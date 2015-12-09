@@ -1,34 +1,71 @@
+#_*_encoding=utf-8_*_
+import os, traceback, unittest, time
 import logging
 import logging.handlers
 
-# 로거 인스턴스를 만든다
-logger = logging.getLogger('mylogger')
+class Logger(unittest.TestCase):
+    def __init__(self, name='logtest', showTime=True):
+	# create logger
+        self.logger = logging.getLogger(name)
 
-# 포매터를 만든다
-fomatter = logging.Formatter('[%(levelname)s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s')
+        # formatter
+        formatter = None
+        if showTime:
+            formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s',"%Y-%m-%d %H:%M:%S")
+        else:
+            formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] > %(message)s')
 
-# 스트림과 파일로 로그를 출력하는 핸들러를 각각 만든다.
-# fileHandler = logging.FileHandler('./myLoggerTest.log')
+        # check log dir
+        if not os.path.exists('logs'):
+            try:
+                os.mkdir('logs')
+            except:
+                print traceback.format_exc()
+                return
 
-# 파일 용량이 100MB를 넘어가면 10개까지 로그를 남기겠다는 의미
-fileMaxByte = 1024 * 1024 * 100 #100MB
-fileHandler = logging.handlers.RotatingFileHandler('./myLoggerTest.log', maxBytes=fileMaxByte, backupCount=10)
+        # create handler
+        fileHandler = logging.FileHandler('./logs/' + str(time.ctime()) + "_" + name + '.log')
+        streamHandler = logging.StreamHandler()
 
-streamHandler = logging.StreamHandler()
+        # binding formatter
+        fileHandler.setFormatter(formatter)
+        streamHandler.setFormatter(formatter)
 
-# 각 핸들러에 포매터를 지정한다.
-fileHandler.setFormatter(fomatter)
-streamHandler.setFormatter(fomatter)
+        # binding handler
+        self.logger.addHandler(fileHandler)
+        self.logger.addHandler(streamHandler)
+        
+        # set log level
+        self.logger.setLevel(logging.DEBUG)
+        
+        # do test
+        self.test()
 
-# 로거 인스턴스에 스트림 핸들러와 파일핸들러를 붙인다.
-# 이 예제는 여러가지의 파일핸들을 logger에 붙여서 로그를 여러군데에 남기는 예제이다.
-logger.addHandler(fileHandler)
-logger.addHandler(streamHandler)
+    def test(self):
+        self.info("TEST START")
+        self.warning("Test warning")
+        self.error("Test error")
+        self.critical("Test critical")
+        self.info("TEST END!")
+        
+    # log function
+    def joinTextList(self, strList):
+        try:
+            return " ".join([str(i) for i in strList])
+        except:
+            print traceback,format_exc()
+    
+    def info(self, *args):
+        self.logger.info(self.joinTextList(args))
 
-# 로거 인스턴스로 로그를 찍는다.
-logger.setLevel(logging.DEBUG)
-logger.info("TEST START")
-logger.warning("스트림으로 로그가 남아요~")
-logger.error("파일로도 남으니 안심이죠~!")
-logger.critical("치명적인 버그는 꼭 파일로 남기기도 하고 메일로 발송하세요!")
-logger.info("TEST END!")
+    def warning(self, *args):
+        self.logger.info(self.joinTextList(args))
+
+    def error(self, *args):
+        self.logger.info(self.joinTextList(args))
+        
+    def critical(self, *args):
+        self.logger.info(self.joinTextList(args))
+        
+# create log instance
+logger = Logger('logtest', False)
