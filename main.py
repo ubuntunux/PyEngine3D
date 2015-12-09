@@ -4,6 +4,9 @@
 # import library
 import sys, math, os
 import time as timeModule
+
+from Logger import logger
+
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
 try:
