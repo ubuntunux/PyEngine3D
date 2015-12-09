@@ -158,7 +158,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # create object
         self.obj_Triangle = Triangle()
         self.obj_Square = Square()
-        self.obj = OBJ(os.path.join("Mesh", "aaa.obj"), 1.0, True)
+        self.obj = OBJ(os.path.join("Mesh", "human.obj"), 1.0, True)
 
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
