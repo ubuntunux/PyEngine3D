@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-# import library
-import sys, math, os
-import time as timeModule
 
-from Logger import logger
+from Utilities.Logger import logger
+
+logger.init('logtest', 'logs', False)
 
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
@@ -21,7 +20,6 @@ except ImportError:
     sys.exit(1)
 
 # import custom library
-from Primitive import *
 from ObjLoader import *
 
 default_vertex_shader = '''
@@ -45,53 +43,16 @@ default_pixel_shader = '''
     }'''
 
 
-class Window(QtGui.QWidget):
+class MainWindow(QtGui.QWidget):
     def __init__(self):
         super(Window, self).__init__()
-
         self.glWidget = GLWidget()
-
-        self.xSlider = self.createSlider()
-        self.ySlider = self.createSlider()
-        self.zSlider = self.createSlider()
-
-        self.xSlider.valueChanged.connect(self.glWidget.setXRotation)
-        self.glWidget.xRotationChanged.connect(self.xSlider.setValue)
-        self.ySlider.valueChanged.connect(self.glWidget.setYRotation)
-        self.glWidget.yRotationChanged.connect(self.ySlider.setValue)
-        self.zSlider.valueChanged.connect(self.glWidget.setZRotation)
-        self.glWidget.zRotationChanged.connect(self.zSlider.setValue)
-
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(self.glWidget)
-        mainLayout.addWidget(self.xSlider)
-        mainLayout.addWidget(self.ySlider)
-        mainLayout.addWidget(self.zSlider)
         self.setLayout(mainLayout)
-
-        self.xSlider.setValue(15 * 16)
-        self.ySlider.setValue(345 * 16)
-        self.zSlider.setValue(0 * 16)
-
         self.setWindowTitle("Hello GL")
 
-    def createSlider(self):
-        slider = QtGui.QSlider(QtCore.Qt.Vertical)
-
-        slider.setRange(0, 360 * 16)
-        slider.setSingleStep(16)
-        slider.setPageStep(15 * 16)
-        slider.setTickInterval(15 * 16)
-        slider.setTickPosition(QtGui.QSlider.TicksRight)
-
-        return slider
-
-
 class GLWidget(QtOpenGL.QGLWidget):
-    xRotationChanged = QtCore.pyqtSignal(int)
-    yRotationChanged = QtCore.pyqtSignal(int)
-    zRotationChanged = QtCore.pyqtSignal(int)
-
     def __init__(self, parent=None):
         super(GLWidget, self).__init__(parent)
 
@@ -222,6 +183,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    window = Window()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())

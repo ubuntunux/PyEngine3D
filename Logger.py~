@@ -43,9 +43,9 @@ class Logger(unittest.TestCase):
 
     def test(self):
         self.info("TEST START")
-        self.warning("Test warning")
-        self.error("Test error")
-        self.critical("Test critical")
+        self.warning("Test warning.")
+        self.error("Test error.")
+        self.critical("Test critical.")
         self.info("TEST END!")
         
     # log function

@@ -1,0 +1,6 @@
+[INFO    |Logger.py:62] > Save log file : logs/1450110343118_logtest.log
+[INFO    |Logger.py:62] > TEST START
+[INFO    |Logger.py:65] > Test warning
+[INFO    |Logger.py:68] > Test error
+[INFO    |Logger.py:71] > Test critical
+[INFO    |Logger.py:62] > TEST END!
