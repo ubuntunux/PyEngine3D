@@ -1,14 +1,22 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-
+# log
 from Utilities.Logger import logger
-
 logger.init('logtest', 'logs', False)
 
+# import library
+import sys, math, os
+import time as timeModule
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
 try:
+    #PyGame
+    import pygame
+    from pygame.locals import *
+    from pygame.constants import *
+    pygame.init()
+
     # PyOpenGL 3.0.1 introduces this convenience module...
     from OpenGL.GL import *
     from OpenGL.GLUT import *
@@ -20,6 +28,7 @@ except ImportError:
     sys.exit(1)
 
 # import custom library
+from Primitive import *
 from ObjLoader import *
 
 default_vertex_shader = '''
@@ -43,12 +52,13 @@ default_pixel_shader = '''
     }'''
 
 
-class MainWindow(QtGui.QWidget):
+class Window(QtGui.QWidget):
     def __init__(self):
         super(Window, self).__init__()
+
         self.glWidget = GLWidget()
         mainLayout = QtGui.QHBoxLayout()
-        mainLayout.addWidget(self.glWidget)
+        mainLayout.addWidget(self.glWidget)        
         self.setLayout(mainLayout)
         self.setWindowTitle("Hello GL")
 
@@ -71,27 +81,8 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def sizeHint(self):
         return QtCore.QSize(1024, 768)
-
-    def setXRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.xRot:
-            self.xRot = angle
-            self.xRotationChanged.emit(angle)
-            self.updateGL()
-
-    def setYRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.yRot:
-            self.yRot = angle
-            self.yRotationChanged.emit(angle)
-            self.updateGL()
-
-    def setZRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.zRot:
-            self.zRot = angle
-            self.zRotationChanged.emit(angle)
-            self.updateGL()
+    
+    self.updateGL()
 
     def initializeGL(self):
         self.qglClearColor(self.trolltechPurple.dark())
@@ -122,7 +113,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         # create object
         self.obj_Triangle = Triangle()
         self.obj_Square = Square()
-        self.obj = OBJ(os.path.join("Mesh", "human.obj"), 1.0, True)
+        self.obj = OBJ(os.path.join("Mesh", "aaa.obj"), 1.0, True)
 
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -165,24 +156,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         dy = event.y() - self.lastPos.y()
 
         if event.buttons() & QtCore.Qt.LeftButton:
-            self.setXRotation(self.xRot + 8 * dy)
-            self.setYRotation(self.yRot + 8 * dx)
+            self.setXRotation()
         elif event.buttons() & QtCore.Qt.RightButton:
-            self.setXRotation(self.xRot + 8 * dy)
-            self.setZRotation(self.zRot + 8 * dx)
+            pass
 
         self.lastPos = event.pos()
 
-    def normalizeAngle(self, angle):
-        while angle < 0:
-            angle += 360 * 16
-        while angle > 360 * 16:
-            angle -= 360 * 16
-        return angle
-
-
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    window = MainWindow()
+    window = Window()
     window.show()
     sys.exit(app.exec_())
