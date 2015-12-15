@@ -3,78 +3,67 @@
 
 # log
 from Utilities.Logger import logger
-logger.init('logtest', 'logs', False)
+logger.init('logtest', 'logs')
 
-# import library
-import sys, math, os
-import time as timeModule
+# QT
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
-try:
-    #PyGame
-    import pygame
-    from pygame.locals import *
-    from pygame.constants import *
-    pygame.init()
+# PyOpenGL 3.0.1 introduces this convenience module...
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
+from OpenGL.GL.shaders import *
 
-    # PyOpenGL 3.0.1 introduces this convenience module...
-    from OpenGL.GL import *
-    from OpenGL.GLUT import *
-    from OpenGL.GLU import *
-    from OpenGL.GL.shaders import *
-except ImportError:
-    app = QtGui.QApplication(sys.argv)
-    QtGui.QMessageBox.critical(None, "OpenGL hellogl", "PyOpenGL must be installed to run this example.")
-    sys.exit(1)
+import Shader
 
 # import custom library
 from Primitive import *
 from ObjLoader import *
 
-default_vertex_shader = '''
-    varying vec3 normal;
-    void main() {
-        normal = gl_NormalMatrix * gl_Normal;
-        gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-    }'''
-
-default_pixel_shader = '''
-     varying vec3 normal;
-    void main() {
-        float intensity;
-        vec4 color;
-        vec3 n = normalize(normal);
-        vec3 l = normalize(gl_LightSource[0].position).xyz;        
-        intensity = saturate(dot(l, n));
-        color = gl_LightSource[0].ambient + gl_LightSource[0].diffuse * intensity;
-    
-        gl_FragColor = color;
-    }'''
-
-
 class Window(QtGui.QWidget):
+    canExit = False
+    
     def __init__(self):
         super(Window, self).__init__()
 
         self.glWidget = GLWidget()
         mainLayout = QtGui.QHBoxLayout()
-        mainLayout.addWidget(self.glWidget)        
+        list_widget = QtGui.QListWidget()
+        button = QtGui.QPushButton("Start")
+        mainLayout.addWidget(self.glWidget)
+        mainLayout.addWidget(list_widget)
+        mainLayout.addWidget(button)        
+        
         self.setLayout(mainLayout)
         self.setWindowTitle("Hello GL")
+        self.canExit = True
+        
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.close()
+            
+    def closeEvent(self, event):        
+        if self.canExit:
+            # let the window close
+            logger.info("Bye")
+            event.accept()
+        else:
+            # exit ignore
+            logger.info("Ignore exit")
+            event.ignore()
 
 class GLWidget(QtOpenGL.QGLWidget):
     def __init__(self, parent=None):
+        logger.info("GLWidget.__init__")
         super(GLWidget, self).__init__(parent)
-
-        self.object = 0
-        self.xRot = 0
-        self.yRot = 0
-        self.zRot = 0
-
         self.lastPos = QtCore.QPoint()
-
+        
+        # default shader
+        self.shader = Shader.Shader()
+        
         self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
         self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
+        self.init = False
 
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -82,9 +71,11 @@ class GLWidget(QtOpenGL.QGLWidget):
     def sizeHint(self):
         return QtCore.QSize(1024, 768)
     
-    self.updateGL()
+    def update(self):
+        self.updateGL()
 
     def initializeGL(self):
+        logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))        
         self.qglClearColor(self.trolltechPurple.dark())
         # set render environment
         glClearColor(0.0, 0.0, 0.0, 0.0)  # This Will Clear The Background Color To Black
@@ -102,25 +93,18 @@ class GLWidget(QtOpenGL.QGLWidget):
         glEnable(GL_LIGHTING)
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
-
-        # init shader
-        self.default_shader = compileProgram(
-            compileShader(default_vertex_shader, GL_VERTEX_SHADER),
-            compileShader(default_pixel_shader, GL_FRAGMENT_SHADER), )
-
-        print "Display : ", glGetDoublev(GL_VIEWPORT)
-
+        
+        # initialize shader
+        self.shader.init()
+        
         # create object
         self.obj_Triangle = Triangle()
         self.obj_Square = Square()
-        self.obj = OBJ(os.path.join("Mesh", "aaa.obj"), 1.0, True)
+        self.init = True        
 
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        # set shader
-        glUseProgram(self.default_shader)
-
+        glUseProgram(self.shader.default_shader)
         # draw triangle
         self.obj_Triangle.translate(-1, 0, -6)
         self.obj_Triangle.draw()
@@ -129,15 +113,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.obj_Square.translate(1, 0, -6)
         self.obj_Square.draw()
 
-        # rotate obj
-        glLoadIdentity()
-        glTranslated(0.0, 0.0, -10.0)
-        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-        glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        self.obj.draw()
-
     def resizeGL(self, width, height):
+        logger.info("resizeGL")
+        
         side = min(width, height)
         if side < 0:
             return
@@ -150,17 +128,31 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def mousePressEvent(self, event):
         self.lastPos = event.pos()
+        
+        eventButtons = event.buttons()
+
+        if eventButtons & QtCore.Qt.LeftButton:
+            logger.info("Click - Left")
+        elif eventButtons & QtCore.Qt.RightButton:
+            logger.info("Click - Right")
 
     def mouseMoveEvent(self, event):
         dx = event.x() - self.lastPos.x()
         dy = event.y() - self.lastPos.y()
-
-        if event.buttons() & QtCore.Qt.LeftButton:
-            self.setXRotation()
-        elif event.buttons() & QtCore.Qt.RightButton:
-            pass
-
         self.lastPos = event.pos()
+        
+    def keyPressEvent(self, e):
+        print e
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.close()
+            
+    def closeEvent(self, event):
+        logger.info("exit")
+        # do stuff
+        if self.canExit():
+            event.accept() # let the window close
+        else:
+            event.ignore()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

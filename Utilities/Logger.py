@@ -4,17 +4,13 @@ import logging
 import logging.handlers
 
 class Logger:    
-    def init(self, name='logtest', directory='logs', showTime=True):
+    def init(self, name='logtest', directory='logs'):
         # create logger
         self.logger = logging.getLogger(name)
         self.directory = directory
 
         # formatter
-        formatter = None
-        if showTime:
-            formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s > %(message)s',"%Y-%m-%d %H:%M:%S")
-        else:
-            formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] > %(message)s')
+        formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s.%(msecs)03d > %(message)s',"%Y-%m-%d %H:%M:%S")
 
         # check log dir
         if not os.path.exists(directory):
@@ -75,4 +71,4 @@ logger = Logger()
 
 # test
 if __name__ == '__main__':    
-    logger.init('logtest', '../logs', False)
+    logger.init('logtest', '../logs')
