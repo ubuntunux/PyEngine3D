@@ -3,10 +3,18 @@ import os, traceback, time
 import logging
 import logging.handlers
 
-class Logger:    
+class Logger:
+    inited = False
+    savedToFile = False
+    
     def init(self, name='logtest', directory='logs'):
+        if self.inited:
+            return
+
         # create logger
         self.logger = logging.getLogger(name)
+        # set log level
+        self.logger.setLevel(logging.DEBUG)
         self.directory = directory
 
         # formatter
@@ -20,25 +28,23 @@ class Logger:
                 print traceback.format_exc()
                 return
 
-        # create handler
-        logFilename = os.path.join(directory, str(int(time.time() * 1000)) + "_" + name + '.log')
-        fileHandler = logging.FileHandler(logFilename)
-        streamHandler = logging.StreamHandler()
-
-        # binding formatter
-        fileHandler.setFormatter(formatter)
+        # set file handler
+        if self.savedToFile:
+            logFilename = os.path.join(directory, str(int(time.time() * 1000)) + "_" + name + '.log')
+            fileHandler = logging.FileHandler(logFilename)
+            fileHandler.setFormatter(formatter)
+            self.logger.addHandler(fileHandler)
+            self.info("Save log file :", logFilename)        
+        
+        # set stream handler
+        streamHandler = logging.StreamHandler()        
         streamHandler.setFormatter(formatter)
-
-        # binding handler
-        self.logger.addHandler(fileHandler)
         self.logger.addHandler(streamHandler)
         
-        # set log level
-        self.logger.setLevel(logging.DEBUG)
-        
-        # test
-        self.info("Save log file :", logFilename)
-        self.test_logs()
+        # test        
+        #self.test_logs()
+
+        self.inited = True
 
     def test_logs(self):
         self.info("TEST START")
@@ -68,7 +74,4 @@ class Logger:
         
 # create log instance
 logger = Logger()
-
-# test
-if __name__ == '__main__':    
-    logger.init('logtest', '../logs')
+logger.init('logtest', '../logs')
