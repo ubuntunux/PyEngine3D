@@ -9,16 +9,13 @@ logger.init('logtest', 'logs')
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
 # PyOpenGL 3.0.1 introduces this convenience module...
-from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from OpenGL.GL.shaders import *
-
 import Shader
 
 # import custom library
-from Primitive import *
-from ObjLoader import *
+from Object.Primitive import *
+from Object.ObjLoader import *
 
 class Window(QtGui.QWidget):
     canExit = False
@@ -28,7 +25,10 @@ class Window(QtGui.QWidget):
 
         self.glWidget = GLWidget()
         mainLayout = QtGui.QHBoxLayout()
+        # obj list
         list_widget = QtGui.QListWidget()
+        list_widget.addItem("obj")
+        
         button = QtGui.QPushButton("Start")
         mainLayout.addWidget(self.glWidget)
         mainLayout.addWidget(list_widget)
