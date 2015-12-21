@@ -12,8 +12,9 @@ GuineaPig is open source 3d engine project write in python.
  - pycuda 2015.1
  - pyautogui 0.9.31
 
-
-### UI
+### Featres
+----
+#### UI
 - [ ] object list
 - [ ] add primitive button
 - [ ] delete primitive button
@@ -25,15 +26,19 @@ GuineaPig is open source 3d engine project write in python.
   - [ ] matrix
   - [ ] quaternion
 
-### Object Module
+#### Object Module
  - [ ] import obj
-### Primirive Module
+ 
+#### Primirive Module
  - [ ] Triangle, Quad, TriangleFan, Cube, Sphere, Cylinder
-### Rendering
+
+#### Rendering
  - [ ] default shader
-### Change Draw Mode
+ 
+#### Change Draw Mode
  - [ ] wire, solid, unlit, shading, texture
-### System
+
+#### System
  - [ ] main loop
  - [ ] save environment
  - [ ] load environment
