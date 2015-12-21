@@ -6,7 +6,7 @@
 Welcome to GuineaPig's documentation!
 =====================================
 
-What Contents:
+What Contents2:
 
 .. toctree::
    :maxdepth: 2

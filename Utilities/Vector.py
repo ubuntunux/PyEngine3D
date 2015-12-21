@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-from Logger import logger
+import Logger
 
 class Vector(object):
     def __init__(self, *args):
@@ -37,6 +37,7 @@ if __name__ == '__main__':
         def testVector(self):
             vector = Vector(-1, -2, 3)
             other = Vector(1, 2, 3)
+            logger = Logger.getLogger()
             logger.info("Test create vector : ", vector)
             logger.info("Test normalize : ", vector.normalize())
             logger.info("Test dot : ", vector.dot(other))
