@@ -5,7 +5,7 @@ import logging.handlers
 
 class Logger:
     inited = False
-    savedToFile = False
+    savedToFile = True
     
     def init(self, name='logtest', directory='logs'):
         if self.inited:
