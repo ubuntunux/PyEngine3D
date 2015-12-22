@@ -3,19 +3,39 @@ import os, traceback, time
 import logging
 import logging.handlers
 
+LOGGER = {}
+
+def getLogger(name = 'logTest', directory = '.', savedToFile = True):
+    if name in LOGGER:
+        return LOGGER[name]
+    else:
+        return Logger(name, directory, savedToFile)
+
 class Logger:
+<<<<<<< HEAD
     inited = False
     savedToFile = True
     
     def init(self, name='logtest', directory='logs'):
         if self.inited:
             return
+=======
+    name = None
+    directory = None
+    savedToFile = False
+>>>>>>> 08847ff18009ff34e6be517418014b33bc683f40
 
-        # create logger
-        self.logger = logging.getLogger(name)
-        # set log level
-        self.logger.setLevel(logging.DEBUG)
+    def __init__(self, name, directory, savedToFile):
+        '''
+        usage : name = 'logtest', directory = 'logs', savedToFile = False
+        '''
+        self.name = name
         self.directory = directory
+        self.savedToFile = savedToFile
+
+        # create logger & set level
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.DEBUG)
 
         # formatter
         formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s.%(msecs)03d > %(message)s',"%Y-%m-%d %H:%M:%S")
@@ -30,7 +50,8 @@ class Logger:
 
         # set file handler
         if self.savedToFile:
-            logFilename = os.path.join(directory, str(int(time.time() * 1000)) + "_" + name + '.log')
+            szTime = "%04d%02d%02d%02d%02d%02d" % (time.localtime()[:6])
+            logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
             fileHandler = logging.FileHandler(logFilename)
             fileHandler.setFormatter(formatter)
             self.logger.addHandler(fileHandler)
@@ -43,8 +64,6 @@ class Logger:
         
         # test        
         #self.test_logs()
-
-        self.inited = True
 
     def test_logs(self):
         self.info("TEST START")
@@ -71,7 +90,7 @@ class Logger:
         
     def critical(self, *args):
         self.logger.info(self.joinTextList(args))
-        
-# create log instance
-logger = Logger()
-logger.init('logtest', '../logs')
+
+if __name__ == '__main__':
+    logger = getLogger()
+    logger.test_logs()
