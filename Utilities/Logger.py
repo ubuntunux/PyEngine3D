@@ -7,15 +7,15 @@ import collections
 
 LOGGER = collections.OrderedDict()
 
-def getLogger(name = '', directory = '', savedToFile = False):
+def getLogger(name='', directory='', savedToFile=False):
     if name in LOGGER:
         return LOGGER[name]
     elif name == '' and len(LOGGER) > 0:
         return LOGGER.values()[0]
     else:
-        logger = Logger(name, directory, savedToFile)
-        LOGGER[name] = logger
-        return logger
+        logObj = Logger(name, directory, savedToFile)
+        LOGGER[name] = logObj
+        return logObj
 
 class Logger:
     name = ''
@@ -23,9 +23,9 @@ class Logger:
     savedToFile = False
 
     def __init__(self, name, directory, savedToFile):
-        '''
+        """
         usage : name = 'logtest', directory = 'logs', savedToFile = False
-        '''
+        """
         self.name = name
         self.directory = directory
         self.savedToFile = savedToFile

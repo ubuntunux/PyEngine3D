@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
+import sys
+
 # log
 import platform
 from Utilities import getLogger
@@ -41,33 +43,35 @@ logger.info('Platform :', platform.platform())
 # QT
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
-# PyOpenGL 3.0.1 introduces this convenience module...
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
-import Shader
-
 # import custom library
-from Object import ObjectManager, Triangle, Quad
+from Render import Renderer
 
 class Window(QtGui.QWidget):
     canExit = False
 
     def __init__(self):
         super(Window, self).__init__()
+        logger.info("Create QT Window...")
 
+        # opengl widget
         self.glWidget = GLWidget()
+
+        # main layout
         mainlayout = QtGui.QHBoxLayout()
 
         # obj list
         list_widget = QtGui.QListWidget()
         list_widget.addItem("obj")
 
+        # add buttons
         button = QtGui.QPushButton("Start")
+
+        # add widgets
         mainlayout.addWidget(self.glWidget)
         mainlayout.addWidget(list_widget)
         mainlayout.addWidget(button)
 
+        # set layouy & window
         self.setLayout(mainlayout)
         self.setWindowTitle("Hello GL")
         self.canExit = True
@@ -86,22 +90,20 @@ class Window(QtGui.QWidget):
             logger.info("Ignore exit")
             event.ignore()
 
-
+import time
 class GLWidget(QtOpenGL.QGLWidget):
     init = False
 
     def __init__(self, parent=None):
-        logger.info("GLWidget.__init__")
         super(GLWidget, self).__init__(parent)
+        logger.info("Create QtOpenGL Widget...")
+
         self.lastPos = QtCore.QPoint()
         self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
         self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
 
-        # default shader
-        self.shader = Shader.Shader()
-
-        # object manager
-        self.objectManager = ObjectManager()
+        # get renderer
+        self.renderer = Renderer()
 
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -113,68 +115,32 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.updateGL()
 
     def initializeGL(self):
-        logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))
+        # clear qt color
         self.qglClearColor(self.trolltechPurple.dark())
-        
-        # set render environment
-        glClearColor(0.0, 0.0, 0.0, 0.0)  # This Will Clear The Background Color To Black
-        glClearDepth(1.0)  # Enables Clearing Of The Depth Buffer
-        glDepthFunc(GL_LESS)  # The Type Of Depth Test To Do
-        glEnable(GL_DEPTH_TEST)  # Enables Depth Testing
-        glShadeModel(GL_SMOOTH)  # Enables Smooth Color Shading
-        glEnable(GL_CULL_FACE)
 
-        # Start - fixed pipline light setting
-        glLightfv(GL_LIGHT0, GL_POSITION, (-40, 200, 100, 0.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.2, 0.2, 0.2, 1.0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
-        glEnable(GL_LIGHT0)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_COLOR_MATERIAL)
-        # End - fixed pipline light setting
+        # updateGL loop
+        timer = QtCore.QTimer(self)
+        self.connect(timer, QtCore.SIGNAL("timeout()"), self, QtCore.SLOT("updateGL()"))
+        timer.start(0)
 
-        # initialize shader
-        self.shader.init()
-
-        # create object
-        self.objectManager.addPrimitive(primitive = Triangle, name = 'Triangle', pos = (-1, 0, -6))
-        self.objectManager.addPrimitive(primitive = Quad, name = 'Quad', pos = (1, 0, -6))
-
-        # initialized flag
-        self.init = True
+        # set renderer init
+        self.renderer.initializeGL()
 
     def paintGL(self):
-        if not self.init:
-            return
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glUseProgram(self.shader.default_shader)
-
-        # draw
-        self.objectManager.draw()
+        # render scene
+        self.renderer.renderScene()
 
     def resizeGL(self, width, height):
-        logger.info("resizeGL")
-
-        side = min(width, height)
-        if side < 0:
-            return
-
-        glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45.0, float(width) / float(height), 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
+        # resize scene
+        self.renderer.resizeScene(width, height)
 
     def mousePressEvent(self, event):
         self.lastPos = event.pos()
-
         eventButtons = event.buttons()
-
         if eventButtons & QtCore.Qt.LeftButton:
-            logger.info("Click - Left")
+            pass
         elif eventButtons & QtCore.Qt.RightButton:
-            logger.info("Click - Right")
+            pass
 
     def mouseMoveEvent(self, event):
         dx = event.x() - self.lastPos.x()
@@ -187,7 +153,6 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.close()
 
     def closeEvent(self, event):
-        logger.info("exit")
         # do stuff
         if self.canExit():
             event.accept()  # let the window close

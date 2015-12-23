@@ -1,13 +1,12 @@
 from OpenGL.GL import *
 from Utilities import Vector
+from Render import MaterialManager
 
 class Primitive:
-    pos = None
-    name = ''
-
-    def __init__(self, name = '', pos = (0,0,0)):
+    def __init__(self, name='', pos=(0,0,0), material=None):
         self.name = name
         self.pos = Vector(*pos)
+        self.material = material or MaterialManager.default_material
 
     def draw(self):
         pass
