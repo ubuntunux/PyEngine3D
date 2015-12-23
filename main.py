@@ -35,7 +35,7 @@ __version__ = '0.1'
 # log
 import platform
 from Utilities import getLogger
-logger = getLogger('main', 'logs', False)
+logger = getLogger('default', 'logs', False)
 logger.info('Platform :', platform.platform())
 
 # QT
@@ -48,8 +48,7 @@ from OpenGL.GLUT import *
 import Shader
 
 # import custom library
-from Object import Primitive, Triangle, Quad, ObjLoader
-
+from Object import ObjectManager, Triangle, Quad
 
 class Window(QtGui.QWidget):
     canExit = False
@@ -89,17 +88,20 @@ class Window(QtGui.QWidget):
 
 
 class GLWidget(QtOpenGL.QGLWidget):
+    init = False
+
     def __init__(self, parent=None):
         logger.info("GLWidget.__init__")
         super(GLWidget, self).__init__(parent)
         self.lastPos = QtCore.QPoint()
+        self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
+        self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
 
         # default shader
         self.shader = Shader.Shader()
 
-        self.trolltechGreen = QtGui.QColor.fromCmykF(0.40, 0.0, 1.0, 0.0)
-        self.trolltechPurple = QtGui.QColor.fromCmykF(0.39, 0.39, 0.0, 0.0)
-        self.init = False
+        # object manager
+        self.objectManager = ObjectManager()
 
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -135,8 +137,10 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.shader.init()
 
         # create object
-        self.obj_Triangle = Triangle([0,0,0])
-        self.obj_Square = Quad([0,0,0])
+        self.objectManager.addPrimitive(primitive = Triangle, name = 'Triangle', pos = (-1, 0, -6))
+        self.objectManager.addPrimitive(primitive = Quad, name = 'Quad', pos = (1, 0, -6))
+
+        # initialized flag
         self.init = True
 
     def paintGL(self):
@@ -146,13 +150,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glUseProgram(self.shader.default_shader)
 
-        # draw triangle
-        self.obj_Triangle.translate(-1, 0, -6)
-        self.obj_Triangle.draw()
-
-        # draw square
-        self.obj_Square.translate(1, 0, -6)
-        self.obj_Square.draw()
+        # draw
+        self.objectManager.draw()
 
     def resizeGL(self, width, height):
         logger.info("resizeGL")

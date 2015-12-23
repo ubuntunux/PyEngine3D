@@ -2,15 +2,13 @@ from OpenGL.GL import *
 from Utilities import Vector
 
 class Primitive:
-    _pos = None
-    def __init__(self, pos):
-        self._pos = Vector(*pos)
+    pos = None
+    name = ''
 
-    def translate(self, x, y, z):
-        self._pos = (x,y,z)
-        glLoadIdentity() # reset view
-        glTranslatef(x, y, z)  # on screen space transform
-        
+    def __init__(self, name = '', pos = (0,0,0)):
+        self.name = name
+        self.pos = Vector(*pos)
+
     def draw(self):
         pass
 

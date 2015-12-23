@@ -1,19 +1,25 @@
 #_*_encoding=utf-8_*_
-import os, traceback, time
+import os
+import traceback
+import time
 import logging
-import logging.handlers
+import collections
 
-LOGGER = {}
+LOGGER = collections.OrderedDict()
 
-def getLogger(name = 'logTest', directory = '.', savedToFile = False):
+def getLogger(name = '', directory = '', savedToFile = False):
     if name in LOGGER:
         return LOGGER[name]
+    elif name == '' and len(LOGGER) > 0:
+        return LOGGER.values()[0]
     else:
-        return Logger(name, directory, savedToFile)
+        logger = Logger(name, directory, savedToFile)
+        LOGGER[name] = logger
+        return logger
 
 class Logger:
-    name = None
-    directory = None
+    name = ''
+    directory = ''
     savedToFile = False
 
     def __init__(self, name, directory, savedToFile):
@@ -32,12 +38,13 @@ class Logger:
         formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s.%(msecs)03d > %(message)s',"%Y-%m-%d %H:%M:%S")
 
         # check log dir
-        if not os.path.exists(directory):
-            try:
-                os.mkdir(directory)
-            except:
-                print traceback.format_exc()
-                return
+        if directory:
+            if not os.path.exists(directory):
+                try:
+                    os.mkdir(directory)
+                except:
+                    print traceback.format_exc()
+                    return
 
         # set file handler
         if self.savedToFile:
@@ -46,15 +53,12 @@ class Logger:
             fileHandler = logging.FileHandler(logFilename)
             fileHandler.setFormatter(formatter)
             self.logger.addHandler(fileHandler)
-            self.info("Save log file :", logFilename)        
+            self.info("Save log file :", logFilename)
         
         # set stream handler
         streamHandler = logging.StreamHandler()        
         streamHandler.setFormatter(formatter)
         self.logger.addHandler(streamHandler)
-        
-        # test        
-        #self.test_logs()
 
     @staticmethod
     def joinTextList(strList):
@@ -84,5 +88,5 @@ class Logger:
 
 
 if __name__ == '__main__':
-    logger = getLogger()
+    logger = getLogger(name = 'logTest', directory = '.', savedToFile = False)
     logger.test_logs()
