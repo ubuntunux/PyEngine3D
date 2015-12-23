@@ -5,25 +5,16 @@ import logging.handlers
 
 LOGGER = {}
 
-def getLogger(name = 'logTest', directory = '.', savedToFile = True):
+def getLogger(name = 'logTest', directory = '.', savedToFile = False):
     if name in LOGGER:
         return LOGGER[name]
     else:
         return Logger(name, directory, savedToFile)
 
 class Logger:
-<<<<<<< HEAD
-    inited = False
-    savedToFile = True
-    
-    def init(self, name='logtest', directory='logs'):
-        if self.inited:
-            return
-=======
     name = None
     directory = None
     savedToFile = False
->>>>>>> 08847ff18009ff34e6be517418014b33bc683f40
 
     def __init__(self, name, directory, savedToFile):
         '''
@@ -65,20 +56,20 @@ class Logger:
         # test        
         #self.test_logs()
 
+    @staticmethod
+    def joinTextList(strList):
+        """
+        joinTextList
+        """
+        return " ".join([str(i) for i in strList])
+
     def test_logs(self):
         self.info("TEST START")
         self.warning("Test warning")
         self.error("Test error")
         self.critical("Test critical")
         self.info("TEST END!")
-        
-    # log function
-    def joinTextList(self, strList):
-        try:
-            return " ".join([str(i) for i in strList])
-        except:
-            print traceback,format_exc()
-    
+
     def info(self, *args):
         self.logger.info(self.joinTextList(args))
 
@@ -90,6 +81,7 @@ class Logger:
         
     def critical(self, *args):
         self.logger.info(self.joinTextList(args))
+
 
 if __name__ == '__main__':
     logger = getLogger()

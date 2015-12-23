@@ -34,11 +34,8 @@ __version__ = '0.1'
 
 # log
 import platform
-from Utilities import Logger
-
-# logger
-logger = Logger()
-logger.init('main', 'logs', )
+from Utilities import getLogger
+logger = getLogger('main', 'logs', False)
 logger.info('Platform :', platform.platform())
 
 # QT
