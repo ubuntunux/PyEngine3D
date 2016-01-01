@@ -43,7 +43,7 @@ class Logger:
                 try:
                     os.mkdir(directory)
                 except:
-                    print traceback.format_exc()
+                    print(traceback.format_exc())
                     return
 
         # set file handler

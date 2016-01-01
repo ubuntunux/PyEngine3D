@@ -1,6 +1,6 @@
 import numpy as np
 import unittest
-import Logger
+from Utilities import Logger
 
 class Vector(object):
     def __init__(self, *args):

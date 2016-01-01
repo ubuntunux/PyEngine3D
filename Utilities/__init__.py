@@ -1,3 +1,3 @@
-from Vector import Vector
-from Logger import getLogger
-from Singleton import Singleton
+from Utilities.Vector import Vector
+from Utilities.Logger import getLogger
+from Utilities.Singleton import Singleton

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-print os.path.abspath('.')
+#print os.path.abspath('.')
 
 __copyright__ = "Copyright (c) 2015, ubuntunux"
 __license__ = """
@@ -90,7 +90,6 @@ class Window(QtGui.QWidget):
             logger.info("Ignore exit")
             event.ignore()
 
-import time
 class GLWidget(QtOpenGL.QGLWidget):
     init = False
 
@@ -148,7 +147,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.lastPos = event.pos()
 
     def keyPressEvent(self, e):
-        print e
+        #print e
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
 

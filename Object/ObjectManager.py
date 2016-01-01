@@ -1,6 +1,6 @@
 from OpenGL.GL import *
 
-from Primitive import Primitive
+from Object import Primitive
 from Render import MaterialManager
 from Utilities import Singleton, getLogger
 

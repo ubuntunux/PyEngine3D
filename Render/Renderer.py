@@ -2,11 +2,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from Shader import ShaderManager
+from Render.Shader import ShaderManager
 from Object import ObjectManager, Triangle, Quad
 from Utilities import Singleton, getLogger
-
-r =0.0
 
 logger = getLogger('default')
 
@@ -21,9 +19,6 @@ class Renderer(Singleton):
 
     def initializeGL(self):
         logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))
-
-        # initialize glut
-        glutInit()
 
         # set render environment
         glClearColor(0.0, 0.0, 0.0, 0.0)  # This Will Clear The Background Color To Black
@@ -84,11 +79,3 @@ class Renderer(Singleton):
             glLoadIdentity()
             glTranslatef(*obj.pos)
             obj.draw()
-
-        global r
-        glPushMatrix()
-        glRotated(r, 0.0, 1.0, 0.0)
-        glutSolidTorus(0.3, 0.5, 30, 30)
-        glPopMatrix()
-        r += 1.0
-        if r > 360.0: r = 0.0
