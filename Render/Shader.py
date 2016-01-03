@@ -25,13 +25,22 @@ DEFAULT_PIXEL_SHADER = '''
 def createShader(vertexShader, pixelShader):
     return compileProgram(compileShader(vertexShader, GL_VERTEX_SHADER), compileShader(pixelShader, GL_FRAGMENT_SHADER), )
 
+#------------------------------#
+# CLASS : ShaderManager
+#------------------------------#
 class ShaderManager(Singleton):
-    shaders = {}
-
     def __init__(self):
+        self.shaders = {}
+        self.default_shader = None
+
+    def initialize(self):
         self.default_shader = createShader(DEFAULT_VERTEX_SHADER, DEFAULT_PIXEL_SHADER)
 
     def createShader(self, shaderName, vertexShader, pixelShader):
         shader = createShader(vertexShader, pixelShader)
         self.shaders[shaderName] = shader
 
+#------------------------------#
+# Globals
+#------------------------------#
+ShaderManager = ShaderManager.instance()

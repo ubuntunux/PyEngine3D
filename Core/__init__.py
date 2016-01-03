@@ -1,1 +1,1 @@
-from CoreManager import CoreManager
+from Core.CoreManager import CoreManager

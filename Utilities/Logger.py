@@ -17,6 +17,8 @@ def getLogger(name='', directory='', savedToFile=False):
         LOGGER[name] = logObj
         return logObj
 
+
+# noinspection PyBroadException
 class Logger:
     name = ''
     directory = ''

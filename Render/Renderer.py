@@ -2,22 +2,20 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from Render.Shader import ShaderManager
-from Object import ObjectManager, Triangle, Quad
-from Utilities import Singleton, getLogger
+from Object import ObjectManager
+from Utilities import Singleton
+from __main__ import logger
 
-logger = getLogger('default')
 
+#------------------------------#
+# CLASS : Renderer
+#------------------------------#
 class Renderer(Singleton):
     def __init__(self):
         self.init = False
         self.lastShader = None
 
-        # managers
-        self.shaderManager = None
-        self.objectManager = None
-
-    def initializeGL(self):
+    def initialize(self):
         logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))
 
         # set render environment
@@ -37,14 +35,6 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
-        # initialize managers
-        self.shaderManager = ShaderManager()
-        self.objectManager = ObjectManager()
-
-        # create object
-        self.objectManager.addPrimitive(primitive = Triangle, name = 'Triangle', pos = (-1, 0, -6))
-        self.objectManager.addPrimitive(primitive = Quad, name = 'Quad', pos = (1, 0, -6))
-
         # initialized flag
         self.init = True
 
@@ -53,7 +43,6 @@ class Renderer(Singleton):
             return
 
         # resize scene
-        logger.info("resize scene")
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -68,14 +57,23 @@ class Renderer(Singleton):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # render
-        for obj in self.objectManager.getObjectList():
+        glPushMatrix()
+        glLoadIdentity()
+        glTranslatef(0,0,-6)
+        for obj in ObjectManager.getObjectList():
             # set shader
             curShader = obj.material.getShader()
             if self.lastShader != curShader:
                 glUseProgram(curShader)
                 self.lastShader = curShader
-
-            # set matrix
-            glLoadIdentity()
+            glPushMatrix()
             glTranslatef(*obj.pos)
+            glPopMatrix()
             obj.draw()
+        glPopMatrix()
+        glFlush()
+
+#------------------------------#
+# Globals
+#------------------------------#
+Renderer = Renderer.instance()

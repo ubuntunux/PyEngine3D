@@ -1,25 +1,45 @@
-from OpenGL.GL import *
-
 from Object import Primitive
 from Render import MaterialManager
-from Utilities import Singleton, getLogger
+from Utilities import Singleton
+from __main__ import logger
 
-logger = getLogger('default')
-
+#------------------------------#
+# CLASS : ObjectManager
+#------------------------------#
 class ObjectManager(Singleton):
-    primitives = []
+    def __init__(self):
+        self.primitives = []
+        self.callback_addPrimitive = None
 
-    def addPrimitive(self, primitive, name='', pos=(0,0,0), material=None):
+    def initialize(self):
+        pass
+
+    # binding callback function
+    def bind_addPrimitive(self, func):
+        self.callback_addPrimitive = func
+
+    def addPrimitive(self, primitive, objName='', pos=(0, 0, 0), material=None):
+        """
+        :param primitive: reference Primitive.py ( Triangle, Quad, etc...)
+        """
         if issubclass(primitive, Primitive):
-            logger.info("Add primitive :", primitive, name)
+            logger.info("Add primitive :", primitive, objName)
             # create material
             if material is None:
-                material = MaterialManager().createMaterial()
+                material = MaterialManager.createMaterial()
             # create primitive
-            obj = primitive(name=name, pos=pos, material=material)
+            obj = primitive(name=objName or primitive.__name__, pos=pos, material=material)
             self.primitives.append(obj)
+            # callback function on success
+            if self.callback_addPrimitive:
+                self.callback_addPrimitive(obj.name)
         else:
             logger.warning("Unknown primitive.", str(primitive))
 
     def getObjectList(self):
         return self.primitives
+
+#------------------------------#
+# Globals
+#------------------------------#
+ObjectManager = ObjectManager.instance()
