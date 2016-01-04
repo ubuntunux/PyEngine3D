@@ -24,8 +24,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         try:
             # load ui file
             uic.loadUi(UI_FILENAME, self)
-        except FileNotFoundError:
-            self.exit("Error :", self.UI_FILENAME, "file not found.")
+        except:
+            self.exit(traceback.format_exc())
 
         try:
             # add opengl widget
