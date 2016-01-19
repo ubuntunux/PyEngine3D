@@ -2,7 +2,7 @@
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
 from __main__ import logger
-import MainWindow
+from . import MainWindow
 from Utilities import Singleton
 from Render import Renderer, ShaderManager, MaterialManager
 from Object import ObjectManager
