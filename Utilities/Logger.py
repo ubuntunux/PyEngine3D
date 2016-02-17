@@ -69,13 +69,6 @@ class Logger:
         """
         return " ".join([str(i) for i in strList])
 
-    def test_logs(self):
-        self.info("TEST START")
-        self.warning("Test warning")
-        self.error("Test error")
-        self.critical("Test critical")
-        self.info("TEST END!")
-
     def info(self, *args):
         self.logger.info(self.joinTextList(args))
 
@@ -91,4 +84,11 @@ class Logger:
 
 if __name__ == '__main__':
     logger = getLogger(name = 'logTest', directory = '.', savedToFile = False)
-    logger.test_logs()
+    # unit test
+    def test_log():
+        logger.info("TEST START")
+        logger.warning("Test warning")
+        logger.error("Test error")
+        logger.critical("Test critical")
+        logger.info("TEST END!")
+    test_log()

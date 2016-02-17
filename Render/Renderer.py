@@ -5,7 +5,8 @@ from OpenGL.GLUT import *
 from Object import ObjectManager
 from Utilities import Singleton
 from __main__ import logger
-
+def Upon_Click (button, button_state, cursor_x, cursor_y):
+	print(button)
 
 #------------------------------#
 # CLASS : Renderer
@@ -16,6 +17,9 @@ class Renderer(Singleton):
         self.lastShader = None
 
     def initialize(self):
+        glutInit()
+        glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
+
         logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))
 
         # set render environment
@@ -23,6 +27,7 @@ class Renderer(Singleton):
         glClearDepth(1.0)  # Enables Clearing Of The Depth Buffer
         glDepthFunc(GL_LESS)  # The Type Of Depth Test To Do
         glEnable(GL_DEPTH_TEST)  # Enables Depth Testing
+
         glShadeModel(GL_SMOOTH)  # Enables Smooth Color Shading
         glEnable(GL_CULL_FACE)
 
@@ -70,8 +75,11 @@ class Renderer(Singleton):
             glTranslatef(*obj.pos)
             glPopMatrix()
             obj.draw()
+        glutSolidSphere(1.0,32,32)
+        glutSolidCube( 1.0 )
         glPopMatrix()
         glFlush()
+
 
 #------------------------------#
 # Globals
