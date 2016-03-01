@@ -29,7 +29,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         try:
             # add opengl widget
-            layout = self.findChild(QtGui.QGridLayout, "glWidget")
+            layout = self.findChild(QtGui.QFormLayout, "glWidget")
             glWidget = GLWidget.instance()
             layout.addWidget(glWidget)
 
