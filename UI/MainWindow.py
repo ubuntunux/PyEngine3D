@@ -12,6 +12,7 @@ from Object import Triangle, Quad, ObjectManager
 
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
+
 #----------------------#
 # CLASS : Main Window
 #----------------------#
@@ -46,9 +47,21 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
+            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.fillObjProperty)
+
+            # object property widget
+            self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
+
+            b1 = QtGui.QSpinBox()
+            self.objPropertyTree.setItemWidget(self.objPropertyTree.topLevelItem(0), 1, b1) # add button to row 0, column
 
         except AttributeError:
             self.exit(traceback.format_exc())
+
+
+    def fillObjProperty(self):
+        pass
+
 
     def exit(self, *args):
         logger.info(*args)
