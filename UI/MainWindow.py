@@ -4,10 +4,10 @@ import sys, traceback, os
 # Third-party library
 from PyQt4 import QtCore, QtGui, uic
 
-from __main__ import logger
+from Core import coreManager, logger
 from Utilities import Singleton
 from UI.GLWidget import GLWidget
-from Object import Triangle, Quad, ObjectManager
+from Object import objectManager, Triangle, Quad
 
 
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
@@ -21,6 +21,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
         self.inited = True
+        # regist
+        coreManager.regist("Main Window", self)
 
         try:
             # load ui file
@@ -36,7 +38,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
             # add primitive
             def addPrimitive(objType):
-                ObjectManager.addPrimitive(objType)
+                objectManager.addPrimitive(objType)
 
             # binding button clicked
             btn = self.findChild(QtGui.QPushButton, "addTriangle")

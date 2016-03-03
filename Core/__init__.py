@@ -1,1 +1,1 @@
-from Core.CoreManager import CoreManager
+from Core.CoreManager import coreManager, logger

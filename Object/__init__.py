@@ -1,3 +1,3 @@
 from Object.ObjLoader import *
 from Object.Primitive import *
-from Object.ObjectManager import ObjectManager
+from Object.ObjectManager import objectManager

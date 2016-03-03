@@ -1,3 +1,3 @@
-from Render.Shader import ShaderManager
-from Render.Material import Material, MaterialManager
-from Render.Renderer import Renderer
+from Render.Shader import shaderManager
+from Render.Material import Material, materialManager
+from Render.Renderer import renderer

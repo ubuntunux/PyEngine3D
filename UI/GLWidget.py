@@ -1,11 +1,11 @@
 # Third-party library
 from PyQt4 import QtCore, QtGui, QtOpenGL
 
-from __main__ import logger
+from Core import coreManager, logger
 from . import MainWindow
 from Utilities import Singleton
-from Render import Renderer, ShaderManager, MaterialManager
-from Object import ObjectManager
+from Render import renderer, shaderManager, materialManager
+from Object import objectManager
 
 
 #--------------------------------#
@@ -41,10 +41,10 @@ class GLWidget(QtOpenGL.QGLWidget, Singleton):
         timer.start(0)
 
         # initialize managers
-        Renderer.initialize()
-        ObjectManager.initialize()
-        ShaderManager.initialize()
-        MaterialManager.initialize()
+        renderer.initialize()
+        objectManager.initialize()
+        shaderManager.initialize()
+        materialManager.initialize()
 
         # on_addPrimitive
         def on_addPrimitive(objName):
@@ -53,19 +53,19 @@ class GLWidget(QtOpenGL.QGLWidget, Singleton):
             main_window.objectList.addItem(item)
 
         # binding - callback function
-        ObjectManager.bind_addPrimitive(on_addPrimitive)
+        objectManager.bind_addPrimitive(on_addPrimitive)
 
     # addPrimitive
     def addPrimitive(self, objType):
-        ObjectManager.addPrimitive(objType)
+        objectManager.addPrimitive(objType)
 
     def paintGL(self):
         # render scene
-        Renderer.renderScene()
+        renderer.renderScene()
 
     def resizeGL(self, width, height):
         # resize scene
-        Renderer.resizeScene(width, height)
+        renderer.resizeScene(width, height)
 
     def mousePressEvent(self, event):
         self.lastPos = event.pos()

@@ -2,11 +2,12 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from Object import ObjectManager
+from Core import coreManager, logger
+from Object import objectManager
 from Utilities import Singleton
-from __main__ import logger
+
 def Upon_Click (button, button_state, cursor_x, cursor_y):
-	print(button)
+    print(button)
 
 #------------------------------#
 # CLASS : Renderer
@@ -15,12 +16,14 @@ class Renderer(Singleton):
     def __init__(self):
         self.init = False
         self.lastShader = None
+        # regist
+        coreManager.regist("Renderer", self)
 
     def initialize(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
-
-        logger.info("InitializeGL :", glGetDoublev(GL_VIEWPORT))
+        f = glGetDoublev(GL_VIEWPORT)
+        logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
 
         # set render environment
         glClearColor(0.0, 0.0, 0.0, 0.0)  # This Will Clear The Background Color To Black
@@ -65,7 +68,7 @@ class Renderer(Singleton):
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(0,0,-6)
-        for obj in ObjectManager.getObjectList():
+        for obj in objectManager.getObjectList():
             # set shader
             curShader = obj.material.getShader()
             if self.lastShader != curShader:
@@ -84,4 +87,4 @@ class Renderer(Singleton):
 #------------------------------#
 # Globals
 #------------------------------#
-Renderer = Renderer.instance()
+renderer = Renderer.instance()

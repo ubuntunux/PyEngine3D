@@ -29,19 +29,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
+import platform
 import sys
 
 from PyQt4 import QtGui
 
-# own library
-import platform
-from Utilities import Logger
-logger = Logger.getLogger('default', 'logs', False)
-logger.info('Platform :', platform.platform())
-
-from UI import MainWindow
+# core manager
+from Core import coreManager, logger
+logger.info('Platform : %s' % platform.platform())
+coreManager.initialize()
 
 if __name__ == "__main__":
+    from UI import MainWindow
     app = QtGui.QApplication(sys.argv)
     main_window = MainWindow.instance()
     main_window.show()
