@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
+from multiprocessing import Process
 import platform
 import sys
 
@@ -40,8 +41,16 @@ logger.info('Platform : %s' % platform.platform())
 coreManager.initialize()
 
 if __name__ == "__main__":
-    from UI import MainWindow
-    app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance()
-    main_window.show()
-    sys.exit(app.exec_())
+    # process - OpenGL
+
+    # process - QT Widget
+    def run_editor():
+        from UI import MainWindow
+        app = QtGui.QApplication(sys.argv)
+        main_window = MainWindow.instance()
+        main_window.show()
+        sys.exit(app.exec_())
+    # run qt
+    pEditor = Process(target=run_editor)
+    pEditor.start()
+    pEditor.join()

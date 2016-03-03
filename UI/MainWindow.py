@@ -21,8 +21,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
         self.inited = True
-        # regist
-        coreManager.regist("Main Window", self)
 
         try:
             # load ui file
@@ -35,6 +33,14 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             layout = self.findChild(QtGui.QFormLayout, "glWidget")
             glWidget = GLWidget.instance()
             layout.addWidget(glWidget)
+
+            # on_addPrimitive
+            def on_addPrimitive(objName):
+                item = QtGui.QListWidgetItem(objName)
+                self.objectList.addItem(item)
+
+            # binding - callback function
+            objectManager.bind_addPrimitive(on_addPrimitive)
 
             # add primitive
             def addPrimitive(objType):
@@ -60,10 +66,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         except AttributeError:
             self.exit(traceback.format_exc())
 
-
     def fillObjProperty(self):
         pass
-
 
     def exit(self, *args):
         logger.info(*args)

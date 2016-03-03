@@ -2,7 +2,7 @@ from Utilities import Logger, Singleton
 logger = Logger.getLogger('default', 'logs', False)
 
 #------------------------------#
-# CLASS : MaterialManager
+# CLASS : CoreManager
 #------------------------------#
 class CoreManager(Singleton):
     """
@@ -31,6 +31,7 @@ class CoreManager(Singleton):
 
     def getManagers(self):
         return self.managers
+
 
 #------------------------------#
 # Globals

@@ -46,18 +46,6 @@ class GLWidget(QtOpenGL.QGLWidget, Singleton):
         shaderManager.initialize()
         materialManager.initialize()
 
-        # on_addPrimitive
-        def on_addPrimitive(objName):
-            item = QtGui.QListWidgetItem(objName)
-            main_window = MainWindow.MainWindow.instance()
-            main_window.objectList.addItem(item)
-
-        # binding - callback function
-        objectManager.bind_addPrimitive(on_addPrimitive)
-
-    # addPrimitive
-    def addPrimitive(self, objType):
-        objectManager.addPrimitive(objType)
 
     def paintGL(self):
         # render scene
@@ -66,20 +54,3 @@ class GLWidget(QtOpenGL.QGLWidget, Singleton):
     def resizeGL(self, width, height):
         # resize scene
         renderer.resizeScene(width, height)
-
-    def mousePressEvent(self, event):
-        self.lastPos = event.pos()
-        eventButtons = event.buttons()
-        if eventButtons & QtCore.Qt.LeftButton:
-            pass
-        elif eventButtons & QtCore.Qt.RightButton:
-            pass
-
-    def mouseMoveEvent(self, event):
-        dx = event.x() - self.lastPos.x()
-        dy = event.y() - self.lastPos.y()
-        self.lastPos = event.pos()
-
-    def keyPressEvent(self, e):
-        if e.key() == QtCore.Qt.Key_Escape:
-            self.close()
