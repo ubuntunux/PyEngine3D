@@ -6,23 +6,29 @@ from Core import coreManager, logger
 from Object import objectManager
 from Utilities import Singleton
 
-def Upon_Click (button, button_state, cursor_x, cursor_y):
-    print(button)
 
 #------------------------------#
 # CLASS : Renderer
 #------------------------------#
 class Renderer(Singleton):
     def __init__(self):
-        self.init = False
+        self.inited = False
         self.lastShader = None
+        self.window = None
         # regist
         coreManager.regist("Renderer", self)
 
     def initialize(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
-        f = glGetDoublev(GL_VIEWPORT)
+        glutInitWindowSize(640, 480)
+        glutInitWindowPosition(0, 0)
+        self.window = glutCreateWindow(b"GuineaPig")
+        glutDisplayFunc(self.renderScene)
+        glutIdleFunc(self.renderScene)
+        glutReshapeFunc(self.resizeScene)
+        glutKeyboardFunc(self.keyPressed)
+
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
 
         # set render environment
@@ -30,7 +36,6 @@ class Renderer(Singleton):
         glClearDepth(1.0)  # Enables Clearing Of The Depth Buffer
         glDepthFunc(GL_LESS)  # The Type Of Depth Test To Do
         glEnable(GL_DEPTH_TEST)  # Enables Depth Testing
-
         glShadeModel(GL_SMOOTH)  # Enables Smooth Color Shading
         glEnable(GL_CULL_FACE)
 
@@ -44,10 +49,10 @@ class Renderer(Singleton):
         # End - fixed pipline light setting
 
         # initialized flag
-        self.init = True
+        self.inited = True
 
     def resizeScene(self, width, height):
-        if not self.init or width < 0 or height < 0:
+        if not self.inited or width < 0 or height < 0:
             return
 
         # resize scene
@@ -57,8 +62,13 @@ class Renderer(Singleton):
         gluPerspective(45.0, float(width) / float(height), 0.1, 100.0)
         glMatrixMode(GL_MODELVIEW)
 
+    def keyPressed(self, *args):
+        # If escape is pressed, kill everything.
+        if args[0] == '\x1b':
+            sys.exit()
+
     def renderScene(self):
-        if not self.init:
+        if not self.inited:
             return
 
         # clear buffer
@@ -82,6 +92,11 @@ class Renderer(Singleton):
         glutSolidCube( 1.0 )
         glPopMatrix()
         glFlush()
+        glutSwapBuffers()
+
+    def update(self):
+        glutMainLoop()
+
 
 
 #------------------------------#

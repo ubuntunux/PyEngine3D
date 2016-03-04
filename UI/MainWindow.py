@@ -4,9 +4,8 @@ import sys, traceback, os
 # Third-party library
 from PyQt4 import QtCore, QtGui, uic
 
-from Core import coreManager, logger
+from Core import logger
 from Utilities import Singleton
-from UI.GLWidget import GLWidget
 from Object import objectManager, Triangle, Quad
 
 
@@ -29,11 +28,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.exit(traceback.format_exc())
 
         try:
-            # add opengl widget
-            layout = self.findChild(QtGui.QFormLayout, "glWidget")
-            glWidget = GLWidget.instance()
-            layout.addWidget(glWidget)
-
             # on_addPrimitive
             def on_addPrimitive(objName):
                 item = QtGui.QListWidgetItem(objName)

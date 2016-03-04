@@ -36,21 +36,26 @@ import sys
 from PyQt4 import QtGui
 
 # core manager
-from Core import coreManager, logger
+from Core import coreManager, logger, mainFrame
 logger.info('Platform : %s' % platform.platform())
 coreManager.initialize()
 
+# process - QT Widget
+def run_editor():
+    from UI import MainWindow
+    app = QtGui.QApplication(sys.argv)
+    main_window = MainWindow.instance()
+    main_window.show()
+    sys.exit(app.exec_())
+
 if __name__ == "__main__":
     # process - OpenGL
+    mainFrame.run()
 
-    # process - QT Widget
-    def run_editor():
-        from UI import MainWindow
-        app = QtGui.QApplication(sys.argv)
-        main_window = MainWindow.instance()
-        main_window.show()
-        sys.exit(app.exec_())
     # run qt
     pEditor = Process(target=run_editor)
     pEditor.start()
+    from Render import renderer
+    #renderer = coreManager.getManager("Renderer")
+    renderer.update()
     pEditor.join()
