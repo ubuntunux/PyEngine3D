@@ -57,5 +57,5 @@ if __name__ == "__main__":
     pEditor.start()
     from Render import renderer
     #renderer = coreManager.getManager("Renderer")
-    renderer.update()
+    renderer.mainloop()
     pEditor.join()
