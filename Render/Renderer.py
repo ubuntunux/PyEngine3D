@@ -34,8 +34,9 @@ class Renderer(Singleton):
         # set render environment
         glClearColor(0.0, 0.0, 0.0, 0.0)  # This Will Clear The Background Color To Black
         glClearDepth(1.0)  # Enables Clearing Of The Depth Buffer
-        glDepthFunc(GL_LESS)  # The Type Of Depth Test To Do
+        glDepthFunc(GL_LESS)  # The Type Of Depth Test To Do        
         glEnable(GL_DEPTH_TEST)  # Enables Depth Testing
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST) # Really Nice Perspective Calculations
         glShadeModel(GL_SMOOTH)  # Enables Smooth Color Shading
         glEnable(GL_CULL_FACE)
 
