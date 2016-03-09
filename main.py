@@ -52,10 +52,12 @@ if __name__ == "__main__":
     # process - OpenGL
     mainFrame.run()
 
+    from Render import renderer
+    renderer.update()
+
     # run qt
+    '''
     pEditor = Process(target=run_editor)
     pEditor.start()
-    from Render import renderer
-    #renderer = coreManager.getManager("Renderer")
-    renderer.mainloop()
     pEditor.join()
+    '''

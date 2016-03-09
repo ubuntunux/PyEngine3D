@@ -48,8 +48,8 @@ class GLFont:
         gl.glBindTexture( gl.GL_TEXTURE_2D, self.texid )
         gl.glTexParameterf( gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR )
         gl.glTexParameterf( gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR )
-        gl.glTexImage2D( gl.GL_TEXTURE_2D, 0, gl.GL_ALPHA, Z.shape[1], Z.shape[0], 0,
-                         gl.GL_ALPHA, gl.GL_UNSIGNED_BYTE, Z )
+        gl.glTexImage2D( gl.GL_TEXTURE_2D, 0, gl.GL_ALPHA, Z.shape[1], Z.shape[0], 0, gl.GL_ALPHA, gl.GL_UNSIGNED_BYTE, Z )
+        gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE )
 
         # Generate display lists
         dx, dy = width/float(Z.shape[1]), height/float(Z.shape[0])
@@ -67,15 +67,20 @@ class GLFont:
                 gl.glTranslatef( 4*width, 0, 0 )
             elif (i >= 32):
                 gl.glBegin( gl.GL_QUADS )
-                gl.glTexCoord2f(x*dx, (y+1)*dy), gl.glVertex(0, -height)
-                gl.glTexCoord2f(x*dx, y*dy), gl.glVertex(0, 0)
-                gl.glTexCoord2f((x+1)*dx, y*dy), gl.glVertex(width, 0)
-                gl.glTexCoord2f((x+1)*dx, (y+1)*dy), gl.glVertex(width, -height)
+                gl.glTexCoord2f(x*dx, (y+1)*dy)
+                gl.glVertex3f(0, -height, 0)
+                gl.glTexCoord2f(x*dx, y*dy)
+                gl.glVertex(0, 0, 0)
+                gl.glTexCoord2f((x+1)*dx, y*dy)
+                gl.glVertex(width, 0, 0)
+                gl.glTexCoord2f((x+1)*dx, (y+1)*dy)
+                gl.glVertex(width, -height, 0)
                 gl.glEnd( )
                 gl.glTranslatef( width, 0, 0 )
             gl.glEndList( )
 
     def render(self, text):
+        gl.glEnable( gl.GL_TEXTURE_2D )
         gl.glBindTexture( gl.GL_TEXTURE_2D, self.texid )
         gl.glListBase( self.base )
         gl.glCallLists( [ord(c) for c in text] )
@@ -102,6 +107,7 @@ class GLFontTest:
         gl.glColorMaterial( gl.GL_FRONT_AND_BACK, gl.GL_AMBIENT_AND_DIFFUSE )
         gl.glBlendFunc( gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA )
         gl.glEnable( gl.GL_TEXTURE_2D )
+
         # make font
         self.testFont1 = GLFont(defaultFont, 64)
         self.testFont2 = GLFont(defaultFont, 14)

@@ -5,7 +5,7 @@ from Object import objectManager
 class MainFrame(Singleton):
     def run(self):
         # initialize managers
-        renderer.test()
+        renderer.initialize()
         objectManager.initialize()
         shaderManager.initialize()
         materialManager.initialize()
