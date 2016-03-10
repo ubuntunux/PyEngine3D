@@ -27,7 +27,6 @@ class CoreManager(Singleton):
             func()
 
     def getManager(self, mgrName):
-        print(self.managers.keys())
         return self.managers[mgrName]
 
     def getManagers(self):

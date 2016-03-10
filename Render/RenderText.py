@@ -8,6 +8,10 @@ import OpenGL.GLUT as glut
 
 defaultFont = os.path.join(os.path.split(__file__)[0], 'UbuntuFont.ttf')
 
+
+#------------------------------#
+# CLASS : GLFont - FreeType Font
+#------------------------------#
 class GLFont:
     def __init__(self, filename, size):
         self.base = 0
@@ -86,6 +90,9 @@ class GLFont:
         gl.glCallLists( [ord(c) for c in text] )
 
 
+#------------------------------#
+# Font Test
+#------------------------------#
 class GLFontTest:
     def __init__(self):
         self.testText = 'Hello World !'
