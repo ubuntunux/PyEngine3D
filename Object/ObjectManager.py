@@ -11,10 +11,11 @@ class ObjectManager(Singleton):
         self.primitives = []
         self.callback_addPrimitive = None
         # regist
-        coreManager.regist("ObjectManager", self)
+        coreManager.regist(self.__class__.__name__, self)
+        logger.info("regist " + self.__class__.__name__)
 
     def initialize(self):
-        pass
+        logger.info("initialize " + self.__class__.__name__)
 
     # binding callback function
     def bind_addPrimitive(self, func):

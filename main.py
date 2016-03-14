@@ -30,14 +30,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 __version__ = '0.1'
 
 from multiprocessing import Process
-import platform
 import sys
 
 from PyQt4 import QtGui
 
 # core manager
 from Core import coreManager, logger, mainFrame
-logger.info('Platform : %s' % platform.platform())
 coreManager.initialize()
 
 # process - QT Widget
@@ -51,9 +49,7 @@ def run_editor():
 if __name__ == "__main__":
     # process - OpenGL
     mainFrame.run()
-
-    from Render import renderer
-    renderer.update()
+    mainFrame.update()
 
     # run qt
     '''

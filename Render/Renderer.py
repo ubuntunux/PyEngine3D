@@ -4,11 +4,65 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
+from Configure import config
 from Core import coreManager, logger
 from Object import objectManager
 from Utilities import Singleton
-from Camera import cameraManager
-from Render.RenderText import GLFont, defaultFont
+from Render.Camera import cameraManager
+from Render.GLFont import GLFont, defaultFont
+
+
+#------------------------------#
+# CLASS : Console
+#------------------------------#
+class Console:
+    glfont = None
+    infos = []
+    debugs = []
+    padding = 10
+
+    def initialize(self):
+        self.glfont = GLFont(defaultFont, 12)
+        self.infos = []
+        self.debugs = []
+
+    def clear(self):
+        self.infos = []
+
+    # just print info
+    def info(self, text):
+        self.infos.append(text)
+
+    # debug text - print every frame
+    def debug(self, text):
+        self.debugs.append(text)
+
+    def render(self):
+        '''
+        # set orthographic view
+        glMatrixMode( GL_PROJECTION )
+        glLoadIdentity( )
+        glOrtho( 0, self.width, 0, self.height, -1, 1 )
+        glMatrixMode( GL_MODELVIEW )
+        glLoadIdentity( )
+
+        # render state
+        glEnable(GL_BLEND)
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_LIGHTING)
+        '''
+
+        # render
+        glColor(1,1,1,1)
+        glPushMatrix( )
+        glTranslate( self.padding, renderer.height - self.padding, 0 )
+        glPushMatrix()
+        # render text
+        self.glfont.render("\n".join(self.debugs + self.infos))
+        glPopMatrix( )
+        glPopMatrix( )
 
 
 #------------------------------#
@@ -16,7 +70,7 @@ from Render.RenderText import GLFont, defaultFont
 #------------------------------#
 class Renderer(Singleton):
     def __init__(self):
-        self.initedViewport= False
+        self.initedViewport = False
         self.lastShader = None
         self.window = None
         self.width = 0
@@ -29,16 +83,19 @@ class Renderer(Singleton):
         self.delta = 0.0
         self.currentTime = 0.0
 
-        self.testFont1 = None
-        self.testFont2 = None
+        # console font
+        self.console = Console()
+
         # regist
-        coreManager.regist("Renderer", self)
+        coreManager.regist(self.__class__.__name__, self)
+        logger.info("regist " + self.__class__.__name__)
 
     def initialize(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
-        glutInitWindowSize(640, 480)
-        glutInitWindowPosition(0, 0)
+        self.width, self.height = config.Screen.size
+        glutInitWindowSize(self.width, self.height)
+        glutInitWindowPosition(*config.Screen.position)
         self.window = glutCreateWindow(b"GuineaPig")
         glutDisplayFunc(self.renderScene)
         glutIdleFunc(self.renderScene)
@@ -55,9 +112,8 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
-        # make font
-        self.testFont1 = GLFont(defaultFont, 64)
-        self.testFont2 = GLFont(defaultFont, 14)
+        # init console text
+        self.console.initialize()
 
         # initialized flag
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
@@ -65,6 +121,7 @@ class Renderer(Singleton):
     def resizeScene(self, width, height):
         if width <= 0 or height <= 0:
             return
+
         self.width = width
         self.height = height
         self.viewportRatio = float(width) / float(height)
@@ -79,24 +136,11 @@ class Renderer(Singleton):
         glLoadIdentity()
         self.initedViewport = True
 
-    def on_reshape(self, width, height):
-        if width <= 0 or height <= 0:
-            return
-
-        self.width = width
-        self.height = height
-        self.viewportRatio = float(self.width) / float(self.height)
-
-        glViewport( 0, 0, width, height )
-        glMatrixMode( GL_PROJECTION )
-        glLoadIdentity( )
-        glOrtho( 0, width, 0, height, -1, 1 )
-        glMatrixMode( GL_MODELVIEW )
-        glLoadIdentity( )
-
     def keyPressed(self, *args):
         # If escape is pressed, kill everything.
-        if args[0] == '\x1b':
+        if args[0] == b'\x1b':
+            config.setValue("Screen", "width", 1000)
+            config.close()
             sys.exit()
 
     # render meshes
@@ -134,41 +178,24 @@ class Renderer(Singleton):
         glutSolidCube( 1.0 )
         glPopMatrix()
 
-    # draw text
-    def render_text(self):
-        # set OrthoView
+    def render_postprocess(self):
+        # set orthographic view
         glMatrixMode( GL_PROJECTION )
         glLoadIdentity( )
         glOrtho( 0, self.width, 0, self.height, -1, 1 )
         glMatrixMode( GL_MODELVIEW )
         glLoadIdentity( )
 
-        # render state
+        # set render state
         glEnable(GL_BLEND)
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         glDisable(GL_LIGHTING)
 
-        # render
-        glColor(1,1,1,1)
-        glPushMatrix( )
-        glTranslate( 0, 480-33, 0 )
-        glPushMatrix()
-        # render text1
-        self.testFont1.render("%.1f" % self.fps)
-        glTranslate( 10, 100, 0 )
-        # render text2
-        self.testFont2.render("ABC")
-        glPopMatrix( )
-        glPopMatrix( )
-
-    def render_postprocess(self):
-        pass
-
     def renderScene(self):
         currentTime = time.time()
-        delta = self.currentTime - currentTime
+        delta = currentTime - self.currentTime
 
         if not self.initedViewport or delta == 0.0:
             return
@@ -177,6 +204,7 @@ class Renderer(Singleton):
         self.currentTime = currentTime
         self.delta = delta
         self.fps = 1.0 / self.delta
+        self.console.info("%.1f" % self.fps)
 
         # clear buffer
         glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -185,7 +213,8 @@ class Renderer(Singleton):
         # render
         self.render_meshes()
         self.render_postprocess()
-        self.render_text()
+        self.console.render()
+        self.console.clear()
 
         # final
         glFlush()

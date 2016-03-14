@@ -1,4 +1,7 @@
+import platform
+
 from Utilities import Logger, Singleton
+
 logger = Logger.getLogger('default', 'logs', False)
 
 #------------------------------#
@@ -13,18 +16,15 @@ class CoreManager(Singleton):
     logger = None
 
     def initialize(self):
+        logger.info('Platform : %s' % platform.platform())
         self.managers = {}
 
-    def regist(self, mgrName, manager, func=None):
+    def regist(self, mgrName, manager):
         if mgrName in self.managers:
             errorMsg = mgrName + " is already in managers."
             logger.error(errorMsg)
             raise Exception(errorMsg)
         self.managers[mgrName] = manager
-        logger.info("Registed " + mgrName)
-        # example) initialize function
-        if func:
-            func()
 
     def getManager(self, mgrName):
         return self.managers[mgrName]

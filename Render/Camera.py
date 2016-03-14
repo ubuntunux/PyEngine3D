@@ -1,3 +1,4 @@
+from Configure import config
 from Core import coreManager, logger
 from Utilities import Singleton
 
@@ -10,12 +11,16 @@ class CameraManager(Singleton):
         self.cameras = []
         self.mainCamera = None
         # regist
-        coreManager.regist("Camera Manager", self)
+        coreManager.regist(self.__class__.__name__, self)
+        logger.info("regist " + self.__class__.__name__)
 
     def initialize(self):
         self.cameras = []
-        self.mainCamera = Camera(45.0, 0.1, 100.0)
-        logger.info("Initialize Camera Manager.")
+        camera = config.Camera
+        logger.info("initialize " + self.__class__.__name__)
+
+        self.mainCamera = Camera(camera.fov, camera.near, camera.far)
+        logger.info("MainCamera Fov(%.1f), Near(%.1f), Far(%.1f)" % (camera.fov, camera.near, camera.far))
 
     def getMainCamera(self):
         return self.mainCamera

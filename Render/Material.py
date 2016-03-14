@@ -1,4 +1,4 @@
-from Core import coreManager
+from Core import coreManager, logger
 from Render import shaderManager
 from Utilities import Singleton
 
@@ -21,10 +21,12 @@ class MaterialManager(Singleton):
         self.materials = {}
         self.default_material = None
         # regist
-        coreManager.regist("MaterialManager", self)
+        coreManager.regist(self.__class__.__name__, self)
+        logger.info("regist " + self.__class__.__name__)
 
     def initialize(self):
         self.default_material = self.createMaterial(name='default material')
+        logger.info("initialize " + self.__class__.__name__)
 
     def createMaterial(self, name='', shader=None):
         material = Material(name=name, shader=shader)
