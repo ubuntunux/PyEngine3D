@@ -5,6 +5,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from Configure import config
+import Core
 from Core import coreManager, logger
 from Object import objectManager
 from Utilities import Singleton
@@ -79,6 +80,7 @@ class Renderer(Singleton):
         self.camera = None
 
         # timer
+        self.fpsLimit = 1.0 / 60.0
         self.fps = 0.0
         self.delta = 0.0
         self.currentTime = 0.0
@@ -93,7 +95,7 @@ class Renderer(Singleton):
     def initialize(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
-        self.width, self.height = config.Screen.size
+        self.width, self.height = config.getValue("Screen", "size")
         glutInitWindowSize(self.width, self.height)
         glutInitWindowPosition(*config.Screen.position)
         self.window = glutCreateWindow(b"GuineaPig")
@@ -118,6 +120,10 @@ class Renderer(Singleton):
         # initialized flag
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
 
+    def close(self):
+        x, y = glutGet(GLUT_WINDOW_X), glutGet(GLUT_WINDOW_Y)
+        config.setValue("Screen", "position", [x, y])
+
     def resizeScene(self, width, height):
         if width <= 0 or height <= 0:
             return
@@ -137,11 +143,15 @@ class Renderer(Singleton):
         self.initedViewport = True
 
     def keyPressed(self, *args):
-        # If escape is pressed, kill everything.
-        if args[0] == b'\x1b':
-            config.setValue("Screen", "width", 1000)
-            config.close()
-            sys.exit()
+        Core.mainFrame.instance().keyPressed(*args)
+        if args[0] == b'w':
+            self.camera.pos[2] -= 0.1
+        elif args[0] == b's':
+            self.camera.pos[2] += 0.1
+        elif args[0] == b'a':
+            self.camera.pos[0] -= 0.1
+        elif args[0] == b'd':
+            self.camera.pos[0] += 0.1
 
     # render meshes
     def render_meshes(self):
@@ -163,7 +173,7 @@ class Renderer(Singleton):
         # render
         glPushMatrix()
         glLoadIdentity()
-        glTranslatef(0,0,-6)
+        glTranslatef(*self.camera.pos)
         for obj in objectManager.getObjectList():
             # set shader
             curShader = obj.material.getShader()
@@ -197,7 +207,7 @@ class Renderer(Singleton):
         currentTime = time.time()
         delta = currentTime - self.currentTime
 
-        if not self.initedViewport or delta == 0.0:
+        if not self.initedViewport or delta < self.fpsLimit:
             return
 
         # set timer

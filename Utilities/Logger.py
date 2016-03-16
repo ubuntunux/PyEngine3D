@@ -31,7 +31,7 @@ def createLogger(name, directory, savedToFile):
     newLogger.setLevel(logging.DEBUG)
 
     # formatter
-    formatter = logging.Formatter('[%(levelname)-8s|%(filename)s:%(lineno)s] %(asctime)s.%(msecs)03d > %(message)s',"%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter('[%(levelname)-8s|%(asctime)s.%(msecs)03d] %(message)s (%(filename)s:%(lineno)s)',"%Y-%m-%d %H:%M:%S")
 
     # check log dir
     if directory:

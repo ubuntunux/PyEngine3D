@@ -1,6 +1,6 @@
 from Configure import config
 from Core import coreManager, logger
-from Utilities import Singleton
+from Utilities import Singleton, Vector
 
 
 #------------------------------#
@@ -16,10 +16,12 @@ class CameraManager(Singleton):
 
     def initialize(self):
         self.cameras = []
-        camera = config.Camera
         logger.info("initialize " + self.__class__.__name__)
 
-        self.mainCamera = Camera(camera.fov, camera.near, camera.far)
+        # add main camera
+        camera = Camera(config.Camera.fov, config.Camera.near, config.Camera.far)
+        self.cameras.append(camera)
+        self.mainCamera = camera
         logger.info("MainCamera Fov(%.1f), Near(%.1f), Far(%.1f)" % (camera.fov, camera.near, camera.far))
 
     def getMainCamera(self):
@@ -34,6 +36,7 @@ class Camera:
         self.fov = fov
         self.near = near
         self.far = far
+        self.pos = Vector(0.0, 0.0, -6.0)
 
 #------------------------------#
 # Globals

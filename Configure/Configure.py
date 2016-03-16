@@ -51,6 +51,9 @@ class Configure(Singleton):
                     print("%s = %s" % (option, value))
                 setattr(current_section, option, getValue(value))
 
+    def getValue(self, section, option):
+        return getValue(self.config[section][option])
+
     def setValue(self, section, option, value):
         # set value
         if not self.config.has_section(section):
@@ -63,7 +66,7 @@ class Configure(Singleton):
         current_section = getattr(self, section)
         setattr(current_section, option, value)
 
-    def close(self):
+    def save(self):
         with open(self.localFile, 'w') as configfile:
             self.config.write(configfile)
             logger.info("Saved Config : " + self.localFile)
