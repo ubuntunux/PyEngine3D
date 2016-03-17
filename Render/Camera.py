@@ -1,6 +1,8 @@
+import numpy as np
+
 from Configure import config
 from Core import coreManager, logger
-from Utilities import Singleton, Vector
+from Utilities import Singleton
 
 
 #------------------------------#
@@ -36,7 +38,7 @@ class Camera:
         self.fov = fov
         self.near = near
         self.far = far
-        self.pos = Vector(0.0, 0.0, -6.0)
+        self.pos = np.array([0.0, 0.0, -6.0])
 
 #------------------------------#
 # Globals

@@ -13,6 +13,29 @@ from Render.Camera import cameraManager
 from Render.GLFont import GLFont, defaultFont
 
 
+#-----------
+# VARIABLES
+#-----------
+
+g_fViewDistance = 9.
+g_Width = 600
+g_Height = 600
+
+g_nearPlane = 1.
+g_farPlane = 1000.
+
+action = ""
+xStart = yStart = 0.
+zoom = 65.
+
+xRotate = 0.
+yRotate = 0.
+zRotate = 0.
+
+xTrans = 0.
+yTrans = 0.
+
+
 #------------------------------#
 # CLASS : Console
 #------------------------------#
@@ -103,6 +126,9 @@ class Renderer(Singleton):
         glutIdleFunc(self.renderScene)
         glutReshapeFunc(self.resizeScene)
         glutKeyboardFunc(self.keyPressed)
+        glutMouseFunc(self.mouse)
+        glutMotionFunc(self.motion)
+
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
         # Start - fixed pipline light setting
@@ -144,14 +170,58 @@ class Renderer(Singleton):
 
     def keyPressed(self, *args):
         Core.mainFrame.instance().keyPressed(*args)
+        print(args)
         if args[0] == b'w':
             self.camera.pos[2] -= 0.1
-        elif args[0] == b's':
+        if args[0] == b's':
             self.camera.pos[2] += 0.1
-        elif args[0] == b'a':
+        if args[0] == b'a':
             self.camera.pos[0] -= 0.1
-        elif args[0] == b'd':
+        if args[0] == b'd':
             self.camera.pos[0] += 0.1
+        glutPostRedisplay()
+
+    def mouse(self, button, state, x, y):
+        global action, xStart, yStart
+        if (button==GLUT_LEFT_BUTTON):
+            if (glutGetModifiers() == GLUT_ACTIVE_SHIFT):
+                action = "MOVE_EYE_2"
+            else:
+                action = "MOVE_EYE"
+        elif (button==GLUT_MIDDLE_BUTTON):
+            action = "TRANS"
+        elif (button==GLUT_RIGHT_BUTTON):
+            action = "ZOOM"
+        xStart = x
+        yStart = y
+        print(x,y,action)
+
+
+    def motion(self, x, y):
+        global zoom, xStart, yStart, xRotate, yRotate, zRotate, xTrans, yTrans
+        if (action=="MOVE_EYE"):
+            xRotate += x - xStart
+            yRotate -= y - yStart
+        elif (action=="MOVE_EYE_2"):
+            zRotate += y - yStart
+        elif (action=="TRANS"):
+            xTrans += x - xStart
+            yTrans += y - yStart
+        elif (action=="ZOOM"):
+            zoom -= y - yStart
+            if zoom > 150.:
+                zoom = 150.
+            elif zoom < 1.1:
+                zoom = 1.1
+        else:
+            print("unknown action\n", action)
+        xStart = x
+        yStart = y
+        glutPostRedisplay()
+        print(x,y)
+
+
+
 
     # render meshes
     def render_meshes(self):
@@ -214,7 +284,8 @@ class Renderer(Singleton):
         self.currentTime = currentTime
         self.delta = delta
         self.fps = 1.0 / self.delta
-        self.console.info("%.1f" % self.fps)
+        self.console.info("%.2f fps" % self.fps)
+        self.console.info("%.2f ms" % (self.delta*1000))
 
         # clear buffer
         glClearColor(0.0, 0.0, 0.0, 1.0)
