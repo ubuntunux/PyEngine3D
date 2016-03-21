@@ -1,7 +1,58 @@
-# GuineaPig
-GuineaPig is open source 3d engine project write in python.
+Welcome to the GuineaPig wiki!
 
-### Documents
-* https://github.com/ubuntunux/GuineaPig/wiki/GuineaPig
-* http://guineapig.readthedocs.org/en/latest/#indices-and-tables
-* https://docs.google.com/document/d/1n-ONPy63yKPJv1v5hL7zILtSPUMLGw7nx91S54W3NVU/edit
+### What is GuineaPig
+* Opensource 3D engine write in python
+
+* Check smiliar project - http://glumpy.github.io/
+
+## Dependency modules.
+ - python 3.5.1
+ - Anaconda3-2.4.1 ( https://www.continuum.io/downloads )
+ - accelerate 2.0 ( anaconda accelerate library )
+ - numpy 1.10.4
+ - numba 0.23.1
+ - pillow (3.1.1)
+ - pyqt4
+ - pyopengl 3.1
+ - pyopengl_accelerate 3.1
+ - freetype 2.5.5
+ - libpng 1.6.17
+ - pysdl2 0.9.3
+
+
+### Current Issue
+----
+ - Split OpenGLWindow and QTWidget
+ - Using glutinit
+
+----
+### TODO
+#### UI
+- [ ] object list
+- [v] add primitive button
+- [ ] delete primitive button
+- [ ] transform gizmo
+- [ ] load obj file
+- [ ] draw mode change
+- [ ] solidd, wire
+- [ ] object info window
+  - translate, rotation, scale
+  - matrix
+  - quaternion
+
+#### Object Module
+ - [ ] import obj
+ 
+#### Primirive Module
+ - [ ] Triangle, Quad, TriangleFan, Cube, Sphere, Cylinder
+
+#### Rendering
+ - [ ] default shader
+ 
+#### Change Draw Mode
+ - [ ] wire, solid, unlit, shading, texture
+
+#### System
+ - [ ] main loop
+ - [ ] save environment
+ - [ ] load environment
