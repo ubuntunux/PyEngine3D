@@ -4,19 +4,14 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from Configure import config
-import Core
-from Core import coreManager, logger
+from Core import coreManager, config, logger
 from Object import objectManager
 from Utilities import Singleton
-from Render.Camera import cameraManager
-from Render.GLFont import GLFont, defaultFont
-
+from Render import shaderManager, materialManager, cameraManager, GLFont, defaultFont
 
 #-----------
 # VARIABLES
 #-----------
-
 g_fViewDistance = 9.
 g_Width = 600
 g_Height = 600
@@ -94,9 +89,8 @@ class Console:
 #------------------------------#
 class Renderer(Singleton):
     def __init__(self):
-        self.initedViewport = False
+        self.inited = False
         self.lastShader = None
-        self.window = None
         self.width = 0
         self.height = 0
         self.viewportRatio = 1.0
@@ -115,19 +109,32 @@ class Renderer(Singleton):
         coreManager.regist(self.__class__.__name__, self)
         logger.info("regist " + self.__class__.__name__)
 
+    def run(self):
+        # process start
+        logger.info("Process Start : %s" % self.__class__.__name__)
+        # init
+        self.initialize()
+        # mainloop
+        glutMainLoop()
+        # close
+        self.close()
+        # process stop
+        logger.info("Process Stop : %s" % self.__class__.__name__)
+
     def initialize(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
         self.width, self.height = config.getValue("Screen", "size")
         glutInitWindowSize(self.width, self.height)
         glutInitWindowPosition(*config.Screen.position)
-        self.window = glutCreateWindow(b"GuineaPig")
+        window = glutCreateWindow(b"GuineaPig")
+
         glutDisplayFunc(self.renderScene)
         glutIdleFunc(self.renderScene)
         glutReshapeFunc(self.resizeScene)
-        glutKeyboardFunc(self.keyPressed)
-        glutMouseFunc(self.mouse)
-        glutMotionFunc(self.motion)
+        #glutKeyboardFunc(self.keyPressed)
+        #glutMouseFunc(self.mouse)
+        #glutMotionFunc(self.motion)
 
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
@@ -145,6 +152,12 @@ class Renderer(Singleton):
 
         # initialized flag
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
+
+        # initalize managers
+        cameraManager.initialize()
+        objectManager.initialize()
+        shaderManager.initialize()
+        materialManager.initialize()
 
     def close(self):
         x, y = glutGet(GLUT_WINDOW_X), glutGet(GLUT_WINDOW_Y)
@@ -166,62 +179,7 @@ class Renderer(Singleton):
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        self.initedViewport = True
-
-    def keyPressed(self, *args):
-        Core.mainFrame.instance().keyPressed(*args)
-        print(args)
-        if args[0] == b'w':
-            self.camera.pos[2] -= 0.1
-        if args[0] == b's':
-            self.camera.pos[2] += 0.1
-        if args[0] == b'a':
-            self.camera.pos[0] -= 0.1
-        if args[0] == b'd':
-            self.camera.pos[0] += 0.1
-        glutPostRedisplay()
-
-    def mouse(self, button, state, x, y):
-        global action, xStart, yStart
-        if (button==GLUT_LEFT_BUTTON):
-            if (glutGetModifiers() == GLUT_ACTIVE_SHIFT):
-                action = "MOVE_EYE_2"
-            else:
-                action = "MOVE_EYE"
-        elif (button==GLUT_MIDDLE_BUTTON):
-            action = "TRANS"
-        elif (button==GLUT_RIGHT_BUTTON):
-            action = "ZOOM"
-        xStart = x
-        yStart = y
-        print(x,y,action)
-
-
-    def motion(self, x, y):
-        global zoom, xStart, yStart, xRotate, yRotate, zRotate, xTrans, yTrans
-        if (action=="MOVE_EYE"):
-            xRotate += x - xStart
-            yRotate -= y - yStart
-        elif (action=="MOVE_EYE_2"):
-            zRotate += y - yStart
-        elif (action=="TRANS"):
-            xTrans += x - xStart
-            yTrans += y - yStart
-        elif (action=="ZOOM"):
-            zoom -= y - yStart
-            if zoom > 150.:
-                zoom = 150.
-            elif zoom < 1.1:
-                zoom = 1.1
-        else:
-            print("unknown action\n", action)
-        xStart = x
-        yStart = y
-        glutPostRedisplay()
-        print(x,y)
-
-
-
+        self.inited = True
 
     # render meshes
     def render_meshes(self):
@@ -277,7 +235,7 @@ class Renderer(Singleton):
         currentTime = time.time()
         delta = currentTime - self.currentTime
 
-        if not self.initedViewport or delta < self.fpsLimit:
+        if not self.inited or delta < self.fpsLimit:
             return
 
         # set timer
@@ -300,11 +258,6 @@ class Renderer(Singleton):
         # final
         glFlush()
         glutSwapBuffers()
-
-    def update(self):
-        glutMainLoop()
-
-
 
 #------------------------------#
 # Globals

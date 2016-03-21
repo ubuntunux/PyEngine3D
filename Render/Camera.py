@@ -1,7 +1,6 @@
 import numpy as np
 
-from Configure import config
-from Core import coreManager, logger
+from Core import coreManager, logger, config
 from Utilities import Singleton
 
 

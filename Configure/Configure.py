@@ -1,9 +1,6 @@
 import os
 import configparser
 
-from Core import logger
-from Utilities import Singleton
-
 # util class
 class Empty:
     pass
@@ -18,7 +15,6 @@ def getValue(value):
         pass
     return value
 
-
 #------------------------------#
 # CLASS : Configure
 # Usage :
@@ -26,16 +22,13 @@ def getValue(value):
 #   # get value example, section:Screen, option:wdith
 #   print(config.Screen.width)
 #------------------------------#
-class Configure(Singleton):
-    debug = False
-    localFile = os.path.join(os.path.split(__file__)[0], "Config.ini")
-    defaultFile = os.path.join(os.path.split(__file__)[0], "DefaultConfig.ini")
-
-    def __init__(self):
-        filename = self.localFile if os.path.exists(self.localFile) else self.defaultFile
+class Config:
+    def __init__(self, configFilename, debug = False):
+        self.debug = debug
+        self.filename = os.path.join(os.path.split(__file__)[0], configFilename)
         self.config = configparser.ConfigParser()
-        self.config.read(filename)
-        logger.info("Load Config : %s" % filename)
+        self.config.read(self.filename)
+        print("Load Config : %s" % self.filename)
 
         # set sections
         for section in self.config.sections():
@@ -67,10 +60,42 @@ class Configure(Singleton):
         setattr(current_section, option, value)
 
     def save(self):
-        with open(self.localFile, 'w') as configfile:
+        with open(self.filename, 'w') as configfile:
             self.config.write(configfile)
-            logger.info("Saved Config : " + self.localFile)
+            print("Saved Config : " + self.filename)
+
+if __name__ == '__main__':
+    import unittest
+
+    # force write TestConfig.ini
+    f = open(os.path.join(os.path.split(__file__)[0], "TestConfig.ini"), "w")
+    f.writelines('''[TestSection]
+test_int = 45
+test_float = 0.1
+test_string = Hello, World
+test_list = [1, 2, 3]
+test_tuple = (1, 2, 3)
+test_dict = {"x":1.0, "y":2.0}
+''')
+    f.close()
+
+    # test
+    class test(unittest.TestCase):
+        def testConfig(self):
+            # load test
+            testConfig = Config("TestConfig.ini", debug=False)
+            # call test
+            self.assertEqual(testConfig.TestSection.test_int, 45)
+            self.assertEqual(testConfig.TestSection.test_float, 0.1)
+            self.assertEqual(testConfig.TestSection.test_string, "Hello, World")
+            self.assertEqual(testConfig.TestSection.test_list, [1, 2, 3])
+            self.assertEqual(testConfig.TestSection.test_tuple, (1, 2, 3))
+            self.assertEqual(testConfig.TestSection.test_dict['x'], 1.0)
+            self.assertEqual(testConfig.TestSection.test_dict['y'], 2.0)
+            # set value test
+            testConfig.setValue("TestSection", "test_int", 99)
+            self.assertEqual(testConfig.TestSection.test_int, 99)
+            testConfig.save()
+    unittest.main()
 
 
-# Global variable
-config = Configure()

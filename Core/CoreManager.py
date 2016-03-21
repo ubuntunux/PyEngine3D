@@ -1,8 +1,13 @@
 import platform
 
+from Configure import Config
 from Utilities import Logger, Singleton
 
+# default logger
 logger = Logger.getLogger('default', 'logs', False)
+
+# config
+config = Config("Config.ini")
 
 #------------------------------#
 # CLASS : CoreManager
@@ -12,12 +17,20 @@ class CoreManager(Singleton):
     Manager other mangers classes. ex) shader manager, material manager...
     CoreManager usage for debug what are woring manager..
     """
-    managers = {}
-    logger = None
+
+    def __init__(self):
+        self.running = False
+        self.managers = {}
+
+        # timer
+        self.fpsLimit = 1.0 / 60.0
+        self.fps = 0.0
+        self.delta = 0.0
+        self.currentTime = 0.0
 
     def initialize(self):
         logger.info('Platform : %s' % platform.platform())
-        self.managers = {}
+        logger.info('initialize : %s' % self.__class__.__name__)
 
     def regist(self, mgrName, manager):
         if mgrName in self.managers:
@@ -31,6 +44,16 @@ class CoreManager(Singleton):
 
     def getManagers(self):
         return self.managers
+
+    def update(self):
+        logger.info("Process Start : %s" % self.__class__.__name__)
+
+        self.running = True
+        while self.running:
+            continue
+
+        logger.info("Process Stop : %s" % self.__class__.__name__)
+
 
 
 #------------------------------#

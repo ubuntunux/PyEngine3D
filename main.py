@@ -34,9 +34,11 @@ import sys
 
 from PyQt4 import QtGui
 
-# core manager
-from Core import coreManager, logger, mainFrame
-coreManager.initialize()
+# core manager - run logger, configure
+from Core import coreManager
+
+# renderer
+from Render import renderer
 
 # process - QT Widget
 def run_editor():
@@ -47,13 +49,23 @@ def run_editor():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    # process - OpenGL
-    mainFrame.run()
-    mainFrame.update()
+    # run first
+    coreManager.initialize()
 
-    # run qt
+    # process - Main Frame
+    pCoreProcess = Process(target=coreManager.update)
+    pCoreProcess.start()
+
+    # process - OpenGL
+    pRenderer = Process(target=renderer.run)
+    pRenderer.start()
+
     '''
+    # run qt
     pEditor = Process(target=run_editor)
     pEditor.start()
     pEditor.join()
     '''
+
+    pCoreProcess.join()
+    pRenderer.join()
