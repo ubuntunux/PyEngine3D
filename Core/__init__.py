@@ -1,1 +1,1 @@
-from Core.CoreManager import coreManager, logger, config
+from Core.CoreManager import *

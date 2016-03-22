@@ -29,16 +29,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 import sys
 
 from PyQt4 import QtGui
 
+# default logger
+from Utilities import Logger
+logger = Logger.getLogger('default', 'logs', False)
+
+# config
+from Configure import Config
+config = Config("Config.ini")
+
 # core manager - run logger, configure
 from Core import coreManager
-
-# renderer
-from Render import renderer
 
 # process - QT Widget
 def run_editor():
@@ -49,16 +54,13 @@ def run_editor():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    # run first
-    coreManager.initialize()
+    cmdQueue = Queue()
 
     # process - Main Frame
-    pCoreProcess = Process(target=coreManager.update)
+    pCoreProcess = Process(target = coreManager.initialize)
     pCoreProcess.start()
-
-    # process - OpenGL
-    pRenderer = Process(target=renderer.run)
-    pRenderer.start()
+    pCoreProcess.join()
+    print("process stop")
 
     '''
     # run qt
@@ -67,5 +69,4 @@ if __name__ == "__main__":
     pEditor.join()
     '''
 
-    pCoreProcess.join()
-    pRenderer.join()
+

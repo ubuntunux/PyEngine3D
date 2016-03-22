@@ -1,7 +1,7 @@
+from __main__ import logger
 from Object import Primitive
 from Render import materialManager
 from Utilities import Singleton
-from Core import coreManager, logger
 
 #------------------------------#
 # CLASS : ObjectManager
@@ -10,11 +10,10 @@ class ObjectManager(Singleton):
     def __init__(self):
         self.primitives = []
         self.callback_addPrimitive = None
-        # regist
-        coreManager.regist(self.__class__.__name__, self)
-        logger.info("regist " + self.__class__.__name__)
+        self.coreManager = None
 
-    def initialize(self):
+    def initialize(self, coreManager):
+        self.coreManager = coreManager
         logger.info("initialize " + self.__class__.__name__)
 
     # binding callback function

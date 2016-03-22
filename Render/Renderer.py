@@ -1,35 +1,15 @@
+import sys
 import time
+from multiprocessing import Process, Queue
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from Core import coreManager, config, logger
+from __main__ import logger, config
 from Object import objectManager
+from Render import cameraManager, GLFont, defaultFont
 from Utilities import Singleton
-from Render import shaderManager, materialManager, cameraManager, GLFont, defaultFont
-
-#-----------
-# VARIABLES
-#-----------
-g_fViewDistance = 9.
-g_Width = 600
-g_Height = 600
-
-g_nearPlane = 1.
-g_farPlane = 1000.
-
-action = ""
-xStart = yStart = 0.
-zoom = 65.
-
-xRotate = 0.
-yRotate = 0.
-zRotate = 0.
-
-xTrans = 0.
-yTrans = 0.
-
 
 #------------------------------#
 # CLASS : Console
@@ -95,6 +75,7 @@ class Renderer(Singleton):
         self.height = 0
         self.viewportRatio = 1.0
         self.camera = None
+        self.coreManager = None
 
         # timer
         self.fpsLimit = 1.0 / 60.0
@@ -105,36 +86,27 @@ class Renderer(Singleton):
         # console font
         self.console = Console()
 
-        # regist
-        coreManager.regist(self.__class__.__name__, self)
-        logger.info("regist " + self.__class__.__name__)
+    def initialize(self, coreManager):
+        self.coreManager = coreManager
+        self.initGL()
 
-    def run(self):
-        # process start
-        logger.info("Process Start : %s" % self.__class__.__name__)
-        # init
-        self.initialize()
-        # mainloop
-        glutMainLoop()
-        # close
-        self.close()
-        # process stop
-        logger.info("Process Stop : %s" % self.__class__.__name__)
-
-    def initialize(self):
+    def initGL(self):
         glutInit()
         glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
         self.width, self.height = config.getValue("Screen", "size")
         glutInitWindowSize(self.width, self.height)
         glutInitWindowPosition(*config.Screen.position)
-        window = glutCreateWindow(b"GuineaPig")
-
+        glutCreateWindow(b"GuineaPig")
         glutDisplayFunc(self.renderScene)
         glutIdleFunc(self.renderScene)
         glutReshapeFunc(self.resizeScene)
-        #glutKeyboardFunc(self.keyPressed)
-        #glutMouseFunc(self.mouse)
-        #glutMotionFunc(self.motion)
+
+        # bind keyboard, mouse interface
+        glutKeyboardFunc(self.coreManager.keyboardFunc)
+        glutKeyboardUpFunc(self.coreManager.keyboardUp)
+        glutPassiveMotionFunc(self.coreManager.passiveMotionFunc)
+        glutMouseFunc(self.coreManager.mouseFunc)
+        glutMotionFunc(self.coreManager.motionFunc)
 
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
@@ -152,12 +124,6 @@ class Renderer(Singleton):
 
         # initialized flag
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
-
-        # initalize managers
-        cameraManager.initialize()
-        objectManager.initialize()
-        shaderManager.initialize()
-        materialManager.initialize()
 
     def close(self):
         x, y = glutGet(GLUT_WINDOW_X), glutGet(GLUT_WINDOW_Y)
@@ -258,6 +224,9 @@ class Renderer(Singleton):
         # final
         glFlush()
         glutSwapBuffers()
+
+    def update(self):
+        glutMainLoop()
 
 #------------------------------#
 # Globals

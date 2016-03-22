@@ -1,9 +1,11 @@
 import os
-from PIL import Image
-from OpenGL.GL import *
 import traceback
 
-from Core import logger
+from PIL import Image
+from OpenGL.GL import *
+
+from __main__ import logger
+
 
 def LoadMTL(filepath, filename):
     contents = {}

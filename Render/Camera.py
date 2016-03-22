@@ -1,6 +1,6 @@
 import numpy as np
 
-from Core import coreManager, logger, config
+from __main__ import logger, config
 from Utilities import Singleton
 
 
@@ -11,13 +11,12 @@ class CameraManager(Singleton):
     def __init__(self):
         self.cameras = []
         self.mainCamera = None
-        # regist
-        coreManager.regist(self.__class__.__name__, self)
-        logger.info("regist " + self.__class__.__name__)
+        self.coreManager = None
 
-    def initialize(self):
-        self.cameras = []
+    def initialize(self, coreManager):
         logger.info("initialize " + self.__class__.__name__)
+        self.coreManager = coreManager
+        self.cameras = []
 
         # add main camera
         camera = Camera(config.Camera.fov, config.Camera.near, config.Camera.far)
