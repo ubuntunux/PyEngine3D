@@ -45,9 +45,6 @@ class CoreManager(Singleton):
         # process start
         logger.info('Platform : %s' % platform.platform())
         logger.info("Process Start : %s" % self.__class__.__name__)
-        
-        # run
-        self.running = True
 
         # initalize managers
         self.renderer.initialize(self)
@@ -63,6 +60,7 @@ class CoreManager(Singleton):
     def keyboardFunc(self, keyPressed, x, y):
         if keyPressed == b'\x1b':
             self.running = False
+            sys.exit(0)
 
     def keyboardUp(self, *args):
         print("keyboardUp", args)

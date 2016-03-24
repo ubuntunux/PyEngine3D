@@ -203,9 +203,6 @@ class Renderer(Singleton):
         glDisable(GL_LIGHTING)
 
     def renderScene(self):
-        if not self.coreManager.running:
-            sys.exit()
-
         currentTime = time.time()
         delta = currentTime - self.currentTime
 
