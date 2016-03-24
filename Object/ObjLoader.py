@@ -4,7 +4,7 @@ import traceback
 from PIL import Image
 from OpenGL.GL import *
 
-from __main__ import logger
+from Core import logger
 
 
 def LoadMTL(filepath, filename):

@@ -34,39 +34,31 @@ import sys
 
 from PyQt4 import QtGui
 
-# default logger
-from Utilities import Logger
-logger = Logger.getLogger('default', 'logs', False)
-
-# config
-from Configure import Config
-config = Config("Config.ini")
-
-# core manager - run logger, configure
-from Core import coreManager
+# core manager
+import Core
+# main UI
+from UI import MainWindow
 
 # process - QT Widget
-def run_editor():
-    from UI import MainWindow
+def run_editor( queueCreateObject ):
     app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance()
+    main_window = MainWindow.instance(queueCreateObject)
     main_window.show()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    cmdQueue = Queue()
+    queueCreateObject = Queue()
 
     # process - Main Frame
-    pCoreProcess = Process(target = coreManager.initialize)
+    pCoreProcess = Process(target = Core.run, args=(queueCreateObject, ))
     pCoreProcess.start()
-    pCoreProcess.join()
-    print("process stop")
 
-    '''
+    import time
+    time.sleep(1)
+
     # run qt
-    pEditor = Process(target=run_editor)
+    pEditor = Process(target=run_editor, args=(queueCreateObject, ))
     pEditor.start()
+
+    pCoreProcess.join()
     pEditor.join()
-    '''
-
-

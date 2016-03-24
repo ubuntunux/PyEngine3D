@@ -1,8 +1,7 @@
 import numpy as np
 
-from __main__ import logger, config
+from Core import logger, config
 from Utilities import Singleton
-
 
 #------------------------------#
 # CLASS : CameraManager
@@ -37,8 +36,3 @@ class Camera:
         self.near = near
         self.far = far
         self.pos = np.array([0.0, 0.0, -6.0])
-
-#------------------------------#
-# Globals
-#------------------------------#
-cameraManager = CameraManager()

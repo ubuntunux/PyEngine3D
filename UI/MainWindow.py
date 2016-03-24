@@ -4,10 +4,8 @@ import sys, traceback, os
 # Third-party library
 from PyQt4 import QtCore, QtGui, uic
 
-from Core import logger
 from Utilities import Singleton
-from Object import objectManager, Triangle, Quad
-
+from UI import logger
 
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
@@ -16,10 +14,11 @@ UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 # CLASS : Main Window
 #----------------------#
 class MainWindow(QtGui.QMainWindow, Singleton):
-    def __init__(self):
+    def __init__(self, queueCreateObject):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
         self.inited = True
+        self.queueCreateObject = queueCreateObject
 
         try:
             # load ui file
@@ -28,24 +27,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.exit(traceback.format_exc())
 
         try:
-            # on_addPrimitive
-            def on_addPrimitive(objName):
-                item = QtGui.QListWidgetItem(objName)
-                self.objectList.addItem(item)
-
-            # binding - callback function
-            objectManager.bind_addPrimitive(on_addPrimitive)
-
             # add primitive
             def addPrimitive(objType):
-                objectManager.addPrimitive(objType)
+                print(objType)
+                # queueCreateObject.put(objType)
+                # recv
+                #item = QtGui.QListWidgetItem(objName)
+                #self.objectList.addItem(item)
 
             # binding button clicked
             btn = self.findChild(QtGui.QPushButton, "addTriangle")
-            btn.clicked.connect(lambda: addPrimitive(Triangle))
+            btn.clicked.connect(lambda: addPrimitive("Triangle"))
 
             btn = self.findChild(QtGui.QPushButton, "addQuad")
-            btn.clicked.connect(lambda: addPrimitive(Quad))
+            btn.clicked.connect(lambda: addPrimitive("Quad"))
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")

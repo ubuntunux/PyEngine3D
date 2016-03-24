@@ -1,6 +1,6 @@
 from OpenGL.GL.shaders import *
 
-from __main__ import logger
+from Core import logger
 from Utilities import Singleton
 
 DEFAULT_VERTEX_SHADER = '''
@@ -44,8 +44,3 @@ class ShaderManager(Singleton):
     def createShader(self, shaderName, vertexShader, pixelShader):
         shader = createShader(vertexShader, pixelShader)
         self.shaders[shaderName] = shader
-
-#------------------------------#
-# Globals
-#------------------------------#
-shaderManager = ShaderManager.instance()

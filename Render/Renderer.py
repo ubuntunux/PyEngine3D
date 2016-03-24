@@ -1,26 +1,27 @@
-import sys
 import time
-from multiprocessing import Process, Queue
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from __main__ import logger, config
-from Object import objectManager
-from Render import cameraManager, GLFont, defaultFont
+from Core import logger, config
+from Object import ObjectManager
+from Render import CameraManager, GLFont, defaultFont
 from Utilities import Singleton
 
 #------------------------------#
 # CLASS : Console
 #------------------------------#
 class Console:
-    glfont = None
-    infos = []
-    debugs = []
-    padding = 10
+    def __init__(self):
+        self.glfont = None
+        self.infos = []
+        self.debugs = []
+        self.padding = 10
+        self.renderer = None
 
     def initialize(self):
+        self.renderer = Renderer.instance()
         self.glfont = GLFont(defaultFont, 12)
         self.infos = []
         self.debugs = []
@@ -56,7 +57,7 @@ class Console:
         # render
         glColor(1,1,1,1)
         glPushMatrix( )
-        glTranslate( self.padding, renderer.height - self.padding, 0 )
+        glTranslate( self.padding, self.renderer.height - self.padding, 0 )
         glPushMatrix()
         # render text
         self.glfont.render("\n".join(self.debugs + self.infos))
@@ -76,6 +77,8 @@ class Renderer(Singleton):
         self.viewportRatio = 1.0
         self.camera = None
         self.coreManager = None
+        self.objectManager = None
+        self.cameraManager = None
 
         # timer
         self.fpsLimit = 1.0 / 60.0
@@ -88,6 +91,8 @@ class Renderer(Singleton):
 
     def initialize(self, coreManager):
         self.coreManager = coreManager
+        self.objectManager = ObjectManager.instance()
+        self.cameraManager = CameraManager.instance()
         self.initGL()
 
     def initGL(self):
@@ -136,7 +141,7 @@ class Renderer(Singleton):
         self.width = width
         self.height = height
         self.viewportRatio = float(width) / float(height)
-        self.camera = cameraManager.getMainCamera()
+        self.camera = self.cameraManager.getMainCamera()
 
         # resize scene
         glViewport(0, 0, width, height)
@@ -168,7 +173,7 @@ class Renderer(Singleton):
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(*self.camera.pos)
-        for obj in objectManager.getObjectList():
+        for obj in self.objectManager.getObjectList():
             # set shader
             curShader = obj.material.getShader()
             if self.lastShader != curShader:
@@ -198,6 +203,9 @@ class Renderer(Singleton):
         glDisable(GL_LIGHTING)
 
     def renderScene(self):
+        if not self.coreManager.running:
+            sys.exit()
+
         currentTime = time.time()
         delta = currentTime - self.currentTime
 
@@ -227,8 +235,3 @@ class Renderer(Singleton):
 
     def update(self):
         glutMainLoop()
-
-#------------------------------#
-# Globals
-#------------------------------#
-renderer = Renderer.instance()

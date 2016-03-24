@@ -1,5 +1,5 @@
 from Render.GLFont import GLFont, defaultFont
-from Render.Camera import cameraManager, Camera
-from Render.Shader import shaderManager
-from Render.Material import Material, materialManager
-from Render.Renderer import renderer
+from Render.Camera import CameraManager, Camera
+from Render.Shader import ShaderManager
+from Render.Material import Material, MaterialManager
+from Render.Renderer import Renderer
