@@ -7,11 +7,24 @@ from Utilities import Singleton
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
 from Object import ObjectManager
 
-
 #-----------
 # VARIABLES
 #-----------
-# CMD_EXIT = 0
+def gen_index():
+        i = 0
+        while True:
+            yield i
+            i += 1
+
+class CMD:
+    cmd_index = gen_index()
+    # arguments
+    # CMD_NAME = (next(cmd_index), any datas)
+    UI_RUN      = (next(cmd_index), None)
+    UI_RUN_OK   = (next(cmd_index), None)
+    APP_EXIT    = (next(cmd_index), None)
+
+
 
 
 #------------------------------#
@@ -22,10 +35,10 @@ class CoreManager(Singleton):
     Manager other mangers classes. ex) shader manager, material manager...
     CoreManager usage for debug what are woring manager..
     """
-    def __init__(self, queueCreateObject):
+    def __init__(self, cmdQueue):
         super(CoreManager, self).__init__()
         self.running = False
-        self.queueCreateObject = queueCreateObject
+        self.cmdQueue = cmdQueue
         self.renderProcess = None
 
         # timer
@@ -52,6 +65,11 @@ class CoreManager(Singleton):
         self.objectManager.initialize(self)
         self.shaderManager.initialize(self)
         self.materialManager.initialize(self)
+
+        # ready to launch - send message to ui
+        self.cmdQueue.put(CMD.UI_RUN)
+
+        # main loop
         self.renderer.update()
 
         # process stop
@@ -79,8 +97,8 @@ class CoreManager(Singleton):
         while self.running:
             continue
 
-def run(queueCreateObject):
-    coreManager = CoreManager.instance(queueCreateObject)
+def run(cmdQueue):
+    coreManager = CoreManager.instance(cmdQueue)
     coreManager.initialize()
 
 if __name__ == '__main__':

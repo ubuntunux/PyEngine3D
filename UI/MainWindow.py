@@ -6,6 +6,7 @@ from PyQt4 import QtCore, QtGui, uic
 
 from Utilities import Singleton
 from UI import logger
+from Core import CMD
 
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
@@ -14,11 +15,16 @@ UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 # CLASS : Main Window
 #----------------------#
 class MainWindow(QtGui.QMainWindow, Singleton):
-    def __init__(self, queueCreateObject):
+    def __init__(self, cmdQueue):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
-        self.inited = True
-        self.queueCreateObject = queueCreateObject
+        self.cmdQueue = cmdQueue
+
+        # ready to command
+        cmd = self.cmdQueue.get()
+        if cmd != CMD.UI_RUN:
+            1/0
+
 
         try:
             # load ui file
@@ -71,3 +77,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # let the window close
         logger.info("Bye")
         event.accept()
+
+# process - QT Widget
+def run_editor( cmdQueue ):
+    app = QtGui.QApplication(sys.argv)
+    main_window = MainWindow.instance(cmdQueue)
+    main_window.show()
+    sys.exit(app.exec_())

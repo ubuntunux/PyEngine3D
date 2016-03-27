@@ -30,35 +30,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 __version__ = '0.1'
 
 from multiprocessing import Process, Queue
-import sys
-
-from PyQt4 import QtGui
 
 # core manager
 import Core
 # main UI
-from UI import MainWindow
-
-# process - QT Widget
-def run_editor( queueCreateObject ):
-    app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance(queueCreateObject)
-    main_window.show()
-    sys.exit(app.exec_())
+from UI import run_editor
 
 if __name__ == "__main__":
-    queueCreateObject = Queue()
+    cmdQueue = Queue()
 
     # process - Main Frame
-    pCoreProcess = Process(target = Core.run, args=(queueCreateObject, ))
+    pCoreProcess = Process(target = Core.run, args=(cmdQueue, ))
     pCoreProcess.start()
 
-    import time
-    time.sleep(1)
-
-    # run qt
-    pEditor = Process(target=run_editor, args=(queueCreateObject, ))
+    # process - QT
+    pEditor = Process(target=run_editor, args=(cmdQueue, ))
     pEditor.start()
 
+    # end
     pCoreProcess.join()
     pEditor.join()

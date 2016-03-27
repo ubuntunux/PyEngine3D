@@ -172,19 +172,26 @@ class Renderer(Singleton):
         # render
         glPushMatrix()
         glLoadIdentity()
+
+        # Transform Camera
         glTranslatef(*self.camera.pos)
+
+        # Transform Objects
         for obj in self.objectManager.getObjectList():
             # set shader
             curShader = obj.material.getShader()
             if self.lastShader != curShader:
                 glUseProgram(curShader)
                 self.lastShader = curShader
+
             glPushMatrix()
             glTranslatef(*obj.pos)
             glPopMatrix()
             obj.draw()
-        glutSolidSphere(1.0,32,32)
+        # glut test
+        glutSolidSphere(1.0, 32, 12)
         glutSolidCube( 1.0 )
+        # Pop Camera Transform
         glPopMatrix()
 
     def render_postprocess(self):
