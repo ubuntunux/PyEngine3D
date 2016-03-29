@@ -18,16 +18,6 @@
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <layout class="QFormLayout" name="glWidget">
-        <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-        </property>
-        <item row="0" column="1">
-         <widget class="QWidget" name="empy_gl_widgetWidget" native="true"/>
-        </item>
-       </layout>
-      </item>
-      <item>
        <layout class="QVBoxLayout" name="btnLayout">
         <item>
          <widget class="QWidget" name="empty_2" native="true"/>
@@ -144,6 +134,14 @@
      <height>25</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuMainMenu">
+    <property name="title">
+     <string>Menu</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuMainMenu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -157,6 +155,11 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>addTriangle</tabstop>
@@ -165,5 +168,22 @@
   <tabstop>objPropertyTree</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>destroyed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>436</x>
+     <y>400</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>436</x>
+     <y>400</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

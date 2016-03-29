@@ -1,31 +1,11 @@
-from multiprocessing import Queue, Process
 import platform
 import sys
+import threading
 
-from Core import logger
+from Core import *
 from Utilities import Singleton
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
 from Object import ObjectManager
-
-#-----------
-# VARIABLES
-#-----------
-def gen_index():
-        i = 0
-        while True:
-            yield i
-            i += 1
-
-class CMD:
-    cmd_index = gen_index()
-    # arguments
-    # CMD_NAME = (next(cmd_index), any datas)
-    UI_RUN      = (next(cmd_index), None)
-    UI_RUN_OK   = (next(cmd_index), None)
-    APP_EXIT    = (next(cmd_index), None)
-
-
-
 
 #------------------------------#
 # CLASS : CoreManager
@@ -35,14 +15,16 @@ class CoreManager(Singleton):
     Manager other mangers classes. ex) shader manager, material manager...
     CoreManager usage for debug what are woring manager..
     """
-    def __init__(self, cmdQueue):
+    def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
         super(CoreManager, self).__init__()
         self.running = False
         self.cmdQueue = cmdQueue
-        self.renderProcess = None
+        self.uiCmdQueue = uiCmdQueue
+        self.cmdPipe = cmdPipe
+        self.renderThread = None
+        self.mainThread = None
 
         # timer
-        self.fpsLimit = 1.0 / 60.0
         self.fps = 0.0
         self.delta = 0.0
         self.currentTime = 0.0
@@ -67,39 +49,47 @@ class CoreManager(Singleton):
         self.materialManager.initialize(self)
 
         # ready to launch - send message to ui
-        self.cmdQueue.put(CMD.UI_RUN)
+        PipeSendRecv(self.cmdPipe, CMD.UI_RUN, CMD.UI_RUN_OK)
 
-        # main loop
+        # run thread
         self.renderer.update()
 
+    def close(self):
+        # close ui
+        self.uiCmdQueue.put(CMD.CLOSE_UI)
+        # close renderer
+        self.renderer.close()
         # process stop
         logger.info("Process Stop : %s" % self.__class__.__name__)
+        sys.exit(0)
+
+    def update(self, currentTime, delta, fps):
+        # set timer
+        self.currentTime = currentTime
+        self.delta = delta
+        self.fps = fps
+
+        if not self.cmdQueue.empty():
+            if self.cmdQueue.get() == CMD.CLOSE_APP:
+                self.close()
 
     def keyboardFunc(self, keyPressed, x, y):
         if keyPressed == b'\x1b':
-            self.running = False
-            sys.exit(0)
+            self.close()
 
     def keyboardUp(self, *args):
-        print("keyboardUp", args)
+        pass #print("keyboardUp", args)
 
     def passiveMotionFunc(self, *args):
-        print("PassiveMotionFunc", args)
+        pass #print("PassiveMotionFunc", args)
 
     def mouseFunc(self, *args):
-        print("MouseFunc", args)
+        pass #print("MouseFunc", args)
 
     def motionFunc(self, *args):
-        print("MotionFunc", args)
+        pass #print("MotionFunc", args)
 
-    def update(self):
-        self.running = True
-        while self.running:
-            continue
 
-def run(cmdQueue):
-    coreManager = CoreManager.instance(cmdQueue)
+def run(cmdQueue, uiCmdQueue, cmdPipe):
+    coreManager = CoreManager.instance(cmdQueue, uiCmdQueue, cmdPipe)
     coreManager.initialize()
-
-if __name__ == '__main__':
-    run(Queue())

@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Pipe
 
 # core manager
 import Core
@@ -37,14 +37,16 @@ import Core
 from UI import run_editor
 
 if __name__ == "__main__":
-    cmdQueue = Queue()
+    coreCmdQueue = Queue()
+    uiCmdQueue = Queue()
+    pipe1, pipe2 = Pipe()
 
     # process - Main Frame
-    pCoreProcess = Process(target = Core.run, args=(cmdQueue, ))
+    pCoreProcess = Process(target = Core.run, args=(coreCmdQueue, uiCmdQueue, pipe1))
     pCoreProcess.start()
 
     # process - QT
-    pEditor = Process(target=run_editor, args=(cmdQueue, ))
+    pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
     pEditor.start()
 
     # end

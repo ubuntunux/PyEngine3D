@@ -133,6 +133,7 @@ class Renderer(Singleton):
     def close(self):
         x, y = glutGet(GLUT_WINDOW_X), glutGet(GLUT_WINDOW_Y)
         config.setValue("Screen", "position", [x, y])
+        logger.info("Save renderer config file - " + config.getFilename())
 
     def resizeScene(self, width, height):
         if width <= 0 or height <= 0:
@@ -216,10 +217,15 @@ class Renderer(Singleton):
         if not self.inited or delta < self.fpsLimit:
             return
 
+        fps = 1.0 / delta
+
+        # update core manager
+        self.coreManager.update(currentTime, delta, fps)
+
         # set timer
         self.currentTime = currentTime
         self.delta = delta
-        self.fps = 1.0 / self.delta
+        self.fps = fps
         self.console.info("%.2f fps" % self.fps)
         self.console.info("%.2f ms" % (self.delta*1000))
 

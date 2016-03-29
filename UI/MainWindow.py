@@ -6,25 +6,37 @@ from PyQt4 import QtCore, QtGui, uic
 
 from Utilities import Singleton
 from UI import logger
-from Core import CMD
+from Core import *
 
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
+#----------------------#
+# CLASS : Main Window
+#----------------------#
+class UIThread(QtCore.QThread):
+    def __init__(self, cmdQueue):
+        QtCore.QThread.__init__(self)
+        self.running = True
+        self.exitQueue = cmdQueue
+
+    def run(self):
+      while self.running:
+          if not self.exitQueue.empty():
+              if self.exitQueue.get() == CMD.CLOSE_UI:
+                  self.running = False
+                  self.emit( QtCore.SIGNAL('exit'), None)
+                  break
 
 #----------------------#
 # CLASS : Main Window
 #----------------------#
 class MainWindow(QtGui.QMainWindow, Singleton):
-    def __init__(self, cmdQueue):
+    def __init__(self, cmdQueue, coreCmdQueue, cmdPipe):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
         self.cmdQueue = cmdQueue
-
-        # ready to command
-        cmd = self.cmdQueue.get()
-        if cmd != CMD.UI_RUN:
-            1/0
-
+        self.coreCmdQueue = coreCmdQueue
+        self.cmdPipe = cmdPipe
 
         try:
             # load ui file
@@ -61,17 +73,27 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         except AttributeError:
             self.exit(traceback.format_exc())
 
+        # ui main loop
+        self.uiThread = UIThread(self.cmdQueue)
+        self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
+        self.uiThread.start()
+
+        # wait a UI_RUN message, and send success message
+        PipeRecvSend(self.cmdPipe, CMD.UI_RUN, CMD.UI_RUN_OK)
+
     def fillObjProperty(self):
         pass
 
     def exit(self, *args):
-        logger.info(*args)
+        if args != ():
+            logger.info(*args)
+        self.coreCmdQueue.put(CMD.CLOSE_APP)
         self.close()
         sys.exit()
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
-            self.close()
+            self.exit()
 
     def closeEvent(self, event):
         # let the window close
@@ -79,8 +101,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         event.accept()
 
 # process - QT Widget
-def run_editor( cmdQueue ):
+def run_editor(cmdQueue, exitQueue, cmdPipe):
     app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance(cmdQueue)
+    main_window = MainWindow.instance(cmdQueue, exitQueue, cmdPipe)
     main_window.show()
     sys.exit(app.exec_())

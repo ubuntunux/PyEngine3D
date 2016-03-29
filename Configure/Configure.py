@@ -64,6 +64,9 @@ class Config:
             self.config.write(configfile)
             print("Saved Config : " + self.filename)
 
+    def getFilename(self):
+        return self.filename
+
 if __name__ == '__main__':
     import unittest
 
