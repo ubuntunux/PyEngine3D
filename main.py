@@ -29,26 +29,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
+import os
 from multiprocessing import Process, Queue, Pipe
+
+import sdl2
+# use local sdl library file path
+sdlpath = os.path.join(os.path.dirname(__file__), 'libs')
+if os.path.exists(sdlpath):
+    os.environ['PYSDL2_DLL_PATH'] = sdlpath
 
 # core manager
 import Core
+
 # main UI
 from UI import run_editor
 
+
 if __name__ == "__main__":
-    coreCmdQueue = Queue()
-    uiCmdQueue = Queue()
-    pipe1, pipe2 = Pipe()
+    # sdl init
+    if sdl2.SDL_Init(sdl2.SDL_INIT_EVERYTHING) == 0:
+        coreCmdQueue = Queue()
+        uiCmdQueue = Queue()
+        pipe1, pipe2 = Pipe()
 
-    # process - Main Frame
-    pCoreProcess = Process(target = Core.run, args=(coreCmdQueue, uiCmdQueue, pipe1))
-    pCoreProcess.start()
+        # process - Main Frame
+        pCoreProcess = Process(target = Core.run, args=(coreCmdQueue, uiCmdQueue, pipe1))
+        pCoreProcess.start()
 
-    # process - QT
-    pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
-    pEditor.start()
+        # process - QT
+        pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+        pEditor.start()
 
-    # end
-    pCoreProcess.join()
-    pEditor.join()
+        # end
+        pCoreProcess.join()
+        pEditor.join()
+
+        # sdl2 quit
+        sdl2.SDL_Quit()
+    else:
+        # sdl initialize error
+        print(sdl2.SDL_GetError())

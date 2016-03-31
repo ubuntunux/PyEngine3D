@@ -2,8 +2,6 @@ import platform
 import sys
 import threading
 
-from OpenGL.GLUT import glutGetModifiers
-
 from Core import *
 from Utilities import Singleton
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
@@ -49,8 +47,8 @@ class CoreManager(Singleton):
         logger.info("Process Start : %s" % self.__class__.__name__)
 
         # initalize managers
-        self.renderer.initialize(self)
         self.cameraManager.initialize(self)
+        self.renderer.initialize(self)
         self.objectManager.initialize(self)
         self.shaderManager.initialize(self)
         self.materialManager.initialize(self)
@@ -62,10 +60,16 @@ class CoreManager(Singleton):
         self.renderer.update()
 
     def close(self):
+        self.running = False
         # close ui
         self.uiCmdQueue.put(CMD.CLOSE_UI)
         # close renderer
         self.renderer.close()
+
+        # save config
+        config.save()
+        logger.info("Save renderer config file - " + config.getFilename())
+
         # process stop
         logger.info("Process Stop : %s" % self.__class__.__name__)
         sys.exit(0)

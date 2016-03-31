@@ -1,11 +1,18 @@
 import time
+import os
+from ctypes import c_int, c_long, pointer
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
+
+from sdl2 import *
+# use local sdl library file path
+sdlpath = os.path.join(os.path.dirname(__file__), 'libs')
+if os.path.exists(sdlpath):
+    os.environ['PYSDL2_DLL_PATH'] = sdlpath
 
 from Core import logger, config
-from Object import ObjectManager
+from Object import ObjectManager, Quad
 from Render import CameraManager, GLFont, defaultFont
 from Utilities import Singleton
 
@@ -71,9 +78,15 @@ class Console:
 class Renderer(Singleton):
     def __init__(self):
         self.inited = False
+        self.window = None
+        self.context = None
+        self.event = None
+        self.running = False
         self.lastShader = None
         self.width = 0
         self.height = 0
+        self.SCREEN_WIDTH = pointer(c_int(0))
+        self.SCREEN_HEIGHT = pointer(c_int(0))
         self.viewportRatio = 1.0
         self.camera = None
         self.coreManager = None
@@ -96,22 +109,17 @@ class Renderer(Singleton):
         self.initGL()
 
     def initGL(self):
-        glutInit()
-        glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH )
-        self.width, self.height = config.getValue("Screen", "size")
-        glutInitWindowSize(self.width, self.height)
-        glutInitWindowPosition(*config.Screen.position)
-        glutCreateWindow(b"GuineaPig")
-        glutDisplayFunc(self.renderScene)
-        glutIdleFunc(self.renderScene)
-        glutReshapeFunc(self.resizeScene)
+        self.width, self.height = config.Screen.size
+        self.window = SDL_CreateWindow(b"OpenGL demo",
+                                   SDL_WINDOWPOS_CENTERED,
+                                   SDL_WINDOWPOS_CENTERED, self.width, self.height,
+                                   SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)
+        if not self.window:
+            logger.info((SDL_GetError()))
+            self.close()
 
-        # bind keyboard, mouse interface
-        glutKeyboardFunc(self.coreManager.keyboardFunc)
-        glutKeyboardUpFunc(self.coreManager.keyboardUp)
-        glutPassiveMotionFunc(self.coreManager.passiveMotionFunc)
-        glutMouseFunc(self.coreManager.mouseFunc)
-        glutMotionFunc(self.coreManager.motionFunc)
+        self.context = SDL_GL_CreateContext(self.window)
+        self.event = SDL_Event()
 
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
@@ -124,6 +132,8 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
+        self.resizeScene()
+
         # init console text
         self.console.initialize()
 
@@ -131,11 +141,20 @@ class Renderer(Singleton):
         logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
 
     def close(self):
-        x, y = glutGet(GLUT_WINDOW_X), glutGet(GLUT_WINDOW_Y)
-        config.setValue("Screen", "position", [x, y])
-        logger.info("Save renderer config file - " + config.getFilename())
+        self.running = False
+        X, Y = pointer(c_int(0)), pointer(c_int(0))
+        SDL_GetWindowPosition(self.window, X, Y)
+        config.setValue("Screen", "size", [self.width, self.height])
+        config.setValue("Screen", "position", [X.contents.value, Y.contents.value])
+        SDL_GL_DeleteContext(self.context)
+        SDL_DestroyWindow(self.window)
+        #SDL_Quit() - run in main.py ( multiprocess error : double free error )
 
-    def resizeScene(self, width, height):
+    def resizeScene(self):
+        SDL_GetWindowSize(self.window, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        width = self.SCREEN_WIDTH.contents.value
+        height = self.SCREEN_HEIGHT.contents.value
+
         if width <= 0 or height <= 0:
             return
 
@@ -189,9 +208,6 @@ class Renderer(Singleton):
             glTranslatef(*obj.pos)
             glPopMatrix()
             obj.draw()
-        # glut test
-        glutSolidSphere(1.0, 32, 12)
-        glutSolidCube( 1.0 )
         # Pop Camera Transform
         glPopMatrix()
 
@@ -241,7 +257,18 @@ class Renderer(Singleton):
 
         # final
         glFlush()
-        glutSwapBuffers()
+        SDL_GL_SwapWindow(self.window)
+
 
     def update(self):
-        glutMainLoop()
+        self.objectManager.addPrimitive(Quad, objName='quad', pos=(0,0,0))
+        self.running = True
+        while self.running:
+            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
+                if self.event.type == SDL_QUIT:
+                    self.running = False
+                    self.close()
+                elif self.event.type == SDL_WINDOWEVENT:
+                    if self.event.window.event == SDL_WINDOWEVENT_RESIZED:
+                        self.resizeScene()
+            self.renderScene()
