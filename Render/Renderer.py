@@ -1,15 +1,9 @@
 import time
-import os
 from ctypes import c_int, c_long, pointer
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
-
 from sdl2 import *
-# use local sdl library file path
-sdlpath = os.path.join(os.path.dirname(__file__), 'libs')
-if os.path.exists(sdlpath):
-    os.environ['PYSDL2_DLL_PATH'] = sdlpath
 
 from Core import logger, config
 from Object import ObjectManager, Quad
@@ -148,7 +142,7 @@ class Renderer(Singleton):
         config.setValue("Screen", "position", [X.contents.value, Y.contents.value])
         SDL_GL_DeleteContext(self.context)
         SDL_DestroyWindow(self.window)
-        #SDL_Quit() - run in main.py ( multiprocess error : double free error )
+
 
     def resizeScene(self):
         SDL_GetWindowSize(self.window, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)

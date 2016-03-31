@@ -1,11 +1,13 @@
-import platform
+import platform as libPlatform
 import sys
-import threading
+
+from sdl2 import *
 
 from Core import *
 from Utilities import Singleton
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
 from Object import ObjectManager
+
 
 #------------------------------#
 # CLASS : CoreManager
@@ -43,8 +45,11 @@ class CoreManager(Singleton):
 
     def initialize(self):
         # process start
-        logger.info('Platform : %s' % platform.platform())
+        logger.info('Platform : %s' % libPlatform.platform())
         logger.info("Process Start : %s" % self.__class__.__name__)
+
+        if SDL_Init(SDL_INIT_EVERYTHING) != 0:
+            logger.info(SDL_GetError())
 
         # initalize managers
         self.cameraManager.initialize(self)
@@ -58,6 +63,10 @@ class CoreManager(Singleton):
 
         # run thread
         self.renderer.update()
+
+        # sdl quit
+        SDL_Quit()
+        logger.info("Process End : %s" % self.__class__.__name__)
 
     def close(self):
         self.running = False
