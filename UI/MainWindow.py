@@ -22,7 +22,7 @@ class UIThread(QtCore.QThread):
     def run(self):
       while self.running:
           if not self.exitQueue.empty():
-              if self.exitQueue.get() == CMD.CLOSE_UI:
+              if self.exitQueue.get() == CMD_CLOSE_UI:
                   self.running = False
                   self.emit( QtCore.SIGNAL('exit'), None)
                   break
@@ -79,15 +79,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
-        PipeRecvSend(self.cmdPipe, CMD.UI_RUN, CMD.UI_RUN_OK)
+        PipeRecvSend(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
 
     def fillObjProperty(self):
         pass
 
     def exit(self, *args):
-        if args != ():
+        if args != () and args[0] != None:
             logger.info(*args)
-        self.coreCmdQueue.put(CMD.CLOSE_APP)
+        self.coreCmdQueue.put(CMD_CLOSE_APP)
         self.close()
         sys.exit()
 

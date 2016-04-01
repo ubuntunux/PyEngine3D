@@ -1,14 +1,18 @@
+import os
 import time
-from ctypes import c_int, c_long, pointer
+from ctypes import c_int, c_long, c_char_p, pointer
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from sdl2 import *
+from sdl2.sdlttf import *
 
 from Core import logger, config
 from Object import ObjectManager, Quad
-from Render import CameraManager, GLFont, defaultFont
+from Render import CameraManager, MaterialManager, ShaderManager, GLFont, defaultFont, SDLText
 from Utilities import Singleton
+
+
 
 #------------------------------#
 # CLASS : Console
@@ -20,12 +24,22 @@ class Console:
         self.debugs = []
         self.padding = 10
         self.renderer = None
+        self.texture = None
+        self.texture_width = None
+        self.texture_height = None
 
-    def initialize(self):
-        self.renderer = Renderer.instance()
+    def initialize(self, renderer):
+        self.renderer = renderer
         self.glfont = GLFont(defaultFont, 12)
         self.infos = []
         self.debugs = []
+
+        color = SDL_Color(255, 255, 255)
+        self.texture = self.renderText(b"TTF fonts are cool!", str.encode(os.path.join('Render', 'Glametrix.otf')), color, 64)
+
+    def close(self):
+        # free texture
+        SDL_DestroyTexture(self.texture)
 
     def clear(self):
         self.infos = []
@@ -65,17 +79,52 @@ class Console:
         glPopMatrix( )
         glPopMatrix( )
 
+    def renderTexture(self, x, y):
+        dst = SDL_Rect(x, y)
+        SDL_QueryTexture(self.texture, None, None, self.texture_width, self.texture_height)
+        dst.w = self.texture_width.contents.value
+        dst.h = self.texture_height.contents.value
+        SDL_RenderCopy(self.renderer.sdl_renderer, self.texture, None, dst)
+
+    def renderText(self, message, fontFile, color, fontSize):
+        SDL_ClearError()
+        font = TTF_OpenFont(fontFile, fontSize)
+        if font is None:
+            logger.info(SDL_GetError())
+            return None
+
+        surf = TTF_RenderText_Blended(font, message, color)
+
+        if surf is None:
+            TTF_CloseFont(font)
+            logger.info("TTF_RenderText error")
+            return None
+
+        self.texture = SDL_CreateTextureFromSurface(self.renderer.sdl_renderer, surf)
+        if self.texture is None:
+            logger.info("CreateTexture error")
+            return None
+
+        #Clean up the surface and font
+        SDL_FreeSurface(surf)
+        TTF_CloseFont(font)
+
+        # get texture info
+        self.texture_width = pointer(c_int(0))
+        self.texture_height = pointer(c_int(0))
+        SDL_QueryTexture(self.texture, None, None, self.texture_width, self.texture_height)
+
 
 #------------------------------#
 # CLASS : Renderer
 #------------------------------#
 class Renderer(Singleton):
     def __init__(self):
-        self.inited = False
         self.window = None
+        self.sdl_renderer = None
+        self.ttf = None
         self.context = None
-        self.event = None
-        self.running = False
+
         self.lastShader = None
         self.width = 0
         self.height = 0
@@ -84,37 +133,44 @@ class Renderer(Singleton):
         self.viewportRatio = 1.0
         self.camera = None
         self.coreManager = None
-        self.objectManager = None
-        self.cameraManager = None
-
-        # timer
-        self.fpsLimit = 1.0 / 60.0
-        self.fps = 0.0
-        self.delta = 0.0
-        self.currentTime = 0.0
+        self.cameraManager = CameraManager.instance()
+        self.objectManager = ObjectManager.instance()
+        self.shaderManager = ShaderManager.instance()
+        self.materialManager = MaterialManager.instance()
 
         # console font
         self.console = Console()
 
     def initialize(self, coreManager):
+        # get manager instance
         self.coreManager = coreManager
-        self.objectManager = ObjectManager.instance()
-        self.cameraManager = CameraManager.instance()
-        self.initGL()
 
-    def initGL(self):
+        # init window
+        logger.info("InitializeGL")
         self.width, self.height = config.Screen.size
-        self.window = SDL_CreateWindow(b"OpenGL demo",
+        self.window = SDL_CreateWindow(b"OpenGL",
                                    SDL_WINDOWPOS_CENTERED,
                                    SDL_WINDOWPOS_CENTERED, self.width, self.height,
                                    SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)
         if not self.window:
             logger.info((SDL_GetError()))
-            self.close()
+            self.coreManager.error("Can't create render windows.")
 
+        # create context
         self.context = SDL_GL_CreateContext(self.window)
-        self.event = SDL_Event()
 
+        # create sdl renderer
+        self.sdl_renderer = SDL_CreateRenderer(self.window, -1, SDL_RENDERER_ACCELERATED)
+
+        # True Type Font Init
+        self.ttf = TTF_Init()
+        if self.ttf != 0:
+            self.coreManager.error(b"TTF_Init error")
+
+        # init console text
+        self.console.initialize(self)
+
+        # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
         # Start - fixed pipline light setting
@@ -126,23 +182,29 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
+        # build a scene
+        self.cameraManager.initialize(self)
         self.resizeScene()
 
-        # init console text
-        self.console.initialize()
-
-        # initialized flag
-        logger.info("InitializeGL : %s" % glGetDoublev(GL_VIEWPORT))
+        # managers initialize
+        self.objectManager.initialize(self)
+        self.shaderManager.initialize(self)
+        self.materialManager.initialize(self)
 
     def close(self):
-        self.running = False
+        # record config
         X, Y = pointer(c_int(0)), pointer(c_int(0))
         SDL_GetWindowPosition(self.window, X, Y)
         config.setValue("Screen", "size", [self.width, self.height])
         config.setValue("Screen", "position", [X.contents.value, Y.contents.value])
-        SDL_GL_DeleteContext(self.context)
-        SDL_DestroyWindow(self.window)
 
+        # destroy console
+        self.console.close()
+
+        # destroy
+        SDL_GL_DeleteContext(self.context)
+        SDL_DestroyRenderer(self.sdl_renderer)
+        SDL_DestroyWindow(self.window)
 
     def resizeScene(self):
         SDL_GetWindowSize(self.window, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
@@ -164,7 +226,6 @@ class Renderer(Singleton):
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        self.inited = True
 
     # render meshes
     def render_meshes(self):
@@ -221,23 +282,11 @@ class Renderer(Singleton):
         glDisable(GL_LIGHTING)
 
     def renderScene(self):
-        currentTime = time.time()
-        delta = currentTime - self.currentTime
+        SDL_RenderClear(self.sdl_renderer)
 
-        if not self.inited or delta < self.fpsLimit:
-            return
-
-        fps = 1.0 / delta
-
-        # update core manager
-        self.coreManager.update(currentTime, delta, fps)
-
-        # set timer
-        self.currentTime = currentTime
-        self.delta = delta
-        self.fps = fps
-        self.console.info("%.2f fps" % self.fps)
-        self.console.info("%.2f ms" % (self.delta*1000))
+        # display text
+        self.console.info("%.2f fps" % self.coreManager.fps)
+        self.console.info("%.2f ms" % (self.coreManager.delta*1000))
 
         # clear buffer
         glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -249,20 +298,10 @@ class Renderer(Singleton):
         self.console.render()
         self.console.clear()
 
+        # sdl font test
+        self.console.renderTexture(100, 100)
+
         # final
         glFlush()
         SDL_GL_SwapWindow(self.window)
-
-
-    def update(self):
-        self.objectManager.addPrimitive(Quad, objName='quad', pos=(0,0,0))
-        self.running = True
-        while self.running:
-            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-                if self.event.type == SDL_QUIT:
-                    self.running = False
-                    self.close()
-                elif self.event.type == SDL_WINDOWEVENT:
-                    if self.event.window.event == SDL_WINDOWEVENT_RESIZED:
-                        self.resizeScene()
-            self.renderScene()
+        SDL_RenderPresent(self.sdl_renderer)

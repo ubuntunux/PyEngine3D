@@ -32,11 +32,10 @@ __version__ = '0.1'
 from multiprocessing import Process, Queue, Pipe
 
 # core manager
-import Core
+from Core import CoreManager
 
 # main UI
 from UI import run_editor
-
 
 if __name__ == "__main__":
     coreCmdQueue = Queue()
@@ -44,11 +43,13 @@ if __name__ == "__main__":
     pipe1, pipe2 = Pipe()
 
     # process - QT
-    pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
-    pEditor.start()
+    #pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+    #pEditor.start()
 
     # process - Main Frame
-    Core.run(coreCmdQueue, uiCmdQueue, pipe1)
+    coreManager = CoreManager.instance(coreCmdQueue, uiCmdQueue, pipe1)
+    coreManager.initialize()
+    coreManager.run()
 
     # QT process end
-    pEditor.join()
+    #pEditor.join()

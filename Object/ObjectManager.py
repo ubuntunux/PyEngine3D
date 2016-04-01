@@ -22,19 +22,19 @@ class ObjectManager(Singleton):
     def bind_addPrimitive(self, func):
         self.callback_addPrimitive = func
 
-    def addPrimitive(self, primitive, objName='', pos=(0,0,0), material=None):
+    def addPrimitive(self, primitive, name='', pos=(0,0,0), material=None):
         """
         :param primitive: reference Primitive.py ( Triangle, Quad, etc...)
         """
         print(primitive, type(primitive))
         print(Primitive, type(Primitive))
         if issubclass(primitive, Primitive.Primitive):
-            logger.info("Add primitive : %s %s" % (primitive, objName))
+            logger.info("Add primitive : %s %s" % (primitive, name))
             # create material
             if material is None:
                 material = self.materialManager.createMaterial()
             # create primitive
-            obj = primitive(name=objName or primitive.__name__, pos=pos, material=material)
+            obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
             self.primitives.append(obj)
             # callback function on success
             if self.callback_addPrimitive:

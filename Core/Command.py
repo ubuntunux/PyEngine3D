@@ -4,19 +4,20 @@ def gen_index():
             yield i
             i += 1
 
-class CMD:
-    cmd_index = gen_index()
-    # arguments
-    # CMD_NAME = (next(cmd_index), any datas)
-    UI_RUN      = next(cmd_index)
-    UI_RUN_OK   = next(cmd_index)
-    FAIL        = next(cmd_index)
-    CLOSE_APP   = next(cmd_index)
-    CLOSE_UI    = next(cmd_index)
+cmd_index = gen_index()
+# CMD_NAME = (next(cmd_index), any datas)
+CMD_UI_RUN      = next(cmd_index)
+CMD_UI_RUN_OK   = next(cmd_index)
+CMD_FAIL        = next(cmd_index)
+CMD_CLOSE_APP   = next(cmd_index)
+CMD_CLOSE_UI    = next(cmd_index)
 
-    @staticmethod
-    def Error():
-        raise "Receive wrong command."
+# add primitive
+CMD_ADD_TRIANGLE = next(cmd_index)
+CMD_ADD_QUAD     = next(cmd_index)
+
+def Error():
+    raise "Receive wrong command."
 
 
 def PipeSendRecv(pipe, sendCmd, recvCmd):
@@ -35,6 +36,6 @@ def PipeRecvSend(pipe, recvCmd, sendCmd):
         # succesfull - send message
         pipe.send(sendCmd)
     else:
-        pipe.send(CMD.FAIL)
+        pipe.send(CMD_FAIL)
         raise "Received %s not %s" % (recv, recvCmd)
 
