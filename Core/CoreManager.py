@@ -112,6 +112,14 @@ class CoreManager(Singleton):
                 if keydown == SDLK_ESCAPE:
                     self.close()
                 elif keydown == SDLK_q:
+                    pass
+                elif keydown == SDLK_w:
+                    pass
+                elif keydown == SDLK_e:
+                    pass
+                elif keydown == SDLK_r:
+                    pass
+                elif keydown == SDLK_q:
                     self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(0,0,0))
                 elif keydown == SDLK_t:
                     self.renderer.objectManager.addPrimitive(Triangle, name="quad", pos=(0,0,0))
@@ -133,6 +141,7 @@ class CoreManager(Singleton):
 
 
     def update(self):
+        self.currentTime = time.time()
         self.running = True
         while self.running:
             currentTime = time.time()

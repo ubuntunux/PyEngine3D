@@ -133,9 +133,9 @@ class CMesh:
 		half_sizeX = float (sizeX) / 2.0
 		half_sizeY = float (sizeY) / 2.0
 		flResolution_int = int (flResolution)
-		while (nZ < sizeY):
+		while nZ < sizeY:
 			nX = 0
-			while (nX < sizeY):
+			while nX < sizeY:
 				for nTri in range (6):
 					# // Using This Quick Hack, Figure The X,Z Position Of The Point
 					flX = float (nX)
@@ -177,7 +177,7 @@ class CMesh:
 		""" // Calculate The Position In The Texture, Careful Not To Overflow """
 		sizeX = self.m_pTextureImage.size [0]
 		sizeY = self.m_pTextureImage.size [1]
-		if (nX >= sizeX or nY >= sizeY):
+		if nX >= sizeX or nY >= sizeY:
 			return 0
 
 		# Get The Red, Green, and Blue Components
@@ -190,12 +190,12 @@ class CMesh:
 		pixel = self.m_pTextureImage.getpixel ((nY, nX))
 
 		# // Calculate The Height Using The Luminance Algorithm
-		return ( (0.299 * flR) + (0.587 * flG) + (0.114 * flB) );
+		return (0.299 * flR) + (0.587 * flG) + (0.114 * flB);
 
 
 	def BuildVBOs (self):
 		""" // Generate And Bind The Vertex Buffer """
-		if (g_fVBOSupported):
+		if g_fVBOSupported:
 			self.m_nVBOVertices = int(glGenBuffersARB( 1));						# // Get A Valid Name
 			glBindBufferARB( GL_ARRAY_BUFFER_ARB, self.m_nVBOVertices );	# // Bind The Buffer
 			# // Load The Data
@@ -219,18 +219,15 @@ def IsExtensionSupported (TargetExtension):
 		Note, that this test only tells you if the OpenGL library supports
 		the extension. The PyOpenGL system might not actually support the extension.
 	"""
-	global gl_supports_extension
 	Extensions = glGetString (GL_EXTENSIONS)
 	Extensions = Extensions.split ()
 	bTargetExtension = str.encode(TargetExtension)
 	for extension in Extensions:
 		if extension == bTargetExtension:
-			gl_supports_extension = True
 			break;
 	else:
 		# not found surpport
 		print("OpenGL rendering context does not support '%s'" % (TargetExtension))
-		gl_supports_extension = False
 		return False
 
 
@@ -240,7 +237,7 @@ def IsExtensionSupported (TargetExtension):
 	# Python divides extension into modules
 	# g_fVBOSupported = IsExtensionSupported ("GL_ARB_vertex_buffer_object")
 	# from OpenGL.GL.EXT.fog_coord import *
-	if (TargetExtension [:3] != "GL_"):
+	if TargetExtension [:3] != "GL_":
 		# Doesn't appear to following extension naming convention.
 		# Don't have a means to find a module for this exentsion type.
 		return False
@@ -256,16 +253,16 @@ def IsExtensionSupported (TargetExtension):
 
 	group_name = afterGL [:group_name_end]
 	extension_name = afterGL [len (group_name) + 1:]
-	extension_module_name = "OpenGL.GL.ARB.%s" % (extension_name)
+	extension_module_name = "OpenGL.GL.ARB.%s" % extension_name
 
 	import traceback
 	try:
 		__import__ (extension_module_name)
-		print("PyOpenGL supports '%s'" % (TargetExtension))
+		print("PyOpenGL supports '%s'" % TargetExtension)
 	except:
 		traceback.print_exc()
 		print('Failed to import', extension_module_name)
-		print("OpenGL rendering context supports '%s'" % (TargetExtension),)
+		print("OpenGL rendering context supports '%s'" % TargetExtension,)
 		return False
 	return True
 
@@ -281,18 +278,19 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
 	# // Load The Mesh Data
 	g_pMesh = CMesh ()
 	filename = os.path.join(os.path.split(__file__)[0], "Terrain.bmp")
-	if (not g_pMesh.LoadHeightmap (filename, CMesh.MESH_HEIGHTSCALE, CMesh.MESH_RESOLUTION)):
+	result = g_pMesh.LoadHeightmap (filename, CMesh.MESH_HEIGHTSCALE, CMesh.MESH_RESOLUTION)
+	if not result:
 		print("Error Loading Heightmap")
 		sys.exit(1)
 		return False
 
-	if (g_fVBOSupported):
+	if g_fVBOSupported:
 		# // Get Pointers To The GL Functions
 		# In python, calling Init for the extension functions will
 		# fill in the function pointers (really function objects)
 		# so that we call the Extension.
-
-		if (not glInitVertexBufferObjectARB()):
+		result = glInitVertexBufferObjectARB()
+		if not result:
 			print("Help!  No GL_ARB_vertex_buffer_object")
 			sys.exit(1)
 			return False
@@ -341,29 +339,31 @@ def DrawGLScene():
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);				# // Clear Screen And Depth Buffer
 	glLoadIdentity ();													# // Reset The Modelview Matrix
 
-
 	# // Get FPS
-	# milliseconds = win32api.GetTickCount()
-	milliseconds = time.clock () * 1000.0
-	if (milliseconds - g_dwLastFPS >= 1000):					# // When A Second Has Passed...
-		# g_dwLastFPS = win32api.GetTickCount();				# // Update Our Time Variable
-		g_dwLastFPS = time.clock () * 1000.0
+	milliseconds = time.time()
+	if g_dwLastFPS == 0.0:
+		g_dwLastFPS = milliseconds
+		g_prev_draw_time = milliseconds
+		return
+
+	if milliseconds - g_dwLastFPS >= 1.0:					# // When A Second Has Passed...
+		g_dwLastFPS = milliseconds
 		g_nFPS = g_nFrames;										# // Save The FPS
 		g_nFrames = 0;											# // Reset The FPS Counter
-
 		# // Build The Title String
 		szTitle = "Lesson 45: NeHe & Paul Frazee's VBO Tut - %d Triangles, %d FPS" % (g_pMesh.m_nVertexCount / 3, g_nFPS );
-		if ( g_fVBOSupported ):									# // Include A Notice About VBOs
-			szTitle = szTitle + ", Using VBOs";
+		if g_fVBOSupported:									# // Include A Notice About VBOs
+			szTitle += ", Using VBOs"
 		else:
-			szTitle = szTitle + ", Not Using VBOs";
-
+			szTitle += ", Not Using VBOs"
 		glutSetWindowTitle ( szTitle );							# // Set The Title
 
-	g_nFrames += 1 												# // Increment Our FPS Counter
-	rot = (milliseconds - g_prev_draw_time) / 1000.0 * 25
+
+	g_nFrames += 1								# // Increment Our FPS Counter
+	rot = (milliseconds - g_prev_draw_time) * 25.0
 	g_prev_draw_time = milliseconds
-	g_flYRot += rot 											# // Consistantly Rotate The Scenery
+	g_flYRot += rot												# // Consistantly Rotate The Scenery
+	print(g_flYRot)
 
 	# // Move The Camera
 	glTranslatef( 0.0, -220.0, 0.0 );							# // Move Above The Terrain
@@ -376,7 +376,7 @@ def DrawGLScene():
 
 
 	# // Set Pointers To Our Data
-	if( g_fVBOSupported ):
+	if g_fVBOSupported:
 #		import pdb
 #		pdb.set_trace()
 		glBindBufferARB( GL_ARRAY_BUFFER_ARB, g_pMesh.m_nVBOVertices );
