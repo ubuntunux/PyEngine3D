@@ -1,5 +1,4 @@
 import os
-import time
 from ctypes import c_int, c_long, c_char_p, pointer
 
 from OpenGL.GL import *
@@ -8,11 +7,9 @@ from sdl2 import *
 from sdl2.sdlttf import *
 
 from Core import logger, config
-from Object import ObjectManager, Quad
+from Object import ObjectManager
 from Render import CameraManager, MaterialManager, ShaderManager, GLFont, defaultFont, SDLText
 from Utilities import Singleton
-
-
 
 #------------------------------#
 # CLASS : Console
@@ -258,7 +255,6 @@ class Renderer(Singleton):
             if self.lastShader != curShader:
                 glUseProgram(curShader)
                 self.lastShader = curShader
-
             glPushMatrix()
             glTranslatef(*obj.pos)
             glPopMatrix()
@@ -295,6 +291,8 @@ class Renderer(Singleton):
         # render
         self.render_meshes()
         self.render_postprocess()
+
+        glUseProgram(0)
         self.console.render()
         self.console.clear()
 

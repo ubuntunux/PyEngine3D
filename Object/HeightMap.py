@@ -66,6 +66,8 @@ import PIL.Image as Image 				# PIL
 from OpenGL.GL.ARB.vertex_buffer_object import *
 # http://oss.sgi.com/projects/ogl-sample/registry/ARB/vertex_buffer_object.txt
 
+from Core import IsExtensionSupported
+
 # Some api in the chain is translating the keystrokes to this octal string
 # so instead of saying: ESCAPE = 27, we use the following.
 ESCAPE = '\033'
@@ -76,12 +78,12 @@ window = 0
 # PyOpenGL doesn't yet have the ARB for vertex_buffer_objects
 NO_VBOS = True
 
-g_fVBOSupported = False;							# // ARB_vertex_buffer_object supported?
-g_pMesh = None;										# // Mesh Data
-g_flYRot = 0.0;										# // Rotation
+g_fVBOSupported = False							# // ARB_vertex_buffer_object supported?
+g_pMesh = None										# // Mesh Data
+g_flYRot = 0.0										# // Rotation
 g_nFPS = 0
-g_nFrames = 0;										# // FPS and FPS Counter
-g_dwLastFPS = 0;									# // Last FPS Check Time
+g_nFrames = 0										# // FPS and FPS Counter
+g_dwLastFPS = 0									# // Last FPS Check Time
 
 # noinspection PyBroadException
 class CMesh:
@@ -90,7 +92,7 @@ class CMesh:
 	MESH_HEIGHTSCALE = 1.0
 
 	def __init__ (self):
-		self.m_nVertexCount = 0;								# // Vertex Count
+		self.m_nVertexCount = 0								# // Vertex Count
 
 		self.m_pVertices = None # np.array ( (), 'f') 		# // Vertex Data array
 		self.m_pVertices_as_string = None						# raw memory string for VertexPointer ()
@@ -98,14 +100,14 @@ class CMesh:
 		self.m_pTexCoords = None # np.array ( (), 'f') 	# // Texture Coordinates array
 		self.m_pTexCoords_as_string = None						# raw memory string for TexPointer ()
 
-		self.m_nTextureId = None;								# // Texture ID
+		self.m_nTextureId = None								# // Texture ID
 
 		# // Vertex Buffer Object Names
-		self.m_nVBOVertices = None;								# // Vertex VBO Name
-		self.m_nVBOTexCoords = None;							# // Texture Coordinate VBO Name
+		self.m_nVBOVertices = None								# // Vertex VBO Name
+		self.m_nVBOTexCoords = None							# // Texture Coordinate VBO Name
 
 		# // Temporary Data
-		self.m_pTextureImage = None;							# // Heightmap Data
+		self.m_pTextureImage = None							# // Heightmap Data
 		self.m_nTextureID = -1
 
 
@@ -123,7 +125,7 @@ class CMesh:
 		# // Generate Vertex Field
 		sizeX = self.m_pTextureImage.size [0]
 		sizeY = self.m_pTextureImage.size [1]
-		self.m_nVertexCount = int ( sizeX * sizeY * 6 / ( flResolution * flResolution ) );
+		self.m_nVertexCount = int ( sizeX * sizeY * 6 / ( flResolution * flResolution ) )
 		self.m_pVertices = np.zeros ((self.m_nVertexCount, 3), 'f') 			# // Vertex Data
 		self.m_pTexCoords = np.zeros ((self.m_nVertexCount, 2), 'f') 			# // Texture Coordinates
 
@@ -163,15 +165,15 @@ class CMesh:
 
 		# // Load The Texture Into OpenGL
 		self.m_nTextureID = glGenTextures (1)						# // Get An Open ID
-		glBindTexture( GL_TEXTURE_2D, self.m_nTextureID );			# // Bind The Texture
+		glBindTexture( GL_TEXTURE_2D, self.m_nTextureID )			# // Bind The Texture
 		glTexImage2D( GL_TEXTURE_2D, 0, 3, sizeX, sizeY, 0, GL_RGB, GL_UNSIGNED_BYTE,
 			self.m_pTextureImage.tobytes ("raw", "RGB", 0, -1))
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR)
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR)
 
 		# // Free The Texture Data
 		self.m_pTextureImage = None
-		return True;
+		return True
 
 	def PtHeight (self, nX, nY):
 		""" // Calculate The Position In The Texture, Careful Not To Overflow """
@@ -190,83 +192,29 @@ class CMesh:
 		pixel = self.m_pTextureImage.getpixel ((nY, nX))
 
 		# // Calculate The Height Using The Luminance Algorithm
-		return (0.299 * flR) + (0.587 * flG) + (0.114 * flB);
+		return (0.299 * flR) + (0.587 * flG) + (0.114 * flB)
 
 
 	def BuildVBOs (self):
 		""" // Generate And Bind The Vertex Buffer """
 		if g_fVBOSupported:
-			self.m_nVBOVertices = int(glGenBuffersARB( 1));						# // Get A Valid Name
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, self.m_nVBOVertices );	# // Bind The Buffer
+			self.m_nVBOVertices = int(glGenBuffersARB( 1))						# // Get A Valid Name
+			glBindBufferARB( GL_ARRAY_BUFFER_ARB, self.m_nVBOVertices )	# // Bind The Buffer
 			# // Load The Data
-			glBufferDataARB( GL_ARRAY_BUFFER_ARB, self.m_pVertices, GL_STATIC_DRAW_ARB );
+			glBufferDataARB( GL_ARRAY_BUFFER_ARB, self.m_pVertices, GL_STATIC_DRAW_ARB )
 
 			# // Generate And Bind The Texture Coordinate Buffer
-			self.m_nVBOTexCoords = int(glGenBuffersARB( 1));						# // Get A Valid Name
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, self.m_nVBOTexCoords );		# // Bind The Buffer
+			self.m_nVBOTexCoords = int(glGenBuffersARB( 1))						# // Get A Valid Name
+			glBindBufferARB( GL_ARRAY_BUFFER_ARB, self.m_nVBOTexCoords )		# // Bind The Buffer
 			# // Load The Data
-			glBufferDataARB( GL_ARRAY_BUFFER_ARB, self.m_pTexCoords, GL_STATIC_DRAW_ARB );
+			glBufferDataARB( GL_ARRAY_BUFFER_ARB, self.m_pTexCoords, GL_STATIC_DRAW_ARB )
 
 			# // Our Copy Of The Data Is No Longer Necessary, It Is Safe In The Graphics Card
 			self.m_pVertices = None
-			self.m_pVertices = None;
+			self.m_pVertices = None
 			self.m_pTexCoords = None
-			self.m_pTexCoords = None;
+			self.m_pTexCoords = None
 		return
-
-def IsExtensionSupported (TargetExtension):
-	""" Accesses the rendering context to see if it supports an extension.
-		Note, that this test only tells you if the OpenGL library supports
-		the extension. The PyOpenGL system might not actually support the extension.
-	"""
-	Extensions = glGetString (GL_EXTENSIONS)
-	Extensions = Extensions.split ()
-	bTargetExtension = str.encode(TargetExtension)
-	for extension in Extensions:
-		if extension == bTargetExtension:
-			break;
-	else:
-		# not found surpport
-		print("OpenGL rendering context does not support '%s'" % (TargetExtension))
-		return False
-
-
-	# Now determine if Python supports the extension
-	# Exentsion names are in the form GL_<group>_<extension_name>
-	# e.g.  GL_EXT_fog_coord
-	# Python divides extension into modules
-	# g_fVBOSupported = IsExtensionSupported ("GL_ARB_vertex_buffer_object")
-	# from OpenGL.GL.EXT.fog_coord import *
-	if TargetExtension [:3] != "GL_":
-		# Doesn't appear to following extension naming convention.
-		# Don't have a means to find a module for this exentsion type.
-		return False
-
-	# extension name after GL_
-	afterGL = TargetExtension [3:]
-	try:
-		group_name_end = afterGL.index ("_")
-	except:
-		# Doesn't appear to following extension naming convention.
-		# Don't have a means to find a module for this exentsion type.
-		return False
-
-	group_name = afterGL [:group_name_end]
-	extension_name = afterGL [len (group_name) + 1:]
-	extension_module_name = "OpenGL.GL.ARB.%s" % extension_name
-
-	import traceback
-	try:
-		__import__ (extension_module_name)
-		print("PyOpenGL supports '%s'" % TargetExtension)
-	except:
-		traceback.print_exc()
-		print('Failed to import', extension_module_name)
-		print("OpenGL rendering context supports '%s'" % TargetExtension,)
-		return False
-	return True
-
-
 
 # // Any GL Init Code & User Initialiazation Goes Here
 def InitGL(Width, Height):				# We call this right after our OpenGL window is created.
@@ -303,16 +251,16 @@ def InitGL(Width, Height):				# We call this right after our OpenGL window is cr
 
 
 	# Setup GL States
-	glClearColor (0.0, 0.0, 0.0, 0.5);							# // Black Background
-	glClearDepth (1.0);											# // Depth Buffer Setup
-	glDepthFunc (GL_LEQUAL);									# // The Type Of Depth Testing
-	glEnable (GL_DEPTH_TEST);									# // Enable Depth Testing
-	glShadeModel (GL_SMOOTH);									# // Select Smooth Shading
-	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);			# // Set Perspective Calculations To Most Accurate
-	glEnable(GL_TEXTURE_2D);									# // Enable Texture Mapping
+	glClearColor (0.0, 0.0, 0.0, 0.5)							# // Black Background
+	glClearDepth (1.0)											# // Depth Buffer Setup
+	glDepthFunc (GL_LEQUAL)									# // The Type Of Depth Testing
+	glEnable (GL_DEPTH_TEST)									# // Enable Depth Testing
+	glShadeModel (GL_SMOOTH)									# // Select Smooth Shading
+	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)			# // Set Perspective Calculations To Most Accurate
+	glEnable(GL_TEXTURE_2D)									# // Enable Texture Mapping
 	glColor4f (1.0, 6.0, 6.0, 1.0)
 
-	return True;												# // Return TRUE (Initialization Successful)
+	return True												# // Return TRUE (Initialization Successful)
 
 
 # The function called when our window is resized (which shouldn't happen if you enable fullscreen, below)
@@ -336,8 +284,8 @@ g_prev_draw_time = 0.0
 def DrawGLScene():
 	global g_dwLastFPS, g_nFPS, g_nFrames, g_pMesh, g_fVBOSupported, g_flYRot, g_prev_draw_time
 
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);				# // Clear Screen And Depth Buffer
-	glLoadIdentity ();													# // Reset The Modelview Matrix
+	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)				# // Clear Screen And Depth Buffer
+	glLoadIdentity ()													# // Reset The Modelview Matrix
 
 	# // Get FPS
 	milliseconds = time.time()
@@ -348,41 +296,41 @@ def DrawGLScene():
 
 	if milliseconds - g_dwLastFPS >= 1.0:					# // When A Second Has Passed...
 		g_dwLastFPS = milliseconds
-		g_nFPS = g_nFrames;										# // Save The FPS
-		g_nFrames = 0;											# // Reset The FPS Counter
+		g_nFPS = g_nFrames										# // Save The FPS
+		g_nFrames = 0											# // Reset The FPS Counter
 		# // Build The Title String
-		szTitle = "Lesson 45: NeHe & Paul Frazee's VBO Tut - %d Triangles, %d FPS" % (g_pMesh.m_nVertexCount / 3, g_nFPS );
+		szTitle = "Lesson 45: NeHe & Paul Frazee's VBO Tut - %d Triangles, %d FPS" % (g_pMesh.m_nVertexCount / 3, g_nFPS )
 		if g_fVBOSupported:									# // Include A Notice About VBOs
 			szTitle += ", Using VBOs"
 		else:
 			szTitle += ", Not Using VBOs"
-		glutSetWindowTitle ( szTitle );							# // Set The Title
+		glutSetWindowTitle ( szTitle )							# // Set The Title
 
 
 	g_nFrames += 1								# // Increment Our FPS Counter
 	rot = (milliseconds - g_prev_draw_time) * 25.0
 	g_prev_draw_time = milliseconds
 	g_flYRot += rot												# // Consistantly Rotate The Scenery
-	print(g_flYRot)
+
 
 	# // Move The Camera
-	glTranslatef( 0.0, -220.0, 0.0 );							# // Move Above The Terrain
-	glRotatef( 10.0, 1.0, 0.0, 0.0 );							# // Look Down Slightly
-	glRotatef( g_flYRot, 0.0, 1.0, 0.0 );						# // Rotate The Camera
+	glTranslatef( 0.0, -220.0, 0.0 )							# // Move Above The Terrain
+	glRotatef( 10.0, 1.0, 0.0, 0.0 )							# // Look Down Slightly
+	glRotatef( g_flYRot, 0.0, 1.0, 0.0 )						# // Rotate The Camera
 
 	# // Enable Pointers
-	glEnableClientState( GL_VERTEX_ARRAY );						# // Enable Vertex Arrays
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );				# // Enable Texture Coord Arrays
+	glEnableClientState( GL_VERTEX_ARRAY )						# // Enable Vertex Arrays
+	glEnableClientState( GL_TEXTURE_COORD_ARRAY )				# // Enable Texture Coord Arrays
 
 
 	# // Set Pointers To Our Data
 	if g_fVBOSupported:
 #		import pdb
 #		pdb.set_trace()
-		glBindBufferARB( GL_ARRAY_BUFFER_ARB, g_pMesh.m_nVBOVertices );
-		glVertexPointer( 3, GL_FLOAT, 0, None );				# // Set The Vertex Pointer To The Vertex Buffer
-		glBindBufferARB( GL_ARRAY_BUFFER_ARB, g_pMesh.m_nVBOTexCoords );
-		glTexCoordPointer( 2, GL_FLOAT, 0, None );				# // Set The TexCoord Pointer To The TexCoord Buffer
+		glBindBufferARB( GL_ARRAY_BUFFER_ARB, g_pMesh.m_nVBOVertices )
+		glVertexPointer( 3, GL_FLOAT, 0, None )				# // Set The Vertex Pointer To The Vertex Buffer
+		glBindBufferARB( GL_ARRAY_BUFFER_ARB, g_pMesh.m_nVBOTexCoords )
+		glTexCoordPointer( 2, GL_FLOAT, 0, None )				# // Set The TexCoord Pointer To The TexCoord Buffer
 	else:
 		# You can use the pythonism glVertexPointerf (), which will convert the numarray into
 		# the needed memory for VertexPointer. This has two drawbacks however:
@@ -391,22 +339,22 @@ def DrawGLScene():
 		# See the PyOpenGL documentation. Section "PyOpenGL for OpenGL Programmers" for details
 		# regarding glXPointer API.
 		# Also see OpenGLContext Working with np Python
-		# glVertexPointerf ( g_pMesh.m_pVertices ); 	# // Set The Vertex Pointer To Our Vertex Data
-		# glTexCoordPointerf ( g_pMesh.m_pTexCoords ); 	# // Set The Vertex Pointer To Our TexCoord Data
+		# glVertexPointerf ( g_pMesh.m_pVertices ) 	# // Set The Vertex Pointer To Our Vertex Data
+		# glTexCoordPointerf ( g_pMesh.m_pTexCoords ) 	# // Set The Vertex Pointer To Our TexCoord Data
 		#
 		#
 		# The faster approach is to make use of an opaque "string" that represents the
 		# the data (vertex array and tex coordinates in this case).
-		glVertexPointer( 3, GL_FLOAT, 0, g_pMesh.m_pVertices_as_string);  	# // Set The Vertex Pointer To Our Vertex Data
-		glTexCoordPointer( 2, GL_FLOAT, 0, g_pMesh.m_pTexCoords_as_string); 	# // Set The Vertex Pointer To Our TexCoord Data
+		glVertexPointer( 3, GL_FLOAT, 0, g_pMesh.m_pVertices_as_string)  	# // Set The Vertex Pointer To Our Vertex Data
+		glTexCoordPointer( 2, GL_FLOAT, 0, g_pMesh.m_pTexCoords_as_string) 	# // Set The Vertex Pointer To Our TexCoord Data
 
 
 	# // Render
-	glDrawArrays( GL_TRIANGLES, 0, g_pMesh.m_nVertexCount );		# // Draw All Of The Triangles At Once
+	glDrawArrays( GL_TRIANGLES, 0, g_pMesh.m_nVertexCount )		# // Draw All Of The Triangles At Once
 
 	# // Disable Pointers
-	glDisableClientState( GL_VERTEX_ARRAY );					# // Disable Vertex Arrays
-	glDisableClientState( GL_TEXTURE_COORD_ARRAY );				# // Disable Texture Coord Arrays
+	glDisableClientState( GL_VERTEX_ARRAY )					# // Disable Vertex Arrays
+	glDisableClientState( GL_TEXTURE_COORD_ARRAY )				# // Disable Texture Coord Arrays
 
 	glutSwapBuffers()													 # // Flush The GL Rendering Pipeline
 	return True

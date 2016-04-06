@@ -35,3 +35,6 @@ class MaterialManager(Singleton):
         material = Material(name=name, shader=shader)
         self.materials[name] = material
         return material
+
+    def getDefaultMaterial(self):
+        return self.default_material

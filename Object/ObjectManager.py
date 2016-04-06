@@ -1,6 +1,5 @@
 from Core import logger
 from Object import Primitive
-from Render import MaterialManager
 from Utilities import Singleton
 
 #------------------------------#
@@ -11,11 +10,9 @@ class ObjectManager(Singleton):
         self.primitives = []
         self.callback_addPrimitive = None
         self.coreManager = None
-        self.materialManager = None
 
     def initialize(self, coreManager):
         self.coreManager = coreManager
-        self.materialManager = MaterialManager.instance()
         logger.info("initialize " + self.__class__.__name__)
 
     # binding callback function
@@ -26,13 +23,11 @@ class ObjectManager(Singleton):
         """
         :param primitive: reference Primitive.py ( Triangle, Quad, etc...)
         """
-        print(primitive, type(primitive))
-        print(Primitive, type(Primitive))
-        if issubclass(primitive, Primitive.Primitive):
+        if issubclass(primitive, Primitive):
             logger.info("Add primitive : %s %s" % (primitive, name))
             # create material
             if material is None:
-                material = self.materialManager.createMaterial()
+                material = self.coreManager.materialManager.getDefaultMaterial()
             # create primitive
             obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
             self.primitives.append(obj)

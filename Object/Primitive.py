@@ -38,8 +38,6 @@ class Sphere(Primitive):
 
     def draw(self):
         glBegin(GL_QUADS)
-        for i in range(self.segment):
-            for j in range(self.segment):
         glVertex3f(-1.0, -1.0, 0.0)
         glVertex3f(1.0, -1.0, 0.0)
         glVertex3f(1.0, 1.0, 0.0)
