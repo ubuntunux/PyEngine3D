@@ -29,4 +29,19 @@ class Quad(Primitive):
         glVertex3f(1.0, 1.0, 0.0)
         glVertex3f(-1.0, 1.0, 0.0)        
         glEnd()
-        
+
+class Sphere(Primitive):
+    """Sphere"""
+    def __init__(self, *args, segment=4, **kargs):
+        super(Sphere, self).__init__(*args, **kargs)
+        self.segment = segment
+
+    def draw(self):
+        glBegin(GL_QUADS)
+        for i in range(self.segment):
+            for j in range(self.segment):
+        glVertex3f(-1.0, -1.0, 0.0)
+        glVertex3f(1.0, -1.0, 0.0)
+        glVertex3f(1.0, 1.0, 0.0)
+        glVertex3f(-1.0, 1.0, 0.0)
+        glEnd()
