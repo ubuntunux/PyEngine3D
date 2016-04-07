@@ -5,8 +5,9 @@ import time
 import re
 import traceback
 
+import pygame
+from pygame.locals import *
 from OpenGL.GL import *
-from sdl2 import *
 
 from Core import *
 from Object import ObjectManager, Triangle, Quad
@@ -75,13 +76,11 @@ class CoreManager(Singleton):
     def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
         super(CoreManager, self).__init__()
         self.running = False
-        self.event = None
-        self.keystatus = None
+
+        # command
         self.cmdQueue = cmdQueue
         self.uiCmdQueue = uiCmdQueue
         self.cmdPipe = cmdPipe
-        self.renderThread = None
-        self.mainThread = None
 
         # timer
         self.fpsLimit = 1.0 / 60.0
@@ -101,13 +100,8 @@ class CoreManager(Singleton):
         logger.info('Platform : %s' % libPlatform.platform())
         logger.info("Process Start : %s" % self.__class__.__name__)
 
-        if SDL_Init(SDL_INIT_EVERYTHING) != 0:
-            logger.info(SDL_GetError())
-
-        # get sdl event handle
-        self.event = SDL_Event()
-        # keyboard state
-        self.keystatus = SDL_GetKeyboardState(None)
+        # pygame init
+        pygame.init()
 
         # initalize managers
         self.renderer = Renderer.instance()
@@ -136,7 +130,7 @@ class CoreManager(Singleton):
         logger.info("Process Stop : %s" % self.__class__.__name__)
 
         # quit
-        SDL_Quit()
+        pygame.quit()
 
     def error(self, msg):
         logger.error(msg)
@@ -153,44 +147,21 @@ class CoreManager(Singleton):
 
 
     def updateEvent(self):
-        while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-            eventType = self.event.type
-            if eventType == SDL_QUIT:
+        for event in pygame.event.get():
+            eventType = event.type
+            keydown = pygame.key.get_pressed()
+
+            if eventType == QUIT:
                 self.close()
-            elif eventType == SDL_WINDOWEVENT:
-                if self.event.window.event == SDL_WINDOWEVENT_RESIZED:
-                    self.renderer.resizeScene()
-            elif eventType == SDL_KEYDOWN:
-                keydown = self.event.key.keysym.sym
-                if keydown == SDLK_ESCAPE:
+            elif eventType == VIDEORESIZE:
+                self.renderer.resizeScene(*event.dict['size'])
+            elif eventType == KEYDOWN:
+                if keydown[K_ESCAPE]:
                     self.close()
-                elif keydown == SDLK_w:
-                    pass
-                elif keydown == SDLK_a:
-                    pass
-                elif keydown == SDLK_s:
-                    pass
-                elif keydown == SDLK_d:
-                    pass
-                elif keydown == SDLK_q:
+                elif keydown[K_q]:
                     self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(0,0,0))
-                elif keydown == SDLK_t:
+                elif keydown[K_t]:
                     self.renderer.objectManager.addPrimitive(Triangle, name="quad", pos=(0,0,0))
-                # another keydown check
-                if self.keystatus[SDL_SCANCODE_LCTRL]:
-                    print("key down LCTRL")
-                print("key down", keydown)
-            elif eventType == SDL_KEYUP:
-                keyup = self.event.key.keysym.sym
-                print("key up", keyup)
-            elif eventType == SDL_MOUSEMOTION:
-                pass
-            elif eventType == SDL_MOUSEBUTTONDOWN:
-                pass
-            elif eventType == SDL_MOUSEBUTTONUP:
-                pass
-            elif eventType == SDL_MOUSEWHEEL:
-                pass
 
 
     def update(self):

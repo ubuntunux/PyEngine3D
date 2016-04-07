@@ -3,6 +3,23 @@ from OpenGL.GL.shaders import *
 from Core import logger
 from Utilities import Singleton
 
+
+SIMPLE_VERTEX_SHADER = '''
+#version 330
+in vec4 position;
+void main()
+{
+   gl_Position = position;
+}'''
+
+SIMPLE_PIXEL_SHADER = '''
+#version 330
+void main()
+{
+   gl_FragColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+}'''
+
+
 DEFAULT_VERTEX_SHADER = '''
     varying vec3 normal;
     void main() {
@@ -11,7 +28,7 @@ DEFAULT_VERTEX_SHADER = '''
     }'''
 
 DEFAULT_PIXEL_SHADER = '''
-     varying vec3 normal;
+    varying vec3 normal;
     void main() {
         float intensity;
         vec4 color;
@@ -44,3 +61,6 @@ class ShaderManager(Singleton):
     def createShader(self, shaderName, vertexShader, pixelShader):
         shader = createShader(vertexShader, pixelShader)
         self.shaders[shaderName] = shader
+
+    def getShader(self, shaderName):
+        return self.shaders[shaderName]
