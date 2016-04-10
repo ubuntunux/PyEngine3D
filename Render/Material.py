@@ -2,6 +2,14 @@ from Core import logger
 from Render import ShaderManager
 from Utilities import Singleton
 
+
+#------------------------------#
+# FUNCTION : CreateMaterial
+#------------------------------#
+def CreateMaterial(name='', shader=None):
+    MaterialManager.instance().createMaterial(name, shader)
+
+
 #------------------------------#
 # CLASS : Material
 #------------------------------#
@@ -33,6 +41,8 @@ class MaterialManager(Singleton):
         if shader is None:
             shader = self.shaderManager.default_shader
         material = Material(name=name, shader=shader)
+        if name in self.materials:
+            raise BaseException("There is same material.")
         self.materials[name] = material
         return material
 

@@ -9,7 +9,7 @@ from OpenGL.GLU import *
 
 from Core import logger, config
 from Object import ObjectManager
-from Render import CameraManager, MaterialManager, ShaderManager
+from Render import *
 from Utilities import Singleton
 
 
@@ -21,11 +21,12 @@ class Console:
         self.infos = []
         self.debugs = []
         self.renderer = None
+        self.texture = None
+        self.font = None
 
     def initialize(self, renderer):
         self.renderer = renderer
-        self.infos = []
-        self.debugs = []
+        self.font = GLFont(defaultFontFile, 12, margin=(10, 0))
 
     def close(self):
         pass
@@ -42,7 +43,14 @@ class Console:
         self.debugs.append(text)
 
     def render(self):
-        pass
+        if len(self.infos) > 1:
+            text = '\n'.join(self.infos)
+        else:
+            text = self.infos[0]
+
+        if text:
+            self.font.render(text, 0, self.renderer.height - self.font.height)
+        self.infos = []
 
 
 
@@ -70,11 +78,6 @@ class Renderer(Singleton):
         # console font
         self.console = Console()
 
-        # fonts
-        self.char = []
-        self.lw = 0
-        self.lh = 0
-
     def initialize(self, coreManager):
         # get manager instance
         self.coreManager = coreManager
@@ -88,21 +91,6 @@ class Renderer(Singleton):
         pygame.font.init()
         if not pygame.font.get_init():
             self.coreManager.error('Could not render font.')
-
-        defaultFont = pygame.font.Font(os.path.join("Resources", "Fonts", 'UbuntuFont.ttf'), 18)
-
-        for c in range(256):
-            s = chr(c)
-            try:
-                letter_render = defaultFont.render(s, 1, (255,255,255), (0,0,0))
-                letter = image.tostring(letter_render, 'RGBA', 1)
-                letter_w, letter_h = letter_render.get_size()
-                self.char.append((letter, letter_w, letter_h))
-            except:
-                self.char.append((None, 0, 0))
-        self.char = tuple(self.char)
-        self.lw = self.char[ord('0')][1]
-        self.lh = self.char[ord('0')][2]
 
         # init console text
         self.console.initialize(self)
@@ -175,7 +163,6 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
-
         # render
         glPushMatrix()
         glLoadIdentity()
@@ -214,8 +201,8 @@ class Renderer(Singleton):
 
     def renderScene(self):
         # display text
-        #self.console.info("%.2f fps" % self.coreManager.fps)
-        #self.console.info("%.2f ms" % (self.coreManager.delta*1000))
+        self.console.info("%.2f fps" % self.coreManager.fps)
+        self.console.info("%.2f ms" % (self.coreManager.delta*1000))
 
         # clear buffer
         glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -223,42 +210,10 @@ class Renderer(Singleton):
 
         # render
         self.render_meshes()
-        #self.render_postprocess()
+        self.render_postprocess()
 
-        #glUseProgram(0)
-        #self.console.render()
-        #self.console.clear()
-
-        # set viewport for font
-        glViewport(0, 0, self.width, self.height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0.0, self.width - 1.0, 0.0, self.height - 1.0, -1.0, 1.0)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-        # set render state
-        #glEnable(GL_BLEND)
-        #glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        #glDisable(GL_LIGHTING)
-
-        #glUseProgram(0)
-
-        s = str(123)
-        i = 0
-        lx = 0
-        length = len(s)
-
-        glPushMatrix()
-        while i < length:
-            glRasterPos2i(100 + lx, 100)
-            ch = self.char[ ord( s[i] ) ]
-            glDrawPixels(ch[1], ch[2], GL_RGBA, GL_UNSIGNED_BYTE, ch[0])
-            lx += ch[1]
-            i += 1
-        glPopMatrix()
+        # render text
+        self.console.render()
 
         # swap buffer
         pygame.display.flip()
