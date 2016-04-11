@@ -117,6 +117,9 @@ class Renderer(Singleton):
         self.materialManager.initialize(self)
 
     def close(self):
+        # shader delete
+        self.shaderManager.close()
+
         # record config
         config.setValue("Screen", "size", [self.width, self.height])
         config.setValue("Screen", "position", [0, 0])
@@ -175,7 +178,7 @@ class Renderer(Singleton):
             # set shader
             curShader = obj.material.getShader()
             if self.lastShader != curShader:
-                glUseProgram(curShader)
+                curShader.useProgram()
                 self.lastShader = curShader
             glPushMatrix()
             glTranslatef(*obj.pos)
