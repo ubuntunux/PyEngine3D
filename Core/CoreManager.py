@@ -5,6 +5,7 @@ import time
 import re
 import traceback
 
+import numpy as np
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
@@ -88,6 +89,10 @@ class CoreManager(Singleton):
         self.delta = 0.0
         self.currentTime = 0.0
 
+        # mouse
+        self.mousePos = np.zeros(3)
+        self.mouseOldPos = np.zeros(3)
+
         # managers
         self.renderer = Renderer.instance()
         self.cameraManager = CameraManager.instance()
@@ -147,6 +152,9 @@ class CoreManager(Singleton):
 
 
     def updateEvent(self):
+        # set pos
+        self.mouseOldPos = self.mousePos
+
         for event in pygame.event.get():
             eventType = event.type
             keydown = pygame.key.get_pressed()
@@ -158,11 +166,42 @@ class CoreManager(Singleton):
             elif eventType == KEYDOWN:
                 if keydown[K_ESCAPE]:
                     self.close()
-                elif keydown[K_q]:
+                elif keydown[K_1]:
                     self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(0,0,0))
-                elif keydown[K_t]:
+                elif keydown[K_2]:
                     self.renderer.objectManager.addPrimitive(Triangle, name="quad", pos=(0,0,0))
+            elif eventType == MOUSEMOTION:
+                self.mousePos = pygame.mouse.get_pos()
 
+    def updateCamera(self):
+        camera = self.cameraManager.getMainCamera()
+        camera_speed = config.Camera.velocity * self.delta
+
+        camera.rot[0] += (self.mousePos[1] - self.renderer.height * 0.5) * config.Camera.rotation * self.delta
+        camera.rot[1] += (self.mousePos[0] - self.renderer.width * 0.5) * config.Camera.rotation * self.delta
+
+        camera.calculateVectors()
+
+        keydown = pygame.key.get_pressed()
+        # update camera transform
+        if keydown[K_w]:
+            camera.pos += camera.front * camera_speed
+        elif keydown[K_s]:
+            camera.pos -= camera.front * camera_speed
+
+        if keydown[K_a]:
+            camera.pos += camera.right * camera_speed
+        elif keydown[K_d]:
+            camera.pos -= camera.right * camera_speed
+
+        if keydown[K_q]:
+            camera.pos += camera.up * camera_speed
+        elif keydown[K_e]:
+            camera.pos -= camera.up * camera_speed
+
+        if keydown[K_SPACE]:
+            camera.pos.flat = [0,0,-6]
+            camera.rot.flat = [0,0,1]
 
     def update(self):
         self.currentTime = time.time()
@@ -184,6 +223,9 @@ class CoreManager(Singleton):
 
             # update keyboard and mouse events
             self.updateEvent()
+
+            # update camera
+            self.updateCamera()
 
             # render scene
             self.renderer.renderScene()

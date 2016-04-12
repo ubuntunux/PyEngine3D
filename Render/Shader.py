@@ -1,3 +1,6 @@
+import os
+import glob
+
 import numpy as np
 import pygame
 from pygame import *
@@ -11,57 +14,7 @@ from OpenGL.GL.shaders import glDetachShader, glDeleteShader
 from Core import logger
 from Utilities import Singleton
 
-
-SIMPLE_VERTEX_SHADER = '''
-#version 330
-in vec4 position;
-void main()
-{
-   gl_Position = position;
-}'''
-
-SIMPLE_FRAGMENT_SHADER = '''
-#version 330
-void main()
-{
-   gl_FragColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
-}'''
-
-DEFAULT_VERTEX_SHADER = '''
-attribute vec4 position;
-attribute vec4 color;
-varying vec4 v_color;
-varying vec3 normal;
-void main() {
-    v_color = color;
-    normal = gl_NormalMatrix * gl_Normal;
-    gl_Position = gl_ModelViewProjectionMatrix * position * 0.2f;
-}'''
-
-DEFAULT_FRAGMENT_SHADER = '''
-varying vec4 v_color;
-varying vec3 normal;
-void main() {
-    float intensity;
-    vec4 color;
-    vec3 n = normalize(normal);
-    vec3 l = normalize(gl_LightSource[0].position).xyz;
-    intensity = saturate(dot(l, n));
-    color = gl_LightSource[0].ambient + gl_LightSource[0].diffuse * intensity;
-    gl_FragColor = v_color;
-}'''
-
-TEXTURE_FRAGMENT_SHADER = '''
-#version 140 // OpenGL 3.1
-varying vec2 vCoord;			// vertex texture coordinates
-uniform sampler2D diffuseTex;  // alpha mapped texture
-uniform vec4 diffuseColor;		// actual color for this text
-void main(void)
-{
-	// multiply alpha with the font texture value
-	gl_FragColor = vec4(diffuseColor.rgb, texture2D(diffuseTex, vCoord).r * diffuseColor.a);
-}
-'''
+shaderDirectory = os.path.join(os.path.split(__file__)[0], '..', 'Shader')
 
 #------------------------------#
 # CLASS : Shader
@@ -69,6 +22,7 @@ void main(void)
 class Shader:
     # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
     def __init__(self, name, vertex_code, fragment_code):
+        logger.info("Create Shader : " + name)
         self.name = name
         self.program  = glCreateProgram()
         self.vertex   = glCreateShader(GL_VERTEX_SHADER)
@@ -107,17 +61,29 @@ class ShaderManager(Singleton):
     def initialize(self, coreManager):
         logger.info("initialize " + self.__class__.__name__)
         self.coreManager = coreManager
-        self.createShader("default", DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER)
+        # collect shader files
+        shaderNames = set()
+        for filename in glob.glob(os.path.join(shaderDirectory, '*.glsl')):
+            filename = os.path.split(filename)[1]
+            shaderNames.add(filename.split('_')[0])
+
+        # create shader from files
+        for shaderName in shaderNames:
+            fileVS = open(os.path.join(shaderDirectory, shaderName + "_vs.glsl"), 'r')
+            filePS = open(os.path.join(shaderDirectory, shaderName + "_ps.glsl"), 'r')
+            vertex_code = fileVS.read()
+            fragment_code = filePS.read()
+            fileVS.close()
+            filePS.close()
+            shader = Shader(shaderName, vertex_code, fragment_code)
+            self.shaders[shaderName] = shader
+        # get default shader
         self.default_shader = self.getShader("default")
 
     def close(self):
         for key in self.shaders:
             shader = self.shaders[key]
             shader.delete()
-
-    def createShader(self, shaderName, vertexShader, fragmentShader):
-        shader = Shader(shaderName, vertexShader, fragmentShader)
-        self.shaders[shaderName] = shader
 
     def getShader(self, shaderName):
         return self.shaders[shaderName]
@@ -127,8 +93,8 @@ class ShaderManager(Singleton):
 if __name__ == '__main__':
     # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
     data = np.zeros(4, dtype = [ ("position", np.float32, 4), ("color", np.float32, 4)] )
+    data['position'] = [ (-1,-1,2,1), (+1,-1,2,1), (-1,+1,0,1), (+1,+1,0,1) ]
     data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-    data['position'] = [ (-1,-1,0,1), (+1,-1,0,1), (-1,+1,0,1), (+1,+1,0,1) ]
 
     def create_object():
         buffer = gl.glGenBuffers(1) # Request a buffer slot from GPU
@@ -143,7 +109,7 @@ if __name__ == '__main__':
         loc = gl.glGetAttribLocation(shader, "position")
         gl.glEnableVertexAttribArray(loc)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
-        gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
+        gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, stride, offset)
 
         offset = ctypes.c_void_p(data.dtype["position"].itemsize)
         loc = gl.glGetAttribLocation(shader, "color")

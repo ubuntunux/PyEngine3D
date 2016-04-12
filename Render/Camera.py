@@ -3,6 +3,8 @@ import numpy as np
 from Core import logger, config
 from Utilities import Singleton
 
+WORLD_UP = np.array([0.0, 1.0, 0.0])
+
 #------------------------------#
 # CLASS : CameraManager
 #------------------------------#
@@ -35,4 +37,20 @@ class Camera:
         self.fov = fov
         self.near = near
         self.far = far
+        # x, y, z
         self.pos = np.array([0.0, 0.0, -6.0])
+        # pitch, yaw, roll
+        self.rot = np.array([0.0, 0.0, 0.0])
+        # front - Z Axis
+        self.front = np.array([0.0, 0.0, 1.0])
+        # up - Y Axis
+        self.front = np.array([0.0, 1.0, 0.0])
+        # right - X Axis
+        self.right = np.array([1.0, 0.0, 0.0])
+
+    def calculateVectors(self):
+        self.front.flat = [-np.sin(np.deg2rad(self.rot[1])), np.sin(np.deg2rad(self.rot[0])), np.cos(np.deg2rad(self.rot[1]))]
+        self.front /= np.linalg.norm(self.front)
+
+        self.right = np.cross(WORLD_UP, self.front)
+        self.up = np.cross(self.right, self.front)

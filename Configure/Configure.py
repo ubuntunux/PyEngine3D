@@ -70,34 +70,33 @@ class Config:
 if __name__ == '__main__':
     import unittest
 
-    # force write TestConfig.ini
-    f = open(os.path.join(os.path.split(__file__)[0], "TestConfig.ini"), "w")
-    f.writelines('''[TestSection]
-test_int = 45
-test_float = 0.1
-test_string = Hello, World
-test_list = [1, 2, 3]
-test_tuple = (1, 2, 3)
-test_dict = {"x":1.0, "y":2.0}
-''')
-    f.close()
-
     # test
     class test(unittest.TestCase):
         def testConfig(self):
             # load test
             testConfig = Config("TestConfig.ini", debug=False)
+
+            # set value
+            testConfig.setValue("TestSection", "test_int", 45)
+            testConfig.setValue("TestSection", "test_float", 0.1)
+            testConfig.setValue("TestSection", "test_string", "Hello, World")
+            testConfig.setValue("TestSection", "test_list", [1, 2, 3])
+            testConfig.setValue("TestSection", "test_tuple", (4, 5, 6))
+            testConfig.setValue("TestSection", "test_dict", {"x":7.0, "y":8.0})
+
             # call test
             self.assertEqual(testConfig.TestSection.test_int, 45)
             self.assertEqual(testConfig.TestSection.test_float, 0.1)
             self.assertEqual(testConfig.TestSection.test_string, "Hello, World")
             self.assertEqual(testConfig.TestSection.test_list, [1, 2, 3])
-            self.assertEqual(testConfig.TestSection.test_tuple, (1, 2, 3))
-            self.assertEqual(testConfig.TestSection.test_dict['x'], 1.0)
-            self.assertEqual(testConfig.TestSection.test_dict['y'], 2.0)
+            self.assertEqual(testConfig.TestSection.test_tuple, (4, 5, 6))
+            self.assertEqual(testConfig.TestSection.test_dict['x'], 7.0)
+            self.assertEqual(testConfig.TestSection.test_dict['y'], 8.0)
+
             # set value test
             testConfig.setValue("TestSection", "test_int", 99)
             self.assertEqual(testConfig.TestSection.test_int, 99)
+
             testConfig.save()
     unittest.main()
 

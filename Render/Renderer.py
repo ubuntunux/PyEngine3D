@@ -171,19 +171,17 @@ class Renderer(Singleton):
         glLoadIdentity()
 
         # Transform Camera
-        glTranslatef(*self.camera.pos)
+        glRotatef(self.camera.rot[0], 1.0, 0, 0) # pitch
+        glRotatef(self.camera.rot[1], 0, 1.0, 0) # yaw
+        glTranslatef(*self.camera.pos.flat)
 
         # Transform Objects
         for obj in self.objectManager.getObjectList():
-            # set shader
-            curShader = obj.material.getShader()
-            if self.lastShader != curShader:
-                curShader.useProgram()
-                self.lastShader = curShader
             glPushMatrix()
             glTranslatef(*obj.pos)
-            glPopMatrix()
             obj.draw()
+            glPopMatrix()
+
         # Pop Camera Transform
         glPopMatrix()
 
