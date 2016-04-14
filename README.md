@@ -15,9 +15,8 @@ Welcome to the GuineaPig wiki!
  - pyqt4
  - pyopengl 3.1
  - pyopengl_accelerate 3.1
- - freetype 2.5.5
  - libpng 1.6.17
- - pysdl2 0.9.3
+ - pygame 1.9.2
 
 
 ### Current Issue
