@@ -11,7 +11,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 
 from Core import *
-from Object import ObjectManager, Triangle, Quad
+from Object import ObjectManager, Triangle, Quad, Cube
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
 from Utilities import Singleton
 
@@ -169,7 +169,7 @@ class CoreManager(Singleton):
                 elif keydown[K_1]:
                     self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(0,0,0))
                 elif keydown[K_2]:
-                    self.renderer.objectManager.addPrimitive(Triangle, name="quad", pos=(0,0,0))
+                    self.renderer.objectManager.addPrimitive(Cube, name="cube", pos=(0,0,0), material=self.materialManager.getMaterial('simple'))
             elif eventType == MOUSEMOTION:
                 self.mousePos = pygame.mouse.get_pos()
 

@@ -28,6 +28,7 @@ class MaterialManager(Singleton):
     def __init__(self):
         self.materials = {}
         self.default_material = None
+        self.simple_material = None
         self.shaderManager = None
         self.coreManager = None
 
@@ -35,7 +36,8 @@ class MaterialManager(Singleton):
         logger.info("initialize " + self.__class__.__name__)
         self.coreManager = coreManager
         self.shaderManager = ShaderManager.instance()
-        self.default_material = self.createMaterial(name='default material')
+        self.default_material = self.createMaterial(name='default', shader=self.shaderManager.default_shader)
+        self.simple_material = self.createMaterial(name='simple', shader=self.shaderManager.getShader('simple'))
 
     def createMaterial(self, name='', shader=None):
         if shader is None:
@@ -48,3 +50,6 @@ class MaterialManager(Singleton):
 
     def getDefaultMaterial(self):
         return self.default_material
+
+    def getMaterial(self, name):
+        return self.materials[name]
