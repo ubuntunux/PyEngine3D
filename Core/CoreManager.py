@@ -167,9 +167,11 @@ class CoreManager(Singleton):
                 if keydown[K_ESCAPE]:
                     self.close()
                 elif keydown[K_1]:
-                    self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(0,0,0))
+                    self.renderer.objectManager.addPrimitive(Triangle, name="triangle", pos=(0,0,0))
                 elif keydown[K_2]:
-                    self.renderer.objectManager.addPrimitive(Cube, name="cube", pos=(0,0,0), material=self.materialManager.getMaterial('simple'))
+                    self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(2,0,0))
+                elif keydown[K_3]:
+                    self.renderer.objectManager.addPrimitive(Cube, name="cube", pos=(-2,0,0))
             elif eventType == MOUSEMOTION:
                 self.mousePos = pygame.mouse.get_pos()
 
