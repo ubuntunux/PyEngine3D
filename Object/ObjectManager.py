@@ -34,8 +34,10 @@ class ObjectManager(Singleton):
             # callback function on success
             if self.callback_addPrimitive:
                 self.callback_addPrimitive(obj.name)
+            return obj
         else:
             logger.warning("Unknown primitive : %s" % str(primitive))
+        return None
 
     def getObjectList(self):
         return self.primitives

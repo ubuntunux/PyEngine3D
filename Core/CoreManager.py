@@ -13,7 +13,7 @@ from OpenGL.GL import *
 from Core import *
 from Object import ObjectManager, Triangle, Quad, Cube
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
-from Utilities import Singleton
+from Utilities import *
 
 
 #------------------------------#
@@ -90,11 +90,15 @@ class CoreManager(Singleton):
         self.currentTime = 0.0
 
         # mouse
-        self.mousePos = np.zeros(3)
-        self.mouseOldPos = np.zeros(3)
+        self.mousePos = np.zeros(2)
+        self.mouseOldPos = np.zeros(2)
+        self.mouseDelta = np.zeros(2)
+        self.wheelUp = False
+        self.wheelDown = False
 
         # managers
         self.renderer = Renderer.instance()
+        self.console = self.renderer.console
         self.cameraManager = CameraManager.instance()
         self.objectManager = ObjectManager.instance()
         self.shaderManager = ShaderManager.instance()
@@ -153,57 +157,83 @@ class CoreManager(Singleton):
 
     def updateEvent(self):
         # set pos
-        self.mouseOldPos = self.mousePos
+        self.mouseDelta[:] = self.mousePos - self.mouseOldPos
+        self.mouseOldPos[:] = self.mousePos
+        self.wheelUp, self.wheelDown = False, False
 
         for event in pygame.event.get():
             eventType = event.type
-            keydown = pygame.key.get_pressed()
-
             if eventType == QUIT:
                 self.close()
             elif eventType == VIDEORESIZE:
                 self.renderer.resizeScene(*event.dict['size'])
             elif eventType == KEYDOWN:
-                if keydown[K_ESCAPE]:
+                keyDown = event.key
+                if keyDown == K_ESCAPE:
                     self.close()
-                elif keydown[K_1]:
-                    self.renderer.objectManager.addPrimitive(Triangle, name="triangle", pos=(0,0,0))
-                elif keydown[K_2]:
-                    self.renderer.objectManager.addPrimitive(Quad, name="quad", pos=(2,0,0))
-                elif keydown[K_3]:
-                    self.renderer.objectManager.addPrimitive(Cube, name="cube", pos=(-2,0,0))
+                elif keyDown == K_BACKQUOTE:
+                    self.console.toggle()
+                elif keyDown == K_1:
+                    for i in range(100):
+                        pos = [np.random.uniform(-10,10) for i in range(3)]
+                        primitive = [Triangle, Quad, Cube][np.random.randint(3)]
+                        obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                        translate(obj.matrix, *obj.pos)
             elif eventType == MOUSEMOTION:
-                self.mousePos = pygame.mouse.get_pos()
+                self.mousePos[:] = pygame.mouse.get_pos()
+            elif eventType == MOUSEBUTTONDOWN:
+                self.wheelUp = event.button == 4
+                self.wheelDown = event.button == 5
 
     def updateCamera(self):
         camera = self.cameraManager.getMainCamera()
-        camera_speed = config.Camera.velocity * self.delta
+        camera_speed = camera.pan_speed * self.delta
+        camera_rotation = camera.rotation_speed * self.delta
 
-        camera.rot[0] += (self.mousePos[1] - self.renderer.height * 0.5) * config.Camera.rotation * self.delta
-        camera.rot[1] += (self.mousePos[0] - self.renderer.width * 0.5) * config.Camera.rotation * self.delta
+        # get pressed mouse buttons
+        btnL, btnM, btnR = pygame.mouse.get_pressed()
 
-        camera.calculateVectors()
+        # camera move pan
+        if btnL and btnR or btnM:
+            translate(camera.matrix, self.mouseDelta[0] * camera_speed * 0.1, -self.mouseDelta[1] * camera_speed * 0.1, 0.0)
+        # camera rotation
+        elif btnL or btnR:
+            yrotate(camera.matrix, -self.mouseDelta[0] * camera_rotation)
+            xrotate(camera.matrix, -self.mouseDelta[1] * camera_rotation)
+        # camera move front/back
+        if self.wheelUp:
+            translate(camera.matrix, 0.0, 0.0, camera_speed * 10.0)
+        elif self.wheelDown:
+            translate(camera.matrix, 0.0, 0.0, -camera_speed * 10.0)
+
 
         keydown = pygame.key.get_pressed()
         # update camera transform
         if keydown[K_w]:
-            camera.pos += camera.front * camera_speed
+            translate(camera.matrix, 0.0, 0.0, camera_speed)
         elif keydown[K_s]:
-            camera.pos -= camera.front * camera_speed
+            translate(camera.matrix, 0.0, 0.0, -camera_speed)
 
         if keydown[K_a]:
-            camera.pos += camera.right * camera_speed
+            translate(camera.matrix, camera_speed, 0, 0)
         elif keydown[K_d]:
-            camera.pos -= camera.right * camera_speed
+            translate(camera.matrix, -camera_speed, 0, 0)
 
         if keydown[K_q]:
-            camera.pos += camera.up * camera_speed
+            translate(camera.matrix, 0, -camera_speed, 0)
         elif keydown[K_e]:
-            camera.pos -= camera.up * camera_speed
+            translate(camera.matrix, 0, camera_speed, 0)
 
         if keydown[K_SPACE]:
-            camera.pos.flat = [0,0,-6]
-            camera.rot.flat = [0,0,1]
+            camera.initialize()
+
+        # print camera transform
+        rows = []
+        for row in camera.matrix:
+            rows.append(" ".join(["%+2.2f" % i for i in row]))
+        rows = "\n".join(rows)
+        self.renderer.console.info(rows)
+
 
     def update(self):
         self.currentTime = time.time()
@@ -211,6 +241,7 @@ class CoreManager(Singleton):
         while self.running:
             currentTime = time.time()
             delta = currentTime - self.currentTime
+            updateTime = currentTime
 
             if delta < self.fpsLimit:
                 continue
@@ -220,14 +251,18 @@ class CoreManager(Singleton):
             self.delta = delta
             self.fps = 1.0 / delta
 
-            # update command queue
-            self.updateCommand()
+            # update
+            self.updateCommand() # update command queue
+            self.updateEvent() # update keyboard and mouse events
+            self.updateCamera() # update camera
 
-            # update keyboard and mouse events
-            self.updateEvent()
-
-            # update camera
-            self.updateCamera()
+            # update time
+            updateTime = time.time() - updateTime
 
             # render scene
+            renderTime = time.time()
             self.renderer.renderScene()
+            renderTime = time.time() - renderTime
+
+            self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
+            self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))

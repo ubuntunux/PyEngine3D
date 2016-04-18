@@ -17,6 +17,7 @@ class Material:
     def __init__(self, name, shader):
         self.name = name
         self.shader = shader
+        self.twoSide = False
 
     def getShader(self):
         return self.shader

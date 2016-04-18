@@ -1,6 +1,7 @@
 import numpy as np
 
 from OpenGL.GL import *
+from Utilities import *
 
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
 #------------------------------#
@@ -16,6 +17,7 @@ class Primitive:
         self.buffer_index = -1
         self.data = None
         self.index = None
+        self.matrix = np.eye(4,dtype=np.float32)
         self.initialized = 0
         self.initialize()
 
@@ -32,7 +34,9 @@ class Primitive:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
-    def draw(self):
+    def draw(self, view, perspective):
+        translate(self.matrix, 0, 0, 0.02)
+
         # use program
         glUseProgram(self.shader.program)
         stride = self.data.strides[0]
@@ -48,9 +52,42 @@ class Primitive:
         glBindBuffer(GL_ARRAY_BUFFER, self.buffer)
         glVertexAttribPointer(loc, 4, GL_FLOAT, False, stride, offset)
 
+        loc = glGetUniformLocation(self.shader.program, "model")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
+
+        loc = glGetUniformLocation(self.shader.program, "view")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, view)
+
+        loc = glGetUniformLocation(self.shader.program, "perspective")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))
         glUseProgram(0)
+
+
+#------------------------------#
+# CLASS : DebugLine
+#------------------------------#
+class DebugLine:
+    def __init__(self, pos1, pos2, width=2.5, color=(1,1,0)):
+        self.width = width
+        self.pos1 = pos1
+        self.pos2 = pos2
+        self.color = color
+
+    def initialize(self):
+        self.initialized = True
+
+    def draw(self):
+        glPushMatrix()
+        glLineWidth(self.width)
+        glColor3f(1,1,1)
+        glBegin(GL_LINES)
+        glVertex3f(*self.pos1)
+        glVertex3f(*self.pos2)
+        glEnd()
+        glPopMatrix()
 
 #------------------------------#
 # CLASS : Triangle
@@ -59,7 +96,7 @@ class Triangle(Primitive):
     """Triangle"""
     def initialize(self):
         self.data = np.zeros(3, [("position", np.float32, 3), ("color", np.float32, 4)] )
-        self.data['position'] = [ (-1,-1,1), (1,-1,1), (-1,1,1)]
+        self.data['position'] = [ (-1,-1,0), (1,-1,0), (-1,1,0)]
         self.data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1) ]
         self.index = np.array([0,1,2], dtype=np.uint32)
 

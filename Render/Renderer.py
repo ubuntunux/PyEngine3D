@@ -8,9 +8,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Core import logger, config
-from Object import ObjectManager
+from Object import ObjectManager, DebugLine
 from Render import *
-from Utilities import Singleton
+from Utilities import *
 
 
 #------------------------------#
@@ -23,6 +23,7 @@ class Console:
         self.renderer = None
         self.texture = None
         self.font = None
+        self.enable = True
 
     def initialize(self, renderer):
         self.renderer = renderer
@@ -34,25 +35,26 @@ class Console:
     def clear(self):
         self.infos = []
 
+    def toggle(self):
+        self.enable = not self.enable
+
     # just print info
     def info(self, text):
-        self.infos.append(text)
+        if self.enable:
+            self.infos.append(text)
 
     # debug text - print every frame
     def debug(self, text):
-        self.debugs.append(text)
+        if self.enable:
+            self.debugs.append(text)
 
     def render(self):
-        if len(self.infos) > 1:
-            text = '\n'.join(self.infos)
-        else:
-            text = self.infos[0]
-
-        if text:
-            self.font.render(text, 0, self.renderer.height - self.font.height)
-        self.infos = []
-
-
+        if self.enable and self.infos:
+            text = '\n'.join(self.infos) if len(self.infos) > 1 else self.infos[0]
+            if text:
+                # render
+                self.font.render(text, 0, self.renderer.height - self.font.height)
+            self.infos = []
 
 #------------------------------#
 # CLASS : Renderer
@@ -62,6 +64,7 @@ class Renderer(Singleton):
         self.width = 0
         self.height = 0
         self.viewportRatio = 1.0
+        self.perspective = np.eye(4,dtype=np.float32)
 
         # components
         self.camera = None
@@ -143,21 +146,11 @@ class Renderer(Singleton):
 
         # resize scene
         glViewport(0, 0, width, height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+
+        self.perspective = perspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
 
     # render meshes
     def render_meshes(self):
-        # set perspective view
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
@@ -166,24 +159,9 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
-        # render
-        glPushMatrix()
-        glLoadIdentity()
-
-        # Transform Camera
-        glRotatef(self.camera.rot[0], 1.0, 0, 0) # pitch
-        glRotatef(self.camera.rot[1], 0, 1.0, 0) # yaw
-        glTranslatef(*self.camera.pos.flat)
-
         # Transform Objects
         for obj in self.objectManager.getObjectList():
-            glPushMatrix()
-            glTranslatef(*obj.pos)
-            obj.draw()
-            glPopMatrix()
-
-        # Pop Camera Transform
-        glPopMatrix()
+            obj.draw(self.camera.matrix, self.perspective)
 
     def render_postprocess(self):
         # set orthographic view
@@ -201,10 +179,6 @@ class Renderer(Singleton):
         glDisable(GL_LIGHTING)
 
     def renderScene(self):
-        # display text
-        self.console.info("%.2f fps" % self.coreManager.fps)
-        self.console.info("%.2f ms" % (self.coreManager.delta*1000))
-
         # clear buffer
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -215,6 +189,9 @@ class Renderer(Singleton):
 
         # render text
         self.console.render()
+        # display text
+        self.console.info("%.2f fps" % self.coreManager.fps)
+        self.console.info("%.2f ms" % (self.coreManager.delta*1000))
 
         # swap buffer
         pygame.display.flip()
