@@ -47,18 +47,17 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         try:
             # add primitive
             def addPrimitive(objType):
-                print(objType)
-                # queueCreateObject.put(objType)
-                # recv
-                #item = QtGui.QListWidgetItem(objName)
-                #self.objectList.addItem(item)
+                if objType == CMD_ADD_TRIANGLE:
+                    self.coreCmdQueue.put(CMD_ADD_TRIANGLE)
+                elif objType == CMD_ADD_QUAD:
+                    self.coreCmdQueue.put(CMD_ADD_QUAD)
 
             # binding button clicked
             btn = self.findChild(QtGui.QPushButton, "addTriangle")
-            btn.clicked.connect(lambda: addPrimitive("Triangle"))
+            btn.clicked.connect(lambda: addPrimitive(CMD_ADD_TRIANGLE))
 
             btn = self.findChild(QtGui.QPushButton, "addQuad")
-            btn.clicked.connect(lambda: addPrimitive("Quad"))
+            btn.clicked.connect(lambda: addPrimitive(CMD_ADD_QUAD))
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")

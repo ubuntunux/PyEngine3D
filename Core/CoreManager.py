@@ -153,7 +153,11 @@ class CoreManager(Singleton):
             cmd = self.cmdQueue.get()
             if cmd == CMD_CLOSE_APP:
                 self.close()
-
+            elif cmd == CMD_ADD_TRIANGLE:
+                camera = self.cameraManager.getMainCamera()
+                pos = camera.front * 10.0
+                primitive = [Triangle, Quad, Cube][np.random.randint(3)]
+                obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
 
     def updateEvent(self):
         # set pos
@@ -178,7 +182,6 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
                         primitive = [Triangle, Quad, Cube][np.random.randint(3)]
                         obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
-                        translate(obj.matrix, *obj.pos)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
@@ -186,28 +189,30 @@ class CoreManager(Singleton):
                 self.wheelDown = event.button == 5
 
     def updateCamera(self):
+        keydown = pygame.key.get_pressed()
+        # get pressed mouse buttons
+        btnL, btnM, btnR = pygame.mouse.get_pressed()
+
+        # get camera
         camera = self.cameraManager.getMainCamera()
         camera_speed = camera.pan_speed * self.delta
         camera_rotation = camera.rotation_speed * self.delta
 
-        # get pressed mouse buttons
-        btnL, btnM, btnR = pygame.mouse.get_pressed()
-
         # camera move pan
         if btnL and btnR or btnM:
             translate(camera.matrix, self.mouseDelta[0] * camera_speed * 0.1, -self.mouseDelta[1] * camera_speed * 0.1, 0.0)
+
         # camera rotation
         elif btnL or btnR:
-            yrotate(camera.matrix, -self.mouseDelta[0] * camera_rotation)
-            xrotate(camera.matrix, -self.mouseDelta[1] * camera_rotation)
+            rotateX(camera.matrix, -self.mouseDelta[1] * camera_rotation)
+            rotateY(camera.matrix, -self.mouseDelta[0] * camera_rotation)
+
         # camera move front/back
         if self.wheelUp:
             translate(camera.matrix, 0.0, 0.0, camera_speed * 10.0)
         elif self.wheelDown:
             translate(camera.matrix, 0.0, 0.0, -camera_speed * 10.0)
 
-
-        keydown = pygame.key.get_pressed()
         # update camera transform
         if keydown[K_w]:
             translate(camera.matrix, 0.0, 0.0, camera_speed)
@@ -226,13 +231,6 @@ class CoreManager(Singleton):
 
         if keydown[K_SPACE]:
             camera.initialize()
-
-        # print camera transform
-        rows = []
-        for row in camera.matrix:
-            rows.append(" ".join(["%+2.2f" % i for i in row]))
-        rows = "\n".join(rows)
-        self.renderer.console.info(rows)
 
 
     def update(self):

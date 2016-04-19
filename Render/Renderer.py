@@ -65,6 +65,7 @@ class Renderer(Singleton):
         self.height = 0
         self.viewportRatio = 1.0
         self.perspective = np.eye(4,dtype=np.float32)
+        self.ortho = np.eye(4,dtype=np.float32)
 
         # components
         self.camera = None
@@ -144,10 +145,12 @@ class Renderer(Singleton):
         self.viewportRatio = float(width) / float(height)
         self.camera = self.cameraManager.getMainCamera()
 
-        # resize scene
-        glViewport(0, 0, width, height)
-
+        # get viewport matrix matrix
         self.perspective = perspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
+        self.ortho = ortho(0, self.width, 0, self.height, self.camera.near, self.camera.far)
+
+        # set viewport
+        glViewport(0, 0, width, height)
 
     # render meshes
     def render_meshes(self):
@@ -159,7 +162,7 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
-        # Transform Objects
+        # draw Objects
         for obj in self.objectManager.getObjectList():
             obj.draw(self.camera.matrix, self.perspective)
 

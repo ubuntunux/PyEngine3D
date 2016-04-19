@@ -43,8 +43,12 @@ if __name__ == "__main__":
     pipe1, pipe2 = Pipe()
 
     # process - QT
-    #pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
-    #pEditor.start()
+    editable = True
+    if editable:
+        pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+        pEditor.start()
+    else:
+        pEditor = None
 
     # process - Main Frame
     coreManager = CoreManager.instance(coreCmdQueue, uiCmdQueue, pipe1)
@@ -52,4 +56,5 @@ if __name__ == "__main__":
     coreManager.run()
 
     # QT process end
-    #pEditor.join()
+    if pEditor:
+        pEditor.join()

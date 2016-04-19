@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Very simple transformation library that is needed for some examples.
+original - http://www.labri.fr/perso/nrougier/teaching/opengl/#the-hard-way-opengl
 """
 
 import math
@@ -12,49 +13,35 @@ WORLD_UP = np.array([0.0, 1.0, 0.0])
 WORLD_FRONT = np.array([0.0, 0.0, 1.0])
 
 
-def translate(M, x, y=None, z=None):
-    """
-    translate produces a translation by (x, y, z) .
-
-    Parameters
-    ----------
-    x, y, z
-        Specify the x, y, and z coordinates of a translation vector.
-    """
-    if y is None: y = x
-    if z is None: z = x
+def translate(M, x, y, z):
+    '''
+    correct matrix - non transposed
     T = [[ 1, 0, 0, x],
          [ 0, 1, 0, y],
          [ 0, 0, 1, z],
          [ 0, 0, 0, 1]]
-    T = np.array(T, dtype=np.float32).T
+    '''
+    # transposed matrix
+    T = [[ 1, 0, 0, 0],
+         [ 0, 1, 0, 0],
+         [ 0, 0, 1, 0],
+         [ x, y, z, 1]]
+    T = np.array(T, dtype=np.float32)
     M[...] = np.dot(M,T)
 
 
-def scale(M, x, y=None, z=None):
-    """
-    scale produces a non uniform scaling along the x, y, and z axes. The three
-    parameters indicate the desired scale factor along each of the three axes.
-
-    Parameters
-    ----------
-    x, y, z
-        Specify scale factors along the x, y, and z axes, respectively.
-    """
-    if y is None: y = x
-    if z is None: z = x
+def scale(M, x, y, z):
     S = [[ x, 0, 0, 0],
          [ 0, y, 0, 0],
          [ 0, 0, z, 0],
          [ 0, 0, 0, 1]]
-    S = np.array(S,dtype=np.float32).T
+    S = np.array(S,dtype=np.float32)
     M[...] = np.dot(M,S)
 
 
-def xrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
+def rotateX(M, radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
     R = np.array(
         [[ 1.0,  0.0,  0.0, 0.0 ],
          [ 0.0, cosT,-sinT, 0.0 ],
@@ -62,10 +49,9 @@ def xrotate(M,theta):
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
     M[...] = np.dot(M,R)
 
-def yrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
+def rotateY(M, radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
     R = np.array(
         [[ cosT,  0.0, sinT, 0.0 ],
          [ 0.0,   1.0,  0.0, 0.0 ],
@@ -73,10 +59,9 @@ def yrotate(M,theta):
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
     M[...] = np.dot(M,R)
 
-def zrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
+def rotateZ(M, radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
     R = np.array(
         [[ cosT,-sinT, 0.0, 0.0 ],
          [ sinT, cosT, 0.0, 0.0 ],
@@ -85,23 +70,8 @@ def zrotate(M,theta):
     M[...] = np.dot(M,R)
 
 
-def rotate(M, angle, x, y, z, point=None):
-    """
-    rotate produces a rotation of angle degrees around the vector (x, y, z).
-
-    Parameters
-    ----------
-    M
-       Current transformation as a numpy array
-
-    angle
-       Specifies the angle of rotation, in degrees.
-
-    x, y, z
-        Specify the x, y, and z coordinates of a vector, respectively.
-    """
-    angle = math.pi*angle/180
-    c,s = math.cos(angle), math.sin(angle)
+def rotate(M, radian, x, y, z):
+    c,s = math.cos(radian), math.sin(radian)
     n = math.sqrt(x*x+y*y+z*z)
     x /= n
     y /= n

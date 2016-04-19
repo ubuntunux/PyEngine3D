@@ -11,18 +11,19 @@ class Primitive:
     def __init__(self, name='', pos=(0,0,0), material=None):
         self.name = name
         self.pos = np.array(pos)
+        self.matrix = np.eye(4,dtype=np.float32)
         self.material = material
         self.shader = self.material.shader
         self.buffer = -1
         self.buffer_index = -1
         self.data = None
         self.index = None
-        self.matrix = np.eye(4,dtype=np.float32)
+
         self.initialized = 0
         self.initialize()
 
     def initialize(self):
-        pass
+        translate(self.matrix, *self.pos)
 
     def bindBuffers(self):
         self.buffer = glGenBuffers(1) # Request a buffer slot from GPU
@@ -35,8 +36,6 @@ class Primitive:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
     def draw(self, view, perspective):
-        translate(self.matrix, 0, 0, 0.02)
-
         # use program
         glUseProgram(self.shader.program)
         stride = self.data.strides[0]
