@@ -43,7 +43,7 @@ if __name__ == "__main__":
     pipe1, pipe2 = Pipe()
 
     # process - QT
-    editable = True
+    editable = False
     if editable:
         pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
         pEditor.start()

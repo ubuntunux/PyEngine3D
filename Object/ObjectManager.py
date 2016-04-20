@@ -28,9 +28,13 @@ class ObjectManager(Singleton):
             # create material
             if material is None:
                 material = self.coreManager.materialManager.getDefaultMaterial()
+
             # create primitive
             obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
+
+            # add object
             self.primitives.append(obj)
+
             # callback function on success
             if self.callback_addPrimitive:
                 self.callback_addPrimitive(obj.name)

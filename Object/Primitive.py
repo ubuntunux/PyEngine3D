@@ -8,6 +8,9 @@ from Utilities import *
 # CLASS : Primitive
 #------------------------------#
 class Primitive:
+    data = None
+    index = None
+
     def __init__(self, name='', pos=(0,0,0), material=None):
         self.name = name
         self.pos = np.array(pos)
@@ -16,14 +19,13 @@ class Primitive:
         self.shader = self.material.shader
         self.buffer = -1
         self.buffer_index = -1
-        self.data = None
-        self.index = None
 
-        self.initialized = 0
+        self.initialized = False
         self.initialize()
 
     def initialize(self):
         translate(self.matrix, *self.pos)
+        self.bindBuffers()
 
     def bindBuffers(self):
         self.buffer = glGenBuffers(1) # Request a buffer slot from GPU
@@ -75,9 +77,6 @@ class DebugLine:
         self.pos2 = pos2
         self.color = color
 
-    def initialize(self):
-        self.initialized = True
-
     def draw(self):
         glPushMatrix()
         glLineWidth(self.width)
@@ -92,63 +91,45 @@ class DebugLine:
 # CLASS : Triangle
 #------------------------------#
 class Triangle(Primitive):
-    """Triangle"""
-    def initialize(self):
-        self.data = np.zeros(3, [("position", np.float32, 3), ("color", np.float32, 4)] )
-        self.data['position'] = [ (-1,-1,0), (1,-1,0), (-1,1,0)]
-        self.data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1) ]
-        self.index = np.array([0,1,2], dtype=np.uint32)
-
-        # binding buffer
-        self.bindBuffers()
-
-        self.initialized = True
+    data = np.zeros(3, [("position", np.float32, 3), ("color", np.float32, 4)] )
+    data['position'] = [ (-1,-1,0), (1,-1,0), (-1,1,0)]
+    data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1) ]
+    index = np.array([0,1,2], dtype=np.uint32)
 
 #------------------------------#
 # CLASS : Quad
 #------------------------------#
 class Quad(Primitive):
-    def initialize(self):
-        self.data = np.zeros(4, [("position", np.float32, 3), ("color", np.float32, 4)] )
-        self.data['position'] = [ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ]
-        self.data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-        self.index = np.array([0,1,2,1,3,2], dtype=np.uint32)
-        # binding buffer
-        self.bindBuffers()
-        self.initialized = True
-
+    data = np.zeros(4, [("position", np.float32, 3), ("color", np.float32, 4)] )
+    data['position'] = [ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ]
+    data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
+    index = np.array([0,1,2,1,3,2], dtype=np.uint32)
 
 
 #------------------------------#
 # CLASS : Cube
 #------------------------------#
 class Cube(Primitive):
-    def initialize(self):
-        if not self.initialized:
-            self.data = np.zeros(8, [("position", np.float32, 3), ("color", np.float32, 4)])
-            self.data['color']  = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1),
-                                (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-            self.data['position'] = [ (-1,-1,1),
-                                (1,-1,1),
-                                (1,1,1),
-                                (-1,1,1),
-                                (-1,-1,-1),
-                                (1,-1,-1),
-                                (1,1,-1),
-                                (-1,1,-1)]
-            self.index = np.array([0,1,2,
-                                2,3,0,
-                                1,5,6,
-                                6,2,1,
-                                7,6,5,
-                                5,4,7,
-                                4,0,3,
-                                3,7,4,
-                                4,5,1,
-                                1,0,4,
-                                3,2,6,
-                                6,7,3], dtype=np.uint32)
-
-            # binding buffer
-            self.bindBuffers()
-            self.initialized = True
+    data = np.zeros(8, [("position", np.float32, 3), ("color", np.float32, 4)])
+    data['color']  = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1),
+                        (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
+    data['position'] = [ (-1,-1,1),
+                        (1,-1,1),
+                        (1,1,1),
+                        (-1,1,1),
+                        (-1,-1,-1),
+                        (1,-1,-1),
+                        (1,1,-1),
+                        (-1,1,-1)]
+    index = np.array([0,1,2,
+                        2,3,0,
+                        1,5,6,
+                        6,2,1,
+                        7,6,5,
+                        5,4,7,
+                        4,0,3,
+                        3,7,4,
+                        4,5,1,
+                        1,0,4,
+                        3,2,6,
+                        6,7,3], dtype=np.uint32)

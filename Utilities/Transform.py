@@ -8,6 +8,9 @@ original - http://www.labri.fr/perso/nrougier/teaching/opengl/#the-hard-way-open
 import math
 import numpy as np
 
+pi = math.pi
+two_pi = 2.0 * math.pi
+IDENTITY_MATRIX = np.eye(4,dtype=np.float32)
 WORLD_RIGHT = np.array([1.0, 0.0, 0.0])
 WORLD_UP = np.array([0.0, 1.0, 0.0])
 WORLD_FRONT = np.array([0.0, 0.0, 1.0])

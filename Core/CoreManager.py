@@ -4,6 +4,7 @@ import sys
 import time
 import re
 import traceback
+import threading
 
 import numpy as np
 import pygame
@@ -99,6 +100,7 @@ class CoreManager(Singleton):
         # managers
         self.renderer = Renderer.instance()
         self.console = self.renderer.console
+        self.camera = None
         self.cameraManager = CameraManager.instance()
         self.objectManager = ObjectManager.instance()
         self.shaderManager = ShaderManager.instance()
@@ -181,7 +183,7 @@ class CoreManager(Singleton):
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
                         primitive = [Triangle, Quad, Cube][np.random.randint(3)]
-                        obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                        self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
@@ -189,48 +191,52 @@ class CoreManager(Singleton):
                 self.wheelDown = event.button == 5
 
     def updateCamera(self):
-        keydown = pygame.key.get_pressed()
-        # get pressed mouse buttons
-        btnL, btnM, btnR = pygame.mouse.get_pressed()
-
         # get camera
-        camera = self.cameraManager.getMainCamera()
-        camera_speed = camera.pan_speed * self.delta
-        camera_rotation = camera.rotation_speed * self.delta
+        self.camera = self.cameraManager.getMainCamera()
+
+        # get pressed key and mouse buttons
+        keydown = pygame.key.get_pressed()
+        btnL, btnM, btnR = pygame.mouse.get_pressed()
 
         # camera move pan
         if btnL and btnR or btnM:
-            translate(camera.matrix, self.mouseDelta[0] * camera_speed * 0.1, -self.mouseDelta[1] * camera_speed * 0.1, 0.0)
-
+            self.camera.moveX(self.mouseDelta[0] * self.delta * 0.1)
+            self.camera.moveY(-self.mouseDelta[1] * self.delta * 0.1)
         # camera rotation
-        elif btnL or btnR:
-            rotateX(camera.matrix, -self.mouseDelta[1] * camera_rotation)
-            rotateY(camera.matrix, -self.mouseDelta[0] * camera_rotation)
+        elif btnL:
+            self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
+            self.camera.rotationYaw(-self.mouseDelta[0] * 0.03)
+        elif btnR:
+            self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
+            self.camera.rotationRoll(-self.mouseDelta[0] * 0.03)
 
         # camera move front/back
         if self.wheelUp:
-            translate(camera.matrix, 0.0, 0.0, camera_speed * 10.0)
+            self.camera.moveZ(self.delta * 5.0)
         elif self.wheelDown:
-            translate(camera.matrix, 0.0, 0.0, -camera_speed * 10.0)
+            self.camera.moveZ(-self.delta * 5.0)
 
         # update camera transform
         if keydown[K_w]:
-            translate(camera.matrix, 0.0, 0.0, camera_speed)
+            self.camera.moveZ(self.delta)
         elif keydown[K_s]:
-            translate(camera.matrix, 0.0, 0.0, -camera_speed)
+            self.camera.moveZ(-self.delta)
 
         if keydown[K_a]:
-            translate(camera.matrix, camera_speed, 0, 0)
+            self.camera.moveX(self.delta)
         elif keydown[K_d]:
-            translate(camera.matrix, -camera_speed, 0, 0)
+            self.camera.moveX(-self.delta)
 
         if keydown[K_q]:
-            translate(camera.matrix, 0, -camera_speed, 0)
+            self.camera.moveY(-self.delta)
         elif keydown[K_e]:
-            translate(camera.matrix, 0, camera_speed, 0)
+            self.camera.moveY(self.delta)
 
         if keydown[K_SPACE]:
-            camera.initialize()
+            self.camera.reset()
+
+        # update camera
+        self.camera.updateMatrix()
 
 
     def update(self):
@@ -262,5 +268,9 @@ class CoreManager(Singleton):
             self.renderer.renderScene()
             renderTime = time.time() - renderTime
 
+            # render text
+            self.console.info("%.2f ms" % (self.delta*1000))
+            self.console.info("%.2f fps" % self.fps)
             self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
             self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))
+            self.console.info(self.camera.cameraInfos())

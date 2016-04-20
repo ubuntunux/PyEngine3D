@@ -192,9 +192,6 @@ class Renderer(Singleton):
 
         # render text
         self.console.render()
-        # display text
-        self.console.info("%.2f fps" % self.coreManager.fps)
-        self.console.info("%.2f ms" % (self.coreManager.delta*1000))
 
         # swap buffer
         pygame.display.flip()
