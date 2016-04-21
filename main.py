@@ -35,7 +35,7 @@ from multiprocessing import Process, Queue, Pipe
 from Core import CoreManager
 
 # main UI
-from UI import run_editor
+#from UI import run_editor
 
 if __name__ == "__main__":
     coreCmdQueue = Queue()

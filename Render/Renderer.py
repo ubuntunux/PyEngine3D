@@ -151,9 +151,21 @@ class Renderer(Singleton):
 
         # set viewport
         glViewport(0, 0, width, height)
+        # set perspective view
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
 
     # render meshes
     def render_meshes(self):
+        # set perspective view
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
@@ -165,6 +177,7 @@ class Renderer(Singleton):
         # draw Objects
         for obj in self.objectManager.getObjectList():
             obj.draw(self.camera.matrix, self.perspective)
+
 
     def render_postprocess(self):
         # set orthographic view

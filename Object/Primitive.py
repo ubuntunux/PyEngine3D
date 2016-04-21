@@ -78,14 +78,12 @@ class DebugLine:
         self.color = color
 
     def draw(self):
-        glPushMatrix()
         glLineWidth(self.width)
         glColor3f(1,1,1)
         glBegin(GL_LINES)
         glVertex3f(*self.pos1)
         glVertex3f(*self.pos2)
         glEnd()
-        glPopMatrix()
 
 #------------------------------#
 # CLASS : Triangle

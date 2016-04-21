@@ -203,12 +203,9 @@ class CoreManager(Singleton):
             self.camera.moveX(self.mouseDelta[0] * self.delta * 0.1)
             self.camera.moveY(-self.mouseDelta[1] * self.delta * 0.1)
         # camera rotation
-        elif btnL:
+        elif btnL or btnR:
             self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
             self.camera.rotationYaw(-self.mouseDelta[0] * 0.03)
-        elif btnR:
-            self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
-            self.camera.rotationRoll(-self.mouseDelta[0] * 0.03)
 
         # camera move front/back
         if self.wheelUp:
