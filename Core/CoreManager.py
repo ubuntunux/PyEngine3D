@@ -76,7 +76,6 @@ class CoreManager(Singleton):
     CoreManager usage for debug what are woring manager..
     """
     def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
-        super(CoreManager, self).__init__()
         self.running = False
 
         # command
