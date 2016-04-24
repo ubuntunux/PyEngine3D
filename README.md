@@ -19,11 +19,6 @@ Welcome to the GuineaPig wiki!
  - pygame 1.9.2
 
 
-### Current Issue
-----
- - Split OpenGLWindow and QTWidget
- - Using glutinit
-
 ----
 ### TODO
 #### UI
