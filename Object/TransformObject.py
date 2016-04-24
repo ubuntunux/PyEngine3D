@@ -17,7 +17,9 @@ class TransformObject:
         # transform
         self.matrix = np.eye(4, dtype=np.float32)
         self.pos = np.zeros(3, dtype=np.float32) # X, Y, Z
+        self.oldPos = np.zeros(3, dtype=np.float32)
         self.rot = np.zeros(3, dtype=np.float32) # pitch, yaw, roll
+        self.oldRot = np.zeros(3, dtype=np.float32)
         self.right = np.zeros(3, dtype=np.float32) # X Axis
         self.up = np.zeros(3, dtype=np.float32) # Y Axis
         self.front = np.zeros(3, dtype=np.float32) # Z Axis
@@ -35,7 +37,7 @@ class TransformObject:
 
     def setPos(self, pos):
         self.moved = True
-        self.pos[:] = pos[:]
+        self.pos[...] = pos
 
     def setPosX(self, x):
         self.moved = True
@@ -70,7 +72,7 @@ class TransformObject:
 
     def setRot(self, rot):
         self.rotated = True
-        self.rot = rot
+        self.rot[...] = rot
 
     def setPitch(self, pitch):
         self.rotated = True
@@ -112,18 +114,22 @@ class TransformObject:
         if self.rotated or self.moved:
             self.matrix = np.eye(4,dtype=np.float32)
 
+            translate(self.matrix, *self.pos)
             if self.moved:
-                translate(self.matrix, *self.pos)
+                self.oldPos[...] = self.pos
 
+            rotateZ(self.matrix, self.rot[2])
+            rotateY(self.matrix, self.rot[1])
+            rotateX(self.matrix, self.rot[0])
             if self.rotated:
-                rotateZ(self.matrix, self.rot[2])
-                rotateY(self.matrix, self.rot[1])
-                rotateX(self.matrix, self.rot[0])
+                self.oldRot[...] = self.rot
                 self.front = self.matrix[:3,2]
                 self.right = self.matrix[:3,0]
                 self.up = self.matrix[:3,1]
+        self.rotated = False
+        self.moved = False
 
-    def getInfos(self):
+    def getTransformInfos(self):
         text = "Position : " + " ".join(["%2.2f" % i for i in self.pos])
         text += "\nRotation : " + " ".join(["%2.2f" % i for i in self.rot])
         text += "\nFront : " + " ".join(["%2.2f" % i for i in self.front])

@@ -268,4 +268,4 @@ class CoreManager(Singleton):
             self.console.info("%.2f fps" % self.fps)
             self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
             self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))
-            self.console.info(self.camera.cameraInfos())
+            self.console.info(self.camera.getTransformInfos())

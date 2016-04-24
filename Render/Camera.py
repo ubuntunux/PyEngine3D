@@ -52,11 +52,3 @@ class Camera(TransformObject):
 
         # initTransform
         self.resetTransform()
-
-    def cameraInfos(self):
-        text = "Position : " + " ".join(["%2.2f" % i for i in self.pos])
-        text += "\nRotation : " + " ".join(["%2.2f" % i for i in self.rot])
-        text += "\nFront : " + " ".join(["%2.2f" % i for i in self.front])
-        text += "\nRight : " + " ".join(["%2.2f" % i for i in self.right])
-        text += "\nUp : " + " ".join(["%2.2f" % i for i in self.up])
-        return text

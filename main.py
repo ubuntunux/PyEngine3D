@@ -34,10 +34,7 @@ from multiprocessing import Process, Queue, Pipe
 # core manager
 from Core import CoreManager
 
-# main UI
-from UI import run_editor
-
-if __name__ == "__main__":
+def run():
     coreCmdQueue = Queue()
     uiCmdQueue = Queue()
     pipe1, pipe2 = Pipe()
@@ -45,6 +42,8 @@ if __name__ == "__main__":
     # process - QT
     editable = False
     if editable:
+        # main UI
+        from UI import run_editor
         pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
         pEditor.start()
     else:
@@ -58,3 +57,6 @@ if __name__ == "__main__":
     # QT process end
     if pEditor:
         pEditor.join()
+
+if __name__ == "__main__":
+    run()

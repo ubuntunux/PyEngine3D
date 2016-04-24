@@ -24,7 +24,7 @@ def build():
             name, ext = os.path.splitext(filename)
             if ".py" == ext.lower():
                 oldFilename = os.path.join(dirname, filename)
-                newFilename = os.path.jogit ain(dirname, name + ".pyx")
+                newFilename = os.path.join(dirname, name + ".pyx")
                 os.rename(oldFilename, newFilename)
                 ext_modules.append(newFilename)
     setup(ext_modules = cythonize(ext_modules))
