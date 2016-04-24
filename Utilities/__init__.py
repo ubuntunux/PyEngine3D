@@ -1,3 +1,3 @@
-from Utilities.Transform import *
-from Utilities.Vector import Vector
-from Utilities.Singleton import Singleton
+from .Transform import *
+from .Vector import Vector
+from .Singleton import Singleton

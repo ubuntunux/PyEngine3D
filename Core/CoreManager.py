@@ -190,12 +190,12 @@ class CoreManager(Singleton):
                 self.wheelDown = event.button == 5
 
     def updateCamera(self):
-        # get camera
-        self.camera = self.cameraManager.getMainCamera()
-
         # get pressed key and mouse buttons
         keydown = pygame.key.get_pressed()
         btnL, btnM, btnR = pygame.mouse.get_pressed()
+
+        # get camera
+        self.camera = self.cameraManager.getMainCamera()
 
         # camera move pan
         if btnL and btnR or btnM:
@@ -229,11 +229,10 @@ class CoreManager(Singleton):
             self.camera.moveY(self.delta)
 
         if keydown[K_SPACE]:
-            self.camera.reset()
+            self.camera.resetTransform()
 
         # update camera
-        self.camera.updateMatrix()
-
+        self.camera.updateTransform()
 
     def update(self):
         self.currentTime = time.time()

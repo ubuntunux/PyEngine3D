@@ -1,30 +1,36 @@
 import numpy as np
-
 from OpenGL.GL import *
+
 from Utilities import *
+from Object import TransformObject
 
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
 #------------------------------#
 # CLASS : Primitive
 #------------------------------#
-class Primitive:
+class Primitive(TransformObject):
     data = None
     index = None
 
     def __init__(self, name='', pos=(0,0,0), material=None):
+        # init TransformObject
+        TransformObject.__init__(self)
+
+        # init variables
         self.name = name
-        self.pos = np.array(pos)
-        self.matrix = np.eye(4,dtype=np.float32)
         self.material = material
         self.shader = self.material.shader
         self.buffer = -1
         self.buffer_index = -1
 
-        self.initialized = False
+        # init transform
+        self.setPos(pos)
+        self.updateTransform()
+
+        # initialize
         self.initialize()
 
     def initialize(self):
-        translate(self.matrix, *self.pos)
         self.bindBuffers()
 
     def bindBuffers(self):
@@ -38,6 +44,9 @@ class Primitive:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
     def draw(self, view, perspective):
+        # update transform
+        self.updateTransform()
+
         # use program
         glUseProgram(self.shader.program)
         stride = self.data.strides[0]

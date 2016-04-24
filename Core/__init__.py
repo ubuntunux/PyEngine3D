@@ -1,5 +1,3 @@
-import os
-
 # default logger
 from Utilities import Logger
 logger = Logger.getLogger('default', 'logs', False)
@@ -8,5 +6,5 @@ logger = Logger.getLogger('default', 'logs', False)
 from Configure import Config
 config = Config("Config.ini")
 
-from Core.Command import *
-from Core.CoreManager import *
+from .Command import *
+from .CoreManager import *
