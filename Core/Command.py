@@ -13,8 +13,12 @@ CMD_CLOSE_APP   = next(cmd_index)
 CMD_CLOSE_UI    = next(cmd_index)
 
 # add primitive
-CMD_ADD_TRIANGLE = next(cmd_index)
-CMD_ADD_QUAD     = next(cmd_index)
+CMD_ADD_PRIMITIVE_START = next(cmd_index)
+CMD_ADD_TRIANGLE        = next(cmd_index)
+CMD_ADD_QUAD            = next(cmd_index)
+CMD_ADD_CUBE            = next(cmd_index)
+CMD_ADD_PRIMITIVE_END   = next(cmd_index)
+CMD_GET_OBJECTLIST      = next(cmd_index)
 
 def Error():
     raise "Receive wrong command."

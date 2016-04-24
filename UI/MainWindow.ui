@@ -23,16 +23,51 @@
          <widget class="QWidget" name="empty_2" native="true"/>
         </item>
         <item>
-         <widget class="QPushButton" name="addQuad">
+         <widget class="QLabel" name="label">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
           <property name="text">
-           <string>addQuad</string>
+           <string>Add Primitives</string>
+          </property>
+          <property name="margin">
+           <number>10</number>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="addTriangle">
+         <widget class="QPushButton" name="add_Triangle">
           <property name="text">
-           <string>addTriangle</string>
+           <string>Triangle</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_Quad">
+          <property name="text">
+           <string>Quad</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_Cube">
+          <property name="text">
+           <string>Cube</string>
           </property>
          </widget>
         </item>
@@ -40,6 +75,9 @@
       </item>
       <item>
        <widget class="QListWidget" name="objectList">
+        <property name="contextMenuPolicy">
+         <enum>Qt::DefaultContextMenu</enum>
+        </property>
         <property name="midLineWidth">
          <number>0</number>
         </property>
@@ -162,10 +200,7 @@
   </action>
  </widget>
  <tabstops>
-  <tabstop>addTriangle</tabstop>
   <tabstop>objectList</tabstop>
-  <tabstop>addQuad</tabstop>
-  <tabstop>objPropertyTree</tabstop>
  </tabstops>
  <resources/>
  <connections>

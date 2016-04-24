@@ -45,19 +45,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.exit(traceback.format_exc())
 
         try:
-            # add primitive
-            def addPrimitive(objType):
-                if objType == CMD_ADD_TRIANGLE:
-                    self.coreCmdQueue.put(CMD_ADD_TRIANGLE)
-                elif objType == CMD_ADD_QUAD:
-                    self.coreCmdQueue.put(CMD_ADD_QUAD)
-
             # binding button clicked
-            btn = self.findChild(QtGui.QPushButton, "addTriangle")
-            btn.clicked.connect(lambda: addPrimitive(CMD_ADD_TRIANGLE))
+            btn = self.findChild(QtGui.QPushButton, "add_Triangle")
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_TRIANGLE))
 
-            btn = self.findChild(QtGui.QPushButton, "addQuad")
-            btn.clicked.connect(lambda: addPrimitive(CMD_ADD_QUAD))
+            btn = self.findChild(QtGui.QPushButton, "add_Quad")
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_QUAD))
+
+            btn = self.findChild(QtGui.QPushButton, "add_Cube")
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_CUBE))
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
@@ -80,9 +76,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # wait a UI_RUN message, and send success message
         PipeRecvSend(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
 
-    def fillObjProperty(self):
-        pass
-
     def exit(self, *args):
         if args != () and args[0] != None:
             logger.info(*args)
@@ -98,6 +91,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # let the window close
         logger.info("Bye")
         event.accept()
+
+    #--------------------#
+    # Commands
+    #--------------------#
+
+    # add primitive
+    def addPrimitive(self, objType):
+        if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
+            self.coreCmdQueue.put(objType)
+            item = QtGui.QListWidgetItem(str(objType))
+            self.objectList.addItem(item)
+
+    def fillObjProperty(self):
+        pass
 
 # process - QT Widget
 def run_editor(cmdQueue, exitQueue, cmdPipe):

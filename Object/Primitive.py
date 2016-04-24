@@ -140,3 +140,8 @@ class Cube(Primitive):
                         1,0,4,
                         3,2,6,
                         6,7,3], dtype=np.uint32)
+
+#------------------------------#
+# GLOBAL : primitives
+#------------------------------#
+primitives = [Triangle, Quad, Cube]

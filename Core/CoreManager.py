@@ -12,7 +12,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 
 from Core import *
-from Object import ObjectManager, Triangle, Quad, Cube
+from Object import ObjectManager, primitives
 from Render import Renderer, ShaderManager, MaterialManager, CameraManager
 from Utilities import *
 
@@ -154,11 +154,14 @@ class CoreManager(Singleton):
             cmd = self.cmdQueue.get()
             if cmd == CMD_CLOSE_APP:
                 self.close()
-            elif cmd == CMD_ADD_TRIANGLE:
+            # add primitive
+            elif cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
                 camera = self.cameraManager.getMainCamera()
-                pos = camera.front * 10.0
-                primitive = [Triangle, Quad, Cube][np.random.randint(3)]
+                pos = camera.pos + camera.front * 10.0
+                primitive = primitives[cmd - CMD_ADD_TRIANGLE]
                 obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                obj.updateTransform()
+
 
     def updateEvent(self):
         # set pos
@@ -181,7 +184,7 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
-                        primitive = [Triangle, Quad, Cube][np.random.randint(3)]
+                        primitive = primitives[np.random.randint(3)]
                         self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
