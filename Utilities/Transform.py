@@ -16,7 +16,7 @@ WORLD_UP = np.array([0.0, 1.0, 0.0])
 WORLD_FRONT = np.array([0.0, 0.0, 1.0])
 
 
-def translate(M, x, y, z):
+def getTranslateMatrix(x, y, z):
     '''
     correct matrix - non transposed
     T = [[ 1, 0, 0, x],
@@ -29,9 +29,25 @@ def translate(M, x, y, z):
          [ 0, 1, 0, 0],
          [ 0, 0, 1, 0],
          [ x, y, z, 1]]
+    return np.array(T, dtype=np.float32)
+
+def translate(M, x, y, z):
+    # transposed matrix
+    T = [[ 1, 0, 0, 0],
+         [ 0, 1, 0, 0],
+         [ 0, 0, 1, 0],
+         [ x, y, z, 1]]
     T = np.array(T, dtype=np.float32)
     M[...] = np.dot(M,T)
 
+
+
+def getScaleMatrix(x, y, z):
+    S = [[ x, 0, 0, 0],
+         [ 0, y, 0, 0],
+         [ 0, 0, z, 0],
+         [ 0, 0, 0, 1]]
+    return np.array(S,dtype=np.float32)
 
 def scale(M, x, y, z):
     S = [[ x, 0, 0, 0],
@@ -41,6 +57,37 @@ def scale(M, x, y, z):
     S = np.array(S,dtype=np.float32)
     M[...] = np.dot(M,S)
 
+
+
+def getRotationMatrixX(radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
+    R = np.array(
+        [[ 1.0,  0.0,  0.0, 0.0 ],
+         [ 0.0, cosT,-sinT, 0.0 ],
+         [ 0.0, sinT, cosT, 0.0 ],
+         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
+    return R
+
+def getRotationMatrixY(radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
+    R = np.array(
+        [[ cosT,  0.0, sinT, 0.0 ],
+         [ 0.0,   1.0,  0.0, 0.0 ],
+         [-sinT,  0.0, cosT, 0.0 ],
+         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
+    return R
+
+def getRotationMatrixZ(radian):
+    cosT = math.cos( radian )
+    sinT = math.sin( radian )
+    R = np.array(
+        [[ cosT,-sinT, 0.0, 0.0 ],
+         [ sinT, cosT, 0.0, 0.0 ],
+         [ 0.0,  0.0,  1.0, 0.0 ],
+         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
+    return R
 
 def rotateX(M, radian):
     cosT = math.cos( radian )

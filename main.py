@@ -40,7 +40,7 @@ def run():
     pipe1, pipe2 = Pipe()
 
     # process - QT
-    editable = True
+    editable = False
     if editable:
         # main UI
         from UI import run_editor
