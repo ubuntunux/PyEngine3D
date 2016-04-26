@@ -118,8 +118,7 @@ class CoreManager(Singleton):
         self.renderer.initialize(self)
 
         # ready to launch - send message to ui
-        #PipeSendRecv(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
-        self.cmdPipe.send(CMD_UI_RUN)
+        PipeSendRecv(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
 
 
     def run(self):
@@ -127,7 +126,8 @@ class CoreManager(Singleton):
         self.update()
 
         # send a message to close ui
-        self.uiCmdQueue.put(CMD_CLOSE_UI)
+        if self.uiCmdQueue:
+            self.uiCmdQueue.put(CMD_CLOSE_UI)
 
         # close renderer
         self.renderer.close()
@@ -150,17 +150,28 @@ class CoreManager(Singleton):
         self.running = False
 
     def updateCommand(self):
-        while not self.cmdQueue.empty():
+        while self.cmdQueue and not self.cmdQueue.empty():
             cmd = self.cmdQueue.get()
+            # close app
             if cmd == CMD_CLOSE_APP:
                 self.close()
-            # add primitive
-            elif cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
-                camera = self.cameraManager.getMainCamera()
-                pos = camera.pos + camera.front * 10.0
-                primitive = primitives[cmd - CMD_ADD_TRIANGLE]
-                obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
-                obj.updateTransform()
+                return
+            # received request pipe
+            elif cmd == CMD_REQUEST_PIPE:
+                # received add primitive
+                cmd = self.cmdPipe.recv()
+                if cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
+                    camera = self.cameraManager.getMainCamera()
+                    pos = camera.pos + camera.front * -10.0
+                    primitive = primitives[cmd - CMD_ADD_TRIANGLE]
+                    obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                    obj.updateTransform()
+                    # send object infomation
+                    objInfos = {'name':obj.name, 'pos':obj.pos, 'rotation':obj.rot}
+                    self.cmdPipe.send((CMD_SEND_PRIMITIVEINFOS, objInfos))
+                    continue
+                # send pipe done message
+                self.cmdPipe.send(CMD_PIPE_DONE)
 
 
     def updateEvent(self):
@@ -199,11 +210,13 @@ class CoreManager(Singleton):
 
         # get camera
         self.camera = self.cameraManager.getMainCamera()
+        moveSpeed = self.delta * 5.0
+        rotSpeed = 0.03
 
         # camera move pan
         if btnL and btnR or btnM:
-            self.camera.moveX(self.mouseDelta[0] * self.delta * 0.1)
-            self.camera.moveY(-self.mouseDelta[1] * self.delta * 0.1)
+            self.camera.move(self.camera.right * self.mouseDelta[0] * 0.01)
+            self.camera.move(-self.camera.up * self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
             self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
@@ -211,25 +224,25 @@ class CoreManager(Singleton):
 
         # camera move front/back
         if self.wheelUp:
-            self.camera.moveZ(self.delta * 5.0)
+            self.camera.move(self.camera.front * 5.0)
         elif self.wheelDown:
-            self.camera.moveZ(-self.delta * 5.0)
+            self.camera.move(-self.camera.front * 5.0)
 
         # update camera transform
         if keydown[K_w]:
-            self.camera.moveZ(self.delta)
+            self.camera.move(self.camera.front * moveSpeed)
         elif keydown[K_s]:
-            self.camera.moveZ(-self.delta)
+            self.camera.move(-self.camera.front * moveSpeed)
 
         if keydown[K_a]:
-            self.camera.moveX(self.delta)
+            self.camera.move(self.camera.right * moveSpeed)
         elif keydown[K_d]:
-            self.camera.moveX(-self.delta)
+            self.camera.move(-self.camera.right * moveSpeed)
 
         if keydown[K_q]:
-            self.camera.moveY(-self.delta)
+            self.camera.move(-self.camera.up * moveSpeed)
         elif keydown[K_e]:
-            self.camera.moveY(self.delta)
+            self.camera.move(self.camera.up * moveSpeed)
 
         if keydown[K_SPACE]:
             self.camera.resetTransform()

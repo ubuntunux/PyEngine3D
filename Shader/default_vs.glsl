@@ -11,4 +11,5 @@ void main() {
     v_color = color;
     normal = gl_NormalMatrix * gl_Normal;
     gl_Position = perspective * view * model * vec4(position, 1.0f);
+    normal = gl_Position.xyz;
 }

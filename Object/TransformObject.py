@@ -62,21 +62,21 @@ class TransformObject:
         self.moved = True
         self.pos[2] = z
 
-    def move(self, deltaX=0.0, deltaY=0.0, deltaZ=0.0):
+    def move(self, vDelta):
         self.moved = True
-        self.pos += (self.right*deltaX + self.up*deltaY + self.front*deltaZ) * self.move_speed
+        self.pos[...] = self.pos + vDelta
 
     def moveX(self, delta):
         self.moved = True
-        self.pos += self.right * self.move_speed * delta
+        self.pos[0] += delta
 
     def moveY(self, delta):
         self.moved = True
-        self.pos += self.up * self.move_speed * delta
+        self.pos[1] += delta
 
     def moveZ(self, delta):
         self.moved = True
-        self.pos += self.front * self.move_speed * delta
+        self.pos[2] += delta
 
     # Rotation
     def getRotation(self):

@@ -1,5 +1,5 @@
 # standard library
-import sys, traceback, os
+import sys, traceback, os, time
 
 # Third-party library
 from PyQt4 import QtCore, QtGui, uic
@@ -20,12 +20,14 @@ class UIThread(QtCore.QThread):
         self.exitQueue = cmdQueue
 
     def run(self):
-      while self.running:
-          if not self.exitQueue.empty():
-              if self.exitQueue.get() == CMD_CLOSE_UI:
-                  self.running = False
-                  self.emit( QtCore.SIGNAL('exit'), None)
-                  break
+        while self.running:
+            if not self.exitQueue.empty():
+                if self.exitQueue.get() == CMD_CLOSE_UI:
+                    self.running = False
+                    self.emit( QtCore.SIGNAL('exit'), None)
+                    break
+            time.sleep(0.1)
+
 
 #----------------------#
 # CLASS : Main Window
@@ -99,8 +101,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # add primitive
     def addPrimitive(self, objType):
         if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
-            self.coreCmdQueue.put(objType)
-            item = QtGui.QListWidgetItem(str(objType))
+            # send add primitive command, and wait recv obj name
+            self.coreCmdQueue.put(CMD_REQUEST_PIPE)
+            # send pipe message
+            objInfos = PipeSendRecv(self.cmdPipe, objType, CMD_SEND_PRIMITIVEINFOS)
+            item = QtGui.QListWidgetItem(objInfos['name'])
             self.objectList.addItem(item)
 
     def fillObjProperty(self):

@@ -35,13 +35,17 @@ from multiprocessing import Process, Queue, Pipe
 from Core import CoreManager
 
 def run():
-    coreCmdQueue = Queue()
-    uiCmdQueue = Queue()
-    pipe1, pipe2 = Pipe()
+    coreCmdQueue = None
+    uiCmdQueue = None
+    pipe1, pipe2 = None, None
 
     # process - QT
-    editable = False
+    editable = True
     if editable:
+        coreCmdQueue = Queue()
+        uiCmdQueue = Queue()
+        pipe1, pipe2 = Pipe()
+
         # main UI
         from UI import run_editor
         pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))

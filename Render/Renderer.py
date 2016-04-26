@@ -8,8 +8,8 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Core import logger, config
-from Object import ObjectManager, DebugLine
 from Render import *
+from Object import ObjectManager, DebugLine
 from Utilities import *
 
 

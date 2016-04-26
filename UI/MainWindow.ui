@@ -106,14 +106,14 @@
           <string>Pos</string>
          </property>
          <property name="text">
-          <string>0, 0, 0</string>
+          <string>0.0, 0.0, 0.0</string>
          </property>
          <item>
           <property name="text">
            <string>X</string>
           </property>
           <property name="text">
-           <string>0</string>
+           <string>0.0</string>
           </property>
          </item>
          <item>
@@ -121,7 +121,7 @@
            <string>Y</string>
           </property>
           <property name="text">
-           <string>0</string>
+           <string>0.0</string>
           </property>
          </item>
          <item>
@@ -129,7 +129,7 @@
            <string>Z</string>
           </property>
           <property name="text">
-           <string>0</string>
+           <string>0.0</string>
           </property>
          </item>
         </item>
@@ -138,24 +138,32 @@
           <string>Rotation</string>
          </property>
          <property name="text">
-          <string/>
+          <string>0.0, 0.0, 0.0</string>
          </property>
          <item>
           <property name="text">
            <string>Pitch</string>
           </property>
+          <property name="text">
+           <string>0.0</string>
+          </property>
          </item>
-        </item>
-        <item>
-         <property name="text">
-          <string>New Item</string>
-         </property>
-         <property name="checkState">
-          <enum>Checked</enum>
-         </property>
-         <property name="flags">
-          <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled|ItemIsTristate</set>
-         </property>
+         <item>
+          <property name="text">
+           <string>Yaw</string>
+          </property>
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Roll</string>
+          </property>
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </item>
         </item>
        </widget>
       </item>

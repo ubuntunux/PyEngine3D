@@ -8,6 +8,7 @@ from Utilities import Singleton
 class ObjectManager(Singleton):
     def __init__(self):
         self.primitives = []
+        self.primitivesMap = {}
         self.callback_addPrimitive = None
         self.coreManager = None
 
@@ -24,21 +25,35 @@ class ObjectManager(Singleton):
         :param primitive: reference Primitive.py ( Triangle, Quad, etc...)
         """
         if issubclass(primitive, Primitive):
-            logger.info("Add primitive : %s %s" % (primitive, name))
-            # create material
-            if material is None:
-                material = self.coreManager.materialManager.getDefaultMaterial()
+            # generate name
+            if name == '':
+                name = primitive.__name__
+
+            index = 0
+            if name in self.primitivesMap:
+                while True:
+                    newName = "%s_%d" % (name, index)
+                    if newName not in self.primitivesMap:
+                        name = newName
+                        break
+                    index += 1
+            # log
+            logger.info("Add primitive : %s %s %s" % (primitive.__name__, name, pos))
 
             # create primitive
+            if not material:
+                material = self.coreManager.materialManager.getDefaultMaterial()
             obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
 
             # add object
             self.primitives.append(obj)
+            self.primitivesMap[name] = obj
 
             # callback function on success
             if self.callback_addPrimitive:
                 self.callback_addPrimitive(obj.name)
             return obj
+
         else:
             logger.warning("Unknown primitive : %s" % str(primitive))
         return None

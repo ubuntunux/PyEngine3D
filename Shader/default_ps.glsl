@@ -9,4 +9,6 @@ void main() {
     intensity = saturate(dot(l, n));
     color = gl_LightSource[0].ambient + gl_LightSource[0].diffuse * intensity + v_color;
     gl_FragColor = v_color;
+    //normal = normalize(normal);
+    gl_FragColor.xyz = normal;// * 0.5f + 0.5f;
 }

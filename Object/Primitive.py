@@ -1,6 +1,7 @@
 import numpy as np
 from OpenGL.GL import *
 
+from Core import CoreManager
 from Utilities import *
 from Object import TransformObject
 
