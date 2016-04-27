@@ -2,7 +2,8 @@
 import sys, traceback, os, time
 
 # Third-party library
-from PyQt4 import QtCore, QtGui, uic
+import PyQt4
+from PyQt4 import Qt, QtCore, QtGui, uic
 
 from Utilities import Singleton
 from UI import logger
@@ -22,11 +23,15 @@ class UIThread(QtCore.QThread):
     def run(self):
         while self.running:
             if not self.exitQueue.empty():
-                if self.exitQueue.get() == CMD_CLOSE_UI:
+                cmd = self.exitQueue.get()
+                if type(cmd) is tuple:
+                    cmd, value = cmd
+                # process
+                if cmd == CMD_CLOSE_UI:
                     self.running = False
                     self.emit( QtCore.SIGNAL('exit'), None)
-                    break
-            time.sleep(0.1)
+                elif cmd == CMD_RECV_PRIMITIVEINFOS:
+                    self.emit( QtCore.SIGNAL('RECV_PRIMITIVEINFOS'), value)
 
 
 #----------------------#
@@ -64,8 +69,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             # object property widget
             self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
 
-            b1 = QtGui.QSpinBox()
-            self.objPropertyTree.setItemWidget(self.objPropertyTree.topLevelItem(0), 1, b1) # add button to row 0, column
+            # test
+            for item in self.objPropertyTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
+                print(item.text(0), item.text(1))
 
         except AttributeError:
             self.exit(traceback.format_exc())
@@ -73,6 +79,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # ui main loop
         self.uiThread = UIThread(self.cmdQueue)
         self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
+        self.connect( self.uiThread, QtCore.SIGNAL("RECV_PRIMITIVEINFOS"), self.recvPrimitiveInfo )
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
@@ -97,19 +104,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Commands
     #--------------------#
-
     # add primitive
     def addPrimitive(self, objType):
         if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
-            # send add primitive command, and wait recv obj name
-            self.coreCmdQueue.put(CMD_REQUEST_PIPE)
-            # send pipe message
-            objInfos = PipeSendRecv(self.cmdPipe, objType, CMD_SEND_PRIMITIVEINFOS)
-            item = QtGui.QListWidgetItem(objInfos['name'])
-            self.objectList.addItem(item)
+            # send message
+            self.coreCmdQueue.put(objType)
 
-    def fillObjProperty(self):
-        pass
+    def recvPrimitiveInfo(self, objInfo):
+        item = QtGui.QListWidgetItem(objInfo['name'])
+        self.objectList.addItem(item)
+
+    def fillObjProperty(self, inst):
+        objName = inst.text()
+        for item in self.objPropertyTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
+            print(item.text(0), item.text(1))
 
 # process - QT Widget
 def run_editor(cmdQueue, exitQueue, cmdPipe):

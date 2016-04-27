@@ -149,29 +149,37 @@ class CoreManager(Singleton):
     def close(self):
         self.running = False
 
+    #---------------------------#
+    # receive and send messages
+    #---------------------------#
+    def sendPrimitiveInfo(self, obj):
+        # send object infomation
+        objInfos = {'name':obj.name, 'pos':obj.pos, 'rotation':obj.rot}
+        self.uiCmdQueue.put((CMD_RECV_PRIMITIVEINFOS, objInfos))
+
+
+    #---------------------------#
+    # update functions
+    #---------------------------#
     def updateCommand(self):
         while self.cmdQueue and not self.cmdQueue.empty():
             cmd = self.cmdQueue.get()
+            if type(cmd) is tuple:
+                cmd, value = cmd
+
             # close app
             if cmd == CMD_CLOSE_APP:
                 self.close()
                 return
             # received request pipe
-            elif cmd == CMD_REQUEST_PIPE:
-                # received add primitive
-                cmd = self.cmdPipe.recv()
-                if cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
-                    camera = self.cameraManager.getMainCamera()
-                    pos = camera.pos + camera.front * -10.0
-                    primitive = primitives[cmd - CMD_ADD_TRIANGLE]
-                    obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
-                    obj.updateTransform()
-                    # send object infomation
-                    objInfos = {'name':obj.name, 'pos':obj.pos, 'rotation':obj.rot}
-                    self.cmdPipe.send((CMD_SEND_PRIMITIVEINFOS, objInfos))
-                    continue
-                # send pipe done message
-                self.cmdPipe.send(CMD_PIPE_DONE)
+            elif cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
+                camera = self.cameraManager.getMainCamera()
+                pos = camera.pos + camera.front * -10.0
+                primitive = primitives[cmd - CMD_ADD_TRIANGLE]
+                obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                obj.updateTransform()
+                # send object infomation
+                self.sendPrimitiveInfo(obj)
 
 
     def updateEvent(self):
@@ -196,7 +204,9 @@ class CoreManager(Singleton):
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
                         primitive = primitives[np.random.randint(3)]
-                        self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                        obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
+                        # send object infomation
+                        self.sendPrimitiveInfo(obj)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
