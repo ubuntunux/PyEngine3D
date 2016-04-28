@@ -152,10 +152,14 @@ class CoreManager(Singleton):
     #---------------------------#
     # receive and send messages
     #---------------------------#
+    def sendPrimitiveName(self, obj):
+        # send object name to GUI
+        self.uiCmdQueue.put((CMD_SEND_PRIMITIVENAME, obj.name))
+
     def sendPrimitiveInfo(self, obj):
-        # send object infomation
-        objInfos = {'name':obj.name, 'pos':obj.pos, 'rotation':obj.rot}
-        self.uiCmdQueue.put((CMD_RECV_PRIMITIVEINFOS, objInfos))
+        # send object infomation to GUI
+        objInfos = self.objectManager.getObjectInfos(obj)
+        self.uiCmdQueue.put((CMD_SEND_PRIMITIVEINFOS, objInfos))
 
 
     #---------------------------#
@@ -164,8 +168,13 @@ class CoreManager(Singleton):
     def updateCommand(self):
         while self.cmdQueue and not self.cmdQueue.empty():
             cmd = self.cmdQueue.get()
+            value = None
+
+            # check type for tuple - (cmd, value)
             if type(cmd) is tuple:
                 cmd, value = cmd
+
+            logger.info("Core CommandQueue (%d, %s)" % (cmd, value))
 
             # close app
             if cmd == CMD_CLOSE_APP:
@@ -178,9 +187,15 @@ class CoreManager(Singleton):
                 primitive = primitives[cmd - CMD_ADD_TRIANGLE]
                 obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
                 obj.updateTransform()
-                # send object infomation
+                # send object name to GUI
+                self.sendPrimitiveName(obj)
+            elif cmd == CMD_REQUEST_PRIMITIVEINFOS:
+                # send object infomation to GUI
+                obj = self.objectManager.getObject(value)
                 self.sendPrimitiveInfo(obj)
-
+            elif cmd == CMD_SET_PRIMITIVEINFO:
+                objectName, propertyName, propertyValue = value
+                self.objectManager.setObjectData(objectName, propertyName, propertyValue)
 
     def updateEvent(self):
         # set pos

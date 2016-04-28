@@ -20,7 +20,10 @@ CMD_ADD_TRIANGLE        = next(cmd_index)
 CMD_ADD_QUAD            = next(cmd_index)
 CMD_ADD_CUBE            = next(cmd_index)
 CMD_ADD_PRIMITIVE_END   = next(cmd_index)
-CMD_RECV_PRIMITIVEINFOS = next(cmd_index)
+CMD_SEND_PRIMITIVENAME  = next(cmd_index)
+CMD_REQUEST_PRIMITIVEINFOS = next(cmd_index)
+CMD_SEND_PRIMITIVEINFOS = next(cmd_index)
+CMD_SET_PRIMITIVEINFO = next(cmd_index)
 
 CMD_OBJECT_MOVE = next(cmd_index)
 

@@ -1,3 +1,5 @@
+from collections import OrderedDict, namedtuple
+
 from Core import logger
 from Object import Primitive
 from Utilities import Singleton
@@ -58,5 +60,24 @@ class ObjectManager(Singleton):
             logger.warning("Unknown primitive : %s" % str(primitive))
         return None
 
+    def getObject(self, objName):
+        return self.primitivesMap[objName] if objName in self.primitivesMap else None
+
     def getObjectList(self):
         return self.primitives
+
+    def getObjectInfos(self, obj):
+        info = OrderedDict()
+        info['name'] = obj.name
+        info['pos'] = obj.pos
+        info['rot'] = obj.rot
+        return info
+
+    def setObjectData(self, objectName, propertyName, propertyValue):
+        obj = self.getObject(objectName)
+        if propertyName == 'pos':
+            obj.setPos(propertyValue)
+        elif propertyName == 'rot':
+            obj.setRot(propertyValue)
+
+
