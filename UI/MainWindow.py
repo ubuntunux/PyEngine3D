@@ -20,7 +20,6 @@ class UIThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.running = True
         self.cmdQueue = cmdQueue
-        self.isFillobjPropertyTree = False
 
     def run(self):
         while self.running:
@@ -55,6 +54,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdQueue = cmdQueue
         self.coreCmdQueue = coreCmdQueue
         self.cmdPipe = cmdPipe
+        self.isFillobjPropertyTree = False
 
         try:
             # load ui file

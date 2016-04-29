@@ -220,8 +220,8 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
                         primitive = primitives[np.random.randint(3)]
                         obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
-                        # send object infomation
-                        self.sendPrimitiveInfo(obj)
+                        # send object name to GUI
+                        self.sendPrimitiveName(obj)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
