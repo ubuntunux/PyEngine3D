@@ -118,7 +118,7 @@ class CoreManager(Singleton):
         self.renderer.initialize(self)
 
         # ready to launch - send message to ui
-        PipeSendRecv(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
+        self.cmdPipe.SendAndRecv(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
 
 
     def run(self):
@@ -154,27 +154,21 @@ class CoreManager(Singleton):
     #---------------------------#
     def sendPrimitiveName(self, obj):
         # send object name to GUI
-        self.uiCmdQueue.put((CMD_SEND_PRIMITIVENAME, obj.name))
+        self.uiCmdQueue.put(CMD_SEND_PRIMITIVENAME, obj.name)
 
     def sendPrimitiveInfo(self, obj):
         # send object infomation to GUI
         objInfos = self.objectManager.getObjectInfos(obj)
-        self.uiCmdQueue.put((CMD_SEND_PRIMITIVEINFOS, objInfos))
+        self.uiCmdQueue.put(CMD_SEND_PRIMITIVEINFOS, objInfos)
 
 
     #---------------------------#
     # update functions
     #---------------------------#
     def updateCommand(self):
-        while self.cmdQueue and not self.cmdQueue.empty():
-            cmd = self.cmdQueue.get()
-            value = None
-
-            # check type for tuple - (cmd, value)
-            if type(cmd) is tuple:
-                cmd, value = cmd
-
-            logger.info("Core CommandQueue (%d, %s)" % (cmd, value))
+        while not self.cmdQueue.empty():
+            # receive value must be tuple type
+            cmd, value = self.cmdQueue.get()
 
             # close app
             if cmd == CMD_CLOSE_APP:
@@ -221,7 +215,7 @@ class CoreManager(Singleton):
                         primitive = primitives[np.random.randint(3)]
                         obj = self.renderer.objectManager.addPrimitive(primitive, name="", pos=pos)
                         # send object infomation
-                        self.sendPrimitiveInfo(obj)
+                        self.sendPrimitiveName(obj)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
@@ -236,12 +230,11 @@ class CoreManager(Singleton):
         # get camera
         self.camera = self.cameraManager.getMainCamera()
         moveSpeed = self.delta * 5.0
-        rotSpeed = 0.03
 
         # camera move pan
         if btnL and btnR or btnM:
-            self.camera.move(self.camera.right * self.mouseDelta[0] * 0.01)
-            self.camera.move(-self.camera.up * self.mouseDelta[1] * 0.01)
+            self.camera.moveToRight(self.mouseDelta[0] * 0.01)
+            self.camera.moveToUp(-self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
             self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
@@ -249,25 +242,25 @@ class CoreManager(Singleton):
 
         # camera move front/back
         if self.wheelUp:
-            self.camera.move(self.camera.front * 5.0)
+            self.camera.moveToFront(5.0)
         elif self.wheelDown:
-            self.camera.move(-self.camera.front * 5.0)
+            self.camera.moveToFront(-5.0)
 
         # update camera transform
         if keydown[K_w]:
-            self.camera.move(self.camera.front * moveSpeed)
+            self.camera.moveToFront(moveSpeed)
         elif keydown[K_s]:
-            self.camera.move(-self.camera.front * moveSpeed)
+            self.camera.moveToFront(-moveSpeed)
 
         if keydown[K_a]:
-            self.camera.move(self.camera.right * moveSpeed)
+            self.camera.moveToRight(moveSpeed)
         elif keydown[K_d]:
-            self.camera.move(-self.camera.right * moveSpeed)
+            self.camera.moveToRight(-moveSpeed)
 
         if keydown[K_q]:
-            self.camera.move(-self.camera.up * moveSpeed)
+            self.camera.moveToUp(-moveSpeed)
         elif keydown[K_e]:
-            self.camera.move(self.camera.up * moveSpeed)
+            self.camera.moveToUp(moveSpeed)
 
         if keydown[K_SPACE]:
             self.camera.resetTransform()

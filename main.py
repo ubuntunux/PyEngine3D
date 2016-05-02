@@ -29,10 +29,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
-from multiprocessing import Process, Queue, Pipe
+from multiprocessing import Process, Pipe
 
 # core manager
-from Core import CoreManager
+from Core import CoreManager, CustomQueue, CustomPipe
 
 def run():
     coreCmdQueue = None
@@ -42,9 +42,9 @@ def run():
     # process - QT
     editable = True
     if editable:
-        coreCmdQueue = Queue()
-        uiCmdQueue = Queue()
-        pipe1, pipe2 = Pipe()
+        coreCmdQueue = CustomQueue()
+        uiCmdQueue = CustomQueue()
+        pipe1, pipe2 = CustomPipe()
 
         # main UI
         from UI import run_editor

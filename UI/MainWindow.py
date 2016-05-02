@@ -13,6 +13,21 @@ from Core import *
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
 #----------------------#
+# FUNCTION : findItem(parent, name)
+#----------------------#
+def findTreeItem(parentItem, findItemName):
+    if type(parentItem) == QtGui.QTreeWidget:
+        for item in parentItem.findItems("", QtCore.Qt.MatchContains):
+            if item.text(0) == findItemName:
+                return item
+    elif type(parentItem) == QtGui.QTreeWidgetItem:
+        for i in range(parentItem.childCount()):
+            item = parentItem.child(i)
+            if item.text(0) == findItemName:
+                return item
+    return None
+
+#----------------------#
 # CLASS : Main Window
 #----------------------#
 class UIThread(QtCore.QThread):
@@ -22,17 +37,24 @@ class UIThread(QtCore.QThread):
         self.cmdQueue = cmdQueue
         self.isFillobjPropertyTree = False
 
+        self.limitDelta = 1.0 / 10.0 # 10fps
+        self.delta = 0.0
+        self.lastTime = 0.0
+
     def run(self):
+        self.lastTime = time.time()
         while self.running:
+            # Timer - fixed 10 fps
+            self.delta = time.time() - self.lastTime
+            if self.delta < self.limitDelta:
+                time.sleep(self.limitDelta - self.delta)
+            #print(1.0/(time.time() - self.lastTime))
+            self.lastTime = time.time()
+
+            # run queue thread
             if not self.cmdQueue.empty():
-                cmd = self.cmdQueue.get()
-                value = None
-
-                # check type for tuple - (cmd, value)
-                if type(cmd) is tuple:
-                    cmd, value = cmd
-
-                logger.info("GUI Command Queue (%d, %s)" % (cmd, value))
+                # receive value must be tuple type
+                cmd, value = self.cmdQueue.get()
 
                 # process
                 if cmd == CMD_CLOSE_UI:
@@ -82,8 +104,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             # hook editable event
             self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers)
             # set object property events
-            self.objPropertyTree.itemSelectionChanged.connect(self.checkEdit)
-            self.objPropertyTree.itemClicked.connect(self.checkEdit)
+            self.objPropertyTree.itemSelectionChanged.connect(self.checkEditable)
+            self.objPropertyTree.itemClicked.connect(self.checkEditable)
             self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
 
         except AttributeError:
@@ -97,7 +119,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
-        PipeRecvSend(self.cmdPipe, CMD_UI_RUN, CMD_UI_RUN_OK)
+        self.cmdPipe.RecvAndSend(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
 
     def exit(self, *args):
         if args != () and args[0] != None:
@@ -121,16 +143,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Propery Tree Widget
     #--------------------#
     # in your connected slot, you can implement any edit-or-not-logic. you want
-    def checkEdit(self, item=None, column=0):
-        if item == None:
+    def checkEditable(self, item=None, column=0):
+        if item is None:
             item = self.objPropertyTree.currentItem()
             column = self.objPropertyTree.currentColumn()
 
-        # e.g. to allow editing only of column 1:
-        if column == 1 and item.childCount() == 0:
+        # e.g. to allow editing only of column and have not child item:
+        if column == 1 and item.childCount() == 0 and not self.isFillobjPropertyTree:
             self.objPropertyTree.editItem(item, column)
 
-    def objPropertyChanged(self, item, column):
+    def objPropertyChanged(self, item):
         # check object property initialize or not
         if not self.isFillobjPropertyTree:
             try:
@@ -161,44 +183,52 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     value = item.dataType(child.text(1))
                 # send data
                 currentObjectName = self.objectList.currentItem().text()
-                self.coreCmdQueue.put((CMD_SET_PRIMITIVEINFO, (currentObjectName, propertyName, value)))
+                self.coreCmdQueue.put(CMD_SET_PRIMITIVEINFO, (currentObjectName, propertyName, value))
             except:
                 print(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
-
-    def addProperty(self, parent, name, value):
+    def setProperty(self, parent, name, value):
         item = QtGui.QTreeWidgetItem(parent)
         item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
         item.setExpanded(True)
+        # property name and type
         item.setText(0, name)
         item.dataType = type(value)
-        item.oldValue = None
+        item.remove = False # this is for remove item when Layout Refresh
 
-        if item.dataType == bool:
+        # set value
+        if item.dataType == bool: # bool type
             item.setCheckState(1, QtCore.Qt.Checked if value else QtCore.Qt.Unhecked)
-        elif item.dataType in (tuple, list, numpy.ndarray) :
-            for i, itemValue in enumerate(value):
-                self.addProperty(item, "[%d]" % i, itemValue)
-        else:
+        elif item.dataType in (tuple, list, numpy.ndarray): # set list type
+            item.setText(1, "") # set value to None
+            for i, itemValue in enumerate(value): # add child component
+                self.setProperty(item, "[%d]" % i, itemValue)
+        else: # set general type value - int, float, string
             item.setText(1, str(value))
-        item.oldValue = item.text(1)
+        item.oldValue = item.text(1) # set old value
 
     # objectList selected event
     def selectObject(self, inst):
         selectedObjectName = inst.text()
         # request selected object infomation to fill property widget
-        self.coreCmdQueue.put((CMD_REQUEST_PRIMITIVEINFOS, selectedObjectName))
+        self.coreCmdQueue.put(CMD_REQUEST_PRIMITIVEINFOS, selectedObjectName)
 
     # SIGNAL - CMD_SEND_PRIMITIVEINFOS_TO_GUI
     def fillPrimitiveInfo(self, objInfo):
+        # lock edit property ui
         self.isFillobjPropertyTree = True
-        # clear property widget
+
         self.objPropertyTree.clear()
+
         # fill properties of selected object
         for valueName in objInfo.keys():
-            self.addProperty(self.objPropertyTree, valueName, objInfo[valueName])
+            self.setProperty(self.objPropertyTree, valueName, objInfo[valueName])
+
+        #self.showProperties()
+
+        # unlock edit property ui
         self.isFillobjPropertyTree = False
 
     def showProperties(self):

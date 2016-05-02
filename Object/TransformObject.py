@@ -66,6 +66,18 @@ class TransformObject:
         self.moved = True
         self.pos[...] = self.pos + vDelta
 
+    def moveToFront(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.front * delta
+
+    def moveToRight(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.right * delta
+
+    def moveToUp(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.up * delta
+
     def moveX(self, delta):
         self.moved = True
         self.pos[0] += delta
@@ -126,9 +138,9 @@ class TransformObject:
     def getScale(self):
         return self.scale
 
-    def setScale(self, scale):
+    def setScale(self, vScale):
         self.scaled = True
-        self.scale[...] = scale
+        self.scale[...] = vScale
 
     def setScaleX(self, x):
         self.scaled = True
@@ -144,32 +156,32 @@ class TransformObject:
 
     # update Transform
     def updateTransform(self):
-        update = False
+        updateMatrix = False
 
         if self.moved and not all(self.oldPos == self.pos):
-            update = True
-            self.translateMatrix = getTranslateMatrix(*self.pos)
             self.oldPos[...] = self.pos
+            self.translateMatrix = getTranslateMatrix(*self.pos)
             self.moved = False
+            updateMatrix = True
 
         if self.rotated and not all(self.oldRot == self.rot):
-            update = True
+            self.oldRot[...] = self.rot
             self.rotationMatrix = getRotationMatrixZ(self.rot[2])
             rotateY(self.rotationMatrix, self.rot[1])
             rotateX(self.rotationMatrix, self.rot[0])
-            self.oldRot[...] = self.rot
             self.front = self.matrix[:3,2]
             self.right = self.matrix[:3,0]
             self.up = self.matrix[:3,1]
             self.rotated = False
+            updateMatrix = True
 
         if self.scaled and not all(self.oldScale == self.scale):
-            update = True
-            self.scaleMatrix = getScaleMatrix(*self.scale)
             self.oldScale[...] = self.scale
+            self.scaleMatrix = getScaleMatrix(*self.scale)
             self.scaled = False
+            updateMatrix = True
 
-        if update:
+        if updateMatrix:
             self.matrix = np.dot(self.translateMatrix, self.rotationMatrix)
             #self.matrix = np.dot(self.matrix, self.scaleMatrix)
 
