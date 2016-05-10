@@ -60,10 +60,10 @@ class UIThread(QtCore.QThread):
                 if cmd == CMD_CLOSE_UI:
                     self.running = False
                     self.emit( QtCore.SIGNAL('exit'), None)
-                elif cmd == CMD_SEND_PRIMITIVENAME:
-                    self.emit( QtCore.SIGNAL('CMD_SEND_PRIMITIVENAME'), value)
-                elif cmd == CMD_SEND_PRIMITIVEINFOS:
-                    self.emit( QtCore.SIGNAL('CMD_SEND_PRIMITIVEINFOS'), value)
+                elif cmd == CMD_SEND_OBJECT_NAME:
+                    self.emit( QtCore.SIGNAL('CMD_SEND_OBJECT_NAME'), value)
+                elif cmd == CMD_SEND_OBJECT_INFOS:
+                    self.emit( QtCore.SIGNAL('CMD_SEND_OBJECT_INFOS'), value)
 
 
 
@@ -114,8 +114,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # ui main loop
         self.uiThread = UIThread(self.cmdQueue)
         self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
-        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_PRIMITIVENAME"), self.addPrimitiveName )
-        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_PRIMITIVEINFOS"), self.fillPrimitiveInfo )
+        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_OBJECT_NAME"), self.addObjectName )
+        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_OBJECT_INFOS"), self.fillOBJECT_INFO )
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
@@ -180,10 +180,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                         value = parent.dataType(value)
                 else:
                     propertyName = item.text(0)
-                    value = item.dataType(child.text(1))
+                    value = item.dataType(item.text(1))
                 # send data
                 currentObjectName = self.objectList.currentItem().text()
-                self.coreCmdQueue.put(CMD_SET_PRIMITIVEINFO, (currentObjectName, propertyName, value))
+                self.coreCmdQueue.put(CMD_SET_OBJECT_INFO, (currentObjectName, propertyName, value))
             except:
                 print(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -213,10 +213,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def selectObject(self, inst):
         selectedObjectName = inst.text()
         # request selected object infomation to fill property widget
-        self.coreCmdQueue.put(CMD_REQUEST_PRIMITIVEINFOS, selectedObjectName)
+        self.coreCmdQueue.put(CMD_REQUEST_OBJECT_INFOS, selectedObjectName)
 
-    # SIGNAL - CMD_SEND_PRIMITIVEINFOS_TO_GUI
-    def fillPrimitiveInfo(self, objInfo):
+    # SIGNAL - CMD_SEND_OBJECT_INFOS_TO_GUI
+    def fillOBJECT_INFO(self, objInfo):
         # lock edit property ui
         self.isFillobjPropertyTree = True
 
@@ -238,8 +238,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Object List Widget
     #--------------------#
-    # SIGNAL - CMD_SEND_PRIMITIVENAME_TO_GUI
-    def addPrimitiveName(self, objName):
+    # SIGNAL - CMD_SEND_OBJECT_NAME_TO_GUI
+    def addObjectName(self, objName):
         # add object name to list
         item = QtGui.QListWidgetItem(objName)
         self.objectList.addItem(item)
@@ -251,6 +251,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def addPrimitive(self, objType):
         if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
             self.coreCmdQueue.put(objType) # send message and receive
+    #
 
 
 # process - QT Widget

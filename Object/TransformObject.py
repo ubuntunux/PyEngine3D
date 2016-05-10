@@ -192,4 +192,9 @@ class TransformObject:
         text += "\nFront : " + " ".join(["%2.2f" % i for i in self.front])
         text += "\nRight : " + " ".join(["%2.2f" % i for i in self.right])
         text += "\nUp : " + " ".join(["%2.2f" % i for i in self.up])
+        text += "\nMatrix"
+        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,0]])
+        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,1]])
+        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,2]])
+        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,3]])
         return text

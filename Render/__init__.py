@@ -1,4 +1,3 @@
-from .Camera import CameraManager, Camera
 from .Shader import *
 from .Material import *
 from .GLFont import GLFont, defaultFontFile

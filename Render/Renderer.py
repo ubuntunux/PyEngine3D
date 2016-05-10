@@ -74,7 +74,6 @@ class Renderer(Singleton):
 
         # managers
         self.coreManager = None
-        self.cameraManager = CameraManager.instance()
         self.objectManager = ObjectManager.instance()
         self.shaderManager = ShaderManager.instance()
         self.materialManager = MaterialManager.instance()
@@ -111,14 +110,13 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
-        # build a scene
-        self.cameraManager.initialize(self)
-        self.resizeScene(self.width, self.height)
-
         # managers initialize
         self.objectManager.initialize(self)
         self.shaderManager.initialize(self)
         self.materialManager.initialize(self)
+
+        # build a scene
+        self.resizeScene(self.width, self.height)
 
     def close(self):
         # shader delete
@@ -143,7 +141,7 @@ class Renderer(Singleton):
         self.width = width
         self.height = height
         self.viewportRatio = float(width) / float(height)
-        self.camera = self.cameraManager.getMainCamera()
+        self.camera = self.objectManager.getMainCamera()
 
         # get viewport matrix matrix
         self.perspective = perspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
@@ -174,8 +172,8 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
-        # draw Objects
-        for obj in self.objectManager.getObjectList():
+        # draw static meshes
+        for obj in self.objectManager.getStaticMeshes():
             obj.draw(self.camera.matrix, self.perspective)
 
 

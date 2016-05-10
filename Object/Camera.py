@@ -4,35 +4,13 @@ from Core import logger, config
 from Utilities import *
 from Object import TransformObject
 
-#------------------------------#
-# CLASS : CameraManager
-#------------------------------#
-class CameraManager(Singleton):
-    def __init__(self):
-        self.cameras = []
-        self.mainCamera = None
-        self.coreManager = None
-
-    def initialize(self, coreManager):
-        logger.info("initialize " + self.__class__.__name__)
-        self.coreManager = coreManager
-        self.cameras = []
-
-        # add main camera
-        camera = Camera()
-        self.cameras.append(camera)
-        self.mainCamera = camera
-        logger.info("MainCamera Fov(%.1f), Near(%.1f), Far(%.1f)" % (camera.fov, camera.near, camera.far))
-
-    def getMainCamera(self):
-        return self.mainCamera
-
 
 #------------------------------#
 # CLASS : Camera
 #------------------------------#
 class Camera(TransformObject):
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         TransformObject.__init__(self)
 
         # get properties
@@ -52,3 +30,5 @@ class Camera(TransformObject):
 
         # initTransform
         self.resetTransform()
+        # log
+        logger.info("Create Camera : %s", self.name)

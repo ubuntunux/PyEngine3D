@@ -7,6 +7,10 @@ class Singleton:
     return cls.__instance
 
   @classmethod
+  def getInstance(cls):
+    return cls.__instance
+
+  @classmethod
   def instance(cls, *args, **kargs):
     cls.__instance = cls(*args, **kargs)
     cls.instance = cls.__getInstance

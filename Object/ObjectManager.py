@@ -1,7 +1,7 @@
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 
-from Core import logger
-from Object import Primitive
+from Core import logger, CoreManager
+from Object import Primitive, Camera
 from Utilities import Singleton
 
 #------------------------------#
@@ -9,62 +9,73 @@ from Utilities import Singleton
 #------------------------------#
 class ObjectManager(Singleton):
     def __init__(self):
-        self.primitives = []
-        self.primitivesMap = {}
+        self.cameras = []
+        self.staticMeshes = []
+        self.objectMap = {}
+        self.mainCamera = None
         self.callback_addPrimitive = None
         self.coreManager = None
+        self.renderer = None
 
-    def initialize(self, coreManager):
-        self.coreManager = coreManager
+    def initialize(self, renderer):
+        self.coreManager = CoreManager.CoreManager.instance()
+        self.renderer = renderer
         logger.info("initialize " + self.__class__.__name__)
+        # add main camera
+        self.mainCamera = self.addCamera()
 
-    # binding callback function
-    def bind_addPrimitive(self, func):
-        self.callback_addPrimitive = func
+    def generateObjectName(self, name):
+        index = 0
+        if name in self.objectMap:
+            while True:
+                newName = "%s_%d" % (name, index)
+                if newName not in self.objectMap:
+                    return newName
+                index += 1
+        return name
 
-    def addPrimitive(self, primitive, name='', pos=(0,0,0), material=None):
-        """
-        :param primitive: reference Primitive.py ( Triangle, Quad, etc...)
-        """
+    def getMainCamera(self):
+        return self.mainCamera
+
+    def addCamera(self):
+        name = self.generateObjectName("Camera")
+        camera = Camera(name)
+        self.cameras.append(camera)
+        self.objectMap[name] = camera
+        # send camera name to gui
+        self.coreManager.sendObjectName(camera)
+        return camera
+
+
+    def addPrimitive(self, primitive, pos=(0,0,0)):
         if issubclass(primitive, Primitive):
             # generate name
-            if name == '':
-                name = primitive.__name__
-
-            index = 0
-            if name in self.primitivesMap:
-                while True:
-                    newName = "%s_%d" % (name, index)
-                    if newName not in self.primitivesMap:
-                        name = newName
-                        break
-                    index += 1
-            # log
+            name = self.generateObjectName(primitive.__name__)
             logger.info("Add primitive : %s %s %s" % (primitive.__name__, name, pos))
 
             # create primitive
-            if not material:
-                material = self.coreManager.materialManager.getDefaultMaterial()
+            material = self.renderer.materialManager.getDefaultMaterial()
             obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
 
-            # add object
-            self.primitives.append(obj)
-            self.primitivesMap[name] = obj
+            # add static mesh
+            self.staticMeshes.append(obj)
+            self.objectMap[name] = obj
+            # send object name to ui
+            self.coreManager.sendObjectName(obj)
 
-            # callback function on success
-            if self.callback_addPrimitive:
-                self.callback_addPrimitive(obj.name)
             return obj
-
         else:
             logger.warning("Unknown primitive : %s" % str(primitive))
         return None
 
     def getObject(self, objName):
-        return self.primitivesMap[objName] if objName in self.primitivesMap else None
+        return self.objectMap[objName]
 
     def getObjectList(self):
-        return self.primitives
+        return self.objectMap.values()
+
+    def getStaticMeshes(self):
+        return self.staticMeshes
 
     def getObjectInfos(self, obj):
         info = OrderedDict()
@@ -79,5 +90,8 @@ class ObjectManager(Singleton):
             obj.setPos(propertyValue)
         elif propertyName == 'rot':
             obj.setRot(propertyValue)
+
+    def setObjectFocus(self, obj):
+        self.mainCamera.setPos(obj.getPos())
 
 
