@@ -176,7 +176,6 @@ class Renderer(Singleton):
         for obj in self.objectManager.getStaticMeshes():
             obj.draw(self.camera.matrix, self.perspective)
 
-
     def render_postprocess(self):
         # set orthographic view
         glMatrixMode( GL_PROJECTION )

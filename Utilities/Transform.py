@@ -15,6 +15,17 @@ WORLD_RIGHT = np.array([1.0, 0.0, 0.0])
 WORLD_UP = np.array([0.0, 1.0, 0.0])
 WORLD_FRONT = np.array([0.0, 0.0, 1.0])
 
+def transform(m, v):
+    return np.asarray(m * np.asmatrix(v).T)[:,0]
+
+def magnitude(v):
+    return math.sqrt(np.sum(v ** 2))
+
+def normalize(v):
+    m = magnitude(v)
+    if m == 0:
+        return v
+    return v / m
 
 def getTranslateMatrix(x, y, z):
     '''
@@ -133,6 +144,16 @@ def rotate(M, radian, x, y, z):
                      [          0,          0,        0,   1]]).T
     M[...] = np.dot(M,R)
 
+def lookat(eye, target, up):
+    F = target[:3] - eye[:3]
+    f = normalize(F)
+    U = normalize(up[:3])
+    s = np.cross(f, U)
+    u = np.cross(s, f)
+    M = np.eye(4, dtype=np.float32)
+    M[:3,:3] = np.vstack([s,u,-f])
+    T = getTranslateMatrix(*(-eye))
+    return M * T
 
 def ortho( left, right, bottom, top, znear, zfar ):
     assert( right  != left )

@@ -180,7 +180,6 @@ class CoreManager(Singleton):
                 # create primitive
                 camera = self.objectManager.getMainCamera()
                 pos = -camera.pos + camera.front * 10.0
-                print(pos)
                 primitive = primitives[cmd - CMD_ADD_TRIANGLE]
                 obj = self.renderer.objectManager.addPrimitive(primitive, pos=pos)
                 obj.updateTransform()
@@ -192,10 +191,10 @@ class CoreManager(Singleton):
                 # send object infomation to GUI
                 objectName, propertyName, propertyValue = value
                 self.objectManager.setObjectData(objectName, propertyName, propertyValue)
+            elif cmd == CMD_SET_OBJECT_SELECT:
+                self.objectManager.setSelectedObject(value)
             elif cmd == CMD_SET_OBJECT_FOCUS:
-                # send object infomation to GUI
-                obj = self.objectManager.getObject(value)
-                self.objectManager.setObjectFocus(obj)
+                self.objectManager.setObjectFocus(value)
 
 
     def updateEvent(self):
@@ -222,9 +221,10 @@ class CoreManager(Singleton):
                         primitive = primitives[np.random.randint(3)]
                         self.renderer.objectManager.addPrimitive(primitive, pos=pos)
                 elif keyDown == K_HOME:
-                    # send object infomation to GUI
                     obj = self.objectManager.staticMeshes[0]
                     self.objectManager.setObjectFocus(obj)
+                elif keyDown == K_DELETE:
+                    self.objectManager.clearObjects()
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
@@ -311,4 +311,8 @@ class CoreManager(Singleton):
             self.console.info("%.2f fps" % self.fps)
             self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
             self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))
-            self.console.info(self.camera.getTransformInfos())
+            # selected object transform info
+            selectedObject = self.objectManager.getSelectedObject()
+            if selectedObject:
+                self.console.info("Selected Object : %s" % selectedObject.name)
+                self.console.info(selectedObject.getTransformInfos())

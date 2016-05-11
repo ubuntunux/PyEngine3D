@@ -7,7 +7,7 @@ from Utilities import *
 # CLASS : TransformObject
 #------------------------------#
 class TransformObject:
-    def __init__(self):
+    def __init__(self, pos):
         self.move_speed = config.Object.move_speed
         self.rotation_speed = config.Object.rotation_speed
 
@@ -34,7 +34,8 @@ class TransformObject:
         self.oldScale = np.zeros(3, dtype=np.float32)
 
         # init transform
-        self.resetTransform()
+        self.setPos(pos)
+        self.updateTransform()
 
     def resetTransform(self):
         self.setPos(np.zeros(3, dtype=np.float32))
@@ -183,18 +184,19 @@ class TransformObject:
 
         if updateMatrix:
             self.matrix = np.dot(self.translateMatrix, self.rotationMatrix)
+            #self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
             #self.matrix = np.dot(self.matrix, self.scaleMatrix)
 
 
     def getTransformInfos(self):
-        text = "Position : " + " ".join(["%2.2f" % i for i in self.pos])
-        text += "\nRotation : " + " ".join(["%2.2f" % i for i in self.rot])
-        text += "\nFront : " + " ".join(["%2.2f" % i for i in self.front])
-        text += "\nRight : " + " ".join(["%2.2f" % i for i in self.right])
-        text += "\nUp : " + " ".join(["%2.2f" % i for i in self.up])
-        text += "\nMatrix"
-        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,0]])
-        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,1]])
-        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,2]])
-        text += "\n" + " ".join(["%2.2f" % i for i in self.matrix[:,3]])
+        text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])
+        text += "\n\tRotation : " + " ".join(["%2.2f" % i for i in self.rot])
+        text += "\n\tFront : " + " ".join(["%2.2f" % i for i in self.front])
+        text += "\n\tRight : " + " ".join(["%2.2f" % i for i in self.right])
+        text += "\n\tUp : " + " ".join(["%2.2f" % i for i in self.up])
+        text += "\n\tMatrix"
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,0]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,1]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,2]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,3]])
         return text

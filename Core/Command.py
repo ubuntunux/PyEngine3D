@@ -72,6 +72,7 @@ CMD_SEND_OBJECT_NAME  = cmd_index.send("CMD_SEND_OBJECT_NAME")
 CMD_REQUEST_OBJECT_INFOS = cmd_index.send("CMD_REQUEST_OBJECT_INFOS")
 CMD_SEND_OBJECT_INFOS = cmd_index.send("CMD_SEND_OBJECT_INFOS")
 CMD_SET_OBJECT_INFO = cmd_index.send("CMD_SET_OBJECT_INFO")
+CMD_SET_OBJECT_SELECT = cmd_index.send("CMD_SET_OBJECT_SELECT")
 CMD_SET_OBJECT_FOCUS = cmd_index.send("CMD_SET_OBJECT_FOCUS")
 
 #---------------------#
@@ -86,16 +87,23 @@ def CustomPipe():
 class PipeClass:
     def __init__(self, pipe):
         self.pipe = pipe
+        self.simpleLog = True
 
     def send(self, sendCmd, sendValue=None):
-        logger.info("Pipe : Send %s, %s in %s" % (getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
+        if self.simpleLog:
+            logger.info("Pipe : Send %s in %s" % (getCommandName(sendCmd), getTraceCallStack()))
+        else:
+            logger.info("Pipe : Send %s, %s in %s" % (getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
         # must send queue date to tuple type
         self.pipe.send((sendCmd, sendValue))
 
     def recv(self):
         # must be a tuple type
         cmdAndValue = self.pipe.recv()
-        logger.info("Pipe : Recv %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
+        if self.simpleLog:
+            logger.info("Pipe : Recv %s in %s" % (getCommandName(cmdAndValue[0]), getTraceCallStack()))
+        else:
+            logger.info("Pipe : Recv %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
         return cmdAndValue
 
     def SendAndRecv(self, sendCmd, sendValue, checkRecvCmd, checkReceiveValue):
@@ -104,12 +112,17 @@ class PipeClass:
 
         # wait recv message - must be a tuple type
         recv, value = self.pipe.recv()
-
-        logger.info("Pipe : Send %s, %s and Recv %s, %s in %s" % (getCommandName(sendCmd), str(sendValue), getCommandName(recv), str(value), getTraceCallStack()))
+        if self.simpleLog:
+            logger.info("Pipe : Send %s and Recv %s in %s" % (getCommandName(sendCmd), getCommandName(recv), getTraceCallStack()))
+        else:
+            logger.info("Pipe : Send %s, %s and Recv %s, %s in %s" % (getCommandName(sendCmd), str(sendValue), getCommandName(recv), str(value), getTraceCallStack()))
 
         # check receive correct command and value
         if recv != checkRecvCmd or (checkReceiveValue is not None and checkReceiveValue != value):
-            logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
+            if self.simpleLog:
+                logger.info("Pipe : RecvFailed %s and Send %s in %s" % (getCommandName(recv), CMD_FAIL, getTraceCallStack()))
+            else:
+                logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
             logger.error("ERROR : Received %s not %s" % (recv, checkRecvCmd))
             raise BaseException("Pipe receive error.")
         return value
@@ -121,13 +134,19 @@ class PipeClass:
         if recv == checkRecvCmd and (checkReceiveValue is None or checkReceiveValue == value):
             # receive succesfull - send message, must be a tuple type
             self.pipe.send((sendCmd, sendValue))
-            logger.info("Pipe : Recv %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
+            if self.simpleLog:
+                logger.info("Pipe : Recv %s and Send %s in %s" % (getCommandName(recv), getCommandName(sendCmd), getTraceCallStack()))
+            else:
+                logger.info("Pipe : Recv %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
 
             # return received value
             return value
         else:
             self.pipe.send((CMD_FAIL,None))
-            logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
+            if self.simpleLog:
+                logger.info("Pipe : RecvFailed %s and Send %s in %s" % (getCommandName(recv), CMD_FAIL, getTraceCallStack()))
+            else:
+                logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
             logger.error("ERROR : Received %s not %s" % (recv, checkRecvCmd))
             raise BaseException("Pipe receive error.")
 
@@ -138,6 +157,7 @@ class PipeClass:
 class CustomQueue:
     def __init__(self):
         self.queue = Queue()
+        self.simpleLog = True
 
     def empty(self):
         return self.queue.empty()
@@ -145,10 +165,16 @@ class CustomQueue:
     def get(self):
         # receive value must be tuple type
         cmdAndValue = self.queue.get(self)
-        logger.info("Queue : get %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
+        if self.simpleLog:
+            logger.info("Queue : get %s in %s" % (getCommandName(cmdAndValue[0]), getTraceCallStack()))
+        else:
+            logger.info("Queue : get %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
         return cmdAndValue
 
     def put(self, cmdIndex, value=None):
-        logger.info("Queue : put %s, %s in %s" % (getCommandName(cmdIndex), str(value), getTraceCallStack()))
+        if self.simpleLog:
+            logger.info("Queue : put %s in %s" % (getCommandName(cmdIndex), getTraceCallStack()))
+        else:
+            logger.info("Queue : put %s, %s in %s" % (getCommandName(cmdIndex), str(value), getTraceCallStack()))
         # must send queue date to tuple type
         self.queue.put((cmdIndex, value))

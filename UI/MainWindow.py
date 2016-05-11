@@ -98,6 +98,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
             QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)
+            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemActivated(QListWidgetItem *)"), self.selectObject)
+            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemDoubleClicked(QListWidgetItem *)"), self.focusObject)
 
             # object property widget
             self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
@@ -200,7 +202,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # set value
         if item.dataType == bool: # bool type
-            item.setCheckState(1, QtCore.Qt.Checked if value else QtCore.Qt.Unhecked)
+            item.setCheckState(1, QtCore.Qt.Checked if value else QtCore.Qt.Unchecked)
         elif item.dataType in (tuple, list, numpy.ndarray): # set list type
             item.setText(1, "") # set value to None
             for i, itemValue in enumerate(value): # add child component
@@ -213,7 +215,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def selectObject(self, inst):
         selectedObjectName = inst.text()
         # request selected object infomation to fill property widget
+        self.coreCmdQueue.put(CMD_SET_OBJECT_SELECT, selectedObjectName)
         self.coreCmdQueue.put(CMD_REQUEST_OBJECT_INFOS, selectedObjectName)
+
+    def focusObject(self, inst):
+        selectedObjectName = inst.text()
+        self.coreCmdQueue.put(CMD_SET_OBJECT_FOCUS, selectedObjectName)
 
     # SIGNAL - CMD_SEND_OBJECT_INFOS_TO_GUI
     def fillOBJECT_INFO(self, objInfo):
@@ -251,7 +258,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def addPrimitive(self, objType):
         if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
             self.coreCmdQueue.put(objType) # send message and receive
-    #
 
 
 # process - QT Widget

@@ -1,32 +1,25 @@
 import numpy as np
 from OpenGL.GL import *
 
-from Core import CoreManager
+from Object import BaseObject
 from Utilities import *
-from Object import TransformObject
 
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
 #------------------------------#
 # CLASS : Primitive
 #------------------------------#
-class Primitive(TransformObject):
+class Primitive(BaseObject):
     data = None
     index = None
 
     def __init__(self, name='', pos=(0,0,0), material=None):
-        # init TransformObject
-        TransformObject.__init__(self)
+        BaseObject.__init__(self, name, pos)
 
         # init variables
-        self.name = name
         self.material = material
         self.shader = self.material.shader
         self.buffer = -1
         self.buffer_index = -1
-
-        # init transform
-        self.setPos(pos)
-        self.updateTransform()
 
         # initialize
         self.initialize()
@@ -71,6 +64,10 @@ class Primitive(TransformObject):
 
         loc = glGetUniformLocation(self.shader.program, "perspective")
         glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
+
+        # selected object render color
+        loc = glGetUniformLocation(self.shader.program, "diffuseColor")
+        glUniform4fv(loc, 1, (1,0,0,1) if self.selected else (0.3, 0.3, 0.3, 1.0))
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))

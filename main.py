@@ -29,8 +29,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 __version__ = '0.1'
 
-from multiprocessing import Process, Pipe
-import threading
+from multiprocessing import Process
+
 # core manager
 from Core import CoreManager, CustomQueue, CustomPipe
 

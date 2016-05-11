@@ -1,8 +1,9 @@
 from collections import OrderedDict
 
 from Core import logger, CoreManager
-from Object import Primitive, Camera
+from Object import Primitive, Camera, TransformObject
 from Utilities import Singleton
+
 
 #------------------------------#
 # CLASS : ObjectManager
@@ -12,8 +13,8 @@ class ObjectManager(Singleton):
         self.cameras = []
         self.staticMeshes = []
         self.objectMap = {}
+        self.selectedObject = None
         self.mainCamera = None
-        self.callback_addPrimitive = None
         self.coreManager = None
         self.renderer = None
 
@@ -62,11 +63,15 @@ class ObjectManager(Singleton):
             self.objectMap[name] = obj
             # send object name to ui
             self.coreManager.sendObjectName(obj)
-
             return obj
         else:
             logger.warning("Unknown primitive : %s" % str(primitive))
         return None
+
+    def clearObjects(self):
+        self.staticMeshes = []
+        self.objectMap = {}
+
 
     def getObject(self, objName):
         return self.objectMap[objName]
@@ -82,6 +87,7 @@ class ObjectManager(Singleton):
         info['name'] = obj.name
         info['pos'] = obj.pos
         info['rot'] = obj.rot
+        info['moved'] = False
         return info
 
     def setObjectData(self, objectName, propertyName, propertyValue):
@@ -91,7 +97,20 @@ class ObjectManager(Singleton):
         elif propertyName == 'rot':
             obj.setRot(propertyValue)
 
-    def setObjectFocus(self, obj):
-        self.mainCamera.setPos(obj.getPos())
+    def getSelectedObject(self):
+        return self.selectedObject
+
+    def setSelectedObject(self, objName):
+        selectedObject = self.getObject(objName)
+        if self.selectedObject is not selectedObject:
+            if self.selectedObject:
+                self.selectedObject.setSelected(False)
+            self.selectedObject = selectedObject
+            if selectedObject:
+                selectedObject.setSelected(True)
+
+    def setObjectFocus(self, objName):
+        if objName in self.objectMap:
+            self.mainCamera.setPos(-self.getObject(objName).getPos() - self.mainCamera.front * 2.0)
 
 
