@@ -166,7 +166,7 @@ class Renderer(Singleton):
         glLoadIdentity()
         # set render state
         glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
+        glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
@@ -175,6 +175,13 @@ class Renderer(Singleton):
         # draw static meshes
         for obj in self.objectManager.getStaticMeshes():
             obj.draw(self.camera.matrix, self.perspective)
+
+        # selected object - render additive color
+        if self.objectManager.getSelectedObject():
+            glEnable(GL_BLEND)
+            glBlendFunc( GL_ONE, GL_ONE )
+            self.objectManager.getSelectedObject().draw(self.camera.matrix, self.perspective, True)
+
 
     def render_postprocess(self):
         # set orthographic view

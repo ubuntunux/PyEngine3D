@@ -37,7 +37,7 @@ class Primitive(BaseObject):
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
-    def draw(self, view, perspective):
+    def draw(self, view, perspective, selected=False):
         # update transform
         self.updateTransform()
 
@@ -67,7 +67,7 @@ class Primitive(BaseObject):
 
         # selected object render color
         loc = glGetUniformLocation(self.shader.program, "diffuseColor")
-        glUniform4fv(loc, 1, (1,0,0,1) if self.selected else (0.3, 0.3, 0.3, 1.0))
+        glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))
