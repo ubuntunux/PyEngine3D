@@ -21,3 +21,6 @@ class Camera(BaseObject):
 
         # log
         logger.info("Create Camera : %s", self.name)
+
+    def draw(self, *args, **kargs):
+        pass

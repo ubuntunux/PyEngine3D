@@ -9,8 +9,11 @@ from Utilities import *
 # CLASS : Primitive
 #------------------------------#
 class Primitive(BaseObject):
-    data = None
-    index = None
+    position = np.array([], dtype=np.float32)
+    color    = np.array([], dtype=np.float32)
+    normal   = np.array([], dtype=np.float32)
+    index = np.array([], dtype=np.uint32)
+    none_offset = ctypes.c_void_p(0)
 
     def __init__(self, name='', pos=(0,0,0), material=None):
         BaseObject.__init__(self, name, pos)
@@ -18,8 +21,11 @@ class Primitive(BaseObject):
         # init variables
         self.material = material
         self.shader = self.material.shader
-        self.buffer = -1
-        self.buffer_index = -1
+
+        self.position_buffer = -1
+        self.color_buffer = -1
+        self.normal_buffer = -1
+        self.index_buffer = -1
 
         # initialize
         self.initialize()
@@ -28,13 +34,24 @@ class Primitive(BaseObject):
         self.bindBuffers()
 
     def bindBuffers(self):
-        self.buffer = glGenBuffers(1) # Request a buffer slot from GPU
-        glBindBuffer(GL_ARRAY_BUFFER, self.buffer) # Make this buffer the default one
-        glBufferData(GL_ARRAY_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW) # Upload data
+        # position buffer
+        self.position_buffer = glGenBuffers(1) # Request a buffer slot from GPU
+        glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer) # Make this buffer the default one
+        glBufferData(GL_ARRAY_BUFFER, self.position.nbytes, self.position, GL_STATIC_DRAW) # Upload data
 
-        # same for index buffer
-        self.buffer_index = glGenBuffers(1)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
+        # color buffer
+        self.color_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.color_buffer)
+        glBufferData(GL_ARRAY_BUFFER, self.color.nbytes, self.color, GL_STATIC_DRAW)
+
+        # normal buffer
+        self.normal_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
+        glBufferData(GL_ARRAY_BUFFER, self.normal.nbytes, self.normal, GL_STATIC_DRAW)
+
+        # index buffer
+        self.index_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
     def draw(self, view, perspective, selected=False):
@@ -43,18 +60,24 @@ class Primitive(BaseObject):
 
         # use program
         glUseProgram(self.shader.program)
-        stride = self.data.strides[0]
-        offset = ctypes.c_void_p(0)
-        loc = glGetAttribLocation(self.shader.program, "position")
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.buffer)
-        glVertexAttribPointer(loc, 3, GL_FLOAT, False, stride, offset)
 
-        offset = ctypes.c_void_p(self.data.dtype["position"].itemsize)
-        loc = glGetAttribLocation(self.shader.program, "color")
+        #loc = glGetAttribLocation(self.shader.program, "position")
+        loc = 0
         glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.buffer)
-        glVertexAttribPointer(loc, 4, GL_FLOAT, False, stride, offset)
+        glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
+        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], self.none_offset)
+
+        #loc = glGetAttribLocation(self.shader.program, "color")
+        loc = 1
+        glEnableVertexAttribArray(loc)
+        glBindBuffer(GL_ARRAY_BUFFER, self.color_buffer)
+        glVertexAttribPointer(loc, 4, GL_FLOAT, False, self.color.strides[0], self.none_offset)
+
+        #loc = glGetAttribLocation(self.shader.program, "normal")
+        loc = 2
+        glEnableVertexAttribArray(loc)
+        glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
+        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.normal.strides[0], self.none_offset)
 
         loc = glGetUniformLocation(self.shader.program, "model")
         glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
@@ -69,7 +92,7 @@ class Primitive(BaseObject):
         loc = glGetUniformLocation(self.shader.program, "diffuseColor")
         glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.buffer_index)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))
         glUseProgram(0)
 
@@ -96,18 +119,18 @@ class DebugLine:
 # CLASS : Triangle
 #------------------------------#
 class Triangle(Primitive):
-    data = np.zeros(3, [("position", np.float32, 3), ("color", np.float32, 4)] )
-    data['position'] = [ (-1,-1,0), (1,-1,0), (-1,1,0)]
-    data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1) ]
+    position = np.array([(-1,-1,0), (1,-1,0), (-1,1,0)], dtype=np.float32)
+    color    = np.array([(1,0,0,1), (0,1,0,1), (0,0,1,1)], dtype=np.float32)
+    normal = np.array([(0,-1,0), (1,-1,0), (-1,1,0)], dtype=np.float32)
     index = np.array([0,1,2], dtype=np.uint32)
 
 #------------------------------#
 # CLASS : Quad
 #------------------------------#
 class Quad(Primitive):
-    data = np.zeros(4, [("position", np.float32, 3), ("color", np.float32, 4)] )
-    data['position'] = [ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ]
-    data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
+    position = np.array([ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ], dtype=np.float32)
+    color    = np.array([ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ], dtype=np.float32)
+    normal = np.array([ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ], dtype=np.float32)
     index = np.array([0,1,2,1,3,2], dtype=np.uint32)
 
 
@@ -115,17 +138,24 @@ class Quad(Primitive):
 # CLASS : Cube
 #------------------------------#
 class Cube(Primitive):
-    data = np.zeros(8, [("position", np.float32, 3), ("color", np.float32, 4)])
-    data['color']  = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1),
-                        (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-    data['position'] = [ (-1,-1,1),
-                        (1,-1,1),
-                        (1,1,1),
-                        (-1,1,1),
-                        (-1,-1,-1),
-                        (1,-1,-1),
-                        (1,1,-1),
-                        (-1,1,-1)]
+    color = np.array([ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1),
+                (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ], dtype=np.float32)
+    position = np.array([ (-1,-1,1),
+                (1,-1,1),
+                (1,1,1),
+                (-1,1,1),
+                (-1,-1,-1),
+                (1,-1,-1),
+                (1,1,-1),
+                (-1,1,-1)], dtype=np.float32)
+    normal = np.array([ (-1,-1,1),
+                (1,-1,1),
+                (1,1,1),
+                (-1,1,1),
+                (-1,-1,-1),
+                (1,-1,-1),
+                (1,1,-1),
+                (-1,1,-1)], dtype=np.float32)
     index = np.array([0,1,2,
                         2,3,0,
                         1,5,6,
