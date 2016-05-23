@@ -1,7 +1,9 @@
+import os
+
 import numpy as np
 from OpenGL.GL import *
 
-from Object import BaseObject
+from Object import BaseObject, OBJ
 from Utilities import *
 
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
@@ -14,6 +16,7 @@ class Primitive(BaseObject):
     normal   = np.array([], dtype=np.float32)
     index = np.array([], dtype=np.uint32)
     none_offset = ctypes.c_void_p(0)
+    initialized = False
 
     def __init__(self, name='', pos=(0,0,0), material=None):
         BaseObject.__init__(self, name, pos)
@@ -27,10 +30,7 @@ class Primitive(BaseObject):
         self.normal_buffer = -1
         self.index_buffer = -1
 
-        # initialize
-        self.initialize()
-
-    def initialize(self):
+        # binding buffers
         self.bindBuffers()
 
     def bindBuffers(self):
@@ -95,6 +95,19 @@ class Primitive(BaseObject):
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))
         glUseProgram(0)
+
+#------------------------------#
+# CLASS : StaticMesh
+#------------------------------#
+class StaticMesh(Primitive):
+    def __init__(self, name='', pos=(0,0,0), material=None):
+        obj = OBJ(os.path.join('Resources', 'Meshes', 'suzan.obj'), 1, True)
+        self.position = np.array(obj.vertices, dtype=np.float32)
+        self.color    = np.array(obj.vertices, dtype=np.float32)
+        self.normal = np.array(obj.normals, dtype=np.float32)
+        self.index = np.array(sum([i[0] for i in obj.faces], []), dtype=np.uint32)
+        Primitive.__init__(self, name, pos, material)
+
 
 
 #------------------------------#
@@ -169,7 +182,10 @@ class Cube(Primitive):
                         3,2,6,
                         6,7,3], dtype=np.uint32)
 
+
+
+
 #------------------------------#
 # GLOBAL : primitives
 #------------------------------#
-primitives = [Triangle, Quad, Cube]
+primitives = [Triangle, Quad, Cube, StaticMesh]

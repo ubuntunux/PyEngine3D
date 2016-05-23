@@ -95,6 +95,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             btn = self.findChild(QtGui.QPushButton, "add_Cube")
             btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_CUBE))
 
+            btn = self.findChild(QtGui.QPushButton, "add_Obj")
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_OBJ))
+
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
             QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)

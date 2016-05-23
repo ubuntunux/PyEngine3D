@@ -218,7 +218,7 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
-                        primitive = primitives[np.random.randint(3)]
+                        primitive = primitives[np.random.randint(len(primitives))]
                         self.renderer.objectManager.addPrimitive(primitive, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]

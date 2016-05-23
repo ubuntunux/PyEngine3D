@@ -1,3 +1,4 @@
+import re
 import os
 import traceback
 
@@ -6,6 +7,7 @@ from OpenGL.GL import *
 
 from Core import logger
 
+reSlash = re.compile('/+')
 
 def LoadMTL(filepath, filename):
     contents = {}
@@ -54,7 +56,7 @@ def LoadMTL(filepath, filename):
                 except:
                     logger.error(traceback.format_exc())
             elif len(line) > 1:
-                mtl[preFix] = map(float, line[1:])
+                mtl[preFix] = list(map(float, line[1:]))
     return contents
     
 
@@ -98,14 +100,14 @@ class OBJ:
                 # vertex position
                 if preFix == 'v' and len(line) >= 4:
                     # apply scale
-                    self.vertices.append(map(lambda x:float(x) * scale, line[1:4]))
+                    self.vertices.append(list(map(lambda x:float(x) * scale, line[1:4])))
                 # vertex normal
                 elif preFix == 'vn' and len(line) >= 4:
                     bNormalAutoGen = False
-                    self.normals.append(map(float, line[1:4]))
+                    self.normals.append(list(map(float, line[1:4])))
                 # texture coordinate
                 elif preFix == 'vt'  and len(line) >= 3:
-                    self.texcoords.append(map(float, line[1:3]))
+                    self.texcoords.append(list(map(float, line[1:3])))
                 # material name
                 elif preFix in ('usemtl', 'usemat'):
                     lastMaterial = line[1]
@@ -120,21 +122,24 @@ class OBJ:
                     values = line[1:]
                     # split data
                     for value in values:
-                        value = map(int, value.split('/'))                        
+                        value = list(map(int, re.split(reSlash, value)))
                         value += [0, 0]
                         
                         # insert vertex, texcoord, normal index
-                        vertices.append(int(value[0]))
-                        texcoords.append(value[1])
-                        normals.append(value[2])
+                        vertices.append(int(value[0]) - 1)
+                        texcoords.append(int(value[1]) - 1)
+                        normals.append(int(value[2]) - 1)
+
                     # append face list                       
                     self.faces.append((vertices, normals, texcoords, lastMaterial))
-                    
+
             # generate gl list
             self.generate()
                     
     # Generate        
     def generate(self):
+        logger.warn("Object created. Ignore generate function")
+        return
         self.glList = glGenLists(1)
         glNewList(self.glList, GL_COMPILE)
         glEnable(GL_TEXTURE_2D)
@@ -158,12 +163,12 @@ class OBJ:
             for i in range(len(vertices)):
                 # set normal
                 if normals[i] > 0:
-                    glNormal3fv(self.normals[normals[i] - 1])
+                    glNormal3fv(self.normals[normals[i]])
                 # set texture Coordinate
                 if texcoords[i] > 0:
-                    glTexCoord2fv(self.texcoords[texcoords[i] - 1])
+                    glTexCoord2fv(self.texcoords[texcoords[i]])
                 # set vertices
-                glVertex3fv(self.vertices[vertices[i] - 1])
+                glVertex3fv(self.vertices[vertices[i]])
             glEnd()
         glDisable(GL_TEXTURE_2D)
         glEndList()

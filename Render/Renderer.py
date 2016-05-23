@@ -179,8 +179,15 @@ class Renderer(Singleton):
         # selected object - render additive color
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
-            glBlendFunc( GL_ONE, GL_ONE )
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
             self.objectManager.getSelectedObject().draw(self.camera.matrix, self.perspective, True)
+            glBlendFunc( GL_ZERO, GL_ZERO )
+            glLineWidth(1.0)
+            glDisable(GL_CULL_FACE)
+            glDisable(GL_DEPTH_TEST)
+            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+            self.objectManager.getSelectedObject().draw(self.camera.matrix, self.perspective, True)
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 
 
     def render_postprocess(self):
