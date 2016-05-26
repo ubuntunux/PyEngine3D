@@ -242,12 +242,12 @@ class CoreManager(Singleton):
 
         # camera move pan
         if btnL and btnR or btnM:
-            self.camera.moveToRight(self.mouseDelta[0] * 0.01)
-            self.camera.moveToUp(-self.mouseDelta[1] * 0.01)
+            self.camera.moveToRight(-self.mouseDelta[0] * 0.01)
+            self.camera.moveToUp(self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
-            self.camera.rotationPitch(-self.mouseDelta[1] * 0.03)
-            self.camera.rotationYaw(-self.mouseDelta[0] * 0.03)
+            self.camera.rotationPitch(self.mouseDelta[1] * 0.03)
+            self.camera.rotationYaw(self.mouseDelta[0] * 0.03)
 
         # camera move front/back
         if self.wheelUp:
@@ -262,20 +262,21 @@ class CoreManager(Singleton):
             self.camera.moveToFront(-moveSpeed)
 
         if keydown[K_a]:
-            self.camera.moveToRight(moveSpeed)
-        elif keydown[K_d]:
             self.camera.moveToRight(-moveSpeed)
+        elif keydown[K_d]:
+            self.camera.moveToRight(moveSpeed)
 
         if keydown[K_q]:
-            self.camera.moveToUp(-moveSpeed)
-        elif keydown[K_e]:
             self.camera.moveToUp(moveSpeed)
+        elif keydown[K_e]:
+            self.camera.moveToUp(-moveSpeed)
 
         if keydown[K_SPACE]:
             self.camera.resetTransform()
 
-        # update camera
-        self.camera.updateTransform()
+        # update camera matrix to inverse matrix
+        self.camera.updateInverseTransform()
+
 
     def update(self):
         self.currentTime = time.time()

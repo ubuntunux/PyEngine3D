@@ -19,8 +19,10 @@ class Camera(BaseObject):
         self.pan_speed = config.Camera.pan_speed
         self.rotation_speed = config.Camera.rotation_speed
 
+
         # log
         logger.info("Create Camera : %s", self.name)
 
+    # override : draw
     def draw(self, *args, **kargs):
         pass

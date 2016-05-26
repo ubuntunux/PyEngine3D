@@ -54,13 +54,39 @@ class Primitive(BaseObject):
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
-    def draw(self, view, perspective, selected=False):
+    def draw(self, cameraPos, view, perspective, lightPos, lightColor, selected=False):
         # update transform
         self.updateTransform()
 
         # use program
         glUseProgram(self.shader.program)
 
+        loc = glGetUniformLocation(self.shader.program, "model")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
+
+        loc = glGetUniformLocation(self.shader.program, "view")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, view)
+
+        loc = glGetUniformLocation(self.shader.program, "perspective")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
+
+        loc = glGetUniformLocation(self.shader.program, "diffuseColor")
+        glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
+
+        # selected object render color
+        loc = glGetUniformLocation(self.shader.program, "camera_position")
+        glUniform3fv(loc, 1, cameraPos)
+
+        # selected object render color
+        loc = glGetUniformLocation(self.shader.program, "light_position")
+        glUniform3fv(loc, 1, lightPos)
+
+        # selected object render color
+        loc = glGetUniformLocation(self.shader.program, "light_color")
+        glUniform4fv(loc, 1, lightColor)
+
+
+        # Binding buffers
         #loc = glGetAttribLocation(self.shader.program, "position")
         loc = 0
         glEnableVertexAttribArray(loc)
@@ -79,19 +105,6 @@ class Primitive(BaseObject):
         glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.normal.strides[0], self.none_offset)
 
-        loc = glGetUniformLocation(self.shader.program, "model")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
-
-        loc = glGetUniformLocation(self.shader.program, "view")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, view)
-
-        loc = glGetUniformLocation(self.shader.program, "perspective")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
-
-        # selected object render color
-        loc = glGetUniformLocation(self.shader.program, "diffuseColor")
-        glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
-
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, ctypes.c_void_p(0))
         glUseProgram(0)
@@ -101,7 +114,7 @@ class Primitive(BaseObject):
 #------------------------------#
 class StaticMesh(Primitive):
     def __init__(self, name='', pos=(0,0,0), material=None):
-        obj = OBJ(os.path.join('Resources', 'Meshes', 'suzan.obj'), 1, True)
+        obj = OBJ(os.path.join('Resources', 'Meshes', 'human.obj'), 1, True)
         self.position = np.array(obj.vertices, dtype=np.float32)
         self.color    = np.array(obj.vertices, dtype=np.float32)
         self.normal = np.array(obj.normals, dtype=np.float32)

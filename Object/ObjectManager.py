@@ -111,6 +111,6 @@ class ObjectManager(Singleton):
 
     def setObjectFocus(self, objName):
         if objName in self.objectMap:
-            self.mainCamera.setPos(-self.getObject(objName).getPos() - self.mainCamera.front * 2.0)
+            self.mainCamera.setPos(self.getObject(objName).getPos() - self.mainCamera.front * 2.0)
 
 

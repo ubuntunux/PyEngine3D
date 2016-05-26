@@ -17,6 +17,7 @@ class TransformObject:
 
         # transform
         self.matrix = np.eye(4, dtype=np.float32)
+        self.inverse_matrix = np.eye(4, dtype=np.float32)
         self.translateMatrix = np.eye(4, dtype=np.float32)
         self.rotationMatrix =  np.eye(4, dtype=np.float32)
         self.scaleMatrix = np.eye(4, dtype=np.float32)
@@ -183,8 +184,38 @@ class TransformObject:
             updateMatrix = True
 
         if updateMatrix:
+            self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
+            #self.matrix = np.dot
+
+    # It's inverse matrix.
+    def updateInverseTransform(self):
+        updateMatrix = False
+
+        if self.moved and not all(self.oldPos == self.pos):
+            self.oldPos[...] = self.pos
+            self.translateMatrix = getTranslateMatrix(*-self.pos)
+            self.moved = False
+            updateMatrix = True
+
+        if self.rotated and not all(self.oldRot == self.rot):
+            self.oldRot[...] = self.rot
+            self.rotationMatrix = getRotationMatrixZ(-self.rot[2])
+            rotateY(self.rotationMatrix, -self.rot[1])
+            rotateX(self.rotationMatrix, -self.rot[0])
+            self.front = -self.matrix[:3,2]
+            self.right = self.matrix[:3,0]
+            self.up = self.matrix[:3,1]
+            self.rotated = False
+            updateMatrix = True
+
+        if self.scaled and not all(self.oldScale == self.scale):
+            self.oldScale[...] = self.scale
+            self.scaleMatrix = getScaleMatrix(*-self.scale)
+            self.scaled = False
+            updateMatrix = True
+
+        if updateMatrix:
             self.matrix = np.dot(self.translateMatrix, self.rotationMatrix)
-            #self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
             #self.matrix = np.dot(self.matrix, self.scaleMatrix)
 
 

@@ -173,8 +173,10 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
 
         # draw static meshes
+        lightPos = np.array([10.0, 10.0, 10.0])
+        lightColor = np.array([1.0, 0.7, 0.2, 10.0])
         for obj in self.objectManager.getStaticMeshes():
-            obj.draw(self.camera.matrix, self.perspective)
+            obj.draw(self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor)
 
         # selected object - render additive color
         if self.objectManager.getSelectedObject():
