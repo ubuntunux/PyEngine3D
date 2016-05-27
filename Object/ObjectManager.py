@@ -11,6 +11,7 @@ from Utilities import Singleton
 class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
+        self.primitives = []
         self.staticMeshes = []
         self.objectMap = {}
         self.selectedObject = None

@@ -174,7 +174,7 @@ class Renderer(Singleton):
 
         # draw static meshes
         lightPos = np.array([10.0, 10.0, 10.0])
-        lightColor = np.array([1.0, 0.7, 0.2, 10.0])
+        lightColor = np.array([1.0, 1.0, 1.0, 1.0])
         for obj in self.objectManager.getStaticMeshes():
             obj.draw(self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor)
 
@@ -182,13 +182,13 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
-            self.objectManager.getSelectedObject().draw(self.camera.matrix, self.perspective, True)
+            self.objectManager.getSelectedObject().draw(self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor, True)
             glBlendFunc( GL_ZERO, GL_ZERO )
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
-            self.objectManager.getSelectedObject().draw(self.camera.matrix, self.perspective, True)
+            self.objectManager.getSelectedObject().draw(self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor, True)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 
 
