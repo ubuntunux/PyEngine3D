@@ -137,9 +137,6 @@ class OBJ:
                         self.faces.append((vertices[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([vertices[2], vertices[3], vertices[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
-
-
-
             # generate gl list
             self.generate()
                     

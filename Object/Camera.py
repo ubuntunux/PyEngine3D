@@ -10,7 +10,7 @@ from Object import BaseObject
 #------------------------------#
 class Camera(BaseObject):
     def __init__(self, name):
-        BaseObject.__init__(self, name)
+        BaseObject.__init__(self, name, (0,0,0), None, None)
 
         # get properties
         self.fov = config.Camera.fov
@@ -18,7 +18,6 @@ class Camera(BaseObject):
         self.far = config.Camera.far
         self.pan_speed = config.Camera.pan_speed
         self.rotation_speed = config.Camera.rotation_speed
-
 
         # log
         logger.info("Create Camera : %s", self.name)

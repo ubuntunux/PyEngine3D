@@ -1,9 +1,9 @@
 from collections import OrderedDict
+import os
 
 from Core import logger, CoreManager
-from Object import Primitive, Camera, TransformObject
+from Object import BaseObject, Camera, Triangle, Quad, StaticMesh
 from Utilities import Singleton
-
 
 #------------------------------#
 # CLASS : ObjectManager
@@ -11,7 +11,7 @@ from Utilities import Singleton
 class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
-        self.primitives = []
+        self.primitives = {}
         self.staticMeshes = []
         self.objectMap = {}
         self.selectedObject = None
@@ -23,8 +23,15 @@ class ObjectManager(Singleton):
         self.coreManager = CoreManager.CoreManager.instance()
         self.renderer = renderer
         logger.info("initialize " + self.__class__.__name__)
+
         # add main camera
         self.mainCamera = self.addCamera()
+
+        # regist primitives
+        self.primitives['Triangle'] = Triangle()
+        self.primitives['Quad'] = Quad()
+        self.primitives['Cube'] = StaticMesh(os.path.join('Resources', 'Meshes', 'suzan.obj'))
+        self.primitives['Obj'] = StaticMesh(os.path.join('Resources', 'Meshes', 'human.obj'))
 
     def generateObjectName(self, name):
         index = 0
@@ -48,16 +55,18 @@ class ObjectManager(Singleton):
         self.coreManager.sendObjectName(camera)
         return camera
 
+    def getPrimitiveByName(self, primitiveName):
+        return self.primitives[primitiveName] if primitiveName in self.primitives else None
 
     def addPrimitive(self, primitive, pos=(0,0,0)):
-        if issubclass(primitive, Primitive):
+        if primitive:
             # generate name
-            name = self.generateObjectName(primitive.__name__)
-            logger.info("Add primitive : %s %s %s" % (primitive.__name__, name, pos))
+            name = self.generateObjectName(primitive.name)
+            logger.info("Add primitive : %s %s %s" % (primitive.name, name, pos))
 
             # create primitive
             material = self.renderer.materialManager.getDefaultMaterial()
-            obj = primitive(name=name or primitive.__name__, pos=pos, material=material)
+            obj = BaseObject(name=name or primitive.name, pos=pos, primitive=primitive, material=material)
 
             # add static mesh
             self.staticMeshes.append(obj)

@@ -12,7 +12,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 
 from Core import *
-from Object import ObjectManager, primitives
+from Object import ObjectManager
 from Render import Renderer, ShaderManager, MaterialManager
 from Utilities import *
 
@@ -179,10 +179,9 @@ class CoreManager(Singleton):
             elif cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
                 # create primitive
                 camera = self.objectManager.getMainCamera()
-                pos = -camera.pos + camera.front * 10.0
-                primitive = primitives[cmd - CMD_ADD_TRIANGLE]
-                obj = self.renderer.objectManager.addPrimitive(primitive, pos=pos)
-                obj.updateTransform()
+                pos = camera.pos + camera.front * 10.0
+                primitive = self.renderer.objectManager.getPrimitiveByName(value)
+                self.renderer.objectManager.addPrimitive(primitive, pos=pos)
             elif cmd == CMD_REQUEST_OBJECT_INFOS:
                 # send object infomation to GUI
                 obj = self.objectManager.getObject(value)
@@ -218,7 +217,8 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
-                        primitive = primitives[np.random.randint(len(primitives))]
+                        primitiveName = np.random.choice(list(self.renderer.objectManager.primitives.keys()))
+                        primitive = self.renderer.objectManager.getPrimitiveByName(primitiveName)
                         self.renderer.objectManager.addPrimitive(primitive, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]

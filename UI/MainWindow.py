@@ -87,16 +87,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         try:
             # binding button clicked
             btn = self.findChild(QtGui.QPushButton, "add_Triangle")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_TRIANGLE))
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_TRIANGLE, "Triangle"))
 
             btn = self.findChild(QtGui.QPushButton, "add_Quad")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_QUAD))
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_QUAD, "Quad"))
 
             btn = self.findChild(QtGui.QPushButton, "add_Cube")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_CUBE))
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_CUBE, "Cube"))
 
             btn = self.findChild(QtGui.QPushButton, "add_Obj")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_OBJ))
+            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_OBJ, "Obj"))
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
@@ -258,9 +258,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Commands
     #--------------------#
     # add primitive
-    def addPrimitive(self, objType):
+    def addPrimitive(self, objType, objTypeName):
         if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
-            self.coreCmdQueue.put(objType) # send message and receive
+            self.coreCmdQueue.put(objType, objTypeName) # send message and receive
 
 
 # process - QT Widget
