@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <layout class="QVBoxLayout" name="btnLayout">
+       <layout class="QVBoxLayout" name="primitiveListLayout">
         <item>
          <widget class="QWidget" name="empty_2" native="true"/>
         </item>
@@ -47,34 +47,6 @@
           </property>
           <property name="margin">
            <number>10</number>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="add_Triangle">
-          <property name="text">
-           <string>Triangle</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="add_Quad">
-          <property name="text">
-           <string>Quad</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="add_Cube">
-          <property name="text">
-           <string>Cube</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="add_Obj">
-          <property name="text">
-           <string>Obj</string>
           </property>
          </widget>
         </item>

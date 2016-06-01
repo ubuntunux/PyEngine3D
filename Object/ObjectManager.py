@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import os
+import os, glob
 
 from Core import logger, CoreManager
 from Object import BaseObject, Camera, Triangle, Quad, StaticMesh
@@ -28,10 +28,18 @@ class ObjectManager(Singleton):
         self.mainCamera = self.addCamera()
 
         # regist primitives
+        self.registPrimitives()
+
+    def registPrimitives(self):
         self.primitives['Triangle'] = Triangle()
         self.primitives['Quad'] = Quad()
-        self.primitives['Cube'] = StaticMesh(os.path.join('Resources', 'Meshes', 'suzan.obj'))
-        self.primitives['Obj'] = StaticMesh(os.path.join('Resources', 'Meshes', 'human.obj'))
+        for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.obj')):
+            name = os.path.splitext(os.path.split(filename)[1])[0]
+            name = name[0].upper() + name[1:]
+            self.primitives[name] = StaticMesh(name, filename)
+
+    def getPrimitiveNameList(self):
+        return list(self.primitives.keys())
 
     def generateObjectName(self, name):
         index = 0
@@ -95,17 +103,20 @@ class ObjectManager(Singleton):
     def getObjectInfos(self, obj):
         info = OrderedDict()
         info['name'] = obj.name
-        info['pos'] = obj.pos
-        info['rot'] = obj.rot
+        info['position'] = obj.pos
+        info['rotation'] = obj.rot
+        info['scale'] = obj.scale
         info['moved'] = False
         return info
 
     def setObjectData(self, objectName, propertyName, propertyValue):
         obj = self.getObject(objectName)
-        if propertyName == 'pos':
+        if propertyName == 'position':
             obj.setPos(propertyValue)
-        elif propertyName == 'rot':
+        elif propertyName == 'rotation':
             obj.setRot(propertyValue)
+        elif propertyName == 'scale':
+            obj.setScale(propertyValue)
 
     def getSelectedObject(self):
         return self.selectedObject

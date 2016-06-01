@@ -23,7 +23,7 @@ class TransformObject:
         self.scaleMatrix = np.eye(4, dtype=np.float32)
 
         self.pos = np.zeros(3, dtype=np.float32) # X, Y, Z
-        self.oldPos = np.zeros(3, dtype=np.float32)
+        self.oldPos = np.zeros(3, dtype=np.float32) # X, Y, Z
 
         self.rot = np.zeros(3, dtype=np.float32) # pitch, yaw, roll
         self.oldRot = np.zeros(3, dtype=np.float32)
@@ -31,11 +31,12 @@ class TransformObject:
         self.up = np.array([0.0, 1.0, 0.0], dtype=np.float32) # Y Axis
         self.front = np.array([0.0, 0.0, 1.0], dtype=np.float32) # Z Axis
 
-        self.scale = np.zeros(3, dtype=np.float32)
-        self.oldScale = np.zeros(3, dtype=np.float32)
+        self.scale = np.zeros(3, dtype=np.float32) # X, Y, Z
+        self.oldScale = np.zeros(3, dtype=np.float32) # X, Y, Z
 
         # init transform
         self.setPos(pos)
+        self.setScale([1.0, 1.0, 1.0])
         self.updateTransform()
 
     def resetTransform(self):
@@ -185,6 +186,7 @@ class TransformObject:
 
         if updateMatrix:
             self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
+            self.matrix = np.dot(self.scaleMatrix, self.matrix)
 
     # It's inverse matrix.
     def updateInverseTransform(self):

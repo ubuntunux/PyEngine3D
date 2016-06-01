@@ -76,7 +76,7 @@ class Primitive:
 # CLASS : StaticMesh
 #------------------------------#
 class StaticMesh(Primitive):
-    def __init__(self, filename):
+    def __init__(self, name, filename):
         if not os.path.exists(filename):
             return None
 
@@ -86,8 +86,8 @@ class StaticMesh(Primitive):
         self.normal = np.array(obj.normals, dtype=np.float32)
         self.index = np.array(sum([i[0] for i in obj.faces], []), dtype=np.uint32)
         Primitive.__init__(self)
-
-        self.name = os.path.splitext(os.path.split(filename)[1])[0]
+        # reset name
+        self.name = name
 
 
 #------------------------------#

@@ -1,5 +1,6 @@
 # standard library
 import sys, traceback, os, time, traceback
+from functools import partial
 
 # Third-party library
 import PyQt4
@@ -60,10 +61,12 @@ class UIThread(QtCore.QThread):
                 if cmd == CMD_CLOSE_UI:
                     self.running = False
                     self.emit( QtCore.SIGNAL('exit'), None)
+                elif cmd == CMD_SEND_PRIMITIVE_LIST:
+                    self.emit( QtCore.SIGNAL('ADD_PRIMITIVE_LIST'), value)
                 elif cmd == CMD_SEND_OBJECT_NAME:
-                    self.emit( QtCore.SIGNAL('CMD_SEND_OBJECT_NAME'), value)
+                    self.emit( QtCore.SIGNAL('ADD_OBJECT_NAME'), value)
                 elif cmd == CMD_SEND_OBJECT_INFOS:
-                    self.emit( QtCore.SIGNAL('CMD_SEND_OBJECT_INFOS'), value)
+                    self.emit( QtCore.SIGNAL('ADD_OBJECT_INFOS'), value)
 
 
 
@@ -85,18 +88,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.exit(traceback.format_exc())
 
         try:
-            # binding button clicked
-            btn = self.findChild(QtGui.QPushButton, "add_Triangle")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_TRIANGLE, "Triangle"))
-
-            btn = self.findChild(QtGui.QPushButton, "add_Quad")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_QUAD, "Quad"))
-
-            btn = self.findChild(QtGui.QPushButton, "add_Cube")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_CUBE, "Cube"))
-
-            btn = self.findChild(QtGui.QPushButton, "add_Obj")
-            btn.clicked.connect(lambda: self.addPrimitive(CMD_ADD_OBJ, "Obj"))
+            # primitive list
+            self.primitiveListLayout = self.findChild(QtGui.QVBoxLayout, "primitiveListLayout")
 
             # object list view
             self.objectList = self.findChild(QtGui.QListWidget, "objectList")
@@ -116,15 +109,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         except AttributeError:
             self.exit(traceback.format_exc())
 
-        # ui main loop
+        # Signals
         self.uiThread = UIThread(self.cmdQueue)
         self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
-        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_OBJECT_NAME"), self.addObjectName )
-        self.connect( self.uiThread, QtCore.SIGNAL("CMD_SEND_OBJECT_INFOS"), self.fillOBJECT_INFO )
+        self.connect( self.uiThread, QtCore.SIGNAL("ADD_PRIMITIVE_LIST"), self.addPrimitiveList )
+        self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_NAME"), self.addObjectName )
+        self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_INFOS"), self.fillOBJECT_INFO )
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
         self.cmdPipe.RecvAndSend(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
+        # request available primitive list
+        self.coreCmdQueue.put(CMD_REQUEST_PRIMITIVE_LIST)
 
     def exit(self, *args):
         if args != () and args[0] != None:
@@ -143,6 +139,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         logger.info("Bye")
         event.accept()
         self.exit()
+
+    #--------------------#
+    # Primitive List
+    #--------------------#
+    # Signal - ADD_PRIMITIVE_LIST
+    def addPrimitiveList(self, primitiveList):
+        primitiveList.sort()
+        for primitiveName in primitiveList:
+            btn = QtGui.QPushButton(primitiveName)
+            btn.clicked.connect(partial(self.addPrimitive, primitiveName))
+            self.primitiveListLayout.addWidget(btn)
+
 
     #--------------------#
     # Propery Tree Widget
@@ -225,7 +233,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         selectedObjectName = inst.text()
         self.coreCmdQueue.put(CMD_SET_OBJECT_FOCUS, selectedObjectName)
 
-    # SIGNAL - CMD_SEND_OBJECT_INFOS_TO_GUI
+    # SIGNAL - ADD_OBJECT_INFOS_TO_GUI
     def fillOBJECT_INFO(self, objInfo):
         # lock edit property ui
         self.isFillobjPropertyTree = True
@@ -248,7 +256,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Object List Widget
     #--------------------#
-    # SIGNAL - CMD_SEND_OBJECT_NAME_TO_GUI
+    # SIGNAL - ADD_OBJECT_NAME_TO_GUI
     def addObjectName(self, objName):
         # add object name to list
         item = QtGui.QListWidgetItem(objName)
@@ -258,9 +266,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Commands
     #--------------------#
     # add primitive
-    def addPrimitive(self, objType, objTypeName):
-        if objType > CMD_ADD_PRIMITIVE_START and objType < CMD_ADD_PRIMITIVE_END:
-            self.coreCmdQueue.put(objType, objTypeName) # send message and receive
+    def addPrimitive(self, objTypeName):
+        self.coreCmdQueue.put(CMD_ADD_PRIMITIVE, objTypeName) # send message and receive
 
 
 # process - QT Widget

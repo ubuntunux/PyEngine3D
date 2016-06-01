@@ -62,13 +62,10 @@ CMD_CLOSE_UI    = cmd_index.send("CMD_CLOSE_UI")
 CMD_REQUEST_PIPE = cmd_index.send("CMD_REQUEST_PIPE")
 CMD_PIPE_DONE   = cmd_index.send("CMD_PIPE_DONE")
 
-# add primitive
-CMD_ADD_PRIMITIVE_START = cmd_index.send("CMD_ADD_PRIMITIVE_START")
-CMD_ADD_TRIANGLE        = cmd_index.send("CMD_ADD_TRIANGLE")
-CMD_ADD_QUAD            = cmd_index.send("CMD_ADD_QUAD")
-CMD_ADD_CUBE            = cmd_index.send("CMD_ADD_CUBE")
-CMD_ADD_OBJ            = cmd_index.send("CMD_ADD_OBJ")
-CMD_ADD_PRIMITIVE_END   = cmd_index.send("CMD_ADD_PRIMITIVE_END")
+# add object
+CMD_ADD_PRIMITIVE = cmd_index.send("CMD_ADD_PRIMITIVE")
+CMD_REQUEST_PRIMITIVE_LIST = cmd_index.send("CMD_REQUEST_PRIMITIVE_LIST")
+CMD_SEND_PRIMITIVE_LIST = cmd_index.send("CMD_SEND_PRIMITIVE_LIST")
 CMD_SEND_OBJECT_NAME  = cmd_index.send("CMD_SEND_OBJECT_NAME")
 CMD_REQUEST_OBJECT_INFOS = cmd_index.send("CMD_REQUEST_OBJECT_INFOS")
 CMD_SEND_OBJECT_INFOS = cmd_index.send("CMD_SEND_OBJECT_INFOS")

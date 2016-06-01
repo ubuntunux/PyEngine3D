@@ -151,6 +151,9 @@ class CoreManager(Singleton):
     #---------------------------#
     # receive and send messages
     #---------------------------#
+    def sendPrimitiveNameList(self, nameList):
+        self.uiCmdQueue.put(CMD_SEND_PRIMITIVE_LIST, nameList)
+
     def sendObjectName(self, obj):
         # send object name to GUI
         assert (obj is not None)
@@ -176,12 +179,14 @@ class CoreManager(Singleton):
                 self.close()
                 return
             # received request pipe
-            elif cmd > CMD_ADD_PRIMITIVE_START and cmd < CMD_ADD_PRIMITIVE_END:
+            elif cmd == CMD_ADD_PRIMITIVE:
                 # create primitive
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
-                primitive = self.renderer.objectManager.getPrimitiveByName(value)
-                self.renderer.objectManager.addPrimitive(primitive, pos=pos)
+                primitive = self.objectManager.getPrimitiveByName(value)
+                self.objectManager.addPrimitive(primitive, pos=pos)
+            elif cmd == CMD_REQUEST_PRIMITIVE_LIST:
+                self.sendPrimitiveNameList(self.objectManager.getPrimitiveNameList())
             elif cmd == CMD_REQUEST_OBJECT_INFOS:
                 # send object infomation to GUI
                 obj = self.objectManager.getObject(value)
@@ -217,9 +222,9 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
-                        primitiveName = np.random.choice(list(self.renderer.objectManager.primitives.keys()))
-                        primitive = self.renderer.objectManager.getPrimitiveByName(primitiveName)
-                        self.renderer.objectManager.addPrimitive(primitive, pos=pos)
+                        primitiveName = np.random.choice(self.objectManager.getPrimitiveNameList())
+                        primitive = self.objectManager.getPrimitiveByName(primitiveName)
+                        self.objectManager.addPrimitive(primitive, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]
                     self.objectManager.setObjectFocus(obj)
