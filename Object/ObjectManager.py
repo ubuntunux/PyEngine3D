@@ -12,7 +12,8 @@ class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
         self.primitives = {}
-        self.staticMeshes = []
+        self.renderGroup = {}
+        self.objects = []
         self.objectMap = {}
         self.selectedObject = None
         self.mainCamera = None
@@ -33,6 +34,7 @@ class ObjectManager(Singleton):
     def registPrimitives(self):
         self.primitives['Triangle'] = Triangle()
         self.primitives['Quad'] = Quad()
+        # regist obj files
         for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.obj')):
             name = os.path.splitext(os.path.split(filename)[1])[0]
             name = name[0].upper() + name[1:]
@@ -76,9 +78,14 @@ class ObjectManager(Singleton):
             material = self.renderer.materialManager.getDefaultMaterial()
             obj = BaseObject(name=name or primitive.name, pos=pos, primitive=primitive, material=material)
 
-            # add static mesh
-            self.staticMeshes.append(obj)
+            # add object
+            self.objects.append(obj)
             self.objectMap[name] = obj
+            if primitive.name in self.renderGroup:
+                self.renderGroup[primitive.name].append(obj)
+            else:
+                self.renderGroup[primitive.name] = [obj, ]
+
             # send object name to ui
             self.coreManager.sendObjectName(obj)
             return obj
@@ -87,9 +94,8 @@ class ObjectManager(Singleton):
         return None
 
     def clearObjects(self):
-        self.staticMeshes = []
+        self.objects = []
         self.objectMap = {}
-
 
     def getObject(self, objName):
         return self.objectMap[objName]
@@ -97,8 +103,8 @@ class ObjectManager(Singleton):
     def getObjectList(self):
         return self.objectMap.values()
 
-    def getStaticMeshes(self):
-        return self.staticMeshes
+    def getObjects(self):
+        return self.objects
 
     def getObjectInfos(self, obj):
         info = OrderedDict()

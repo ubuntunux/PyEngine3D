@@ -18,12 +18,13 @@ class BaseObject(TransformObject):
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, cameraPos, view, perspective, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastPrimitive,  cameraPos, view, perspective, lightPos, lightColor, selected=False):
         # update transform
         self.updateTransform()
 
         # use program
-        glUseProgram(self.shader.program)
+        if lastProgram != self.shader.program:
+            glUseProgram(self.shader.program)
 
         loc = glGetUniformLocation(self.shader.program, "model")
         glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
@@ -50,9 +51,10 @@ class BaseObject(TransformObject):
         glUniform4fv(loc, 1, lightColor)
 
         # At last, bind buffers
-        self.primitive.bindBuffers()
+        if lastPrimitive != self.primitive:
+            self.primitive.bindBuffers()
 
         # Primitive draw
         self.primitive.draw()
 
-        glUseProgram(0)
+        #glUseProgram(0)
