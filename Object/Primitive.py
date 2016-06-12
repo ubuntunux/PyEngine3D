@@ -73,9 +73,9 @@ class Primitive:
 
 
 #------------------------------#
-# CLASS : StaticMesh
+# CLASS : Mesh
 #------------------------------#
-class StaticMesh(Primitive):
+class Mesh(Primitive):
     def __init__(self, name, filename):
         if not os.path.exists(filename):
             return None

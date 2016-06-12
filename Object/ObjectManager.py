@@ -2,7 +2,7 @@ from collections import OrderedDict
 import os, glob
 
 from Core import logger, CoreManager
-from Object import BaseObject, Camera, Triangle, Quad, StaticMesh
+from Object import BaseObject, Camera, Triangle, Quad, Mesh
 from Utilities import Singleton
 
 #------------------------------#
@@ -38,7 +38,7 @@ class ObjectManager(Singleton):
         for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.obj')):
             name = os.path.splitext(os.path.split(filename)[1])[0]
             name = name[0].upper() + name[1:]
-            self.primitives[name] = StaticMesh(name, filename)
+            self.primitives[name] = Mesh(name, filename)
 
     def getPrimitiveNameList(self):
         return list(self.primitives.keys())
