@@ -3,7 +3,6 @@ import os
 import numpy as np
 from OpenGL.GL import *
 
-from Object import OBJ
 from Utilities import *
 
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
@@ -80,12 +79,20 @@ class Mesh(Primitive):
         if not os.path.exists(filename):
             return None
 
-        obj = OBJ(filename, 1, True)
-        self.position = np.array(obj.vertices, dtype=np.float32)
-        self.color    = np.array(obj.vertices, dtype=np.float32)
-        self.normal = np.array(obj.normals, dtype=np.float32)
-        self.index = np.array(sum([i[0] for i in obj.faces], []), dtype=np.uint32)
+        # load from mesh
+        f = open(filename, 'r')
+        datas = eval(f.read())
+        f.close()
+
+        # set data
+        self.position = np.array(datas['vertices'], dtype=np.float32)
+        self.color    = np.array(datas['vertices'], dtype=np.float32)
+        self.normal = np.array(datas['normals'], dtype=np.float32)
+        self.index = np.array(datas['indices'], dtype=np.uint32)
+
+        # primitive init
         Primitive.__init__(self)
+
         # reset name
         self.name = name
 

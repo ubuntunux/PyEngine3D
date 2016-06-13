@@ -1,13 +1,13 @@
-import re
-import os
-import traceback
+import os, datetime, glob, traceback
+from collections import OrderedDict
 
 from PIL import Image
 from OpenGL.GL import *
 
 from Core import logger
 
-reSlash = re.compile('/+')
+defaultTexCoord = [0.0, 0.0]
+defaultNormal = [0.1, 0.1, 0.1]
 
 def LoadMTL(filepath, filename):
     contents = {}
@@ -68,13 +68,20 @@ class OBJ:
         self.vertices = []
         self.normals = []
         self.texcoords = []
+        self.defaultTexCoordIndex = -1
         self.faces = []
         self.mtl = None
         self.glList = None
+        self.filename = filename
+        self.modifyTime = ''
+        self.fileSize = 0 # byte
         
         # check is exist file
-        if os.path.isfile(filename):
-            filePath = os.path.split(filename)[0]            
+        if os.path.exists(filename):
+            mTime = os.path.getmtime(filename)
+            self.modifyTime = str(datetime.datetime.fromtimestamp(mTime))
+            self.fileSize = os.path.getsize(filename)
+            filePath = os.path.split(filename)[0]
             lastMaterial = None
                                     
             # load OBJ file
@@ -122,13 +129,18 @@ class OBJ:
                     values = line[1:]
                     # split data
                     for value in values:
-                        value = list(map(int, re.split(reSlash, value)))
-                        value += [0, 0]
+                        value = list(map(lambda x:int(x)-1 if x else -1, value.split('/')))
+                        # check there is a texcoord or not.
+                        if value[1] == -1:
+                            if self.defaultTexCoordIndex == -1:
+                                self.defaultTexCoordIndex = len(self.texcoords)
+                                self.texcoords.append(defaultTexCoord)
+                            value[1] = self.defaultTexCoordIndex
                         
                         # insert vertex, texcoord, normal index
-                        vertices.append(int(value[0]) - 1)
-                        texcoords.append(int(value[1]) - 1)
-                        normals.append(int(value[2]) - 1)
+                        vertices.append(value[0])
+                        texcoords.append(value[1])
+                        normals.append(value[2])
 
                     # append face list
                     if len(vertices) == 3:
@@ -137,13 +149,38 @@ class OBJ:
                         self.faces.append((vertices[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([vertices[2], vertices[3], vertices[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
-            # generate gl list
-            self.generate()
+    def saveToMesh(self):
+        vertices = []
+        normals = []
+        texcoords = []
+        indices = []
+        indexMap = OrderedDict()
+
+        for face in self.faces:
+            # exclude material
+            vertexIndex, normalIndex, texcoordIndex, material = face
+            for i in range(len(vertexIndex)):
+                vntIndex = (vertexIndex[i], normalIndex[i], texcoordIndex[i])
+                if vntIndex in indexMap:
+                    indices.append(list(indexMap.keys()).index(vntIndex))
+                else:
+                    indices.append(len(indexMap))
+                    indexMap[vntIndex] = None
+                    vertices.append(self.vertices[vertexIndex[i]])
+                    normals.append(self.normals[normalIndex[i]])
+                    texcoords.append(self.texcoords[texcoordIndex[i]])
+
+        data = dict(filename=self.filename, modifyTime=self.modifyTime, fileSize=self.fileSize,
+                    vertices=vertices, normals=normals, texcoords=texcoords, indices=indices)
+
+        newFilename = os.path.splitext(self.filename)[0] + ".mesh"
+        f = open(newFilename, 'w')
+        f.writelines(str(data))
+        f.close()
+
                     
     # Generate        
-    def generate(self):
-        logger.warn("Object created. Ignore generate function")
-        return
+    def generateInstruction(self):
         self.glList = glGenLists(1)
         glNewList(self.glList, GL_COMPILE)
         glEnable(GL_TEXTURE_2D)
@@ -184,3 +221,15 @@ class OBJ:
     def draw(self):
         if self.glList:
             glCallList(self.glList)
+
+
+def convertToMesh(filePath):
+    for filename in glob.glob(os.path.join(filePath, '*.obj')):
+        obj = OBJ(filename, 1, True)
+        print("Convering :", filename)
+        obj.saveToMesh()
+        print("Done.")
+
+
+if __name__ == '__main__':
+    convertToMesh(os.path.join('..', 'Resources', 'Meshes'))

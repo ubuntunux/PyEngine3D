@@ -35,10 +35,11 @@ class ObjectManager(Singleton):
         self.primitives['Triangle'] = Triangle()
         self.primitives['Quad'] = Quad()
         # regist obj files
-        for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.obj')):
+        for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.mesh')):
             name = os.path.splitext(os.path.split(filename)[1])[0]
             name = name[0].upper() + name[1:]
             self.primitives[name] = Mesh(name, filename)
+
 
     def getPrimitiveNameList(self):
         return list(self.primitives.keys())
