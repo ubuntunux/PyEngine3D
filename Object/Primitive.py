@@ -16,6 +16,7 @@ class Primitive:
     position = np.array([], dtype=np.float32)
     color    = np.array([], dtype=np.float32)
     normal   = np.array([], dtype=np.float32)
+    texcoord = np.array([], dtype=np.float32)
     index = np.array([], dtype=np.uint32)
 
     def __init__(self):
@@ -23,6 +24,7 @@ class Primitive:
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1
+        self.texcoord_buffer = -1
         self.index_buffer = -1
 
         # position buffer
@@ -39,6 +41,11 @@ class Primitive:
         self.normal_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
         glBufferData(GL_ARRAY_BUFFER, self.normal.nbytes, self.normal, GL_STATIC_DRAW)
+
+        # texcoord buffer
+        self.texcoord_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.texcoord_buffer)
+        glBufferData(GL_ARRAY_BUFFER, self.texcoord.nbytes, self.texcoord, GL_STATIC_DRAW)
 
         # index buffer
         self.index_buffer = glGenBuffers(1)
@@ -65,6 +72,13 @@ class Primitive:
         glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.normal.strides[0], NONE_OFFSET)
 
+        #loc = glGetAttribLocation(self.shader.program, "texcoord")
+        loc = 3
+        glEnableVertexAttribArray(loc)
+        glBindBuffer(GL_ARRAY_BUFFER, self.texcoord_buffer)
+        glVertexAttribPointer(loc, 2, GL_FLOAT, False, self.texcoord.strides[0], NONE_OFFSET)
+
+        # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def draw(self):
@@ -88,6 +102,7 @@ class Mesh(Primitive):
         self.position = np.array(datas['vertices'], dtype=np.float32)
         self.color    = np.array(datas['vertices'], dtype=np.float32)
         self.normal = np.array(datas['normals'], dtype=np.float32)
+        self.texcoord = np.array(datas['texcoords'], dtype=np.float32)
         self.index = np.array(datas['indices'], dtype=np.uint32)
 
         # primitive init
@@ -104,6 +119,7 @@ class Triangle(Primitive):
     position = np.array([(-1,-1,0), (1,-1,0), (-1,1,0)], dtype=np.float32)
     color    = np.array([(1,0,0,1), (0,1,0,1), (0,0,1,1)], dtype=np.float32)
     normal = np.array([(0,0,1), (0,0,1), (0,0,1)], dtype=np.float32)
+    texcoord = np.array([ (-1,-1), (1,-1), (-1,1) ], dtype=np.float32)
     index = np.array([0,1,2], dtype=np.uint32)
 
 #------------------------------#
@@ -113,6 +129,7 @@ class Quad(Primitive):
     position = np.array([ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ], dtype=np.float32)
     color    = np.array([ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ], dtype=np.float32)
     normal = np.array([ (0,0,1), (0,0,1), (0,0,1), (0,0,1) ], dtype=np.float32)
+    texcoord = np.array([ (-1,-1), (1,-1), (-1,1), (1,1) ], dtype=np.float32)
     index = np.array([0,1,2,1,3,2], dtype=np.uint32)
 
 
