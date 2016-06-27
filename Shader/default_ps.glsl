@@ -8,6 +8,8 @@ uniform sampler2D ourTexture;
 varying vec3 worldPosition;
 varying vec4 vertexColor;
 varying vec3 normalVector;
+varying vec3 bitangentVector;
+varying vec3 tangentVector;
 varying vec2 textureCoordinate;
 varying vec3 cameraVector;
 varying vec3 lightVector;
@@ -29,6 +31,7 @@ void main() {
     gl_FragColor.xyz = diffuseColor.xyz + n;
     gl_FragColor.xyz = abs(dot(cameraVector, n));
     vec3 specular = pow(saturate(dot(reflect(-lightVector, n), cameraVector)), 60.0f);
-    gl_FragColor.xyz = texture(ourTexture, textureCoordinate.xy * 15.0).xyz * saturate(dot(lightVector, n)) + specular;
+    gl_FragColor.xyz = texture(ourTexture, textureCoordinate.xy).xyz * saturate(dot(lightVector, n)) + specular;
     gl_FragColor.xyz *= light_color.xyz * light_color.w;
+    gl_FragColor.xyz = dot(bitangentVector, normalVector);
 }
