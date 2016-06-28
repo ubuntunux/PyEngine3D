@@ -3,13 +3,13 @@ uniform vec3 camera_position;
 uniform vec4 light_color;
 uniform vec3 light_position;
 
-uniform sampler2D ourTexture;
+uniform sampler2D textureDiffuse;
+uniform sampler2D textureNormal;
 
 varying vec3 worldPosition;
 varying vec4 vertexColor;
 varying vec3 normalVector;
-varying vec3 bitangentVector;
-varying vec3 tangentVector;
+varying mat3 tangentToWorld;
 varying vec2 textureCoordinate;
 varying vec3 cameraVector;
 varying vec3 lightVector;
@@ -20,18 +20,14 @@ void main() {
     cameraVector = normalize(cameraVector);
     lightVector = normalize(lightVector);
 
-    float intensity;
-    vec4 color;
-    vec3 n = normalize(normalVector);
-    vec3 l = normalize(gl_LightSource[0].position).xyz;
-    intensity = saturate(dot(l, n));
-    color = gl_LightSource[0].ambient + gl_LightSource[0].diffuse * intensity + vertexColor;
+    vec3 diffuseColor = texture(textureDiffuse, textureCoordinate.xy).xyz;
+    vec3 normal = texture(textureNormal, textureCoordinate.xy).xyz;
+    normal = tangentToWorld * normalize(normal * -2.0 + 1.0);
+    normal.y = -normal.y;
+    normal.z = -normal.z;
 
-    gl_FragColor = vertexColor;
-    gl_FragColor.xyz = diffuseColor.xyz + n;
-    gl_FragColor.xyz = abs(dot(cameraVector, n));
-    vec3 specular = pow(saturate(dot(reflect(-lightVector, n), cameraVector)), 60.0f);
-    gl_FragColor.xyz = texture(ourTexture, textureCoordinate.xy).xyz * saturate(dot(lightVector, n)) + specular;
+    vec3 diffuseLighting = diffuseColor * saturate(dot(lightVector, normal));
+    vec3 specularLighting = pow(saturate(dot(reflect(-lightVector, normal), cameraVector)), 60.0);
+    gl_FragColor.xyz = diffuseLighting + specularLighting;
     gl_FragColor.xyz *= light_color.xyz * light_color.w;
-    gl_FragColor.xyz = dot(bitangentVector, normalVector);
 }

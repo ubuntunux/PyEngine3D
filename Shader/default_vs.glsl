@@ -16,19 +16,18 @@ uniform vec3 light_position;
 varying vec3 worldPosition;
 varying vec4 vertexColor;
 varying vec3 normalVector;
-varying vec3 bitangentVector;
-varying vec3 tangentVector;
+varying mat3 tangentToWorld;
 varying vec2 textureCoordinate;
 varying vec3 cameraVector;
 varying vec3 lightVector;
 
 void main() {
-    gl_Position = perspective * view * model * vec4(position, 1.0f);
-    worldPosition = position;
     vertexColor = color;
-    normalVector = normal; // gl_NormalMatrix * gl_Normal;
-    bitangentVector = bitangent;
-    tangentVector = tangent;
+    gl_Position = perspective * view * model * vec4(position, 1.0f);
+    mat3 modelViewMatrix = view * model;
+    worldPosition = modelViewMatrix * position;
+    normalVector = modelViewMatrix * normal;
+    tangentToWorld = transpose(mat3(modelViewMatrix * tangent, modelViewMatrix * bitangent, modelViewMatrix * normal));
     textureCoordinate = texcoord;
 
     cameraVector = camera_position - position;

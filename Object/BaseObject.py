@@ -1,3 +1,5 @@
+import time, math
+
 from OpenGL.GL import *
 from PIL import Image
 
@@ -17,13 +19,28 @@ class BaseObject(TransformObject):
         self.shader = self.material.shader if self.material else None
 
         # load texture file
-        image = Image.open('Resources/Textures/multimaterial.jpg')
+        image = Image.open('Resources/Textures/Wool_carpet_pxr128_bmp.tif')
         ix, iy = image.size
         image = image.tobytes("raw", "RGBX", 0, -1)
 
         # binding texture
-        self.texid = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.texid)
+        self.textureDiffuse = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        # load texture file
+        image = Image.open('Resources/Textures/Wool_carpet_pxr128_normal.tif')
+        ix, iy = image.size
+        image = image.tobytes("raw", "RGBX", 0, -1)
+
+        # binding texture
+        self.textureNormal = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.textureNormal)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
         #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
         #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
@@ -35,6 +52,9 @@ class BaseObject(TransformObject):
         self.selected = selected
 
     def draw(self, lastProgram, lastPrimitive,  cameraPos, view, perspective, lightPos, lightColor, selected=False):
+        # Test Code
+        self.setYaw((time.time() * 0.3) % math.pi * 2.0)
+
         # update transform
         self.updateTransform()
 
@@ -67,8 +87,12 @@ class BaseObject(TransformObject):
         glUniform4fv(loc, 1, lightColor)
 
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.texid)
-        glUniform1i(glGetUniformLocation(self.shader.program, "ourTexture"), 0)
+        glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
+        glUniform1i(glGetUniformLocation(self.shader.program, "textureDiffuse"), 0)
+
+        glActiveTexture(GL_TEXTURE1)
+        glBindTexture(GL_TEXTURE_2D, self.textureNormal)
+        glUniform1i(glGetUniformLocation(self.shader.program, "textureNormal"), 1)
 
         # At last, bind buffers
         if lastPrimitive != self.primitive:

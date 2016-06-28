@@ -41,18 +41,19 @@ def LoadMTL(filepath, filename):
                 texName = os.path.join(filepath, line[1])
                 mtl['map_Kd'] = texName
                 try:
-                    # load texture file
-                    image = Image.open(texName)                    
-                    ix, iy = image.size
-                    image = image.tobytes("raw", "RGBX", 0, -1)
-    
-                    # binding texture
-                    texid = mtl['texture_Kd'] = glGenTextures(1)
-                    glBindTexture(GL_TEXTURE_2D, texid)
-                    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)                    
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)                    
+                    if os.path.exists(texName):
+                        # load texture file
+                        image = Image.open(texName)
+                        ix, iy = image.size
+                        image = image.tobytes("raw", "RGBX", 0, -1)
+
+                        # binding texture
+                        texid = mtl['texture_Kd'] = glGenTextures(1)
+                        glBindTexture(GL_TEXTURE_2D, texid)
+                        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                 except:
                     logger.error(traceback.format_exc())
             elif len(line) > 1:
