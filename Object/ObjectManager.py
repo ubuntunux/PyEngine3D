@@ -2,7 +2,7 @@ from collections import OrderedDict
 import os, glob
 
 from Core import logger, CoreManager
-from Object import BaseObject, Camera, Triangle, Quad, Mesh
+from Object import BaseObject, Camera, Light, Triangle, Quad, Mesh
 from Utilities import Singleton
 
 #------------------------------#
@@ -11,6 +11,7 @@ from Utilities import Singleton
 class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
+        self.lights = []
         self.primitives = {}
         self.renderGroup = {}
         self.objects = []
@@ -25,11 +26,14 @@ class ObjectManager(Singleton):
         self.renderer = renderer
         logger.info("initialize " + self.__class__.__name__)
 
+        # regist primitives
+        self.registPrimitives()
+
         # add main camera
         self.mainCamera = self.addCamera()
 
-        # regist primitives
-        self.registPrimitives()
+        # default light
+        self.addLight()
 
     def registPrimitives(self):
         self.primitives['Triangle'] = Triangle()
@@ -66,6 +70,27 @@ class ObjectManager(Singleton):
         self.coreManager.sendObjectName(camera)
         return camera
 
+    def addLight(self):
+        name = self.generateObjectName("Light")
+        # create light
+        primitive = self.getPrimitiveByName('Cube')
+        material = self.renderer.materialManager.getMaterial('simple')
+        light = Light(name, (0,0,0), primitive, material)
+
+        # add light
+        self.lights.append(light)
+        self.objectMap[name] = light
+
+        # add to render group
+        if primitive.name in self.renderGroup:
+            self.renderGroup[primitive.name].append(light)
+        else:
+            self.renderGroup[primitive.name] = [light, ]
+
+        # send light name to gui
+        self.coreManager.sendObjectName(light)
+        return light
+
     def getPrimitiveByName(self, primitiveName):
         return self.primitives[primitiveName] if primitiveName in self.primitives else None
 
@@ -82,6 +107,8 @@ class ObjectManager(Singleton):
             # add object
             self.objects.append(obj)
             self.objectMap[name] = obj
+
+            # add to render group
             if primitive.name in self.renderGroup:
                 self.renderGroup[primitive.name].append(obj)
             else:

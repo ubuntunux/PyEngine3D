@@ -53,7 +53,7 @@ class BaseObject(TransformObject):
 
     def draw(self, lastProgram, lastPrimitive,  cameraPos, view, perspective, lightPos, lightColor, selected=False):
         # Test Code
-        self.setYaw((time.time() * 0.3) % math.pi * 2.0)
+        self.setYaw((time.time() * 0.2) % math.pi * 2.0)
 
         # update transform
         self.updateTransform()

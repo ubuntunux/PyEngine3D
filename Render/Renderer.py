@@ -1,4 +1,5 @@
-import os
+import os, math
+import time as timeModule
 
 import pygame
 from pygame import *
@@ -113,9 +114,9 @@ class Renderer(Singleton):
         # End - fixed pipline light setting
 
         # managers initialize
-        self.objectManager.initialize(self)
         self.shaderManager.initialize(self)
         self.materialManager.initialize(self)
+        self.objectManager.initialize(self)
 
         # build a scene
         self.resizeScene(self.width, self.height)
@@ -174,9 +175,14 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
+
+        # Test Code
+        light = self.objectManager.lights[0]
+        light.setPos((math.sin(timeModule.time())*10.0, 0.0, math.cos(timeModule.time())*10.0))
+        lightPos = light.getPos()
+        lightColor = light.lightColor
+
         # draw static meshes
-        lightPos = np.array([10.0, 10.0, 10.0])
-        lightColor = np.array([1.0, 1.0, 1.0, 1.0])
         lastPrimitive = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
@@ -190,7 +196,7 @@ class Renderer(Singleton):
             glEnable(GL_BLEND)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
             self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor, True)
-            glBlendFunc( GL_ZERO, GL_ZERO )
+            glBlendFunc( GL_ONE, GL_ONE_MINUS_DST_COLOR )
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)

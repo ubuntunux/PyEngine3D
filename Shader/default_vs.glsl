@@ -19,7 +19,9 @@ varying vec3 normalVector;
 varying mat3 tangentToWorld;
 varying vec2 textureCoordinate;
 varying vec3 cameraVector;
+varying vec3 cameraPosition;
 varying vec3 lightVector;
+varying vec3 lightPosition;
 
 void main() {
     vertexColor = color;
@@ -30,9 +32,11 @@ void main() {
     tangentToWorld = transpose(mat3(modelViewMatrix * tangent, modelViewMatrix * bitangent, modelViewMatrix * normal));
     textureCoordinate = texcoord;
 
-    cameraVector = camera_position - position;
+    cameraPosition = camera_position;
+    cameraVector = camera_position - worldPosition;
     cameraVector = normalize(cameraVector);
 
-    lightVector = light_position - position;
+    lightPosition = light_position;
+    lightVector = light_position - worldPosition;
     lightVector = normalize(lightVector);
 }
