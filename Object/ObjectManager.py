@@ -73,7 +73,7 @@ class ObjectManager(Singleton):
     def addLight(self):
         name = self.generateObjectName("Light")
         # create light
-        primitive = self.getPrimitiveByName('Cube')
+        primitive = self.getPrimitiveByName('Sphere')
         material = self.renderer.materialManager.getMaterial('simple')
         light = Light(name, (0,0,0), primitive, material)
 

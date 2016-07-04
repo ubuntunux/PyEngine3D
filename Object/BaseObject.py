@@ -4,6 +4,7 @@ from OpenGL.GL import *
 from PIL import Image
 
 from Object import TransformObject
+from Core import CoreManager
 
 #------------------------------#
 # CLASS : BaseObject

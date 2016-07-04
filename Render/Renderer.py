@@ -175,7 +175,6 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
 
-
         # Test Code
         light = self.objectManager.lights[0]
         light.setPos((math.sin(timeModule.time())*10.0, 0.0, math.cos(timeModule.time())*10.0))

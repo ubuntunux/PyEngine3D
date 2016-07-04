@@ -243,7 +243,7 @@ class CoreManager(Singleton):
 
         # get camera
         self.camera = self.objectManager.getMainCamera()
-        moveSpeed = self.delta * 5.0
+        moveSpeed = self.delta * 10.0
 
         # camera move pan
         if btnL and btnR or btnM:
