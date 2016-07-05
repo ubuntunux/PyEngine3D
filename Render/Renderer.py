@@ -181,12 +181,15 @@ class Renderer(Singleton):
         lightPos = light.getPos()
         lightColor = light.lightColor
 
+        # Perspective * View matrix
+        vpMatrix = np.dot(self.camera.matrix, self.perspective)
+
         # draw static meshes
         lastPrimitive = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor)
+                obj.draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor)
                 lastProgram = obj.shader.program
                 lastPrimitive = obj.primitive
 
@@ -194,13 +197,13 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, vpMatrix, self.perspective, lightPos, lightColor, True)
             glBlendFunc( GL_ONE, GL_ONE_MINUS_DST_COLOR )
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 
         # reset shader program

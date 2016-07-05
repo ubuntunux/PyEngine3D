@@ -16,7 +16,6 @@ class Primitive:
     position = np.array([], dtype=np.float32)
     color    = np.array([], dtype=np.float32)
     normal   = np.array([], dtype=np.float32)
-    bitangent   = np.array([], dtype=np.float32)
     tangent   = np.array([], dtype=np.float32)
     texcoord = np.array([], dtype=np.float32)
     index = np.array([], dtype=np.uint32)
@@ -26,7 +25,6 @@ class Primitive:
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1
-        self.bitangent_buffer = -1
         self.tangent_buffer = -1
         self.texcoord_buffer = -1
         self.index_buffer = -1
@@ -49,11 +47,6 @@ class Primitive:
         glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
         glBufferData(GL_ARRAY_BUFFER, self.normal.nbytes, self.normal, GL_STATIC_DRAW)
 
-        # bitangent buffer
-        self.bitangent_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.bitangent_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.bitangent.nbytes, self.bitangent, GL_STATIC_DRAW)
-
         # tangent buffer
         self.tangent_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.tangent_buffer)
@@ -70,40 +63,33 @@ class Primitive:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
     def computeTangent(self):
-        self.bitangent = np.array([[0,0,0],] * len(self.normal), dtype=np.float32)
-        self.tangent = np.array([[0,0,0],] * len(self.normal), dtype=np.float32)
+        if len(self.tangent) == 0:
+            self.tangent = np.array([[0,0,0],] * len(self.normal), dtype=np.float32)
+            #self.bitangent = np.array([[0,0,0],] * len(self.normal), dtype=np.float32)
 
-        for i in range(0, len(self.index), 3):
-            i1, i2, i3 = self.index[i:i+3]
-            deltaPos2 = self.position[i2] - self.position[i1]
-            deltaPos3 = self.position[i3] - self.position[i1]
-            deltaUV2 = self.texcoord[i2] - self.texcoord[i1]
-            deltaUV3 = self.texcoord[i3] - self.texcoord[i1]
-            r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-            if r != 0.0:
-                r = 1.0 / (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-            else:
-                r = 0.0
+            for i in range(0, len(self.index), 3):
+                i1, i2, i3 = self.index[i:i+3]
+                deltaPos2 = self.position[i2] - self.position[i1]
+                deltaPos3 = self.position[i3] - self.position[i1]
+                deltaUV2 = self.texcoord[i2] - self.texcoord[i1]
+                deltaUV3 = self.texcoord[i3] - self.texcoord[i1]
+                r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
+                if r != 0.0:
+                    r = 1.0 / (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
+                else:
+                    r = 0.0
 
-            tangent = (deltaPos2 * deltaUV3[1]   - deltaPos3 * deltaUV2[1]) * r
-            tangent = normalize(tangent)
-            bitangent = (deltaPos3 * deltaUV2[0]   - deltaPos2 * deltaUV3[0]) * r
-            bitangent = normalize(bitangent)
+                tangent = (deltaPos2 * deltaUV3[1]   - deltaPos3 * deltaUV2[1]) * r
+                tangent = normalize(tangent)
+                #bitangent = (deltaPos3 * deltaUV2[0]   - deltaPos2 * deltaUV3[0]) * r
+                #bitangent = normalize(bitangent)
 
-            if all(self.bitangent[self.index[i]] == [0,0,0]):
-                self.bitangent[self.index[i]] = bitangent
-            if all(self.bitangent[self.index[i+1]] == [0,0,0]):
-                self.bitangent[self.index[i+1]] = bitangent
-            if all(self.bitangent[self.index[i+2]] == [0,0,0]):
-                self.bitangent[self.index[i+2]] = bitangent
-
-            if all(self.tangent[self.index[i]] == [0,0,0]):
                 self.tangent[self.index[i]] = tangent
-            if all(self.tangent[self.index[i+1]] == [0,0,0]):
                 self.tangent[self.index[i+1]] = tangent
-            if all(self.tangent[self.index[i+2]] == [0,0,0]):
                 self.tangent[self.index[i+2]] = tangent
-
+                #self.bitangent[self.index[i]] = bitangent
+                #self.bitangent[self.index[i+1]] = bitangent
+                #self.bitangent[self.index[i+2]] = bitangent
 
     def bindBuffers(self):
         # Binding buffers
@@ -125,20 +111,14 @@ class Primitive:
         glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.normal.strides[0], NONE_OFFSET)
 
-        #loc = glGetAttribLocation(self.shader.program, "bitangent")
-        loc = 3
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.bitangent_buffer)
-        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.bitangent.strides[0], NONE_OFFSET)
-
         #loc = glGetAttribLocation(self.shader.program, "tangent")
-        loc = 4
+        loc = 3
         glEnableVertexAttribArray(loc)
         glBindBuffer(GL_ARRAY_BUFFER, self.tangent_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.tangent.strides[0], NONE_OFFSET)
 
         #loc = glGetAttribLocation(self.shader.program, "texcoord")
-        loc = 5
+        loc = 4
         glEnableVertexAttribArray(loc)
         glBindBuffer(GL_ARRAY_BUFFER, self.texcoord_buffer)
         glVertexAttribPointer(loc, 2, GL_FLOAT, False, self.texcoord.strides[0], NONE_OFFSET)
@@ -167,6 +147,7 @@ class Mesh(Primitive):
         self.position = np.array(datas['vertices'], dtype=np.float32)
         self.color    = np.array(datas['vertices'], dtype=np.float32)
         self.normal = np.array(datas['normals'], dtype=np.float32)
+        self.tangent = np.array(datas['tangent'], dtype=np.float32)
         self.texcoord = np.array(datas['texcoords'], dtype=np.float32)
         self.index = np.array(datas['indices'], dtype=np.uint32)
 

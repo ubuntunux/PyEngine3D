@@ -2,13 +2,13 @@
 attribute vec3 position;
 attribute vec4 color;
 attribute vec3 normal;
-attribute vec3 bitangent;
 attribute vec3 tangent;
 attribute vec2 texcoord;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 perspective;
+uniform mat4 mvp;
 uniform vec3 camera_position;
 uniform vec3 light_position;
 
@@ -25,10 +25,10 @@ varying vec3 lightPosition;
 
 void main() {
     vertexColor = color;
-    gl_Position = perspective * view * model * vec4(position, 1.0f);
+    gl_Position = mvp * vec4(position, 1.0f);
     worldPosition = model * vec4(position, 1.0);
     normalVector = model * vec4(normal, 0.0);
-    //tangent = cross(bitangent, normal);
+    vec3 bitangent = cross(tangent, normal);
     tangentToWorld = mat4(model * vec4(tangent, 0.0), model * vec4(bitangent,0.0), model * vec4(normal, 0.0), model * vec4(0.0, 0.0, 0.0, 1.0));
     textureCoordinate = texcoord;
 

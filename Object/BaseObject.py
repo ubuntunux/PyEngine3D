@@ -1,5 +1,6 @@
 import time, math
 
+import numpy as np
 from OpenGL.GL import *
 from PIL import Image
 
@@ -52,7 +53,7 @@ class BaseObject(TransformObject):
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastPrimitive,  cameraPos, view, perspective, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastPrimitive, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
         # Test Code
         self.setYaw((time.time() * 0.2) % math.pi * 2.0)
 
@@ -71,6 +72,9 @@ class BaseObject(TransformObject):
 
         loc = glGetUniformLocation(self.shader.program, "perspective")
         glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
+
+        loc = glGetUniformLocation(self.shader.program, "mvp")
+        glUniformMatrix4fv(loc, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
 
         loc = glGetUniformLocation(self.shader.program, "diffuseColor")
         glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))

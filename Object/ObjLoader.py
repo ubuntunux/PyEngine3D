@@ -1,13 +1,16 @@
-import os, datetime, glob, traceback
+import os, datetime, glob, traceback, pprint
 from collections import OrderedDict
 
+import numpy as np
 from PIL import Image
 from OpenGL.GL import *
 
 from Core import logger
+from Utilities.Transform import normalize
 
 defaultTexCoord = [0.0, 0.0]
 defaultNormal = [0.1, 0.1, 0.1]
+
 
 def LoadMTL(filepath, filename):
     contents = {}
@@ -150,6 +153,7 @@ class OBJ:
                         self.faces.append((vertices[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([vertices[2], vertices[3], vertices[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
+    # save to mesh
     def saveToMesh(self):
         vertices = []
         normals = []
@@ -171,12 +175,47 @@ class OBJ:
                     normals.append(self.normals[normalIndex[i]])
                     texcoords.append(self.texcoords[texcoordIndex[i]])
 
-        data = dict(filename=self.filename, modifyTime=self.modifyTime, fileSize=self.fileSize,
-                    vertices=vertices, normals=normals, texcoords=texcoords, indices=indices)
+        # generate tangent and bitangent vector
+        vertices = np.array(vertices, dtype=np.float32)
+        normals = np.array(normals, dtype=np.float32)
+        texcoords = np.array(texcoords, dtype=np.float32)
+        indices = np.array(indices, dtype=np.uint32)
+        tangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
+        #bitangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
 
+        for i in range(0, len(indices), 3):
+            i1, i2, i3 = indices[i:i+3]
+            deltaPos2 = vertices[i2] - vertices[i1]
+            deltaPos3 = vertices[i3] - vertices[i1]
+            deltaUV2 = texcoords[i2] - texcoords[i1]
+            deltaUV3 = texcoords[i3] - texcoords[i1]
+            r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
+            if r != 0.0:
+                r = 1.0 / (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
+            else:
+                r = 0.0
+
+            tangent = (deltaPos2 * deltaUV3[1]   - deltaPos3 * deltaUV2[1]) * r
+            tangent = normalize(tangent)
+            #bitangent = np.cross(tangent, normals[i1])
+            #bitangent = normalize(bitangent)
+
+            tangents[indices[i]] = tangent
+            tangents[indices[i+1]] = tangent
+            tangents[indices[i+2]] = tangent
+            #bitangents[indices[i]] = bitangent
+            #bitangents[indices[i+1]] = bitangent
+            #bitangents[indices[i+2]] = bitangent
+
+        # dictionary
+        data = dict(filename=self.filename, modifyTime=self.modifyTime, fileSize=self.fileSize,
+                    vertices=vertices.tolist(), normals=normals.tolist(), tangent=tangents.tolist(), #bitangent=bitangents.tolist(),
+                    texcoords=texcoords.tolist(), indices=indices.tolist())
+
+        # save to file
         newFilename = os.path.splitext(self.filename)[0] + ".mesh"
         f = open(newFilename, 'w')
-        f.writelines(str(data))
+        pprint.pprint(data, f,compact=True)
         f.close()
 
                     
