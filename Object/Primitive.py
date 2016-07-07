@@ -20,17 +20,14 @@ class Primitive:
     texcoord = np.array([], dtype=np.float32)
     index = np.array([], dtype=np.uint32)
 
-    def __init__(self):
-        self.name = self.__class__.__name__
+    def __init__(self, name=""):
+        self.name = name or self.__class__.__name__
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1
         self.tangent_buffer = -1
         self.texcoord_buffer = -1
         self.index_buffer = -1
-
-        # computeTangent
-        self.computeTangent()
 
         # position buffer
         self.position_buffer = glGenBuffers(1) # Request a buffer slot from GPU
@@ -95,9 +92,10 @@ class Primitive:
         # Binding buffers
         #loc = glGetAttribLocation(self.shader.program, "position")
         loc = 0
-        glEnableVertexAttribArray(loc)
+
         glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
+        glEnableVertexAttribArray(loc)
 
         #loc = glGetAttribLocation(self.shader.program, "color")
         loc = 1
@@ -152,10 +150,7 @@ class Mesh(Primitive):
         self.index = np.array(datas['indices'], dtype=np.uint32)
 
         # primitive init
-        Primitive.__init__(self)
-
-        # reset name
-        self.name = name
+        Primitive.__init__(self, name)
 
 
 #------------------------------#
@@ -168,15 +163,24 @@ class Triangle(Primitive):
     texcoord = np.array([ (-1,-1), (1,-1), (-1,1) ], dtype=np.float32)
     index = np.array([0,1,2], dtype=np.uint32)
 
+    def __init__(self):
+        self.computeTangent()
+        Primitive.__init__(self)
+
+
 #------------------------------#
 # CLASS : Quad
 #------------------------------#
 class Quad(Primitive):
-    position = np.array([ (-1,-1,1), (1,-1,1), (-1,1,1), (1,1,1) ], dtype=np.float32)
+    position = np.array([ (-1,-1,0), (1,-1,0), (-1,1,0), (1,1,0) ], dtype=np.float32)
     color    = np.array([ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ], dtype=np.float32)
     normal = np.array([ (0,0,1), (0,0,1), (0,0,1), (0,0,1) ], dtype=np.float32)
     texcoord = np.array([ (-1,-1), (1,-1), (-1,1), (1,1) ], dtype=np.float32)
     index = np.array([0,1,2,1,3,2], dtype=np.uint32)
+
+    def __init__(self):
+        self.computeTangent()
+        Primitive.__init__(self)
 
 
 #------------------------------#
