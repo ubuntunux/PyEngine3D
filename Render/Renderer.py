@@ -91,7 +91,8 @@ class Renderer(Singleton):
         # init window
         logger.info("InitializeGL")
         self.width, self.height = config.Screen.size
-        self.screen = pygame.display.set_mode((self.width, self.height), OPENGL|DOUBLEBUF|RESIZABLE|HWPALETTE|HWSURFACE)
+        # It's have to pygame set_mode at first. very important.
+        self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
         # font init
         pygame.font.init()
@@ -136,7 +137,6 @@ class Renderer(Singleton):
         pygame.display.quit()
 
     def resizeScene(self, width, height):
-        pygame.display.set_mode((width, height), OPENGL|DOUBLEBUF|RESIZABLE|HWPALETTE|HWSURFACE)
 
         if width <= 0 or height <= 0:
             return
