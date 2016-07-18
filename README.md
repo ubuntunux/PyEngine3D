@@ -1,7 +1,7 @@
 Welcome to the GuineaPig wiki!
 
 ### What is GuineaPig
-* Opensource 3D engine write in python
+* Opensource 3D engine was written in python
 
 * Check smiliar project - http://glumpy.github.io/
 
@@ -22,7 +22,7 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 #### UI
-- [ ] object list
+- [v] object list
 - [v] add primitive button
 - [ ] delete primitive button
 - [ ] transform gizmo
