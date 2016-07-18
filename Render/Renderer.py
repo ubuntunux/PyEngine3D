@@ -1,4 +1,5 @@
 import os, math
+import platform as platformModule
 import time as timeModule
 
 import pygame
@@ -91,7 +92,8 @@ class Renderer(Singleton):
         # init window
         logger.info("InitializeGL")
         self.width, self.height = config.Screen.size
-        # It's have to pygame set_mode at first. very important.
+
+        # It's have to pygame set_mode at first.
         self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
         # font init
@@ -137,6 +139,9 @@ class Renderer(Singleton):
         pygame.display.quit()
 
     def resizeScene(self, width, height):
+        # It have to pygame set_mode again on Linux.
+        if platformModule.system() == 'Linux':
+            self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
         if width <= 0 or height <= 0:
             return

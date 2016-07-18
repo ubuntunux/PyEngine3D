@@ -81,33 +81,30 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.coreCmdQueue = coreCmdQueue
         self.cmdPipe = cmdPipe
 
-        try:
-            # load ui file
-            uic.loadUi(UI_FILENAME, self)
-        except:
-            self.exit(traceback.format_exc())
+        # load ui file
+        uic.loadUi(UI_FILENAME, self)
 
-        try:
-            # primitive list
-            self.primitiveListLayout = self.findChild(QtGui.QVBoxLayout, "primitiveListLayout")
+        # action menus
+        actionExit = self.findChild(QtGui.QAction, "actionExit")
+        QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
 
-            # object list view
-            self.objectList = self.findChild(QtGui.QListWidget, "objectList")
-            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)
-            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemActivated(QListWidgetItem *)"), self.selectObject)
-            QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemDoubleClicked(QListWidgetItem *)"), self.focusObject)
+        # primitive list
+        self.primitiveListLayout = self.findChild(QtGui.QVBoxLayout, "primitiveListLayout")
 
-            # object property widget
-            self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
-            # hook editable event
-            self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers)
-            # set object property events
-            self.objPropertyTree.itemSelectionChanged.connect(self.checkEditable)
-            self.objPropertyTree.itemClicked.connect(self.checkEditable)
-            self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
+        # object list view
+        self.objectList = self.findChild(QtGui.QListWidget, "objectList")
+        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)
+        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemActivated(QListWidgetItem *)"), self.selectObject)
+        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemDoubleClicked(QListWidgetItem *)"), self.focusObject)
 
-        except AttributeError:
-            self.exit(traceback.format_exc())
+        # object property widget
+        self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
+        # hook editable event
+        self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers)
+        # set object property events
+        self.objPropertyTree.itemSelectionChanged.connect(self.checkEditable)
+        self.objPropertyTree.itemClicked.connect(self.checkEditable)
+        self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
 
         # Signals
         self.uiThread = UIThread(self.cmdQueue)

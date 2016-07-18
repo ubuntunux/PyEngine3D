@@ -20,10 +20,10 @@
       <item>
        <layout class="QVBoxLayout" name="primitiveListLayout">
         <item>
-         <widget class="QWidget" name="empty_2" native="true"/>
+         <widget class="QWidget" name="empty_Primitive" native="true"/>
         </item>
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="label_AddPrimitives">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -102,7 +102,15 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuViewmode">
+    <property name="title">
+     <string>View mode</string>
+    </property>
+    <addaction name="actionWireframe"/>
+    <addaction name="actionShading"/>
+   </widget>
    <addaction name="menuMainMenu"/>
+   <addaction name="menuViewmode"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -121,27 +129,23 @@
     <string>Exit</string>
    </property>
   </action>
+  <action name="actionWireframe">
+   <property name="text">
+    <string>Wireframe</string>
+   </property>
+  </action>
+  <action name="actionShading">
+   <property name="text">
+    <string>Shading</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>objectList</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>destroyed()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>436</x>
-     <y>400</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>436</x>
-     <y>400</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
+ <slots>
+  <slot>exit()</slot>
+ </slots>
 </ui>
