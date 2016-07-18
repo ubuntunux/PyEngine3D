@@ -20,13 +20,13 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- delete primitive button
+- material system
 - transform gizmo
-- draw mode change
 - view mode
--  wire, solid, unlit, shading, texture
+ - wire, solid, unlit, shading, texture
+- delete primitive button
 - object info window
   - matrix
-- quaternion
+  - property system
+  - quaternion
 - scene save/load
-- material system
