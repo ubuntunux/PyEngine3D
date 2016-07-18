@@ -29,3 +29,4 @@ Welcome to the GuineaPig wiki!
   - matrix
 - quaternion
 - scene save/load
+- material system
