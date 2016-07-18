@@ -1,7 +1,7 @@
 Welcome to the GuineaPig wiki!
 
 ### What is GuineaPig
-* Opensource 3D engine write in python
+* Opensource 3D engine was written in python
 
 * Check smiliar project - http://glumpy.github.io/
 
@@ -18,35 +18,18 @@ Welcome to the GuineaPig wiki!
  - libpng 1.6.17
  - pygame 1.9.2
 
-
 ----
 ### TODO
-#### UI
-- [ ] object list
-- [v] add primitive button
-- [ ] delete primitive button
-- [ ] transform gizmo
-- [ ] load obj file
-- [ ] draw mode change
-- [ ] solidd, wire
-- [ ] object info window
-  - translate, rotation, scale
+- material system
+ - choose shader
+ - propery list
+- transform gizmo
+- view mode
+ - wire, solid, unlit, shading, texture
+- delete primitive button
+- object info window
   - matrix
+  - property system
+  - material
   - quaternion
-
-#### Object Module
- - [ ] import obj
- 
-#### Primirive Module
- - [ ] Triangle, Quad, TriangleFan, Cube, Sphere, Cylinder
-
-#### Rendering
- - [ ] default shader
- 
-#### Change Draw Mode
- - [ ] wire, solid, unlit, shading, texture
-
-#### System
- - [ ] main loop
- - [ ] save environment
- - [ ] load environment
+- scene save/load
