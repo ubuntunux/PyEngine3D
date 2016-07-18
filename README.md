@@ -18,35 +18,14 @@ Welcome to the GuineaPig wiki!
  - libpng 1.6.17
  - pygame 1.9.2
 
-
 ----
 ### TODO
-#### UI
-- [v] object list
-- [v] add primitive button
-- [ ] delete primitive button
-- [ ] transform gizmo
-- [ ] load obj file
-- [ ] draw mode change
-- [ ] solidd, wire
-- [ ] object info window
-  - translate, rotation, scale
+- delete primitive button
+- transform gizmo
+- draw mode change
+- view mode
+-  wire, solid, unlit, shading, texture
+- object info window
   - matrix
-  - quaternion
-
-#### Object Module
- - [ ] import obj
- 
-#### Primirive Module
- - [ ] Triangle, Quad, TriangleFan, Cube, Sphere, Cylinder
-
-#### Rendering
- - [ ] default shader
- 
-#### Change Draw Mode
- - [ ] wire, solid, unlit, shading, texture
-
-#### System
- - [ ] main loop
- - [ ] save environment
- - [ ] load environment
+- quaternion
+- scene save/load
