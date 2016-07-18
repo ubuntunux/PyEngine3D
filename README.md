@@ -21,6 +21,8 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - material system
+ - choose shader
+ - propery list
 - transform gizmo
 - view mode
  - wire, solid, unlit, shading, texture
@@ -28,5 +30,6 @@ Welcome to the GuineaPig wiki!
 - object info window
   - matrix
   - property system
+  - material
   - quaternion
 - scene save/load
