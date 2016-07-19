@@ -11,7 +11,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from Core import logger, config
+from Core import *
 from Render import *
 from Object import ObjectManager, DebugLine
 from Utilities import *
@@ -70,6 +70,7 @@ class Renderer(Singleton):
         self.viewportRatio = 1.0
         self.perspective = np.eye(4,dtype=np.float32)
         self.ortho = np.eye(4,dtype=np.float32)
+        self.viewMode = GL_FILL
 
         # components
         self.camera = None
@@ -138,6 +139,12 @@ class Renderer(Singleton):
         # destroy
         pygame.display.quit()
 
+    def setViewMode(self, viewMode):
+        if viewMode == CMD_VIEWMODE_WIREFRAME:
+            self.viewMode = GL_LINE
+        elif viewMode == CMD_VIEWMODE_SHADING:
+            self.viewMode = GL_FILL
+
     def resizeScene(self, width, height):
         # It have to pygame set_mode again on Linux.
         if platformModule.system() == 'Linux':
@@ -179,6 +186,7 @@ class Renderer(Singleton):
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
+        glPolygonMode( GL_FRONT_AND_BACK, self.viewMode )
 
         # Test Code
         light = self.objectManager.lights[0]

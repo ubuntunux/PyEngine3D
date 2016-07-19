@@ -62,6 +62,10 @@ CMD_CLOSE_UI    = cmd_index.send("CMD_CLOSE_UI")
 CMD_REQUEST_PIPE = cmd_index.send("CMD_REQUEST_PIPE")
 CMD_PIPE_DONE   = cmd_index.send("CMD_PIPE_DONE")
 
+# view mode
+CMD_VIEWMODE_WIREFRAME = cmd_index.send("CMD_VIEWMODE_WIREFRAME")
+CMD_VIEWMODE_SHADING = cmd_index.send("CMD_VIEWMODE_SHADING")
+
 # add object
 CMD_ADD_PRIMITIVE = cmd_index.send("CMD_ADD_PRIMITIVE")
 CMD_REQUEST_PRIMITIVE_LIST = cmd_index.send("CMD_REQUEST_PRIMITIVE_LIST")

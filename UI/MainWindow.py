@@ -88,6 +88,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         actionExit = self.findChild(QtGui.QAction, "actionExit")
         QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
 
+        # action draw mode
+        actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
+        actionShading = self.findChild(QtGui.QAction, "actionShading")
+        QtCore.QObject.connect(actionWireframe, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_WIREFRAME))
+        QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_SHADING))
+
         # primitive list
         self.primitiveListLayout = self.findChild(QtGui.QVBoxLayout, "primitiveListLayout")
 
@@ -265,6 +271,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # add primitive
     def addPrimitive(self, objTypeName):
         self.coreCmdQueue.put(CMD_ADD_PRIMITIVE, objTypeName) # send message and receive
+
+    # set view mode
+    def setViewMode(self, mode):
+        self.coreCmdQueue.put(mode)
 
 
 # process - QT Widget

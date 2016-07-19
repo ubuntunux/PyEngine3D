@@ -199,6 +199,8 @@ class CoreManager(Singleton):
                 self.objectManager.setSelectedObject(value)
             elif cmd == CMD_SET_OBJECT_FOCUS:
                 self.objectManager.setObjectFocus(value)
+            elif cmd >= CMD_VIEWMODE_WIREFRAME and cmd <= CMD_VIEWMODE_SHADING:
+                self.renderer.setViewMode(cmd)
 
 
     def updateEvent(self):
