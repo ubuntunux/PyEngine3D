@@ -14,9 +14,11 @@ def CreateMaterial(name='', shader=None):
 # CLASS : Material
 #------------------------------#
 class Material:
-    def __init__(self, name, shader):
+    def __init__(self, name, vs, ps):
         self.name = name
-        self.shader = shader
+        self.program = glCreateProgram()
+        self.vertexShader = vs
+        self.pixelShader = ps
         self.twoSide = False
 
     def getShader(self):
