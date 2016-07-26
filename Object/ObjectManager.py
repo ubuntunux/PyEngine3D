@@ -1,8 +1,10 @@
 from collections import OrderedDict
 import os, glob
 
+from Resource import ResourceManager
 from Core import logger, CoreManager
-from Object import BaseObject, Camera, Light, Triangle, Quad, Mesh
+from Object import BaseObject, Camera, Light
+from Render import Renderer
 from Utilities import Singleton
 
 #------------------------------#
@@ -12,41 +14,26 @@ class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
         self.lights = []
-        self.primitives = {}
         self.renderGroup = {}
         self.objects = []
         self.objectMap = {}
         self.selectedObject = None
         self.mainCamera = None
         self.coreManager = None
+        self.resourceManager = None
         self.renderer = None
 
     def initialize(self, renderer):
-        self.coreManager = CoreManager.CoreManager.instance()
-        self.renderer = renderer
         logger.info("initialize " + self.__class__.__name__)
-
-        # regist primitives
-        self.registPrimitives()
+        self.coreManager = CoreManager.CoreManager.instance()
+        self.resourceManager = ResourceManager.ResourceManager.instance()
+        self.renderer = Renderer.Renderer.instance()
 
         # add main camera
         self.mainCamera = self.addCamera()
 
         # default light
         self.addLight()
-
-    def registPrimitives(self):
-        self.primitives['Triangle'] = Triangle()
-        self.primitives['Quad'] = Quad()
-        # regist obj files
-        for filename in glob.glob(os.path.join('Resources', 'Meshes', '*.mesh')):
-            name = os.path.splitext(os.path.split(filename)[1])[0]
-            name = name[0].upper() + name[1:]
-            self.primitives[name] = Mesh(name, filename)
-
-
-    def getPrimitiveNameList(self):
-        return list(self.primitives.keys())
 
     def generateObjectName(self, name):
         index = 0
@@ -73,52 +60,49 @@ class ObjectManager(Singleton):
     def addLight(self):
         name = self.generateObjectName("Light")
         # create light
-        primitive = self.getPrimitiveByName('Sphere')
-        material = self.renderer.materialManager.getMaterial('simple')
-        light = Light(name, (0,0,0), primitive, material)
+        mesh = self.resourceManager.getMeshByName('Sphere')
+        material = self.resourceManager.getMaterial('simple')
+        light = Light(name, (0,0,0), mesh, material)
 
         # add light
         self.lights.append(light)
         self.objectMap[name] = light
 
         # add to render group
-        if primitive.name in self.renderGroup:
-            self.renderGroup[primitive.name].append(light)
+        if mesh.name in self.renderGroup:
+            self.renderGroup[mesh.name].append(light)
         else:
-            self.renderGroup[primitive.name] = [light, ]
+            self.renderGroup[mesh.name] = [light, ]
 
         # send light name to gui
         self.coreManager.sendObjectName(light)
         return light
 
-    def getPrimitiveByName(self, primitiveName):
-        return self.primitives[primitiveName] if primitiveName in self.primitives else None
-
-    def addPrimitive(self, primitive, pos=(0,0,0)):
-        if primitive:
+    def addMesh(self, mesh, pos=(0,0,0)):
+        if mesh:
             # generate name
-            name = self.generateObjectName(primitive.name)
-            logger.info("Add primitive : %s %s %s" % (primitive.name, name, pos))
+            name = self.generateObjectName(mesh.name)
+            logger.info("Add mesh : %s %s %s" % (mesh.name, name, pos))
 
-            # create primitive
-            material = self.renderer.materialManager.getDefaultMaterial()
-            obj = BaseObject(name=name or primitive.name, pos=pos, primitive=primitive, material=material)
+            # create mesh
+            material = self.resourceManager.getDefaultMaterial()
+            obj = BaseObject(name=name or mesh.name, pos=pos, mesh=mesh, material=material)
 
             # add object
             self.objects.append(obj)
             self.objectMap[name] = obj
 
             # add to render group
-            if primitive.name in self.renderGroup:
-                self.renderGroup[primitive.name].append(obj)
+            if mesh.name in self.renderGroup:
+                self.renderGroup[mesh.name].append(obj)
             else:
-                self.renderGroup[primitive.name] = [obj, ]
+                self.renderGroup[mesh.name] = [obj, ]
 
             # send object name to ui
             self.coreManager.sendObjectName(obj)
             return obj
         else:
-            logger.warning("Unknown primitive : %s" % str(primitive))
+            logger.warning("Unknown mesh : %s" % str(mesh))
         return None
 
     def clearObjects(self):

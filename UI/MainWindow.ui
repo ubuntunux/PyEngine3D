@@ -18,12 +18,12 @@
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <layout class="QVBoxLayout" name="primitiveListLayout">
+       <layout class="QVBoxLayout" name="meshListLayout">
         <item>
-         <widget class="QWidget" name="empty_Primitive" native="true"/>
+         <widget class="QWidget" name="empty_Mesh" native="true"/>
         </item>
         <item>
-         <widget class="QLabel" name="label_AddPrimitives">
+         <widget class="QLabel" name="label_AddMesh">
           <property name="enabled">
            <bool>true</bool>
           </property>

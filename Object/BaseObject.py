@@ -4,24 +4,23 @@ import numpy as np
 from OpenGL.GL import *
 from PIL import Image
 
+from Resource import *
 from Object import TransformObject
-from Core import CoreManager
 
 #------------------------------#
 # CLASS : BaseObject
 #------------------------------#
 class BaseObject(TransformObject):
-    def __init__(self, name, pos, primitive, material):
+    def __init__(self, name, pos, mesh, material):
         # init TransformObject
         TransformObject.__init__(self, pos)
         self.name = name
         self.selected = False
-        self.primitive = primitive
+        self.mesh = mesh
         self.material = material
-        self.shader = self.material.shader if self.material else None
 
         # load texture file
-        image = Image.open('Resources/Textures/Wool_carpet_pxr128_bmp.tif')
+        image = Image.open(os.path.join(PathTextures, 'Wool_carpet_pxr128_bmp.tif'))
         ix, iy = image.size
         image = image.tobytes("raw", "RGBX", 0, -1)
 
@@ -36,7 +35,7 @@ class BaseObject(TransformObject):
         glGenerateMipmap(GL_TEXTURE_2D)
 
         # load texture file
-        image = Image.open('Resources/Textures/Wool_carpet_pxr128_normal.tif')
+        image = Image.open(os.path.join(PathTextures, 'Wool_carpet_pxr128_normal.tif'))
         ix, iy = image.size
         image = image.tobytes("raw", "RGBX", 0, -1)
 
@@ -53,7 +52,7 @@ class BaseObject(TransformObject):
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastPrimitive, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastMesh, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
         # Test Code
         self.setYaw((time.time() * 0.2) % math.pi * 2.0)
 
@@ -61,49 +60,49 @@ class BaseObject(TransformObject):
         self.updateTransform()
 
         # use program
-        if lastProgram != self.shader.program:
-            glUseProgram(self.shader.program)
+        if lastProgram != self.material.program:
+            glUseProgram(self.material.program)
 
-        loc = glGetUniformLocation(self.shader.program, "model")
+        loc = glGetUniformLocation(self.material.program, "model")
         glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
 
-        loc = glGetUniformLocation(self.shader.program, "view")
+        loc = glGetUniformLocation(self.material.program, "view")
         glUniformMatrix4fv(loc, 1, GL_FALSE, view)
 
-        loc = glGetUniformLocation(self.shader.program, "perspective")
+        loc = glGetUniformLocation(self.material.program, "perspective")
         glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
 
-        loc = glGetUniformLocation(self.shader.program, "mvp")
+        loc = glGetUniformLocation(self.material.program, "mvp")
         glUniformMatrix4fv(loc, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
 
-        loc = glGetUniformLocation(self.shader.program, "diffuseColor")
+        loc = glGetUniformLocation(self.material.program, "diffuseColor")
         glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
 
         # selected object render color
-        loc = glGetUniformLocation(self.shader.program, "camera_position")
+        loc = glGetUniformLocation(self.material.program, "camera_position")
         glUniform3fv(loc, 1, cameraPos)
 
         # selected object render color
-        loc = glGetUniformLocation(self.shader.program, "light_position")
+        loc = glGetUniformLocation(self.material.program, "light_position")
         glUniform3fv(loc, 1, lightPos)
 
         # selected object render color
-        loc = glGetUniformLocation(self.shader.program, "light_color")
+        loc = glGetUniformLocation(self.material.program, "light_color")
         glUniform4fv(loc, 1, lightColor)
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glUniform1i(glGetUniformLocation(self.shader.program, "textureDiffuse"), 0)
+        glUniform1i(glGetUniformLocation(self.material.program, "textureDiffuse"), 0)
 
         glActiveTexture(GL_TEXTURE1)
         glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glUniform1i(glGetUniformLocation(self.shader.program, "textureNormal"), 1)
+        glUniform1i(glGetUniformLocation(self.material.program, "textureNormal"), 1)
 
         # At last, bind buffers
-        if lastPrimitive != self.primitive:
-            self.primitive.bindBuffers()
+        if lastMesh != self.mesh:
+            self.mesh.bindBuffers()
 
-        # Primitive draw
-        self.primitive.draw()
+        # Mesh draw
+        self.mesh.draw()
 
         #glUseProgram(0)

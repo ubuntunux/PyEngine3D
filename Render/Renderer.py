@@ -11,6 +11,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from Resource import ResourceManager
 from Core import *
 from Render import *
 from Object import ObjectManager, DebugLine
@@ -79,23 +80,20 @@ class Renderer(Singleton):
 
         # managers
         self.coreManager = None
+        self.resourceManager = ResourceManager.ResourceManager.instance()
         self.objectManager = ObjectManager.instance()
-        self.shaderManager = ShaderManager.instance()
-        self.materialManager = MaterialManager.instance()
 
         # console font
         self.console = Console()
 
-    def initialize(self, coreManager):
-        # get manager instance
-        self.coreManager = coreManager
-
-        # init window
-        logger.info("InitializeGL")
+    def initScreen(self):
         self.width, self.height = config.Screen.size
-
         # It's have to pygame set_mode at first.
         self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+
+    def initialize(self, coreManager):
+        logger.info("Initialize Renderer")
+        self.coreManager = coreManager
 
         # font init
         pygame.font.init()
@@ -117,18 +115,10 @@ class Renderer(Singleton):
         glEnable(GL_COLOR_MATERIAL)
         # End - fixed pipline light setting
 
-        # managers initialize
-        self.shaderManager.initialize(self)
-        self.materialManager.initialize(self)
-        self.objectManager.initialize(self)
-
         # build a scene
         self.resizeScene(self.width, self.height)
 
     def close(self):
-        # shader delete
-        self.shaderManager.close()
-
         # record config
         config.setValue("Screen", "size", [self.width, self.height])
         config.setValue("Screen", "position", [0, 0])
@@ -198,25 +188,25 @@ class Renderer(Singleton):
         vpMatrix = np.dot(self.camera.matrix, self.perspective)
 
         # draw static meshes
-        lastPrimitive = None
+        lastMesh = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor)
-                lastProgram = obj.shader.program
-                lastPrimitive = obj.primitive
+                obj.draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor)
+                lastProgram = obj.material.program
+                lastMesh = obj.mesh
 
         # selected object - render additive color
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, vpMatrix, self.perspective, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, vpMatrix, self.perspective, lightPos, lightColor, True)
             glBlendFunc( GL_ONE, GL_ONE_MINUS_DST_COLOR )
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastPrimitive, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 
         # reset shader program

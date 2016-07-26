@@ -26,7 +26,7 @@ Welcome to the GuineaPig wiki!
 - transform gizmo
 - view mode
  - wire, solid, unlit, shading, texture
-- delete primitive button
+- delete mesh button
 - object info window
   - matrix
   - property system

@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 from OpenGL.GL import *
 
+from Resource import *
 from Core import logger
 from Utilities.Transform import normalize
 
@@ -272,4 +273,4 @@ def convertToMesh(filePath):
 
 
 if __name__ == '__main__':
-    convertToMesh(os.path.join('..', 'Resources', 'Meshes'))
+    convertToMesh(PathMeshes)

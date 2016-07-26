@@ -12,8 +12,9 @@ from pygame.locals import *
 from OpenGL.GL import *
 
 from Core import *
+from Resource import ResourceManager
 from Object import ObjectManager
-from Render import Renderer, ShaderManager, MaterialManager
+from Render import Renderer
 from Utilities import *
 
 
@@ -97,12 +98,11 @@ class CoreManager(Singleton):
         self.wheelDown = False
 
         # managers
+        self.camera = None
+        self.resourceManager = ResourceManager.instance()
         self.renderer = Renderer.instance()
         self.console = self.renderer.console
-        self.camera = None
         self.objectManager = ObjectManager.instance()
-        self.shaderManager = ShaderManager.instance()
-        self.materialManager = MaterialManager.instance()
 
     def initialize(self):
         # process start
@@ -112,8 +112,12 @@ class CoreManager(Singleton):
         # pygame init
         pygame.init()
 
+        # init screen
+        self.renderer.initScreen()
+
         # initalize managers
-        self.renderer = Renderer.instance()
+        self.resourceManager.initialize()
+        self.objectManager.initialize(None)
         self.renderer.initialize(self)
 
         # ready to launch - send message to ui
@@ -131,9 +135,12 @@ class CoreManager(Singleton):
         # close renderer
         self.renderer.close()
 
+        # close resource manager
+        self.resourceManager.close()
+
         # save config
         config.save()
-        logger.info("Save renderer config file - " + config.getFilename())
+        logger.info("Saved config file - " + config.getFilename())
 
         # process stop
         logger.info("Process Stop : %s" % self.__class__.__name__)
@@ -151,8 +158,8 @@ class CoreManager(Singleton):
     #---------------------------#
     # receive and send messages
     #---------------------------#
-    def sendPrimitiveNameList(self, nameList):
-        self.uiCmdQueue.put(CMD_SEND_PRIMITIVE_LIST, nameList)
+    def sendMeshNameList(self, nameList):
+        self.uiCmdQueue.put(CMD_SEND_MESH_LIST, nameList)
 
     def sendObjectName(self, obj):
         # send object name to GUI
@@ -179,14 +186,14 @@ class CoreManager(Singleton):
                 self.close()
                 return
             # received request pipe
-            elif cmd == CMD_ADD_PRIMITIVE:
-                # create primitive
+            elif cmd == CMD_ADD_MESH:
+                # create mesh
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
-                primitive = self.objectManager.getPrimitiveByName(value)
-                self.objectManager.addPrimitive(primitive, pos=pos)
-            elif cmd == CMD_REQUEST_PRIMITIVE_LIST:
-                self.sendPrimitiveNameList(self.objectManager.getPrimitiveNameList())
+                mesh = self.resourceManager.getMeshByName(value)
+                self.objectManager.addMesh(mesh, pos=pos)
+            elif cmd == CMD_REQUEST_MESH_LIST:
+                self.sendMeshNameList(self.resourceManager.getMeshNameList())
             elif cmd == CMD_REQUEST_OBJECT_INFOS:
                 # send object infomation to GUI
                 obj = self.objectManager.getObject(value)
@@ -224,9 +231,9 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10,10) for i in range(3)]
-                        primitiveName = np.random.choice(self.objectManager.getPrimitiveNameList())
-                        primitive = self.objectManager.getPrimitiveByName(primitiveName)
-                        self.objectManager.addPrimitive(primitive, pos=pos)
+                        meshName = np.random.choice(self.resourceManager.getMeshNameList())
+                        mesh = self.resourceManager.getMeshByName(meshName)
+                        self.objectManager.addMesh(mesh, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]
                     self.objectManager.setObjectFocus(obj)

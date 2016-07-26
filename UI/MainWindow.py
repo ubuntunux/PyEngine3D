@@ -61,8 +61,8 @@ class UIThread(QtCore.QThread):
                 if cmd == CMD_CLOSE_UI:
                     self.running = False
                     self.emit( QtCore.SIGNAL('exit'), None)
-                elif cmd == CMD_SEND_PRIMITIVE_LIST:
-                    self.emit( QtCore.SIGNAL('ADD_PRIMITIVE_LIST'), value)
+                elif cmd == CMD_SEND_MESH_LIST:
+                    self.emit( QtCore.SIGNAL('ADD_MESH_LIST'), value)
                 elif cmd == CMD_SEND_OBJECT_NAME:
                     self.emit( QtCore.SIGNAL('ADD_OBJECT_NAME'), value)
                 elif cmd == CMD_SEND_OBJECT_INFOS:
@@ -94,8 +94,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionWireframe, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_WIREFRAME))
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_SHADING))
 
-        # primitive list
-        self.primitiveListLayout = self.findChild(QtGui.QVBoxLayout, "primitiveListLayout")
+        # mesh list
+        self.meshListLayout = self.findChild(QtGui.QVBoxLayout, "meshListLayout")
 
         # object list view
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
@@ -115,15 +115,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Signals
         self.uiThread = UIThread(self.cmdQueue)
         self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
-        self.connect( self.uiThread, QtCore.SIGNAL("ADD_PRIMITIVE_LIST"), self.addPrimitiveList )
+        self.connect( self.uiThread, QtCore.SIGNAL("ADD_MESH_LIST"), self.addMeshList )
         self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_NAME"), self.addObjectName )
         self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_INFOS"), self.fillOBJECT_INFO )
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
         self.cmdPipe.RecvAndSend(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
-        # request available primitive list
-        self.coreCmdQueue.put(CMD_REQUEST_PRIMITIVE_LIST)
+        # request available mesh list
+        self.coreCmdQueue.put(CMD_REQUEST_MESH_LIST)
 
     def exit(self, *args):
         if args != () and args[0] != None:
@@ -144,15 +144,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.exit()
 
     #--------------------#
-    # Primitive List
+    # Mesh List
     #--------------------#
-    # Signal - ADD_PRIMITIVE_LIST
-    def addPrimitiveList(self, primitiveList):
-        primitiveList.sort()
-        for primitiveName in primitiveList:
-            btn = QtGui.QPushButton(primitiveName)
-            btn.clicked.connect(partial(self.addPrimitive, primitiveName))
-            self.primitiveListLayout.addWidget(btn)
+    # Signal - ADD_MESH_LIST
+    def addMeshList(self, meshList):
+        meshList.sort()
+        for meshName in meshList:
+            btn = QtGui.QPushButton(meshName)
+            btn.clicked.connect(partial(self.addMesh, meshName))
+            self.meshListLayout.addWidget(btn)
 
 
     #--------------------#
@@ -268,9 +268,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Commands
     #--------------------#
-    # add primitive
-    def addPrimitive(self, objTypeName):
-        self.coreCmdQueue.put(CMD_ADD_PRIMITIVE, objTypeName) # send message and receive
+    # add mesh
+    def addMesh(self, objTypeName):
+        self.coreCmdQueue.put(CMD_ADD_MESH, objTypeName) # send message and receive
 
     # set view mode
     def setViewMode(self, mode):

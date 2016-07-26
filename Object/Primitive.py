@@ -149,7 +149,7 @@ class Mesh(Primitive):
         self.texcoord = np.array(datas['texcoords'], dtype=np.float32)
         self.index = np.array(datas['indices'], dtype=np.uint32)
 
-        # primitive init
+        # mesh init
         Primitive.__init__(self, name)
 
 
