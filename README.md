@@ -20,11 +20,16 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- material system
+- Material System
+ - create material dialog
  - choose shader
  - propery list
-- transform gizmo
-- view mode
+- Resource reload System
+ - shader reload and apply to material
+ - material reload and apply to mesh 
+ - mesh refresh and auto convert, reload
+- Transform Gizmo
+- View Mode
  - wire, solid, unlit, shading, texture
 - delete mesh button
 - object info window
