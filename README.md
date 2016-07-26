@@ -2,7 +2,7 @@ Welcome to the GuineaPig wiki!
 
 ### What is GuineaPig
 * Opensource 3D engine was written in python
-
+* Reference - http://learnopengl.com/
 * Check smiliar project - http://glumpy.github.io/
 
 ## Dependency modules.
