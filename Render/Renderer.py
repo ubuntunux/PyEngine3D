@@ -200,7 +200,7 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, vpMatrix, self.perspective, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
             glBlendFunc( GL_ONE, GL_ONE_MINUS_DST_COLOR )
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
