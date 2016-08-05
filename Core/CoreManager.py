@@ -158,8 +158,8 @@ class CoreManager(Singleton):
     #---------------------------#
     # receive and send messages
     #---------------------------#
-    def sendMeshNameList(self, nameList):
-        self.uiCmdQueue.put(CMD_SEND_MESH_LIST, nameList)
+    def sendResourceList(self, resourceList):
+        self.uiCmdQueue.put(CMD_SEND_RESOURCE_LIST, resourceList)
 
     def sendObjectName(self, obj):
         # send object name to GUI
@@ -186,14 +186,15 @@ class CoreManager(Singleton):
                 self.close()
                 return
             # received request pipe
-            elif cmd == CMD_ADD_MESH:
+            elif cmd == CMD_ADD_RESOURCE:
+                resName, resType = value
                 # create mesh
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
-                mesh = self.resourceManager.getMeshByName(value)
+                mesh = self.resourceManager.getMeshByName(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
-            elif cmd == CMD_REQUEST_MESH_LIST:
-                self.sendMeshNameList(self.resourceManager.getMeshNameList())
+            elif cmd == CMD_REQUEST_RESOURCE_LIST:
+                self.sendResourceList([(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in self.resourceManager.getMeshNameList()])
             elif cmd == CMD_REQUEST_OBJECT_INFOS:
                 # send object infomation to GUI
                 obj = self.objectManager.getObject(value)

@@ -61,8 +61,8 @@ class UIThread(QtCore.QThread):
                 if cmd == CMD_CLOSE_UI:
                     self.running = False
                     self.emit( QtCore.SIGNAL('exit'), None)
-                elif cmd == CMD_SEND_MESH_LIST:
-                    self.emit( QtCore.SIGNAL('ADD_MESH_LIST'), value)
+                elif cmd == CMD_SEND_RESOURCE_LIST:
+                    self.emit( QtCore.SIGNAL('ADD_RESOURCE_LIST'), value)
                 elif cmd == CMD_SEND_OBJECT_NAME:
                     self.emit( QtCore.SIGNAL('ADD_OBJECT_NAME'), value)
                 elif cmd == CMD_SEND_OBJECT_INFOS:
@@ -94,10 +94,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionWireframe, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_WIREFRAME))
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"), lambda:self.setViewMode(CMD_VIEWMODE_SHADING))
 
-        # mesh list
-        self.meshListLayout = self.findChild(QtGui.QVBoxLayout, "meshListLayout")
+        # Tab - resource list
+        self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
+        self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
 
-        # object list view
+        # Tab - object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
         QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)
         QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemActivated(QListWidgetItem *)"), self.selectObject)
@@ -115,7 +116,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Signals
         self.uiThread = UIThread(self.cmdQueue)
         self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
-        self.connect( self.uiThread, QtCore.SIGNAL("ADD_MESH_LIST"), self.addMeshList )
+        self.connect( self.uiThread, QtCore.SIGNAL("ADD_RESOURCE_LIST"), self.addResourceList )
         self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_NAME"), self.addObjectName )
         self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_INFOS"), self.fillOBJECT_INFO )
         self.uiThread.start()
@@ -123,7 +124,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # wait a UI_RUN message, and send success message
         self.cmdPipe.RecvAndSend(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
         # request available mesh list
-        self.coreCmdQueue.put(CMD_REQUEST_MESH_LIST)
+        self.coreCmdQueue.put(CMD_REQUEST_RESOURCE_LIST)
 
     def exit(self, *args):
         if args != () and args[0] != None:
@@ -144,16 +145,14 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.exit()
 
     #--------------------#
-    # Mesh List
+    # Resource List
     #--------------------#
-    # Signal - ADD_MESH_LIST
-    def addMeshList(self, meshList):
-        meshList.sort()
-        for meshName in meshList:
-            btn = QtGui.QPushButton(meshName)
-            btn.clicked.connect(partial(self.addMesh, meshName))
-            self.meshListLayout.addWidget(btn)
-
+    # Signal - ADD_RESOURCE_LIST
+    def addResourceList(self, resourceList):
+        for resName, resType in resourceList:
+            item = QtGui.QTreeWidgetItem(self.resourceListWidget)
+            item.setText(0, resName)
+            item.setText(1, resType)
 
     #--------------------#
     # Propery Tree Widget
@@ -268,9 +267,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Commands
     #--------------------#
-    # add mesh
-    def addMesh(self, objTypeName):
-        self.coreCmdQueue.put(CMD_ADD_MESH, objTypeName) # send message and receive
+    # add resource
+    def addResource(self, item=None):
+        self.coreCmdQueue.put(CMD_ADD_RESOURCE, (item.text(0), item.text(1))) # send message and receive
 
     # set view mode
     def setViewMode(self, mode):
