@@ -20,10 +20,11 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Material System
+- ResourceTab
+ - Mesh Info
+ - Material Info
  - create material dialog
  - choose shader
- - propery list
 - Resource reload System
  - shader reload and apply to material
  - material reload and apply to mesh 
