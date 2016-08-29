@@ -60,13 +60,13 @@ class UIThread(QtCore.QThread):
                 # process
                 if cmd == CMD_CLOSE_UI:
                     self.running = False
-                    self.emit( QtCore.SIGNAL('exit'), None)
-                elif cmd == CMD_SEND_RESOURCE_LIST:
-                    self.emit( QtCore.SIGNAL('ADD_RESOURCE_LIST'), value)
-                elif cmd == CMD_SEND_OBJECT_NAME:
-                    self.emit( QtCore.SIGNAL('ADD_OBJECT_NAME'), value)
-                elif cmd == CMD_SEND_OBJECT_INFOS:
-                    self.emit( QtCore.SIGNAL('ADD_OBJECT_INFOS'), value)
+                    self.emit( QtCore.SIGNAL(getCommandName(CMD_CLOSE_UI)), None)
+                elif cmd == CMD_RESOURCE_LIST:
+                    self.emit( QtCore.SIGNAL(getCommandName(CMD_RESOURCE_LIST)), value)
+                elif cmd == CMD_OBJECT_NAME:
+                    self.emit( QtCore.SIGNAL(getCommandName(CMD_OBJECT_NAME)), value)
+                elif cmd == CMD_OBJECT_INFOS:
+                    self.emit( QtCore.SIGNAL(getCommandName(CMD_OBJECT_INFOS)), value)
 
 
 
@@ -115,10 +115,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Signals
         self.uiThread = UIThread(self.cmdQueue)
-        self.connect( self.uiThread, QtCore.SIGNAL("exit"), self.exit )
-        self.connect( self.uiThread, QtCore.SIGNAL("ADD_RESOURCE_LIST"), self.addResourceList )
-        self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_NAME"), self.addObjectName )
-        self.connect( self.uiThread, QtCore.SIGNAL("ADD_OBJECT_INFOS"), self.fillOBJECT_INFO )
+        self.connect( self.uiThread, QtCore.SIGNAL(getCommandName(CMD_CLOSE_UI)), self.exit )
+        self.connect( self.uiThread, QtCore.SIGNAL(getCommandName(CMD_RESOURCE_LIST)), self.addResourceList )
+        self.connect( self.uiThread, QtCore.SIGNAL(getCommandName(CMD_OBJECT_NAME)), self.addObjectName )
+        self.connect( self.uiThread, QtCore.SIGNAL(getCommandName(CMD_OBJECT_INFOS)), self.fillOBJECT_INFO )
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
@@ -235,7 +235,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         selectedObjectName = inst.text()
         self.coreCmdQueue.put(CMD_SET_OBJECT_FOCUS, selectedObjectName)
 
-    # SIGNAL - ADD_OBJECT_INFOS_TO_GUI
+    # SIGNAL
     def fillOBJECT_INFO(self, objInfo):
         # lock edit property ui
         self.isFillobjPropertyTree = True
@@ -258,7 +258,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     #--------------------#
     # Object List Widget
     #--------------------#
-    # SIGNAL - ADD_OBJECT_NAME_TO_GUI
     def addObjectName(self, objName):
         # add object name to list
         item = QtGui.QListWidgetItem(objName)

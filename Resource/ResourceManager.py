@@ -10,6 +10,7 @@ from Utilities import Singleton
 from Render import Shader, Material
 from Object import Triangle, Quad, Mesh
 
+
 #------------------------------#
 # CLASS : ShaderLoader
 #------------------------------#
@@ -17,38 +18,38 @@ class ShaderLoader(Singleton):
     def __init__(self):
         self.vertexShaders = {}
         self.fragmentShader = {}
-        self.shaders = {GL_VERTEX_SHADER:self.vertexShaders, GL_FRAGMENT_SHADER:self.fragmentShader}
+        self.shaders = []
 
     def initialize(self):
         logger.info("initialize " + self.__class__.__name__)
 
         # collect shader files
         for filename in glob.glob(os.path.join(PathShaders, '*.*')):
-            shaderFile = os.path.split(filename)[1]
-            shaderName, ext = os.path.splitext(shaderFile)
-            if ext == '.vs':
-                shaderType = GL_VERTEX_SHADER
-            elif ext == '.fs':
-                shaderType = GL_FRAGMENT_SHADER
-            else:
-                logger.warn("Shader error : %s is invalid shader. Shader file extension must be one of '.vs', '.ps', '.cs'..." % filename)
-                continue
-
             try:
-                # create shader
+                shaderFile = os.path.split(filename)[1]
+                shaderName, ext = os.path.splitext(shaderFile)
+                # open shader file
                 f = open(filename, 'r')
                 shaderSource = f.read()
                 f.close()
-                shader = Shader(shaderName, shaderSource, shaderType)
-                # regist shader. self.shaders include self.vertexShaders, self.fragmentShaders as dict.
-                self.shaders[shaderType][shaderName] = shader
-            except BaseException("Shader error."):
+                # create shader
+                if ext == '.vs':
+                    shader = VertexShader(shaderName, shaderSource)
+                    self.vertexShaders[shaderName] = shader
+                elif ext == '.fs':
+                    shader = FragmentShader(shaderName, shaderSource)
+                    self.fragmentShader[shaderName] = shader
+                else:
+                    logger.warn("Shader error : %s is invalid shader. Shader file extension must be one of '.vs', '.ps', '.cs'..." % filename)
+                    continue
+                # regist shader
+                self.shaders.append(shader)
+            except:
                 logger.error(traceback.format_exc())
 
     def close(self):
-        for shaders in self.shaders.values():
-            for shaderName in shaders:
-                shaders[shaderName].delete()
+        for shader in self.shaders:
+            shader.delete()
 
     def getVertexShader(self, shaderName):
         return self.vertexShaders[shaderName] if shaderName in self.vertexShaders else None
@@ -94,6 +95,9 @@ class MaterialLoader(Singleton):
     def getMaterial(self, name):
         return self.materials[name]
 
+    def getMaterialNameList(self):
+        return list(self.materials.keys())
+
 
 #------------------------------#
 # CLASS : MeshLoader
@@ -108,7 +112,7 @@ class MeshLoader(Singleton):
         # Regist meshs
         self.meshes['Triangle'] = Triangle()
         self.meshes['Quad'] = Quad()
-        # regist obj files
+        # regist mesh files
         for filename in glob.glob(os.path.join(PathMeshes, '*.mesh')):
             name = os.path.splitext(os.path.split(filename)[1])[0]
             name = name[0].upper() + name[1:]
@@ -139,6 +143,15 @@ class ResourceManager(Singleton):
         self.shaderLoader.close()
 
     #------------------------------#
+    # FUNCTIONS : Shader
+    #------------------------------#
+    def getVertexShader(self, name):
+        return self.shaderLoader.getVertexShader(name)
+
+    def getFragmentShader(self, name):
+        return self.shaderLoader.getFragmentShader(name)
+
+    #------------------------------#
     # FUNCTIONS : Material
     #------------------------------#
     def getMaterial(self, name):
@@ -146,6 +159,9 @@ class ResourceManager(Singleton):
 
     def getDefaultMaterial(self):
         return self.materialLoader.getDefaultMaterial()
+
+    def getMaterialNameList(self):
+        return self.materialLoader.getMaterialNameList()
 
     #------------------------------#
     # FUNCTIONS : Mesh

@@ -14,12 +14,13 @@ from Utilities import Singleton
 # CLASS : Shader
 #------------------------------#
 class Shader:
-    def __init__(self, shaderName, shaderSource, shaderType):
-        logger.info("Create Shader : " + shaderName)
+    shaderType = None
+
+    def __init__(self, shaderName, shaderSource):
+        logger.info("Create " + self.__class__.__name__ + " : " + shaderName)
         self.name = shaderName
         self.source = shaderSource
-        self.type = shaderType
-        self.shader = glCreateShader(shaderType)
+        self.shader = glCreateShader(self.shaderType)
 
         # Set shaders source
         glShaderSource(self.shader, shaderSource)
@@ -29,3 +30,15 @@ class Shader:
 
     def delete(self):
         glDeleteShader(self.shader)
+
+#------------------------------#
+# CLASS : VertexShader
+#------------------------------#
+class VertexShader(Shader):
+    shaderType = GL_VERTEX_SHADER
+
+#------------------------------#
+# CLASS : FragmentShader
+#------------------------------#
+class FragmentShader(Shader):
+    shaderType = GL_FRAGMENT_SHADER

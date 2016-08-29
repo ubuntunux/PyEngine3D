@@ -109,6 +109,9 @@ class CoreManager(Singleton):
         logger.info('Platform : %s' % libPlatform.platform())
         logger.info("Process Start : %s" % self.__class__.__name__)
 
+        # ready to launch - send message to ui
+        self.cmdPipe.SendAndRecv(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
+
         # pygame init
         pygame.init()
 
@@ -119,10 +122,6 @@ class CoreManager(Singleton):
         self.resourceManager.initialize()
         self.objectManager.initialize(None)
         self.renderer.initialize(self)
-
-        # ready to launch - send message to ui
-        self.cmdPipe.SendAndRecv(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
-
 
     def run(self):
         # main loop
@@ -159,18 +158,18 @@ class CoreManager(Singleton):
     # receive and send messages
     #---------------------------#
     def sendResourceList(self, resourceList):
-        self.uiCmdQueue.put(CMD_SEND_RESOURCE_LIST, resourceList)
+        self.uiCmdQueue.put(CMD_RESOURCE_LIST, resourceList)
 
     def sendObjectName(self, obj):
         # send object name to GUI
         assert (obj is not None)
-        self.uiCmdQueue.put(CMD_SEND_OBJECT_NAME, obj.name)
+        self.uiCmdQueue.put(CMD_OBJECT_NAME, obj.name)
 
     def sendObjectInfo(self, obj):
         # send object infomation to GUI
         assert (obj is not None)
         objInfos = self.objectManager.getObjectInfos(obj)
-        self.uiCmdQueue.put(CMD_SEND_OBJECT_INFOS, objInfos)
+        self.uiCmdQueue.put(CMD_OBJECT_INFOS, objInfos)
 
 
     #---------------------------#
@@ -195,6 +194,7 @@ class CoreManager(Singleton):
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == CMD_REQUEST_RESOURCE_LIST:
                 self.sendResourceList([(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in self.resourceManager.getMeshNameList()])
+                self.sendResourceList([(resName, self.resourceManager.getMaterial(resName).__class__.__name__) for resName in self.resourceManager.getMaterialNameList()])
             elif cmd == CMD_REQUEST_OBJECT_INFOS:
                 # send object infomation to GUI
                 obj = self.objectManager.getObject(value)
