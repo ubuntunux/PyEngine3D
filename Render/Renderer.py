@@ -91,6 +91,10 @@ class Renderer(Singleton):
         # It's have to pygame set_mode at first.
         self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
+    def destroyScreen(self):
+        # destroy
+        pygame.display.quit()
+
     def initialize(self, coreManager):
         logger.info("Initialize Renderer")
         self.coreManager = coreManager
@@ -125,9 +129,6 @@ class Renderer(Singleton):
 
         # destroy console
         self.console.close()
-
-        # destroy
-        pygame.display.quit()
 
     def setViewMode(self, viewMode):
         if viewMode == CMD_VIEWMODE_WIREFRAME:

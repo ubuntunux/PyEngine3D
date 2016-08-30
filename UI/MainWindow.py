@@ -29,7 +29,7 @@ def findTreeItem(parentItem, findItemName):
     return None
 
 #----------------------#
-# CLASS : Main Window
+# CLASS : UIThread
 #----------------------#
 class UIThread(QtCore.QThread):
     def __init__(self, cmdQueue):

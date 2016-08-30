@@ -1,0 +1,9 @@
+freetype-py==1.0.2
+numpy==1.10.4
+Pillow==3.2.0
+pycollada==0.4.1
+pygame==1.9.2a0
+PyOpenGL==3.1.1a1
+PyOpenGL-accelerate==3.1.1a1
+python-dateutil==2.5.3
+six==1.10.0

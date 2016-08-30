@@ -137,6 +137,9 @@ class CoreManager(Singleton):
         # close resource manager
         self.resourceManager.close()
 
+        # destory screen
+        self.renderer.destroyScreen()
+
         # save config
         config.save()
         logger.info("Saved config file - " + config.getFilename())
