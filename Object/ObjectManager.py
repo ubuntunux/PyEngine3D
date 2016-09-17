@@ -7,9 +7,7 @@ from Object import BaseObject, Camera, Light
 from Render import Renderer
 from Utilities import Singleton
 
-#------------------------------#
-# CLASS : ObjectManager
-#------------------------------#
+
 class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
@@ -23,7 +21,7 @@ class ObjectManager(Singleton):
         self.resourceManager = None
         self.renderer = None
 
-    def initialize(self, renderer):
+    def initialize(self):
         logger.info("initialize " + self.__class__.__name__)
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
@@ -110,7 +108,7 @@ class ObjectManager(Singleton):
         self.objectMap = {}
 
     def getObject(self, objName):
-        return self.objectMap[objName]
+        return self.objectMap[objName] if objName in self.objectMap else None
 
     def getObjectList(self):
         return self.objectMap.values()
@@ -118,23 +116,13 @@ class ObjectManager(Singleton):
     def getObjects(self):
         return self.objects
 
-    def getObjectInfos(self, obj):
-        info = OrderedDict()
-        info['name'] = obj.name
-        info['position'] = obj.pos
-        info['rotation'] = obj.rot
-        info['scale'] = obj.scale
-        info['moved'] = False
-        return info
+    def getObjectData(self, objName):
+        obj = self.getObject(objName)
+        return obj.getObjectData() if obj else None
 
     def setObjectData(self, objectName, propertyName, propertyValue):
         obj = self.getObject(objectName)
-        if propertyName == 'position':
-            obj.setPos(propertyValue)
-        elif propertyName == 'rotation':
-            obj.setRot(propertyValue)
-        elif propertyName == 'scale':
-            obj.setScale(propertyValue)
+        obj and obj.setObjectData(propertyName, propertyValue)
 
     def getSelectedObject(self):
         return self.selectedObject

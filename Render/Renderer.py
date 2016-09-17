@@ -5,9 +5,7 @@ import time as timeModule
 import pygame
 from pygame import *
 from pygame.locals import *
-
 import numpy as np
-
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -18,9 +16,9 @@ from Object import ObjectManager, DebugLine
 from Utilities import *
 
 
-#------------------------------#
+# ------------------------------#
 # CLASS : Console
-#------------------------------#
+# ------------------------------#
 class Console:
     def __init__(self):
         self.infos = []
@@ -61,16 +59,17 @@ class Console:
                 self.font.render(text, 0, self.renderer.height - self.font.height)
             self.infos = []
 
-#------------------------------#
+
+# ------------------------------#
 # CLASS : Renderer
-#------------------------------#
+# ------------------------------#
 class Renderer(Singleton):
     def __init__(self):
         self.width = 0
         self.height = 0
         self.viewportRatio = 1.0
-        self.perspective = np.eye(4,dtype=np.float32)
-        self.ortho = np.eye(4,dtype=np.float32)
+        self.perspective = np.eye(4, dtype=np.float32)
+        self.ortho = np.eye(4, dtype=np.float32)
         self.viewMode = GL_FILL
 
         # components
@@ -89,9 +88,11 @@ class Renderer(Singleton):
     def initScreen(self):
         self.width, self.height = config.Screen.size
         # It's have to pygame set_mode at first.
-        self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+        self.screen = pygame.display.set_mode((self.width, self.height),
+                                              OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
-    def destroyScreen(self):
+    @staticmethod
+    def destroyScreen():
         # destroy
         pygame.display.quit()
 
@@ -110,14 +111,14 @@ class Renderer(Singleton):
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
-        # Start - fixed pipline light setting
+        # Start - fixed pipe line light setting
         glLightfv(GL_LIGHT0, GL_POSITION, (-40, 200, 100, 0.0))
         glLightfv(GL_LIGHT0, GL_AMBIENT, (0.2, 0.2, 0.2, 1.0))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
         glEnable(GL_LIGHT0)
         glEnable(GL_LIGHTING)
         glEnable(GL_COLOR_MATERIAL)
-        # End - fixed pipline light setting
+        # End - fixed pipe line light setting
 
         # build a scene
         self.resizeScene(self.width, self.height)
@@ -139,7 +140,8 @@ class Renderer(Singleton):
     def resizeScene(self, width, height):
         # It have to pygame set_mode again on Linux.
         if platformModule.system() == 'Linux':
-            self.screen = pygame.display.set_mode((self.width, self.height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+            self.screen = pygame.display.set_mode((self.width, self.height),
+                                                  OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
         if width <= 0 or height <= 0:
             return
@@ -177,11 +179,11 @@ class Renderer(Singleton):
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
-        glPolygonMode( GL_FRONT_AND_BACK, self.viewMode )
+        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         # Test Code
         light = self.objectManager.lights[0]
-        light.setPos((math.sin(timeModule.time())*10.0, 0.0, math.cos(timeModule.time())*10.0))
+        light.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
         lightPos = light.getPos()
         lightColor = light.lightColor
 
@@ -193,38 +195,40 @@ class Renderer(Singleton):
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor)
+                obj.draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix,
+                         lightPos, lightColor)
                 lastProgram = obj.material.program
                 lastMesh = obj.mesh
 
         # selected object - render additive color
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
-            glBlendFunc( GL_ONE, GL_ONE_MINUS_DST_COLOR )
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix,
+                                                        self.perspective, vpMatrix, lightPos, lightColor, True)
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix, lightPos, lightColor, True)
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix,
+                                                        self.perspective, vpMatrix, lightPos, lightColor, True)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         # reset shader program
         glUseProgram(0)
 
-
     def render_postprocess(self):
         # set orthographic view
-        glMatrixMode( GL_PROJECTION )
-        glLoadIdentity( )
-        glOrtho( 0, self.width, 0, self.height, -1, 1 )
-        glMatrixMode( GL_MODELVIEW )
-        glLoadIdentity( )
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.width, 0, self.height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
 
         # set render state
         glEnable(GL_BLEND)
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         glDisable(GL_LIGHTING)
@@ -243,4 +247,3 @@ class Renderer(Singleton):
 
         # swap buffer
         pygame.display.flip()
-

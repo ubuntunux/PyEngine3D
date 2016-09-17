@@ -17,20 +17,20 @@ from Object import ObjectManager
 from Render import Renderer
 from Utilities import *
 
-
-#------------------------------#
+# ------------------------------#
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
-#------------------------------#
+# ------------------------------#
 reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 
-def IsExtensionSupported (TargetExtension):
+
+def IsExtensionSupported(TargetExtension):
     """ Accesses the rendering context to see if it supports an extension.
         Note, that this test only tells you if the OpenGL library supports
         the extension. The PyOpenGL system might not actually support the extension.
     """
-    Extensions = glGetString (GL_EXTENSIONS)
-    Extensions = Extensions.split ()
+    Extensions = glGetString(GL_EXTENSIONS)
+    Extensions = Extensions.split()
     bTargetExtension = str.encode(TargetExtension)
     for extension in Extensions:
         if extension == bTargetExtension:
@@ -49,7 +49,7 @@ def IsExtensionSupported (TargetExtension):
     # from OpenGL.GL.EXT.fog_coord import *
     m = re.match(reCheckGLExtention, TargetExtension)
     if m:
-        group_name =  m.groups()[0]
+        group_name = m.groups()[0]
         extension_name = m.groups()[1]
     else:
         msg = "GL unsupport error, %s" % TargetExtension
@@ -59,7 +59,7 @@ def IsExtensionSupported (TargetExtension):
     extension_module_name = "OpenGL.GL.%s.%s" % (group_name, extension_name)
 
     try:
-        __import__ (extension_module_name)
+        __import__(extension_module_name)
         logger.info("PyOpenGL supports '%s'" % TargetExtension)
     except:
         msg = 'Failed to import', extension_module_name
@@ -68,14 +68,15 @@ def IsExtensionSupported (TargetExtension):
     return True
 
 
-#------------------------------#
+# ------------------------------#
 # CLASS : CoreManager
-#------------------------------#
+# ------------------------------#
 class CoreManager(Singleton):
     """
     Manager other mangers classes. ex) shader manager, material manager...
     CoreManager usage for debug what are woring manager..
     """
+
     def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
         self.running = False
 
@@ -120,7 +121,7 @@ class CoreManager(Singleton):
 
         # initalize managers
         self.resourceManager.initialize()
-        self.objectManager.initialize(None)
+        self.objectManager.initialize()
         self.renderer.initialize(self)
 
     def run(self):
@@ -157,27 +158,28 @@ class CoreManager(Singleton):
     def close(self):
         self.running = False
 
-    #---------------------------#
-    # receive and send messages
-    #---------------------------#
+    # ---------------------------#
+    # receive and send messages, communication with GUI
+    # ---------------------------#
     def sendResourceList(self, resourceList):
-        self.uiCmdQueue.put(CMD_RESOURCE_LIST, resourceList)
+        self.uiCmdQueue.put(CMD_SEND_RESOURCE_LIST, resourceList)
 
     def sendObjectName(self, obj):
-        # send object name to GUI
-        assert (obj is not None)
-        self.uiCmdQueue.put(CMD_OBJECT_NAME, obj.name)
+        if obj:
+            self.uiCmdQueue.put(CMD_SEND_OBJECT_NAME, obj.name)
+        else:
+            logger.error("Cannot find " + (objName or ""))
 
-    def sendObjectInfo(self, obj):
-        # send object infomation to GUI
-        assert (obj is not None)
-        objInfos = self.objectManager.getObjectInfos(obj)
-        self.uiCmdQueue.put(CMD_OBJECT_INFOS, objInfos)
+    def sendObjectData(self, objName):
+        objData = self.objectManager.getObjectData(objName)
+        if objData:
+            self.uiCmdQueue.put(CMD_SEND_OBJECT_DATA, objData)
+        else:
+            logger.error("Cannot find " + (objName or ""))
 
-
-    #---------------------------#
+    # ---------------------------#
     # update functions
-    #---------------------------#
+    # ---------------------------#
     def updateCommand(self):
         while not self.cmdQueue.empty():
             # receive value must be tuple type
@@ -196,23 +198,23 @@ class CoreManager(Singleton):
                 mesh = self.resourceManager.getMeshByName(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == CMD_REQUEST_RESOURCE_LIST:
-                self.sendResourceList([(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in self.resourceManager.getMeshNameList()])
-                self.sendResourceList([(resName, self.resourceManager.getMaterial(resName).__class__.__name__) for resName in self.resourceManager.getMaterialNameList()])
-            elif cmd == CMD_REQUEST_OBJECT_INFOS:
-                # send object infomation to GUI
-                obj = self.objectManager.getObject(value)
-                self.sendObjectInfo(obj)
-            elif cmd == CMD_SET_OBJECT_INFO:
-                # send object infomation to GUI
+                self.sendResourceList(
+                    [(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in
+                     self.resourceManager.getMeshNameList()])
+                self.sendResourceList(
+                    [(resName, self.resourceManager.getMaterial(resName).__class__.__name__) for resName in
+                     self.resourceManager.getMaterialNameList()])
+            elif cmd == CMD_REQUEST_OBJECT_DATA:
+                self.sendObjectData(value)
+            elif cmd == CMD_SET_OBJECT_DATA:
                 objectName, propertyName, propertyValue = value
                 self.objectManager.setObjectData(objectName, propertyName, propertyValue)
             elif cmd == CMD_SET_OBJECT_SELECT:
                 self.objectManager.setSelectedObject(value)
             elif cmd == CMD_SET_OBJECT_FOCUS:
                 self.objectManager.setObjectFocus(value)
-            elif cmd >= CMD_VIEWMODE_WIREFRAME and cmd <= CMD_VIEWMODE_SHADING:
+            elif CMD_VIEWMODE_WIREFRAME <= cmd <= CMD_VIEWMODE_SHADING:
                 self.renderer.setViewMode(cmd)
-
 
     def updateEvent(self):
         # set pos
@@ -234,7 +236,7 @@ class CoreManager(Singleton):
                     self.console.toggle()
                 elif keyDown == K_1:
                     for i in range(100):
-                        pos = [np.random.uniform(-10,10) for i in range(3)]
+                        pos = [np.random.uniform(-10, 10) for i in range(3)]
                         meshName = np.random.choice(self.resourceManager.getMeshNameList())
                         mesh = self.resourceManager.getMeshByName(meshName)
                         self.objectManager.addMesh(mesh, pos=pos)
@@ -295,7 +297,6 @@ class CoreManager(Singleton):
         # update camera matrix to inverse matrix
         self.camera.updateInverseTransform()
 
-
     def update(self):
         self.currentTime = time.time()
         self.running = True
@@ -313,9 +314,9 @@ class CoreManager(Singleton):
             self.fps = 1.0 / delta
 
             # update
-            self.updateCommand() # update command queue
-            self.updateEvent() # update keyboard and mouse events
-            self.updateCamera() # update camera
+            self.updateCommand()  # update command queue
+            self.updateEvent()  # update keyboard and mouse events
+            self.updateCamera()  # update camera
 
             # update time
             updateTime = time.time() - updateTime
@@ -326,7 +327,7 @@ class CoreManager(Singleton):
             renderTime = time.time() - renderTime
 
             # render text
-            self.console.info("%.2f ms" % (self.delta*1000))
+            self.console.info("%.2f ms" % (self.delta * 1000))
             self.console.info("%.2f fps" % self.fps)
             self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
             self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))

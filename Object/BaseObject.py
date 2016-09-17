@@ -1,4 +1,5 @@
 import time, math
+from collections import OrderedDict
 
 import numpy as np
 from OpenGL.GL import *
@@ -7,12 +8,9 @@ from PIL import Image
 from Resource import *
 from Object import TransformObject
 
-#------------------------------#
-# CLASS : BaseObject
-#------------------------------#
+
 class BaseObject(TransformObject):
     def __init__(self, name, pos, mesh, material):
-        # init TransformObject
         TransformObject.__init__(self, pos)
         self.name = name
         self.selected = False
@@ -28,8 +26,8 @@ class BaseObject(TransformObject):
         self.textureDiffuse = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
+        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
+        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glGenerateMipmap(GL_TEXTURE_2D)
@@ -43,11 +41,27 @@ class BaseObject(TransformObject):
         self.textureNormal = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.textureNormal)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
+        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
+        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glGenerateMipmap(GL_TEXTURE_2D)
+
+    def getObjectData(self):
+        data = OrderedDict()
+        data['name'] = self.name
+        data['position'] = self.pos
+        data['rotation'] = self.rot
+        data['scale'] = self.scale
+        return data
+
+    def setObjectData(self, propertyName, propertyValue):
+        if propertyName == 'position':
+            self.setPos(propertyValue)
+        elif propertyName == 'rotation':
+            self.setRot(propertyValue)
+        elif propertyName == 'scale':
+            self.setScale(propertyValue)
 
     def setSelected(self, selected):
         self.selected = selected
@@ -105,4 +119,4 @@ class BaseObject(TransformObject):
         # Mesh draw
         self.mesh.draw()
 
-        #glUseProgram(0)
+        # glUseProgram(0)
