@@ -228,7 +228,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # lock edit property ui
         self.isFillobjPropertyTree = True
 
-        self.objPropertyTree.clear()
+        self.objPropertyTree.clear()  # clear
 
         # fill properties of selected object
         for valueName in objData.keys():
