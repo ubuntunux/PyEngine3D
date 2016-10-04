@@ -67,13 +67,10 @@ class BaseObject(TransformObject):
         self.selected = selected
 
     def draw(self, lastProgram, lastMesh, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
-        # Test Code
-        self.setYaw((time.time() * 0.2) % math.pi * 2.0)
-
-        # update transform
+        self.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
         self.updateTransform()
 
-        # use program
+        # bind shader program
         if lastProgram != self.material.program:
             glUseProgram(self.material.program)
 
@@ -115,8 +112,5 @@ class BaseObject(TransformObject):
         # At last, bind buffers
         if lastMesh != self.mesh:
             self.mesh.bindBuffers()
-
-        # Mesh draw
         self.mesh.draw()
-
         # glUseProgram(0)

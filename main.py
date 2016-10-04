@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__copyright__ = "Copyright (c) 2015, ubuntunux"
-__license__ = """
+""""
 Copyright (c) 2015, ubuntunux
 All rights reserved.
 
+License:
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -26,13 +26,15 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+__version__ = 0.1
 """
-__version__ = '0.1'
 
 from multiprocessing import Process
 
 # core manager
 from Core import CoreManager, CustomQueue, CustomPipe
+
 
 def run():
     coreCmdQueue = None

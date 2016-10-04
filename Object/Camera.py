@@ -5,12 +5,12 @@ from Utilities import *
 from Object import BaseObject
 
 
-#------------------------------#
+# ------------------------------ #
 # CLASS : Camera
-#------------------------------#
+# ------------------------------ #
 class Camera(BaseObject):
     def __init__(self, name):
-        BaseObject.__init__(self, name, (0,0,0), None, None)
+        BaseObject.__init__(self, name, (0, 0, 0), None, None)
 
         # get properties
         self.fov = config.Camera.fov
