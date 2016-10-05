@@ -17,10 +17,11 @@ from Object import ObjectManager
 from Render import Renderer
 from Utilities import *
 
-# ------------------------------#
+
+#
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
-# ------------------------------#
+#
 reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 
 
@@ -111,7 +112,7 @@ class CoreManager(Singleton):
         logger.info("Process Start : %s" % self.__class__.__name__)
 
         # ready to launch - send message to ui
-        self.cmdPipe.SendAndRecv(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
+        self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         # pygame init
         pygame.init()
@@ -130,7 +131,7 @@ class CoreManager(Singleton):
 
         # send a message to close ui
         if self.uiCmdQueue:
-            self.uiCmdQueue.put(CMD_CLOSE_UI)
+            self.uiCmdQueue.put(COMMAND.CLOSE_UI)
 
         # close renderer
         self.renderer.close()
@@ -162,18 +163,18 @@ class CoreManager(Singleton):
     # receive and send messages, communication with GUI
     # ---------------------------#
     def sendResourceList(self, resourceList):
-        self.uiCmdQueue.put(CMD_SEND_RESOURCE_LIST, resourceList)
+        self.uiCmdQueue.put(COMMAND.SEND_RESOURCE_LIST, resourceList)
 
     def sendObjectName(self, obj):
         if obj:
-            self.uiCmdQueue.put(CMD_SEND_OBJECT_NAME, obj.name)
+            self.uiCmdQueue.put(COMMAND.SEND_OBJECT_NAME, obj.name)
         else:
             logger.error("Cannot find " + (objName or ""))
 
     def sendObjectData(self, objName):
         objData = self.objectManager.getObjectData(objName)
         if objData:
-            self.uiCmdQueue.put(CMD_SEND_OBJECT_DATA, objData)
+            self.uiCmdQueue.put(COMMAND.SEND_OBJECT_DATA, objData)
         else:
             logger.error("Cannot find " + (objName or ""))
 
@@ -186,34 +187,34 @@ class CoreManager(Singleton):
             cmd, value = self.cmdQueue.get()
 
             # close app
-            if cmd == CMD_CLOSE_APP:
+            if cmd == COMMAND.CLOSE_APP:
                 self.close()
                 return
             # received request pipe
-            elif cmd == CMD_ADD_RESOURCE:
+            elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
                 # create mesh
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
                 mesh = self.resourceManager.getMeshByName(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
-            elif cmd == CMD_REQUEST_RESOURCE_LIST:
+            elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
                 self.sendResourceList(
                     [(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in
                      self.resourceManager.getMeshNameList()])
                 self.sendResourceList(
                     [(resName, self.resourceManager.getMaterial(resName).__class__.__name__) for resName in
                      self.resourceManager.getMaterialNameList()])
-            elif cmd == CMD_REQUEST_OBJECT_DATA:
+            elif cmd == COMMAND.REQUEST_OBJECT_DATA:
                 self.sendObjectData(value)
-            elif cmd == CMD_SET_OBJECT_DATA:
+            elif cmd == COMMAND.SET_OBJECT_DATA:
                 objectName, propertyName, propertyValue = value
                 self.objectManager.setObjectData(objectName, propertyName, propertyValue)
-            elif cmd == CMD_SET_OBJECT_SELECT:
+            elif cmd == COMMAND.SET_OBJECT_SELECT:
                 self.objectManager.setSelectedObject(value)
-            elif cmd == CMD_SET_OBJECT_FOCUS:
+            elif cmd == COMMAND.SET_OBJECT_FOCUS:
                 self.objectManager.setObjectFocus(value)
-            elif CMD_VIEWMODE_WIREFRAME <= cmd <= CMD_VIEWMODE_SHADING:
+            elif COMMAND.VIEWMODE_WIREFRAME <= cmd <= COMMAND.VIEWMODE_SHADING:
                 self.renderer.setViewMode(cmd)
 
     def updateEvent(self):

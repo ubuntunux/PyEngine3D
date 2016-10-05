@@ -4,13 +4,14 @@ import traceback
 from multiprocessing import Queue, Pipe
 
 # logger
-from Utilities import Logger
+from Utilities import Logger, AutoEnum
 
 logger = Logger.getLogger('Command Logger', 'logs', False)
 
-# ------------------------------------#
+
+#
 # UTIL : call stack function for log
-# ------------------------------------#
+#
 reTraceStack = re.compile("File \"(.+?)\", line (\d+?), .+")  # [0] filename, [1] line number
 
 
@@ -28,63 +29,40 @@ def getTraceCallStack():
     return ""
 
 
-# ---------------------#
-# FUNCTION : Error
-# ---------------------#
-def Error():
-    raise Exception("Receive wrong command.")
-
-
-# ---------------------#
+#
 # COMMANDS
-# ---------------------#
-CMD_NAMES = []
+#
+class COMMAND(AutoEnum):
+    UI_RUN = ()
+    UI_RUN_OK = ()
+    FAIL = ()
+    CLOSE_APP = ()
+    CLOSE_UI = ()
+    REQUEST_PIPE = ()
+    PIPE_DONE = ()
+
+    # view mode
+    VIEWMODE_WIREFRAME = ()
+    VIEWMODE_SHADING = ()
+
+    # add object
+    ADD_RESOURCE = ()
+    REQUEST_RESOURCE_LIST = ()
+    SEND_RESOURCE_LIST = ()
+    SEND_OBJECT_NAME = ()
+    REQUEST_OBJECT_DATA = ()
+    SEND_OBJECT_DATA = ()
+    SET_OBJECT_DATA = ()
+    SET_OBJECT_SELECT = ()
+    SET_OBJECT_FOCUS = ()
 
 
-# command index coroutine
-def genCommandIndex():
-    i = -1
-    while True:
-        cmdName = yield i  # return index and receive
-        CMD_NAMES.append(cmdName)
-        i += 1
-
-def getCommandName(command_index):
-    return CMD_NAMES[command_index] if len(CMD_NAMES) > command_index else "CMD_NONE"
+def get_command_name(cmd: COMMAND) -> str:
+    return str(cmd)
 
 
-cmd_index = genCommandIndex()
-# just first run coroutine
-next(cmd_index)
-
-CMD_UI_RUN = cmd_index.send("CMD_UI_RUN")
-CMD_UI_RUN_OK = cmd_index.send("CMD_UI_RUN_OK")
-CMD_FAIL = cmd_index.send("CMD_FAIL")
-CMD_CLOSE_APP = cmd_index.send("CMD_CLOSE_APP")
-CMD_CLOSE_UI = cmd_index.send("CMD_CLOSE_UI")
-CMD_REQUEST_PIPE = cmd_index.send("CMD_REQUEST_PIPE")
-CMD_PIPE_DONE = cmd_index.send("CMD_PIPE_DONE")
-
-# view mode
-CMD_VIEWMODE_WIREFRAME = cmd_index.send("CMD_VIEWMODE_WIREFRAME")
-CMD_VIEWMODE_SHADING = cmd_index.send("CMD_VIEWMODE_SHADING")
-
-# add object
-CMD_ADD_RESOURCE = cmd_index.send("CMD_ADD_RESOURCE")
-CMD_REQUEST_RESOURCE_LIST = cmd_index.send("CMD_REQUEST_RESOURCE_LIST")
-CMD_SEND_RESOURCE_LIST = cmd_index.send("CMD_SEND_RESOURCE_LIST")
-CMD_SEND_OBJECT_NAME = cmd_index.send("CMD_SEND_OBJECT_NAME")
-CMD_REQUEST_OBJECT_DATA = cmd_index.send("CMD_REQUEST_OBJECT_DATA")
-CMD_SEND_OBJECT_DATA = cmd_index.send("CMD_SEND_OBJECT_DATA")
-CMD_SET_OBJECT_DATA = cmd_index.send("CMD_SET_OBJECT_DATA")
-CMD_SET_OBJECT_SELECT = cmd_index.send("CMD_SET_OBJECT_SELECT")
-CMD_SET_OBJECT_FOCUS = cmd_index.send("CMD_SET_OBJECT_FOCUS")
-
-
-# ---------------------#
-# CLASS : CustomPipe
-# ---------------------#
 def CustomPipe():
+    """get CustomPipe Instances"""
     pipe1, pipe2 = Pipe()
     pipe1 = PipeClass(pipe1)
     pipe2 = PipeClass(pipe2)
@@ -92,26 +70,27 @@ def CustomPipe():
 
 
 class PipeClass:
+    """Custom Pipe class"""
     def __init__(self, pipe):
         self.pipe = pipe
         self.simpleLog = True
 
     def send(self, sendCmd, sendValue=None):
         if self.simpleLog:
-            logger.info("Pipe : Send %s in %s" % (getCommandName(sendCmd), getTraceCallStack()))
+            logger.info("Pipe : Send %s in %s" % (get_command_name(sendCmd), getTraceCallStack()))
         else:
-            logger.info("Pipe : Send %s, %s in %s" % (getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
+            logger.info("Pipe : Send %s, %s in %s" % (get_command_name(sendCmd), str(sendValue), getTraceCallStack()))
         # must send queue date to tuple type
         self.pipe.send((sendCmd, sendValue))
 
     def recv(self):
-        # must be a tuple type
+        """must be a tuple type"""
         cmdAndValue = self.pipe.recv()
         if self.simpleLog:
-            logger.info("Pipe : Recv %s in %s" % (getCommandName(cmdAndValue[0]), getTraceCallStack()))
+            logger.info("Pipe : Recv %s in %s" % (get_command_name(cmdAndValue[0]), getTraceCallStack()))
         else:
             logger.info(
-                "Pipe : Recv %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
+                "Pipe : Recv %s, %s in %s" % (get_command_name(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
         return cmdAndValue
 
     def SendAndRecv(self, sendCmd, sendValue, checkRecvCmd, checkReceiveValue):
@@ -122,19 +101,19 @@ class PipeClass:
         recv, value = self.pipe.recv()
         if self.simpleLog:
             logger.info("Pipe : Send %s and Recv %s in %s" % (
-            getCommandName(sendCmd), getCommandName(recv), getTraceCallStack()))
+                get_command_name(sendCmd), get_command_name(recv), getTraceCallStack()))
         else:
             logger.info("Pipe : Send %s, %s and Recv %s, %s in %s" % (
-            getCommandName(sendCmd), str(sendValue), getCommandName(recv), str(value), getTraceCallStack()))
+                get_command_name(sendCmd), str(sendValue), get_command_name(recv), str(value), getTraceCallStack()))
 
         # check receive correct command and value
         if recv != checkRecvCmd or (checkReceiveValue is not None and checkReceiveValue != value):
             if self.simpleLog:
-                logger.info(
-                    "Pipe : RecvFailed %s and Send %s in %s" % (getCommandName(recv), CMD_FAIL, getTraceCallStack()))
+                logger.info("Pipe : RecvFailed %s and Send %s in %s" % (get_command_name(recv),
+                                                                        COMMAND.FAIL, getTraceCallStack()))
             else:
                 logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (
-                getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
+                    get_command_name(recv), str(value), COMMAND.FAIL, "None", getTraceCallStack()))
             logger.error("ERROR : Received %s not %s" % (recv, checkRecvCmd))
             raise BaseException("Pipe receive error.")
         return value
@@ -148,28 +127,28 @@ class PipeClass:
             self.pipe.send((sendCmd, sendValue))
             if self.simpleLog:
                 logger.info("Pipe : Recv %s and Send %s in %s" % (
-                getCommandName(recv), getCommandName(sendCmd), getTraceCallStack()))
+                    get_command_name(recv), get_command_name(sendCmd), getTraceCallStack()))
             else:
                 logger.info("Pipe : Recv %s, %s and Send %s, %s in %s" % (
-                getCommandName(recv), str(value), getCommandName(sendCmd), str(sendValue), getTraceCallStack()))
+                    get_command_name(recv), str(value), get_command_name(sendCmd), str(sendValue), getTraceCallStack()))
 
             # return received value
             return value
         else:
-            self.pipe.send((CMD_FAIL, None))
+            self.pipe.send((COMMAND.FAIL, None))
             if self.simpleLog:
                 logger.info(
-                    "Pipe : RecvFailed %s and Send %s in %s" % (getCommandName(recv), CMD_FAIL, getTraceCallStack()))
+                    "Pipe : RecvFailed %s and Send %s in %s" % (get_command_name(recv), COMMAND.FAIL, getTraceCallStack()))
             else:
                 logger.info("Pipe : RecvFailed %s, %s and Send %s, %s in %s" % (
-                getCommandName(recv), str(value), CMD_FAIL, "None", getTraceCallStack()))
+                    get_command_name(recv), str(value), COMMAND.FAIL, "None", getTraceCallStack()))
             logger.error("ERROR : Received %s not %s" % (recv, checkRecvCmd))
             raise BaseException("Pipe receive error.")
 
 
-# ---------------------#
-# CLASS : CustomQueue
-# ---------------------#
+#
+# CLASS : Custom Queue
+#
 class CustomQueue:
     def __init__(self):
         self.queue = Queue()
@@ -182,16 +161,16 @@ class CustomQueue:
         # receive value must be tuple type
         cmdAndValue = self.queue.get(self)
         if self.simpleLog:
-            logger.info("Queue : get %s in %s" % (getCommandName(cmdAndValue[0]), getTraceCallStack()))
+            logger.info("Queue : get %s in %s" % (get_command_name(cmdAndValue[0]), getTraceCallStack()))
         else:
             logger.info(
-                "Queue : get %s, %s in %s" % (getCommandName(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
+                "Queue : get %s, %s in %s" % (get_command_name(cmdAndValue[0]), str(cmdAndValue[1]), getTraceCallStack()))
         return cmdAndValue
 
     def put(self, cmdIndex, value=None):
         if self.simpleLog:
-            logger.info("Queue : put %s in %s" % (getCommandName(cmdIndex), getTraceCallStack()))
+            logger.info("Queue : put %s in %s" % (get_command_name(cmdIndex), getTraceCallStack()))
         else:
-            logger.info("Queue : put %s, %s in %s" % (getCommandName(cmdIndex), str(value), getTraceCallStack()))
+            logger.info("Queue : put %s, %s in %s" % (get_command_name(cmdIndex), str(value), getTraceCallStack()))
         # must send queue date to tuple type
         self.queue.put((cmdIndex, value))

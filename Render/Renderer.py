@@ -16,9 +16,9 @@ from Object import ObjectManager, DebugLine
 from Utilities import *
 
 
-# ------------------------------#
+#
 # CLASS : Console
-# ------------------------------#
+#
 class Console:
     def __init__(self):
         self.infos = []
@@ -60,9 +60,9 @@ class Console:
             self.infos = []
 
 
-# ------------------------------#
+#
 # CLASS : Renderer
-# ------------------------------#
+#
 class Renderer(Singleton):
     def __init__(self):
         self.width = 0
@@ -132,9 +132,9 @@ class Renderer(Singleton):
         self.console.close()
 
     def setViewMode(self, viewMode):
-        if viewMode == CMD_VIEWMODE_WIREFRAME:
+        if viewMode == COMMAND.VIEWMODE_WIREFRAME:
             self.viewMode = GL_LINE
-        elif viewMode == CMD_VIEWMODE_SHADING:
+        elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
     def resizeScene(self, width, height):

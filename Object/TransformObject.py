@@ -3,9 +3,7 @@ import numpy as np
 from Core import logger, config
 from Utilities import *
 
-#------------------------------#
-# CLASS : TransformObject
-#------------------------------#
+
 class TransformObject:
     def __init__(self, pos):
         self.move_speed = config.Object.move_speed
@@ -45,7 +43,9 @@ class TransformObject:
         self.setScale(np.zeros(3, dtype=np.float32))
         self.updateTransform()
 
+    #
     # Translate
+    #
     def getPos(self):
         return self.pos
 
@@ -93,7 +93,9 @@ class TransformObject:
         self.moved = True
         self.pos[2] += delta
 
+    #
     # Rotation
+    #
     def getRotation(self):
         return self.rot
 
@@ -137,7 +139,9 @@ class TransformObject:
         if self.rot[2] > two_pi: self.rot[2] -= two_pi
         elif self.rot[2] < 0.0: self.rot[2] += two_pi
 
+    #
     # Scale
+    #
     def getScale(self):
         return self.scale
 
@@ -217,8 +221,7 @@ class TransformObject:
 
         if updateMatrix:
             self.matrix = np.dot(self.translateMatrix, self.rotationMatrix)
-            #self.matrix = np.dot(self.matrix, self.scaleMatrix)
-
+            # self.matrix = np.dot(self.matrix, self.scaleMatrix)
 
     def getTransformInfos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])

@@ -49,9 +49,9 @@ class UIThread(QtCore.QThread):
             if not self.cmdQueue.empty():
                 # receive value must be tuple type
                 cmd, value = self.cmdQueue.get()
-                cmdName = getCommandName(cmd)
+                cmdName = get_command_name(cmd)
                 # recieved queues
-                if cmd == CMD_CLOSE_UI:
+                if cmd == COMMAND.CLOSE_UI:
                     self.running = False
                 # call binded signal event
                 self.emit(QtCore.SIGNAL(cmdName), value)
@@ -77,19 +77,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
         actionShading = self.findChild(QtGui.QAction, "actionShading")
         QtCore.QObject.connect(actionWireframe, QtCore.SIGNAL("triggered()"),
-                               lambda: self.setViewMode(CMD_VIEWMODE_WIREFRAME))
+                               lambda: self.setViewMode(COMMAND.VIEWMODE_WIREFRAME))
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"),
-                               lambda: self.setViewMode(CMD_VIEWMODE_SHADING))
+                               lambda: self.setViewMode(COMMAND.VIEWMODE_SHADING))
 
         # TabWidget - resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
+        self.resourceListWidget.itemClicked.connect(self.selectResource)
 
         # TabWidget - object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
-        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.selectObject)
-        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemActivated(QListWidgetItem *)"), self.selectObject)
-        QtCore.QObject.connect(self.objectList, QtCore.SIGNAL("itemDoubleClicked(QListWidgetItem *)"), self.focusObject)
+        self.objectList.itemClicked.connect(self.selectObject)
+        self.objectList.itemActivated.connect(self.selectObject)
+        self.objectList.itemDoubleClicked.connect(self.focusObject)
 
         # object property widget
         self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
@@ -100,23 +101,25 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.objPropertyTree.itemClicked.connect(self.checkEditable)
         self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
 
+        #
         # UIThread - Regist Recieve Signals
+        #
         self.uiThread = UIThread(self.cmdQueue)
-        self.connect(self.uiThread, QtCore.SIGNAL(getCommandName(CMD_CLOSE_UI)), self.exit)
-        self.connect(self.uiThread, QtCore.SIGNAL(getCommandName(CMD_SEND_RESOURCE_LIST)), self.addResourceList)
-        self.connect(self.uiThread, QtCore.SIGNAL(getCommandName(CMD_SEND_OBJECT_NAME)), self.addObjectName)
-        self.connect(self.uiThread, QtCore.SIGNAL(getCommandName(CMD_SEND_OBJECT_DATA)), self.fillObjectData)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.CLOSE_UI)), self.exit)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_RESOURCE_LIST)), self.addResourceList)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_OBJECT_NAME)), self.addObjectName)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_OBJECT_DATA)), self.fillObjectData)
         self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
-        self.cmdPipe.RecvAndSend(CMD_UI_RUN, None, CMD_UI_RUN_OK, None)
+        self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
         # request available mesh list
-        self.coreCmdQueue.put(CMD_REQUEST_RESOURCE_LIST)
+        self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
     def exit(self, *args):
         if args != () and args[0] is not None:
             logger.info(*args)
-        self.coreCmdQueue.put(CMD_CLOSE_APP)
+        self.coreCmdQueue.put(COMMAND.CLOSE_APP)
         self.close()
         sys.exit()
 
@@ -159,9 +162,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # check value chaned
                 if item.oldValue == item.text(1):
                     return
-
                 item.oldValue = item.text(1)
-
                 # check array type, then combine components
                 parent = item.parent()
                 if type(parent) == QtGui.QTreeWidgetItem and parent.dataType in (tuple, list, numpy.ndarray):
@@ -181,7 +182,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     value = item.dataType(item.text(1))
                 # send data
                 currentObjectName = self.objectList.currentItem().text()
-                self.coreCmdQueue.put(CMD_SET_OBJECT_DATA, (currentObjectName, propertyName, value))
+                self.coreCmdQueue.put(COMMAND.SET_OBJECT_DATA, (currentObjectName, propertyName, value))
             except:
                 print(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -207,16 +208,19 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item.setText(1, str(value))
         item.oldValue = item.text(1)  # set old value
 
+    def selectResource(self):
+        print("Call selectResource")
+        pass
+
     def selectObject(self, inst):
-        """objectList selected event"""
         selectedObjectName = inst.text()
         # request selected object infomation to fill property widget
-        self.coreCmdQueue.put(CMD_SET_OBJECT_SELECT, selectedObjectName)
-        self.coreCmdQueue.put(CMD_REQUEST_OBJECT_DATA, selectedObjectName)
+        self.coreCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
+        self.coreCmdQueue.put(COMMAND.REQUEST_OBJECT_DATA, selectedObjectName)
 
     def focusObject(self, inst):
         selectedObjectName = inst.text()
-        self.coreCmdQueue.put(CMD_SET_OBJECT_FOCUS, selectedObjectName)
+        self.coreCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
 
     def fillObjectData(self, objData):
         # lock edit property ui
@@ -249,7 +253,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Commands
     #
     def addResource(self, item=None):
-        self.coreCmdQueue.put(CMD_ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
+        self.coreCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
 
     def setViewMode(self, mode):
         self.coreCmdQueue.put(mode)
