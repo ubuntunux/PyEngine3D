@@ -17,19 +17,6 @@ Welcome to the GuineaPig wiki!
  - pyopengl_accelerate 3.1
  - libpng 1.6.17
  - pygame 1.9.2
- 
-----
-### Features
-- Rendering : PyOpenGL
-- UI : PyQT
-- Image : PIL
-- Sound : PyAL ( OpenAL Wrap )
-- Math : Numpy
-- Simulation : PyOpenCL
-- 3D File Format
-    - OBJ
-    - Collada
-    - FBX
 
 ----
 ### TODO
