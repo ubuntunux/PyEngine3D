@@ -45,13 +45,17 @@ class COMMAND(AutoEnum):
     VIEWMODE_WIREFRAME = ()
     VIEWMODE_SHADING = ()
 
-    # add object
+    # resource
     ADD_RESOURCE = ()
     REQUEST_RESOURCE_LIST = ()
-    SEND_RESOURCE_LIST = ()
-    SEND_OBJECT_NAME = ()
+    TRANS_RESOURCE_LIST = ()
+    REQUEST_RESOURCE_DATA = ()
+    TRANS_RESOURCE_DATA = ()
+
+    # object
+    TRANS_OBJECT_NAME = ()
     REQUEST_OBJECT_DATA = ()
-    SEND_OBJECT_DATA = ()
+    TRANS_OBJECT_DATA = ()
     SET_OBJECT_DATA = ()
     SET_OBJECT_SELECT = ()
     SET_OBJECT_FOCUS = ()

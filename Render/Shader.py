@@ -10,10 +10,11 @@ from Core import logger
 from Utilities import Singleton
 
 
-#------------------------------#
-# CLASS : Shader
-#------------------------------#
 class Shader:
+    """
+    CLASS : Shader
+    """
+
     shaderType = None
 
     def __init__(self, shaderName, shaderSource):
@@ -31,14 +32,16 @@ class Shader:
     def delete(self):
         glDeleteShader(self.shader)
 
-#------------------------------#
-# CLASS : VertexShader
-#------------------------------#
+
 class VertexShader(Shader):
+    """
+    CLASS : VertexShader
+    """
     shaderType = GL_VERTEX_SHADER
 
-#------------------------------#
-# CLASS : FragmentShader
-#------------------------------#
+
 class FragmentShader(Shader):
+    """
+    CLASS : FragmentShader
+    """
     shaderType = GL_FRAGMENT_SHADER

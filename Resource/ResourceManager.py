@@ -11,9 +11,9 @@ from Render import Shader, Material
 from Object import Triangle, Quad, Mesh
 
 
-#------------------------------#
+#
 # CLASS : ShaderLoader
-#------------------------------#
+#
 class ShaderLoader(Singleton):
     def __init__(self):
         self.vertexShaders = {}
@@ -58,9 +58,9 @@ class ShaderLoader(Singleton):
         return self.fragmentShader[shaderName] if shaderName in self.fragmentShader else None
 
 
-#------------------------------#
+#
 # CLASS : MaterialLoader
-#------------------------------#
+#
 class MaterialLoader(Singleton):
     def __init__(self):
         self.materials = {}
@@ -99,9 +99,9 @@ class MaterialLoader(Singleton):
         return list(self.materials.keys())
 
 
-#------------------------------#
+#
 # CLASS : MeshLoader
-#------------------------------#
+#
 class MeshLoader(Singleton):
     def __init__(self):
         self.meshes = {}
@@ -125,9 +125,9 @@ class MeshLoader(Singleton):
         return self.meshes[meshName] if meshName in self.meshes else None
 
 
-#------------------------------#
+#
 # CLASS : ResourceManager
-#------------------------------#
+#
 class ResourceManager(Singleton):
     def __init__(self):
         self.shaderLoader = ShaderLoader.instance()
@@ -142,18 +142,45 @@ class ResourceManager(Singleton):
     def close(self):
         self.shaderLoader.close()
 
-    #------------------------------#
+    def getResourceList(self):
+        """
+        :return [(resource name, resource type)]:
+        """
+        result = []
+        for resName in self.getMeshNameList():
+            result.append((resName, self.getMeshByName(resName).__class__.__name__))
+        for resName in self.getMaterialNameList():
+            result.append((resName, self.getMaterial(resName).__class__.__name__))
+        return result
+
+    def getResourceData(self, resName, resType):
+        try:
+            resType = eval(resType)
+            resource = None
+
+            print("Need to implement.")
+
+            if resType == Shader:
+                resource = self.getFragmentShader(resName)
+            elif resType == Material:
+                resource = self.getMaterial(resName)
+            elif resType in (Triangle, Quad, Mesh):
+                print("")
+            else:
+                raise TypeError("%s of %s is unknown type." % (str(resType), resName))
+        except:
+            logger.error(traceback.format_exc())
+
     # FUNCTIONS : Shader
-    #------------------------------#
+
     def getVertexShader(self, name):
         return self.shaderLoader.getVertexShader(name)
 
     def getFragmentShader(self, name):
         return self.shaderLoader.getFragmentShader(name)
 
-    #------------------------------#
     # FUNCTIONS : Material
-    #------------------------------#
+
     def getMaterial(self, name):
         return self.materialLoader.getMaterial(name)
 
@@ -163,9 +190,8 @@ class ResourceManager(Singleton):
     def getMaterialNameList(self):
         return self.materialLoader.getMaterialNameList()
 
-    #------------------------------#
     # FUNCTIONS : Mesh
-    #------------------------------#
+
     def getMeshNameList(self):
         return self.meshLoader.getMeshNameList()
 

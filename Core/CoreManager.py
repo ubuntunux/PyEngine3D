@@ -159,29 +159,33 @@ class CoreManager(Singleton):
     def close(self):
         self.running = False
 
-    # ---------------------------#
+    #
     # receive and send messages, communication with GUI
-    # ---------------------------#
+    #
     def sendResourceList(self, resourceList):
-        self.uiCmdQueue.put(COMMAND.SEND_RESOURCE_LIST, resourceList)
+        self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
+
+    def sendResourceData(self, data):
+        self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_DATA, data)
 
     def sendObjectName(self, obj):
         if obj:
-            self.uiCmdQueue.put(COMMAND.SEND_OBJECT_NAME, obj.name)
+            self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_NAME, obj.name)
         else:
             logger.error("Cannot find " + (objName or ""))
 
     def sendObjectData(self, objName):
         objData = self.objectManager.getObjectData(objName)
         if objData:
-            self.uiCmdQueue.put(COMMAND.SEND_OBJECT_DATA, objData)
+            self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_DATA, objData)
         else:
             logger.error("Cannot find " + (objName or ""))
 
-    # ---------------------------#
-    # update functions
-    # ---------------------------#
     def updateCommand(self):
+        """
+        process recieved command queues and send datas.
+        :return None:
+        """
         while not self.cmdQueue.empty():
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
@@ -190,23 +194,26 @@ class CoreManager(Singleton):
             if cmd == COMMAND.CLOSE_APP:
                 self.close()
                 return
-            # received request pipe
+                # View mode
+            elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:
+                self.renderer.setViewMode(cmd)
+            # Resource Message
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
-                # create mesh
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
                 mesh = self.resourceManager.getMeshByName(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
-                self.sendResourceList(
-                    [(resName, self.resourceManager.getMeshByName(resName).__class__.__name__) for resName in
-                     self.resourceManager.getMeshNameList()])
-                self.sendResourceList(
-                    [(resName, self.resourceManager.getMaterial(resName).__class__.__name__) for resName in
-                     self.resourceManager.getMaterialNameList()])
+                datas = self.resourceManager.getResourceList()
+                self.sendResourceList(datas)
+            elif cmd == COMMAND.REQUEST_RESOURCE_DATA:
+                resName, resType = value
+                data = self.resourceManager.getResourceData(resName, resType)
+                self.sendResourceData(data)
             elif cmd == COMMAND.REQUEST_OBJECT_DATA:
                 self.sendObjectData(value)
+            # Object Message
             elif cmd == COMMAND.SET_OBJECT_DATA:
                 objectName, propertyName, propertyValue = value
                 self.objectManager.setObjectData(objectName, propertyName, propertyValue)
@@ -214,15 +221,18 @@ class CoreManager(Singleton):
                 self.objectManager.setSelectedObject(value)
             elif cmd == COMMAND.SET_OBJECT_FOCUS:
                 self.objectManager.setObjectFocus(value)
-            elif COMMAND.VIEWMODE_WIREFRAME <= cmd <= COMMAND.VIEWMODE_SHADING:
-                self.renderer.setViewMode(cmd)
 
     def updateEvent(self):
+        """
+        process keyboard and mouse events
+        :return None:
+        """
         # set pos
         self.mouseDelta[:] = self.mousePos - self.mouseOldPos
         self.mouseOldPos[:] = self.mousePos
         self.wheelUp, self.wheelDown = False, False
 
+        # Keyboard & Mouse Events
         for event in pygame.event.get():
             eventType = event.type
             if eventType == QUIT:

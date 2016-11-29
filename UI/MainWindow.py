@@ -66,6 +66,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdPipe = cmdPipe
         self.isFillobjPropertyTree = False
 
+        # UIThread
+        self.uiThread = UIThread(self.cmdQueue)
+        self.uiThread.start()
+
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.CLOSE_UI)), self.exit)
+
         # load ui file
         uic.loadUi(UI_FILENAME, self)
 
@@ -81,35 +87,27 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"),
                                lambda: self.setViewMode(COMMAND.VIEWMODE_SHADING))
 
-        # TabWidget - resource list
+        # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
 
-        # TabWidget - object list
+        # Object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
         self.objectList.itemClicked.connect(self.selectObject)
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)), self.addObjectName)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_DATA)), self.fillObjectData)
 
-        # object property widget
+        # Object property tree
         self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
-        # hook editable event
-        self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers)
-        # set object property events
+        self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers) # hook editable event
         self.objPropertyTree.itemSelectionChanged.connect(self.checkEditable)
         self.objPropertyTree.itemClicked.connect(self.checkEditable)
         self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
-
-        #
-        # UIThread - Regist Recieve Signals
-        #
-        self.uiThread = UIThread(self.cmdQueue)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.CLOSE_UI)), self.exit)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_RESOURCE_LIST)), self.addResourceList)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_OBJECT_NAME)), self.addObjectName)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.SEND_OBJECT_DATA)), self.fillObjectData)
-        self.uiThread.start()
 
         # wait a UI_RUN message, and send success message
         self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
@@ -184,7 +182,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 currentObjectName = self.objectList.currentItem().text()
                 self.coreCmdQueue.put(COMMAND.SET_OBJECT_DATA, (currentObjectName, propertyName, value))
             except:
-                print(traceback.format_exc())
+                logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
@@ -209,8 +207,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.oldValue = item.text(1)  # set old value
 
     def selectResource(self):
-        print("Call selectResource")
-        pass
+        getSelected = self.resourceListWidget.selectedItems()
+        if getSelected:
+            node = getSelected[0]
+            self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_DATA, (node.text(0), node.text(1)))
 
     def selectObject(self, inst):
         selectedObjectName = inst.text()
