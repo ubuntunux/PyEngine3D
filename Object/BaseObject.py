@@ -5,8 +5,10 @@ import numpy as np
 from OpenGL.GL import *
 from PIL import Image
 
+import Resource
 from Resource import *
 from Object import TransformObject
+
 
 
 class BaseObject(TransformObject):
@@ -53,6 +55,8 @@ class BaseObject(TransformObject):
         data['position'] = self.pos
         data['rotation'] = self.rot
         data['scale'] = self.scale
+        data['mesh'] = self.mesh.name if self.mesh else ""
+        data['material'] = self.material.name if self.material else ""
         return data
 
     def setObjectData(self, propertyName, propertyValue):
@@ -62,6 +66,10 @@ class BaseObject(TransformObject):
             self.setRot(propertyValue)
         elif propertyName == 'scale':
             self.setScale(propertyValue)
+        elif propertyName == 'mesh':
+            self.mesh = Resource.ResourceManager.instance().getMesh(propertyValue)
+        elif propertyName == 'material':
+            self.material = Resource.ResourceManager.instance().getMaterial(propertyValue)
 
     def setSelected(self, selected):
         self.selected = selected
@@ -69,6 +77,9 @@ class BaseObject(TransformObject):
     def draw(self, lastProgram, lastMesh, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
         self.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
         self.updateTransform()
+
+        if self.material is None or self.mesh is None:
+            return
 
         # bind shader program
         if lastProgram != self.material.program:

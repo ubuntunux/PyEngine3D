@@ -7,7 +7,7 @@ from OpenGL.GL.shaders import glDetachShader, glDeleteShader
 
 from Resource import *
 from Core import logger
-from Utilities import Singleton
+from Utilities import Singleton, getClassName
 
 
 class Shader:
@@ -18,7 +18,7 @@ class Shader:
     shaderType = None
 
     def __init__(self, shaderName, shaderSource):
-        logger.info("Create " + self.__class__.__name__ + " : " + shaderName)
+        logger.info("Create " + getClassName(self) + " : " + shaderName)
         self.name = shaderName
         self.source = shaderSource
         self.shader = glCreateShader(self.shaderType)

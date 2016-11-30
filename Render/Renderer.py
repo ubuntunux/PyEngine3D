@@ -197,7 +197,7 @@ class Renderer(Singleton):
             for obj in objList:
                 obj.draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix,
                          lightPos, lightColor)
-                lastProgram = obj.material.program
+                lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
         # selected object - render additive color

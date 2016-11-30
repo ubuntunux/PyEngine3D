@@ -109,7 +109,7 @@ class CoreManager(Singleton):
     def initialize(self):
         # process start
         logger.info('Platform : %s' % libPlatform.platform())
-        logger.info("Process Start : %s" % self.__class__.__name__)
+        logger.info("Process Start : %s" % getClassName(self))
 
         # ready to launch - send message to ui
         self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
@@ -147,7 +147,7 @@ class CoreManager(Singleton):
         logger.info("Saved config file - " + config.getFilename())
 
         # process stop
-        logger.info("Process Stop : %s" % self.__class__.__name__)
+        logger.info("Process Stop : %s" % getClassName(self))
 
         # quit
         pygame.quit()
@@ -202,7 +202,7 @@ class CoreManager(Singleton):
                 resName, resType = value
                 camera = self.objectManager.getMainCamera()
                 pos = camera.pos + camera.front * 10.0
-                mesh = self.resourceManager.getMeshByName(resName)
+                mesh = self.resourceManager.getMesh(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
                 datas = self.resourceManager.getResourceList()
@@ -249,7 +249,7 @@ class CoreManager(Singleton):
                     for i in range(100):
                         pos = [np.random.uniform(-10, 10) for i in range(3)]
                         meshName = np.random.choice(self.resourceManager.getMeshNameList())
-                        mesh = self.resourceManager.getMeshByName(meshName)
+                        mesh = self.resourceManager.getMesh(meshName)
                         self.objectManager.addMesh(mesh, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]

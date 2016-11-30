@@ -20,7 +20,7 @@ class Primitive:
     index = np.array([], dtype=np.uint32)
 
     def __init__(self, name=""):
-        self.name = name or self.__class__.__name__
+        self.name = name or getClassName(self)
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1

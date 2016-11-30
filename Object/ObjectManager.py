@@ -5,7 +5,7 @@ from Resource import ResourceManager
 from Core import logger, CoreManager
 from Object import BaseObject, Camera, Light
 from Render import Renderer
-from Utilities import Singleton
+from Utilities import Singleton, getClassName
 
 
 class ObjectManager(Singleton):
@@ -22,7 +22,7 @@ class ObjectManager(Singleton):
         self.renderer = None
 
     def initialize(self):
-        logger.info("initialize " + self.__class__.__name__)
+        logger.info("initialize " + getClassName(self))
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
         self.renderer = Renderer.Renderer.instance()
@@ -58,7 +58,7 @@ class ObjectManager(Singleton):
     def addLight(self):
         name = self.generateObjectName("Light")
         # create light
-        mesh = self.resourceManager.getMeshByName('Sphere')
+        mesh = self.resourceManager.getMesh('Sphere')
         material = self.resourceManager.getMaterial('simple')
         light = Light(name, (0,0,0), mesh, material)
 

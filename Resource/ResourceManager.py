@@ -6,9 +6,9 @@ from OpenGL.GL.shaders import glDetachShader
 
 from Render import *
 from Core import logger
-from Utilities import Singleton
+from Utilities import Singleton, getClassName
 from Render import Shader, Material
-from Object import Triangle, Quad, Mesh
+from Object import Triangle, Quad, Mesh, Primitive
 
 
 #
@@ -21,7 +21,7 @@ class ShaderLoader(Singleton):
         self.shaders = []
 
     def initialize(self):
-        logger.info("initialize " + self.__class__.__name__)
+        logger.info("initialize " + getClassName(self))
 
         # collect shader files
         for filename in glob.glob(os.path.join(PathShaders, '*.*')):
@@ -57,6 +57,12 @@ class ShaderLoader(Singleton):
     def getFragmentShader(self, shaderName):
         return self.fragmentShader[shaderName] if shaderName in self.fragmentShader else None
 
+    def getVertexShaderNameList(self):
+        return list(self.vertexShaders.keys())
+
+    def getFragmentShaderNameList(self):
+        return list(self.fragmentShader.keys())
+
 
 #
 # CLASS : MaterialLoader
@@ -67,7 +73,7 @@ class MaterialLoader(Singleton):
         self.default_material = None
 
     def initialize(self):
-        logger.info("initialize " + self.__class__.__name__)
+        logger.info("initialize " + getClassName(self))
         shaderLoader = ShaderLoader.instance()
 
         # create materials
@@ -93,7 +99,7 @@ class MaterialLoader(Singleton):
         return self.default_material
 
     def getMaterial(self, name):
-        return self.materials[name]
+        return self.materials[name] if name in self.materials else None
 
     def getMaterialNameList(self):
         return list(self.materials.keys())
@@ -107,7 +113,7 @@ class MeshLoader(Singleton):
         self.meshes = {}
 
     def initialize(self):
-        logger.info("initialize " + self.__class__.__name__)
+        logger.info("initialize " + getClassName(self))
 
         # Regist meshs
         self.meshes['Triangle'] = Triangle()
@@ -121,7 +127,7 @@ class MeshLoader(Singleton):
     def getMeshNameList(self):
         return list(self.meshes.keys())
 
-    def getMeshByName(self, meshName):
+    def getMesh(self, meshName):
         return self.meshes[meshName] if meshName in self.meshes else None
 
 
@@ -147,29 +153,38 @@ class ResourceManager(Singleton):
         :return [(resource name, resource type)]:
         """
         result = []
-        for resName in self.getMeshNameList():
-            result.append((resName, self.getMeshByName(resName).__class__.__name__))
+        for resName in self.getVertexShaderNameList():
+            result.append((resName, getClassName(self.getVertexShader(resName))))
+        for resName in self.getFragmentShaderNameList():
+            result.append((resName, getClassName(self.getFragmentShader(resName))))
         for resName in self.getMaterialNameList():
-            result.append((resName, self.getMaterial(resName).__class__.__name__))
+            result.append((resName, getClassName(self.getMaterial(resName))))
+        for resName in self.getMeshNameList():
+            result.append((resName, getClassName(self.getMesh(resName))))
         return result
 
-    def getResourceData(self, resName, resType):
+    def getResourceData(self, resName, resTypeName):
         try:
-            resType = eval(resType)
-            resource = None
-
-            print("Need to implement.")
-
-            if resType == Shader:
-                resource = self.getFragmentShader(resName)
-            elif resType == Material:
-                resource = self.getMaterial(resName)
-            elif resType in (Triangle, Quad, Mesh):
-                print("")
+            resType = eval(resTypeName)
+            resource = self.getResource(resName, resType)
+            if resource and hasattr(resource, "resource"):
+                resource.getResourceData()
             else:
-                raise TypeError("%s of %s is unknown type." % (str(resType), resName))
+                raise AttributeError(resTypeName + " must implement getResourceData.")
         except:
             logger.error(traceback.format_exc())
+
+    def getResource(self, resName, resType):
+        resource = None
+        if resType == FragmentShader:
+            resource = self.getFragmentShader(resName)
+        elif resType == VertexShader:
+            resource = self.getVertexShader(resName)
+        elif resType == Material:
+            resource = self.getMaterial(resName)
+        elif issubclass(resType, Primitive):
+            resource = self.getMesh(resName)
+        return resource
 
     # FUNCTIONS : Shader
 
@@ -178,6 +193,12 @@ class ResourceManager(Singleton):
 
     def getFragmentShader(self, name):
         return self.shaderLoader.getFragmentShader(name)
+
+    def getVertexShaderNameList(self):
+        return self.shaderLoader.getVertexShaderNameList()
+
+    def getFragmentShaderNameList(self):
+        return self.shaderLoader.getFragmentShaderNameList()
 
     # FUNCTIONS : Material
 
@@ -195,5 +216,5 @@ class ResourceManager(Singleton):
     def getMeshNameList(self):
         return self.meshLoader.getMeshNameList()
 
-    def getMeshByName(self, meshName):
-        return self.meshLoader.getMeshByName(meshName)
+    def getMesh(self, meshName):
+        return self.meshLoader.getMesh(meshName)

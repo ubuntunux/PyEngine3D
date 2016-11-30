@@ -92,7 +92,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
 
         # Object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
