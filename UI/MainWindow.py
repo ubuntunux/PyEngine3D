@@ -64,7 +64,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdQueue = cmdQueue
         self.coreCmdQueue = coreCmdQueue
         self.cmdPipe = cmdPipe
-        self.isFillobjPropertyTree = False
+        self.isFillAttributeTree = False
 
         # UIThread
         self.uiThread = UIThread(self.cmdQueue)
@@ -92,6 +92,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)), self.fillAttribute)
 
         # Object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
@@ -99,14 +100,14 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
         self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)), self.addObjectName)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_DATA)), self.fillObjectData)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)), self.fillAttribute)
 
-        # Object property tree
-        self.objPropertyTree = self.findChild(QtGui.QTreeWidget, "objPropertyTree")
-        self.objPropertyTree.setEditTriggers(self.objPropertyTree.NoEditTriggers) # hook editable event
-        self.objPropertyTree.itemSelectionChanged.connect(self.checkEditable)
-        self.objPropertyTree.itemClicked.connect(self.checkEditable)
-        self.objPropertyTree.itemChanged.connect(self.objPropertyChanged)
+        # Object attribute tree
+        self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
+        self.attributeTree.setEditTriggers(self.attributeTree.NoEditTriggers) # hook editable event
+        self.attributeTree.itemSelectionChanged.connect(self.checkEditable)
+        self.attributeTree.itemClicked.connect(self.checkEditable)
+        self.attributeTree.itemChanged.connect(self.attributeChanged)
 
         # wait a UI_RUN message, and send success message
         self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
@@ -146,15 +147,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def checkEditable(self, item=None, column=0):
         """in your connected slot, you can implement any edit-or-not-logic. you want"""
         if item is None:
-            item = self.objPropertyTree.currentItem()
-            column = self.objPropertyTree.currentColumn()
+            item = self.attributeTree.currentItem()
+            column = self.attributeTree.currentColumn()
 
         # e.g. to allow editing only of column and have not child item:
-        if column == 1 and item.childCount() == 0 and not self.isFillobjPropertyTree:
-            self.objPropertyTree.editItem(item, column)
+        if column == 1 and item.childCount() == 0 and not self.isFillAttributeTree:
+            self.attributeTree.editItem(item, column)
 
-    def objPropertyChanged(self, item):
-        if not self.isFillobjPropertyTree:
+    def attributeChanged(self, item):
+        if not self.isFillAttributeTree:
             try:
                 # check value chaned
                 if item.oldValue == item.text(1):
@@ -163,7 +164,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # check array type, then combine components
                 parent = item.parent()
                 if type(parent) == QtGui.QTreeWidgetItem and parent.dataType in (tuple, list, numpy.ndarray):
-                    propertyName = parent.text(0)
+                    attributeName = parent.text(0)
                     value = []
                     for i in range(parent.childCount()):
                         child = parent.child(i)
@@ -175,22 +176,22 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     else:
                         value = parent.dataType(value)
                 else:
-                    propertyName = item.text(0)
+                    attributeName = item.text(0)
                     value = item.dataType(item.text(1))
                 # send data
                 currentObjectName = self.objectList.currentItem().text()
-                self.coreCmdQueue.put(COMMAND.SET_OBJECT_DATA, (currentObjectName, propertyName, value))
+                self.coreCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
-    def addProperty(self, parent, propertyName, value):
+    def addAttribute(self, parent, attributeName, value):
         item = QtGui.QTreeWidgetItem(parent)
         item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
         item.setExpanded(True)
-        # property name and type
-        item.setText(0, propertyName)
+        # attribute name and type
+        item.setText(0, attributeName)
         item.dataType = type(value)
         item.remove = False  # this is flag for remove item when Layout Refresh
 
@@ -200,7 +201,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         elif item.dataType in (tuple, list, numpy.ndarray):  # set list type
             item.setText(1, "")  # set value to None
             for i, itemValue in enumerate(value):  # add child component
-                self.addProperty(item, "[%d]" % i, itemValue)
+                self.addAttribute(item, "[%d]" % i, itemValue)
         else:  # set general type value - int, float, string
             item.setText(1, str(value))
         item.oldValue = item.text(1)  # set old value
@@ -209,35 +210,35 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         getSelected = self.resourceListWidget.selectedItems()
         if getSelected:
             node = getSelected[0]
-            self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_DATA, (node.text(0), node.text(1)))
+            self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
 
     def selectObject(self, inst):
         selectedObjectName = inst.text()
-        # request selected object infomation to fill property widget
+        # request selected object infomation to fill attribute widget
         self.coreCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
-        self.coreCmdQueue.put(COMMAND.REQUEST_OBJECT_DATA, selectedObjectName)
+        self.coreCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
 
     def focusObject(self, inst):
         selectedObjectName = inst.text()
         self.coreCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
 
-    def fillObjectData(self, objData):
-        # lock edit property ui
-        self.isFillobjPropertyTree = True
+    def fillAttribute(self, objData):
+        # lock edit attribute ui
+        self.isFillAttributeTree = True
 
-        self.objPropertyTree.clear()  # clear
+        self.attributeTree.clear()  # clear
 
         # fill properties of selected object
         for valueName in objData.keys():
-            self.addProperty(self.objPropertyTree, valueName, objData[valueName])
+            self.addAttribute(self.attributeTree, valueName, objData[valueName])
 
         # self.showProperties()
 
-        # unlock edit property ui
-        self.isFillobjPropertyTree = False
+        # unlock edit attribute ui
+        self.isFillAttributeTree = False
 
     def showProperties(self):
-        for item in self.objPropertyTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
+        for item in self.attributeTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
             print(item.text(0), item.text(1))
 
     #

@@ -130,6 +130,16 @@ class MeshLoader(Singleton):
     def getMesh(self, meshName):
         return self.meshes[meshName] if meshName in self.meshes else None
 
+#
+# CLASS : TextureLoader
+#
+class TextureLoader(Singleton):
+    def __init__(self):
+        self.textures = {}
+
+    def initialize(self):
+        logger.info("Initialize " + getClassName(self))
+
 
 #
 # CLASS : ResourceManager
@@ -139,6 +149,7 @@ class ResourceManager(Singleton):
         self.shaderLoader = ShaderLoader.instance()
         self.materialLoader = MaterialLoader.instance()
         self.meshLoader = MeshLoader.instance()
+        self.textureLoad = TextureLoader.instance()
 
     def initialize(self):
         self.shaderLoader.initialize()
@@ -163,14 +174,13 @@ class ResourceManager(Singleton):
             result.append((resName, getClassName(self.getMesh(resName))))
         return result
 
-    def getResourceData(self, resName, resTypeName):
+    def getResourceAttribute(self, resName, resTypeName):
         try:
             resType = eval(resTypeName)
             resource = self.getResource(resName, resType)
-            if resource and hasattr(resource, "resource"):
-                resource.getResourceData()
-            else:
-                raise AttributeError(resTypeName + " must implement getResourceData.")
+            if resource:
+                return resource.getAttribute()
+            return None
         except:
             logger.error(traceback.format_exc())
 

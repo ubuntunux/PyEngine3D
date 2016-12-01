@@ -159,27 +159,13 @@ class CoreManager(Singleton):
     def close(self):
         self.running = False
 
-    #
     # receive and send messages, communication with GUI
-    #
-    def sendResourceList(self, resourceList):
-        self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
-
-    def sendResourceData(self, data):
-        self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_DATA, data)
-
     def sendObjectName(self, obj):
         if obj:
             self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_NAME, obj.name)
         else:
             logger.error("Cannot find " + (objName or ""))
 
-    def sendObjectData(self, objName):
-        objData = self.objectManager.getObjectData(objName)
-        if objData:
-            self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_DATA, objData)
-        else:
-            logger.error("Cannot find " + (objName or ""))
 
     def updateCommand(self):
         """
@@ -205,18 +191,21 @@ class CoreManager(Singleton):
                 mesh = self.resourceManager.getMesh(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
-                datas = self.resourceManager.getResourceList()
-                self.sendResourceList(datas)
-            elif cmd == COMMAND.REQUEST_RESOURCE_DATA:
+                resourceList = self.resourceManager.getResourceList()
+                self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
+            elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
                 resName, resType = value
-                data = self.resourceManager.getResourceData(resName, resType)
-                self.sendResourceData(data)
-            elif cmd == COMMAND.REQUEST_OBJECT_DATA:
-                self.sendObjectData(value)
+                attribute = self.resourceManager.getResourceAttribute(resName, resType)
+                if attribute:
+                    self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
+            elif cmd == COMMAND.REQUEST_OBJECT_ATTRIBUTE:
+                attribute = self.objectManager.getObjectAttribute(value)
+                if attribute:
+                    self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
             # Object Message
-            elif cmd == COMMAND.SET_OBJECT_DATA:
-                objectName, propertyName, propertyValue = value
-                self.objectManager.setObjectData(objectName, propertyName, propertyValue)
+            elif cmd == COMMAND.SET_OBJECT_ATTRIBUTE:
+                objectName, attributeName, attributeValue = value
+                self.objectManager.setObjectAttribute(objectName, attributeName, attributeValue)
             elif cmd == COMMAND.SET_OBJECT_SELECT:
                 self.objectManager.setSelectedObject(value)
             elif cmd == COMMAND.SET_OBJECT_FOCUS:

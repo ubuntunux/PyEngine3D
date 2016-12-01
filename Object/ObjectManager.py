@@ -116,13 +116,13 @@ class ObjectManager(Singleton):
     def getObjects(self):
         return self.objects
 
-    def getObjectData(self, objName):
+    def getObjectAttribute(self, objName):
         obj = self.getObject(objName)
-        return obj.getObjectData() if obj else None
+        return obj.getAttribute() if obj else None
 
-    def setObjectData(self, objectName, propertyName, propertyValue):
+    def setObjectAttribute(self, objectName, attributeName, attributeValue):
         obj = self.getObject(objectName)
-        obj and obj.setObjectData(propertyName, propertyValue)
+        obj and obj.setAttribute(attributeName, attributeValue)
 
     def getSelectedObject(self):
         return self.selectedObject

@@ -49,27 +49,27 @@ class BaseObject(TransformObject):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glGenerateMipmap(GL_TEXTURE_2D)
 
-    def getObjectData(self):
-        data = OrderedDict()
-        data['name'] = self.name
-        data['position'] = self.pos
-        data['rotation'] = self.rot
-        data['scale'] = self.scale
-        data['mesh'] = self.mesh.name if self.mesh else ""
-        data['material'] = self.material.name if self.material else ""
-        return data
+    def getAttribute(self):
+        attribute = OrderedDict()
+        attribute['name'] = self.name
+        attribute['position'] = self.pos
+        attribute['rotation'] = self.rot
+        attribute['scale'] = self.scale
+        attribute['mesh'] = self.mesh.name if self.mesh else ""
+        attribute['material'] = self.material.name if self.material else ""
+        return attribute
 
-    def setObjectData(self, propertyName, propertyValue):
-        if propertyName == 'position':
-            self.setPos(propertyValue)
-        elif propertyName == 'rotation':
-            self.setRot(propertyValue)
-        elif propertyName == 'scale':
-            self.setScale(propertyValue)
-        elif propertyName == 'mesh':
-            self.mesh = Resource.ResourceManager.instance().getMesh(propertyValue)
-        elif propertyName == 'material':
-            self.material = Resource.ResourceManager.instance().getMaterial(propertyValue)
+    def setAttribute(self, attributeName, attributeValue):
+        if attributeName == 'position':
+            self.setPos(attributeValue)
+        elif attributeName == 'rotation':
+            self.setRot(attributeValue)
+        elif attributeName == 'scale':
+            self.setScale(attributeValue)
+        elif attributeName == 'mesh':
+            self.mesh = Resource.ResourceManager.instance().getMesh(attributeValue)
+        elif attributeName == 'material':
+            self.material = Resource.ResourceManager.instance().getMaterial(attributeValue)
 
     def setSelected(self, selected):
         self.selected = selected
