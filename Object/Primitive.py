@@ -27,6 +27,7 @@ class Primitive:
         self.tangent_buffer = -1
         self.texcoord_buffer = -1
         self.index_buffer = -1
+        self.attributes = Attributes()
 
         # position buffer
         self.position_buffer = glGenBuffers(1)  # Request a buffer slot from GPU
@@ -57,6 +58,11 @@ class Primitive:
         self.index_buffer = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
+
+    def getAttribute(self):
+        self.attributes.setAttribute("name", self.name)
+        self.attributes.setAttribute("position", len(self.position), type(self.position))
+        return self.attributes
 
     def computeTangent(self):
         if len(self.tangent) == 0:

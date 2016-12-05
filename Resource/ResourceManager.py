@@ -11,9 +11,9 @@ from Render import Shader, Material
 from Object import Triangle, Quad, Mesh, Primitive
 
 
-#
+# -----------------------#
 # CLASS : ShaderLoader
-#
+# -----------------------#
 class ShaderLoader(Singleton):
     def __init__(self):
         self.vertexShaders = {}
@@ -64,9 +64,9 @@ class ShaderLoader(Singleton):
         return list(self.fragmentShader.keys())
 
 
-#
+# -----------------------#
 # CLASS : MaterialLoader
-#
+# -----------------------#
 class MaterialLoader(Singleton):
     def __init__(self):
         self.materials = {}
@@ -105,9 +105,9 @@ class MaterialLoader(Singleton):
         return list(self.materials.keys())
 
 
-#
+# -----------------------#
 # CLASS : MeshLoader
-#
+# -----------------------#
 class MeshLoader(Singleton):
     def __init__(self):
         self.meshes = {}
@@ -130,9 +130,10 @@ class MeshLoader(Singleton):
     def getMesh(self, meshName):
         return self.meshes[meshName] if meshName in self.meshes else None
 
-#
+
+# -----------------------#
 # CLASS : TextureLoader
-#
+# -----------------------#
 class TextureLoader(Singleton):
     def __init__(self):
         self.textures = {}
@@ -141,9 +142,9 @@ class TextureLoader(Singleton):
         logger.info("Initialize " + getClassName(self))
 
 
-#
+# -----------------------#
 # CLASS : ResourceManager
-#
+# -----------------------#
 class ResourceManager(Singleton):
     def __init__(self):
         self.shaderLoader = ShaderLoader.instance()

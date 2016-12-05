@@ -5,7 +5,7 @@ import PyQt4
 from PyQt4 import Qt, QtCore, QtGui, uic
 import numpy
 
-from Utilities import Singleton
+from Utilities import Singleton, Attribute, Attributes
 from UI import logger
 from Core import *
 
@@ -179,8 +179,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     attributeName = item.text(0)
                     value = item.dataType(item.text(1))
                 # send data
-                currentObjectName = self.objectList.currentItem().text()
-                self.coreCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
+                currentItem = self.objectList.currentItem()
+                if currentItem:
+                    currentObjectName = self.objectList.currentItem().text()
+                    self.coreCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -222,15 +224,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         selectedObjectName = inst.text()
         self.coreCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
 
-    def fillAttribute(self, objData):
+    def fillAttribute(self, attributes):
         # lock edit attribute ui
         self.isFillAttributeTree = True
 
         self.attributeTree.clear()  # clear
 
         # fill properties of selected object
-        for valueName in objData.keys():
-            self.addAttribute(self.attributeTree, valueName, objData[valueName])
+        for attribute in attributes.getAttributes():
+            self.addAttribute(self.attributeTree, attribute.name, attribute.value)
 
         # self.showProperties()
 

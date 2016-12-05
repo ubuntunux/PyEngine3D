@@ -1,5 +1,4 @@
 import time, math
-from collections import OrderedDict
 
 import numpy as np
 from OpenGL.GL import *
@@ -7,8 +6,9 @@ from PIL import Image
 
 import Resource
 from Resource import *
-from Object import TransformObject
-
+from Object import TransformObject, Primitive
+from Render import Material
+from Utilities import Attributes
 
 
 class BaseObject(TransformObject):
@@ -18,6 +18,7 @@ class BaseObject(TransformObject):
         self.selected = False
         self.mesh = mesh
         self.material = material
+        self.attributes = Attributes()
 
         # load texture file
         image = Image.open(os.path.join(PathTextures, 'Wool_carpet_pxr128_bmp.tif'))
@@ -50,19 +51,18 @@ class BaseObject(TransformObject):
         glGenerateMipmap(GL_TEXTURE_2D)
 
     def getAttribute(self):
-        attribute = OrderedDict()
-        attribute['name'] = self.name
-        attribute['position'] = self.pos
-        attribute['rotation'] = self.rot
-        attribute['scale'] = self.scale
-        attribute['mesh'] = self.mesh.name if self.mesh else ""
-        attribute['material'] = self.material.name if self.material else ""
-        return attribute
+        self.attributes.setAttribute('name', self.name)
+        self.attributes.setAttribute('pos', self.pos)
+        self.attributes.setAttribute('rot', self.rot)
+        self.attributes.setAttribute('scale', self.scale)
+        self.attributes.setAttribute('mesh', self.mesh.name if self.mesh else "", type(Primitive))
+        self.attributes.setAttribute('material', self.material.name if self.material else "", type(Material))
+        return self.attributes
 
     def setAttribute(self, attributeName, attributeValue):
-        if attributeName == 'position':
+        if attributeName == 'pos':
             self.setPos(attributeValue)
-        elif attributeName == 'rotation':
+        elif attributeName == 'rot':
             self.setRot(attributeValue)
         elif attributeName == 'scale':
             self.setScale(attributeValue)
@@ -98,7 +98,7 @@ class BaseObject(TransformObject):
         glUniformMatrix4fv(loc, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
 
         loc = glGetUniformLocation(self.material.program, "diffuseColor")
-        glUniform4fv(loc, 1, (0,0,0.5,1) if selected else (0.3, 0.3, 0.3, 1.0))
+        glUniform4fv(loc, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
 
         # selected object render color
         loc = glGetUniformLocation(self.material.program, "camera_position")

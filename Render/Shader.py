@@ -7,7 +7,7 @@ from OpenGL.GL.shaders import glDetachShader, glDeleteShader
 
 from Resource import *
 from Core import logger
-from Utilities import Singleton, getClassName
+from Utilities import Singleton, getClassName, Attributes
 
 
 class Shader:
@@ -22,12 +22,17 @@ class Shader:
         self.name = shaderName
         self.source = shaderSource
         self.shader = glCreateShader(self.shaderType)
+        self.attribute = Attributes()
 
         # Set shaders source
         glShaderSource(self.shader, shaderSource)
 
         # Compile shaders
         glCompileShader(self.shader)
+
+    def getAttribute(self):
+        self.attribute.setAttribute("name", self.name)
+        return self.attribute
 
     def delete(self):
         glDeleteShader(self.shader)

@@ -1,10 +1,10 @@
-from collections import OrderedDict
-
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDetachShader
 
 from Core import logger
+from Utilities import Attributes
+
 
 #
 # CLASS : Material
@@ -14,6 +14,7 @@ class Material:
         logger.info("Create Material : " + name)
         self.name = name
         self.twoSide = False
+        self.Attributes = Attributes()
 
         # build and link the program
         self.program = glCreateProgram()
@@ -37,8 +38,7 @@ class Material:
         glUseProgram(self.program)
 
     def getAttribute(self):
-        attribute = OrderedDict()
-        attribute['name'] = self.name
-        attribute['FragmentShader'] = self.fragmentShader.name if self.fragmentShader else ""
-        attribute['VertexShader'] = self.vertexShader.name if self.vertexShader else ""
-        return attribute
+        self.Attributes.setAttribute('name', self.name)
+        self.Attributes.setAttribute('fragmentShader', self.fragmentShader.name, type(self.fragmentShader))
+        self.Attributes.setAttribute('vertexShader', self.vertexShader.name, type(self.vertexShader))
+        return self.Attributes

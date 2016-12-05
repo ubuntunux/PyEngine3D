@@ -47,16 +47,17 @@ SIMPLE_PIXEL_SHADER = '''
 
 void main(void)
 {
-	// multiply alpha with the font texture value
-	gl_FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+    // multiply alpha with the font texture value
+    gl_FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 }
 '''
 
 defaultFontFile = os.path.join(os.path.split(__file__)[0], 'UbuntuFont.ttf')
 
-#------------------------------#
+
+#
 # CLASS : GLFont
-#------------------------------#
+#
 class GLFont:
     cmd_id = 0
     texture_id = []
