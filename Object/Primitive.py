@@ -1,4 +1,4 @@
-import os
+import os, traceback
 
 import numpy as np
 from OpenGL.GL import *
@@ -20,7 +20,7 @@ class Primitive:
     index = np.array([], dtype=np.uint32)
 
     def __init__(self, name=""):
-        self.name = name or getClassName(self)
+        self.name = name or getClassName(self).lower()
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1
@@ -137,25 +137,19 @@ class Primitive:
 # CLASS : Mesh
 # ------------------------------#
 class Mesh(Primitive):
-    def __init__(self, name, filename):
-        if not os.path.exists(filename):
-            return None
+    def __init__(self, meshName, meshData):
+        try:
+            # set data
+            self.position = np.array(meshData['vertices'], dtype=np.float32)
+            self.color = np.array(meshData['vertices'], dtype=np.float32)
+            self.normal = np.array(meshData['normals'], dtype=np.float32)
+            self.tangent = np.array(meshData['tangent'], dtype=np.float32)
+            self.texcoord = np.array(meshData['texcoords'], dtype=np.float32)
+            self.index = np.array(meshData['indices'], dtype=np.uint32)
+        except:
+            logger.error(traceback.format_exc())
 
-        # load from mesh
-        f = open(filename, 'r')
-        datas = eval(f.read())
-        f.close()
-
-        # set data
-        self.position = np.array(datas['vertices'], dtype=np.float32)
-        self.color = np.array(datas['vertices'], dtype=np.float32)
-        self.normal = np.array(datas['normals'], dtype=np.float32)
-        self.tangent = np.array(datas['tangent'], dtype=np.float32)
-        self.texcoord = np.array(datas['texcoords'], dtype=np.float32)
-        self.index = np.array(datas['indices'], dtype=np.uint32)
-
-        # mesh init
-        Primitive.__init__(self, name)
+        Primitive.__init__(self, meshName)
 
 
 # ------------------------------#

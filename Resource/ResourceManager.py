@@ -1,14 +1,70 @@
-import os, glob, configparser
+import os
+import glob
+import configparser
+import time
+import traceback
 
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDetachShader
+from PIL import Image
 
 from Render import *
 from Core import logger
 from Utilities import Singleton, getClassName
-from Render import Shader, Material
+from Render import Shader, Material, Texture
 from Object import Triangle, Quad, Mesh, Primitive
+
+
+# -----------------------#
+# CLASS : MetaData
+# -----------------------#
+class MetaData:
+    def __init__(self, filePath):
+        if os.path.exists(filePath):
+            self.filePath = filePath
+            self.dateTime = os.path.getmtime(filePath)
+            self.timeStamp = time.ctime(self.dateTime)
+
+
+# -----------------------#
+# CLASS : ResourceLoader
+# -----------------------#
+class ResourceLoader(object):
+    def __init__(self, fileExt):
+        self.resources = {}
+        self.metaDatas = {}
+        self.fileExt = fileExt
+
+    def initialize(self):
+        logger.info("initialize " + getClassName(self))
+
+        # collect shader files
+        for filename in glob.glob(os.path.join(PathShaders, '*.' + self.fileExt)):
+            self.loadResource(filename)
+            # set meta data
+            self.metaDatas[shader] = MetaData(filename)
+
+    @staticmethod
+    def getResourceName(filepath):
+        resourceName = os.path.splitext(os.path.split(filepath)[1])[0]
+        return resourceName.lower()
+
+    def loadResource(self, filePath):
+        raise BaseException("You must implement loadResource.")
+
+    def getMetaData(self, resourceName):
+        resource = self.getResource(resourceName)
+        return self.metaDatas[resource] if resource in self.metaDatas else None
+
+    def getResource(self, resourceName):
+        return self.resources[resourceName] if resourceName in self.resources else None
+
+    def getResourceList(self):
+        return list(self.resources.values())
+
+    def getResourceNameList(self):
+        return list(self.resources.keys())
 
 
 # -----------------------#
@@ -18,7 +74,7 @@ class ShaderLoader(Singleton):
     def __init__(self):
         self.vertexShaders = {}
         self.fragmentShader = {}
-        self.shaders = []
+        self.metaDatas = {}
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
@@ -26,8 +82,8 @@ class ShaderLoader(Singleton):
         # collect shader files
         for filename in glob.glob(os.path.join(PathShaders, '*.*')):
             try:
-                shaderFile = os.path.split(filename)[1]
-                shaderName, ext = os.path.splitext(shaderFile)
+                shaderName, ext = os.path.splitext(os.path.split(filename)[1])
+                shaderName = shaderName.lower()
                 # open shader file
                 f = open(filename, 'r')
                 shaderSource = f.read()
@@ -40,15 +96,18 @@ class ShaderLoader(Singleton):
                     shader = FragmentShader(shaderName, shaderSource)
                     self.fragmentShader[shaderName] = shader
                 else:
-                    logger.warn("Shader error : %s is invalid shader. Shader file extension must be one of '.vs', '.ps', '.cs'..." % filename)
+                    logger.warn("Shader error : %s is invalid shader.Shader file extension must be one of '.vs', '.ps', '.cs'..." % filename)
                     continue
-                # regist shader
-                self.shaders.append(shader)
+                # set meta data
+                self.metaDatas[shader] = MetaData(filename)
             except:
                 logger.error(traceback.format_exc())
 
     def close(self):
-        for shader in self.shaders:
+        for shader in self.vertexShaders.values():
+            shader.delete()
+
+        for shader in self.fragmentShader.values():
             shader.delete()
 
     def getVertexShader(self, shaderName):
@@ -69,8 +128,9 @@ class ShaderLoader(Singleton):
 # -----------------------#
 class MaterialLoader(Singleton):
     def __init__(self):
-        self.materials = {}
         self.default_material = None
+        self.materials = {}
+        self.metaDatas = {}
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
@@ -84,22 +144,18 @@ class MaterialLoader(Singleton):
                 vs = shaderLoader.getVertexShader(materialFile.get("VertexShader", "shaderName"))
                 fs = shaderLoader.getFragmentShader(materialFile.get("FragmentShader", "shaderName"))
                 materialName = os.path.splitext(os.path.split(filename)[1])[0]
-                material = self.createMaterial(name=materialName, vs=vs, fs=fs)
+                materialName = materialName.lower()
+                material = Material(materialName=materialName, vs=vs, fs=fs)
                 self.materials[materialName] = material
+                # set meta data
+                self.metaDatas[material] = MetaData(filename)
         self.default_material = self.getMaterial('default')
-
-    def createMaterial(self, name, vs, fs):
-        if name in self.materials:
-            raise BaseException("There is same material.")
-        material = Material(name=name, vs=vs, fs=fs)
-        self.materials[name] = material
-        return material
 
     def getDefaultMaterial(self):
         return self.default_material
 
-    def getMaterial(self, name):
-        return self.materials[name] if name in self.materials else None
+    def getMaterial(self, materialName):
+        return self.materials[materialName] if materialName in self.materials else None
 
     def getMaterialNameList(self):
         return list(self.materials.keys())
@@ -111,18 +167,29 @@ class MaterialLoader(Singleton):
 class MeshLoader(Singleton):
     def __init__(self):
         self.meshes = {}
+        self.metaDatas = {}
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
 
         # Regist meshs
-        self.meshes['Triangle'] = Triangle()
-        self.meshes['Quad'] = Quad()
+        self.meshes['triangle'] = Triangle()
+        self.meshes['quad'] = Quad()
         # regist mesh files
         for filename in glob.glob(os.path.join(PathMeshes, '*.mesh')):
-            name = os.path.splitext(os.path.split(filename)[1])[0]
-            name = name[0].upper() + name[1:]
-            self.meshes[name] = Mesh(name, filename)
+            try:
+                meshName = os.path.splitext(os.path.split(filename)[1])[0]
+                meshName = meshName.lower()
+                # load from mesh
+                f = open(filename, 'r')
+                meshData = eval(f.read())
+                f.close()
+                mesh = Mesh(meshName, meshData)
+                self.meshes[meshName] = mesh
+                # set meta data
+                self.metaDatas[mesh] = MetaData(filename)
+            except:
+                logger.error(traceback.format_exc())
 
     def getMeshNameList(self):
         return list(self.meshes.keys())
@@ -134,12 +201,24 @@ class MeshLoader(Singleton):
 # -----------------------#
 # CLASS : TextureLoader
 # -----------------------#
-class TextureLoader(Singleton):
+class TextureLoader(ResourceLoader, Singleton):
     def __init__(self):
-        self.textures = {}
+        super(TextureLoader, self).__init__("*")
 
-    def initialize(self):
-        logger.info("Initialize " + getClassName(self))
+    def loadResource(self, filePath):
+        try:
+            image = Image.open(filePath)
+            ix, iy = image.size
+            buffer = image.tobytes("raw", "RGBX", 0, -1)
+
+            textureName = self.getResourceName(filePath)
+
+            texture = Texture(textureName, buffer, ix, iy)
+            self.textures[textureName] = texture
+            # set meta data
+            self.metaDatas[texture] = MetaData(filename)
+        except:
+            logger.error(traceback.format_exc())
 
 
 # -----------------------#
@@ -193,6 +272,8 @@ class ResourceManager(Singleton):
             resource = self.getVertexShader(resName)
         elif resType == Material:
             resource = self.getMaterial(resName)
+        elif resType == Texture:
+            resource = self.getTexture(resName)
         elif issubclass(resType, Primitive):
             resource = self.getMesh(resName)
         return resource
@@ -229,3 +310,11 @@ class ResourceManager(Singleton):
 
     def getMesh(self, meshName):
         return self.meshLoader.getMesh(meshName)
+
+    # FUNCTIONS : Texture
+
+    def getTextureNameList(self):
+        return self.textureLoader.getResourceNameList()
+
+    def getTexture(self, textureName):
+        return self.textureLoader.getResource(textureName)

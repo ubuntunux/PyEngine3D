@@ -11,10 +11,6 @@ from Utilities import Singleton, getClassName, Attributes
 
 
 class Shader:
-    """
-    CLASS : Shader
-    """
-
     shaderType = None
 
     def __init__(self, shaderName, shaderSource):
@@ -39,14 +35,8 @@ class Shader:
 
 
 class VertexShader(Shader):
-    """
-    CLASS : VertexShader
-    """
     shaderType = GL_VERTEX_SHADER
 
 
 class FragmentShader(Shader):
-    """
-    CLASS : FragmentShader
-    """
     shaderType = GL_FRAGMENT_SHADER

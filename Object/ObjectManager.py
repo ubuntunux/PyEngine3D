@@ -47,7 +47,7 @@ class ObjectManager(Singleton):
         return self.mainCamera
 
     def addCamera(self):
-        name = self.generateObjectName("Camera")
+        name = self.generateObjectName("camera")
         camera = Camera(name)
         self.cameras.append(camera)
         self.objectMap[name] = camera
@@ -56,9 +56,9 @@ class ObjectManager(Singleton):
         return camera
 
     def addLight(self):
-        name = self.generateObjectName("Light")
+        name = self.generateObjectName("light")
         # create light
-        mesh = self.resourceManager.getMesh('Sphere')
+        mesh = self.resourceManager.getMesh('sphere')
         material = self.resourceManager.getMaterial('simple')
         light = Light(name, (0,0,0), mesh, material)
 

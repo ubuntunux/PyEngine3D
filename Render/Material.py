@@ -6,13 +6,10 @@ from Core import logger
 from Utilities import Attributes
 
 
-#
-# CLASS : Material
-#
 class Material:
-    def __init__(self, name, vs, fs):
-        logger.info("Create Material : " + name)
-        self.name = name
+    def __init__(self, materialName, vs, fs):
+        logger.info("Create Material : " + materialName)
+        self.name = materialName
         self.twoSide = False
         self.Attributes = Attributes()
 
