@@ -20,13 +20,13 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Import .blend File
 - Texture Data
-- Scene Data
+- Resource Create, Delete, Regist, Release System
 - Object Data
+- Scene Data
+- Import .blend File
 - Choose Resource System
 - Resource Reload System
-- Resource Create, Delete, Regist, Release System
 - View Mode
  - wire, solid, unlit, shading, texture
 - profiler
