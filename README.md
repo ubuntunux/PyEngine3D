@@ -22,6 +22,7 @@ Welcome to the GuineaPig wiki!
 ### TODO
 - Texture Data
 - Resource Create, Delete, Regist, Release System
+- resource release, delete, create, regist 테스트
 - FilePath 상수들 config 파일로 옮기기
 - Object Data
 - Scene Data
