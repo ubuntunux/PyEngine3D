@@ -21,22 +21,11 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Import .blend File
-- ResourceTab
- - Mesh Info
- - Material Info
- - create material dialog
- - choose shader
-- Resource reload System
- - shader reload and apply to material
- - material reload and apply to mesh 
- - mesh refresh and auto convert, reload
-- Transform Gizmo
+- Texture Data
+- Scene Data
+- Object Data
+- Choose Resource System
+- Resource Reload System
+- Add / Remove Data
 - View Mode
  - wire, solid, unlit, shading, texture
-- delete mesh button
-- object info window
-  - matrix
-  - property system
-  - material
-  - quaternion
-- scene save/load
