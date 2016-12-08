@@ -26,7 +26,7 @@ Welcome to the GuineaPig wiki!
 - Object Data
 - Choose Resource System
 - Resource Reload System
-- Add / Remove Data
+- Resource Create, Delete, Regist, Release System
 - View Mode
  - wire, solid, unlit, shading, texture
 - profiler
