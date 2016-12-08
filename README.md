@@ -29,3 +29,6 @@ Welcome to the GuineaPig wiki!
 - Add / Remove Data
 - View Mode
  - wire, solid, unlit, shading, texture
+- profiler
+    - time
+    - memory
