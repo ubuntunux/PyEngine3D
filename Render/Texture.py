@@ -9,7 +9,7 @@ from Utilities import Singleton, getClassName, Attributes
 
 
 class Texture:
-    def __init__(self, textureFileName, buffer, width, heght):
+    def __init__(self, textureFileName, buffer, width, height):
         logger.info("Create " + getClassName(self) + " : " + textureFileName)
         self.name = textureFileName
         self.width = width
@@ -17,7 +17,7 @@ class Texture:
 
         self.textureID = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.textureID)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)

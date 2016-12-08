@@ -21,9 +21,13 @@ from Object import Triangle, Quad, Mesh, Primitive
 # -----------------------#
 class MetaData:
     def __init__(self, filePath):
-        if os.path.exists(filePath):
+        if filePath != "" and os.path.exists(filePath):
             self.filePath = filePath
             self.dateTime = os.path.getmtime(filePath)
+            self.timeStamp = time.ctime(self.dateTime)
+        else:
+            self.filePath = ""
+            self.dateTime = 0.0
             self.timeStamp = time.ctime(self.dateTime)
 
 
@@ -31,31 +35,71 @@ class MetaData:
 # CLASS : ResourceLoader
 # -----------------------#
 class ResourceLoader(object):
-    def __init__(self, fileExt):
+    def __init__(self, dirName, fileExt):
         self.resources = {}
         self.metaDatas = {}
+        self.dirName = dirName
         self.fileExt = fileExt
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
 
         # collect shader files
-        for filename in glob.glob(os.path.join(PathShaders, '*.' + self.fileExt)):
-            self.loadResource(filename)
-            # set meta data
-            self.metaDatas[shader] = MetaData(filename)
+        for dirname, dirnames, filenames in os.walk(self.dirName):
+            for filename in filenames:
+                if self.fileExt == ".*" or self.fileExt == os.path.splitext(filename)[1].lower():
+                    filename = os.path.join(dirname, filename)
+                    resource = self.loadResource(filename)
+                    if resource:
+                        self.registResource(resource, filename)
+                    else:
+                        logger.error("load %s error" % filename)
+            
+    def createResource(self):
+        """ create resource file and regist."""
+        pass
+    
+    def deleteResource(self, resource):
+        """ delete resource file and release."""
+        if resource:
+            metaData = self.getMetaData(resource)
+            self.releaseResource(resource)            
+            if metaData:
+                filePath = metaData.filePath
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                    logger.info("Remove %s file" & filePath)
+       
+    def registResource(self, resource, filePath=""):
+        if resource is None or not hasattr(resource, "name"):
+            raise AttributeException("resource have to has name.")        
+        newMetaData = MetaData(filePath)                
+        # check the file is exsits resource or not.
+        if resource.name in self.resources:
+            oldResource = self.resources[resource.name]
+            oldMetaData = self.getMetaData(oldResource)
+            if oldMetaData:
+                if newMetaData.filePath == oldMetaData.filePath and newMetaData.dateTime == oldMetaData.dateTime:
+                    # Same resource
+                    return
+        # regist new resource
+        self.resources[resource.name] = resource
+        self.metaDatas[resource] = newMetaData
+        
+    def releaseResource(self, resource):
+        if resource:
+            if resource.name in self.resources:
+                self.resources.pop(resource.name)
+            if resource in self.metaDatas:
+                self.metaDatas.pop(resource)
 
     @staticmethod
-    def getResourceName(filepath):
+    def splitResourceName(filepath):
         resourceName = os.path.splitext(os.path.split(filepath)[1])[0]
         return resourceName.lower()
 
     def loadResource(self, filePath):
         raise BaseException("You must implement loadResource.")
-
-    def getMetaData(self, resourceName):
-        resource = self.getResource(resourceName)
-        return self.metaDatas[resource] if resource in self.metaDatas else None
 
     def getResource(self, resourceName):
         return self.resources[resourceName] if resourceName in self.resources else None
@@ -65,6 +109,9 @@ class ResourceLoader(object):
 
     def getResourceNameList(self):
         return list(self.resources.keys())
+    
+    def getMetaData(self, resource):
+        return self.metaDatas[resource] if resource in self.metaDatas else None
 
 
 # -----------------------#
@@ -164,59 +211,44 @@ class MaterialLoader(Singleton):
 # -----------------------#
 # CLASS : MeshLoader
 # -----------------------#
-class MeshLoader(Singleton):
+class MeshLoader(ResourceLoader, Singleton):
     def __init__(self):
-        self.meshes = {}
-        self.metaDatas = {}
+        super(MeshLoader, self).__init__(PathMeshes, ".mesh")
 
     def initialize(self):
-        logger.info("initialize " + getClassName(self))
+        super(MeshLoader, self).initialize()
 
-        # Regist meshs
-        self.meshes['triangle'] = Triangle()
-        self.meshes['quad'] = Quad()
-        # regist mesh files
-        for filename in glob.glob(os.path.join(PathMeshes, '*.mesh')):
-            try:
-                meshName = os.path.splitext(os.path.split(filename)[1])[0]
-                meshName = meshName.lower()
-                # load from mesh
-                f = open(filename, 'r')
-                meshData = eval(f.read())
-                f.close()
-                mesh = Mesh(meshName, meshData)
-                self.meshes[meshName] = mesh
-                # set meta data
-                self.metaDatas[mesh] = MetaData(filename)
-            except:
-                logger.error(traceback.format_exc())
+        # Regist basic meshs
+        self.registResource(Triangle())
+        self.registResource(Quad())
 
-    def getMeshNameList(self):
-        return list(self.meshes.keys())
-
-    def getMesh(self, meshName):
-        return self.meshes[meshName] if meshName in self.meshes else None
-
+    def loadResource(self, filePath):
+        try:
+            # load from mesh
+            f = open(filePath, 'r')
+            meshData = eval(f.read())
+            f.close()
+            
+            meshName = self.splitResourceName(filePath)
+            return Mesh(meshName, meshData)
+        except:
+            logger.error(traceback.format_exc())
+        
 
 # -----------------------#
 # CLASS : TextureLoader
 # -----------------------#
 class TextureLoader(ResourceLoader, Singleton):
     def __init__(self):
-        super(TextureLoader, self).__init__("*")
+        super(TextureLoader, self).__init__(PathTextures, ".*")
 
     def loadResource(self, filePath):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
             buffer = image.tobytes("raw", "RGBX", 0, -1)
-
-            textureName = self.getResourceName(filePath)
-
-            texture = Texture(textureName, buffer, ix, iy)
-            self.textures[textureName] = texture
-            # set meta data
-            self.metaDatas[texture] = MetaData(filename)
+            textureName = self.splitResourceName(filePath)
+            return Texture(textureName, buffer, ix, iy)
         except:
             logger.error(traceback.format_exc())
 
@@ -226,12 +258,13 @@ class TextureLoader(ResourceLoader, Singleton):
 # -----------------------#
 class ResourceManager(Singleton):
     def __init__(self):
+        self.textureLoad = TextureLoader.instance()
         self.shaderLoader = ShaderLoader.instance()
         self.materialLoader = MaterialLoader.instance()
         self.meshLoader = MeshLoader.instance()
-        self.textureLoad = TextureLoader.instance()
 
     def initialize(self):
+        self.textureLoad.initialize()
         self.shaderLoader.initialize()
         self.materialLoader.initialize()
         self.meshLoader.initialize()
@@ -306,10 +339,10 @@ class ResourceManager(Singleton):
     # FUNCTIONS : Mesh
 
     def getMeshNameList(self):
-        return self.meshLoader.getMeshNameList()
+        return self.meshLoader.getResourceNameList()
 
     def getMesh(self, meshName):
-        return self.meshLoader.getMesh(meshName)
+        return self.meshLoader.getResource(meshName)
 
     # FUNCTIONS : Texture
 
