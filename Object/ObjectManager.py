@@ -83,7 +83,7 @@ class ObjectManager(Singleton):
             logger.info("Add mesh : %s %s %s" % (mesh.name, name, pos))
 
             # create mesh
-            material = self.resourceManager.getDefaultMaterial()
+            material = self.resourceManager.getMaterial("default")
             obj = BaseObject(name=name or mesh.name, pos=pos, mesh=mesh, material=material)
 
             # add object

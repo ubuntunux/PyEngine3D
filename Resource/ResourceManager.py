@@ -39,7 +39,7 @@ class ResourceLoader(object):
         self.resources = {}
         self.metaDatas = {}
         self.dirName = dirName
-        self.fileExt = fileExt
+        self.fileExt = fileExt.lower()
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
@@ -102,7 +102,10 @@ class ResourceLoader(object):
         raise BaseException("You must implement loadResource.")
 
     def getResource(self, resourceName):
-        return self.resources[resourceName] if resourceName in self.resources else None
+        if resourceName in self.resources:
+            return self.resources[resourceName]
+        logger.error("Not found %s." % resourceName)
+        return None
 
     def getResourceList(self):
         return list(self.resources.values())
@@ -111,101 +114,73 @@ class ResourceLoader(object):
         return list(self.resources.keys())
     
     def getMetaData(self, resource):
-        return self.metaDatas[resource] if resource in self.metaDatas else None
+        if resource in self.metaDatas:
+            return self.metaDatas[resource]
+        logger.error("Not found meta data of %s." % resource.name)
+        return None
 
 
-# -----------------------#
-# CLASS : ShaderLoader
-# -----------------------#
-class ShaderLoader(Singleton):
+# ---------------------------#
+# CLASS : VertexShaderLoader
+# ---------------------------#
+class VertexShaderLoader(ResourceLoader, Singleton):
     def __init__(self):
-        self.vertexShaders = {}
-        self.fragmentShader = {}
-        self.metaDatas = {}
+        super(VertexShaderLoader, self).__init__(PathShaders, ".vs")
 
-    def initialize(self):
-        logger.info("initialize " + getClassName(self))
-
-        # collect shader files
-        for filename in glob.glob(os.path.join(PathShaders, '*.*')):
-            try:
-                shaderName, ext = os.path.splitext(os.path.split(filename)[1])
-                shaderName = shaderName.lower()
-                # open shader file
-                f = open(filename, 'r')
-                shaderSource = f.read()
-                f.close()
-                # create shader
-                if ext == '.vs':
-                    shader = VertexShader(shaderName, shaderSource)
-                    self.vertexShaders[shaderName] = shader
-                elif ext == '.fs':
-                    shader = FragmentShader(shaderName, shaderSource)
-                    self.fragmentShader[shaderName] = shader
-                else:
-                    logger.warn("Shader error : %s is invalid shader.Shader file extension must be one of '.vs', '.ps', '.cs'..." % filename)
-                    continue
-                # set meta data
-                self.metaDatas[shader] = MetaData(filename)
-            except:
-                logger.error(traceback.format_exc())
+    def loadResource(self, filePath):
+        try:
+            f = open(filePath, 'r')
+            shaderSource = f.read()
+            f.close()
+            shaderName = self.splitResourceName(filePath)
+            return VertexShader(shaderName, shaderSource)
+        except:
+            logger.error(traceback.format_exc())
 
     def close(self):
-        for shader in self.vertexShaders.values():
+        for shader in self.resources.values():
             shader.delete()
 
-        for shader in self.fragmentShader.values():
+
+# ---------------------------#
+# CLASS : FragmentShaderLoader
+# ---------------------------#
+class FragmentShaderLoader(ResourceLoader, Singleton):
+    def __init__(self):
+        super(FragmentShaderLoader, self).__init__(PathShaders, ".fs")
+
+    def loadResource(self, filePath):
+        try:
+            f = open(filePath, 'r')
+            shaderSource = f.read()
+            f.close()
+            shaderName = self.splitResourceName(filePath)
+            return FragmentShader(shaderName, shaderSource)
+        except:
+            logger.error(traceback.format_exc())
+
+    def close(self):
+        for shader in self.resources.values():
             shader.delete()
-
-    def getVertexShader(self, shaderName):
-        return self.vertexShaders[shaderName] if shaderName in self.vertexShaders else None
-
-    def getFragmentShader(self, shaderName):
-        return self.fragmentShader[shaderName] if shaderName in self.fragmentShader else None
-
-    def getVertexShaderNameList(self):
-        return list(self.vertexShaders.keys())
-
-    def getFragmentShaderNameList(self):
-        return list(self.fragmentShader.keys())
 
 
 # -----------------------#
 # CLASS : MaterialLoader
 # -----------------------#
-class MaterialLoader(Singleton):
+class MaterialLoader(ResourceLoader, Singleton):
     def __init__(self):
-        self.default_material = None
-        self.materials = {}
-        self.metaDatas = {}
+        super(MaterialLoader, self).__init__(PathMaterials, ".material")
 
-    def initialize(self):
-        logger.info("initialize " + getClassName(self))
-        shaderLoader = ShaderLoader.instance()
-
-        # create materials
-        for filename in glob.glob(os.path.join(PathMaterials, "*.*")):
-            if os.path.splitext(filename)[1].lower() == ".material":
-                materialFile = configparser.ConfigParser()
-                materialFile.read(filename)
-                vs = shaderLoader.getVertexShader(materialFile.get("VertexShader", "shaderName"))
-                fs = shaderLoader.getFragmentShader(materialFile.get("FragmentShader", "shaderName"))
-                materialName = os.path.splitext(os.path.split(filename)[1])[0]
-                materialName = materialName.lower()
-                material = Material(materialName=materialName, vs=vs, fs=fs)
-                self.materials[materialName] = material
-                # set meta data
-                self.metaDatas[material] = MetaData(filename)
-        self.default_material = self.getMaterial('default')
-
-    def getDefaultMaterial(self):
-        return self.default_material
-
-    def getMaterial(self, materialName):
-        return self.materials[materialName] if materialName in self.materials else None
-
-    def getMaterialNameList(self):
-        return list(self.materials.keys())
+    def loadResource(self, filePath):
+        try:
+            materialFile = configparser.ConfigParser()
+            materialFile.read(filePath)
+            vs = VertexShaderLoader.instance().getResource(materialFile.get("VertexShader", "shaderName"))
+            fs = FragmentShaderLoader.instance().getResource(materialFile.get("FragmentShader", "shaderName"))
+            materialName = self.splitResourceName(filePath)
+            return Material(materialName=materialName, vs=vs, fs=fs)
+        except:
+            logger.error(traceback.format_exc())
 
 
 # -----------------------#
@@ -259,18 +234,21 @@ class TextureLoader(ResourceLoader, Singleton):
 class ResourceManager(Singleton):
     def __init__(self):
         self.textureLoad = TextureLoader.instance()
-        self.shaderLoader = ShaderLoader.instance()
+        self.vertexShaderLoader = VertexShaderLoader.instance()
+        self.fragmentShaderLoader = FragmentShaderLoader.instance()
         self.materialLoader = MaterialLoader.instance()
         self.meshLoader = MeshLoader.instance()
 
     def initialize(self):
         self.textureLoad.initialize()
-        self.shaderLoader.initialize()
+        self.vertexShaderLoader.initialize()
+        self.fragmentShaderLoader.initialize()
         self.materialLoader.initialize()
         self.meshLoader.initialize()
 
     def close(self):
-        self.shaderLoader.close()
+        self.vertexShaderLoader.close()
+        self.fragmentShaderLoader.close()
 
     def getResourceList(self):
         """
@@ -313,28 +291,25 @@ class ResourceManager(Singleton):
 
     # FUNCTIONS : Shader
 
-    def getVertexShader(self, name):
-        return self.shaderLoader.getVertexShader(name)
+    def getVertexShader(self, shaderName):
+        return self.vertexShaderLoader.getResource(shaderName)
 
-    def getFragmentShader(self, name):
-        return self.shaderLoader.getFragmentShader(name)
+    def getFragmentShader(self, shaderName):
+        return self.fragmentShaderLoader.getResource(shaderName)
 
     def getVertexShaderNameList(self):
-        return self.shaderLoader.getVertexShaderNameList()
+        return self.vertexShaderLoader.getResourceNameList()
 
     def getFragmentShaderNameList(self):
-        return self.shaderLoader.getFragmentShaderNameList()
+        return self.fragmentShaderLoader.getResourceNameList()
 
     # FUNCTIONS : Material
 
-    def getMaterial(self, name):
-        return self.materialLoader.getMaterial(name)
-
-    def getDefaultMaterial(self):
-        return self.materialLoader.getDefaultMaterial()
-
     def getMaterialNameList(self):
-        return self.materialLoader.getMaterialNameList()
+        return self.materialLoader.getResourceNameList()
+
+    def getMaterial(self, name):
+        return self.materialLoader.getResource(name)
 
     # FUNCTIONS : Mesh
 
