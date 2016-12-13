@@ -20,35 +20,11 @@ class BaseObject(TransformObject):
         self.material = material
         self.attributes = Attributes()
 
-        # load texture file
-        image = Image.open(os.path.join(PathTextures, 'Wool_carpet_pxr128_bmp.tif'))
-        ix, iy = image.size
-        image = image.tobytes("raw", "RGBX", 0, -1)
+        # binding texture
+        self.textureDiffuse = Resource.ResourceManager.instance().getTextureID("wool_d")
 
         # binding texture
-        self.textureDiffuse = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
-        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glGenerateMipmap(GL_TEXTURE_2D)
-
-        # load texture file
-        image = Image.open(os.path.join(PathTextures, 'Wool_carpet_pxr128_normal.tif'))
-        ix, iy = image.size
-        image = image.tobytes("raw", "RGBX", 0, -1)
-
-        # binding texture
-        self.textureNormal = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT)
-        # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glGenerateMipmap(GL_TEXTURE_2D)
+        self.textureNormal = Resource.ResourceManager.instance().getTextureID("wool_n")
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)

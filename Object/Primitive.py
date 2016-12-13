@@ -97,7 +97,6 @@ class Primitive:
         # Binding buffers
         # loc = glGetAttribLocation(self.shader.program, "position")
         loc = 0
-
         glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
         glEnableVertexAttribArray(loc)

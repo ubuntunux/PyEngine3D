@@ -227,20 +227,23 @@ class TextureLoader(ResourceLoader, Singleton):
         except:
             logger.error(traceback.format_exc())
 
+    def getTextureID(self, resourceName):
+        return self.resources[resourceName].textureID if resourceName in self.resources else -1
+
 
 # -----------------------#
 # CLASS : ResourceManager
 # -----------------------#
 class ResourceManager(Singleton):
     def __init__(self):
-        self.textureLoad = TextureLoader.instance()
+        self.textureLoader = TextureLoader.instance()
         self.vertexShaderLoader = VertexShaderLoader.instance()
         self.fragmentShaderLoader = FragmentShaderLoader.instance()
         self.materialLoader = MaterialLoader.instance()
         self.meshLoader = MeshLoader.instance()
 
     def initialize(self):
-        self.textureLoad.initialize()
+        self.textureLoader.initialize()
         self.vertexShaderLoader.initialize()
         self.fragmentShaderLoader.initialize()
         self.materialLoader.initialize()
@@ -326,3 +329,6 @@ class ResourceManager(Singleton):
 
     def getTexture(self, textureName):
         return self.textureLoader.getResource(textureName)
+
+    def getTextureID(self, textureName):
+        return self.textureLoader.getTextureID(textureName)
