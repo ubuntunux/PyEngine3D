@@ -20,10 +20,8 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Texture Data
+- Logger 파일갯수가 특정 갯수 넘어가면 자동삭제기능
 - Resource Create, Delete, Regist, Release System
-- resource release, delete, create, regist 테스트
-- FilePath 상수들 config 파일로 옮기기
 - Object Data
 - Scene Data
 - Import .blend File
