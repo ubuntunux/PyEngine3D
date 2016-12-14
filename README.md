@@ -21,6 +21,9 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Logger 파일갯수가 특정 갯수 넘어가면 자동삭제기능
+- implement uniform block 
+    - http://blog.livedoor.jp/gaziya/archives/55281439.html
+    - http://stackoverflow.com/questions/24971761/using-glgetuniformindices-in-pyopengl
 - Resource Create, Delete, Regist, Release System
 - Object Data
 - Scene Data
