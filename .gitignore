@@ -1,3 +1,5 @@
+temp/
+logs/
 .idea
 .ropeproject
 .settings

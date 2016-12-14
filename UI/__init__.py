@@ -1,6 +1,6 @@
 # logger
 from Utilities import Logger
-logger = Logger.getLogger('UI Logger', 'logs', False)
+logger = Logger.getLogger()
 
 
 from .MainWindow import run_editor

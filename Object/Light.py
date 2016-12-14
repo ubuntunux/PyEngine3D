@@ -14,4 +14,4 @@ class Light(BaseObject):
         self.lightColor = np.array(lightColor, dtype=np.float32)
 
         # log
-        logger.info("Create Light : %s", self.name)
+        logger.info("Create Light : %s" % self.name)

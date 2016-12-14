@@ -57,44 +57,46 @@ class BaseObject(TransformObject):
         if self.material is None or self.mesh is None:
             return
 
-        # bind shader program
-        if lastProgram != self.material.program:
-            glUseProgram(self.material.program)
+        program = self.material.program
 
-        loc = glGetUniformLocation(self.material.program, "model")
+        # bind shader program
+        if lastProgram != program:
+            glUseProgram(program)
+
+        loc = glGetUniformLocation(program, "model")
         glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
 
-        loc = glGetUniformLocation(self.material.program, "view")
+        loc = glGetUniformLocation(program, "view")
         glUniformMatrix4fv(loc, 1, GL_FALSE, view)
 
-        loc = glGetUniformLocation(self.material.program, "perspective")
+        loc = glGetUniformLocation(program, "perspective")
         glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
 
-        loc = glGetUniformLocation(self.material.program, "mvp")
+        loc = glGetUniformLocation(program, "mvp")
         glUniformMatrix4fv(loc, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
 
-        loc = glGetUniformLocation(self.material.program, "diffuseColor")
+        loc = glGetUniformLocation(program, "diffuseColor")
         glUniform4fv(loc, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
 
         # selected object render color
-        loc = glGetUniformLocation(self.material.program, "camera_position")
+        loc = glGetUniformLocation(program, "camera_position")
         glUniform3fv(loc, 1, cameraPos)
 
         # selected object render color
-        loc = glGetUniformLocation(self.material.program, "light_position")
+        loc = glGetUniformLocation(program, "light_position")
         glUniform3fv(loc, 1, lightPos)
 
         # selected object render color
-        loc = glGetUniformLocation(self.material.program, "light_color")
+        loc = glGetUniformLocation(program, "light_color")
         glUniform4fv(loc, 1, lightColor)
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glUniform1i(glGetUniformLocation(self.material.program, "textureDiffuse"), 0)
+        glUniform1i(glGetUniformLocation(program, "textureDiffuse"), 0)
 
         glActiveTexture(GL_TEXTURE1)
         glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glUniform1i(glGetUniformLocation(self.material.program, "textureNormal"), 1)
+        glUniform1i(glGetUniformLocation(program, "textureNormal"), 1)
 
         # At last, bind buffers
         if lastMesh != self.mesh:

@@ -1,22 +1,35 @@
-#_*_encoding=utf-8_*_
 import os
 import traceback
 import time
 import logging
+from logging import CRITICAL, FATAL, ERROR, WARNING, WARN, INFO, DEBUG, NOTSET
 import collections
 
+import __main__
+
+# add custom log level
+MINOR_INFO = DEBUG + 5
+logging.addLevelName(MINOR_INFO, "MINOR_INFO")
+
+# global variables
 LOGGER = collections.OrderedDict()
+defaultLogPath = os.path.abspath(os.path.abspath(__main__.__file__))
+defaultLogPath = os.path.join(os.path.split(defaultLogPath)[0], "logs")
+
+
+def getLevelName(level):
+    return logging.getLevelName(level)
+
+
+def addLevelName(level, levelName):
+    logging.addLevelName(level, levelName)
+
 
 # create and get logger
-def getLogger(name='', directory='', savedToFile=False):
-    if name in LOGGER:
-        return LOGGER[name]
-    elif name == '' and len(LOGGER) > 0:
-        return LOGGER.values()[0]
-    else:
-        logObj = createLogger(name, directory, savedToFile)
-        LOGGER[name] = logObj
-        return logObj
+def getLogger(name='default', directory=defaultLogPath, level=logging.DEBUG):
+    if name not in LOGGER:
+        LOGGER[name] = createLogger(name, directory, level)
+    return LOGGER[name]
 
 
 # utility - join text list
@@ -25,10 +38,10 @@ def joinTextList(strList):
 
 
 # noinspection PyBroadException
-def createLogger(name, directory, savedToFile):
+def createLogger(name, directory, level):
     # create logger & set level
     newLogger = logging.getLogger(name)
-    newLogger.setLevel(logging.DEBUG)
+    newLogger.setLevel(level)
 
     # formatter
     formatter = logging.Formatter('[%(levelname)-8s|%(asctime)s.%(msecs)03d] %(message)s (%(filename)s:%(lineno)s)',"%Y-%m-%d %H:%M:%S")
@@ -43,13 +56,12 @@ def createLogger(name, directory, savedToFile):
                 return
 
     # set file handler
-    if savedToFile:
-        szTime = "%04d%02d%02d%02d%02d%02d" % (time.localtime()[:6])
-        logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
-        fileHandler = logging.FileHandler(logFilename)
-        fileHandler.setFormatter(formatter)
-        newLogger.addHandler(fileHandler)
-        newLogger.info("Save log file : " + logFilename)
+    szTime = "%04d%02d%02d%02d%02d%02d" % (time.localtime()[:6])
+    logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
+    fileHandler = logging.FileHandler(logFilename)
+    fileHandler.setFormatter(formatter)
+    newLogger.addHandler(fileHandler)
+    newLogger.info("Save log file : " + logFilename)
 
     # set stream handler
     streamHandler = logging.StreamHandler()
@@ -58,7 +70,8 @@ def createLogger(name, directory, savedToFile):
     return newLogger
 
 if __name__ == '__main__':
-    testLogger = getLogger(name = 'logTest', directory = 'logtest', savedToFile = True)
+    testLogger = getLogger(name='logTest', directory='logtest', level=logging.DEBUG)
+
     # unit test
     def test_log():
         testLogger.info("TEST START")
@@ -66,4 +79,13 @@ if __name__ == '__main__':
         testLogger.error("Test error")
         testLogger.critical("Test critical")
         testLogger.info("TEST END!")
+
+        CUSTOM_LOG_LEVEL = logging.DEBUG + 1
+        addLevelName(CUSTOM_LOG_LEVEL, "CUSTOM_LOG_LEVEL")
+        testLogger.log(CUSTOM_LOG_LEVEL, "Custom log level test. %s" % getLevelName(CUSTOM_LOG_LEVEL))
+
+        # level test
+        testLogger.setLevel(logging.CRITICAL)
+        testLogger.log(CUSTOM_LOG_LEVEL, "Log level test. This message must not display.")
+
     test_log()
