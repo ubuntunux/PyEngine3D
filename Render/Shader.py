@@ -24,7 +24,10 @@ class Shader:
         glShaderSource(self.shader, shaderSource)
 
         # Compile shaders
-        glCompileShader(self.shader)
+        try:
+            glCompileShader(self.shader)
+        except:
+            print("error")
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)

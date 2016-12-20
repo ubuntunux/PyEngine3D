@@ -60,7 +60,7 @@ class ObjectManager(Singleton):
         # create light
         mesh = self.resourceManager.getMesh('sphere')
         material = self.resourceManager.getMaterial('simple')
-        light = Light(name, (0,0,0), mesh, material)
+        light = Light(name, (0, 0, 0), mesh, material)
 
         # add light
         self.lights.append(light)

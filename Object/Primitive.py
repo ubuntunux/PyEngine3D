@@ -76,10 +76,7 @@ class Primitive:
                 deltaUV2 = self.texcoord[i2] - self.texcoord[i1]
                 deltaUV3 = self.texcoord[i3] - self.texcoord[i1]
                 r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-                if r != 0.0:
-                    r = 1.0 / (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-                else:
-                    r = 0.0
+                r = 1.0 / r if r != 0.0 else 0.0
 
                 tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
                 tangent = normalize(tangent)
@@ -97,9 +94,9 @@ class Primitive:
         # Binding buffers
         # loc = glGetAttribLocation(self.shader.program, "position")
         loc = 0
+        glEnableVertexAttribArray(loc)
         glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
-        glEnableVertexAttribArray(loc)
 
         # loc = glGetAttribLocation(self.shader.program, "color")
         loc = 1

@@ -189,14 +189,14 @@ class Renderer(Singleton):
 
         # Perspective * View matrix
         vpMatrix = np.dot(self.camera.matrix, self.perspective)
+        vpBuffer = np.hstack((self.camera.matrix.flat, self.perspective.flat))
 
         # draw static meshes
         lastMesh = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix, self.perspective, vpMatrix,
-                         lightPos, lightColor)
+                obj.draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix, lightPos, lightColor)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
@@ -204,15 +204,15 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix,
-                                                        self.perspective, vpMatrix, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix,
+                                                        lightPos, lightColor, True)
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, self.camera.matrix,
-                                                        self.perspective, vpMatrix, lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix,
+                                                        lightPos, lightColor, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         # reset shader program

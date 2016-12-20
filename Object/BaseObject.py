@@ -12,13 +12,39 @@ from Utilities import Attributes
 
 
 class BaseObject(TransformObject):
+
     def __init__(self, name, pos, mesh, material):
         TransformObject.__init__(self, pos)
         self.name = name
         self.selected = False
         self.mesh = mesh
-        self.material = material
+        self.material = None
         self.attributes = Attributes()
+
+        if material:
+            self.setMaterial(material)
+
+    # all below parameters must move to Materal Class.
+    def setMaterial(self, material):
+        self.material = material
+
+        # binding datas
+        self.buffer = glGenBuffers(1)
+        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
+
+        if self.material:
+            program = self.material.program
+            self.bind_pvMatrix = 0
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'pvMatrix'), self.bind_pvMatrix)
+
+            self.bind_model = glGetUniformLocation(program, "model")
+            self.bind_mvp = glGetUniformLocation(program, "mvp")
+            self.bind_diffuseColor = glGetUniformLocation(program, "diffuseColor")
+            self.bind_camera_position = glGetUniformLocation(program, "camera_position")
+            self.bind_light_color = glGetUniformLocation(self.material.program, "light_color")
+            self.bind_light_position = glGetUniformLocation(self.material.program, "light_position")
+            self.bind_textureDiffuse = glGetUniformLocation(program, "textureDiffuse")
+            self.bind_textureNormal = glGetUniformLocation(program, "textureNormal")
 
         # binding texture
         self.textureDiffuse = Resource.ResourceManager.instance().getTextureID("wool_d")
@@ -50,7 +76,7 @@ class BaseObject(TransformObject):
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastMesh, cameraPos, view, perspective, vpMatrix, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastMesh, cameraPos, vpBuffer, vpMatrix, lightPos, lightColor, selected=False):
         self.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
         self.updateTransform()
 
@@ -63,40 +89,24 @@ class BaseObject(TransformObject):
         if lastProgram != program:
             glUseProgram(program)
 
-        loc = glGetUniformLocation(program, "model")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, self.matrix)
+        # Uniform Block
+        glBufferData(GL_UNIFORM_BUFFER, vpBuffer.nbytes, vpBuffer, GL_DYNAMIC_DRAW)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.bind_pvMatrix, self.buffer)
 
-        loc = glGetUniformLocation(program, "view")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, view)
-
-        loc = glGetUniformLocation(program, "perspective")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, perspective)
-
-        loc = glGetUniformLocation(program, "mvp")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
-
-        loc = glGetUniformLocation(program, "diffuseColor")
-        glUniform4fv(loc, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
-
-        # selected object render color
-        loc = glGetUniformLocation(program, "camera_position")
-        glUniform3fv(loc, 1, cameraPos)
-
-        # selected object render color
-        loc = glGetUniformLocation(program, "light_position")
-        glUniform3fv(loc, 1, lightPos)
-
-        # selected object render color
-        loc = glGetUniformLocation(program, "light_color")
-        glUniform4fv(loc, 1, lightColor)
+        glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, self.matrix)
+        glUniformMatrix4fv(self.bind_mvp, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
+        glUniform4fv(self.bind_diffuseColor, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
+        glUniform3fv(self.bind_camera_position, 1, cameraPos)
+        glUniform3fv(self.bind_light_position, 1, lightPos)
+        glUniform4fv(self.bind_light_color, 1, lightColor)
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glUniform1i(glGetUniformLocation(program, "textureDiffuse"), 0)
+        glUniform1i(self.bind_textureDiffuse, 0)
 
         glActiveTexture(GL_TEXTURE1)
         glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glUniform1i(glGetUniformLocation(program, "textureNormal"), 1)
+        glUniform1i(self.bind_textureNormal, 1)
 
         # At last, bind buffers
         if lastMesh != self.mesh:

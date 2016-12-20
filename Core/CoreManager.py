@@ -327,6 +327,7 @@ class CoreManager(Singleton):
             renderTime = time.time() - renderTime
 
             # render text
+            print(self.fps)
             self.console.info("%.2f ms" % (self.delta * 1000))
             self.console.info("%.2f fps" % self.fps)
             self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
