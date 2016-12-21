@@ -29,18 +29,17 @@ class BaseObject(TransformObject):
         self.material = material
 
         # binding datas
-        self.buffer = glGenBuffers(1)
-        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
+        self.commonBuffer = glGenBuffers(1)
+        glBindBuffer(GL_UNIFORM_BUFFER, self.commonBuffer)
 
         if self.material:
             program = self.material.program
-            self.bind_pvMatrix = 0
-            glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'pvMatrix'), self.bind_pvMatrix)
+            self.commonBind = 0
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'commonConstants'), self.commonBind)
 
             self.bind_model = glGetUniformLocation(program, "model")
             self.bind_mvp = glGetUniformLocation(program, "mvp")
             self.bind_diffuseColor = glGetUniformLocation(program, "diffuseColor")
-            self.bind_camera_position = glGetUniformLocation(program, "camera_position")
             self.bind_light_color = glGetUniformLocation(self.material.program, "light_color")
             self.bind_light_position = glGetUniformLocation(self.material.program, "light_position")
             self.bind_textureDiffuse = glGetUniformLocation(program, "textureDiffuse")
@@ -76,7 +75,7 @@ class BaseObject(TransformObject):
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastMesh, cameraPos, vpBuffer, vpMatrix, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastMesh, commonData, vpMatrix, lightPos, lightColor, selected=False):
         self.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
         self.updateTransform()
 
@@ -90,13 +89,12 @@ class BaseObject(TransformObject):
             glUseProgram(program)
 
         # Uniform Block
-        glBufferData(GL_UNIFORM_BUFFER, vpBuffer.nbytes, vpBuffer, GL_DYNAMIC_DRAW)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.bind_pvMatrix, self.buffer)
+        glBufferData(GL_UNIFORM_BUFFER, commonData.nbytes, commonData, GL_DYNAMIC_DRAW)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.commonBind, self.commonBuffer)
 
         glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, self.matrix)
         glUniformMatrix4fv(self.bind_mvp, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
         glUniform4fv(self.bind_diffuseColor, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
-        glUniform3fv(self.bind_camera_position, 1, cameraPos)
         glUniform3fv(self.bind_light_position, 1, lightPos)
         glUniform4fv(self.bind_light_color, 1, lightColor)
 

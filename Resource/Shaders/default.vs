@@ -6,15 +6,15 @@ attribute vec3 normal;
 attribute vec3 tangent;
 attribute vec2 texcoord;
 
-layout(std140) uniform pvMatrix
+layout(std140) uniform commonConstants
 {
     mat4 view;
     mat4 perspective;
+    vec3 camera_position;
 };
 
 uniform mat4 model;
 uniform mat4 mvp;
-uniform vec3 camera_position;
 uniform vec3 light_position;
 
 struct DATA

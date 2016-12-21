@@ -189,14 +189,14 @@ class Renderer(Singleton):
 
         # Perspective * View matrix
         vpMatrix = np.dot(self.camera.matrix, self.perspective)
-        vpBuffer = np.hstack((self.camera.matrix.flat, self.perspective.flat))
+        commonData = np.hstack((self.camera.matrix.flat, self.perspective.flat, self.camera.pos.flat))
 
         # draw static meshes
         lastMesh = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix, lightPos, lightColor)
+                obj.draw(lastProgram, lastMesh, commonData, vpMatrix, lightPos, lightColor)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 

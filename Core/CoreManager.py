@@ -84,9 +84,12 @@ class CoreManager(Singleton):
         self.cmdPipe = cmdPipe
 
         # timer
-        self.fpsLimit = 1.0 / 60.0
         self.fps = 0.0
+        self.minDelta = 1.0 / 60.0  # 60fps
         self.delta = 0.0
+        self.updateTime = 0.0
+        self.logicTime = 0.0
+        self.renderTime = 0.0
         self.currentTime = 0.0
 
         # mouse
@@ -295,13 +298,13 @@ class CoreManager(Singleton):
         self.camera.updateInverseTransform()
 
     def update(self):        
-        self.currentTime = time.perf_counter()
+        self.currentTime = 0.0
         self.running = True
         while self.running:
             currentTime = time.perf_counter()
             delta = currentTime - self.currentTime
             
-            if delta < self.fpsLimit:
+            if delta < self.minDelta:
                 continue
 
             # set timer
@@ -309,27 +312,26 @@ class CoreManager(Singleton):
             self.delta = delta
             self.fps = 1.0 / delta
 
+            self.updateTime = delta * 1000.0  # millisecond
+
             # update logic
-            logicTime = time.perf_counter()
+            startTime = time.perf_counter()
             self.updateCommand()  # update command queue
             self.updateEvent()  # update keyboard and mouse events
             self.updateCamera()  # update camera
-            logicTime = (time.perf_counter() - logicTime) * 1000.0 # millisecond
+            self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # render scene
-            renderTime = time.perf_counter()
+            startTime = time.perf_counter()
             self.renderer.renderScene()
-            renderTime = (time.perf_counter() - renderTime) * 1000.0 # millisecond
+            self.renderTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # debug info
-            updateTime = delta * 1000.0 # millisecond
-            
-            pygame.display.set_caption("FPS : %.2f fps, Update : %.2f ms, CPU : %.2f ms, GPU : %.2f ms" % (self.fps, updateTime, logicTime, renderTime))
-            
-            self.console.info("%.2f ms" % updateTime)
+            print(self.fps, self.updateTime)
             self.console.info("%.2f fps" % self.fps)
-            self.console.info("CPU : %.2f ms" % logicTime)
-            self.console.info("GPU : %.2f ms" % renderTime)
+            self.console.info("%.2f ms" % self.updateTime)
+            self.console.info("CPU : %.2f ms" % self.logicTime)
+            self.console.info("GPU : %.2f ms" % self.renderTime)
             
             # selected object transform info
             selectedObject = self.objectManager.getSelectedObject()
