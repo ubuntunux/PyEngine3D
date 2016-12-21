@@ -5,15 +5,13 @@ import logging
 from logging import CRITICAL, FATAL, ERROR, WARNING, WARN, INFO, DEBUG, NOTSET
 import collections
 
-import __main__
-
 # add custom log level
 MINOR_INFO = DEBUG + 5
 logging.addLevelName(MINOR_INFO, "MINOR_INFO")
 
 # global variables
 LOGGER = collections.OrderedDict()
-defaultLogPath = os.path.abspath(os.path.abspath(__main__.__file__))
+defaultLogPath = os.path.abspath(os.path.abspath(os.getcwd()))
 defaultLogPath = os.path.join(os.path.split(defaultLogPath)[0], "logs")
 
 

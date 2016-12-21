@@ -18,12 +18,9 @@ from Render import Renderer
 from Utilities import *
 
 
-#
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
-#
 reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
-
 
 def IsExtensionSupported(TargetExtension):
     """ Accesses the rendering context to see if it supports an extension.
@@ -297,14 +294,13 @@ class CoreManager(Singleton):
         # update camera matrix to inverse matrix
         self.camera.updateInverseTransform()
 
-    def update(self):
-        self.currentTime = time.time()
+    def update(self):        
+        self.currentTime = time.perf_counter()
         self.running = True
         while self.running:
-            currentTime = time.time()
+            currentTime = time.perf_counter()
             delta = currentTime - self.currentTime
-            updateTime = currentTime
-
+            
             if delta < self.fpsLimit:
                 continue
 
@@ -313,25 +309,28 @@ class CoreManager(Singleton):
             self.delta = delta
             self.fps = 1.0 / delta
 
-            # update
+            # update logic
+            logicTime = time.perf_counter()
             self.updateCommand()  # update command queue
             self.updateEvent()  # update keyboard and mouse events
             self.updateCamera()  # update camera
-
-            # update time
-            updateTime = time.time() - updateTime
+            logicTime = (time.perf_counter() - logicTime) * 1000.0 # millisecond
 
             # render scene
-            renderTime = time.time()
+            renderTime = time.perf_counter()
             self.renderer.renderScene()
-            renderTime = time.time() - renderTime
+            renderTime = (time.perf_counter() - renderTime) * 1000.0 # millisecond
 
-            # render text
-            print(self.fps)
-            self.console.info("%.2f ms" % (self.delta * 1000))
+            # debug info
+            updateTime = delta * 1000.0 # millisecond
+            
+            pygame.display.set_caption("FPS : %.2f fps, Update : %.2f ms, CPU : %.2f ms, GPU : %.2f ms" % (self.fps, updateTime, logicTime, renderTime))
+            
+            self.console.info("%.2f ms" % updateTime)
             self.console.info("%.2f fps" % self.fps)
-            self.console.info("CPU : %.2f ms" % (updateTime * 1000.0))
-            self.console.info("GPU : %.2f ms" % (renderTime * 1000.0))
+            self.console.info("CPU : %.2f ms" % logicTime)
+            self.console.info("GPU : %.2f ms" % renderTime)
+            
             # selected object transform info
             selectedObject = self.objectManager.getSelectedObject()
             if selectedObject:
