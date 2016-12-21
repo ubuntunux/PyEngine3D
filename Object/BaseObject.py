@@ -89,7 +89,7 @@ class BaseObject(TransformObject):
             glUseProgram(program)
 
         # Uniform Block
-        glBufferData(GL_UNIFORM_BUFFER, commonData.nbytes, commonData, GL_DYNAMIC_DRAW)
+        glBufferData(GL_UNIFORM_BUFFER, commonData.nbytes, commonData, GL_STATIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.commonBind, self.commonBuffer)
 
         glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, self.matrix)
