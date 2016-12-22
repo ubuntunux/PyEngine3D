@@ -70,7 +70,7 @@ class OBJ:
         """
         Loads a wavefront OBJ file.
         """
-        self.vertices = []
+        self.positions = []
         self.normals = []
         self.texcoords = []
         self.defaultTexCoordIndex = -1
@@ -112,7 +112,7 @@ class OBJ:
                 # vertex position
                 if preFix == 'v' and len(line) >= 4:
                     # apply scale
-                    self.vertices.append(list(map(lambda x:float(x) * scale, line[1:4])))
+                    self.positions.append(list(map(lambda x:float(x) * scale, line[1:4])))
                 # vertex normal
                 elif preFix == 'vn' and len(line) >= 4:
                     bNormalAutoGen = False
@@ -128,7 +128,7 @@ class OBJ:
                     self.mtl = LoadMTL(filePath,  line[1])
                 # faces
                 elif preFix == 'f':
-                    vertices = []
+                    positions = []
                     normals = []
                     texcoords = []
                     values = line[1:]
@@ -143,20 +143,21 @@ class OBJ:
                             value[1] = self.defaultTexCoordIndex
                         
                         # insert vertex, texcoord, normal index
-                        vertices.append(value[0])
+                        positions.append(value[0])
                         texcoords.append(value[1])
                         normals.append(value[2])
 
                     # append face list
-                    if len(vertices) == 3:
-                        self.faces.append((vertices, normals, texcoords, lastMaterial))
-                    elif len(vertices) == 4:
-                        self.faces.append((vertices[:3], normals[:3], texcoords[:3], lastMaterial))
-                        self.faces.append(([vertices[2], vertices[3], vertices[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
+                    if len(positions) == 3:
+                        self.faces.append((positions, normals, texcoords, lastMaterial))
+                    elif len(positions) == 4:
+                        self.faces.append((positions[:3], normals[:3], texcoords[:3], lastMaterial))
+                        self.faces.append(([positions[2], positions[3], positions[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
     # save to mesh
     def saveToMesh(self):
-        vertices = []
+        positions = []
+        colors = []
         normals = []
         texcoords = []
         indices = []
@@ -164,30 +165,31 @@ class OBJ:
 
         for face in self.faces:
             # exclude material
-            vertexIndex, normalIndex, texcoordIndex, material = face
-            for i in range(len(vertexIndex)):
-                vntIndex = (vertexIndex[i], normalIndex[i], texcoordIndex[i])
-                if vntIndex in indexMap:
-                    indices.append(list(indexMap.keys()).index(vntIndex))
+            postionIndicies, normalIndicies, texcoordIndicies, material = face
+            for i in range(len(postionIndicies)):
+                vertIndex = (postionIndicies[i], normalIndicies[i], texcoordIndicies[i])
+                if vertIndex in indexMap:
+                    indices.append(list(indexMap.keys()).index(vertIndex))
                 else:
                     indices.append(len(indexMap))
-                    indexMap[vntIndex] = None
-                    vertices.append(self.vertices[vertexIndex[i]])
-                    normals.append(self.normals[normalIndex[i]])
-                    texcoords.append(self.texcoords[texcoordIndex[i]])
+                    indexMap[vertIndex] = None
+                    positions.append(self.positions[postionIndicies[i]])
+                    normals.append(self.normals[normalIndicies[i]])
+                    texcoords.append(self.texcoords[texcoordIndicies[i]])
 
         # generate tangent and bitangent vector
-        vertices = np.array(vertices, dtype=np.float32)
+        positions = np.array(positions, dtype=np.float32)
+        colors = np.array([1.0, 1.0, 1.0, 1.0] * len(positions), dtype=np.float32).reshape(len(positions), 4)
         normals = np.array(normals, dtype=np.float32)
         texcoords = np.array(texcoords, dtype=np.float32)
         indices = np.array(indices, dtype=np.uint32)
         tangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
-        #bitangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
+        # bitangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
 
         for i in range(0, len(indices), 3):
             i1, i2, i3 = indices[i:i+3]
-            deltaPos2 = vertices[i2] - vertices[i1]
-            deltaPos3 = vertices[i3] - vertices[i1]
+            deltaPos2 = positions[i2] - positions[i1]
+            deltaPos3 = positions[i3] - positions[i1]
             deltaUV2 = texcoords[i2] - texcoords[i1]
             deltaUV3 = texcoords[i3] - texcoords[i1]
             r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
@@ -196,29 +198,34 @@ class OBJ:
             else:
                 r = 0.0
 
-            tangent = (deltaPos2 * deltaUV3[1]   - deltaPos3 * deltaUV2[1]) * r
+            tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
             tangent = normalize(tangent)
-            #bitangent = np.cross(tangent, normals[i1])
-            #bitangent = normalize(bitangent)
+            # bitangent = np.cross(tangent, normals[i1])
+            # bitangent = normalize(bitangent)
 
             tangents[indices[i]] = tangent
             tangents[indices[i+1]] = tangent
             tangents[indices[i+2]] = tangent
-            #bitangents[indices[i]] = bitangent
-            #bitangents[indices[i+1]] = bitangent
-            #bitangents[indices[i+2]] = bitangent
+            # bitangents[indices[i]] = bitangent
+            # bitangents[indices[i+1]] = bitangent
+            # bitangents[indices[i+2]] = bitangent
 
-        # dictionary
-        data = dict(filename=self.filename, modifyTime=self.modifyTime, fileSize=self.fileSize,
-                    vertices=vertices.tolist(), normals=normals.tolist(), tangent=tangents.tolist(), #bitangent=bitangents.tolist(),
-                    texcoords=texcoords.tolist(), indices=indices.tolist())
+        data = dict(filename=self.filename,
+                    modifyTime=self.modifyTime,
+                    fileSize=self.fileSize,
+                    positions=positions.tolist(),
+                    colors=colors.tolist(),
+                    normals=normals.tolist(),
+                    tangents=tangents.tolist(),
+                    # bitangents=bitangents.tolist(),
+                    texcoords=texcoords.tolist(),
+                    indices=indices.tolist())
 
         # save to file
         newFilename = os.path.splitext(self.filename)[0] + ".mesh"
         f = open(newFilename, 'w')
-        pprint.pprint(data, f,compact=True)
+        pprint.pprint(data, f, compact=True)
         f.close()
-
                     
     # Generate        
     def generateInstruction(self):
@@ -228,10 +235,10 @@ class OBJ:
         glFrontFace(GL_CCW)
         # generate  face
         for face in self.faces:
-            vertices, normals, texcoords, material = face
+            positions, normals, texcoords, material = face
             
             # set material
-            if self.mtl != None and material in self.mtl:
+            if self.mtl is not None and material in self.mtl:
                 mtl = self.mtl[material]
                 if 'texture_Kd' in mtl:
                     # set diffuse texture
@@ -242,15 +249,15 @@ class OBJ:
             
             # generate face
             glBegin(GL_POLYGON)
-            for i in range(len(vertices)):
+            for i in range(len(positions)):
                 # set normal
                 if normals[i] > 0:
                     glNormal3fv(self.normals[normals[i]])
                 # set texture Coordinate
                 if texcoords[i] > 0:
                     glTexCoord2fv(self.texcoords[texcoords[i]])
-                # set vertices
-                glVertex3fv(self.vertices[vertices[i]])
+                # set positions
+                glVertex3fv(self.positions[positions[i]])
             glEnd()
         glDisable(GL_TEXTURE_2D)
         glEndList()

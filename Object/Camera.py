@@ -25,3 +25,7 @@ class Camera(BaseObject):
     # override : draw
     def draw(self, *args, **kargs):
         pass
+
+    def update(self):
+        # update camera matrix to inverse matrix
+        self.transform.updateInverseTransform()

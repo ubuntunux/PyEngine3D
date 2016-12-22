@@ -11,12 +11,11 @@ from Render import Material
 from Utilities import Attributes
 
 
-class BaseObject(TransformObject):
-
+class BaseObject:
     def __init__(self, name, pos, mesh, material):
-        TransformObject.__init__(self, pos)
         self.name = name
         self.selected = False
+        self.transform = TransformObject(pos)
         self.mesh = mesh
         self.material = None
         self.attributes = Attributes()
@@ -53,20 +52,20 @@ class BaseObject(TransformObject):
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
-        self.attributes.setAttribute('pos', self.pos)
-        self.attributes.setAttribute('rot', self.rot)
-        self.attributes.setAttribute('scale', self.scale)
+        self.attributes.setAttribute('pos', self.transform.pos)
+        self.attributes.setAttribute('rot', self.transform.rot)
+        self.attributes.setAttribute('scale', self.transform.scale)
         self.attributes.setAttribute('mesh', self.mesh.name if self.mesh else "", type(Primitive))
         self.attributes.setAttribute('material', self.material.name if self.material else "", type(Material))
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue):
         if attributeName == 'pos':
-            self.setPos(attributeValue)
+            self.transform.setPos(attributeValue)
         elif attributeName == 'rot':
-            self.setRot(attributeValue)
+            self.transform.setRot(attributeValue)
         elif attributeName == 'scale':
-            self.setScale(attributeValue)
+            self.transform.setScale(attributeValue)
         elif attributeName == 'mesh':
             self.mesh = Resource.ResourceManager.instance().getMesh(attributeValue)
         elif attributeName == 'material':
@@ -76,8 +75,12 @@ class BaseObject(TransformObject):
         self.selected = selected
 
     def draw(self, lastProgram, lastMesh, commonData, vpMatrix, lightPos, lightColor, selected=False):
-        self.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
-        self.updateTransform()
+        transform = self.transform
+        # test code
+        transform.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
+
+        # update transform
+        transform.updateTransform()
 
         if self.material is None or self.mesh is None:
             return
@@ -92,8 +95,8 @@ class BaseObject(TransformObject):
         glBufferData(GL_UNIFORM_BUFFER, commonData.nbytes, commonData, GL_STATIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.commonBind, self.commonBuffer)
 
-        glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, self.matrix)
-        glUniformMatrix4fv(self.bind_mvp, 1, GL_FALSE, np.dot(self.matrix, vpMatrix))
+        glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, transform.matrix)
+        glUniformMatrix4fv(self.bind_mvp, 1, GL_FALSE, np.dot(transform.matrix, vpMatrix))
         glUniform4fv(self.bind_diffuseColor, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
         glUniform3fv(self.bind_light_position, 1, lightPos)
         glUniform4fv(self.bind_light_color, 1, lightColor)

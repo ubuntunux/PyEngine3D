@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 
 uniform vec4 diffuseColor;
 uniform vec3 camera_position;
@@ -8,7 +8,7 @@ uniform vec3 light_position;
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;
 
-struct DATA
+in struct DATA
 {
     vec3 worldPosition;
     vec4 vertexColor;
@@ -19,9 +19,7 @@ struct DATA
     vec3 cameraPosition;
     vec3 lightVector;
     vec3 lightPosition;
-};
-
-in DATA data;
+} data;
 
 out vec4 result;
 

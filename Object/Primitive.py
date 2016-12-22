@@ -19,15 +19,19 @@ class Primitive:
     texcoord = np.array([], dtype=np.float32)
     index = np.array([], dtype=np.uint32)
 
-    def __init__(self, name=""):
-        self.name = name or getClassName(self).lower()
+    def __init__(self):
+        self.name = ""
         self.position_buffer = -1
         self.color_buffer = -1
         self.normal_buffer = -1
         self.tangent_buffer = -1
         self.texcoord_buffer = -1
         self.index_buffer = -1
+        self.vertices = None
         self.attributes = Attributes()
+
+    def initialize(self, primitiveName=""):
+        self.name = primitiveName or getClassName(self).lower()
 
         # position buffer
         self.position_buffer = glGenBuffers(1)  # Request a buffer slot from GPU
@@ -134,18 +138,18 @@ class Primitive:
 # ------------------------------#
 class Mesh(Primitive):
     def __init__(self, meshName, meshData):
+        Primitive.__init__(self)
         try:
             # set data
-            self.position = np.array(meshData['vertices'], dtype=np.float32)
-            self.color = np.array(meshData['vertices'], dtype=np.float32)
+            self.position = np.array(meshData['positions'], dtype=np.float32)
+            self.color = np.array(meshData['colors'], dtype=np.float32)
             self.normal = np.array(meshData['normals'], dtype=np.float32)
-            self.tangent = np.array(meshData['tangent'], dtype=np.float32)
+            self.tangent = np.array(meshData['tangents'], dtype=np.float32)
             self.texcoord = np.array(meshData['texcoords'], dtype=np.float32)
             self.index = np.array(meshData['indices'], dtype=np.uint32)
         except:
             logger.error(traceback.format_exc())
-
-        Primitive.__init__(self, meshName)
+        self.initialize(meshName)
 
 
 # ------------------------------#
@@ -159,8 +163,9 @@ class Triangle(Primitive):
     index = np.array([0, 1, 2], dtype=np.uint32)
 
     def __init__(self):
-        self.computeTangent()
         Primitive.__init__(self)
+        self.computeTangent()
+        self.initialize()
 
 
 # ------------------------------#
@@ -174,8 +179,9 @@ class Quad(Primitive):
     index = np.array([0, 1, 2, 1, 3, 2], dtype=np.uint32)
 
     def __init__(self):
-        self.computeTangent()
         Primitive.__init__(self)
+        self.computeTangent()
+        self.initialize()
 
 
 # ------------------------------#

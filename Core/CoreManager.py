@@ -187,7 +187,7 @@ class CoreManager(Singleton):
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
                 camera = self.objectManager.getMainCamera()
-                pos = camera.pos + camera.front * 10.0
+                pos = camera.transform.pos + camera.transform.front * 10.0
                 mesh = self.resourceManager.getMesh(resName)
                 self.objectManager.addMesh(mesh, pos=pos)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
@@ -258,44 +258,45 @@ class CoreManager(Singleton):
 
         # get camera
         self.camera = self.objectManager.getMainCamera()
+        cameraTransform = self.camera.transform
         moveSpeed = self.delta * 10.0
 
         # camera move pan
         if btnL and btnR or btnM:
-            self.camera.moveToRight(-self.mouseDelta[0] * 0.01)
-            self.camera.moveToUp(self.mouseDelta[1] * 0.01)
+            cameraTransform.moveToRight(-self.mouseDelta[0] * 0.01)
+            cameraTransform.moveToUp(self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
-            self.camera.rotationPitch(self.mouseDelta[1] * 0.03)
-            self.camera.rotationYaw(self.mouseDelta[0] * 0.03)
+            cameraTransform.rotationPitch(self.mouseDelta[1] * 0.03)
+            cameraTransform.rotationYaw(self.mouseDelta[0] * 0.03)
 
         # camera move front/back
         if self.wheelUp:
-            self.camera.moveToFront(5.0)
+            cameraTransform.moveToFront(5.0)
         elif self.wheelDown:
-            self.camera.moveToFront(-5.0)
+            cameraTransform.moveToFront(-5.0)
 
         # update camera transform
         if keydown[K_w]:
-            self.camera.moveToFront(moveSpeed)
+            cameraTransform.moveToFront(moveSpeed)
         elif keydown[K_s]:
-            self.camera.moveToFront(-moveSpeed)
+            cameraTransform.moveToFront(-moveSpeed)
 
         if keydown[K_a]:
-            self.camera.moveToRight(-moveSpeed)
+            cameraTransform.moveToRight(-moveSpeed)
         elif keydown[K_d]:
-            self.camera.moveToRight(moveSpeed)
+            cameraTransform.moveToRight(moveSpeed)
 
         if keydown[K_q]:
-            self.camera.moveToUp(moveSpeed)
+            cameraTransform.moveToUp(moveSpeed)
         elif keydown[K_e]:
-            self.camera.moveToUp(-moveSpeed)
+            cameraTransform.moveToUp(-moveSpeed)
 
         if keydown[K_SPACE]:
-            self.camera.resetTransform()
+            cameraTransform.resetTransform()
 
-        # update camera matrix to inverse matrix
-        self.camera.updateInverseTransform()
+        # update camera
+        self.camera.update()
 
     def update(self):        
         self.currentTime = 0.0
@@ -327,7 +328,7 @@ class CoreManager(Singleton):
             self.renderTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # debug info
-            print(self.fps, self.updateTime)
+            # print(self.fps, self.updateTime)
             self.console.info("%.2f fps" % self.fps)
             self.console.info("%.2f ms" % self.updateTime)
             self.console.info("CPU : %.2f ms" % self.logicTime)
@@ -337,4 +338,4 @@ class CoreManager(Singleton):
             selectedObject = self.objectManager.getSelectedObject()
             if selectedObject:
                 self.console.info("Selected Object : %s" % selectedObject.name)
-                self.console.info(selectedObject.getTransformInfos())
+                self.console.info(selectedObject.transform.getTransformInfos())

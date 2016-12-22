@@ -1,10 +1,10 @@
-#version 330 core
+#version 400 core
 
-attribute vec3 position;
-attribute vec4 color;
-attribute vec3 normal;
-attribute vec3 tangent;
-attribute vec2 texcoord;
+layout(location=0) in vec3 position;
+layout(location=1) in vec4 color;
+layout(location=2) in vec3 normal;
+layout(location=3) in vec3 tangent;
+layout(location=4) in vec2 texcoord;
 
 layout(std140) uniform commonConstants
 {
@@ -17,7 +17,7 @@ uniform mat4 model;
 uniform mat4 mvp;
 uniform vec3 light_position;
 
-struct DATA
+out struct DATA
 {
     vec3 worldPosition;
     vec4 vertexColor;
@@ -28,9 +28,7 @@ struct DATA
     vec3 cameraPosition;
     vec3 lightVector;
     vec3 lightPosition;
-};
-
-out DATA data;
+} data;
 
 void main() {
     data.vertexColor = color;

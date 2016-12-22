@@ -1,6 +1,6 @@
 # default logger
 from Utilities import Logger
-logger = Logger.getLogger(level=Logger.DEBUG)
+logger = Logger.getLogger(level=Logger.INFO)
 
 # config
 from Configure import Config

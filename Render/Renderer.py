@@ -183,13 +183,14 @@ class Renderer(Singleton):
 
         # Test Code
         light = self.objectManager.lights[0]
-        light.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-        lightPos = light.getPos()
+        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
+        lightPos = light.transform.getPos()
         lightColor = light.lightColor
+        cameraTransform = self.camera.transform
 
         # Perspective * View matrix
-        vpMatrix = np.dot(self.camera.matrix, self.perspective)
-        commonData = np.hstack((self.camera.matrix.flat, self.perspective.flat, self.camera.pos.flat))
+        vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
+        commonData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat, cameraTransform.pos.flat))
 
         # draw static meshes
         lastMesh = None
@@ -204,14 +205,14 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix,
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, commonData, vpMatrix,
                                                         lightPos, lightColor, True)
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, self.camera.pos, vpBuffer, vpMatrix,
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, commonData, vpMatrix,
                                                         lightPos, lightColor, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
