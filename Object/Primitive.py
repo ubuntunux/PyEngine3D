@@ -9,59 +9,87 @@ NONE_OFFSET = ctypes.c_void_p(0)
 
 
 # ------------------------------#
+# CLASS : VertexUniformBuffer
+# ------------------------------#
+class VertexUniformBuffer:
+    def __init__(self, *datas, dtype):
+        self.vertex_unitSize = 0
+        self.vertex_strides = []
+        self.vertex_stride_points = []
+        accStridePoint = 0
+        for data in datas:
+            if dtype != data.dtype:
+                raise AttributeException("dtype is not %s." % str(data.dtype))
+            stride = len(data[0])
+            self.vertex_strides.append(stride)
+            self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
+            accStridePoint += stride * np.nbytes[data.dtype]
+        self.vertex_unitSize = accStridePoint
+        self.vertex_stride_range = range(len(self.vertex_strides))
+
+        self.vertex = np.hstack(datas).astype(dtype)
+        self.vertex_array = glGenVertexArrays(1)
+        self.vertex_buffer = glGenBuffers(1)
+
+        glBindVertexArray(self.vertex_array)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
+        glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
+
+    def bindBUffer(self):
+        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
+
+        for i in self.vertex_stride_range:
+            glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_unitSize,
+                                  self.vertex_stride_points[i])
+            glEnableVertexAttribArray(i)
+
+
+# ------------------------------#
 # CLASS : Primitive
 # ------------------------------#
 class Primitive:
-    position = np.array([], dtype=np.float32)
-    color = np.array([], dtype=np.float32)
-    normal = np.array([], dtype=np.float32)
-    tangent = np.array([], dtype=np.float32)
-    texcoord = np.array([], dtype=np.float32)
-    index = np.array([], dtype=np.uint32)
-
-    def __init__(self):
-        self.name = ""
-        self.position_buffer = -1
-        self.color_buffer = -1
-        self.normal_buffer = -1
-        self.tangent_buffer = -1
-        self.texcoord_buffer = -1
+    def __init__(self, primitiveName=""):
+        self.name = primitiveName or getClassName(self).lower()
+        self.position = np.array([], dtype=np.float32)
+        self.color = np.array([], dtype=np.float32)
+        self.normal = np.array([], dtype=np.float32)
+        self.tangent = np.array([], dtype=np.float32)
+        self.texcoord = np.array([], dtype=np.float32)
+        self.index = np.array([], dtype=np.uint32)
         self.index_buffer = -1
-        self.vertices = None
+        self.vertexBuffer = None
         self.attributes = Attributes()
 
-    def initialize(self, primitiveName=""):
-        self.name = primitiveName or getClassName(self).lower()
+    def initialize(self):
+        self.vertexBuffer = VertexUniformBuffer(self.position, self.color, self.normal, self.tangent, self.texcoord,
+                                                dtype=np.float32)
 
-        # position buffer
+        """
+        # buffer initialize
+        self.position = np.array([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]], dtype=np.float32)
         self.position_buffer = glGenBuffers(1)  # Request a buffer slot from GPU
         glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)  # Make this buffer the default one
         glBufferData(GL_ARRAY_BUFFER, self.position.nbytes, self.position, GL_STATIC_DRAW)  # Upload data
 
-        # color buffer
-        self.color_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.color_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.color.nbytes, self.color, GL_STATIC_DRAW)
-
-        # normal buffer
-        self.normal_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.normal.nbytes, self.normal, GL_STATIC_DRAW)
-
-        # tangent buffer
-        self.tangent_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.tangent_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.tangent.nbytes, self.tangent, GL_STATIC_DRAW)
-
-        # texcoord buffer
-        self.texcoord_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.texcoord_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.texcoord.nbytes, self.texcoord, GL_STATIC_DRAW)
+        # buffer binding - do per every frame
+        # loc = glGetAttribLocation(self.shader.program, "position")
+        loc = 0
+        glEnableVertexAttribArray(loc)
+        glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
+        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
+        """
 
         # index buffer
         self.index_buffer = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
+
+    def clearData(self):
+        self.position = None
+        self.color = None
+        self.normal = None
+        self.tangent = None
+        self.texcoord = None
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
@@ -95,36 +123,7 @@ class Primitive:
                 # self.bitangent[self.index[i+2]] = bitangent
 
     def bindBuffers(self):
-        # Binding buffers
-        # loc = glGetAttribLocation(self.shader.program, "position")
-        loc = 0
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
-        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
-
-        # loc = glGetAttribLocation(self.shader.program, "color")
-        loc = 1
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.color_buffer)
-        glVertexAttribPointer(loc, 4, GL_FLOAT, False, self.color.strides[0], NONE_OFFSET)
-
-        # loc = glGetAttribLocation(self.shader.program, "normal")
-        loc = 2
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.normal_buffer)
-        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.normal.strides[0], NONE_OFFSET)
-
-        # loc = glGetAttribLocation(self.shader.program, "tangent")
-        loc = 3
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.tangent_buffer)
-        glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.tangent.strides[0], NONE_OFFSET)
-
-        # loc = glGetAttribLocation(self.shader.program, "texcoord")
-        loc = 4
-        glEnableVertexAttribArray(loc)
-        glBindBuffer(GL_ARRAY_BUFFER, self.texcoord_buffer)
-        glVertexAttribPointer(loc, 2, GL_FLOAT, False, self.texcoord.strides[0], NONE_OFFSET)
+        self.vertexBuffer.bindBUffer()
 
         # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
@@ -138,7 +137,7 @@ class Primitive:
 # ------------------------------#
 class Mesh(Primitive):
     def __init__(self, meshName, meshData):
-        Primitive.__init__(self)
+        Primitive.__init__(self, meshName)
         try:
             # set data
             self.position = np.array(meshData['positions'], dtype=np.float32)
@@ -149,21 +148,20 @@ class Mesh(Primitive):
             self.index = np.array(meshData['indices'], dtype=np.uint32)
         except:
             logger.error(traceback.format_exc())
-        self.initialize(meshName)
+        self.initialize()
 
 
 # ------------------------------#
 # CLASS : Triangle
 # ------------------------------#
 class Triangle(Primitive):
-    position = np.array([(-1, -1, 0), (1, -1, 0), (-1, 1, 0)], dtype=np.float32)
-    color = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)], dtype=np.float32)
-    normal = np.array([(0, 0, 1), (0, 0, 1), (0, 0, 1)], dtype=np.float32)
-    texcoord = np.array([(-1, -1), (1, -1), (-1, 1)], dtype=np.float32)
-    index = np.array([0, 1, 2], dtype=np.uint32)
-
     def __init__(self):
         Primitive.__init__(self)
+        self.position = np.array([(-1, -1, 0), (1, -1, 0), (-1, 1, 0)], dtype=np.float32)
+        self.color = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)], dtype=np.float32)
+        self.normal = np.array([(0, 0, 1), (0, 0, 1), (0, 0, 1)], dtype=np.float32)
+        self.texcoord = np.array([(-1, -1), (1, -1), (-1, 1)], dtype=np.float32)
+        self.index = np.array([0, 1, 2], dtype=np.uint32)
         self.computeTangent()
         self.initialize()
 
@@ -172,14 +170,13 @@ class Triangle(Primitive):
 # CLASS : Quad
 # ------------------------------#
 class Quad(Primitive):
-    position = np.array([(-1, -1, 0), (1, -1, 0), (-1, 1, 0), (1, 1, 0)], dtype=np.float32)
-    color = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)], dtype=np.float32)
-    normal = np.array([(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)], dtype=np.float32)
-    texcoord = np.array([(-1, -1), (1, -1), (-1, 1), (1, 1)], dtype=np.float32)
-    index = np.array([0, 1, 2, 1, 3, 2], dtype=np.uint32)
-
     def __init__(self):
         Primitive.__init__(self)
+        self.position = np.array([(-1, -1, 0), (1, -1, 0), (-1, 1, 0), (1, 1, 0)], dtype=np.float32)
+        self.color = np.array([(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)], dtype=np.float32)
+        self.normal = np.array([(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)], dtype=np.float32)
+        self.texcoord = np.array([(-1, -1), (1, -1), (-1, 1), (1, 1)], dtype=np.float32)
+        self.index = np.array([0, 1, 2, 1, 3, 2], dtype=np.uint32)
         self.computeTangent()
         self.initialize()
 
