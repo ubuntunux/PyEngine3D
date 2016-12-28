@@ -20,10 +20,8 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- implement uniform block 
-    - http://blog.livedoor.jp/gaziya/archives/55281439.html
-    - http://stackoverflow.com/questions/24971761/using-glgetuniformindices-in-pyopengl
 - Material System
+- Auto create material from shader
 - Object Data
 - Resource Create, Delete, Regist, Release System
 - Scene Data
