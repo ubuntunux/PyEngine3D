@@ -35,7 +35,7 @@ void main() {
     data.worldPosition = (model * vec4(position, 1.0)).xyz;
     data.normalVector = (model * vec4(normal, 0.0)).xyz;
     vec3 bitangent = cross(tangent, normal);
-    data.tangentToWorld = mat4(model * vec4(tangent, 0.0), model * vec4(bitangent,0.0), model * vec4(normal, 0.0), model * vec4(0.0, 0.0, 0.0, 1.0));
+    data.tangentToWorld = model * mat4(vec4(tangent, 0.0), vec4(bitangent,0.0), vec4(normal, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     data.textureCoordinate = texcoord;
 
     data.cameraPosition = camera_position;
