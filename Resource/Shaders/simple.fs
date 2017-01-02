@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 
 uniform vec4 diffuseColor;
 

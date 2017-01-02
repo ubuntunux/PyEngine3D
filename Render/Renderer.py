@@ -188,16 +188,19 @@ class Renderer(Singleton):
         lightColor = light.lightColor
         cameraTransform = self.camera.transform
 
+        sceneConstData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat,
+                                    cameraTransform.pos, np.float32(0),
+                                    lightPos, np.float32(0)))
+
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
-        commonData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat, cameraTransform.pos.flat))
 
         # draw static meshes
         lastMesh = None
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, commonData, vpMatrix, lightPos, lightColor)
+                obj.draw(lastProgram, lastMesh, sceneConstData, vpMatrix, lightColor)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
@@ -205,15 +208,15 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, commonData, vpMatrix,
-                                                        lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix,
+                                                        lightColor, True)
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, commonData, vpMatrix,
-                                                        lightPos, lightColor, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix,
+                                                        lightColor, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         # reset shader program

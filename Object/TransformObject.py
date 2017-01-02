@@ -17,20 +17,20 @@ class TransformObject:
         self.matrix = np.eye(4, dtype=np.float32)
         self.inverse_matrix = np.eye(4, dtype=np.float32)
         self.translateMatrix = np.eye(4, dtype=np.float32)
-        self.rotationMatrix =  np.eye(4, dtype=np.float32)
+        self.rotationMatrix = np.eye(4, dtype=np.float32)
         self.scaleMatrix = np.eye(4, dtype=np.float32)
 
-        self.pos = np.zeros(3, dtype=np.float32) # X, Y, Z
-        self.oldPos = np.zeros(3, dtype=np.float32) # X, Y, Z
+        self.pos = np.zeros(3, dtype=np.float32)  # X, Y, Z
+        self.oldPos = np.zeros(3, dtype=np.float32)  # X, Y, Z
 
-        self.rot = np.zeros(3, dtype=np.float32) # pitch, yaw, roll
+        self.rot = np.zeros(3, dtype=np.float32)  # pitch, yaw, roll
         self.oldRot = np.zeros(3, dtype=np.float32)
-        self.right = np.array([1.0, 0.0, 0.0], dtype=np.float32) # X Axis
-        self.up = np.array([0.0, 1.0, 0.0], dtype=np.float32) # Y Axis
-        self.front = np.array([0.0, 0.0, 1.0], dtype=np.float32) # Z Axis
+        self.right = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # X Axis
+        self.up = np.array([0.0, 1.0, 0.0], dtype=np.float32)  # Y Axis
+        self.front = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # Z Axis
 
-        self.scale = np.zeros(3, dtype=np.float32) # X, Y, Z
-        self.oldScale = np.zeros(3, dtype=np.float32) # X, Y, Z
+        self.scale = np.zeros(3, dtype=np.float32)  # X, Y, Z
+        self.oldScale = np.zeros(3, dtype=np.float32)  # X, Y, Z
 
         # init transform
         self.setPos(pos)
@@ -43,9 +43,7 @@ class TransformObject:
         self.setScale(np.zeros(3, dtype=np.float32))
         self.updateTransform()
 
-    #
     # Translate
-    #
     def getPos(self):
         return self.pos
 
@@ -93,9 +91,7 @@ class TransformObject:
         self.moved = True
         self.pos[2] += delta
 
-    #
     # Rotation
-    #
     def getRotation(self):
         return self.rot
 
@@ -139,9 +135,7 @@ class TransformObject:
         if self.rot[2] > two_pi: self.rot[2] -= two_pi
         elif self.rot[2] < 0.0: self.rot[2] += two_pi
 
-    #
     # Scale
-    #
     def getScale(self):
         return self.scale
 

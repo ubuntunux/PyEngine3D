@@ -1,9 +1,7 @@
 #version 400 core
 
 uniform vec4 diffuseColor;
-uniform vec3 camera_position;
 uniform vec4 light_color;
-uniform vec3 light_position;
 
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;

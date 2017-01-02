@@ -27,20 +27,18 @@ class BaseObject:
     def setMaterial(self, material):
         self.material = material
 
-        # binding datas
-        self.commonBuffer = glGenBuffers(1)
-        glBindBuffer(GL_UNIFORM_BUFFER, self.commonBuffer)
-
         if self.material:
             program = self.material.program
-            self.commonBind = 0
-            glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'commonConstants'), self.commonBind)
+
+            self.sceneConstBind = 0
+            self.sceneConstBuffer = glGenBuffers(1)
+            glBindBuffer(GL_UNIFORM_BUFFER, self.sceneConstBuffer)
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'sceneConstants'), self.sceneConstBind)
 
             self.bind_model = glGetUniformLocation(program, "model")
             self.bind_mvp = glGetUniformLocation(program, "mvp")
             self.bind_diffuseColor = glGetUniformLocation(program, "diffuseColor")
             self.bind_light_color = glGetUniformLocation(self.material.program, "light_color")
-            self.bind_light_position = glGetUniformLocation(self.material.program, "light_position")
             self.bind_textureDiffuse = glGetUniformLocation(program, "textureDiffuse")
             self.bind_textureNormal = glGetUniformLocation(program, "textureNormal")
 
@@ -74,7 +72,7 @@ class BaseObject:
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastMesh, commonData, vpMatrix, lightPos, lightColor, selected=False):
+    def draw(self, lastProgram, lastMesh, sceneConstData, vpMatrix, lightColor, selected=False):
         transform = self.transform
         # test code
         transform.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
@@ -91,14 +89,14 @@ class BaseObject:
         if lastProgram != program:
             glUseProgram(program)
 
-        # Uniform Block
-        glBufferData(GL_UNIFORM_BUFFER, commonData.nbytes, commonData, GL_STATIC_DRAW)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.commonBind, self.commonBuffer)
+            #glBindBuffer(GL_UNIFORM_BUFFER, self.sceneConstBuffer)
+            #glUniformBlockBinding(program, glGetUniformBlockIndex(program, 'sceneConstants'), self.sceneConstBind)
+            glBufferData(GL_UNIFORM_BUFFER, sceneConstData.nbytes, sceneConstData, GL_STATIC_DRAW)
+            glBindBufferBase(GL_UNIFORM_BUFFER, self.sceneConstBind, self.sceneConstBuffer)
 
         glUniformMatrix4fv(self.bind_model, 1, GL_FALSE, transform.matrix)
         glUniformMatrix4fv(self.bind_mvp, 1, GL_FALSE, np.dot(transform.matrix, vpMatrix))
         glUniform4fv(self.bind_diffuseColor, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
-        glUniform3fv(self.bind_light_position, 1, lightPos)
         glUniform4fv(self.bind_light_color, 1, lightColor)
 
         glActiveTexture(GL_TEXTURE0)
