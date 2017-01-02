@@ -20,6 +20,8 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
+- Shader Combine System
+- Create Material from shader
 - Material System
 - Auto create material from shader
 - Object Data
