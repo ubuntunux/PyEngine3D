@@ -1,4 +1,4 @@
-#version 400 core
+#version 430 core
 
 layout(location=0) in vec3 position;
 layout(location=1) in vec4 color;
@@ -8,10 +8,14 @@ layout(location=4) in vec2 texcoord;
 
 layout(std140) uniform sceneConstants
 {
-    mat4 view;              // 64 bytes
-    mat4 perspective;       // 64 bytes
-    vec4 camera_position;   // 16 bytes
-    vec4 light_position;    // 16 bytes
+    mat4 view;
+    mat4 perspective;
+    vec4 camera_position;
+};
+
+layout(std140) uniform lightConstants
+{
+    vec4 light_position;
 };
 
 uniform mat4 model;

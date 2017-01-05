@@ -189,8 +189,8 @@ class Renderer(Singleton):
         cameraTransform = self.camera.transform
 
         sceneConstData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat,
-                                    cameraTransform.pos, np.float32(0),
-                                    lightPos, np.float32(0)))
+                                    cameraTransform.pos, np.float32(0)))
+        lightConstData = np.hstack((lightPos, np.float32(0)))
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
@@ -200,7 +200,7 @@ class Renderer(Singleton):
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, sceneConstData, vpMatrix, lightColor)
+                obj.draw(lastProgram, lastMesh, sceneConstData, lightConstData, vpMatrix, lightColor)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
@@ -208,14 +208,14 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix,
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, lightConstData, vpMatrix,
                                                         lightColor, True)
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix,
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, lightConstData, vpMatrix,
                                                         lightColor, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 

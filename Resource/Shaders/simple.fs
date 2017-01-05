@@ -1,7 +1,9 @@
-#version 400 core
+#version 430 core
 
 uniform vec4 diffuseColor;
 
+out vec4 result;
+
 void main() {
-    gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+    result = vec4(1.0, 1.0, 0.0, 1.0);
 }

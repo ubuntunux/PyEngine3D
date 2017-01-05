@@ -20,14 +20,20 @@ class Shader:
         self.shader = glCreateShader(self.shaderType)
         self.attribute = Attributes()
 
-        # Set shaders source
-        glShaderSource(self.shader, shaderSource)
-
         # Compile shaders
         try:
+            glShaderSource(self.shader, shaderSource)
             glCompileShader(self.shader)
+            if glGetShaderiv(self.shader, GL_COMPILE_STATUS) != 1 or True:
+                infoLog = glGetShaderInfoLog(self.shader)
+                if infoLog:
+                    if type(infoLog) == bytes:
+                        infoLog = infoLog.decode("utf-8")
+                    logger.error("%s shader error!!!\n" % self.name + infoLog)
+                else:
+                    logger.info("%s shader complete." % self.name)
         except:
-            print("error")
+            print(traceback.format_exc())
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)

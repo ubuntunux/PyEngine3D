@@ -1,4 +1,4 @@
-#version 400 core
+#version 430 core
 
 uniform vec4 diffuseColor;
 uniform vec4 light_color;
