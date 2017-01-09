@@ -6,14 +6,10 @@ layout(std140) uniform sceneConstants
 {
     mat4 view;
     mat4 perspective;
-    vec4 camera_position;
+    vec4 cameraPosition;
 };
 
-layout(std140) uniform lightConstants
-{
-    vec4 light_position;
-};
-
+uniform vec4 lightPosition;
 uniform mat4 model;
 
 void main() {

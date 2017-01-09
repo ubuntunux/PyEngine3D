@@ -1,7 +1,8 @@
 #version 430 core
 
 uniform vec4 diffuseColor;
-uniform vec4 light_color;
+uniform vec4 lightPosition;
+uniform vec4 lightColor;
 
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;
@@ -14,9 +15,7 @@ in struct DATA
     mat4 tangentToWorld;
     vec2 textureCoordinate;
     vec3 cameraVector;
-    vec3 cameraPosition;
     vec3 lightVector;
-    vec3 lightPosition;
 } data;
 
 out vec4 result;
@@ -33,5 +32,5 @@ void main() {
     vec3 diffuseLighting = diffuseTex * diffuseColor.xyz * clamp(dot(lightVector, normalTex), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normalTex), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
-    result = vec4(light_color.xyz * (diffuseLighting + specularLighting), 1.0);
+    result = vec4(lightColor.xyz * (diffuseLighting + specularLighting), 1.0);
 }

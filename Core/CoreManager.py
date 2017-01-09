@@ -1,4 +1,3 @@
-import ctypes
 import platform as libPlatform
 import sys
 import time

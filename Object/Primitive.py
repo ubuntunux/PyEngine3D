@@ -1,4 +1,6 @@
-import os, traceback
+import ctypes
+import os
+import traceback
 
 import numpy as np
 from OpenGL.GL import *
@@ -9,9 +11,9 @@ NONE_OFFSET = ctypes.c_void_p(0)
 
 
 # ------------------------------#
-# CLASS : VertexUniformBuffer
+# CLASS : VertexArrayBuffer
 # ------------------------------#
-class VertexUniformBuffer:
+class VertexArrayBuffer:
     def __init__(self, *datas, dtype):
         self.vertex_unitSize = 0
         self.vertex_strides = []
@@ -20,7 +22,7 @@ class VertexUniformBuffer:
         for data in datas:
             if dtype != data.dtype:
                 raise AttributeException("dtype is not %s." % str(data.dtype))
-            stride = len(data[0])
+            stride = len(data[0]) if len(data) > 0 else 0
             self.vertex_strides.append(stride)
             self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
             accStridePoint += stride * np.nbytes[data.dtype]
@@ -35,13 +37,17 @@ class VertexUniformBuffer:
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
         glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
 
-    def bindBUffer(self):
+    def bindBuffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
         for i in self.vertex_stride_range:
             glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_unitSize,
                                   self.vertex_stride_points[i])
             glEnableVertexAttribArray(i)
+
+    def unbindBuffer(self):
+        for i in self.vertex_stride_range:
+            glDisableVertexAttribArray(i)
 
 
 # ------------------------------#
@@ -61,7 +67,7 @@ class Primitive:
         self.attributes = Attributes()
 
     def initialize(self):
-        self.vertexBuffer = VertexUniformBuffer(self.position, self.color, self.normal, self.tangent, self.texcoord,
+        self.vertexBuffer = VertexArrayBuffer(self.position, self.color, self.normal, self.tangent, self.texcoord,
                                                 dtype=np.float32)
 
         """
@@ -123,7 +129,7 @@ class Primitive:
                 # self.bitangent[self.index[i+2]] = bitangent
 
     def bindBuffers(self):
-        self.vertexBuffer.bindBUffer()
+        self.vertexBuffer.bindBuffer()
 
         # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)

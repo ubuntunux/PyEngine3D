@@ -10,13 +10,10 @@ layout(std140) uniform sceneConstants
 {
     mat4 view;
     mat4 perspective;
-    vec4 camera_position;
+    vec4 cameraPosition;
 };
 
-layout(std140) uniform lightConstants
-{
-    vec4 light_position;
-};
+uniform vec4 lightPosition;
 
 uniform mat4 model;
 uniform mat4 mvp;
@@ -29,9 +26,7 @@ out struct DATA
     mat4 tangentToWorld;
     vec2 textureCoordinate;
     vec3 cameraVector;
-    vec3 cameraPosition;
     vec3 lightVector;
-    vec3 lightPosition;
 } data;
 
 void main() {
@@ -42,12 +37,10 @@ void main() {
     data.tangentToWorld = model * mat4(vec4(tangent, 0.0), vec4(bitangent,0.0), vec4(normal, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     data.textureCoordinate = texcoord;
 
-    data.cameraPosition = camera_position.xyz;
-    data.cameraVector = camera_position.xyz - data.worldPosition;
+    data.cameraVector = cameraPosition.xyz - data.worldPosition;
     //data.cameraVector = normalize(data.cameraVector);
 
-    data.lightPosition = light_position.xyz;
-    data.lightVector = light_position.xyz - data.worldPosition;
+    data.lightVector = lightPosition.xyz - data.worldPosition;
     //data.lightVector = normalize(data.lightVector);
     gl_Position = mvp * vec4(position, 1.0f);
 }
