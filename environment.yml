@@ -1,4 +1,6 @@
-name: condaPython
+name: GuineaPig
+channels: !!python/tuple
+- defaults
 dependencies:
 - freetype=2.5.5=vc14_1
 - jpeg=8d=vc14_0
@@ -19,11 +21,8 @@ dependencies:
 - wheel=0.29.0=py35_0
 - zlib=1.2.8=vc14_3
 - pip:
-  - freetype-py==1.0.2
-  - pillow==3.2.0
-  - pycollada==0.4.1
-  - pygame==1.9.2a0
-  - python-dateutil==2.5.3
-  - six==1.10.0
-prefix: C:\Anaconda3\envs\condaPython
+  - olefile==0.44
+  - pillow==4.0.0
+  - pygame==1.9.2
+prefix: D:\Anaconda3\envs\GuineaPig
 
