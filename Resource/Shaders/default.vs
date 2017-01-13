@@ -1,17 +1,20 @@
 #version 430 core
 
-layout(location=0) in vec3 position;
-layout(location=1) in vec4 color;
-layout(location=2) in vec3 normal;
-layout(location=3) in vec3 tangent;
-layout(location=4) in vec2 texcoord;
-
 layout(std140) uniform sceneConstants
 {
     mat4 view;
     mat4 perspective;
     vec4 cameraPosition;
 };
+
+in struct VERTEX_ARRAY
+{
+    layout(location=0) vec3 position;
+    layout(location=1) vec4 color;
+    layout(location=2) vec3 normal;
+    layout(location=3) vec3 tangent;
+    layout(location=4) vec2 texcoord;
+} vertex;
 
 uniform vec4 lightPosition;
 
@@ -30,17 +33,18 @@ out struct DATA
 } data;
 
 void main() {
-    data.vertexColor = color;
-    data.worldPosition = (model * vec4(position, 1.0)).xyz;
-    data.normalVector = (model * vec4(normal, 0.0)).xyz;
-    vec3 bitangent = cross(tangent, normal);
-    data.tangentToWorld = model * mat4(vec4(tangent, 0.0), vec4(bitangent,0.0), vec4(normal, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
-    data.textureCoordinate = texcoord;
+    data.vertexColor = vertex.color;
+    data.worldPosition = (model * vec4(vertex.position, 1.0)).xyz;
+    data.normalVector = (model * vec4(vertex.normal, 0.0)).xyz;
+    vec3 bitangent = cross(vertex.tangent, vertex.normal);
+    data.tangentToWorld = model * mat4(vec4(vertex.tangent, 0.0), vec4(bitangent, 0.0), vec4(vertex.normal, 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0));
+    data.textureCoordinate = vertex.texcoord;
 
     data.cameraVector = cameraPosition.xyz - data.worldPosition;
     //data.cameraVector = normalize(data.cameraVector);
 
     data.lightVector = lightPosition.xyz - data.worldPosition;
     //data.lightVector = normalize(data.lightVector);
-    gl_Position = mvp * vec4(position, 1.0f);
+    gl_Position = mvp * vec4(vertex.position, 1.0f);
 }
