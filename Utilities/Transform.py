@@ -15,11 +15,14 @@ WORLD_RIGHT = np.array([1.0, 0.0, 0.0])
 WORLD_UP = np.array([0.0, 1.0, 0.0])
 WORLD_FRONT = np.array([0.0, 0.0, 1.0])
 
+
 def transform(m, v):
     return np.asarray(m * np.asmatrix(v).T)[:,0]
 
+
 def magnitude(v):
     return math.sqrt(np.sum(v ** 2))
+
 
 def normalize(v):
     m = magnitude(v)
@@ -27,23 +30,16 @@ def normalize(v):
         return v
     return v / m
 
+
 def getTranslateMatrix(x, y, z):
-    '''
-    correct matrix - non transposed
-    T = [[ 1, 0, 0, x],
-         [ 0, 1, 0, y],
-         [ 0, 0, 1, z],
-         [ 0, 0, 0, 1]]
-    '''
-    # transposed matrix
     T = [[ 1, 0, 0, 0],
          [ 0, 1, 0, 0],
          [ 0, 0, 1, 0],
          [ x, y, z, 1]]
     return np.array(T, dtype=np.float32)
 
+
 def translate(M, x, y, z):
-    # transposed matrix
     T = [[ 1, 0, 0, 0],
          [ 0, 1, 0, 0],
          [ 0, 0, 1, 0],
@@ -52,13 +48,13 @@ def translate(M, x, y, z):
     M[...] = np.dot(M,T)
 
 
-
 def getScaleMatrix(x, y, z):
     S = [[ x, 0, 0, 0],
          [ 0, y, 0, 0],
          [ 0, 0, z, 0],
          [ 0, 0, 0, 1]]
-    return np.array(S,dtype=np.float32)
+    return np.array(S, dtype=np.float32)
+
 
 def scale(M, x, y, z):
     S = [[ x, 0, 0, 0],
@@ -66,8 +62,7 @@ def scale(M, x, y, z):
          [ 0, 0, z, 0],
          [ 0, 0, 0, 1]]
     S = np.array(S,dtype=np.float32)
-    M[...] = np.dot(M,S)
-
+    M[...] = np.dot(M, S)
 
 
 def getRotationMatrixX(radian):
@@ -80,6 +75,7 @@ def getRotationMatrixX(radian):
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
     return R
 
+
 def getRotationMatrixY(radian):
     cosT = math.cos( radian )
     sinT = math.sin( radian )
@@ -89,6 +85,7 @@ def getRotationMatrixY(radian):
          [-sinT,  0.0, cosT, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
     return R
+
 
 def getRotationMatrixZ(radian):
     cosT = math.cos( radian )
@@ -100,6 +97,7 @@ def getRotationMatrixZ(radian):
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
     return R
 
+
 def rotateX(M, radian):
     cosT = math.cos( radian )
     sinT = math.sin( radian )
@@ -108,7 +106,8 @@ def rotateX(M, radian):
          [ 0.0, cosT,-sinT, 0.0 ],
          [ 0.0, sinT, cosT, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
-    M[...] = np.dot(M,R)
+    M[...] = np.dot(M, R)
+
 
 def rotateY(M, radian):
     cosT = math.cos( radian )
@@ -118,7 +117,8 @@ def rotateY(M, radian):
          [ 0.0,   1.0,  0.0, 0.0 ],
          [-sinT,  0.0, cosT, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
-    M[...] = np.dot(M,R)
+    M[...] = np.dot(M, R)
+
 
 def rotateZ(M, radian):
     cosT = math.cos( radian )
@@ -128,7 +128,7 @@ def rotateZ(M, radian):
          [ sinT, cosT, 0.0, 0.0 ],
          [ 0.0,  0.0,  1.0, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
-    M[...] = np.dot(M,R)
+    M[...] = np.dot(M, R)
 
 
 def rotate(M, radian, x, y, z):
@@ -144,6 +144,7 @@ def rotate(M, radian, x, y, z):
                      [          0,          0,        0,   1]]).T
     M[...] = np.dot(M,R)
 
+
 def lookat(eye, target, up):
     F = target[:3] - eye[:3]
     f = normalize(F)
@@ -154,6 +155,7 @@ def lookat(eye, target, up):
     M[:3,:3] = np.vstack([s,u,-f])
     T = getTranslateMatrix(*(-eye))
     return M * T
+
 
 def ortho( left, right, bottom, top, znear, zfar ):
     assert( right  != left )
@@ -170,6 +172,7 @@ def ortho( left, right, bottom, top, znear, zfar ):
     M[3,3] = 1.0
     return M
 
+
 def frustum( left, right, bottom, top, znear, zfar ):
     assert( right  != left )
     assert( bottom != top  )
@@ -184,6 +187,7 @@ def frustum( left, right, bottom, top, znear, zfar ):
     M[3,2] = -2.0*znear*zfar/(zfar-znear)
     M[2,3] = -1.0
     return M
+
 
 def perspective(fovy, aspect, znear, zfar):
     assert( znear != zfar )
