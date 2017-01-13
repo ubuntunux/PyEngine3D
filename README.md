@@ -20,7 +20,8 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Shader Combine System
+- Column Major <--> Row Major Matrix Swtich System ( Now, row major matrix, but glsl use column major matrix. )
+- Object GLSL Constant Struct
 - Create Material from shader
 - Material System
 - Auto create material from shader
