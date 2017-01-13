@@ -20,7 +20,7 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Column Major <--> Row Major Matrix Swtich System ( Now, row major matrix, but glsl use column major matrix. )
+- Column Major <--> Row Major Matrix Swtich System ( Now, App use row major matrix, but glsl use column major matrix. )
 - Object GLSL Constant Struct
 - Create Material from shader
 - Material System
