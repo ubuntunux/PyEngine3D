@@ -102,38 +102,50 @@ class TransformObject:
     def setPitch(self, pitch):
         self.rotated = True
         self.rot[0] = pitch
-        if self.rot[0] > two_pi: self.rot[0] -= two_pi
-        elif self.rot[0] < 0.0: self.rot[0] += two_pi
+        if self.rot[0] > two_pi:
+            self.rot[0] -= two_pi
+        elif self.rot[0] < 0.0:
+            self.rot[0] += two_pi
 
     def setYaw(self, yaw):
         self.rotated = True
         self.rot[1] = yaw
-        if self.rot[1] > two_pi: self.rot[1] -= two_pi
-        elif self.rot[1] < 0.0: self.rot[1] += two_pi
+        if self.rot[1] > two_pi:
+            self.rot[1] -= two_pi
+        elif self.rot[1] < 0.0:
+            self.rot[1] += two_pi
 
     def setRoll(self, roll):
         self.rotated = True
         self.rot[2] = roll
-        if self.rot[2] > two_pi: self.rot[2] -= two_pi
-        elif self.rot[2] < 0.0: self.rot[2] += two_pi
+        if self.rot[2] > two_pi:
+            self.rot[2] -= two_pi
+        elif self.rot[2] < 0.0:
+            self.rot[2] += two_pi
 
     def rotationPitch(self, delta=0.0):
         self.rotated = True
         self.rot[0] += delta * self.rotation_speed
-        if self.rot[0] > two_pi: self.rot[0] -= two_pi
-        elif self.rot[0] < 0.0: self.rot[0] += two_pi
+        if self.rot[0] > two_pi:
+            self.rot[0] -= two_pi
+        elif self.rot[0] < 0.0:
+            self.rot[0] += two_pi
 
     def rotationYaw(self, delta=0.0):
         self.rotated = True
         self.rot[1] += delta * self.rotation_speed
-        if self.rot[1] > two_pi: self.rot[1] -= two_pi
-        elif self.rot[1] < 0.0: self.rot[1] += two_pi
+        if self.rot[1] > two_pi:
+            self.rot[1] -= two_pi
+        elif self.rot[1] < 0.0:
+            self.rot[1] += two_pi
 
     def rotationRoll(self, delta=0.0):
         self.rotated = True
         self.rot[2] += delta * self.rotation_speed
-        if self.rot[2] > two_pi: self.rot[2] -= two_pi
-        elif self.rot[2] < 0.0: self.rot[2] += two_pi
+        if self.rot[2] > two_pi:
+            self.rot[2] -= two_pi
+        elif self.rot[2] < 0.0:
+            self.rot[2] += two_pi
 
     # Scale
     def getScale(self):
@@ -167,12 +179,12 @@ class TransformObject:
 
         if self.rotated and not all(self.oldRot == self.rot):
             self.oldRot[...] = self.rot
-            self.rotationMatrix = getRotationMatrixZ(self.rot[2])
+            self.rotationMatrix = getRotationMatrixX(self.rot[0])
             rotateY(self.rotationMatrix, self.rot[1])
-            rotateX(self.rotationMatrix, self.rot[0])
-            self.front = self.matrix[:3,2]
-            self.right = self.matrix[:3,0]
-            self.up = self.matrix[:3,1]
+            rotateZ(self.rotationMatrix, self.rot[2])
+            self.front = self.matrix[:3, 2]
+            self.right = self.matrix[:3, 0]
+            self.up = self.matrix[:3, 1]
             self.rotated = False
             updateMatrix = True
 
@@ -183,8 +195,7 @@ class TransformObject:
             updateMatrix = True
 
         if updateMatrix:
-            self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
-            self.matrix = np.dot(self.scaleMatrix, self.matrix)
+            self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
 
     # It's inverse matrix.
     def updateInverseTransform(self):
@@ -198,12 +209,12 @@ class TransformObject:
 
         if self.rotated and not all(self.oldRot == self.rot):
             self.oldRot[...] = self.rot
-            self.rotationMatrix = getRotationMatrixZ(-self.rot[2])
+            self.rotationMatrix = getRotationMatrixX(-self.rot[0])
             rotateY(self.rotationMatrix, -self.rot[1])
-            rotateX(self.rotationMatrix, -self.rot[0])
-            self.front = -self.matrix[:3,2]
-            self.right = self.matrix[:3,0]
-            self.up = self.matrix[:3,1]
+            rotateZ(self.rotationMatrix, -self.rot[2])
+            self.front = self.matrix[:3, 2]
+            self.right = self.matrix[:3, 0]
+            self.up = self.matrix[:3, 1]
             self.rotated = False
             updateMatrix = True
 
@@ -214,8 +225,7 @@ class TransformObject:
             updateMatrix = True
 
         if updateMatrix:
-            self.matrix = np.dot(self.translateMatrix, self.rotationMatrix)
-            # self.matrix = np.dot(self.matrix, self.scaleMatrix)
+            self.matrix = np.dot(self.translateMatrix, np.dot(self.rotationMatrix, self.scaleMatrix))
 
     def getTransformInfos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])
@@ -224,8 +234,8 @@ class TransformObject:
         text += "\n\tRight : " + " ".join(["%2.2f" % i for i in self.right])
         text += "\n\tUp : " + " ".join(["%2.2f" % i for i in self.up])
         text += "\n\tMatrix"
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,0]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,1]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,2]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:,3]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 0]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 1]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 2]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 3]])
         return text

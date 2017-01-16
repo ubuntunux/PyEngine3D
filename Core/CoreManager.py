@@ -165,7 +165,6 @@ class CoreManager(Singleton):
         else:
             logger.error("Cannot find " + (objName or ""))
 
-
     def updateCommand(self):
         """
         process recieved command queues and send datas.
@@ -266,20 +265,20 @@ class CoreManager(Singleton):
             cameraTransform.moveToUp(self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotationPitch(self.mouseDelta[1] * 0.03)
-            cameraTransform.rotationYaw(self.mouseDelta[0] * 0.03)
+            cameraTransform.rotationPitch(-self.mouseDelta[1] * 0.03)
+            cameraTransform.rotationYaw(-self.mouseDelta[0] * 0.03)
 
         # camera move front/back
         if self.wheelUp:
-            cameraTransform.moveToFront(5.0)
-        elif self.wheelDown:
             cameraTransform.moveToFront(-5.0)
+        elif self.wheelDown:
+            cameraTransform.moveToFront(5.0)
 
         # update camera transform
         if keydown[K_w]:
-            cameraTransform.moveToFront(moveSpeed)
-        elif keydown[K_s]:
             cameraTransform.moveToFront(-moveSpeed)
+        elif keydown[K_s]:
+            cameraTransform.moveToFront(moveSpeed)
 
         if keydown[K_a]:
             cameraTransform.moveToRight(-moveSpeed)
