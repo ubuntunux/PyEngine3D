@@ -102,50 +102,50 @@ class TransformObject:
     def setPitch(self, pitch):
         self.rotated = True
         self.rot[0] = pitch
-        if self.rot[0] > two_pi:
-            self.rot[0] -= two_pi
+        if self.rot[0] > TWO_PI:
+            self.rot[0] -= TWO_PI
         elif self.rot[0] < 0.0:
-            self.rot[0] += two_pi
+            self.rot[0] += TWO_PI
 
     def setYaw(self, yaw):
         self.rotated = True
         self.rot[1] = yaw
-        if self.rot[1] > two_pi:
-            self.rot[1] -= two_pi
+        if self.rot[1] > TWO_PI:
+            self.rot[1] -= TWO_PI
         elif self.rot[1] < 0.0:
-            self.rot[1] += two_pi
+            self.rot[1] += TWO_PI
 
     def setRoll(self, roll):
         self.rotated = True
         self.rot[2] = roll
-        if self.rot[2] > two_pi:
-            self.rot[2] -= two_pi
+        if self.rot[2] > TWO_PI:
+            self.rot[2] -= TWO_PI
         elif self.rot[2] < 0.0:
-            self.rot[2] += two_pi
+            self.rot[2] += TWO_PI
 
     def rotationPitch(self, delta=0.0):
         self.rotated = True
         self.rot[0] += delta * self.rotation_speed
-        if self.rot[0] > two_pi:
-            self.rot[0] -= two_pi
+        if self.rot[0] > TWO_PI:
+            self.rot[0] -= TWO_PI
         elif self.rot[0] < 0.0:
-            self.rot[0] += two_pi
+            self.rot[0] += TWO_PI
 
     def rotationYaw(self, delta=0.0):
         self.rotated = True
         self.rot[1] += delta * self.rotation_speed
-        if self.rot[1] > two_pi:
-            self.rot[1] -= two_pi
+        if self.rot[1] > TWO_PI:
+            self.rot[1] -= TWO_PI
         elif self.rot[1] < 0.0:
-            self.rot[1] += two_pi
+            self.rot[1] += TWO_PI
 
     def rotationRoll(self, delta=0.0):
         self.rotated = True
         self.rot[2] += delta * self.rotation_speed
-        if self.rot[2] > two_pi:
-            self.rot[2] -= two_pi
+        if self.rot[2] > TWO_PI:
+            self.rot[2] -= TWO_PI
         elif self.rot[2] < 0.0:
-            self.rot[2] += two_pi
+            self.rot[2] += TWO_PI
 
     # Scale
     def getScale(self):
@@ -173,7 +173,7 @@ class TransformObject:
 
         if self.moved and not all(self.oldPos == self.pos):
             self.oldPos[...] = self.pos
-            self.translateMatrix = getTranslateMatrix(*self.pos)
+            self.translateMatrix = getTranslateMatrix(self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
             updateMatrix = True
 
@@ -190,7 +190,7 @@ class TransformObject:
 
         if self.scaled and not all(self.oldScale == self.scale):
             self.oldScale[...] = self.scale
-            self.scaleMatrix = getScaleMatrix(*self.scale)
+            self.scaleMatrix = getScaleMatrix(self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
             updateMatrix = True
 
@@ -203,7 +203,7 @@ class TransformObject:
 
         if self.moved and not all(self.oldPos == self.pos):
             self.oldPos[...] = self.pos
-            self.translateMatrix = getTranslateMatrix(*-self.pos)
+            self.translateMatrix = getTranslateMatrix(-self.pos[0], -self.pos[1], -self.pos[2])
             self.moved = False
             updateMatrix = True
 
@@ -220,7 +220,7 @@ class TransformObject:
 
         if self.scaled and not all(self.oldScale == self.scale):
             self.oldScale[...] = self.scale
-            self.scaleMatrix = getScaleMatrix(*-self.scale)
+            self.scaleMatrix = getScaleMatrix(-self.scale[0], -self.scale[1], -self.scale[2])
             self.scaled = False
             updateMatrix = True
 

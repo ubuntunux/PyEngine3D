@@ -1,9 +1,4 @@
-#version 430 core
-
 uniform vec4 diffuseColor;
-uniform vec4 lightPosition;
-uniform vec4 lightColor;
-
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;
 

@@ -5,49 +5,10 @@ import traceback
 import numpy as np
 from OpenGL.GL import *
 
+from Render.Shader import VertexArrayBuffer
 from Utilities import *
 
 NONE_OFFSET = ctypes.c_void_p(0)
-
-
-# ------------------------------#
-# CLASS : VertexArrayBuffer
-# ------------------------------#
-class VertexArrayBuffer:
-    def __init__(self, *datas, dtype):
-        self.vertex_unitSize = 0
-        self.vertex_strides = []
-        self.vertex_stride_points = []
-        accStridePoint = 0
-        for data in datas:
-            if dtype != data.dtype:
-                raise AttributeException("dtype is not %s." % str(data.dtype))
-            stride = len(data[0]) if len(data) > 0 else 0
-            self.vertex_strides.append(stride)
-            self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
-            accStridePoint += stride * np.nbytes[data.dtype]
-        self.vertex_unitSize = accStridePoint
-        self.vertex_stride_range = range(len(self.vertex_strides))
-
-        self.vertex = np.hstack(datas).astype(dtype)
-        self.vertex_array = glGenVertexArrays(1)
-        self.vertex_buffer = glGenBuffers(1)
-
-        glBindVertexArray(self.vertex_array)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
-
-    def bindBuffer(self):
-        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-
-        for i in self.vertex_stride_range:
-            glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_unitSize,
-                                  self.vertex_stride_points[i])
-            glEnableVertexAttribArray(i)
-
-    def unbindBuffer(self):
-        for i in self.vertex_stride_range:
-            glDisableVertexAttribArray(i)
 
 
 # ------------------------------#

@@ -40,8 +40,6 @@ class BaseObject:
             self.modelBind = glGetUniformLocation(program, "model")
             self.mvpBind = glGetUniformLocation(program, "mvp")
             self.diffuseColorBind = glGetUniformLocation(program, "diffuseColor")
-            self.lightColorBind = glGetUniformLocation(self.material.program, "lightColor")
-            self.lightPosBind = glGetUniformLocation(program, 'lightPosition')
             self.textureDiffuseBind = glGetUniformLocation(program, "textureDiffuse")
             self.textureNormalBind = glGetUniformLocation(program, "textureNormal")
 
@@ -73,7 +71,7 @@ class BaseObject:
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastMesh, sceneConstData, vpMatrix, lightColor, lightPos, selected=False):
+    def draw(self, lastProgram, lastMesh, sceneConstData, vpMatrix, selected=False):
         transform = self.transform
         # test code
         transform.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
@@ -98,8 +96,6 @@ class BaseObject:
         glUniformMatrix4fv(self.modelBind, 1, GL_FALSE, transform.matrix)
         glUniformMatrix4fv(self.mvpBind, 1, GL_FALSE, np.dot(transform.matrix, vpMatrix))
         glUniform4fv(self.diffuseColorBind, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
-        glUniform4fv(self.lightColorBind, 1, lightColor)
-        glUniform4fv(self.lightPosBind, 1, lightPos)
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)

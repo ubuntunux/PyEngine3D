@@ -1,5 +1,3 @@
-#version 430 core
-
 uniform vec4 diffuseColor;
 
 out vec4 result;

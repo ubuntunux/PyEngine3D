@@ -286,9 +286,9 @@ class CoreManager(Singleton):
             cameraTransform.moveToRight(moveSpeed)
 
         if keydown[K_q]:
-            cameraTransform.moveToUp(moveSpeed)
-        elif keydown[K_e]:
             cameraTransform.moveToUp(-moveSpeed)
+        elif keydown[K_e]:
+            cameraTransform.moveToUp(moveSpeed)
 
         if keydown[K_SPACE]:
             cameraTransform.resetTransform()

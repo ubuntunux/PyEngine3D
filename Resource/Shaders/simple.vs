@@ -1,15 +1,5 @@
-#version 430 core
-
 in vec3 position;
 
-layout(std140) uniform sceneConstants
-{
-    mat4 view;
-    mat4 perspective;
-    vec4 cameraPosition;
-};
-
-uniform vec4 lightPosition;
 uniform mat4 model;
 
 void main() {

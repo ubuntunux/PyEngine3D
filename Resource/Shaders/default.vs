@@ -1,12 +1,3 @@
-#version 430 core
-
-layout(std140) uniform sceneConstants
-{
-    mat4 view;
-    mat4 perspective;
-    vec4 cameraPosition;
-};
-
 in struct VERTEX_ARRAY
 {
     layout(location=0) vec3 position;
@@ -15,8 +6,6 @@ in struct VERTEX_ARRAY
     layout(location=3) vec3 tangent;
     layout(location=4) vec2 texcoord;
 } vertex;
-
-uniform vec4 lightPosition;
 
 uniform mat4 model;
 uniform mat4 mvp;
