@@ -21,6 +21,7 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Column Major <--> Row Major Matrix Swtich System ( Now, App use row major matrix, but glsl use column major matrix. )
+- glsl buffer binding system
 - implement UniformBuffer
 - Object Uniform Struct
 - Create Material from shader
