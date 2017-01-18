@@ -21,6 +21,14 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Actor Struct
+    - skeletal mesh
+    - static mesh
+    - landscape
+    - intanced object
+    - tree
+    - foliage
+    - point, directional, spot, area light
+    - cube map
 - shader template system
 - glsl buffer binding system
 - implement UniformBuffer
@@ -34,6 +42,7 @@ Welcome to the GuineaPig wiki!
 - Import .blend File
 - Choose Resource System
 - Resource Reload System
+- Particle System
 - View Mode
  - wire, solid, unlit, shading, texture
 - profiler
