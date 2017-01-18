@@ -21,6 +21,7 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Actor Struct
+- shader template system
 - glsl buffer binding system
 - implement UniformBuffer
 - Object Uniform Struct
