@@ -20,6 +20,8 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
+- Scene Manager
+- sceneContantBuffer
 - Actor Struct
     - skeletal mesh
     - static mesh
