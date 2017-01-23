@@ -72,6 +72,9 @@ class Renderer(Singleton):
         self.ortho = np.eye(4, dtype=np.float32)
         self.viewMode = GL_FILL
 
+        # TEST_CODE
+        self.sceneConstantBuffer = None
+
         # components
         self.camera = None
         self.lastShader = None
@@ -181,15 +184,18 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        # Test Code
+        # TEST_CODE
         light = self.objectManager.lights[0]
         light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
         cameraTransform = self.camera.transform
 
+        # TEST_CODE
         sceneConstData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat,
                                     cameraTransform.pos, FLOAT32_ZERO,
                                     light.transform.getPos(), FLOAT32_ZERO,
                                     light.lightColor))
+        if self.sceneConstantBuffer:
+            self.sceneConstantBuffer.bindBuffer(sceneConstData)
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
@@ -199,7 +205,11 @@ class Renderer(Singleton):
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, sceneConstData, vpMatrix)
+                # TEST_CODE
+                if self.sceneConstantBuffer is None:
+                    self.sceneConstantBuffer = UniformBuffer("sceneConstants", obj.material.program)
+                    self.sceneConstantBuffer.bindBuffer(sceneConstData)
+                obj.draw(lastProgram, lastMesh, vpMatrix)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
@@ -207,13 +217,13 @@ class Renderer(Singleton):
         if self.objectManager.getSelectedObject():
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, vpMatrix, True)
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, sceneConstData, vpMatrix, True)
+            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, vpMatrix, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         # reset shader program

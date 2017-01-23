@@ -55,8 +55,9 @@ class VertexArrayBuffer:
 # CLASS : UniformBuffer
 # ------------------------------
 class UniformBuffer:
-    def __init__(self, buffer_name):
+    def __init__(self, buffer_name, program):
         self.buffer_name = buffer_name
+        self.program = program
         self.buffer = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
         self.buffer_bind = 0
@@ -66,7 +67,7 @@ class UniformBuffer:
 
     def bindBuffer(self, data):
         # glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
-        # glUniformBlockBinding(program, self.buffer_index, self.buffer_bind)
+        # glUniformBlockBinding(self.program, self.buffer_index, self.buffer_bind)
         glBufferData(GL_UNIFORM_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
