@@ -11,20 +11,6 @@ from Core import logger
 from Utilities import Singleton, getClassName, Attributes
 
 
-GLSL_SHADER_VERSION = """#version 430 core\n"""
-
-SCENE_CONSTANTS = """
-layout(std140) uniform sceneConstants
-{
-    mat4 view;
-    mat4 perspective;
-    vec4 cameraPosition;
-    vec4 lightPosition;
-    vec4 lightColor;
-};
-"""
-
-
 # ------------------------------
 # CLASS : VertexArrayBuffer
 # ------------------------------
@@ -62,26 +48,27 @@ class VertexArrayBuffer:
 
     def unbindBuffer(self):
         for i in self.vertex_stride_range:
-            glDisableVertexAttribArray(i
+            glDisableVertexAttribArray(i)
 
 
 # ------------------------------
 # CLASS : UniformBuffer
 # ------------------------------
 class UniformBuffer:
-    def __init__(self, *datas):
-        self.sceneConstBuffer = glGenBuffers(1)
-        glBindBuffer(GL_UNIFORM_BUFFER, self.sceneConstBuffer)
-        self.sceneConstBind = 0
-        self.sceneConstIndex = glGetUniformBlockIndex(program, 'sceneConstants')
-        glUniformBlockBinding(program, self.sceneConstIndex, self.sceneConstBind)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.sceneConstBind, self.sceneConstBuffer)
+    def __init__(self, buffer_name):
+        self.buffer_name = buffer_name
+        self.buffer = glGenBuffers(1)
+        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
+        self.buffer_bind = 0
+        self.buffer_index = glGetUniformBlockIndex(program, buffer_name)
+        glUniformBlockBinding(program, self.buffer_index, self.buffer_bind)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
-    def bindBuffer(self):
-        # glBindBuffer(GL_UNIFORM_BUFFER, self.sceneConstBuffer)
-        # glUniformBlockBinding(program, self.sceneConstIndex, self.sceneConstBind)
-        glBufferData(GL_UNIFORM_BUFFER, sceneConstData.nbytes, sceneConstData, GL_STATIC_DRAW)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.sceneConstBind, self.sceneConstBuffer)
+    def bindBuffer(self, data):
+        # glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
+        # glUniformBlockBinding(program, self.buffer_index, self.buffer_bind)
+        glBufferData(GL_UNIFORM_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
 
 # ------------------------------
@@ -93,7 +80,7 @@ class Shader:
     def __init__(self, shaderName, shaderSource):
         logger.info("Create " + getClassName(self) + " : " + shaderName)
         self.name = shaderName
-        self.source = GLSL_SHADER_VERSION + SCENE_CONSTANTS + shaderSource
+        self.source = shaderSource
         self.shader = glCreateShader(self.shaderType)
         self.attribute = Attributes()
 

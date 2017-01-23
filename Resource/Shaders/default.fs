@@ -9,7 +9,6 @@ layout(std140) uniform sceneConstants
     vec4 lightColor;
 };
 
-
 uniform vec4 diffuseColor;
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;
