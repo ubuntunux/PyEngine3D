@@ -21,7 +21,7 @@ Welcome to the GuineaPig wiki!
 ----
 ### TODO
 - Scene Manager
-- sceneContantBuffer
+- uniform, vertex_array buffer manager by material
 - Actor Struct
     - skeletal mesh
     - static mesh
