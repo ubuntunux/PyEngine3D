@@ -84,7 +84,7 @@ class ObjectManager(Singleton):
 
             # create mesh
             material = self.resourceManager.getMaterial("default")
-            obj = BaseObject(name=name or mesh.name, pos=pos, mesh=mesh, material=material)
+            obj = BaseObject(objName=name or mesh.name, pos=pos, mesh=mesh, material=material)
 
             # add object
             self.objects.append(obj)

@@ -100,10 +100,9 @@ class CoreManager(Singleton):
 
         # managers
         self.camera = None
-        self.resourceManager = ResourceManager.instance()
-        self.renderer = Renderer.instance()
-        self.console = self.renderer.console
-        self.objectManager = ObjectManager.instance()
+        self.resourceManager = None
+        self.renderer = None
+        self.objectManager = None
 
     def initialize(self):
         # process start
@@ -115,11 +114,17 @@ class CoreManager(Singleton):
 
         # pygame init
         pygame.init()
+        pygame.font.init()
+        if not pygame.font.get_init():
+            self.error('Could not render font.')
 
-        # init screen
-        self.renderer.initScreen()
+        # creates
+        self.resourceManager = ResourceManager.instance()
+        self.renderer = Renderer.instance()
+        self.objectManager = ObjectManager.instance()
 
         # initalize managers
+        self.renderer.initScreen()
         self.resourceManager.initialize()
         self.objectManager.initialize()
         self.renderer.initialize(self)
@@ -231,7 +236,7 @@ class CoreManager(Singleton):
                 if keyDown == K_ESCAPE:
                     self.close()
                 elif keyDown == K_BACKQUOTE:
-                    self.console.toggle()
+                    self.renderer.console.toggle()
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10, 10) for i in range(3)]
@@ -296,7 +301,7 @@ class CoreManager(Singleton):
         # update camera
         self.camera.update()
 
-    def update(self):        
+    def update(self):
         self.currentTime = 0.0
         self.running = True
         while self.running:
@@ -327,13 +332,13 @@ class CoreManager(Singleton):
 
             # debug info
             # print(self.fps, self.updateTime)
-            self.console.info("%.2f fps" % self.fps)
-            self.console.info("%.2f ms" % self.updateTime)
-            self.console.info("CPU : %.2f ms" % self.logicTime)
-            self.console.info("GPU : %.2f ms" % self.renderTime)
+            self.renderer.console.info("%.2f fps" % self.fps)
+            self.renderer.console.info("%.2f ms" % self.updateTime)
+            self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
+            self.renderer.console.info("GPU : %.2f ms" % self.renderTime)
             
             # selected object transform info
             selectedObject = self.objectManager.getSelectedObject()
             if selectedObject:
-                self.console.info("Selected Object : %s" % selectedObject.name)
-                self.console.info(selectedObject.transform.getTransformInfos())
+                self.renderer.console.info("Selected Object : %s" % selectedObject.name)
+                self.renderer.console.info(selectedObject.transform.getTransformInfos())

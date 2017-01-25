@@ -12,8 +12,8 @@ from Utilities import Attributes
 
 
 class BaseObject:
-    def __init__(self, name, pos, mesh, material):
-        self.name = name
+    def __init__(self, objName, pos, mesh, material):
+        self.name = objName
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
@@ -32,10 +32,10 @@ class BaseObject:
 
             self.modelBind = glGetUniformLocation(program, "model")
             self.mvpBind = glGetUniformLocation(program, "mvp")
+
             self.diffuseColorBind = glGetUniformLocation(program, "diffuseColor")
             self.textureDiffuseBind = glGetUniformLocation(program, "textureDiffuse")
             self.textureNormalBind = glGetUniformLocation(program, "textureNormal")
-
             # binding textures
             self.textureDiffuse = Resource.ResourceManager.instance().getTextureID("wool_d")
             self.textureNormal = Resource.ResourceManager.instance().getTextureID("wool_n")

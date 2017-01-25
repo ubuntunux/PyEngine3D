@@ -71,22 +71,18 @@ class Renderer(Singleton):
         self.perspective = np.eye(4, dtype=np.float32)
         self.ortho = np.eye(4, dtype=np.float32)
         self.viewMode = GL_FILL
-
-        # TEST_CODE
-        self.sceneConstantBuffer = None
-
+        # managers
+        self.coreManager = None
+        self.resourceManager = None
+        self.objectManager = None
+        # console font
+        self.console = None
         # components
         self.camera = None
         self.lastShader = None
         self.screen = None
-
-        # managers
-        self.coreManager = None
-        self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.objectManager = ObjectManager.instance()
-
-        # console font
-        self.console = Console()
+        # TEST_CODE
+        self.sceneConstantBuffer = None
 
     def initScreen(self):
         self.width, self.height = config.Screen.size
@@ -102,13 +98,11 @@ class Renderer(Singleton):
     def initialize(self, coreManager):
         logger.info("Initialize Renderer")
         self.coreManager = coreManager
+        self.resourceManager = ResourceManager.ResourceManager.instance()
+        self.objectManager = ObjectManager.instance()
 
-        # font init
-        pygame.font.init()
-        if not pygame.font.get_init():
-            self.coreManager.error('Could not render font.')
-
-        # init console text
+        # console font
+        self.console = Console()
         self.console.initialize(self)
 
         # set gl hint
@@ -125,6 +119,10 @@ class Renderer(Singleton):
 
         # build a scene
         self.resizeScene(self.width, self.height)
+
+        # TEST_CODE : scene constants uniform buffer
+        material = self.resourceManager.getMaterial("default")
+        self.sceneConstantBuffer = UniformBuffer("sceneConstants", material.program)
 
     def close(self):
         # record config
@@ -167,14 +165,29 @@ class Renderer(Singleton):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-    # render meshes
-    def render_meshes(self):
+    def renderScene(self):
+        # clear buffer
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # render
+        self.render_objects()
+        self.render_postprocess()
+
+        # render text
+        self.console.render()
+
+        # swap buffer
+        pygame.display.flip()
+
+    def render_objects(self):
         # set perspective view
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
@@ -194,8 +207,7 @@ class Renderer(Singleton):
                                     cameraTransform.pos, FLOAT32_ZERO,
                                     light.transform.getPos(), FLOAT32_ZERO,
                                     light.lightColor))
-        if self.sceneConstantBuffer:
-            self.sceneConstantBuffer.bindBuffer(sceneConstData)
+        self.sceneConstantBuffer.bindBuffer(sceneConstData)
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
@@ -205,10 +217,6 @@ class Renderer(Singleton):
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                # TEST_CODE
-                if self.sceneConstantBuffer is None:
-                    self.sceneConstantBuffer = UniformBuffer("sceneConstants", obj.material.program)
-                    self.sceneConstantBuffer.bindBuffer(sceneConstData)
                 obj.draw(lastProgram, lastMesh, vpMatrix)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
@@ -229,6 +237,9 @@ class Renderer(Singleton):
         # reset shader program
         glUseProgram(0)
 
+    def render_object(self):
+        pass
+
     def render_postprocess(self):
         # set orthographic view
         glMatrixMode(GL_PROJECTION)
@@ -243,18 +254,3 @@ class Renderer(Singleton):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         glDisable(GL_LIGHTING)
-
-    def renderScene(self):
-        # clear buffer
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        # render
-        self.render_meshes()
-        self.render_postprocess()
-
-        # render text
-        self.console.render()
-
-        # swap buffer
-        pygame.display.flip()

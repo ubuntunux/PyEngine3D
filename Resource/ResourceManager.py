@@ -56,7 +56,7 @@ class ResourceLoader(object):
                         logger.error("load %s error" % filename)
             
     def createResource(self):
-        """ create resource file and regist."""
+        """ TODO : create resource file and regist."""
         pass
     
     def deleteResource(self, resource):
