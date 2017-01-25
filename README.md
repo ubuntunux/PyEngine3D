@@ -20,8 +20,10 @@ Welcome to the GuineaPig wiki!
 
 ----
 ### TODO
-- Scene Manager
 - uniform, vertex_array buffer manager by material
+- shader template system
+- Material System
+- Scene Manager
 - Actor Struct
     - skeletal mesh
     - static mesh
@@ -31,18 +33,9 @@ Welcome to the GuineaPig wiki!
     - foliage
     - point, directional, spot, area light
     - cube map
-- shader template system
-- glsl buffer binding system
-- implement UniformBuffer
-- Object Uniform Struct
-- Create Material from shader
-- Material System
-- Auto create material from shader
 - Object Data
 - Resource Create, Delete, Regist, Release System
-- Scene Data
 - Import .blend File
-- Choose Resource System
 - Resource Reload System
 - Particle System
 - View Mode
