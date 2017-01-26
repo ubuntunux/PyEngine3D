@@ -33,6 +33,7 @@ Welcome to the GuineaPig wiki!
     - foliage
     - point, directional, spot, area light
     - cube map
+- Skinning object
 - Object Data
 - Resource Create, Delete, Regist, Release System
 - Import .blend File
