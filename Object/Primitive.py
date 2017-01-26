@@ -23,15 +23,16 @@ class Primitive:
         self.tangent = np.array([], dtype=np.float32)
         self.texcoord = np.array([], dtype=np.float32)
         self.index = np.array([], dtype=np.uint32)
-        self.index_buffer = -1
         self.vertexBuffer = None
         self.attributes = Attributes()
 
     def initialize(self):
-        self.vertexBuffer = VertexArrayBuffer(self.position, self.color, self.normal, self.tangent, self.texcoord,
-                                                dtype=np.float32)
+        self.vertexBuffer = VertexArrayBuffer([self.position, self.color, self.normal, self.tangent, self.texcoord],
+                                              self.index, dtype=np.float32)
 
         """
+        # Example of array buffer
+
         # buffer initialize
         self.position = np.array([[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]], dtype=np.float32)
         self.position_buffer = glGenBuffers(1)  # Request a buffer slot from GPU
@@ -45,11 +46,6 @@ class Primitive:
         glBindBuffer(GL_ARRAY_BUFFER, self.position_buffer)
         glVertexAttribPointer(loc, 3, GL_FLOAT, False, self.position.strides[0], NONE_OFFSET)
         """
-
-        # index buffer
-        self.index_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index.nbytes, self.index, GL_STATIC_DRAW)
 
     def clearData(self):
         self.position = None
@@ -91,9 +87,6 @@ class Primitive:
 
     def bindBuffers(self):
         self.vertexBuffer.bindBuffer()
-
-        # bind index buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def draw(self):
         glDrawElements(GL_TRIANGLES, self.index.nbytes, GL_UNSIGNED_INT, NONE_OFFSET)

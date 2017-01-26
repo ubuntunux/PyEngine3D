@@ -33,13 +33,6 @@ class BaseObject:
             self.modelBind = glGetUniformLocation(program, "model")
             self.mvpBind = glGetUniformLocation(program, "mvp")
 
-            self.diffuseColorBind = glGetUniformLocation(program, "diffuseColor")
-            self.textureDiffuseBind = glGetUniformLocation(program, "textureDiffuse")
-            self.textureNormalBind = glGetUniformLocation(program, "textureNormal")
-            # binding textures
-            self.textureDiffuse = Resource.ResourceManager.instance().getTextureID("wool_d")
-            self.textureNormal = Resource.ResourceManager.instance().getTextureID("wool_n")
-
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('pos', self.transform.pos)
@@ -64,37 +57,15 @@ class BaseObject:
     def setSelected(self, selected):
         self.selected = selected
 
-    def draw(self, lastProgram, lastMesh, vpMatrix, selected=False):
+    def update(self):
         transform = self.transform
-        # test code
+        # TEST_CODE
         transform.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
 
         # update transform
         transform.updateTransform()
 
-        if self.material is None or self.mesh is None:
-            return
-
-        program = self.material.program
-
-        # bind shader program
-        if lastProgram != program:
-            glUseProgram(program)
-
-        glUniformMatrix4fv(self.modelBind, 1, GL_FALSE, transform.matrix)
-        glUniformMatrix4fv(self.mvpBind, 1, GL_FALSE, np.dot(transform.matrix, vpMatrix))
-        glUniform4fv(self.diffuseColorBind, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glUniform1i(self.textureDiffuseBind, 0)
-
-        glActiveTexture(GL_TEXTURE1)
-        glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glUniform1i(self.textureNormalBind, 1)
-
-        # At last, bind buffers
-        if lastMesh != self.mesh:
-            self.mesh.bindBuffers()
-        self.mesh.draw()
-        # glUseProgram(0)
+    def bind(self, vpMatrix):
+        # bind uniform variables
+        glUniformMatrix4fv(self.modelBind, 1, GL_FALSE, self.transform.matrix)
+        glUniformMatrix4fv(self.mvpBind, 1, GL_FALSE, np.dot(self.transform.matrix, vpMatrix))

@@ -217,28 +217,46 @@ class Renderer(Singleton):
         lastProgram = None
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
-                obj.draw(lastProgram, lastMesh, vpMatrix)
+                self.render_object(obj, lastProgram, lastMesh, vpMatrix)
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
         # selected object - render additive color
-        if self.objectManager.getSelectedObject():
+        selected_obj = self.objectManager.getSelectedObject()
+        if selected_obj:
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, vpMatrix, True)
+            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix, True)
+
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.objectManager.getSelectedObject().draw(lastProgram, lastMesh, vpMatrix, True)
+            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix, True)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         # reset shader program
         glUseProgram(0)
 
-    def render_object(self):
-        pass
+    def render_object(self, obj, lastProgram, lastMesh, vpMatrix, selected=False):
+        program = obj.material.program
+        mesh = obj.mesh
+
+        # bind shader program
+        if lastProgram != program:
+            glUseProgram(program)
+            obj.material.bind(selected)
+
+        # TEST_CODE
+        obj.update()
+        obj.bind(vpMatrix)
+
+        # At last, bind buffers
+        if lastMesh != mesh:
+            mesh.bindBuffers()
+
+        mesh.draw()
 
     def render_postprocess(self):
         # set orthographic view

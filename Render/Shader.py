@@ -15,7 +15,7 @@ from Utilities import Singleton, getClassName, Attributes
 # CLASS : VertexArrayBuffer
 # ------------------------------
 class VertexArrayBuffer:
-    def __init__(self, *datas, dtype):
+    def __init__(self, datas, index_data, dtype):
         self.vertex_unitSize = 0
         self.vertex_strides = []
         self.vertex_stride_points = []
@@ -38,6 +38,10 @@ class VertexArrayBuffer:
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
         glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
 
+        self.index_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_data.nbytes, index_data, GL_STATIC_DRAW)
+
     def bindBuffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
@@ -45,6 +49,9 @@ class VertexArrayBuffer:
             glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_unitSize,
                                   self.vertex_stride_points[i])
             glEnableVertexAttribArray(i)
+
+        # bind index buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def unbindBuffer(self):
         for i in self.vertex_stride_range:
