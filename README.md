@@ -5,7 +5,7 @@ Welcome to the GuineaPig wiki!
 * Reference - http://learnopengl.com/
 * Check smiliar project - http://glumpy.github.io/
 
-## Dependency modules.
+## Dependency modules
  - python 3.5.1
  - Anaconda3-2.4.1 ( https://www.continuum.io/downloads )
  - accelerate 2.0 ( anaconda accelerate library )
