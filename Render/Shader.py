@@ -22,7 +22,7 @@ class VertexArrayBuffer:
         accStridePoint = 0
         for data in datas:
             if dtype != data.dtype:
-                raise AttributesException("dtype is not %s." % str(data.dtype))
+                raise AttributeError("dtype is not %s." % str(data.dtype))
             stride = len(data[0]) if len(data) > 0 else 0
             self.vertex_strides.append(stride)
             self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
