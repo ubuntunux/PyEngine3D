@@ -72,16 +72,23 @@ class UniformBuffer:
         glUniformBlockBinding(program, self.buffer_index, self.buffer_bind)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
-    def bindBuffer(self, data):
+    def bindBuffer(self, *datas):
+        serializedData = np.hstack(datas)
+
+        # TEST_CODE
+        if serializedData.nbytes % 4 != 1:
+            raise BaseException("Uniform buffer block must start on a 16-byte boundary.")
+
         # glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
         # glUniformBlockBinding(self.program, self.buffer_index, self.buffer_bind)
-        glBufferData(GL_UNIFORM_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
+        glBufferData(GL_UNIFORM_BUFFER, serializedData.nbytes, serializedData, GL_STATIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
 
 # ------------------------------
 # CLASS : Shader
 # ------------------------------
+# noinspection PyBroadException
 class Shader:
     shaderType = None
 

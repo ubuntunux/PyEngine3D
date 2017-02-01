@@ -203,11 +203,10 @@ class Renderer(Singleton):
         cameraTransform = self.camera.transform
 
         # TEST_CODE
-        sceneConstData = np.hstack((cameraTransform.matrix.flat, self.perspective.flat,
+        self.sceneConstantBuffer.bindBuffer(cameraTransform.matrix.flat, self.perspective.flat,
                                     cameraTransform.pos, FLOAT32_ZERO,
                                     light.transform.getPos(), FLOAT32_ZERO,
-                                    light.lightColor))
-        self.sceneConstantBuffer.bindBuffer(sceneConstData)
+                                    light.lightColor)
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
