@@ -99,7 +99,6 @@ class GLFont:
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
             glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
 
-
         # create command list
         self.cmd_id = glGenLists(128)
         for i in range(128):

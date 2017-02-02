@@ -227,8 +227,8 @@ class TextureLoader(ResourceLoader, Singleton):
         except:
             logger.error(traceback.format_exc())
 
-    def getTextureID(self, resourceName):
-        return self.resources[resourceName].textureID if resourceName in self.resources else -1
+    def getTextureBind(self, resourceName):
+        return self.resources[resourceName].texture_bind if resourceName in self.resources else -1
 
 
 # -----------------------#
@@ -330,5 +330,5 @@ class ResourceManager(Singleton):
     def getTexture(self, textureName):
         return self.textureLoader.getResource(textureName)
 
-    def getTextureID(self, textureName):
-        return self.textureLoader.getTextureID(textureName)
+    def getTextureBind(self, textureName):
+        return self.textureLoader.getTextureBind(textureName)

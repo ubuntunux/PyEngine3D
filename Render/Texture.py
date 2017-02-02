@@ -15,8 +15,8 @@ class Texture:
         self.width = width
         self.height = height
 
-        self.textureID = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.textureID)
+        self.texture_bind = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.texture_bind)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
@@ -24,11 +24,15 @@ class Texture:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glGenerateMipmap(GL_TEXTURE_2D)
 
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        pass
+        #glDeleteTextures(1, self.texture_bind)
+
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
         self.attribute.setAttribute("width", self.width)
         self.attribute.setAttribute("height", self.height)
         return self.attribute
-
-    def delete(self):
-        glDeleteShader(self.shader)

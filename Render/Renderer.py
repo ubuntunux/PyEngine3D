@@ -204,9 +204,9 @@ class Renderer(Singleton):
 
         # TEST_CODE
         self.sceneConstantBuffer.bindBuffer(cameraTransform.matrix.flat, self.perspective.flat,
-                                    cameraTransform.pos, FLOAT32_ZERO,
-                                    light.transform.getPos(), FLOAT32_ZERO,
-                                    light.lightColor)
+                                            cameraTransform.pos, FLOAT32_ZERO,
+                                            light.transform.getPos(), FLOAT32_ZERO,
+                                            light.lightColor)
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
@@ -220,32 +220,35 @@ class Renderer(Singleton):
                 lastProgram = obj.material.program if obj.material else None
                 lastMesh = obj.mesh
 
+        """
         # selected object - render additive color
         selected_obj = self.objectManager.getSelectedObject()
         if selected_obj:
             glEnable(GL_BLEND)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix, True)
+            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix)
 
             glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
             glLineWidth(1.0)
             glDisable(GL_CULL_FACE)
             glDisable(GL_DEPTH_TEST)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix, True)
+            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        """
 
         # reset shader program
         glUseProgram(0)
 
-    def render_object(self, obj, lastProgram, lastMesh, vpMatrix, selected=False):
+    @staticmethod
+    def render_object(obj, lastProgram, lastMesh, vpMatrix):
         program = obj.material.program
         mesh = obj.mesh
 
         # bind shader program
         if lastProgram != program:
             glUseProgram(program)
-            obj.material.bind(selected)
+            obj.material.bind()
 
         # TEST_CODE
         obj.update()

@@ -17,11 +17,9 @@ class BaseObject:
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
-        self.material = None
         self.attributes = Attributes()
-
-        if material:
-            self.setMaterial(material)
+        self.material = None
+        self.setMaterial(material)
 
     # all below parameters must move to Materal Class.
     def setMaterial(self, material):

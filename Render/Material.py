@@ -30,12 +30,25 @@ class Material:
         self.diffuseColorBind = glGetUniformLocation(self.program, "diffuseColor")
         self.textureDiffuseBind = glGetUniformLocation(self.program, "textureDiffuse")
         self.textureNormalBind = glGetUniformLocation(self.program, "textureNormal")
-        self.textureDiffuse = Resource.ResourceManager.instance().getTextureID("wool_d")
-        self.textureNormal = Resource.ResourceManager.instance().getTextureID("wool_n")
+        self.textureDiffuse = Resource.ResourceManager.instance().getTextureBind("wool_d")
+        self.textureNormal = Resource.ResourceManager.instance().getTextureBind("wool_n")
 
-    def bind(self, selected):
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        pass
+        """
+        glDetachShader(self.program, self.vertexShader.shader)
+        glDetachShader(self.program, self.fragmentShader.shader)
+        self.vertexShader.delete()
+        self.fragmentShader.delete()
+        glDeleteProgram(self.program)
+        """
+
+    def bind(self):
         # TEST_CODE : material components
-        glUniform4fv(self.diffuseColorBind, 1, (0, 0, 0.5, 1) if selected else (0.3, 0.3, 0.3, 1.0))
+        glUniform4fv(self.diffuseColorBind, 1, (1, 1, 1, 1))
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)

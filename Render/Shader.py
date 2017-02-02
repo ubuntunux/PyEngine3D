@@ -42,6 +42,17 @@ class VertexArrayBuffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_data.nbytes, index_data, GL_STATIC_DRAW)
 
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        pass
+        """
+        glDeleteVertexArrays(1, self.vertex_array)
+        glDeleteBuffers(1, self.vertex_buffer)
+        glDeleteBuffers(1, self.index_buffer)
+        """
+
     def bindBuffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
@@ -63,7 +74,7 @@ class VertexArrayBuffer:
 # ------------------------------
 class UniformBuffer:
     def __init__(self, buffer_name, program):
-        self.buffer_name = buffer_name
+        self.name = buffer_name
         self.program = program
         self.buffer = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
@@ -72,11 +83,19 @@ class UniformBuffer:
         glUniformBlockBinding(program, self.buffer_index, self.buffer_bind)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        pass
+        #glDeleteBuffers(1, self.buffer)
+
     def bindBuffer(self, *datas):
+        # serialize
         serializedData = np.hstack(datas)
 
         # TEST_CODE
-        if serializedData.nbytes % 4 != 1:
+        if serializedData.nbytes % 4 != 0:
             raise BaseException("Uniform buffer block must start on a 16-byte boundary.")
 
         # glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
@@ -114,12 +133,15 @@ class Shader:
         except:
             print(traceback.format_exc())
 
-    def getAttribute(self):
-        self.attribute.setAttribute("name", self.name)
-        return self.attribute
+    def __del__(self):
+        self.delete()
 
     def delete(self):
         glDeleteShader(self.shader)
+
+    def getAttribute(self):
+        self.attribute.setAttribute("name", self.name)
+        return self.attribute
 
 
 class VertexShader(Shader):
