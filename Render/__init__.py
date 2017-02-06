@@ -1,5 +1,4 @@
-from .Texture import *
-from .Shader import *
-from .Material import *
 from .GLFont import GLFont, defaultFontFile
+from .Material import *
 from .Renderer import Renderer
+from .Texture import *

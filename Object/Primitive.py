@@ -1,11 +1,6 @@
-import ctypes
-import os
-import traceback
-
-import numpy as np
 from OpenGL.GL import *
 
-from Render.Shader import VertexArrayBuffer
+from Shader import VertexArrayBuffer
 from Utilities import *
 
 NONE_OFFSET = ctypes.c_void_p(0)

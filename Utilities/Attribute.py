@@ -20,7 +20,7 @@ class Attributes:
         return self.attributeMap.values()
 
     def getAttributeNames(self):
-        return self.getAttributes.keys()
+        return self.attributeMap.keys()
 
     def setAttribute(self, attrName, attrValue, attrType=None, isReadOnly=False):
         if attrType is None:

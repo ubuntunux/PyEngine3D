@@ -5,13 +5,16 @@ from OpenGL.GL.shaders import glDetachShader
 import Resource
 from Core import logger
 from Utilities import Attributes
+from Shader import UniformColor, UniformTexture2D
 
 
 class Material:
     def __init__(self, materialName, vs, fs):
         logger.info("Create Material : " + materialName)
+        resourceMgr = Resource.ResourceManager.instance()
         self.name = materialName
-        self.twoSide = False
+        self.activateTextureIndex = GL_TEXTURE0
+        self.textureIndex = 0
         self.Attributes = Attributes()
 
         # build and link the program
@@ -27,36 +30,38 @@ class Material:
         glDetachShader(self.program, fs.shader)
 
         # TEST_CODE : material components
-        self.diffuseColorBind = glGetUniformLocation(self.program, "diffuseColor")
-        self.textureDiffuseBind = glGetUniformLocation(self.program, "textureDiffuse")
-        self.textureNormalBind = glGetUniformLocation(self.program, "textureNormal")
-        self.textureDiffuse = Resource.ResourceManager.instance().getTextureBind("wool_d")
-        self.textureNormal = Resource.ResourceManager.instance().getTextureBind("wool_n")
+        self.diffuseColor = UniformColor(self.program, "diffuseColor", (1.0, 1.0, 1.0, 1.0))
+        self.textureDiffuse = UniformTexture2D(self.program, "textureDiffuse", resourceMgr.getTexture("wool_d"))
+        self.textureNormal = UniformTexture2D(self.program, "textureNormal", resourceMgr.getTexture("wool_n"))
 
     def __del__(self):
-        self.delete()
+        pass
+        # self.delete()
 
     def delete(self):
-        pass
-        """
         glDetachShader(self.program, self.vertexShader.shader)
         glDetachShader(self.program, self.fragmentShader.shader)
         self.vertexShader.delete()
         self.fragmentShader.delete()
         glDeleteProgram(self.program)
-        """
 
     def bind(self):
         # TEST_CODE : material components
-        glUniform4fv(self.diffuseColorBind, 1, (1, 1, 1, 1))
+        self.diffuseColor.bind()
 
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.textureDiffuse)
-        glUniform1i(self.textureDiffuseBind, 0)
+        # TEST_CODE : very important - reset_texture_index first!!
+        self.reset_texture_index()
+        self.bind_texture(self.textureNormal)
+        self.bind_texture(self.textureDiffuse)
 
-        glActiveTexture(GL_TEXTURE1)
-        glBindTexture(GL_TEXTURE_2D, self.textureNormal)
-        glUniform1i(self.textureNormalBind, 1)
+    def reset_texture_index(self):
+        self.activateTextureIndex = GL_TEXTURE0
+        self.textureIndex = 0
+
+    def increase_texture_index(self, texture):
+        texture.bind(self.activateTextureIndex, self.textureIndex)
+        self.activateTextureIndex += 1
+        self.textureIndex += 1
 
     def getVertexShader(self):
         return self.vertexShader

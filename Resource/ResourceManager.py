@@ -9,10 +9,11 @@ from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDetachShader
 from PIL import Image
 
-from Render import *
+from . import *
 from Core import logger
 from Utilities import Singleton, getClassName
-from Render import Shader, Material, Texture
+from Render import Material, Texture
+from Shader import *
 from Object import Triangle, Quad, Mesh, Primitive
 
 
@@ -72,7 +73,7 @@ class ResourceLoader(object):
        
     def registResource(self, resource, filePath=""):
         if resource is None or not hasattr(resource, "name"):
-            raise AttributeException("resource have to has name.")        
+            raise AttributeError("resource have to has name.")
         newMetaData = MetaData(filePath)                
         # check the file is exsits resource or not.
         if resource.name in self.resources:
@@ -226,9 +227,7 @@ class TextureLoader(ResourceLoader, Singleton):
             return Texture(textureName, buffer, ix, iy)
         except:
             logger.error(traceback.format_exc())
-
-    def getTextureBind(self, resourceName):
-        return self.resources[resourceName].texture_bind if resourceName in self.resources else -1
+        return None
 
 
 # -----------------------#
@@ -330,5 +329,3 @@ class ResourceManager(Singleton):
     def getTexture(self, textureName):
         return self.textureLoader.getResource(textureName)
 
-    def getTextureBind(self, textureName):
-        return self.textureLoader.getTextureBind(textureName)
