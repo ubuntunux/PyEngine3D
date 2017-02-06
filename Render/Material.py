@@ -29,7 +29,7 @@ class Material:
         glDetachShader(self.program, vs.shader)
         glDetachShader(self.program, fs.shader)
 
-        # TEST_CODE : material components
+        # TODO : build material components from shader files parsing.
         self.diffuseColor = UniformColor(self.program, "diffuseColor", (1.0, 1.0, 1.0, 1.0))
         self.textureDiffuse = UniformTexture2D(self.program, "textureDiffuse", resourceMgr.getTexture("wool_d"))
         self.textureNormal = UniformTexture2D(self.program, "textureNormal", resourceMgr.getTexture("wool_n"))
@@ -46,10 +46,10 @@ class Material:
         glDeleteProgram(self.program)
 
     def bind(self):
-        # TEST_CODE : material components
+        # TODO : auto bind uniform variables.
         self.diffuseColor.bind()
 
-        # TEST_CODE : very important - reset_texture_index first!!
+        # very important. must reset_texture_index first!!
         self.reset_texture_index()
         self.bind_texture(self.textureNormal)
         self.bind_texture(self.textureDiffuse)
