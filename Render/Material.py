@@ -58,7 +58,7 @@ class Material:
         self.activateTextureIndex = GL_TEXTURE0
         self.textureIndex = 0
 
-    def increase_texture_index(self, texture):
+    def bind_texture(self, texture):
         texture.bind(self.activateTextureIndex, self.textureIndex)
         self.activateTextureIndex += 1
         self.textureIndex += 1
