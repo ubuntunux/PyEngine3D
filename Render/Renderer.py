@@ -117,7 +117,8 @@ class Renderer(Singleton):
 
         # TEST_CODE : scene constants uniform buffer
         material = self.resourceManager.getMaterial("default")
-        self.sceneConstantBuffer = UniformBlock("sceneConstants", material.program)
+        self.sceneConstantBuffer = UniformBlock("sceneConstants", material.program, 128, 0)
+        self.sceneConstantBuffer2 = UniformBlock("sceneConstants2", material.program, 48, 1)
 
     def close(self):
         # record config
@@ -198,10 +199,10 @@ class Renderer(Singleton):
         cameraTransform = self.camera.transform
 
         # TEST_CODE
-        self.sceneConstantBuffer.bindData(cameraTransform.matrix.flat, self.perspective.flat,
-                                          cameraTransform.pos, FLOAT32_ZERO,
-                                          light.transform.getPos(), FLOAT32_ZERO,
-                                          light.lightColor)
+        self.sceneConstantBuffer.bindData(cameraTransform.matrix.flat, self.perspective.flat)
+        self.sceneConstantBuffer2.bindData(cameraTransform.pos, FLOAT32_ZERO,
+                                           light.transform.getPos(), FLOAT32_ZERO,
+                                           light.lightColor)
 
         # Perspective * View matrix
         vpMatrix = np.dot(cameraTransform.matrix, self.perspective)

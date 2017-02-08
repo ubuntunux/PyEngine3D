@@ -1,9 +1,13 @@
 #version 430 core
 
-layout(std140) uniform sceneConstants
+layout(std140, binding=0) uniform sceneConstants
 {
     mat4 view;
     mat4 perspective;
+};
+
+layout(std140, binding=1) uniform sceneConstants2
+{
     vec4 cameraPosition;
     vec4 lightPosition;
     vec4 lightColor;
