@@ -1,0 +1,19 @@
+[VertexShader]
+name = default
+
+[FragmentShader]
+name = default
+
+[Material]
+name = template
+
+[Scalar]
+isFixed = true
+level = 3
+brightness = 3.0
+
+[Vector]
+diffuseColor = (1.0, 1.0, 1.0, 1.0)
+
+[Texture2D]
+textureDiffuse = wool_d

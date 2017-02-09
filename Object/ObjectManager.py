@@ -59,8 +59,8 @@ class ObjectManager(Singleton):
         name = self.generateObjectName("light")
         # create light
         mesh = self.resourceManager.getMesh('sphere')
-        material = self.resourceManager.getMaterial('simple')
-        light = Light(name, (0, 0, 0), mesh, material)
+        material_instance = self.resourceManager.getMaterialInstance('simple')
+        light = Light(name, (0, 0, 0), mesh, material_instance)
 
         # add light
         self.lights.append(light)
@@ -83,8 +83,8 @@ class ObjectManager(Singleton):
             logger.info("Add mesh : %s %s %s" % (mesh.name, name, pos))
 
             # create mesh
-            material = self.resourceManager.getMaterial("default")
-            obj = BaseObject(objName=name or mesh.name, pos=pos, mesh=mesh, material=material)
+            material_instance = self.resourceManager.getMaterialInstance("default")
+            obj = BaseObject(objName=name or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
 
             # add object
             self.objects.append(obj)

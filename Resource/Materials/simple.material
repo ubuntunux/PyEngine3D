@@ -1,5 +1,0 @@
-[VertexShader]
-shaderName = simple
-
-[FragmentShader]
-shaderName = simple

@@ -1,0 +1,8 @@
+[VertexShader]
+name = simple
+
+[FragmentShader]
+name = simple
+
+[Material]
+name = template

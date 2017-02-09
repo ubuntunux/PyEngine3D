@@ -1,5 +1,6 @@
+from ctypes import c_void_p
+
 import numpy as np
-import ctypes
 from OpenGL.GL import *
 
 
@@ -14,7 +15,7 @@ class UniformBlock:
 
         self.buffer = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
-        glBufferData(GL_UNIFORM_BUFFER, blockSize, ctypes.c_void_p(0), GL_DYNAMIC_DRAW)
+        glBufferData(GL_UNIFORM_BUFFER, blockSize, c_void_p(0), GL_DYNAMIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
     def __del__(self):
@@ -26,7 +27,7 @@ class UniformBlock:
 
     def bindData(self, *datas):
         # serialize
-        serializedData = np.hstack(datas).astype(np.float32)
+        serializedData = np.hstack(datas)
 
         # DEVELOPMENT
         if serializedData.nbytes % 4 != 0:

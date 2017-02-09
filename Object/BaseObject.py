@@ -7,26 +7,26 @@ from PIL import Image
 import Resource
 from Resource import *
 from Object import TransformObject, Primitive
-from Render import Material
+from Render import MaterialInstance
 from Utilities import Attributes
 
 
 class BaseObject:
-    def __init__(self, objName, pos, mesh, material):
+    def __init__(self, objName, pos, mesh, material_instance):
         self.name = objName
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
         self.attributes = Attributes()
-        self.material = None
-        self.setMaterial(material)
+        self.material_instance = None
+        self.setMaterialInstance(material_instance)
 
     # all below parameters must move to Materal Class.
-    def setMaterial(self, material):
-        self.material = material
+    def setMaterialInstance(self, material_instance):
+        self.material_instance = material_instance
 
-        if self.material:
-            program = self.material.program
+        if self.material_instance:
+            program = self.material_instance.program
 
             self.modelBind = glGetUniformLocation(program, "model")
             self.mvpBind = glGetUniformLocation(program, "mvp")
@@ -37,7 +37,7 @@ class BaseObject:
         self.attributes.setAttribute('rot', self.transform.rot)
         self.attributes.setAttribute('scale', self.transform.scale)
         self.attributes.setAttribute('mesh', self.mesh.name if self.mesh else "", type(Primitive))
-        self.attributes.setAttribute('material', self.material.name if self.material else "", type(Material))
+        self.attributes.setAttribute('material_instance', self.material_instance.name if self.material_instance else "", type(MaterialInstance))
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue):
@@ -49,8 +49,8 @@ class BaseObject:
             self.transform.setScale(attributeValue)
         elif attributeName == 'mesh':
             self.mesh = Resource.ResourceManager.instance().getMesh(attributeValue)
-        elif attributeName == 'material':
-            self.material = Resource.ResourceManager.instance().getMaterial(attributeValue)
+        elif attributeName == 'material_instance':
+            self.material_instance = Resource.ResourceManager.instance().getMaterialInstance(attributeValue)
 
     def setSelected(self, selected):
         self.selected = selected

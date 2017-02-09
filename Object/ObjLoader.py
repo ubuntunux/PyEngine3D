@@ -63,7 +63,7 @@ def LoadMTL(filepath, filename):
             elif len(line) > 1:
                 mtl[preFix] = list(map(float, line[1:]))
     return contents
-    
+
 
 class OBJ:
     def __init__(self, filename, scale, swapyz):
@@ -80,7 +80,7 @@ class OBJ:
         self.filename = filename
         self.modifyTime = ''
         self.fileSize = 0 # byte
-        
+
         # check is exist file
         if os.path.exists(filename):
             mTime = os.path.getmtime(filename)
@@ -88,27 +88,27 @@ class OBJ:
             self.fileSize = os.path.getsize(filename)
             filePath = os.path.split(filename)[0]
             lastMaterial = None
-                                    
+
             # load OBJ file
             for line in open(filename, "r"):
                 # is comment?
                 line = line.strip()
                 if line.startswith('#'):
                     continue
-                
+
                 # split with space
                 line = line.split()
-                
+
                 # is empty?
                 if not line:
                     continue
-                
+
                 # first strings
                 preFix = line[0]
-                
+
                 # auto generate normal flag
                 bNormalAutoGen = True
-                
+
                 # vertex position
                 if preFix == 'v' and len(line) >= 4:
                     # apply scale
@@ -141,7 +141,7 @@ class OBJ:
                                 self.defaultTexCoordIndex = len(self.texcoords)
                                 self.texcoords.append(defaultTexCoord)
                             value[1] = self.defaultTexCoordIndex
-                        
+
                         # insert vertex, texcoord, normal index
                         positions.append(value[0])
                         texcoords.append(value[1])
@@ -226,8 +226,8 @@ class OBJ:
         f = open(newFilename, 'w')
         pprint.pprint(data, f, compact=True)
         f.close()
-                    
-    # Generate        
+
+    # Generate
     def generateInstruction(self):
         self.glList = glGenLists(1)
         glNewList(self.glList, GL_COMPILE)
@@ -236,7 +236,7 @@ class OBJ:
         # generate  face
         for face in self.faces:
             positions, normals, texcoords, material = face
-            
+
             # set material
             if self.mtl is not None and material in self.mtl:
                 mtl = self.mtl[material]

@@ -12,7 +12,7 @@ from PIL import Image
 from . import *
 from Core import logger
 from Utilities import Singleton, getClassName
-from Render import Material, Texture
+from Render import MaterialInstance, Texture
 from Shader import *
 from Object import Triangle, Quad, Mesh, Primitive
 
@@ -95,8 +95,9 @@ class ResourceLoader(object):
                 self.metaDatas.pop(resource)
 
     @staticmethod
-    def splitResourceName(filepath):
-        resourceName = os.path.splitext(os.path.split(filepath)[1])[0]
+    def splitResourceName(filepath, workPath):
+        resourceName = os.path.splitext(os.path.relpath(filepath, workPath))[0]
+        resourceName.replace(os.sep, "/")
         return resourceName.lower()
 
     def loadResource(self, filePath):
@@ -133,7 +134,7 @@ class VertexShaderLoader(ResourceLoader, Singleton):
             f = open(filePath, 'r')
             shaderSource = f.read()
             f.close()
-            shaderName = self.splitResourceName(filePath)
+            shaderName = self.splitResourceName(filePath, PathShaders)
             return VertexShader(shaderName, shaderSource)
         except:
             logger.error(traceback.format_exc())
@@ -155,7 +156,7 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
             f = open(filePath, 'r')
             shaderSource = f.read()
             f.close()
-            shaderName = self.splitResourceName(filePath)
+            shaderName = self.splitResourceName(filePath, PathShaders)
             return FragmentShader(shaderName, shaderSource)
         except:
             logger.error(traceback.format_exc())
@@ -170,16 +171,35 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
 # -----------------------#
 class MaterialLoader(ResourceLoader, Singleton):
     def __init__(self):
-        super(MaterialLoader, self).__init__(PathMaterials, ".material")
+        super(MaterialLoader, self).__init__(PathMaterials, ".mat")
 
     def loadResource(self, filePath):
         try:
-            materialFile = configparser.ConfigParser()
-            materialFile.read(filePath)
-            vs = VertexShaderLoader.instance().getResource(materialFile.get("VertexShader", "shaderName"))
-            fs = FragmentShaderLoader.instance().getResource(materialFile.get("FragmentShader", "shaderName"))
-            materialName = self.splitResourceName(filePath)
-            return Material(materialName=materialName, vs=vs, fs=fs)
+            material_instance_file = configparser.ConfigParser()
+            material_instance_file.read(filePath)
+            material_name = self.splitResourceName(filePath, PathShaders)
+            return Material(material_name=material_name)
+        except:
+            logger.error(traceback.format_exc())
+
+
+# -----------------------#
+# CLASS : MaterialInstanceLoader
+# -----------------------#
+class MaterialInstanceLoader(ResourceLoader, Singleton):
+    def __init__(self):
+        super(MaterialInstanceLoader, self).__init__(PathMaterials, ".matinst")
+
+    def loadResource(self, filePath):
+        try:
+            material_instance_file = configparser.ConfigParser()
+            material_instance_file.read(filePath)
+            vs = VertexShaderLoader.instance().getResource(
+                material_instance_file.get("VertexShader", "name"))
+            fs = FragmentShaderLoader.instance().getResource(
+                material_instance_file.get("FragmentShader", "name"))
+            material_instance_name = self.splitResourceName(filePath, PathMaterials)
+            return MaterialInstance(material_instance_name=material_instance_name, vs=vs, fs=fs)
         except:
             logger.error(traceback.format_exc())
 
@@ -205,7 +225,7 @@ class MeshLoader(ResourceLoader, Singleton):
             meshData = eval(f.read())
             f.close()
             
-            meshName = self.splitResourceName(filePath)
+            meshName = self.splitResourceName(filePath, PathMeshes)
             return Mesh(meshName, meshData)
         except:
             logger.error(traceback.format_exc())
@@ -223,7 +243,7 @@ class TextureLoader(ResourceLoader, Singleton):
             image = Image.open(filePath)
             ix, iy = image.size
             buffer = image.tobytes("raw", "RGBX", 0, -1)
-            textureName = self.splitResourceName(filePath)
+            textureName = self.splitResourceName(filePath, PathTextures)
             return Texture(textureName, buffer, ix, iy)
         except:
             logger.error(traceback.format_exc())
@@ -238,14 +258,14 @@ class ResourceManager(Singleton):
         self.textureLoader = TextureLoader.instance()
         self.vertexShaderLoader = VertexShaderLoader.instance()
         self.fragmentShaderLoader = FragmentShaderLoader.instance()
-        self.materialLoader = MaterialLoader.instance()
+        self.material_instanceLoader = MaterialInstanceLoader.instance()
         self.meshLoader = MeshLoader.instance()
 
     def initialize(self):
         self.textureLoader.initialize()
         self.vertexShaderLoader.initialize()
         self.fragmentShaderLoader.initialize()
-        self.materialLoader.initialize()
+        self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
 
     def close(self):
@@ -261,8 +281,8 @@ class ResourceManager(Singleton):
             result.append((resName, getClassName(self.getVertexShader(resName))))
         for resName in self.getFragmentShaderNameList():
             result.append((resName, getClassName(self.getFragmentShader(resName))))
-        for resName in self.getMaterialNameList():
-            result.append((resName, getClassName(self.getMaterial(resName))))
+        for resName in self.getMaterialInstanceNameList():
+            result.append((resName, getClassName(self.getMaterialInstance(resName))))
         for resName in self.getMeshNameList():
             result.append((resName, getClassName(self.getMesh(resName))))
         return result
@@ -283,8 +303,8 @@ class ResourceManager(Singleton):
             resource = self.getFragmentShader(resName)
         elif resType == VertexShader:
             resource = self.getVertexShader(resName)
-        elif resType == Material:
-            resource = self.getMaterial(resName)
+        elif resType == MaterialInstance:
+            resource = self.getMaterialInstance(resName)
         elif resType == Texture:
             resource = self.getTexture(resName)
         elif issubclass(resType, Primitive):
@@ -305,13 +325,13 @@ class ResourceManager(Singleton):
     def getFragmentShaderNameList(self):
         return self.fragmentShaderLoader.getResourceNameList()
 
-    # FUNCTIONS : Material
+    # FUNCTIONS : MaterialInstance
 
-    def getMaterialNameList(self):
-        return self.materialLoader.getResourceNameList()
+    def getMaterialInstanceNameList(self):
+        return self.material_instanceLoader.getResourceNameList()
 
-    def getMaterial(self, name):
-        return self.materialLoader.getResource(name)
+    def getMaterialInstance(self, name):
+        return self.material_instanceLoader.getResource(name)
 
     # FUNCTIONS : Mesh
 

@@ -32,7 +32,7 @@ class Shader:
                 else:
                     logger.info("%s shader complete." % self.name)
         except:
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
 
     def __del__(self):
         pass

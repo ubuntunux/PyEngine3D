@@ -9,10 +9,29 @@ from Shader import UniformColor, UniformTexture2D
 
 
 class Material:
-    def __init__(self, materialName, vs, fs):
-        logger.info("Create Material : " + materialName)
+    def __init__(self, material_name):
+        logger.info("Create Material : " + material_name)
         resourceMgr = Resource.ResourceManager.instance()
-        self.name = materialName
+        self.name = material_name
+        self.Attributes = Attributes()
+
+    def __del__(self):
+        pass
+        # self.delete()
+
+    def delete(self):
+        pass
+
+    def getAttribute(self):
+        self.Attributes.setAttribute('name', self.name)
+        return self.Attributes
+
+
+class MaterialInstance:
+    def __init__(self, material_instance_name, vs, fs):
+        logger.info("Create Material Instance : " + material_instance_name)
+        resourceMgr = Resource.ResourceManager.instance()
+        self.name = material_instance_name
         self.activateTextureIndex = GL_TEXTURE0
         self.textureIndex = 0
         self.Attributes = Attributes()

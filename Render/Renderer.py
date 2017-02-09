@@ -78,6 +78,7 @@ class Renderer(Singleton):
         self.screen = None
         # TEST_CODE
         self.sceneConstantBuffer = None
+        self.sceneConstantBuffer2 = None
 
     def initScreen(self):
         self.width, self.height = config.Screen.size
@@ -116,9 +117,9 @@ class Renderer(Singleton):
         self.resizeScene(self.width, self.height)
 
         # TEST_CODE : scene constants uniform buffer
-        material = self.resourceManager.getMaterial("default")
-        self.sceneConstantBuffer = UniformBlock("sceneConstants", material.program, 128, 0)
-        self.sceneConstantBuffer2 = UniformBlock("sceneConstants2", material.program, 48, 1)
+        material_instance = self.resourceManager.getMaterialInstance("default")
+        self.sceneConstantBuffer = UniformBlock("sceneConstants", material_instance.program, 128, 0)
+        self.sceneConstantBuffer2 = UniformBlock("sceneConstants2", material_instance.program, 48, 1)
 
     def close(self):
         # record config
@@ -213,7 +214,7 @@ class Renderer(Singleton):
         for objList in self.objectManager.renderGroup.values():
             for obj in objList:
                 self.render_object(obj, lastProgram, lastMesh, vpMatrix)
-                lastProgram = obj.material.program if obj.material else None
+                lastProgram = obj.material_instance.program if obj.material_instance else None
                 lastMesh = obj.mesh
 
         """
@@ -238,13 +239,13 @@ class Renderer(Singleton):
 
     @staticmethod
     def render_object(obj, lastProgram, lastMesh, vpMatrix):
-        program = obj.material.program
+        program = obj.material_instance.program
         mesh = obj.mesh
 
         # bind shader program
         if lastProgram != program:
             glUseProgram(program)
-            obj.material.bind()
+            obj.material_instance.bind()
 
         # TEST_CODE
         obj.update()
