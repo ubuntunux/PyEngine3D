@@ -7,6 +7,15 @@ from Core import logger
 from Utilities import Attributes
 from Shader import UniformColor, UniformTexture2D
 
+vs = """
+void main()
+{
+}
+"""
+
+m = re.sub("void\s*main\s*\(\s*\)",
+           "\n\n/* Begin : Material Template */\n%s\n/* End : Material Template */\n\nvoid main()" % "here", vs, 1)
+
 
 class Material:
     def __init__(self, material_name):
