@@ -12,7 +12,8 @@ from PIL import Image
 from . import *
 from Core import logger
 from Utilities import Singleton, getClassName
-from Render import MaterialInstance, Texture
+from Render import Texture
+from Shader import MaterialInstance
 from Shader import *
 from Object import Triangle, Quad, Mesh, Primitive
 

@@ -1,3 +1,5 @@
+import re
+
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDetachShader

@@ -7,7 +7,7 @@ from PIL import Image
 import Resource
 from Resource import *
 from Object import TransformObject, Primitive
-from Render import MaterialInstance
+from Shader import MaterialInstance
 from Utilities import Attributes
 
 
