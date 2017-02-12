@@ -27,23 +27,24 @@ class UniformArray(UniformVariable):
     pass
 
 
-class UniformColor(UniformVariable):
-    def __init__(self, program, variable_name, color=(1.0, 1.0, 1.0, 1.0)):
-        UniformVariable.__init__(self, program, variable_name)
-        self.color = np.array(color, dtype=np.float32)
+class UniformInt(UniformVariable):
+    def bind(self, value):
+        glUniform1i(self.location, 1, value)
 
-    def bind(self):
-        glUniform4fv(self.location, 1, self.color)
+
+class UniformFloat(UniformVariable):
+    def bind(self, value):
+        glUniform1f(self.location, value)
+
+
+class UniformColor(UniformVariable):
+    def bind(self, color):
+        TEST - is need program??
+        glUniform4fv(program, self.location, 1, color)
 
 
 class UniformTexture2D(UniformVariable):
-    def __init__(self, program, variable_name, texture):
-        UniformVariable.__init__(self, program, variable_name)
-        if texture is None:
-            raise AttributeError("Texture is None.")
-        self.texture = texture
-
-    def bind(self, activateTextureIndex, textureIndex):
+    def bind(self, activateTextureIndex, textureIndex, texture):
         glActiveTexture(activateTextureIndex)
-        self.texture.bind()
+        texture.bind()
         glUniform1i(self.location, textureIndex)

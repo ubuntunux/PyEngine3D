@@ -1,9 +1,3 @@
-[VertexShader]
-name = default
-
-[FragmentShader]
-name = default
-
 [Material]
 name = template
 

@@ -176,10 +176,11 @@ class MaterialLoader(ResourceLoader, Singleton):
 
     def loadResource(self, filePath):
         try:
-            material_instance_file = configparser.ConfigParser()
-            material_instance_file.read(filePath)
-            material_name = self.splitResourceName(filePath, PathShaders)
-            return Material(material_name=material_name)
+            # TODO
+            vs = VertexShaderLoader.instance().getResource("default")
+            fs = FragmentShaderLoader.instance().getResource("default")
+            material_name = self.splitResourceName(filePath, PathMaterials)
+            return Material(material_name=material_name, vs=vs, fs=fs)
         except:
             logger.error(traceback.format_exc())
 
@@ -193,12 +194,8 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
 
     def loadResource(self, filePath):
         try:
-            material_instance_file = configparser.ConfigParser()
-            material_instance_file.read(filePath)
-            vs = VertexShaderLoader.instance().getResource(
-                material_instance_file.get("VertexShader", "name"))
-            fs = FragmentShaderLoader.instance().getResource(
-                material_instance_file.get("FragmentShader", "name"))
+            vs = VertexShaderLoader.instance().getResource("default")
+            fs = FragmentShaderLoader.instance().getResource("default")
             material_instance_name = self.splitResourceName(filePath, PathMaterials)
             return MaterialInstance(material_instance_name=material_instance_name, vs=vs, fs=fs)
         except:

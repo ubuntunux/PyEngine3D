@@ -13,6 +13,7 @@ layout(std140, binding=1) uniform sceneConstants2
     vec4 lightColor;
 };
 
+uniform float brightness;
 uniform vec4 diffuseColor;
 uniform sampler2D textureDiffuse;
 uniform sampler2D textureNormal;
@@ -39,7 +40,7 @@ void main() {
     vec3 normalTex = texture(textureNormal, data.textureCoordinate.xy).xyz;
     normalTex = normalize((data.tangentToWorld * vec4(normalTex * 2.0 - 1.0, 0.0)).xyz);
 
-    vec3 diffuseLighting = diffuseTex * diffuseColor.xyz * clamp(dot(lightVector, normalTex), 0.0, 1.0);
+    vec3 diffuseLighting = diffuseTex * diffuseColor.xyz * clamp(dot(lightVector, normalTex), 0.0, 1.0) * brightness;
     float specularLighting = clamp(dot(reflect(-lightVector, normalTex), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
     result = vec4(lightColor.xyz * (diffuseLighting + specularLighting), 1.0);
