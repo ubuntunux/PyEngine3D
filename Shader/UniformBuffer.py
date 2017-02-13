@@ -39,8 +39,7 @@ class UniformFloat(UniformVariable):
 
 class UniformColor(UniformVariable):
     def bind(self, color):
-        TEST - is need program??
-        glUniform4fv(program, self.location, 1, color)
+        glUniform4fv(self.location, 1, color)
 
 
 class UniformTexture2D(UniformVariable):

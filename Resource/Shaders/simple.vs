@@ -13,11 +13,11 @@ layout(std140) uniform sceneConstants
 {
     mat4 view;
     mat4 perspective;
+    vec4 cameraPosition;
 };
 
-layout(std140) uniform sceneConstants2
+layout(std140) uniform lightConstants
 {
-    vec4 cameraPosition;
     vec4 lightPosition;
     vec4 lightColor;
 };

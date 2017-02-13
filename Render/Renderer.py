@@ -77,8 +77,8 @@ class Renderer(Singleton):
         self.lastShader = None
         self.screen = None
         # TEST_CODE
-        self.sceneConstantBuffer = None
-        self.sceneConstantBuffer2 = None
+        self.uniformSceneConstants = None
+        self.uniformLightConstants = None
 
     def initScreen(self):
         self.width, self.height = config.Screen.size
@@ -118,8 +118,8 @@ class Renderer(Singleton):
 
         # TEST_CODE : scene constants uniform buffer
         material_instance = self.resourceManager.getMaterialInstance("default")
-        self.sceneConstantBuffer = UniformBlock("sceneConstants", material_instance.program, 128, 0)
-        self.sceneConstantBuffer2 = UniformBlock("sceneConstants2", material_instance.program, 48, 1)
+        self.uniformSceneConstants = UniformBlock("sceneConstants", material_instance.program, 144, 0)
+        self.uniformLightConstants = UniformBlock("lightConstants", material_instance.program, 32, 1)
 
     def close(self):
         # record config
@@ -200,9 +200,10 @@ class Renderer(Singleton):
         cameraTransform = self.camera.transform
 
         # TEST_CODE
-        self.sceneConstantBuffer.bindData(cameraTransform.matrix.flat, self.perspective.flat)
-        self.sceneConstantBuffer2.bindData(cameraTransform.pos, FLOAT32_ZERO,
-                                           light.transform.getPos(), FLOAT32_ZERO,
+        self.uniformSceneConstants.bindData(cameraTransform.matrix.flat,
+                                            self.perspective.flat,
+                                            cameraTransform.pos, FLOAT32_ZERO)
+        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT32_ZERO,
                                            light.lightColor)
 
         # Perspective * View matrix
