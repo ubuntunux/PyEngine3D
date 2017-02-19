@@ -8,6 +8,7 @@ from OpenGL.GL.shaders import glDetachShader
 import Resource
 from Core import logger
 from Utilities import Attributes
+from Shader import *
 
 """
 example) re.sub(reInsertMaterialBlock,
