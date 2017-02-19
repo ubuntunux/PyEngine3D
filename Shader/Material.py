@@ -8,16 +8,12 @@ from OpenGL.GL.shaders import glDetachShader
 import Resource
 from Core import logger
 from Utilities import Attributes
-from Shader import *
 
-shader = """
-void main()
-{
-}
 """
-
-m = re.sub("void\s*main\s*\(\s*\)",
-           "\n\n/* Begin : Material Template */\n%s\n/* End : Material Template */\n\nvoid main()" % "here", shader, 1)
+example) re.sub(reInsertMaterialBlock,
+    "\n\n/* Begin : Material Template */\n" + material + "\n/* End : Material Template */\n\nvoid main()", shader, 1)
+"""
+reInsertMaterialBlock = re.compile("void\s*main\s*\(\s*\)")
 
 
 class Material:
