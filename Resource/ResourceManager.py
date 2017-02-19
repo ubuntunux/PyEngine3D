@@ -256,6 +256,7 @@ class ResourceManager(Singleton):
         self.textureLoader = TextureLoader.instance()
         self.vertexShaderLoader = VertexShaderLoader.instance()
         self.fragmentShaderLoader = FragmentShaderLoader.instance()
+        self.materialLoader = MaterialLoader.instance()
         self.material_instanceLoader = MaterialInstanceLoader.instance()
         self.meshLoader = MeshLoader.instance()
 
@@ -263,12 +264,12 @@ class ResourceManager(Singleton):
         self.textureLoader.initialize()
         self.vertexShaderLoader.initialize()
         self.fragmentShaderLoader.initialize()
+        self.materialLoader.initialize()
         self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
 
     def close(self):
-        self.vertexShaderLoader.close()
-        self.fragmentShaderLoader.close()
+        pass
 
     def getResourceList(self):
         """
@@ -279,10 +280,14 @@ class ResourceManager(Singleton):
             result.append((resName, getClassName(self.getVertexShader(resName))))
         for resName in self.getFragmentShaderNameList():
             result.append((resName, getClassName(self.getFragmentShader(resName))))
+        for resName in self.getMaterialNameList():
+            result.append((resName, getClassName(self.getMaterial(resName))))
         for resName in self.getMaterialInstanceNameList():
             result.append((resName, getClassName(self.getMaterialInstance(resName))))
         for resName in self.getMeshNameList():
             result.append((resName, getClassName(self.getMesh(resName))))
+        for resName in self.getTextureNameList():
+            result.append((resName, getClassName(self.getTexture(resName))))
         return result
 
     def getResourceAttribute(self, resName, resTypeName):
@@ -301,8 +306,12 @@ class ResourceManager(Singleton):
             resource = self.getFragmentShader(resName)
         elif resType == VertexShader:
             resource = self.getVertexShader(resName)
+        elif resType == Material:
+            resource = self.getMaterial(resName)
         elif resType == MaterialInstance:
             resource = self.getMaterialInstance(resName)
+        elif resType == Mesh:
+            resource = self.getMesh(resName)
         elif resType == Texture:
             resource = self.getTexture(resName)
         elif issubclass(resType, Primitive):
@@ -322,6 +331,14 @@ class ResourceManager(Singleton):
 
     def getFragmentShaderNameList(self):
         return self.fragmentShaderLoader.getResourceNameList()
+
+    # FUNCTIONS : Material
+
+    def getMaterialNameList(self):
+        return self.materialLoader.getResourceNameList()
+
+    def getMaterial(self, name):
+        return self.materialLoader.getResource(name)
 
     # FUNCTIONS : MaterialInstance
 

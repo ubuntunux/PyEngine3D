@@ -39,9 +39,9 @@ class Material:
         glDetachShader(self.program, fs.shader)
 
         # TODO : build material components from shader files parsing.
-        self.diffuseColor = UniformColor(self.program, "diffuseColor", (1.0, 1.0, 1.0, 1.0))
-        self.textureDiffuse = UniformTexture2D(self.program, "textureDiffuse", resourceMgr.getTexture("wool_d"))
-        self.textureNormal = UniformTexture2D(self.program, "textureNormal", resourceMgr.getTexture("wool_n"))
+        self.diffuseColor = UniformColor(self.program, "diffuseColor")
+        self.textureDiffuse = UniformTexture2D(self.program, "textureDiffuse")
+        self.textureNormal = UniformTexture2D(self.program, "textureNormal")
 
     def __del__(self):
         pass
