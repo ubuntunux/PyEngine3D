@@ -1,10 +1,8 @@
-# default logger
-from Utilities import Logger
-logger = Logger.getLogger(level=Logger.INFO)
+import os
 
-# config
-from Configure import Config
-config = Config("Config.ini")
+from Utilities import Logger, Config
+logger = Logger.getLogger(level=Logger.INFO)
+config = Config(os.path.join(os.path.split(__file__)[0], "Config.ini"))
 
 from .Command import *
 from .CoreManager import *

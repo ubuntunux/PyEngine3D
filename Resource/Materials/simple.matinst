@@ -1,8 +1,12 @@
-[VertexShader]
-name = simple
-
-[FragmentShader]
-name = simple
-
 [Material]
-name = template
+name = default
+
+[Float]
+brightness = 0.5
+
+[Vector4]
+diffuse_color = (1.0, 1.0, 1.0, 1.0)
+
+[Texture2D]
+texture_diffuse = wool_d
+texture_normal = wool_n

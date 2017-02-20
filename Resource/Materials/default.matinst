@@ -1,13 +1,12 @@
 [Material]
-name = template
+name = default
 
-[Scalar]
-isFixed = true
-level = 3
-brightness = 3.0
+[Float]
+brightness = 1.0
 
-[Vector]
-diffuseColor = (1.0, 1.0, 1.0, 1.0)
+[Vector4]
+diffuse_color = (1.0, 1.0, 1.0, 1.0)
 
 [Texture2D]
-textureDiffuse = wool_d
+texture_diffuse = wool_d
+texture_normal = wool_n

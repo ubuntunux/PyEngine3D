@@ -1,9 +1,11 @@
 import os
 import configparser
 
+
 # util class
 class Empty:
     pass
+
 
 def getValue(value):
     # find value type
@@ -15,17 +17,18 @@ def getValue(value):
         pass
     return value
 
-#------------------------------#
+
+# ------------------------------ #
 # CLASS : Configure
 # Usage :
 #   config = Configure()
 #   # get value example, section:Screen, option:wdith
 #   print(config.Screen.width)
-#------------------------------#
+# ------------------------------ #
 class Config:
-    def __init__(self, configFilename, debug = False):
+    def __init__(self, configFilename, debug=False):
         self.debug = debug
-        self.filename = os.path.join(os.path.split(__file__)[0], configFilename)
+        self.filename = configFilename
         self.config = configparser.ConfigParser()
         self.config.read(self.filename)
         print("Load Config : %s" % self.filename)
@@ -70,7 +73,6 @@ class Config:
 if __name__ == '__main__':
     import unittest
 
-    # test
     class test(unittest.TestCase):
         def testConfig(self):
             # load test

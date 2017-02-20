@@ -12,7 +12,7 @@ from OpenGL.GLU import *
 from Resource import ResourceManager
 from Core import *
 from Render import *
-from Shader import *
+from Material import *
 from Object import ObjectManager, DebugLine
 from Utilities import *
 

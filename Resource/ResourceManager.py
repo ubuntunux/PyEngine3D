@@ -13,8 +13,7 @@ from . import *
 from Core import logger
 from Utilities import Singleton, getClassName
 from Render import Texture
-from Shader import MaterialInstance
-from Shader import *
+from Material import *
 from Object import Triangle, Quad, Mesh, Primitive
 
 
@@ -176,11 +175,11 @@ class MaterialLoader(ResourceLoader, Singleton):
 
     def loadResource(self, filePath):
         try:
-            # TODO
-            vs = VertexShaderLoader.instance().getResource("default")
-            fs = FragmentShaderLoader.instance().getResource("default")
+            f = open(filePath, 'r')
+            material_template = f.read()
+            f.close()
             material_name = self.splitResourceName(filePath, PathMaterials)
-            return Material(material_name=material_name, vs=vs, fs=fs)
+            return Material(material_name=material_name, material_template=material_template)
         except:
             logger.error(traceback.format_exc())
 
@@ -193,13 +192,8 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
         super(MaterialInstanceLoader, self).__init__(PathMaterials, ".matinst")
 
     def loadResource(self, filePath):
-        try:
-            vs = VertexShaderLoader.instance().getResource("default")
-            fs = FragmentShaderLoader.instance().getResource("default")
-            material_instance_name = self.splitResourceName(filePath, PathMaterials)
-            return MaterialInstance(material_instance_name=material_instance_name, vs=vs, fs=fs)
-        except:
-            logger.error(traceback.format_exc())
+        material_instance_name = self.splitResourceName(filePath, PathMaterials)
+        return MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
 
 
 # -----------------------#

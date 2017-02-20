@@ -36,10 +36,17 @@ class UniformFloat(UniformVariable):
     def bind(self, value):
         glUniform1f(self.location, value)
 
+class UniformVector2(UniformVariable):
+    def bind(self, value):
+        glUniform2fv(self.location, 1, value)
 
-class UniformColor(UniformVariable):
-    def bind(self, color):
-        glUniform4fv(self.location, 1, color)
+class UniformVector3(UniformVariable):
+    def bind(self, value):
+        glUniform3fv(self.location, 1, value)
+
+class UniformVector4(UniformVariable):
+    def bind(self, value):
+        glUniform4fv(self.location, 1, value)
 
 
 class UniformTexture2D(UniformVariable):

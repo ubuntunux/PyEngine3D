@@ -1,8 +1,3 @@
-uniform float brightness;
-uniform vec4 diffuse_color;
-uniform sampler2D texture_diffuse;
-uniform sampler2D texture_normal;
-
 vec3 get_emissive_color()
 {
     return vec3(1.0, 1.0, 1.0);
@@ -10,7 +5,7 @@ vec3 get_emissive_color()
 
 vec3 get_base_color()
 {
-    return texture(texture_diffuse, data.textureCoordinate.xy).xyz * brightness * diffuse_color.xyz * diffuse_color.a;
+    return vec3(1.0, 1.0, 1.0);
 }
 
 float get_reflection()
@@ -35,9 +30,7 @@ float get_sss_scale()
 
 vec3 get_normal()
 {
-    vec3 normal = texture(texture_normal, data.textureCoordinate.xy).xyz;
-    normal = normalize((data.tangentToWorld * vec4(normal * 2.0 - 1.0, 0.0)).xyz);
-    return normal;
+    return vec3(0.0, 0.0, 1.0);
 }
 
 float get_ior()

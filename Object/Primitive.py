@@ -1,6 +1,6 @@
 from OpenGL.GL import *
 
-from Shader import VertexArrayBuffer
+from Material import VertexArrayBuffer
 from Utilities import *
 
 NONE_OFFSET = ctypes.c_void_p(0)
