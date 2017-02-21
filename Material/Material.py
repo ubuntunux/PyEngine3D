@@ -116,6 +116,7 @@ class MaterialInstance:
             for value_name in material_inst_file[value_type]:
                 strValue = material_inst_file.get(value_type, value_name)
                 value = conversion(value_type, strValue)
+                # TODO : 텍스쳐일경우 여기에서 active index를 생성하고 bind할때에도 사용한다.
                 if value is not None:
                     self.variables[value_name] = value
                 else:
