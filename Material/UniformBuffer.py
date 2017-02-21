@@ -1,7 +1,31 @@
+import traceback
+
 import numpy as np
 from OpenGL.GL import *
 
 from Core import logger
+import Resource
+
+
+def conversion(value_type, strValue):
+    try:
+        if value_type == 'Float':
+            return np.float32(strValue)
+        elif value_type == 'Int':
+            return np.int32(strValue)
+        elif value_type in ('Vector2', 'Vector3', 'Vector4'):
+            vecValue = eval(strValue)
+            componentCount = int(value_type[-1])
+            if len(vecValue) == componentCount:
+                return np.array(vecValue, dtype=np.float32)
+            else:
+                logger.error(ValueError("%s need %d float numbers." % (value_type, componentCount)))
+                raise ValueError
+        elif value_type == 'Texture2D':
+            return Resource.ResourceManager.instance().getTexture(strValue)
+    except ValueError:
+        logger.error(traceback.format_exc())
+    return None
 
 
 class UniformVariable:
@@ -18,7 +42,7 @@ class UniformVariable:
     def delete(self):
         pass
 
-    def bind(self):
+    def bind(self, value):
         raise BaseException("You must implement bind function.")
 
 
@@ -36,13 +60,16 @@ class UniformFloat(UniformVariable):
     def bind(self, value):
         glUniform1f(self.location, value)
 
+
 class UniformVector2(UniformVariable):
     def bind(self, value):
         glUniform2fv(self.location, 1, value)
 
+
 class UniformVector3(UniformVariable):
     def bind(self, value):
         glUniform3fv(self.location, 1, value)
+
 
 class UniformVector4(UniformVariable):
     def bind(self, value):

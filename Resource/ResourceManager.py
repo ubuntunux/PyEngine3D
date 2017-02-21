@@ -36,6 +36,8 @@ class MetaData:
 # CLASS : ResourceLoader
 # -----------------------#
 class ResourceLoader(object):
+    name = "ResourceLoader"
+
     def __init__(self, dirName, fileExt):
         self.resources = {}
         self.metaDatas = {}
@@ -49,12 +51,12 @@ class ResourceLoader(object):
         for dirname, dirnames, filenames in os.walk(self.dirName):
             for filename in filenames:
                 if self.fileExt == ".*" or self.fileExt == os.path.splitext(filename)[1].lower():
-                    filename = os.path.join(dirname, filename)
-                    resource = self.loadResource(filename)
+                    filepath = os.path.join(dirname, filename)
+                    resource = self.loadResource(filepath)
                     if resource:
-                        self.registResource(resource, filename)
+                        self.registResource(resource, filepath)
                     else:
-                        logger.error("load %s error" % filename)
+                        logger.error("%s load failed." % filename)
             
     def createResource(self):
         """ TODO : create resource file and regist."""
@@ -106,7 +108,7 @@ class ResourceLoader(object):
     def getResource(self, resourceName):
         if resourceName in self.resources:
             return self.resources[resourceName]
-        logger.error("Not found %s." % resourceName)
+        logger.error("%s cannot found %s resource." % (self.name, resourceName))
         return None
 
     def getResourceList(self):
@@ -126,6 +128,8 @@ class ResourceLoader(object):
 # CLASS : VertexShaderLoader
 # ---------------------------#
 class VertexShaderLoader(ResourceLoader, Singleton):
+    name = "VertexShaderLoader"
+
     def __init__(self):
         super(VertexShaderLoader, self).__init__(PathShaders, ".vs")
 
@@ -138,6 +142,7 @@ class VertexShaderLoader(ResourceLoader, Singleton):
             return VertexShader(shaderName, shaderSource)
         except:
             logger.error(traceback.format_exc())
+        return None
 
     def close(self):
         for shader in self.resources.values():
@@ -148,6 +153,8 @@ class VertexShaderLoader(ResourceLoader, Singleton):
 # CLASS : FragmentShaderLoader
 # ---------------------------#
 class FragmentShaderLoader(ResourceLoader, Singleton):
+    name = "FragmentShaderLoader"
+
     def __init__(self):
         super(FragmentShaderLoader, self).__init__(PathShaders, ".fs")
 
@@ -160,6 +167,7 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
             return FragmentShader(shaderName, shaderSource)
         except:
             logger.error(traceback.format_exc())
+        return None
 
     def close(self):
         for shader in self.resources.values():
@@ -170,6 +178,8 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
 # CLASS : MaterialLoader
 # -----------------------#
 class MaterialLoader(ResourceLoader, Singleton):
+    name = "MaterialLoader"
+
     def __init__(self):
         super(MaterialLoader, self).__init__(PathMaterials, ".mat")
 
@@ -179,27 +189,34 @@ class MaterialLoader(ResourceLoader, Singleton):
             material_template = f.read()
             f.close()
             material_name = self.splitResourceName(filePath, PathMaterials)
-            return Material(material_name=material_name, material_template=material_template)
+            material = Material(material_name=material_name, material_template=material_template)
+            return material if material.loaded else None
         except:
             logger.error(traceback.format_exc())
+        return None
 
 
 # -----------------------#
 # CLASS : MaterialInstanceLoader
 # -----------------------#
 class MaterialInstanceLoader(ResourceLoader, Singleton):
+    name = "MaterialInstanceLoader"
+
     def __init__(self):
         super(MaterialInstanceLoader, self).__init__(PathMaterials, ".matinst")
 
     def loadResource(self, filePath):
         material_instance_name = self.splitResourceName(filePath, PathMaterials)
-        return MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
+        material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
+        return material_instance if material_instance.loaded else None
 
 
 # -----------------------#
 # CLASS : MeshLoader
 # -----------------------#
 class MeshLoader(ResourceLoader, Singleton):
+    name = "MeshLoader"
+
     def __init__(self):
         super(MeshLoader, self).__init__(PathMeshes, ".mesh")
 
@@ -221,12 +238,15 @@ class MeshLoader(ResourceLoader, Singleton):
             return Mesh(meshName, meshData)
         except:
             logger.error(traceback.format_exc())
+        return None
         
 
 # -----------------------#
 # CLASS : TextureLoader
 # -----------------------#
 class TextureLoader(ResourceLoader, Singleton):
+    name = "TextureLoader"
+
     def __init__(self):
         super(TextureLoader, self).__init__(PathTextures, ".*")
 
@@ -246,6 +266,8 @@ class TextureLoader(ResourceLoader, Singleton):
 # CLASS : ResourceManager
 # -----------------------#
 class ResourceManager(Singleton):
+    name = "ResourceManager"
+
     def __init__(self):
         self.textureLoader = TextureLoader.instance()
         self.vertexShaderLoader = VertexShaderLoader.instance()

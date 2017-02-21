@@ -2,6 +2,7 @@ import os
 import configparser
 from collections import OrderedDict
 import re
+import traceback
 
 import numpy as np
 from OpenGL.GL import *
@@ -18,6 +19,7 @@ reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
 
 class Material:
     def __init__(self, material_name, material_template):
+        self.loaded = False
         logger.info("Create Material : " + material_name)
         resourceMgr = Resource.ResourceManager.instance()
         self.name = material_name
@@ -25,14 +27,21 @@ class Material:
         self.uniforms = OrderedDict({})
         self.activateTextureIndex = GL_TEXTURE0
         self.textureIndex = 0
+        self.program = -1
         self.Attributes = Attributes()
 
         # build and link the program
-        self.program = glCreateProgram()
         vs = resourceMgr.getVertexShader("default")
         fs = resourceMgr.getFragmentShader("default")
         self.vertexShader = vs.compile(self.material_template)
         self.fragmentShader = fs.compile(self.material_template)
+
+        if self.vertexShader is None or self.fragmentShader is None:
+            logger.error("%s material compile error." % material_name)
+            return
+
+        # create program
+        self.program = glCreateProgram()
         glAttachShader(self.program, self.vertexShader)
         glAttachShader(self.program, self.fragmentShader)
         glLinkProgram(self.program)
@@ -55,6 +64,7 @@ class Material:
                 uniform_class = UniformTexture2D
 
             self.uniforms[uniform_name] = uniform_class(self.program, uniform_name)
+        self.loaded = True
 
     def __del__(self):
         pass
@@ -77,37 +87,40 @@ class MaterialInstance:
     resourceMgr = None
 
     def __init__(self, material_instance_name, filePath):
+        self.loaded = False
         logger.info("Create Material Instance : " + material_instance_name)
         resourceMgr = Resource.ResourceManager.instance()
         self.name = material_instance_name
+        self.program = None
         self.activateTextureIndex = GL_TEXTURE0
         self.textureIndex = 0
         self.Attributes = Attributes()
 
         # open material instance file
-        material_instance = configparser.ConfigParser()
-        material_instance.read(filePath)
+        material_inst_file = configparser.ConfigParser()
+        material_inst_file.read(filePath)
         logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
         # get material
-        material_name = material_instance.get('Material', 'name')
+        material_name = material_inst_file.get('Material', 'name')
         self.material = resourceMgr.getMaterial(material_name)
+        if self.material is None:
+            return
         self.program = self.material.program
 
         # get uniform variable values
         self.variables = {}
-        for value_type in material_instance.sections():
-            for value_name in material_instance[value_type]:
-                value = material_instance.get(value_type, value_name)
-                if value_type == 'Float':
-                    value = np.float32(value)
-                elif value_type in ('Vector2', 'Vector3', 'Vector4'):
-                    value = np.array(eval(value), dtype=np.float32)
-                elif value_type == 'Texture2D':
-                    value = resourceMgr.getTexture(value)
+        for value_type in material_inst_file.sections():
+            if value_type == 'Material':
+                continue
+            for value_name in material_inst_file[value_type]:
+                strValue = material_inst_file.get(value_type, value_name)
+                value = conversion(value_type, strValue)
+                if value is not None:
+                    self.variables[value_name] = value
                 else:
-                    continue
-                self.variables[value_name] = value
+                    logger.error("%s MaterialInstance, %s %s is none." % (self.name, value_type, value_name))
+        self.loaded = True
 
     def __del__(self):
         pass
@@ -135,8 +148,11 @@ class MaterialInstance:
         self.activateTextureIndex += 1
         self.textureIndex += 1
 
+    def getProgram(self):
+        return self.material.program
+
     def useProgram(self):
-        glUseProgram(self.program)
+        glUseProgram(self.material.program)
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)

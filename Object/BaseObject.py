@@ -26,10 +26,8 @@ class BaseObject:
         self.material_instance = material_instance
 
         if self.material_instance:
-            program = self.material_instance.program
-
-            self.modelBind = glGetUniformLocation(program, "model")
-            self.mvpBind = glGetUniformLocation(program, "mvp")
+            self.modelBind = glGetUniformLocation(self.material_instance.program, "model")
+            self.mvpBind = glGetUniformLocation(self.material_instance.program, "mvp")
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)

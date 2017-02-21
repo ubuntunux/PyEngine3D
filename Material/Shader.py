@@ -42,12 +42,16 @@ class Shader:
                 if infoLog:
                     if type(infoLog) == bytes:
                         infoLog = infoLog.decode("utf-8")
-                    logger.error("%s shader error!!!\n" % self.name + infoLog)
+                    logger.error("%s shader compile error.\n%s" % (self.name, infoLog))
                 else:
-                    logger.info("%s shader complete." % self.name)
+                    # complete
+                    logger.info("%s shader compile complete." % self.name)
+                    return shader
+            return None
+
         except:
             logger.error(traceback.format_exc())
-        return shader
+        return None
 
     def __del__(self):
         pass
