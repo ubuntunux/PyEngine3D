@@ -108,7 +108,7 @@ class MaterialInstance:
             return
         self.program = self.material.program
 
-        # get uniform variable values
+        # conversion string to uniform variable
         self.variables = {}
         for value_type in material_inst_file.sections():
             if value_type == 'Material':
