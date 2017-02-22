@@ -136,7 +136,7 @@ class Renderer(Singleton):
             self.viewMode = GL_FILL
 
     def resizeScene(self, width, height):
-        # It have to pygame set_mode again on Linux.
+        # You have to do pygame.display.set_mode again on Linux.
         if platformModule.system() == 'Linux':
             self.screen = pygame.display.set_mode((self.width, self.height),
                                                   OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
