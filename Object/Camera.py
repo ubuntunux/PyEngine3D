@@ -27,5 +27,5 @@ class Camera(BaseObject):
         pass
 
     def update(self):
-        # update camera matrix to inverse matrix
-        self.transform.updateInverseTransform()
+        self.transform.updateTransform()
+        self.transform.updateInverseTransform() # update view matrix

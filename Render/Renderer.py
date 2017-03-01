@@ -197,26 +197,46 @@ class Renderer(Singleton):
         # TEST_CODE
         light = self.objectManager.lights[0]
         light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-        cameraTransform = self.camera.transform
+        viewTransform = self.camera.transform
 
         # TEST_CODE
-        self.uniformSceneConstants.bindData(cameraTransform.matrix.flat,
+        self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
                                             self.perspective.flat,
-                                            cameraTransform.pos, FLOAT32_ZERO)
+                                            viewTransform.pos, FLOAT32_ZERO)
         self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT32_ZERO,
                                            light.lightColor)
 
         # Perspective * View matrix
-        vpMatrix = np.dot(cameraTransform.matrix, self.perspective)
+        vpMatrix = np.dot(viewTransform.inverse_matrix, self.perspective)
 
         # draw static meshes
-        lastMesh = None
-        lastProgram = None
-        for objList in self.objectManager.renderGroup.values():
-            for obj in objList:
-                self.render_object(obj, lastProgram, lastMesh, vpMatrix)
-                lastProgram = obj.material_instance.program if obj.material_instance else None
-                lastMesh = obj.mesh
+        last_mesh = None
+        last_program = None
+        last_material_instance = None
+        for obj in self.objectManager.getObjects():
+            program = obj.material_instance.program if obj.material_instance else None
+            mesh = obj.mesh
+            material_instance = obj.material_instance
+
+            if last_program != program:
+                glUseProgram(program)
+                obj.material_instance.bind()
+
+            if material_instance != last_material_instance:
+                material_instance.bind()
+
+            obj.bind(vpMatrix)
+
+            # At last, bind buffers
+            if last_mesh != mesh:
+                mesh.bindBuffers()
+
+            # draw
+            mesh.draw()
+
+            last_program = program
+            last_mesh = mesh
+            last_material_instance = material_instance
 
         """
         # selected object - render additive color
@@ -237,26 +257,6 @@ class Renderer(Singleton):
 
         # reset shader program
         glUseProgram(0)
-
-    @staticmethod
-    def render_object(obj, lastProgram, lastMesh, vpMatrix):
-        program = obj.material_instance.program
-        mesh = obj.mesh
-
-        # bind shader program
-        if lastProgram != program:
-            glUseProgram(program)
-            obj.material_instance.bind()
-
-        # TEST_CODE
-        obj.update()
-        obj.bind(vpMatrix)
-
-        # At last, bind buffers
-        if lastMesh != mesh:
-            mesh.bindBuffers()
-
-        mesh.draw()
 
     def render_postprocess(self):
         # set orthographic view

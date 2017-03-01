@@ -12,7 +12,6 @@ class ObjectManager(Singleton):
     def __init__(self):
         self.cameras = []
         self.lights = []
-        self.renderGroup = {}
         self.objects = []
         self.objectMap = {}
         self.selectedObject = None
@@ -66,12 +65,6 @@ class ObjectManager(Singleton):
         self.lights.append(light)
         self.objectMap[name] = light
 
-        # add to render group
-        if mesh.name in self.renderGroup:
-            self.renderGroup[mesh.name].append(light)
-        else:
-            self.renderGroup[mesh.name] = [light, ]
-
         # send light name to gui
         self.coreManager.sendObjectName(light)
         return light
@@ -89,12 +82,6 @@ class ObjectManager(Singleton):
             # add object
             self.objects.append(obj)
             self.objectMap[name] = obj
-
-            # add to render group
-            if mesh.name in self.renderGroup:
-                self.renderGroup[mesh.name].append(obj)
-            else:
-                self.renderGroup[mesh.name] = [obj, ]
 
             # send object name to ui
             self.coreManager.sendObjectName(obj)
@@ -140,4 +127,12 @@ class ObjectManager(Singleton):
         if objName in self.objectMap:
             self.mainCamera.transform.setPos(self.getObject(objName).transform.pos - self.mainCamera.transform.front * 2.0)
 
+    def update(self):
+        for camera in self.cameras:
+            camera.update()
 
+        for light in self.lights:
+            light.update()
+
+        for obj in self.objects:
+            obj.update()

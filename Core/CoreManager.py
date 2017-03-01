@@ -264,10 +264,13 @@ class CoreManager(Singleton):
         cameraTransform = self.camera.transform
         moveSpeed = self.delta * 10.0
 
+        if keydown[K_LSHIFT]:
+            moveSpeed *= 4.0
+
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.moveToRight(-self.mouseDelta[0] * 0.01)
-            cameraTransform.moveToUp(self.mouseDelta[1] * 0.01)
+            cameraTransform.moveToViewRight(-self.mouseDelta[0] * 0.01)
+            cameraTransform.moveToViewUp(self.mouseDelta[1] * 0.01)
         # camera rotation
         elif btnL or btnR:
             cameraTransform.rotationPitch(-self.mouseDelta[1] * 0.03)
@@ -275,31 +278,28 @@ class CoreManager(Singleton):
 
         # camera move front/back
         if self.wheelUp:
-            cameraTransform.moveToFront(-5.0)
+            cameraTransform.moveToViewFront(-5.0)
         elif self.wheelDown:
-            cameraTransform.moveToFront(5.0)
+            cameraTransform.moveToViewFront(5.0)
 
         # update camera transform
         if keydown[K_w]:
-            cameraTransform.moveToFront(-moveSpeed)
+            cameraTransform.moveToViewFront(-moveSpeed)
         elif keydown[K_s]:
-            cameraTransform.moveToFront(moveSpeed)
+            cameraTransform.moveToViewFront(moveSpeed)
 
         if keydown[K_a]:
-            cameraTransform.moveToRight(-moveSpeed)
+            cameraTransform.moveToViewRight(-moveSpeed)
         elif keydown[K_d]:
-            cameraTransform.moveToRight(moveSpeed)
+            cameraTransform.moveToViewRight(moveSpeed)
 
         if keydown[K_q]:
-            cameraTransform.moveToUp(-moveSpeed)
+            cameraTransform.moveToViewUp(-moveSpeed)
         elif keydown[K_e]:
-            cameraTransform.moveToUp(moveSpeed)
+            cameraTransform.moveToViewUp(moveSpeed)
 
         if keydown[K_SPACE]:
             cameraTransform.resetTransform()
-
-        # update camera
-        self.camera.update()
 
     def update(self):
         self.currentTime = 0.0
@@ -324,6 +324,9 @@ class CoreManager(Singleton):
             self.updateEvent()  # update keyboard and mouse events
             self.updateCamera()  # update camera
             self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+
+            # update actors
+            self.objectManager.update()
 
             # render scene
             startTime = time.perf_counter()

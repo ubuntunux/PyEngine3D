@@ -12,6 +12,7 @@ class TransformObject:
         self.moved = False
         self.rotated = False
         self.scaled = False
+        self.updated = False
 
         # transform
         self.matrix = np.eye(4, dtype=np.float32)
@@ -25,9 +26,14 @@ class TransformObject:
 
         self.rot = np.zeros(3, dtype=np.float32)  # pitch, yaw, roll
         self.oldRot = np.zeros(3, dtype=np.float32)
+
         self.right = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # X Axis
         self.up = np.array([0.0, 1.0, 0.0], dtype=np.float32)  # Y Axis
         self.front = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # Z Axis
+
+        self.view_right = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # inverse matrix X Axis
+        self.view_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)  # inverse matrix Y Axis
+        self.view_front = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # inverse matrix Z Axis
 
         self.scale = np.zeros(3, dtype=np.float32)  # X, Y, Z
         self.oldScale = np.zeros(3, dtype=np.float32)  # X, Y, Z
@@ -76,6 +82,18 @@ class TransformObject:
         self.pos[...] = self.pos + self.right * delta
 
     def moveToUp(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.view_up * delta
+
+    def moveToViewFront(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.view_front * delta
+
+    def moveToViewRight(self, delta):
+        self.moved = True
+        self.pos[...] = self.pos + self.view_right * delta
+
+    def moveToViewUp(self, delta):
         self.moved = True
         self.pos[...] = self.pos + self.up * delta
 
@@ -169,63 +187,41 @@ class TransformObject:
 
     # update Transform
     def updateTransform(self):
-        updateMatrix = False
+        self.updated = False
 
         if self.moved and not all(self.oldPos == self.pos):
             self.oldPos[...] = self.pos
             self.translateMatrix = getTranslateMatrix(self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
-            updateMatrix = True
+            self.updated = True
 
         if self.rotated and not all(self.oldRot == self.rot):
             self.oldRot[...] = self.rot
-            self.rotationMatrix = getRotationMatrixX(self.rot[0])
+            self.rotationMatrix = getRotationMatrixZ(self.rot[2])
             rotateY(self.rotationMatrix, self.rot[1])
-            rotateZ(self.rotationMatrix, self.rot[2])
-            self.front = self.matrix[:3, 2]
-            self.right = self.matrix[:3, 0]
-            self.up = self.matrix[:3, 1]
+            rotateX(self.rotationMatrix, self.rot[0])
             self.rotated = False
-            updateMatrix = True
+            self.updated = True
 
         if self.scaled and not all(self.oldScale == self.scale):
             self.oldScale[...] = self.scale
             self.scaleMatrix = getScaleMatrix(self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
-            updateMatrix = True
+            self.updated = True
 
-        if updateMatrix:
+        if self.updated:
             self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
-
-    # It's inverse matrix.
-    def updateInverseTransform(self):
-        updateMatrix = False
-
-        if self.moved and not all(self.oldPos == self.pos):
-            self.oldPos[...] = self.pos
-            self.translateMatrix = getTranslateMatrix(-self.pos[0], -self.pos[1], -self.pos[2])
-            self.moved = False
-            updateMatrix = True
-
-        if self.rotated and not all(self.oldRot == self.rot):
-            self.oldRot[...] = self.rot
-            self.rotationMatrix = getRotationMatrixX(-self.rot[0])
-            rotateY(self.rotationMatrix, -self.rot[1])
-            rotateZ(self.rotationMatrix, -self.rot[2])
             self.front = self.matrix[:3, 2]
             self.right = self.matrix[:3, 0]
             self.up = self.matrix[:3, 1]
-            self.rotated = False
-            updateMatrix = True
 
-        if self.scaled and not all(self.oldScale == self.scale):
-            self.oldScale[...] = self.scale
-            self.scaleMatrix = getScaleMatrix(-self.scale[0], -self.scale[1], -self.scale[2])
-            self.scaled = False
-            updateMatrix = True
-
-        if updateMatrix:
-            self.matrix = np.dot(self.translateMatrix, np.dot(self.rotationMatrix, self.scaleMatrix))
+    # It's view matrix.
+    def updateInverseTransform(self):
+        if self.updated:
+            self.inverse_matrix = np.linalg.inv(self.matrix)
+            self.view_front = self.inverse_matrix[:3, 2]
+            self.view_right = self.inverse_matrix[:3, 0]
+            self.view_up = self.inverse_matrix[:3, 1]
 
     def getTransformInfos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])

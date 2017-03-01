@@ -110,7 +110,7 @@ class MaterialInstance:
                 if value is not None:
                     self.uniform_datas[value_name] = value
                 else:
-                    logger.error("%s MaterialInstance, %s %s is none." % (self.name, value_type, value_name))
+                    logger.error("%s MaterialInstance, %s %s is None." % (self.name, value_type, value_name))
 
         # link uniform_buffers and uniform_data
         self.link_uniform_buffers()
@@ -143,7 +143,7 @@ class MaterialInstance:
                     # linking
                     self.linked_uniform_list.append((uniform_buffer, uniform_data))
                 else:
-                    logger.error("%s isn't in material instance.")
+                    logger.error("Material requires %s data. MaterialInstance has no %s." % (buffer_name, buffer_name))
 
     def bind(self):
         for uniform_buffer, uniform_data in self.linked_uniform_list:

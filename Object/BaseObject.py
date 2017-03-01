@@ -9,6 +9,7 @@ from Resource import *
 from Object import TransformObject, Primitive
 from Material import MaterialInstance
 from Utilities import Attributes
+from Core import logger
 
 
 class BaseObject:
