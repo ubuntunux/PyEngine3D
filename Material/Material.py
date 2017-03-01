@@ -16,41 +16,6 @@ from Material import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
 
-TODO : 이거 UniformBuffer로 옮기자.
-def get_uniform_class(uniform_type):
-    if uniform_type == "float":
-        return UniformFloat
-    elif uniform_type == "vec2":
-        return UniformVector2
-    elif uniform_type == "vec3":
-        return UniformVector3
-    elif uniform_type == "vec4":
-        return UniformVector4
-    elif uniform_type == "sampler2D":
-        return UniformTexture2D
-    return None
-
-TODO : 이거 UniformBuffer로 옮기자.
-def str_to_uniform_data(value_type, strValue):
-    try:
-        if value_type == 'Float':
-            return np.float32(strValue)
-        elif value_type == 'Int':
-            return np.int32(strValue)
-        elif value_type in ('Vector2', 'Vector3', 'Vector4'):
-            vecValue = eval(strValue)
-            componentCount = int(value_type[-1])
-            if len(vecValue) == componentCount:
-                return np.array(vecValue, dtype=np.float32)
-            else:
-                logger.error(ValueError("%s need %d float numbers." % (value_type, componentCount)))
-                raise ValueError
-        elif value_type == 'Texture2D':
-            return Resource.ResourceManager.instance().getTexture(strValue)
-    except ValueError:
-        logger.error(traceback.format_exc())
-    return None
-
 
 class Material:
     def __init__(self, material_name, material_template):
@@ -84,9 +49,7 @@ class Material:
         # build uniform buffer variable
         uniform_contents = re.findall(reFindUniform, self.material_template)
         for uniform_type, uniform_name in uniform_contents:
-            UniformClass = get_uniform_class(uniform_type)
-            if UniformClass:
-                self.uniform_buffers[uniform_name] = UniformClass(self.program, uniform_name)
+            self.uniform_buffers[uniform_name] = create_uniform_buffer(uniform_type, self.program, uniform_name)
         self.loaded = True
 
     def __del__(self):
@@ -127,8 +90,8 @@ class MaterialInstance:
         material_inst_file.read(filePath)
         logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
-        # get material
         try:
+            # get material
             material_name = material_inst_file.get('Material', 'name')
             self.material = resourceMgr.getMaterial(material_name)
         except:
@@ -143,7 +106,7 @@ class MaterialInstance:
                 continue
             for value_name in material_inst_file[value_type]:
                 strValue = material_inst_file.get(value_type, value_name)
-                value = str_to_uniform_data(value_type, strValue)
+                value = material_to_uniform_data(value_type, strValue)
                 if value is not None:
                     self.uniform_datas[value_name] = value
                 else:

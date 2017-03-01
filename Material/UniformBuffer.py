@@ -7,6 +7,41 @@ from Core import logger
 import Resource
 
 
+def create_uniform_buffer(uniform_type, program, uniform_name):
+    if uniform_type == "float":
+        return UniformFloat(program, uniform_name)
+    elif uniform_type == "vec2":
+        return UniformVector2(program, uniform_name)
+    elif uniform_type == "vec3":
+        return UniformVector3(program, uniform_name)
+    elif uniform_type == "vec4":
+        return UniformVector4(program, uniform_name)
+    elif uniform_type == "sampler2D":
+        return UniformTexture2D(program, uniform_name)
+    return None
+
+
+def material_to_uniform_data(value_type, strValue):
+    try:
+        if value_type == 'Float':
+            return np.float32(strValue)
+        elif value_type == 'Int':
+            return np.int32(strValue)
+        elif value_type in ('Vector2', 'Vector3', 'Vector4'):
+            vecValue = eval(strValue)
+            componentCount = int(value_type[-1])
+            if len(vecValue) == componentCount:
+                return np.array(vecValue, dtype=np.float32)
+            else:
+                logger.error(ValueError("%s need %d float members." % (value_type, componentCount)))
+                raise ValueError
+        elif value_type == 'Texture2D':
+            return Resource.ResourceManager.instance().getTexture(strValue)
+    except ValueError:
+        logger.error(traceback.format_exc())
+    return None
+
+
 class UniformVariable:
     def __init__(self, program, variable_name):
         self.name = variable_name
