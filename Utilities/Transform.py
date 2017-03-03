@@ -10,12 +10,17 @@ import numpy as np
 
 PI = math.pi
 TWO_PI = 2.0 * math.pi
-FLOAT32_ZERO = np.float32(0)
-IDENTITY_MATRIX = np.eye(4, dtype=np.float32)
-WORLD_RIGHT = np.array([1.0, 0.0, 0.0])
-WORLD_UP = np.array([0.0, 1.0, 0.0])
-WORLD_FRONT = np.array([0.0, 0.0, 1.0])
 
+Float = lambda x=0.0: np.float32(x)
+Float2 = lambda x=0.0, y=0.0: np.array([x, y], dtype=np.float32)
+Float3 = lambda x=0.0, y=0.0, z=0.0: np.array([x, y, z], dtype=np.float32)
+Float4 = lambda x=0.0, y=0.0, z=0.0, w=0.0: np.array([x, y, z, w], dtype=np.float32)
+Identity = lambda: np.eye(4, dtype=np.float32)
+
+FLOAT_ZERO = Float(0.0)
+WORLD_RIGHT = Float3(1.0, 0.0, 0.0)
+WORLD_UP = Float3(0.0, 1.0, 0.0)
+WORLD_FRONT = Float3(0.0, 0.0, 1.0)
 
 def transform(m, v):
     return np.asarray(m * np.asmatrix(v).T)[:, 0]

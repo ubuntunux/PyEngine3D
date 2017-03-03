@@ -6,47 +6,44 @@ from Utilities import *
 
 class TransformObject:
     def __init__(self, pos):
-        self.move_speed = config.Object.move_speed
-        self.rotation_speed = config.Object.rotation_speed
-
         self.moved = False
         self.rotated = False
         self.scaled = False
         self.updated = False
 
         # transform
-        self.matrix = np.eye(4, dtype=np.float32)
-        self.inverse_matrix = np.eye(4, dtype=np.float32)
-        self.translateMatrix = np.eye(4, dtype=np.float32)
-        self.rotationMatrix = np.eye(4, dtype=np.float32)
-        self.scaleMatrix = np.eye(4, dtype=np.float32)
+        self.matrix = Identity()
+        self.inverse_matrix = Identity()
+        self.translateMatrix = Identity()
+        self.rotationMatrix = Identity()
+        self.scaleMatrix = Identity()
 
-        self.pos = np.zeros(3, dtype=np.float32)  # X, Y, Z
-        self.oldPos = np.zeros(3, dtype=np.float32)  # X, Y, Z
+        self.pos = Float3()
+        self.oldPos = Float3()
 
-        self.rot = np.zeros(3, dtype=np.float32)  # pitch, yaw, roll
-        self.oldRot = np.zeros(3, dtype=np.float32)
+        self.rot = Float3()
+        self.oldRot = Float3()
 
-        self.right = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # X Axis
-        self.up = np.array([0.0, 1.0, 0.0], dtype=np.float32)  # Y Axis
-        self.front = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # Z Axis
+        self.right = WORLD_RIGHT.copy()
+        self.up = WORLD_UP.copy()
+        self.front = WORLD_FRONT.copy()
 
-        self.view_right = np.array([1.0, 0.0, 0.0], dtype=np.float32)  # inverse matrix X Axis
-        self.view_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)  # inverse matrix Y Axis
-        self.view_front = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # inverse matrix Z Axis
+        self.view_right = WORLD_RIGHT.copy()
+        self.view_up = WORLD_UP.copy()
+        self.view_front = WORLD_FRONT.copy()
 
-        self.scale = np.zeros(3, dtype=np.float32)  # X, Y, Z
-        self.oldScale = np.zeros(3, dtype=np.float32)  # X, Y, Z
+        self.scale = Float3()
+        self.oldScale = Float3()
 
         # init transform
         self.setPos(pos)
-        self.setScale([1.0, 1.0, 1.0])
+        self.setScale(Float3(1.0, 1.0, 1.0))
         self.updateTransform()
 
     def resetTransform(self):
-        self.setPos(np.zeros(3, dtype=np.float32))
-        self.setRot(np.zeros(3, dtype=np.float32))
-        self.setScale(np.zeros(3, dtype=np.float32))
+        self.setPos(Float3())
+        self.setRot(Float3())
+        self.setScale(Float3(1.0, 1.0, 1.0))
         self.updateTransform()
 
     # Translate
@@ -83,7 +80,7 @@ class TransformObject:
 
     def moveToUp(self, delta):
         self.moved = True
-        self.pos[...] = self.pos + self.view_up * delta
+        self.pos[...] = self.pos + self.up * delta
 
     def moveToViewFront(self, delta):
         self.moved = True
@@ -95,7 +92,7 @@ class TransformObject:
 
     def moveToViewUp(self, delta):
         self.moved = True
-        self.pos[...] = self.pos + self.up * delta
+        self.pos[...] = self.pos + self.view_up * delta
 
     def moveX(self, delta):
         self.moved = True
@@ -143,7 +140,7 @@ class TransformObject:
 
     def rotationPitch(self, delta=0.0):
         self.rotated = True
-        self.rot[0] += delta * self.rotation_speed
+        self.rot[0] += delta
         if self.rot[0] > TWO_PI:
             self.rot[0] -= TWO_PI
         elif self.rot[0] < 0.0:
@@ -151,7 +148,7 @@ class TransformObject:
 
     def rotationYaw(self, delta=0.0):
         self.rotated = True
-        self.rot[1] += delta * self.rotation_speed
+        self.rot[1] += delta
         if self.rot[1] > TWO_PI:
             self.rot[1] -= TWO_PI
         elif self.rot[1] < 0.0:
@@ -159,7 +156,7 @@ class TransformObject:
 
     def rotationRoll(self, delta=0.0):
         self.rotated = True
-        self.rot[2] += delta * self.rotation_speed
+        self.rot[2] += delta
         if self.rot[2] > TWO_PI:
             self.rot[2] -= TWO_PI
         elif self.rot[2] < 0.0:
@@ -197,11 +194,13 @@ class TransformObject:
 
         if self.rotated and not all(self.oldRot == self.rot):
             self.oldRot[...] = self.rot
+            '''
             self.rotationMatrix = getRotationMatrixZ(self.rot[2])
             rotateY(self.rotationMatrix, self.rot[1])
             rotateX(self.rotationMatrix, self.rot[0])
             self.rotated = False
             self.updated = True
+            '''
 
         if self.scaled and not all(self.oldScale == self.scale):
             self.oldScale[...] = self.scale
@@ -211,9 +210,11 @@ class TransformObject:
 
         if self.updated:
             self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
+            '''
             self.front = self.matrix[:3, 2]
             self.right = self.matrix[:3, 0]
             self.up = self.matrix[:3, 1]
+            '''
 
     # It's view matrix.
     def updateInverseTransform(self):

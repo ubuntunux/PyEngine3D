@@ -262,41 +262,44 @@ class CoreManager(Singleton):
         # get camera
         self.camera = self.objectManager.getMainCamera()
         cameraTransform = self.camera.transform
-        moveSpeed = self.delta * 10.0
+        move_speed = self.camera.move_speed * self.delta
+        pan_speed = self.camera.pan_speed * self.delta
+        rotation_speed = self.camera.rotation_speed * self.delta
 
         if keydown[K_LSHIFT]:
-            moveSpeed *= 4.0
+            move_speed *= 4.0
+            pan_speed *= 4.0
 
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.moveToViewRight(-self.mouseDelta[0] * 0.01)
-            cameraTransform.moveToViewUp(self.mouseDelta[1] * 0.01)
+            cameraTransform.moveToRight(-self.mouseDelta[0] * pan_speed)
+            cameraTransform.moveToUp(self.mouseDelta[1] * pan_speed)
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotationPitch(-self.mouseDelta[1] * 0.03)
-            cameraTransform.rotationYaw(-self.mouseDelta[0] * 0.03)
+            cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
+            cameraTransform.rotationYaw(-self.mouseDelta[0] * rotation_speed)
 
         # camera move front/back
         if self.wheelUp:
-            cameraTransform.moveToViewFront(-5.0)
+            cameraTransform.moveToFront(-move_speed)
         elif self.wheelDown:
-            cameraTransform.moveToViewFront(5.0)
+            cameraTransform.moveToFront(move_speed)
 
         # update camera transform
         if keydown[K_w]:
-            cameraTransform.moveToViewFront(-moveSpeed)
+            cameraTransform.moveToFront(-move_speed)
         elif keydown[K_s]:
-            cameraTransform.moveToViewFront(moveSpeed)
+            cameraTransform.moveToFront(move_speed)
 
         if keydown[K_a]:
-            cameraTransform.moveToViewRight(-moveSpeed)
+            cameraTransform.moveToRight(-move_speed)
         elif keydown[K_d]:
-            cameraTransform.moveToViewRight(moveSpeed)
+            cameraTransform.moveToRight(move_speed)
 
         if keydown[K_q]:
-            cameraTransform.moveToViewUp(-moveSpeed)
+            cameraTransform.moveY(-move_speed)
         elif keydown[K_e]:
-            cameraTransform.moveToViewUp(moveSpeed)
+            cameraTransform.moveY(move_speed)
 
         if keydown[K_SPACE]:
             cameraTransform.resetTransform()

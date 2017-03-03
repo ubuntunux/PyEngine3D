@@ -16,6 +16,7 @@ class Camera(BaseObject):
         self.fov = config.Camera.fov
         self.near = config.Camera.near
         self.far = config.Camera.far
+        self.move_speed = config.Camera.move_speed
         self.pan_speed = config.Camera.pan_speed
         self.rotation_speed = config.Camera.rotation_speed
 

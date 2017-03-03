@@ -202,8 +202,8 @@ class Renderer(Singleton):
         # TEST_CODE
         self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
                                             self.perspective.flat,
-                                            viewTransform.pos, FLOAT32_ZERO)
-        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT32_ZERO,
+                                            viewTransform.pos, FLOAT_ZERO)
+        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
                                            light.lightColor)
 
         # Perspective * View matrix
