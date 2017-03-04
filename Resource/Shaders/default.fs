@@ -36,5 +36,5 @@ void main() {
     vec3 diffuseLighting = diffuseColor * get_base_color() * clamp(dot(lightVector, normal), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
-    result = vec4(lightColor.xyz * (diffuseLighting + specularLighting), 1.0);
+    result = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + get_emissive_color(), 1.0);
 }

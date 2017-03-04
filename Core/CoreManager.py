@@ -156,7 +156,7 @@ class CoreManager(Singleton):
         # quit
         pygame.quit()
 
-    def error(self, msg):
+    def error(self, msg: object) -> object:
         logger.error(msg)
         self.close()
 
@@ -279,6 +279,11 @@ class CoreManager(Singleton):
             cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
             cameraTransform.rotationYaw(-self.mouseDelta[0] * rotation_speed)
 
+        if keydown[K_z]:
+            cameraTransform.rotationRoll(-rotation_speed * 10.0)
+        elif keydown[K_c]:
+            cameraTransform.rotationRoll(rotation_speed * 10.0)
+
         # camera move front/back
         if self.wheelUp:
             cameraTransform.moveToFront(-move_speed)
@@ -337,7 +342,7 @@ class CoreManager(Singleton):
             self.renderTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # debug info
-            # print(self.fps, self.updateTime)
+            print(self.fps, self.updateTime)
             self.renderer.console.info("%.2f fps" % self.fps)
             self.renderer.console.info("%.2f ms" % self.updateTime)
             self.renderer.console.info("CPU : %.2f ms" % self.logicTime)

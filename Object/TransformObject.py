@@ -12,6 +12,7 @@ class TransformObject:
         self.updated = False
 
         # transform
+        self.quat = Float4(0.0, 0.0, 0.0, 1.0)
         self.matrix = Identity()
         self.inverse_matrix = Identity()
         self.translateMatrix = Identity()
@@ -27,10 +28,6 @@ class TransformObject:
         self.right = WORLD_RIGHT.copy()
         self.up = WORLD_UP.copy()
         self.front = WORLD_FRONT.copy()
-
-        self.view_right = WORLD_RIGHT.copy()
-        self.view_up = WORLD_UP.copy()
-        self.view_front = WORLD_FRONT.copy()
 
         self.scale = Float3()
         self.oldScale = Float3()
@@ -82,18 +79,6 @@ class TransformObject:
         self.moved = True
         self.pos[...] = self.pos + self.up * delta
 
-    def moveToViewFront(self, delta):
-        self.moved = True
-        self.pos[...] = self.pos + self.view_front * delta
-
-    def moveToViewRight(self, delta):
-        self.moved = True
-        self.pos[...] = self.pos + self.view_right * delta
-
-    def moveToViewUp(self, delta):
-        self.moved = True
-        self.pos[...] = self.pos + self.view_up * delta
-
     def moveX(self, delta):
         self.moved = True
         self.pos[0] += delta
@@ -116,51 +101,39 @@ class TransformObject:
 
     def setPitch(self, pitch):
         self.rotated = True
+        if pitch > TWO_PI or pitch < 0.0:
+            pitch %= TWO_PI
         self.rot[0] = pitch
-        if self.rot[0] > TWO_PI:
-            self.rot[0] -= TWO_PI
-        elif self.rot[0] < 0.0:
-            self.rot[0] += TWO_PI
 
     def setYaw(self, yaw):
         self.rotated = True
+        if yaw > TWO_PI or yaw < 0.0:
+            yaw %= TWO_PI
         self.rot[1] = yaw
-        if self.rot[1] > TWO_PI:
-            self.rot[1] -= TWO_PI
-        elif self.rot[1] < 0.0:
-            self.rot[1] += TWO_PI
 
     def setRoll(self, roll):
         self.rotated = True
+        if roll > TWO_PI or roll < 0.0:
+            roll %= TWO_PI
         self.rot[2] = roll
-        if self.rot[2] > TWO_PI:
-            self.rot[2] -= TWO_PI
-        elif self.rot[2] < 0.0:
-            self.rot[2] += TWO_PI
 
     def rotationPitch(self, delta=0.0):
         self.rotated = True
         self.rot[0] += delta
-        if self.rot[0] > TWO_PI:
-            self.rot[0] -= TWO_PI
-        elif self.rot[0] < 0.0:
-            self.rot[0] += TWO_PI
+        if self.rot[0] > TWO_PI or self.rot[0] < 0.0:
+            self.rot[0] %= TWO_PI
 
     def rotationYaw(self, delta=0.0):
         self.rotated = True
         self.rot[1] += delta
-        if self.rot[1] > TWO_PI:
-            self.rot[1] -= TWO_PI
-        elif self.rot[1] < 0.0:
-            self.rot[1] += TWO_PI
+        if self.rot[1] > TWO_PI or self.rot[1] < 0.0:
+            self.rot[1] %= TWO_PI
 
     def rotationRoll(self, delta=0.0):
         self.rotated = True
         self.rot[2] += delta
-        if self.rot[2] > TWO_PI:
-            self.rot[2] -= TWO_PI
-        elif self.rot[2] < 0.0:
-            self.rot[2] += TWO_PI
+        if self.rot[2] > TWO_PI or self.rot[2] < 0.0:
+            self.rot[2] %= TWO_PI
 
     # Scale
     def getScale(self):
@@ -186,23 +159,29 @@ class TransformObject:
     def updateTransform(self):
         self.updated = False
 
-        if self.moved and not all(self.oldPos == self.pos):
+        if self.moved and any(self.oldPos != self.pos):
             self.oldPos[...] = self.pos
             self.translateMatrix = getTranslateMatrix(self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
             self.updated = True
 
-        if self.rotated and not all(self.oldRot == self.rot):
+        if self.rotated and any(self.oldRot != self.rot):
             self.oldRot[...] = self.rot
-            '''
-            self.rotationMatrix = getRotationMatrixZ(self.rot[2])
-            rotateY(self.rotationMatrix, self.rot[1])
-            rotateX(self.rotationMatrix, self.rot[0])
+            # matrix rotation - faster
+            matrix_rotation(*self.rot, self.rotationMatrix)
+            matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front
+
+            matrix 회전을 pitch, yaw, roll 3가지 만들어서 최종 합성한 버전으로 테스트해보자. 어떻게 다른지..
+
+            # Quaternion Rotation - slower
+            # euler_to_quaternion(*self.rot, self.quat)
+            # quaternion_to_matrix(self.quat, self.rotationMatrix)
+            # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
+
             self.rotated = False
             self.updated = True
-            '''
 
-        if self.scaled and not all(self.oldScale == self.scale):
+        if self.scaled and any(self.oldScale != self.scale):
             self.oldScale[...] = self.scale
             self.scaleMatrix = getScaleMatrix(self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
@@ -210,19 +189,12 @@ class TransformObject:
 
         if self.updated:
             self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
-            '''
-            self.front = self.matrix[:3, 2]
-            self.right = self.matrix[:3, 0]
-            self.up = self.matrix[:3, 1]
-            '''
 
     # It's view matrix.
     def updateInverseTransform(self):
         if self.updated:
+            #self.inverse_matrix = np.dot(np.linalg.inv(self.translateMatrix), np.dot(np.linalg.inv(self.rotationMatrix), np.linalg.inv(self.scaleMatrix)))
             self.inverse_matrix = np.linalg.inv(self.matrix)
-            self.view_front = self.inverse_matrix[:3, 2]
-            self.view_right = self.inverse_matrix[:3, 0]
-            self.view_up = self.inverse_matrix[:3, 1]
 
     def getTransformInfos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])

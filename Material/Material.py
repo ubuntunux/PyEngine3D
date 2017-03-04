@@ -143,7 +143,7 @@ class MaterialInstance:
                     # linking
                     self.linked_uniform_list.append((uniform_buffer, uniform_data))
                 else:
-                    logger.error("Material requires %s data. MaterialInstance has no %s." % (buffer_name, buffer_name))
+                    logger.error("Material requires %s data. %s material instance has no %s." % (buffer_name, self.name, buffer_name))
 
     def bind(self):
         for uniform_buffer, uniform_data in self.linked_uniform_list:

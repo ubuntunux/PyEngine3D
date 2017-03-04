@@ -1,11 +1,12 @@
 uniform float brightness;
+uniform vec4 emissive_color;
 uniform vec4 diffuse_color;
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
 
 vec3 get_emissive_color()
 {
-    return vec3(1.0, 1.0, 1.0);
+    return emissive_color.xyz * emissive_color.w;
 }
 
 vec3 get_base_color()

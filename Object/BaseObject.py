@@ -9,7 +9,7 @@ from Resource import *
 from Object import TransformObject, Primitive
 from Material import MaterialInstance
 from Utilities import Attributes
-from Core import logger
+from Core import logger, CoreManager
 
 
 class BaseObject:
@@ -33,6 +33,9 @@ class BaseObject:
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('pos', self.transform.pos)
+        self.attributes.setAttribute('right', self.transform.right)
+        self.attributes.setAttribute('up', self.transform.up)
+        self.attributes.setAttribute('front', self.transform.front)
         self.attributes.setAttribute('rot', self.transform.rot)
         self.attributes.setAttribute('scale', self.transform.scale)
         self.attributes.setAttribute('mesh', self.mesh.name if self.mesh else "", type(Primitive))
@@ -57,7 +60,9 @@ class BaseObject:
     def update(self):
         transform = self.transform
         # TEST_CODE
-        transform.setYaw((time.time() * 0.2) % math.pi * 2.0)  # Test Code
+        transform.setPitch((time.time() * 0.5) % (math.pi * 2.0))
+        transform.setYaw((time.time() * 0.5) % (math.pi * 2.0))
+        transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update transform
         transform.updateTransform()
