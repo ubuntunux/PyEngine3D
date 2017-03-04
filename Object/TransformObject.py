@@ -167,19 +167,24 @@ class TransformObject:
 
         if self.rotated and any(self.oldRot != self.rot):
             self.oldRot[...] = self.rot
-            # matrix rotation - faster
+            self.rotated = False
+            self.updated = True
+            
+            # Matrix Rotation - faster
             matrix_rotation(*self.rot, self.rotationMatrix)
-            matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front
+            matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
 
-            matrix 회전을 pitch, yaw, roll 3가지 만들어서 최종 합성한 버전으로 테스트해보자. 어떻게 다른지..
+            # Euler Rotation - slow
+            # p = getRotationMatrixX(self.rot[0])
+            # y = getRotationMatrixY(self.rot[1])
+            # r = getRotationMatrixZ(self.rot[2])
+            # self.rotationMatrix = np.dot(p, np.dot(y, r))
+            # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
 
             # Quaternion Rotation - slower
             # euler_to_quaternion(*self.rot, self.quat)
             # quaternion_to_matrix(self.quat, self.rotationMatrix)
             # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
-
-            self.rotated = False
-            self.updated = True
 
         if self.scaled and any(self.oldScale != self.scale):
             self.oldScale[...] = self.scale
