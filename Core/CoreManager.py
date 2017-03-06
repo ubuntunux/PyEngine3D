@@ -277,7 +277,7 @@ class CoreManager(Singleton):
         # camera rotation
         elif btnL or btnR:
             cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
-            cameraTransform.rotationYaw(-self.mouseDelta[0] * rotation_speed)
+            cameraTransform.rotationYaw(self.mouseDelta[0] * rotation_speed)
 
         if keydown[K_z]:
             cameraTransform.rotationRoll(-rotation_speed * 10.0)
@@ -286,15 +286,15 @@ class CoreManager(Singleton):
 
         # camera move front/back
         if self.wheelUp:
-            cameraTransform.moveToFront(-move_speed)
-        elif self.wheelDown:
             cameraTransform.moveToFront(move_speed)
+        elif self.wheelDown:
+            cameraTransform.moveToFront(-move_speed)
 
         # update camera transform
         if keydown[K_w]:
-            cameraTransform.moveToFront(-move_speed)
-        elif keydown[K_s]:
             cameraTransform.moveToFront(move_speed)
+        elif keydown[K_s]:
+            cameraTransform.moveToFront(-move_speed)
 
         if keydown[K_a]:
             cameraTransform.moveToRight(-move_speed)
@@ -342,7 +342,7 @@ class CoreManager(Singleton):
             self.renderTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # debug info
-            print(self.fps, self.updateTime)
+            # print(self.fps, self.updateTime)
             self.renderer.console.info("%.2f fps" % self.fps)
             self.renderer.console.info("%.2f ms" % self.updateTime)
             self.renderer.console.info("CPU : %.2f ms" % self.logicTime)

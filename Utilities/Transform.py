@@ -329,24 +329,31 @@ def ortho(left, right, bottom, top, znear, zfar):
     return M
 
 
-def frustum(left, right, bottom, top, znear, zfar):
-    assert (right != left)
-    assert (bottom != top)
-    assert (znear != zfar)
-
-    M = np.eye(4, dtype=np.float32)
-    M[0, 0] = +2.0 * znear / (right - left)
-    M[2, 0] = (right + left) / (right - left)
-    M[1, 1] = +2.0 * znear / (top - bottom)
-    M[3, 1] = (top + bottom) / (top - bottom)
-    M[2, 2] = -(zfar + znear) / (zfar - znear)
-    M[3, 2] = -2.0 * znear * zfar / (zfar - znear)
-    M[2, 3] = -1.0
-    return M
-
-
 def perspective(fovy, aspect, znear, zfar):
     assert (znear != zfar)
+    '''
+    # common equation
     h = np.tan(fovy / 360.0 * np.pi) * znear
     w = h * aspect
-    return frustum(-w, w, -h, h, znear, zfar)
+    left = -w
+    right = w
+    top = h
+    bottom = -h
+
+    M = Identity()
+    M[0, :] = [2.0 * znear / (right - left), 0.0, 0.0, 0.0]
+    M[1, :] = [0.0, 2.0 * znear / (top - bottom), 0.0, 0.0]
+    M[2, :] = [(right + left) / (right - left), 0.0, -(zfar + znear) / (zfar - znear), -1.0]
+    M[3, :] = [0.0, (top + bottom) / (top - bottom), -2.0 * znear * zfar / (zfar - znear), 0.0]
+    return M
+    '''
+
+    height = np.tan(fovy / 360.0 * np.pi) * znear
+    width = height * aspect
+    depth = zfar - znear
+    M = Identity()
+    M[0, :] = [znear / width, 0.0, 0.0, 0.0]
+    M[1, :] = [0.0, znear / height, 0.0, 0.0]
+    M[2, :] = [0.0, 0.0, (zfar + znear) / depth, 1.0]  # flip Z axis for left hand system.
+    M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / depth, 0.0]
+    return M

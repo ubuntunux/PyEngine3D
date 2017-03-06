@@ -6,10 +6,10 @@ from Utilities import *
 
 class TransformObject:
     def __init__(self, pos):
-        self.moved = False
-        self.rotated = False
-        self.scaled = False
-        self.updated = False
+        self.moved = True
+        self.rotated = True
+        self.scaled = True
+        self.updated = True
 
         # transform
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
@@ -29,15 +29,20 @@ class TransformObject:
         self.up = WORLD_UP.copy()
         self.front = WORLD_FRONT.copy()
 
-        self.scale = Float3()
-        self.oldScale = Float3()
+        self.scale = Float3(1.0, 1.0, 1.0)
+        self.oldScale = Float3(1.0, 1.0, 1.0)
 
         # init transform
         self.setPos(pos)
+        self.setRot(Float3())
         self.setScale(Float3(1.0, 1.0, 1.0))
         self.updateTransform()
 
     def resetTransform(self):
+        self.moved = True
+        self.rotated = True
+        self.scaled = True
+        self.updated = True
         self.setPos(Float3())
         self.setRot(Float3())
         self.setScale(Float3(1.0, 1.0, 1.0))
@@ -169,7 +174,7 @@ class TransformObject:
             self.oldRot[...] = self.rot
             self.rotated = False
             self.updated = True
-            
+
             # Matrix Rotation - faster
             matrix_rotation(*self.rot, self.rotationMatrix)
             matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)

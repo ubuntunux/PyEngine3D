@@ -189,6 +189,7 @@ class Renderer(Singleton):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CW) # flip for left hand system
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
