@@ -18,5 +18,5 @@ Welcome to the GuineaPig wiki!
  - libpng 1.6.17
  - pygame 1.9.2
 
-## Dependency modules
+## Summary
  - Left hand based coordinate system. ( Y axis up )
