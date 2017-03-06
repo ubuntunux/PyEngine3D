@@ -8,13 +8,14 @@ import Resource
 from Resource import *
 from Object import TransformObject, Primitive
 from Material import MaterialInstance
-from Utilities import Attributes
-from Core import logger, CoreManager
+from Utilities import getClassName, Attributes
+from Core import logger
 
 
 class BaseObject:
     def __init__(self, objName, pos, mesh, material_instance):
         self.name = objName
+        self.class_name = getClassName(self)
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
@@ -33,13 +34,11 @@ class BaseObject:
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('pos', self.transform.pos)
-        self.attributes.setAttribute('right', self.transform.right)
-        self.attributes.setAttribute('up', self.transform.up)
-        self.attributes.setAttribute('front', self.transform.front)
+        self.attributes.setAttribute('matrix', self.transform.matrix)
         self.attributes.setAttribute('rot', self.transform.rot)
         self.attributes.setAttribute('scale', self.transform.scale)
-        self.attributes.setAttribute('mesh', self.mesh.name if self.mesh else "", type(Primitive))
-        self.attributes.setAttribute('material_instance', self.material_instance.name if self.material_instance else "", type(MaterialInstance))
+        self.attributes.setAttribute('mesh', self.mesh)
+        self.attributes.setAttribute('material_instance', self.material_instance)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue):
@@ -59,9 +58,10 @@ class BaseObject:
 
     def update(self):
         transform = self.transform
+
         # TEST_CODE
-        transform.setPitch((time.time() * 0.5) % (math.pi * 2.0))
-        transform.setYaw((time.time() * 0.5) % (math.pi * 2.0))
+        transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
+        transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
         transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update transform

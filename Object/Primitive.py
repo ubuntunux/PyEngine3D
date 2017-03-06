@@ -51,7 +51,7 @@ class Primitive:
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
-        self.attributes.setAttribute("position", len(self.position), type(self.position))
+        self.attributes.setAttribute("vertex", len(self.position))
         return self.attributes
 
     def computeTangent(self):

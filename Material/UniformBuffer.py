@@ -21,21 +21,21 @@ def create_uniform_buffer(uniform_type, program, uniform_name):
     return None
 
 
-def material_to_uniform_data(value_type, strValue):
+def get_uniform_data(data_type, strValue):
     try:
-        if value_type == 'Float':
+        if data_type == 'Float':
             return np.float32(strValue)
-        elif value_type == 'Int':
+        elif data_type == 'Int':
             return np.int32(strValue)
-        elif value_type in ('Vector2', 'Vector3', 'Vector4'):
+        elif data_type in ('Vector2', 'Vector3', 'Vector4'):
             vecValue = eval(strValue)
-            componentCount = int(value_type[-1])
+            componentCount = int(data_type[-1])
             if len(vecValue) == componentCount:
                 return np.array(vecValue, dtype=np.float32)
             else:
-                logger.error(ValueError("%s need %d float members." % (value_type, componentCount)))
+                logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
                 raise ValueError
-        elif value_type == 'Texture2D':
+        elif data_type == 'Texture2D':
             return Resource.ResourceManager.instance().getTexture(strValue)
     except ValueError:
         logger.error(traceback.format_exc())

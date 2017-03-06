@@ -12,6 +12,7 @@ from OpenGL.GL.shaders import glDetachShader
 import Resource
 from Core import logger
 from Utilities import Attributes
+import Render
 from Material import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
@@ -66,6 +67,7 @@ class Material:
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
+        self.Attributes.setAttribute('type', type(self))
         return self.Attributes
 
 
@@ -80,9 +82,7 @@ class MaterialInstance:
         self.program = None
         self.material = None
         self.uniform_datas = {}
-        self.linked_uniform_list = []  #
-        self.activateTextureIndex = GL_TEXTURE0
-        self.textureIndex = 0
+        self.linked_uniform_list = []
         self.Attributes = Attributes()
 
         # open material instance file
@@ -90,60 +90,64 @@ class MaterialInstance:
         material_inst_file.read(filePath)
         logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
-        try:
-            # get material
-            material_name = material_inst_file.get('Material', 'name')
-            self.material = resourceMgr.getMaterial(material_name)
-        except:
-            logger.error(traceback.format_exc())
-            return
-
-        self.program = self.material.program
-
-        # conversion string to uniform variable
-        for value_type in material_inst_file.sections():
-            if value_type == 'Material':
+        # Load data - conversion string to uniform variable
+        for data_type in material_inst_file.sections():
+            if data_type == 'Material':
                 continue
-            for value_name in material_inst_file[value_type]:
-                strValue = material_inst_file.get(value_type, value_name)
-                value = material_to_uniform_data(value_type, strValue)
-                if value is not None:
-                    self.uniform_datas[value_name] = value
+            for data_name in material_inst_file[data_type]:
+                strValue = material_inst_file.get(data_type, data_name)
+                data = get_uniform_data(data_type, strValue)
+                if data is not None:
+                    self.uniform_datas[data_name] = data
                 else:
-                    logger.error("%s MaterialInstance, %s %s is None." % (self.name, value_type, value_name))
+                    logger.error("%s MaterialInstance, %s %s is None." % (self.name, data_type, data_name))
 
-        # link uniform_buffers and uniform_data
-        self.link_uniform_buffers()
+        # get material
+        material = None
+        if material_inst_file.has_option('Material', 'name'):
+            material_name = material_inst_file.get('Material', 'name')
+            material = resourceMgr.getMaterial(material_name)
+            # link uniform_buffers and uniform_data
+            self.link_uniform_buffers(material)
+
+        # load failed.
+        if material is None:
+            logger.error("%s material instance has no material." % self.name)
+            return
 
         self.loaded = True
 
-    def __del__(self):
-        pass
-        # self.delete()
-
-    def delete(self):
-        pass
-
-    def link_uniform_buffers(self):
-        # Link between uniform_buffer and uniform_datas.
-        activateTextureIndex = GL_TEXTURE0
-        textureIndex = 0
+    def clear(self):
+        self.program = None
+        self.material = None
         self.linked_uniform_list = []
-        if self.material:
-            buffer_names = self.material.uniform_buffers.keys()
-            for buffer_name in buffer_names:
-                if buffer_name in self.uniform_datas:
-                    uniform_buffer = self.material.uniform_buffers[buffer_name]
-                    uniform_data = self.uniform_datas[buffer_name]
-                    # Important : set texture binding index
-                    if uniform_buffer.__class__ == UniformTexture2D:
-                        uniform_buffer.set_texture_index(activateTextureIndex, textureIndex)
-                        activateTextureIndex += 1
-                        textureIndex += 1
-                    # linking
-                    self.linked_uniform_list.append((uniform_buffer, uniform_data))
-                else:
-                    logger.error("Material requires %s data. %s material instance has no %s." % (buffer_name, self.name, buffer_name))
+        self.Attributes.clear()
+
+    def link_uniform_buffers(self, material):
+        if material:
+            self.material = material
+            self.program = self.material.program
+
+            # Link between uniform_buffer and uniform_datas.
+            activateTextureIndex = GL_TEXTURE0
+            textureIndex = 0
+            self.linked_uniform_list = []
+            if self.material:
+                buffer_names = self.material.uniform_buffers.keys()
+                for buffer_name in buffer_names:
+                    if buffer_name in self.uniform_datas:
+                        uniform_buffer = self.material.uniform_buffers[buffer_name]
+                        uniform_data = self.uniform_datas[buffer_name]
+                        # Important : set texture binding index
+                        if uniform_buffer.__class__ == UniformTexture2D:
+                            uniform_buffer.set_texture_index(activateTextureIndex, textureIndex)
+                            activateTextureIndex += 1
+                            textureIndex += 1
+                        # linking
+                        self.linked_uniform_list.append((uniform_buffer, uniform_data))
+                    else:
+                        logger.error("Material requires %s data. %s material instance has no %s." % (
+                            buffer_name, self.name, buffer_name))
 
     def bind(self):
         for uniform_buffer, uniform_data in self.linked_uniform_list:
@@ -157,5 +161,8 @@ class MaterialInstance:
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
-        self.Attributes.setAttribute('material', self.material.name, type(self.material))
+        self.Attributes.setAttribute('material', self.material)
+        for uniform_buffer, uniform_data in self.linked_uniform_list:
+            self.Attributes.setAttribute(uniform_buffer.name, uniform_data)
+
         return self.Attributes

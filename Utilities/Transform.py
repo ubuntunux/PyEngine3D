@@ -171,7 +171,7 @@ def slerp(quaternion1, quaternion2, amount):
     num = amount
     num2 = 0.0
     num3 = 0.0
-    num4 = (((quaternion1[1] * quaternion2[1]) + (quaternion1[2] * quaternion2[2])) + (quaternion1[3] * quaternion2[3])) + (quaternion1[0] * quaternion2[0])
+    num4 = np.dot(quaternion1, quaternion2)
     flag = False
     if num4 < 0.0:
         flag = True
