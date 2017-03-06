@@ -276,7 +276,7 @@ class CoreManager(Singleton):
             cameraTransform.moveToUp(self.mouseDelta[1] * pan_speed)
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
+            cameraTransform.rotationPitch(self.mouseDelta[1] * rotation_speed)
             cameraTransform.rotationYaw(self.mouseDelta[0] * rotation_speed)
 
         if keydown[K_z]:
