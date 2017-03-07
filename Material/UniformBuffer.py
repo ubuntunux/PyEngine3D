@@ -49,13 +49,6 @@ class UniformVariable:
         if self.location == -1:
             logger.warn("%s location is -1" % variable_name)
 
-    def __del__(self):
-        pass
-        # self.delete()
-
-    def delete(self):
-        pass
-
     def bind(self, value):
         raise BaseException("You must implement bind function.")
 
@@ -88,6 +81,21 @@ class UniformVector3(UniformVariable):
 class UniformVector4(UniformVariable):
     def bind(self, value):
         glUniform4fv(self.location, 1, value)
+
+
+class UniformMatrix2(UniformVariable):
+    def bind(self, value):
+        glUniformMatrix2fv(self.location, 1, GL_FALSE, value)
+
+
+class UniformMatrix3(UniformVariable):
+    def bind(self, value):
+        glUniformMatrix3fv(self.location, 1, GL_FALSE, value)
+
+
+class UniformMatrix4(UniformVariable):
+    def bind(self, value):
+        glUniformMatrix4fv(self.location, 1, GL_FALSE, value)
 
 
 class UniformTexture2D(UniformVariable):

@@ -1,14 +1,12 @@
 import time, math
 
 import numpy as np
-from OpenGL.GL import *
-from PIL import Image
 
 import Resource
 from Resource import *
-from Object import TransformObject, Primitive
-from Material import MaterialInstance
+from Object import TransformObject
 from Utilities import getClassName, Attributes
+from Material import UniformMatrix4
 from Core import logger
 
 
@@ -19,17 +17,12 @@ class BaseObject:
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
-        self.attributes = Attributes()
         self.material_instance = None
-        self.setMaterialInstance(material_instance)
+        self.attributes = Attributes()
 
-    # all below parameters must move to Materal Class.
-    def setMaterialInstance(self, material_instance):
-        self.material_instance = material_instance
-
-        if self.material_instance:
-            self.modelBind = glGetUniformLocation(self.material_instance.program, "model")
-            self.mvpBind = glGetUniformLocation(self.material_instance.program, "mvp")
+    def set_material_instance(self, material_instance):
+        if material_instance:
+            self.material_instance = material_instance
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
@@ -51,23 +44,20 @@ class BaseObject:
         elif attributeName == 'mesh':
             self.mesh = Resource.ResourceManager.instance().getMesh(attributeValue)
         elif attributeName == 'material_instance':
-            self.material_instance = Resource.ResourceManager.instance().getMaterialInstance(attributeValue)
+            material_instance = Resource.ResourceManager.instance().getMaterialInstance(attributeValue)
+            self.set_material_instance(material_instance)
 
     def setSelected(self, selected):
         self.selected = selected
 
     def update(self):
-        transform = self.transform
-
         # TEST_CODE
-        transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
-        transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
-        transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
+        self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
+        self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
+        self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update transform
-        transform.updateTransform()
+        self.transform.updateTransform()
 
-    def bind(self, vpMatrix):
-        # bind uniform variables
-        glUniformMatrix4fv(self.modelBind, 1, GL_FALSE, self.transform.matrix)
-        glUniformMatrix4fv(self.mvpBind, 1, GL_FALSE, np.dot(self.transform.matrix, vpMatrix))
+    def bind(self):
+        pass

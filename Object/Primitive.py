@@ -24,7 +24,6 @@ class Primitive:
     def initialize(self):
         self.vertexBuffer = VertexArrayBuffer([self.position, self.color, self.normal, self.tangent, self.texcoord],
                                               self.index, dtype=np.float32)
-
         """
         # Example of array buffer
 

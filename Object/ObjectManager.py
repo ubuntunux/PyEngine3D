@@ -3,7 +3,7 @@ import os, glob
 
 from Resource import ResourceManager
 from Core import logger, CoreManager
-from Object import BaseObject, Camera, Light
+from Object import BaseObject, StaticMesh, Camera, Light
 from Render import Renderer
 from Utilities import Singleton, getClassName
 
@@ -77,7 +77,7 @@ class ObjectManager(Singleton):
 
             # create mesh
             material_instance = self.resourceManager.getMaterialInstance("default")
-            obj = BaseObject(objName=name or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
+            obj = StaticMesh(objName=name or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
 
             # add object
             self.objects.append(obj)
@@ -124,8 +124,9 @@ class ObjectManager(Singleton):
                 selectedObject.setSelected(True)
 
     def setObjectFocus(self, objName):
-        if objName in self.objectMap:
-            self.mainCamera.transform.setPos(self.getObject(objName).transform.pos - self.mainCamera.transform.front * 2.0)
+        obj = self.getObject(objName+"2")
+        if obj and obj != self.mainCamera:
+            self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
     def update(self):
         for camera in self.cameras:

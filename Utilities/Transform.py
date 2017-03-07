@@ -17,7 +17,7 @@ TWO_PI = 2.0 * math.pi
 FLOAT_ZERO = np.float32(0.0)
 WORLD_RIGHT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
 WORLD_UP = np.array([0.0, 1.0, 0.0], dtype=np.float32)
-WORLD_FRONT = np.array([0.0, 0.0, -1.0], dtype=np.float32)
+WORLD_FRONT = np.array([0.0, 0.0, 1.0], dtype=np.float32)
 
 
 def Float(x=0.0):

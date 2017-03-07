@@ -6,11 +6,6 @@ from Utilities import *
 
 class TransformObject:
     def __init__(self, pos):
-        self.moved = True
-        self.rotated = True
-        self.scaled = True
-        self.updated = True
-
         # transform
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
         self.matrix = Identity()
@@ -19,23 +14,22 @@ class TransformObject:
         self.rotationMatrix = Identity()
         self.scaleMatrix = Identity()
 
-        self.pos = Float3()
-        self.oldPos = Float3()
-
-        self.rot = Float3()
-        self.oldRot = Float3()
-
         self.right = WORLD_RIGHT.copy()
         self.up = WORLD_UP.copy()
         self.front = WORLD_FRONT.copy()
 
-        self.scale = Float3(1.0, 1.0, 1.0)
-        self.oldScale = Float3(1.0, 1.0, 1.0)
-
         # init transform
-        self.setPos(pos)
-        self.setRot(Float3())
-        self.setScale(Float3(1.0, 1.0, 1.0))
+        self.moved = True
+        self.rotated = True
+        self.scaled = True
+        self.updated = True
+        self.force_update = True
+        self.pos = Float3(*pos)
+        self.oldPos = Float3()
+        self.rot = Float3()
+        self.oldRot = Float3()
+        self.scale = Float3(1, 1, 1)
+        self.oldScale = Float3(1, 1, 1)
         self.updateTransform()
 
     def resetTransform(self):
@@ -43,9 +37,10 @@ class TransformObject:
         self.rotated = True
         self.scaled = True
         self.updated = True
+        self.force_update = True
         self.setPos(Float3())
         self.setRot(Float3())
-        self.setScale(Float3(1.0, 1.0, 1.0))
+        self.setScale(Float3(1, 1, 1))
         self.updateTransform()
 
     # Translate
@@ -164,13 +159,13 @@ class TransformObject:
     def updateTransform(self):
         self.updated = False
 
-        if self.moved and any(self.oldPos != self.pos):
+        if self.moved and any(self.oldPos != self.pos) or self.force_update:
             self.oldPos[...] = self.pos
             self.translateMatrix = getTranslateMatrix(self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
             self.updated = True
 
-        if self.rotated and any(self.oldRot != self.rot):
+        if self.rotated and any(self.oldRot != self.rot) or self.force_update:
             self.oldRot[...] = self.rot
             self.rotated = False
             self.updated = True
@@ -191,19 +186,18 @@ class TransformObject:
             # quaternion_to_matrix(self.quat, self.rotationMatrix)
             # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
 
-        if self.scaled and any(self.oldScale != self.scale):
+        if self.scaled and any(self.oldScale != self.scale) or self.force_update:
             self.oldScale[...] = self.scale
             self.scaleMatrix = getScaleMatrix(self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
             self.updated = True
 
-        if self.updated:
+        if self.updated or self.force_update:
+            self.force_update = False
             self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
 
-    # It's view matrix.
     def updateInverseTransform(self):
         if self.updated:
-            #self.inverse_matrix = np.dot(np.linalg.inv(self.translateMatrix), np.dot(np.linalg.inv(self.rotationMatrix), np.linalg.inv(self.scaleMatrix)))
             self.inverse_matrix = np.linalg.inv(self.matrix)
 
     def getTransformInfos(self):

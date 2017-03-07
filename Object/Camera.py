@@ -1,7 +1,4 @@
-import numpy as np
-
 from Core import logger, config
-from Utilities import *
 from Object import BaseObject
 
 
@@ -29,4 +26,4 @@ class Camera(BaseObject):
 
     def update(self):
         self.transform.updateTransform()
-        self.transform.updateInverseTransform() # update view matrix
+        self.transform.updateInverseTransform()  # update view matrix
