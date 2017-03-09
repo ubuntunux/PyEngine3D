@@ -20,6 +20,3 @@ Welcome to the GuineaPig wiki!
  - pyopengl_accelerate 3.1
  - libpng 1.6.17
  - pygame 1.9.2
-
-## Summary
- - Left hand based coordinate system. ( Y axis up )
