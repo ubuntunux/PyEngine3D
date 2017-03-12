@@ -189,10 +189,7 @@ class CoreManager(Singleton):
             # Resource Message
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
-                camera = self.objectManager.getMainCamera()
-                pos = camera.transform.pos + camera.transform.front * 10.0
-                mesh = self.resourceManager.getMesh(resName)
-                self.objectManager.addMesh(mesh, pos=pos)
+                self.resourceManager.createResource(resName, resType)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
                 resourceList = self.resourceManager.getResourceList()
                 self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
@@ -242,7 +239,7 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10, 10) for i in range(3)]
                         meshName = np.random.choice(self.resourceManager.getMeshNameList())
                         mesh = self.resourceManager.getMesh(meshName)
-                        self.objectManager.addMesh(mesh, pos=pos)
+                        self.objectManager.createMesh(mesh, pos=pos)
                 elif keyDown == K_HOME:
                     obj = self.objectManager.staticMeshes[0]
                     self.objectManager.setObjectFocus(obj)

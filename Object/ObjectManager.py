@@ -27,10 +27,10 @@ class ObjectManager(Singleton):
         self.renderer = Renderer.Renderer.instance()
 
         # add main camera
-        self.mainCamera = self.addCamera()
+        self.mainCamera = self.createCamera()
 
         # default light
-        self.addLight()
+        self.createLight()
 
     def generateObjectName(self, name):
         index = 0
@@ -45,7 +45,7 @@ class ObjectManager(Singleton):
     def getMainCamera(self):
         return self.mainCamera
 
-    def addCamera(self):
+    def createCamera(self):
         name = self.generateObjectName("camera")
         camera = Camera(name)
         self.cameras.append(camera)
@@ -54,7 +54,7 @@ class ObjectManager(Singleton):
         self.coreManager.sendObjectName(camera)
         return camera
 
-    def addLight(self):
+    def createLight(self):
         name = self.generateObjectName("light")
         # create light
         mesh = self.resourceManager.getMesh('sphere')
@@ -69,7 +69,7 @@ class ObjectManager(Singleton):
         self.coreManager.sendObjectName(light)
         return light
 
-    def addMesh(self, mesh, pos=(0,0,0)):
+    def createMesh(self, mesh, pos=(0,0,0)):
         if mesh:
             # generate name
             name = self.generateObjectName(mesh.name)
@@ -89,6 +89,11 @@ class ObjectManager(Singleton):
         else:
             logger.warning("Unknown mesh : %s" % str(mesh))
         return None
+
+    def createMeshHere(self, mesh):
+        camera = self.getMainCamera()
+        pos = camera.transform.pos + camera.transform.front * 10.0
+        self.createMesh(mesh, pos=pos)
 
     def clearObjects(self):
         self.objects = []

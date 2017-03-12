@@ -14,7 +14,7 @@ from Core import logger
 from Utilities import Singleton, getClassName
 from Render import Texture
 from Material import *
-from Object import Triangle, Quad, Mesh, Primitive
+from Object import ObjectManager, Triangle, Quad, Mesh, Primitive
 
 
 # -----------------------#
@@ -283,6 +283,7 @@ class ResourceManager(Singleton):
         self.materialLoader.initialize()
         self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
+        self.objectManager = ObjectManager.instance()
 
     def close(self):
         pass
@@ -318,6 +319,9 @@ class ResourceManager(Singleton):
 
     def getResource(self, resName, resType):
         resource = None
+        if type(resType) == str:
+            resType = eval(resType)
+
         if resType == FragmentShader:
             resource = self.getFragmentShader(resName)
         elif resType == VertexShader:
@@ -326,13 +330,31 @@ class ResourceManager(Singleton):
             resource = self.getMaterial(resName)
         elif resType == MaterialInstance:
             resource = self.getMaterialInstance(resName)
-        elif resType == Mesh:
+        elif issubclass(resType.__class__, Primitive.__class__):
             resource = self.getMesh(resName)
         elif resType == Texture:
             resource = self.getTexture(resName)
-        elif issubclass(resType, Primitive):
-            resource = self.getMesh(resName)
+        else:
+            logger.error("%s(%s) is a unknown type resource." % (resName, resType))
         return resource
+
+    def createResource(self, resName, resType):
+        resource = self.getResource(resName, resType)
+        resType = type(resource)
+        if resource:
+            if resType == FragmentShader:
+                pass
+            elif resType == VertexShader:
+                pass
+            elif resType == Material:
+                pass
+            elif resType == MaterialInstance:
+                pass
+            elif issubclass(resType.__class__, Primitive.__class__):
+                return self.objectManager.createMeshHere(resource)
+            elif resType == Texture:
+                pass
+        logger.error("Can't create %s(%s)." % (resName, resType))
 
     # FUNCTIONS : Shader
 
