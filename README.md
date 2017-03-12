@@ -38,6 +38,8 @@
     - TODO : instancing
     - TODO : skinning
 * Rendering
+    - Left hand coordinate system ( Y-up, X-Right, Z-front )
+    - Row major based matrix
     - View Mode
         - Wire, Solid, Lighting, Color
     - Forward Renderer
