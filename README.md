@@ -39,7 +39,7 @@
     - TODO : skinning
 * Rendering
     - Left hand coordinate system ( Y-up, X-Right, Z-front )
-    - Row major based matrix
+    - Row major based matrix in Application. (but GLSL using column major matrix)
     - View Mode
         - Wire, Solid, Lighting, Color
     - Forward Renderer
