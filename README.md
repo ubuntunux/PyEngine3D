@@ -43,7 +43,7 @@ Welcome to the GuineaPig wiki!
     - Forward Renderer
     - TODO : Deferred Renderer
     - TODO : LightPrepass Renderer
-    - PBR
+    - TODO : PBR
 * Particle System
     - TODO
 * PostProcess
@@ -56,18 +56,18 @@ Welcome to the GuineaPig wiki!
     - TODO : Screen Space SSS
 * Scene Manager
     - Object managing
-    - Render target manage
 * Resource Manager
     - Create/Remove/Regist/Release resources
-    - Resource Reload System
+    - TODO : resource reload system
 * Import/Export
     - OBJ
     - TODO : FBX
     - TODO : Blender
+    - Textures
 * GUI Tool
     - QT backend
     - Kivy backend
 * Debug
     - performance profiler
     - debug info print
-    - render target viewer
+    - TODO : render target viewer
