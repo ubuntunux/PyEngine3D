@@ -33,6 +33,8 @@
     - Light
     - TODO : SkyBox
 * Object
+    - Basic primitives Triangle, Quad, Cube, Shpere
+    - Mesh object from external file ( obj, fbx, blend )
     - TODO : instancing
     - TODO : skinning
 * Rendering
