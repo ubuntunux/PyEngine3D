@@ -20,3 +20,38 @@ Welcome to the GuineaPig wiki!
  - pyopengl_accelerate 3.1
  - libpng 1.6.17
  - pygame 1.9.2
+
+## Features
+* Material System
+    - Material Template
+    - Material Instance
+    - TODO : Shader Cache
+* Actor System
+    - StaticMesh
+    - TODO : SkeletalMesh
+    - TODO : Tree, Foliage
+    - TODO : Landscape
+    - Camera
+    - Light
+* Rendering
+    - Forward Renderer
+    - TODO : Deferred Renderer
+    - TODO : LightPrepass Renderer
+    - PBR
+* PostProcess
+    - TODO : PostProcess Chain
+    - TODO : SSAA, TAA, MSAA, SMAA
+    - TODO : Motion Blur
+    - TODO : HDR Tonemapping
+    - TODO : SSAO, Temporal SSAO
+    - TODO : Screen Space Reflection
+    - TODO : Screen Space SSS
+* Resource Manager
+    - Create/Remove resources
+* Import/Export
+    - OBJ
+    - TODO : FBX
+    - TODO : Blender
+* GUI Tool
+    - QT backend
+    - Kivy backend
