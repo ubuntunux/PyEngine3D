@@ -33,11 +33,19 @@ Welcome to the GuineaPig wiki!
     - TODO : Landscape
     - Camera
     - Light
+    - TODO : SkyBox
+* Object
+    - TODO : instancing
+    - TODO : skinning
 * Rendering
+    - View Mode
+        - Wire, Solid, Lighting, Color
     - Forward Renderer
     - TODO : Deferred Renderer
     - TODO : LightPrepass Renderer
     - PBR
+* Particle System
+    - TODO
 * PostProcess
     - TODO : PostProcess Chain
     - TODO : SSAA, TAA, MSAA, SMAA
@@ -46,8 +54,12 @@ Welcome to the GuineaPig wiki!
     - TODO : SSAO, Temporal SSAO
     - TODO : Screen Space Reflection
     - TODO : Screen Space SSS
+* Scene Manager
+    - Object managing
+    - Render target manage
 * Resource Manager
-    - Create/Remove resources
+    - Create/Remove/Regist/Release resources
+    - Resource Reload System
 * Import/Export
     - OBJ
     - TODO : FBX
@@ -55,3 +67,7 @@ Welcome to the GuineaPig wiki!
 * GUI Tool
     - QT backend
     - Kivy backend
+* Debug
+    - performance profiler
+    - debug info print
+    - render target viewer
