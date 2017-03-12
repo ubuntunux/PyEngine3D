@@ -33,9 +33,13 @@
     - Light
     - TODO : SkyBox
 * Object
+    - Basic primitives Triangle, Quad, Cube, Shpere
+    - Mesh object from external file ( obj, fbx, blend )
     - TODO : instancing
     - TODO : skinning
 * Rendering
+    - Left hand coordinate system ( Y-up, X-Right, Z-front )
+    - Row major based matrix in Application. (but GLSL using column major matrix)
     - View Mode
         - Wire, Solid, Lighting, Color
     - Forward Renderer
