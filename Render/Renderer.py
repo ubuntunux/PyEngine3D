@@ -13,7 +13,7 @@ from Resource import ResourceManager
 from Core import *
 from Render import *
 from Material import *
-from Object import ObjectManager, DebugLine
+from Scene import SceneManager
 from Utilities import *
 
 
@@ -69,7 +69,8 @@ class Renderer(Singleton):
         # managers
         self.coreManager = None
         self.resourceManager = None
-        self.objectManager = None
+        self.sceneManager = None
+        self.sceneManager = None
         # console font
         self.console = None
         # components
@@ -95,7 +96,7 @@ class Renderer(Singleton):
         logger.info("Initialize Renderer")
         self.coreManager = coreManager
         self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.objectManager = ObjectManager.instance()
+        self.sceneManager = SceneManager.instance()
 
         # console font
         self.console = Console()
@@ -115,11 +116,6 @@ class Renderer(Singleton):
 
         # build a scene
         self.resizeScene(self.width, self.height)
-
-        # TEST_CODE : scene constants uniform buffer
-        material_instance = self.resourceManager.getMaterialInstance("default")
-        self.uniformSceneConstants = UniformBlock("sceneConstants", material_instance.program, 144, 0)
-        self.uniformLightConstants = UniformBlock("lightConstants", material_instance.program, 32, 1)
 
     def close(self):
         # record config
@@ -147,7 +143,7 @@ class Renderer(Singleton):
         self.width = width
         self.height = height
         self.viewportRatio = float(width) / float(height)
-        self.camera = self.objectManager.getMainCamera()
+        self.camera = self.sceneManager.getMainCamera()
 
         # get viewport matrix matrix
         self.perspective = perspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
@@ -195,66 +191,7 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        # TEST_CODE
-        light = self.objectManager.lights[0]
-        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-        viewTransform = self.camera.transform
-
-        # TEST_CODE
-        self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
-                                            self.perspective.flat,
-                                            viewTransform.pos, FLOAT_ZERO)
-        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
-                                           light.lightColor)
-
-        # Perspective * View matrix
-        vpMatrix = np.dot(viewTransform.inverse_matrix, self.perspective)
-
-        # draw static meshes
-        last_mesh = None
-        last_program = None
-        last_material_instance = None
-        for obj in self.objectManager.getObjects():
-            program = obj.material_instance.program if obj.material_instance else None
-            mesh = obj.mesh
-            material_instance = obj.material_instance
-
-            if last_program != program:
-                glUseProgram(program)
-                obj.material_instance.bind()
-
-            if material_instance != last_material_instance:
-                material_instance.bind()
-
-            obj.bind(vpMatrix)
-
-            # At last, bind buffers
-            if last_mesh != mesh:
-                mesh.bindBuffers()
-
-            # draw
-            mesh.draw()
-
-            last_program = program
-            last_mesh = mesh
-            last_material_instance = material_instance
-
-        """
-        # selected object - render additive color
-        selected_obj = self.objectManager.getSelectedObject()
-        if selected_obj:
-            glEnable(GL_BLEND)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix)
-
-            glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_COLOR)
-            glLineWidth(1.0)
-            glDisable(GL_CULL_FACE)
-            glDisable(GL_DEPTH_TEST)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            self.render_object(selected_obj, lastProgram, lastMesh, vpMatrix)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        """
+        self.sceneManager.render()
 
         # reset shader program
         glUseProgram(0)

@@ -19,7 +19,7 @@ reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
 
 
 class Material:
-    def __init__(self, material_name, material_template):
+    def __init__(self, material_name, vs_name, fs_name, material_template):
         self.loaded = False
         logger.info("Create Material : " + material_name)
         resourceMgr = Resource.ResourceManager.instance()
@@ -30,10 +30,10 @@ class Material:
         self.Attributes = Attributes()
 
         # build and link the program
-        vs = resourceMgr.getVertexShader("default")
-        fs = resourceMgr.getFragmentShader("default")
-        self.vertexShader = vs.compile(self.material_template)
-        self.fragmentShader = fs.compile(self.material_template)
+        vs = resourceMgr.getVertexShader(vs_name)
+        fs = resourceMgr.getFragmentShader(fs_name)
+        self.vertexShader = vs.compile(self.material_template) if vs else None
+        self.fragmentShader = fs.compile(self.material_template) if fs else None
 
         if self.vertexShader is None or self.fragmentShader is None:
             logger.error("%s material compile error." % material_name)

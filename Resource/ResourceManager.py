@@ -14,7 +14,8 @@ from Core import logger
 from Utilities import Singleton, getClassName
 from Render import Texture
 from Material import *
-from Object import ObjectManager, Triangle, Quad, Mesh, Primitive
+from Object import Triangle, Quad, Mesh, Primitive
+from Scene import SceneManager
 
 
 # -----------------------#
@@ -57,26 +58,26 @@ class ResourceLoader(object):
                         self.registResource(resource, filepath)
                     else:
                         logger.error("%s load failed." % filename)
-            
+
     def createResource(self):
         """ TODO : create resource file and regist."""
         pass
-    
+
     def deleteResource(self, resource):
         """ delete resource file and release."""
         if resource:
             metaData = self.getMetaData(resource)
-            self.releaseResource(resource)            
+            self.releaseResource(resource)
             if metaData:
                 filePath = metaData.filePath
                 if os.path.exists(filePath):
                     os.remove(filePath)
                     logger.info("Remove %s file" & filePath)
-       
+
     def registResource(self, resource, filePath=""):
         if resource is None or not hasattr(resource, "name"):
             raise AttributeError("resource have to has name.")
-        newMetaData = MetaData(filePath)                
+        newMetaData = MetaData(filePath)
         # check the file is exsits resource or not.
         if resource.name in self.resources:
             oldResource = self.resources[resource.name]
@@ -88,7 +89,7 @@ class ResourceLoader(object):
         # regist new resource
         self.resources[resource.name] = resource
         self.metaDatas[resource] = newMetaData
-        
+
     def releaseResource(self, resource):
         if resource:
             if resource.name in self.resources:
@@ -116,7 +117,7 @@ class ResourceLoader(object):
 
     def getResourceNameList(self):
         return list(self.resources.keys())
-    
+
     def getMetaData(self, resource):
         if resource in self.metaDatas:
             return self.metaDatas[resource]
@@ -189,7 +190,8 @@ class MaterialLoader(ResourceLoader, Singleton):
             material_template = f.read()
             f.close()
             material_name = self.splitResourceName(filePath, PathMaterials)
-            material = Material(material_name=material_name, material_template=material_template)
+            material = Material(material_name=material_name, vs_name="default", fs_name="default",
+                                material_template=material_template)
             return material if material.loaded else None
         except:
             logger.error(traceback.format_exc())
@@ -233,13 +235,13 @@ class MeshLoader(ResourceLoader, Singleton):
             f = open(filePath, 'r')
             meshData = eval(f.read())
             f.close()
-            
+
             meshName = self.splitResourceName(filePath, PathMeshes)
             return Mesh(meshName, meshData)
         except:
             logger.error(traceback.format_exc())
         return None
-        
+
 
 # -----------------------#
 # CLASS : TextureLoader
@@ -269,6 +271,7 @@ class ResourceManager(Singleton):
     name = "ResourceManager"
 
     def __init__(self):
+        self.sceneManager = None
         self.textureLoader = TextureLoader.instance()
         self.vertexShaderLoader = VertexShaderLoader.instance()
         self.fragmentShaderLoader = FragmentShaderLoader.instance()
@@ -283,7 +286,7 @@ class ResourceManager(Singleton):
         self.materialLoader.initialize()
         self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
-        self.objectManager = ObjectManager.instance()
+        self.sceneManager = SceneManager.instance()
 
     def close(self):
         pass
@@ -330,7 +333,7 @@ class ResourceManager(Singleton):
             resource = self.getMaterial(resName)
         elif resType == MaterialInstance:
             resource = self.getMaterialInstance(resName)
-        elif issubclass(resType.__class__, Primitive.__class__):
+        elif issubclass(resType, Primitive):
             resource = self.getMesh(resName)
         elif resType == Texture:
             resource = self.getTexture(resName)
@@ -350,8 +353,8 @@ class ResourceManager(Singleton):
                 pass
             elif resType == MaterialInstance:
                 pass
-            elif issubclass(resType.__class__, Primitive.__class__):
-                return self.objectManager.createMeshHere(resource)
+            elif issubclass(resType, Primitive):
+                return self.sceneManager.createMeshHere(resource)
             elif resType == Texture:
                 pass
         logger.error("Can't create %s(%s)." % (resName, resType))
@@ -401,4 +404,3 @@ class ResourceManager(Singleton):
 
     def getTexture(self, textureName):
         return self.textureLoader.getResource(textureName)
-

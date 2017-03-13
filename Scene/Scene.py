@@ -1,30 +1,48 @@
 from collections import OrderedDict
-import os, glob
+import os
+import glob
+import math
+import time as timeModule
 
-from Resource import ResourceManager
 from Core import logger, CoreManager
+from Material import *
 from Object import BaseObject, StaticMesh, Camera, Light
-from Render import Renderer
-from Utilities import Singleton, getClassName
+from Resource import ResourceManager
+from Render import Renderer, PostProcess
+from Utilities import *
 
 
-class ObjectManager(Singleton):
+class SceneManager(Singleton):
     def __init__(self):
+        self.coreManager = None
+        self.resourceManager = None
+        self.renderer = None
+
+        # Scene Objects
+        self.mainCamera = None
         self.cameras = []
+
         self.lights = []
         self.objects = []
         self.objectMap = {}
         self.selectedObject = None
-        self.mainCamera = None
-        self.coreManager = None
-        self.resourceManager = None
-        self.renderer = None
+
+        self.postprocess = []
+
+        # Test Code : scene constants uniform buffer
+        self.uniformSceneConstants = None
+        self.uniformLightConstants = None
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
         self.renderer = Renderer.Renderer.instance()
+
+        # Test Code : scene constants uniform buffer
+        material_instance = self.resourceManager.getMaterialInstance("default")
+        self.uniformSceneConstants = UniformBlock("sceneConstants", material_instance.program, 144, 0)
+        self.uniformLightConstants = UniformBlock("lightConstants", material_instance.program, 32, 1)
 
         # add main camera
         self.mainCamera = self.createCamera()
@@ -132,6 +150,51 @@ class ObjectManager(Singleton):
         obj = self.getObject(objName+"2")
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
+
+    def render(self):
+        light = self.lights[0]
+        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
+        viewTransform = self.mainCamera.transform
+
+        # TEST_CODE
+        perspective = self.renderer.perspective
+        self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
+                                            perspective.flat,
+                                            viewTransform.pos, FLOAT_ZERO)
+        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
+                                            light.lightColor)
+
+        # Perspective * View matrix
+        vpMatrix = np.dot(viewTransform.inverse_matrix, perspective)
+
+        # draw static meshes
+        last_mesh = None
+        last_program = None
+        last_material_instance = None
+        for obj in self.getObjects():
+            program = obj.material_instance.program if obj.material_instance else None
+            mesh = obj.mesh
+            material_instance = obj.material_instance
+
+            if last_program != program:
+                glUseProgram(program)
+                obj.material_instance.bind()
+
+            if material_instance != last_material_instance:
+                material_instance.bind()
+
+            obj.bind(vpMatrix)
+
+            # At last, bind buffers
+            if last_mesh != mesh:
+                mesh.bindBuffers()
+
+            # draw
+            mesh.draw()
+
+            last_program = program
+            last_mesh = mesh
+            last_material_instance = material_instance
 
     def update(self):
         for camera in self.cameras:

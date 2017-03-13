@@ -12,8 +12,8 @@ from OpenGL.GL import *
 
 from Core import *
 from Resource import ResourceManager
-from Object import ObjectManager
 from Render import Renderer
+from Scene import SceneManager
 from Utilities import *
 
 
@@ -102,7 +102,7 @@ class CoreManager(Singleton):
         self.camera = None
         self.resourceManager = None
         self.renderer = None
-        self.objectManager = None
+        self.sceneManager = None
 
     def initialize(self):
         # process start
@@ -121,12 +121,12 @@ class CoreManager(Singleton):
         # creates
         self.resourceManager = ResourceManager.instance()
         self.renderer = Renderer.instance()
-        self.objectManager = ObjectManager.instance()
+        self.sceneManager = SceneManager.instance()
 
         # initalize managers
         self.renderer.initScreen()
         self.resourceManager.initialize()
-        self.objectManager.initialize()
+        self.sceneManager.initialize()
         self.renderer.initialize(self)
 
     def run(self):
@@ -193,16 +193,16 @@ class CoreManager(Singleton):
                 if attribute:
                     self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
             elif cmd == COMMAND.REQUEST_OBJECT_ATTRIBUTE:
-                attribute = self.objectManager.getObjectAttribute(value)
+                attribute = self.sceneManager.getObjectAttribute(value)
                 if attribute:
                     self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
             elif cmd == COMMAND.SET_OBJECT_ATTRIBUTE:
                 objectName, attributeName, attributeValue = value
-                self.objectManager.setObjectAttribute(objectName, attributeName, attributeValue)
+                self.sceneManager.setObjectAttribute(objectName, attributeName, attributeValue)
             elif cmd == COMMAND.SET_OBJECT_SELECT:
-                self.objectManager.setSelectedObject(value)
+                self.sceneManager.setSelectedObject(value)
             elif cmd == COMMAND.SET_OBJECT_FOCUS:
-                self.objectManager.setObjectFocus(value)
+                self.sceneManager.setObjectFocus(value)
 
     def updateEvent(self):
         self.mouseDelta[:] = self.mousePos - self.mouseOldPos
@@ -227,12 +227,12 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10, 10) for i in range(3)]
                         meshName = np.random.choice(self.resourceManager.getMeshNameList())
                         mesh = self.resourceManager.getMesh(meshName)
-                        self.objectManager.createMesh(mesh, pos=pos)
+                        self.sceneManager.createMesh(mesh, pos=pos)
                 elif keyDown == K_HOME:
-                    obj = self.objectManager.staticMeshes[0]
-                    self.objectManager.setObjectFocus(obj)
+                    obj = self.sceneManager.staticMeshes[0]
+                    self.sceneManager.setObjectFocus(obj)
                 elif keyDown == K_DELETE:
-                    self.objectManager.clearObjects()
+                    self.sceneManager.clearObjects()
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
@@ -245,7 +245,7 @@ class CoreManager(Singleton):
         btnL, btnM, btnR = pygame.mouse.get_pressed()
 
         # get camera
-        self.camera = self.objectManager.getMainCamera()
+        self.camera = self.sceneManager.getMainCamera()
         cameraTransform = self.camera.transform
         move_speed = self.camera.move_speed * self.delta
         pan_speed = self.camera.pan_speed * self.delta
@@ -319,7 +319,7 @@ class CoreManager(Singleton):
             self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # update actors
-            self.objectManager.update()
+            self.sceneManager.update()
 
             # render scene
             startTime = time.perf_counter()
@@ -334,7 +334,7 @@ class CoreManager(Singleton):
             self.renderer.console.info("GPU : %.2f ms" % self.renderTime)
             
             # selected object transform info
-            selectedObject = self.objectManager.getSelectedObject()
+            selectedObject = self.sceneManager.getSelectedObject()
             if selectedObject:
                 self.renderer.console.info("Selected Object : %s" % selectedObject.name)
                 self.renderer.console.info(selectedObject.transform.getTransformInfos())
