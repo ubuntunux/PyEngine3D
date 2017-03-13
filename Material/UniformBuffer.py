@@ -8,8 +8,11 @@ import Resource
 
 
 def create_uniform_buffer(uniform_type, program, uniform_name):
+    """ create uniform buffer from .mat(shader) file """
     if uniform_type == "float":
         return UniformFloat(program, uniform_name)
+    elif uniform_type == "int":
+        return UniformInt(program, uniform_name)
     elif uniform_type == "vec2":
         return UniformVector2(program, uniform_name)
     elif uniform_type == "vec3":
@@ -21,22 +24,26 @@ def create_uniform_buffer(uniform_type, program, uniform_name):
     return None
 
 
-def get_uniform_data(data_type, strValue):
+def create_uniform_data(data_type, strValue=""):
+    """ return converted data from string or default data """
     try:
-        if data_type == 'Float':
-            return np.float32(strValue)
-        elif data_type == 'Int':
-            return np.int32(strValue)
-        elif data_type in ('Vector2', 'Vector3', 'Vector4'):
-            vecValue = eval(strValue)
+        if data_type == 'Float' or data_type == UniformFloat:
+            return np.float32(strValue) if strValue else np.float32(0)
+        elif data_type == 'Int' or data_type == UniformInt:
+            return np.int32(strValue) if strValue else np.int32(0)
+        elif data_type in ('Vector2', 'Vector3', 'Vector4') or data_type in (UniformVector2, UniformVector3, UniformVector4):
             componentCount = int(data_type[-1])
-            if len(vecValue) == componentCount:
-                return np.array(vecValue, dtype=np.float32)
+            if strValue:
+                vecValue = eval(strValue)
+                if len(vecValue) == componentCount:
+                    return np.array(vecValue, dtype=np.float32)
+                else:
+                    logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
+                    raise ValueError
             else:
-                logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
-                raise ValueError
-        elif data_type == 'Texture2D':
-            return Resource.ResourceManager.instance().getTexture(strValue)
+                return np.array([1.0, ] * componentCount, dtype=np.float32)
+        elif data_type == 'Texture2D' or data_type == UniformTexture2D:
+            return Resource.ResourceManager.instance().getTexture(strValue or 'empty')
     except ValueError:
         logger.error(traceback.format_exc())
     return None

@@ -171,10 +171,6 @@ class CoreManager(Singleton):
             logger.error("Cannot find " + (objName or ""))
 
     def updateCommand(self):
-        """
-        process recieved command queues and send datas.
-        :return None:
-        """
         while not self.cmdQueue.empty():
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
@@ -183,10 +179,8 @@ class CoreManager(Singleton):
             if cmd == COMMAND.CLOSE_APP:
                 self.close()
                 return
-                # View mode
             elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:
                 self.renderer.setViewMode(cmd)
-            # Resource Message
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
                 self.resourceManager.createResource(resName, resType)
@@ -202,7 +196,6 @@ class CoreManager(Singleton):
                 attribute = self.objectManager.getObjectAttribute(value)
                 if attribute:
                     self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
-            # Object Message
             elif cmd == COMMAND.SET_OBJECT_ATTRIBUTE:
                 objectName, attributeName, attributeValue = value
                 self.objectManager.setObjectAttribute(objectName, attributeName, attributeValue)
@@ -212,11 +205,6 @@ class CoreManager(Singleton):
                 self.objectManager.setObjectFocus(value)
 
     def updateEvent(self):
-        """
-        process keyboard and mouse events
-        :return None:
-        """
-        # set pos
         self.mouseDelta[:] = self.mousePos - self.mouseOldPos
         self.mouseOldPos[:] = self.mousePos
         self.wheelUp, self.wheelDown = False, False
@@ -299,9 +287,9 @@ class CoreManager(Singleton):
             cameraTransform.moveToRight(move_speed)
 
         if keydown[K_q]:
-            cameraTransform.moveY(-move_speed)
+            cameraTransform.moveToUp(-move_speed)
         elif keydown[K_e]:
-            cameraTransform.moveY(move_speed)
+            cameraTransform.moveToUp(move_speed)
 
         if keydown[K_SPACE]:
             cameraTransform.resetTransform()

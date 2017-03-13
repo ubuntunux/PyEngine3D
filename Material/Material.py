@@ -96,7 +96,8 @@ class MaterialInstance:
                 continue
             for data_name in material_inst_file[data_type]:
                 strValue = material_inst_file.get(data_type, data_name)
-                data = get_uniform_data(data_type, strValue)
+                data = create_uniform_data(data_type, strValue)
+                # append uniform data
                 if data is not None:
                     self.uniform_datas[data_name] = data
                 else:
@@ -127,27 +128,35 @@ class MaterialInstance:
         if material:
             self.material = material
             self.program = self.material.program
-
-            # Link between uniform_buffer and uniform_datas.
             activateTextureIndex = GL_TEXTURE0
             textureIndex = 0
             self.linked_uniform_list = []
             if self.material:
                 buffer_names = self.material.uniform_buffers.keys()
                 for buffer_name in buffer_names:
+                    uniform_buffer = self.material.uniform_buffers[buffer_name]
+                    # find uniform data
                     if buffer_name in self.uniform_datas:
-                        uniform_buffer = self.material.uniform_buffers[buffer_name]
                         uniform_data = self.uniform_datas[buffer_name]
-                        # Important : set texture binding index
-                        if uniform_buffer.__class__ == UniformTexture2D:
-                            uniform_buffer.set_texture_index(activateTextureIndex, textureIndex)
-                            activateTextureIndex += 1
-                            textureIndex += 1
-                        # linking
-                        self.linked_uniform_list.append((uniform_buffer, uniform_data))
                     else:
+                        # no found uniform data. create and set default uniform data.
+                        data_type = uniform_buffer.__class__
+                        uniform_data = create_uniform_data(data_type)
+                        if uniform_data:
+                            self.uniform_datas[buffer_name] = uniform_data
+
+                    if uniform_data is None:
                         logger.error("Material requires %s data. %s material instance has no %s." % (
                             buffer_name, self.name, buffer_name))
+
+                    # Important : set texture binding index
+                    if uniform_buffer.__class__ == UniformTexture2D:
+                        uniform_buffer.set_texture_index(activateTextureIndex, textureIndex)
+                        activateTextureIndex += 1
+                        textureIndex += 1
+
+                    # link between uniform buffer and data.
+                    self.linked_uniform_list.append((uniform_buffer, uniform_data))
 
     def bind(self):
         for uniform_buffer, uniform_data in self.linked_uniform_list:

@@ -2,12 +2,12 @@ import numpy as np
 
 from Core import logger, config
 from Utilities import *
-from Object import BaseObject
+from Object import StaticMesh
 
 
-class Light(BaseObject):
+class Light(StaticMesh):
     def __init__(self, name, pos, mesh, material_instance, lightColor=(1.0, 1.0, 1.0, 1.0)):
-        BaseObject.__init__(self, name, pos, mesh, material_instance)
+        StaticMesh.__init__(self, name, pos, mesh, material_instance)
 
         self.lightColor = np.array(lightColor, dtype=np.float32)
 

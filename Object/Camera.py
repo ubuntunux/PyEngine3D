@@ -7,7 +7,7 @@ from Object import BaseObject
 # ------------------------------ #
 class Camera(BaseObject):
     def __init__(self, name):
-        BaseObject.__init__(self, name, (0, 0, 0), None, None)
+        BaseObject.__init__(self, name, (0, 0, 0), None)
 
         # get properties
         self.fov = config.Camera.fov

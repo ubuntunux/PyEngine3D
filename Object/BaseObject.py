@@ -11,7 +11,7 @@ from Core import logger
 
 
 class BaseObject:
-    def __init__(self, objName, pos, mesh, material_instance):
+    def __init__(self, objName, pos, mesh):
         self.name = objName
         self.class_name = getClassName(self)
         self.selected = False

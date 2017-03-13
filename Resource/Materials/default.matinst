@@ -9,5 +9,5 @@ emissive_color = (1.0, 1.0, 1.0, 0.3)
 diffuse_color = (1.0, 1.0, 1.0, 1.0)
 
 [Texture2D]
-texture_diffuse = wool_d
+#texture_diffuse = wool_d
 texture_normal = wool_n

@@ -6,7 +6,7 @@ from Object import BaseObject
 
 class StaticMesh(BaseObject):
     def __init__(self, objName, pos, mesh, material_instance):
-        BaseObject.__init__(self, objName, pos, mesh, material_instance)
+        BaseObject.__init__(self, objName, pos, mesh)
         self.matrix_model = None
         self.matrix_mvp = None
         self.set_material_instance(material_instance)
