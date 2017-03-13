@@ -50,6 +50,11 @@
     - TODO : Deferred Renderer
     - TODO : LightPrepass Renderer
     - TODO : PBR
+    - TODO : Fog
+    - TODO : Volumtric Scattering
+    - TODO : Atmospheric Scattering
+* Transparent Rendering
+    - TODO
 * Particle System
     - TODO
 * PostProcess
@@ -60,6 +65,9 @@
     - TODO : SSAO, Temporal SSAO
     - TODO : Screen Space Reflection
     - TODO : Screen Space SSS
+    - TODO : God Ray
+    - TODO : Glare
+    - TODO : Depth Of Field
 * Scene Manager
     - Object managing
     - Scene Save/Load
