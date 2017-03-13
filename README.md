@@ -35,6 +35,14 @@
 * Object
     - TODO : instancing
     - TODO : skinning
+* Texture Object
+    - TODO : MipMap Filter
+    - TODO : Multi Sample
+    - TODO : Wrap, Mirror, Clamp mode
+    - TODO : sRGB, NormalMap, Linear Color type
+    - TODO : source file path and data
+* Render Target Manager
+    - 2D, 3D, Cube, Array
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color
