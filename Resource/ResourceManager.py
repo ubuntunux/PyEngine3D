@@ -106,8 +106,6 @@ class ResourceLoader(object):
         raise BaseException("You must implement loadResource.")
 
     def getResource(self, resourceName):
-        if resourceName == "":
-            1/0
         if resourceName in self.resources:
             return self.resources[resourceName]
         logger.error("%s cannot found %s resource." % (self.name, resourceName))
