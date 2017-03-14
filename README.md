@@ -68,6 +68,10 @@
     - TODO : God Ray
     - TODO : Glare
     - TODO : Depth Of Field
+    - TODO : Film Grain
+    - TODO : Color Correction
+    - TODO : Color Grading
+    - TODO : Vignetting
 * Scene Manager
     - Object managing
     - Scene Save/Load
