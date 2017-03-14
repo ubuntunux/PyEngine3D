@@ -75,19 +75,22 @@ class ResourceLoader(object):
                     logger.info("Remove %s file" & filePath)
 
     def registResource(self, resource, filePath=""):
+        resource_name = ""
         if resource is None or not hasattr(resource, "name"):
-            raise AttributeError("resource have to has name.")
+            resource_name = self.splitResourceName(filePath, self.dirName)
+        else:
+            resource_name = resource.name
         newMetaData = MetaData(filePath)
         # check the file is exsits resource or not.
-        if resource.name in self.resources:
-            oldResource = self.resources[resource.name]
+        if resource_name in self.resources:
+            oldResource = self.resources[resource_name]
             oldMetaData = self.getMetaData(oldResource)
             if oldMetaData:
                 if newMetaData.filePath == oldMetaData.filePath and newMetaData.dateTime == oldMetaData.dateTime:
                     # Same resource
                     return
         # regist new resource
-        self.resources[resource.name] = resource
+        self.resources[resource_name] = resource
         self.metaDatas[resource] = newMetaData
 
     def releaseResource(self, resource):
@@ -132,7 +135,7 @@ class VertexShaderLoader(ResourceLoader, Singleton):
     name = "VertexShaderLoader"
 
     def __init__(self):
-        super(VertexShaderLoader, self).__init__(PathShaders, ".vs")
+        super(VertexShaderLoader, self).__init__(PathShaders, ".vert")
 
     def loadResource(self, filePath):
         try:
@@ -157,7 +160,7 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
     name = "FragmentShaderLoader"
 
     def __init__(self):
-        super(FragmentShaderLoader, self).__init__(PathShaders, ".fs")
+        super(FragmentShaderLoader, self).__init__(PathShaders, ".frag")
 
     def loadResource(self, filePath):
         try:
@@ -183,18 +186,33 @@ class MaterialLoader(ResourceLoader, Singleton):
 
     def __init__(self):
         super(MaterialLoader, self).__init__(PathMaterials, ".mat")
+        self.materials = {}
 
     def loadResource(self, filePath):
-        try:
-            f = open(filePath, 'r')
-            material_template = f.read()
-            f.close()
-            material_name = self.splitResourceName(filePath, PathMaterials)
-            material = Material(material_name=material_name, vs_name="default", fs_name="default",
-                                material_template=material_template)
-            return material if material.loaded else None
-        except:
-            logger.error(traceback.format_exc())
+        logger.info("Regist %s material template filepath " % self.splitResourceName(filePath, self.dirName))
+        return filePath
+
+    def getCombinedMaterial(self, mat_name, vs_name, fs_name):
+        combined_name = "_".join([mat_name, vs_name, fs_name])
+
+        if combined_name in self.materials:
+            return self.materials[combined_name]
+        # create material and return
+        elif mat_name in self.resources:
+            try:
+                material_filePath = self.resources[mat_name]
+                f = open(material_filePath, 'r')
+                material_template = f.read()
+                f.close()
+                material = Material(mat_name=mat_name, vs_name=vs_name, fs_name=fs_name,
+                                    material_template=material_template)
+                # regist new combined material
+                self.materials[combined_name] = material
+                return material if material.valid else None
+            except:
+                logger.error(traceback.format_exc())
+        else:
+            logger.error("There isn't %s material." % mat_name)
         return None
 
 
@@ -210,7 +228,7 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
     def loadResource(self, filePath):
         material_instance_name = self.splitResourceName(filePath, PathMaterials)
         material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
-        return material_instance if material_instance.loaded else None
+        return material_instance if material_instance.valid else None
 
 
 # -----------------------#
@@ -300,8 +318,8 @@ class ResourceManager(Singleton):
             result.append((resName, getClassName(self.getVertexShader(resName))))
         for resName in self.getFragmentShaderNameList():
             result.append((resName, getClassName(self.getFragmentShader(resName))))
-        for resName in self.getMaterialNameList():
-            result.append((resName, getClassName(self.getMaterial(resName))))
+        for resName in self.getMaterialTemplateNameList():
+            result.append((resName, getClassName(self.getMaterialTemplate(resName))))
         for resName in self.getMaterialInstanceNameList():
             result.append((resName, getClassName(self.getMaterialInstance(resName))))
         for resName in self.getMeshNameList():
@@ -330,7 +348,7 @@ class ResourceManager(Singleton):
         elif resType == VertexShader:
             resource = self.getVertexShader(resName)
         elif resType == Material:
-            resource = self.getMaterial(resName)
+            resource = self.getMaterialTemplate(resName)
         elif resType == MaterialInstance:
             resource = self.getMaterialInstance(resName)
         elif issubclass(resType, Primitive):
@@ -375,11 +393,14 @@ class ResourceManager(Singleton):
 
     # FUNCTIONS : Material
 
-    def getMaterialNameList(self):
+    def getMaterialTemplateNameList(self):
         return self.materialLoader.getResourceNameList()
 
-    def getMaterial(self, name):
-        return self.materialLoader.getResource(name)
+    def getMaterialTemplate(self, mat_name):
+        return self.materialLoader.getResource(mat_name)
+
+    def getCombinedMaterial(self, mat_name, vs_name, fs_name):
+        return self.materialLoader.getCombinedMaterial(mat_name, vs_name, fs_name)
 
     # FUNCTIONS : MaterialInstance
 

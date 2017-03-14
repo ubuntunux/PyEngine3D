@@ -19,11 +19,11 @@ reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
 
 
 class Material:
-    def __init__(self, material_name, vs_name, fs_name, material_template):
-        self.loaded = False
-        logger.info("Create Material : " + material_name)
+    def __init__(self, mat_name, vs_name, fs_name, material_template):
+        self.valid = False
+        logger.info("%s material is combined : vs(%s), fs(%s)" % (mat_name, vs_name, fs_name))
         resourceMgr = Resource.ResourceManager.instance()
-        self.name = material_name
+        self.name = mat_name
         self.program = -1
         self.material_template = material_template
         self.uniform_buffers = OrderedDict({})  # Declaration order is important.
@@ -36,7 +36,7 @@ class Material:
         self.fragmentShader = fs.compile(self.material_template) if fs else None
 
         if self.vertexShader is None or self.fragmentShader is None:
-            logger.error("%s material compile error." % material_name)
+            logger.error("%s material compile error." % mat_name)
             return
 
         # create program
@@ -51,7 +51,7 @@ class Material:
         uniform_contents = re.findall(reFindUniform, self.material_template)
         for uniform_type, uniform_name in uniform_contents:
             self.uniform_buffers[uniform_name] = create_uniform_buffer(uniform_type, self.program, uniform_name)
-        self.loaded = True
+        self.valid = True
 
     def __del__(self):
         pass
@@ -75,12 +75,12 @@ class MaterialInstance:
     resourceMgr = None
 
     def __init__(self, material_instance_name, filePath):
-        self.loaded = False
+        self.valid = False
         logger.info("Create Material Instance : " + material_instance_name)
         resourceMgr = Resource.ResourceManager.instance()
         self.name = material_instance_name
         self.program = None
-        self.material = None
+        self.material = -1
         self.uniform_datas = {}
         self.linked_uniform_list = []
         self.Attributes = Attributes()
@@ -92,7 +92,8 @@ class MaterialInstance:
 
         # Load data - conversion string to uniform variable
         for data_type in material_inst_file.sections():
-            if data_type == 'Material':
+            # pass [Shader] section
+            if data_type == 'Shader':
                 continue
             for data_name in material_inst_file[data_type]:
                 strValue = material_inst_file.get(data_type, data_name)
@@ -105,18 +106,23 @@ class MaterialInstance:
 
         # get material
         material = None
-        if material_inst_file.has_option('Material', 'name'):
-            material_name = material_inst_file.get('Material', 'name')
-            material = resourceMgr.getMaterial(material_name)
-            # link uniform_buffers and uniform_data
-            self.link_uniform_buffers(material)
+        if material_inst_file.has_option('Shader', 'material'):
+            try:
+                mat_name = material_inst_file.get('Shader', 'material')
+                vs_name = material_inst_file.get('Shader', 'vertex_shader')
+                fs_name = material_inst_file.get('Shader', 'fragment_shader')
+                material = resourceMgr.getCombinedMaterial(mat_name, vs_name, fs_name)
+                # link uniform_buffers and uniform_data
+                self.link_uniform_buffers(material)
+            except:
+                logger.error(traceback.format_exc())
 
         # load failed.
         if material is None:
             logger.error("%s material instance has no material." % self.name)
             return
 
-        self.loaded = True
+        self.valid = True
 
     def clear(self):
         self.program = None
@@ -127,7 +133,7 @@ class MaterialInstance:
     def link_uniform_buffers(self, material):
         if material:
             self.material = material
-            self.program = self.material.program
+            self.program = material.program
             activateTextureIndex = GL_TEXTURE0
             textureIndex = 0
             self.linked_uniform_list = []
@@ -163,10 +169,10 @@ class MaterialInstance:
             uniform_buffer.bind(uniform_data)
 
     def getProgram(self):
-        return self.material.program
+        return self.program
 
     def useProgram(self):
-        glUseProgram(self.material.program)
+        glUseProgram(self.program)
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)

@@ -1,5 +1,7 @@
-[Material]
-name = default
+[Shader]
+material = template
+vertex_shader = simple
+fragment_shader = simple
 
 [Float]
 brightness = 0.5

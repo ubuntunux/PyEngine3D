@@ -65,6 +65,7 @@ class SceneManager(Singleton):
 
     def createCamera(self):
         name = self.generateObjectName("camera")
+        logger.info("Create Camera : %s" % name)
         camera = Camera(name)
         self.cameras.append(camera)
         self.objectMap[name] = camera
@@ -74,9 +75,10 @@ class SceneManager(Singleton):
 
     def createLight(self):
         name = self.generateObjectName("light")
+        logger.info("Create Light : %s" % name)
         # create light
         mesh = self.resourceManager.getMesh('sphere')
-        material_instance = self.resourceManager.getMaterialInstance('simple')
+        material_instance = self.resourceManager.getMaterialInstance('default')
         light = Light(name, (0, 0, 0), mesh, material_instance)
 
         # add light
@@ -87,19 +89,19 @@ class SceneManager(Singleton):
         self.coreManager.sendObjectName(light)
         return light
 
-    def createMesh(self, mesh, pos=(0,0,0)):
+    def createMesh(self, mesh, pos=(0, 0, 0)):
         if mesh:
             # generate name
-            name = self.generateObjectName(mesh.name)
-            logger.info("Add mesh : %s %s %s" % (mesh.name, name, pos))
+            objName = self.generateObjectName(mesh.name)
+            logger.info("Create Mesh : %s" % objName)
 
             # create mesh
             material_instance = self.resourceManager.getMaterialInstance("default")
-            obj = StaticMesh(objName=name or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
+            obj = StaticMesh(objName=objName or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
 
             # add object
             self.objects.append(obj)
-            self.objectMap[name] = obj
+            self.objectMap[objName] = obj
 
             # send object name to ui
             self.coreManager.sendObjectName(obj)

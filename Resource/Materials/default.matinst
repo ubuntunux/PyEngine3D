@@ -1,5 +1,7 @@
-[Material]
-name = default
+[Shader]
+material = default
+vertex_shader = default
+fragment_shader = default
 
 [Float]
 brightness = 1.0
@@ -9,5 +11,5 @@ emissive_color = (1.0, 1.0, 1.0, 0.3)
 diffuse_color = (1.0, 1.0, 1.0, 1.0)
 
 [Texture2D]
-#texture_diffuse = wool_d
+texture_diffuse = wool_d
 texture_normal = wool_n
