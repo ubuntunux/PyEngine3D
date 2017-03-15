@@ -119,12 +119,9 @@ class GLFont:
                 glTexCoord2f(0.0, 1.0); glVertex3f(0, self.height, 0)
                 glEnd()
                 glTranslatef(self.width, 0, 0)
-            glEndList( )
+            glEndList()
 
     def render(self, text, x, y):
-        glEnable( GL_TEXTURE_2D )
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glPushMatrix()
         glLoadIdentity()
         glTranslatef(x+self.margin[0], y-self.margin[1], 0)

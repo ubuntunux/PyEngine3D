@@ -1,0 +1,12 @@
+uniform float opacity;
+uniform vec4 emissive_color;
+
+vec3 get_emissive_color()
+{
+    return emissive_color.xyz * emissive_color.w;
+}
+
+float get_opacity()
+{
+    return opacity;
+}

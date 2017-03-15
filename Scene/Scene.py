@@ -20,14 +20,13 @@ class SceneManager(Singleton):
 
         # Scene Objects
         self.mainCamera = None
-        self.cameras = []
-
-        self.lights = []
-        self.objects = []
-        self.objectMap = {}
         self.selectedObject = None
 
+        self.cameras = []
+        self.lights = []
+        self.staticmeshes = []
         self.postprocess = []
+        self.objectMap = {} # All of objects
 
         # Test Code : scene constants uniform buffer
         self.uniformSceneConstants = None
@@ -44,65 +43,62 @@ class SceneManager(Singleton):
         self.uniformSceneConstants = UniformBlock("sceneConstants", material_instance.program, 144, 0)
         self.uniformLightConstants = UniformBlock("lightConstants", material_instance.program, 32, 1)
 
-        # add main camera
+        # create scene objects ( camera, light, postprocess )
         self.mainCamera = self.createCamera()
-
-        # default light
         self.createLight()
+        self.create_postprocess()
 
-    def generateObjectName(self, name):
+    def generateObjectName(self, currName):
         index = 0
-        if name in self.objectMap:
+        if currName in self.objectMap:
             while True:
-                newName = "%s_%d" % (name, index)
+                newName = "%s_%d" % (currName, index)
                 if newName not in self.objectMap:
                     return newName
                 index += 1
-        return name
+        return currName
 
     def getMainCamera(self):
         return self.mainCamera
 
     def createCamera(self):
-        name = self.generateObjectName("camera")
-        logger.info("Create Camera : %s" % name)
-        camera = Camera(name)
+        camera_name = self.generateObjectName("camera")
+        logger.info("Create Camera : %s" % camera_name)
+        camera = Camera(camera_name)
+        # regist
         self.cameras.append(camera)
-        self.objectMap[name] = camera
+        self.objectMap[camera_name] = camera
         # send camera name to gui
         self.coreManager.sendObjectName(camera)
         return camera
 
     def createLight(self):
-        name = self.generateObjectName("light")
-        logger.info("Create Light : %s" % name)
+        light_name = self.generateObjectName("light")
+        logger.info("Create Light : %s" % light_name)
         # create light
         mesh = self.resourceManager.getMesh('sphere')
         material_instance = self.resourceManager.getMaterialInstance('default')
-        light = Light(name, (0, 0, 0), mesh, material_instance)
-
-        # add light
+        light = Light(light_name, (0, 0, 0), mesh, material_instance)
+        # regist
         self.lights.append(light)
-        self.objectMap[name] = light
-
+        self.objectMap[light_name] = light
         # send light name to gui
         self.coreManager.sendObjectName(light)
         return light
 
+    def create_postprocess(self):
+        self.postprocess.append(PostProcess.Tonemapping(name=self.generateObjectName("tonemapping")))
+
     def createMesh(self, mesh, pos=(0, 0, 0)):
         if mesh:
-            # generate name
             objName = self.generateObjectName(mesh.name)
             logger.info("Create Mesh : %s" % objName)
-
             # create mesh
             material_instance = self.resourceManager.getMaterialInstance("default")
             obj = StaticMesh(objName=objName or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
-
-            # add object
-            self.objects.append(obj)
+            # regist
+            self.staticmeshes.append(obj)
             self.objectMap[objName] = obj
-
             # send object name to ui
             self.coreManager.sendObjectName(obj)
             return obj
@@ -116,17 +112,19 @@ class SceneManager(Singleton):
         self.createMesh(mesh, pos=pos)
 
     def clearObjects(self):
-        self.objects = []
+        self.cameras = []
+        self.lights = []
+        self.staticmeshes = []
         self.objectMap = {}
 
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
 
-    def getObjectList(self):
+    def getObjects(self):
         return self.objectMap.values()
 
-    def getObjects(self):
-        return self.objects
+    def getStaticMeshes(self):
+        return self.staticmeshes
 
     def getObjectAttribute(self, objName):
         obj = self.getObject(objName)
@@ -153,50 +151,56 @@ class SceneManager(Singleton):
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
-    def render(self):
-        light = self.lights[0]
-        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
+    def render_objects(self):
         viewTransform = self.mainCamera.transform
-
-        # TEST_CODE
         perspective = self.renderer.perspective
+        vpMatrix = np.dot(viewTransform.inverse_matrix, perspective)
+
+        # Test Code : bind scene shader constants
         self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
                                             perspective.flat,
                                             viewTransform.pos, FLOAT_ZERO)
+        light = self.lights[0]
+        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
         self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
                                             light.lightColor)
 
-        # Perspective * View matrix
-        vpMatrix = np.dot(viewTransform.inverse_matrix, perspective)
-
+        # Test Code : sort tge list by mesh, material
+        static_meshes = self.getStaticMeshes()[:]
+        static_meshes.sort(key=lambda x: id(x.material_instance))
+        static_meshes.sort(key=lambda x: id(x.mesh))
         # draw static meshes
         last_mesh = None
         last_program = None
         last_material_instance = None
-        for obj in self.getObjects():
+        for obj in static_meshes:
             program = obj.material_instance.program if obj.material_instance else None
             mesh = obj.mesh
             material_instance = obj.material_instance
 
-            if last_program != program:
+            if last_program != program and program is not None:
                 glUseProgram(program)
-                obj.material_instance.bind()
 
-            if material_instance != last_material_instance:
+            if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind()
 
             obj.bind(vpMatrix)
 
             # At last, bind buffers
-            if last_mesh != mesh:
+            if last_mesh != mesh and mesh is not None:
                 mesh.bindBuffers()
 
             # draw
-            mesh.draw()
+            if mesh and material_instance:
+                mesh.draw()
 
             last_program = program
             last_mesh = mesh
             last_material_instance = material_instance
+
+    def render_postprocess(self):
+        for postprocess in self.postprocess:
+            postprocess.render()
 
     def update(self):
         for camera in self.cameras:
@@ -205,5 +209,5 @@ class SceneManager(Singleton):
         for light in self.lights:
             light.update()
 
-        for obj in self.objects:
+        for obj in self.staticmeshes:
             obj.update()

@@ -1,0 +1,10 @@
+[Shader]
+material = tonemapping
+vertex_shader = quad
+fragment_shader = tonemapping
+
+[Float]
+opacity = 0.9
+
+[Vector4]
+emissive_color = (5.0, 1.0, 1.0, 0.3)

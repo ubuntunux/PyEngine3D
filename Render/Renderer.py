@@ -50,6 +50,22 @@ class Console:
             self.debugs.append(text)
 
     def render(self):
+        # set orthographic view
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.renderer.width, 0, self.renderer.height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        # set render state
+        glEnable(GL_BLEND)
+        glBlendEquation(GL_FUNC_ADD)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_LIGHTING)
+
         if self.enable and self.infos:
             text = '\n'.join(self.infos) if len(self.infos) > 1 else self.infos[0]
             if text:
@@ -151,12 +167,15 @@ class Renderer(Singleton):
 
         # set viewport
         glViewport(0, 0, width, height)
-        # set perspective view
+
+        """
+        # Legacy opengl pipeline - set perspective view
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        """
 
     def renderScene(self):
         # clear buffer
@@ -167,6 +186,9 @@ class Renderer(Singleton):
         self.render_objects()
         self.render_postprocess()
 
+        # Test Code : reset shader program
+        glUseProgram(0)
+
         # render text
         self.console.render()
 
@@ -174,12 +196,14 @@ class Renderer(Singleton):
         pygame.display.flip()
 
     def render_objects(self):
-        # set perspective view
+        """
+        # Legacy opengl pipeline - set perspective view
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        """
 
         # set render state
         glEnable(GL_DEPTH_TEST)
@@ -191,22 +215,14 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        self.sceneManager.render()
-
-        # reset shader program
-        glUseProgram(0)
+        self.sceneManager.render_objects()
 
     def render_postprocess(self):
-        # set orthographic view
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, self.width, 0, self.height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-        # set render state
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         glDisable(GL_LIGHTING)
+        glBlendEquation(GL_FUNC_ADD)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        self.sceneManager.render_postprocess()
