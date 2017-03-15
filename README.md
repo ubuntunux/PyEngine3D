@@ -73,6 +73,13 @@
     - TODO : Color Correction
     - TODO : Color Grading
     - TODO : Vignetting
+* Font
+    - TODO : Console input/output
+    - TODO : Shader based rendering
+* InGame GUI
+    - TODO : input / output
+    - TODO : progress bar
+    - TODO : button
 * Scene Manager
     - Object managing
     - Scene Save/Load
