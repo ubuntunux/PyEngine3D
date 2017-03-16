@@ -47,10 +47,15 @@
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color
+    - TODO : Culling
+        - view frustum culling 
+        - occlusion culling
+        - distance culling
     - Forward Renderer
     - TODO : Deferred Renderer
     - TODO : LightPrepass Renderer
     - TODO : PBR
+    - TODO : Shadow
     - TODO : Fog
     - TODO : Volumtric Scattering
     - TODO : Atmospheric Scattering
