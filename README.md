@@ -33,6 +33,7 @@
     - Camera
     - Light
     - TODO : SkyBox
+    - TODO : Wind
 * Object
     - TODO : instancing
     - TODO : skinning
@@ -60,7 +61,8 @@
     - TODO : Volumtric Scattering
     - TODO : Atmospheric Scattering
 * Transparent Rendering
-    - TODO
+    - TODO : blend mode
+        - Additive, Multiply, Blending    
 * Particle System
     - TODO
 * PostProcess
