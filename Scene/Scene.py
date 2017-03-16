@@ -17,6 +17,7 @@ class SceneManager(Singleton):
         self.coreManager = None
         self.resourceManager = None
         self.renderer = None
+        self.framebuffer = None
 
         # Scene Objects
         self.mainCamera = None

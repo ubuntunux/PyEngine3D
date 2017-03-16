@@ -9,7 +9,9 @@ in struct VERTEX_ARRAY
     layout(location=4) vec2 texcoord;
 } vertex;
 
+out vec2 texcoord;
 
 void main() {
-    gl_Position = vec4(vertex.position.xy, 0.0, 0.0);
+    texcoord = vertex.texcoord;
+    gl_Position = vec4(vertex.position, 1.0);
 }

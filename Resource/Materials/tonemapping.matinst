@@ -4,7 +4,7 @@ vertex_shader = quad
 fragment_shader = tonemapping
 
 [Float]
-opacity = 0.9
+opacity = 0.5
 
 [Vector4]
-emissive_color = (5.0, 1.0, 1.0, 0.3)
+emissive_color = (0.0, 0.0, 1.0, 0.3)

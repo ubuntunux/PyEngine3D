@@ -1,17 +1,20 @@
+uniform int enable_blend;
 uniform float brightness;
 uniform vec4 emissive_color;
 uniform vec4 diffuse_color;
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
 
-vec3 get_emissive_color()
+vec4 get_emissive_color()
 {
-    return emissive_color.xyz * emissive_color.w;
+    return emissive_color;
 }
 
-vec3 get_base_color()
+vec4 get_base_color()
 {
-    return texture(texture_diffuse, data.textureCoordinate.xy).xyz * brightness * diffuse_color.xyz * diffuse_color.a;
+    vec4 color = texture(texture_diffuse, data.texCoord.xy);
+    color.xyz = color.xyz * brightness * diffuse_color.xyz * diffuse_color.a;
+    return color;
 }
 
 float get_reflection()
@@ -36,7 +39,7 @@ float get_sss_scale()
 
 vec3 get_normal()
 {
-    vec3 normal = texture(texture_normal, data.textureCoordinate.xy).xyz;
+    vec3 normal = texture(texture_normal, data.texCoord.xy).xyz;
     normal = normalize((data.tangentToWorld * vec4(normal * 2.0 - 1.0, 0.0)).xyz);
     return normal;
 }
@@ -52,16 +55,6 @@ float get_roughness()
 }
 
 float get_metalicness()
-{
-    return 1.0;
-}
-
-float get_opacity()
-{
-    return 1.0;
-}
-
-float get_opacity_mask()
 {
     return 1.0;
 }

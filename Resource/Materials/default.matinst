@@ -3,6 +3,9 @@ material = default
 vertex_shader = default
 fragment_shader = default
 
+[Int]
+enable_blend = 0
+
 [Float]
 brightness = 1.0
 

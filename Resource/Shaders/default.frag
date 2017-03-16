@@ -19,7 +19,7 @@ in struct DATA
     vec4 vertexColor;
     vec3 normalVector;
     mat4 tangentToWorld;
-    vec2 textureCoordinate;
+    vec2 texCoord;
     vec3 cameraVector;
     vec3 lightVector;
 } data;
@@ -27,14 +27,19 @@ in struct DATA
 out vec4 result;
 
 void main() {
-    result = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 baseColor = get_base_color();
+    if(baseColor.a < 0.333f && enable_blend != 1)
+    {
+        discard;
+    }
+
     vec3 normalVector = normalize(data.normalVector);
     vec3 cameraVector = normalize(data.cameraVector);
     vec3 lightVector = normalize(data.lightVector);
-    vec3 diffuseColor = get_base_color();
+    vec4 emissiveColor = get_emissive_color();
     vec3 normal = get_normal();
-    vec3 diffuseLighting = diffuseColor * get_base_color() * clamp(dot(lightVector, normal), 0.0, 1.0);
+    vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
-    result = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + get_emissive_color(), 1.0);
+    result = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 }

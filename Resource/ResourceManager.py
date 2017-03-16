@@ -274,9 +274,9 @@ class TextureLoader(ResourceLoader, Singleton):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
-            buffer = image.tobytes("raw", "RGBX", 0, -1)
+            buffer = image.tobytes("raw", image.mode, 0, -1)
             textureName = self.splitResourceName(filePath, PathTextures)
-            return Texture(textureName, buffer, ix, iy)
+            return Texture(textureName, buffer, ix, iy, image.mode)
         except:
             logger.error(traceback.format_exc())
         return None

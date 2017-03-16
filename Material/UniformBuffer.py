@@ -28,8 +28,10 @@ def create_uniform_data(data_type, strValue=""):
     """ return converted data from string or default data """
     try:
         if data_type == 'Float' or data_type == UniformFloat:
+            #return float(strValue) if strValue else 0.0
             return np.float32(strValue) if strValue else np.float32(0)
         elif data_type == 'Int' or data_type == UniformInt:
+            # return int(strValue) if strValue else 0
             return np.int32(strValue) if strValue else np.int32(0)
         elif data_type in ('Vector2', 'Vector3', 'Vector4') or data_type in (UniformVector2, UniformVector3, UniformVector4):
             componentCount = int(data_type[-1])
@@ -67,7 +69,7 @@ class UniformArray(UniformVariable):
 
 class UniformInt(UniformVariable):
     def bind(self, value):
-        glUniform1i(self.location, 1, value)
+        glUniform1i(self.location, value)
 
 
 class UniformFloat(UniformVariable):

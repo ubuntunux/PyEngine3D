@@ -12,6 +12,7 @@ from OpenGL.GLU import *
 from Resource import ResourceManager
 from Core import *
 from Render import *
+from Render import Texture
 from Material import *
 from Scene import SceneManager
 from Utilities import *
@@ -93,6 +94,7 @@ class Renderer(Singleton):
         self.camera = None
         self.lastShader = None
         self.screen = None
+        self.framebuffer = None
         # TEST_CODE
         self.uniformSceneConstants = None
         self.uniformLightConstants = None
@@ -113,6 +115,8 @@ class Renderer(Singleton):
         self.coreManager = coreManager
         self.resourceManager = ResourceManager.ResourceManager.instance()
         self.sceneManager = SceneManager.instance()
+
+        self.framebuffer = Texture.FrameBuffer(self.width, self.height)
 
         # console font
         self.console = Console()
@@ -178,9 +182,8 @@ class Renderer(Singleton):
         """
 
     def renderScene(self):
-        # clear buffer
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # Prepare to render into the renderbuffer and clear buffer
+        self.framebuffer.begin()
 
         # render
         self.render_objects()
@@ -191,6 +194,9 @@ class Renderer(Singleton):
 
         # render text
         self.console.render()
+
+        # blit frame buffer
+        self.framebuffer.end()
 
         # swap buffer
         pygame.display.flip()

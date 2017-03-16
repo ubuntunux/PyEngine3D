@@ -31,7 +31,7 @@ out struct DATA
     vec4 vertexColor;
     vec3 normalVector;
     mat4 tangentToWorld;
-    vec2 textureCoordinate;
+    vec2 texCoord;
     vec3 cameraVector;
     vec3 lightVector;
 } data;
@@ -43,7 +43,7 @@ void main() {
     vec3 bitangent = cross(vertex.tangent, vertex.normal);
     data.tangentToWorld = model * mat4(vec4(vertex.tangent, 0.0), vec4(bitangent, 0.0), vec4(vertex.normal, 0.0),
         vec4(0.0, 0.0, 0.0, 1.0));
-    data.textureCoordinate = vertex.texcoord;
+    data.texCoord = vertex.texcoord;
 
     data.cameraVector = cameraPosition.xyz - data.worldPosition;
     //data.cameraVector = normalize(data.cameraVector);
