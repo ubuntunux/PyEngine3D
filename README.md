@@ -52,6 +52,7 @@
         - view frustum culling 
         - occlusion culling
         - distance culling
+    - TODO : RenderTargets Resize
     - Forward Renderer
     - TODO : Deferred Renderer
     - TODO : LightPrepass Renderer
