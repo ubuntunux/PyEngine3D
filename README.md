@@ -1,7 +1,10 @@
 ### What is GuineaPig
 * Opensource Opengl 3D engine was written in python.
 * Wiki : https://github.com/ubuntunux/GuineaPig/wiki/main
-* Reference - http://learnopengl.com/
+* Reference
+    - http://learnopengl.com/
+    - http://www.opengl-tutorial.org/
+    - https://github.com/neutralord/pyopengl-experiments    
 * Check smiliar project
     - http://glumpy.github.io/
     - https://github.com/JoshuaSenouf/GLEngine
