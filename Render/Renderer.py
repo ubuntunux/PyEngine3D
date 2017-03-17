@@ -94,7 +94,9 @@ class Renderer(Singleton):
         self.camera = None
         self.lastShader = None
         self.screen = None
+
         self.framebuffer = None
+
         # TEST_CODE
         self.uniformSceneConstants = None
         self.uniformLightConstants = None

@@ -12,7 +12,7 @@ from PIL import Image
 from . import *
 from Core import logger
 from Utilities import Singleton, getClassName
-from Render import Texture
+from Render import Texture2D
 from Material import *
 from Object import Triangle, Quad, Mesh, Primitive
 from Scene import SceneManager
@@ -274,9 +274,9 @@ class TextureLoader(ResourceLoader, Singleton):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
-            buffer = image.tobytes("raw", image.mode, 0, -1)
+            data = image.tobytes("raw", image.mode, 0, -1)
             textureName = self.splitResourceName(filePath, PathTextures)
-            return Texture(textureName, buffer, ix, iy, image.mode)
+            return Texture2D(textureName, data, ix, iy, image.mode)
         except:
             logger.error(traceback.format_exc())
         return None
