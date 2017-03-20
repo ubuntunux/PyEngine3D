@@ -42,7 +42,7 @@
     - TODO : skinning
 * Texture Object
     - TODO : MipMap Filter
-    - TODO : Multi Sample
+    - TODO : Multisample texture - glTexImage2DMultisample
     - TODO : Wrap, Mirror, Clamp mode
     - TODO : sRGB, NormalMap, Linear Color type
     - TODO : source file path and data
@@ -56,8 +56,7 @@
         - occlusion culling
         - distance culling
     - RenderBuffer object
-    - Texture2D attach to framebuffer
-    - TODO : Multisample texture
+    - Texture2D attach to framebuffer    
     - TODO : Multi render target
     - TODO : Copy Texture Interface
     - TODO : RenderTargets Resize when change resolution
