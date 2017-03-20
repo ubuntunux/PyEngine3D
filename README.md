@@ -43,6 +43,7 @@
 * Texture Object
     - TODO : MipMap Filter
     - TODO : Multisample texture - glTexImage2DMultisample
+        - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
     - TODO : Wrap, Mirror, Clamp mode
     - TODO : sRGB, NormalMap, Linear Color type
     - TODO : source file path and data
