@@ -187,6 +187,15 @@ class Renderer(Singleton):
         # Prepare to render into the renderbuffer and clear buffer
         self.framebuffer.begin()
 
+        """
+        1. Create multisample textures (or renderbuffers) as render targets (color, depth/stencil, etc.)
+        2. Attach to an FBO
+        3. Bind the FBO as the DRAW_FRAMEBUFFER
+        4. glEnable( GL_MULTISAMPLE )
+        5. Render to it
+        6. Use glBlitFramebuffer to downsample from multisample (per pixel) to single sample (per pixel)
+        """
+
         # render
         self.render_objects()
         self.render_postprocess()
