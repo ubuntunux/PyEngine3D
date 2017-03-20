@@ -270,13 +270,22 @@ class TextureLoader(ResourceLoader, Singleton):
     def __init__(self):
         super(TextureLoader, self).__init__(PathTextures, ".*")
 
+    def get_texture_format(self, str_image_mode):
+        if str_image_mode == "RGB":
+            return GL_RGB
+        elif str_image_mode == "RGBA":
+            return GL_RGBA
+        return GL_RGBA
+
     def loadResource(self, filePath):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
             data = image.tobytes("raw", image.mode, 0, -1)
-            textureName = self.splitResourceName(filePath, PathTextures)
-            return Texture2D(textureName, data, ix, iy, image.mode)
+            texture_name = self.splitResourceName(filePath, PathTextures)
+            internal_format = self.get_texture_format(image.mode)
+            texture_format = internal_format
+            return Texture2D(texture_name, internal_format, ix, iy, texture_format, GL_UNSIGNED_BYTE, data, True)
         except:
             logger.error(traceback.format_exc())
         return None

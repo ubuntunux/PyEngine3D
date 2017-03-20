@@ -11,34 +11,34 @@ from Core import logger
 from Utilities import Singleton, getClassName, Attributes
 
 
-def get_texture_mode(str_image_mode):
-    if str_image_mode == "RGB":
-        return GL_RGB
-    elif str_image_mode == "RGBA":
-        return GL_RGBA
-    return GL_RGBA
-
-
 class Texture2D:
-    def __init__(self, textureFileName, data, width, height, image_mode):
+    def __init__(self, textureFileName, internal_format=GL_RGBA, width=1024, height=1024, format=GL_BGRA,
+                 data_type=GL_UNSIGNED_BYTE, data=None, mipmap=True):
         logger.info("Create " + getClassName(self) + " : " + textureFileName)
         self.name = textureFileName
         self.width = width
         self.height = height
-        self.target = GL_TEXTURE_2D
         self.attribute = Attributes()
-        texture_mode = get_texture_mode(image_mode)
+        self.internal_format = internal_format  # The number of channels and the data type
+        self.format = format  # R,G,B,A order. GL_BGRA is faster than GL_RGBA
 
         self.texture = glGenTextures(1)
-        glBindTexture(self.target, self.texture)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
 
-        glTexImage2D(self.target, 0, texture_mode, width, height, 0, texture_mode, GL_UNSIGNED_BYTE, data)
-        glGenerateMipmap(self.target)
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, data_type, data)
+        if mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D)
 
-        glTexParameteri(self.target, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(self.target, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(self.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(self.target, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        # create indivisual mipmapThis creates a texture with a single mipmap level.
+        # You will also need separate glTexSubImage2D calls to upload each mipmap
+        # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
+        # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
     def __del__(self):
         pass
@@ -48,7 +48,10 @@ class Texture2D:
         glDeleteTextures(1, self.texture)
 
     def bind(self):
-        glBindTexture(self.target, self.texture)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+
+    def attach(self, attachment=GL_COLOR_ATTACHMENT0):
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, self.texture, 0)
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
@@ -57,25 +60,24 @@ class Texture2D:
         return self.attribute
 
 
-class RenderTarget:
+class RenderObject:
+    """
+    RenderObject is fater than Texture2D, but it's read-only.
+    """
     def __init__(self, texture_name, width, height, internal_format=GL_RGBA):
         logger.info("Create " + getClassName(self) + " : " + texture_name)
         self.name = texture_name
         self.width = width
         self.height = height
+        self.internal_format = internal_format  # GL_RGBA, GL_DEPTH_COMPONENT32, GL_DEPTH24_STENCIL8
+
         self.buffer = glGenRenderbuffers(1)
-        self.internal_format = internal_format  # GL_RGBA, GL_DEPTH_COMPONENT24
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
         glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
-    def set_render_target(self, attachment=GL_COLOR_ATTACHMENT0):
-        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.buffer)
-
-    def set_depth_target(self):
-        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.buffer)
-
-    def set_depth_stencil(self):
-        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.buffer)
+    def attach(self, attachment=GL_COLOR_ATTACHMENT0):
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.buffer)
 
 
 class FrameBuffer:
@@ -85,23 +87,42 @@ class FrameBuffer:
         self.height = height
 
         self.framebuffer = glGenFramebuffers(1)
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.framebuffer)
+        # read/write : GL_FRAMEBUFFER, read : GL_READ_FRAMEBUFFER, write :GL_DRAW_FRAMEBUFFER
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-        self.backbuffer = RenderTarget(texture_name="BackBuffer", width=width, height=height, internal_format=GL_RGBA)
-        self.depthbuffer = RenderTarget(texture_name="DepthTarget", width=width, height=height, internal_format=GL_DEPTH_COMPONENT24)
+        self.default_color_texture = Texture2D("ColorTexture", GL_RGBA8, width, height, GL_BGRA, GL_UNSIGNED_BYTE, None,
+                                               False)
+        self.default_depth_stencil_texture = Texture2D("DepthStencilTexture", GL_DEPTH24_STENCIL8, width, height,
+                                                       GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, None, False)
+
+        # RenderBufferObject is faster than Texture2D object, but it's read-only.
+        # self.default_color_buffer = RenderObject(texture_name="ColorBuffer", width=width, height=height,
+        #                                          internal_format=GL_RGBA)
+        # self.default_depth_stencil_buffer = RenderObject(texture_name="DepthStencilBuffer", width=width,
+        #                                                  height=height, internal_format=GL_DEPTH24_STENCIL8)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    def delete(self):
+        glDeleteFramebuffers(self.framebuffer)
 
     def begin(self):
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.framebuffer)
-        self.backbuffer.set_render_target()
-        self.depthbuffer.set_depth_target()
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+
+        self.default_color_texture.attach(GL_COLOR_ATTACHMENT0)
+        self.default_depth_stencil_texture.attach(GL_DEPTH_STENCIL_ATTACHMENT)
+
+        gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
+        if gl_error != GL_FRAMEBUFFER_COMPLETE:
+            logger.error("glCheckFramebufferStatus error %d." % gl_error)
+
         glViewport(0, 0, self.width, self.height)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def end(self):
         # Set up to read from the renderbuffer and draw to window-system framebuffer
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, self.framebuffer)
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)
         # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

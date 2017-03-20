@@ -30,7 +30,7 @@ void main() {
     vec4 baseColor = get_base_color();
     if(baseColor.a < 0.333f && enable_blend != 1)
     {
-        discard;
+        //discard;
     }
 
     vec3 normalVector = normalize(data.normalVector);
