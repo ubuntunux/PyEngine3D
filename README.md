@@ -55,6 +55,7 @@
         - view frustum culling 
         - occlusion culling
         - distance culling
+    - TODO : Copy Texture Interface
     - TODO : RenderTargets Resize when change resolution
     - Forward Renderer
     - TODO : Deferred Renderer
@@ -66,7 +67,7 @@
     - TODO : Atmospheric Scattering
 * Transparent Rendering
     - TODO : blend mode
-        - Additive, Multiply, Blending    
+        - Additive, Multiply, Blending
 * Particle System
     - TODO
 * PostProcess
