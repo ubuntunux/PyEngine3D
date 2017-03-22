@@ -1,3 +1,5 @@
+# Just Remove MaterialTemplate System!!!!
+
 ### What is GuineaPig
 * Opensource Opengl 3D engine was written in python.
 * Wiki : https://github.com/ubuntunux/GuineaPig/wiki/main
