@@ -27,7 +27,7 @@ class SceneManager(Singleton):
         self.lights = []
         self.staticmeshes = []
         self.postprocess = []
-        self.objectMap = {} # All of objects
+        self.objectMap = {}  # All of objects
 
         # Test Code : scene constants uniform buffer
         self.uniformSceneConstants = None

@@ -12,7 +12,7 @@ from OpenGL.GL import *
 
 from Core import *
 from Resource import ResourceManager
-from Render import Renderer
+from Render import Renderer, RenderTargetManager
 from Scene import SceneManager
 from Utilities import *
 
@@ -102,6 +102,7 @@ class CoreManager(Singleton):
         self.camera = None
         self.resourceManager = None
         self.renderer = None
+        self.rendertarget_manager = None
         self.sceneManager = None
 
     def initialize(self):
@@ -121,13 +122,15 @@ class CoreManager(Singleton):
         # creates
         self.resourceManager = ResourceManager.instance()
         self.renderer = Renderer.instance()
+        self.rendertarget_manager = RenderTargetManager.instance()
         self.sceneManager = SceneManager.instance()
 
         # initalize managers
         self.renderer.initScreen()
         self.resourceManager.initialize()
         self.sceneManager.initialize()
-        self.renderer.initialize(self)
+        self.renderer.initialize()
+        self.rendertarget_manager.initialize()
 
     def run(self):
         # main loop

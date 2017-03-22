@@ -10,9 +10,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Resource import ResourceManager
-from Core import *
+from Core import CoreManager, config
 from Render import *
-from Render import Texture
+from Render.RenderTarget import RenderTargets, RenderTargetManager, FrameBuffer
 from Material import *
 from Scene import SceneManager
 from Utilities import *
@@ -51,12 +51,7 @@ class Console:
             self.debugs.append(text)
 
     def render(self):
-        # set orthographic view
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, self.renderer.width, 0, self.renderer.height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        self.renderer.ortho_view()
 
         # set render state
         glEnable(GL_BLEND)
@@ -87,7 +82,7 @@ class Renderer(Singleton):
         self.coreManager = None
         self.resourceManager = None
         self.sceneManager = None
-        self.sceneManager = None
+        self.rendertarget_manager = None
         # console font
         self.console = None
         # components
@@ -112,13 +107,13 @@ class Renderer(Singleton):
         # destroy
         pygame.display.quit()
 
-    def initialize(self, coreManager):
+    def initialize(self):
         logger.info("Initialize Renderer")
-        self.coreManager = coreManager
+        self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
         self.sceneManager = SceneManager.instance()
-
-        self.framebuffer = Texture.FrameBuffer(self.width, self.height)
+        self.rendertarget_manager = RenderTargetManager.instance()
+        self.framebuffer = FrameBuffer(self.width, self.height)
 
         # console font
         self.console = Console()
@@ -174,18 +169,30 @@ class Renderer(Singleton):
         # set viewport
         glViewport(0, 0, width, height)
 
-        """
+    def ortho_view(self):
+        # Legacy opengl pipeline - set orthographic view
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.width, 0, self.height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+    def projection_view(self):
         # Legacy opengl pipeline - set perspective view
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        """
 
     def renderScene(self):
         # Prepare to render into the renderbuffer and clear buffer
         self.framebuffer.begin()
+
+        colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
+
+        self.framebuffer.bind_rendertarget(colortexture, depthtexture, True)
 
         """
         1. Create multisample textures (or renderbuffers) as render targets (color, depth/stencil, etc.)
@@ -213,20 +220,11 @@ class Renderer(Singleton):
         pygame.display.flip()
 
     def render_objects(self):
-        """
-        # Legacy opengl pipeline - set perspective view
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        """
-
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
-        glFrontFace(GL_CW) # flip for left hand system
+        glFrontFace(GL_CW)
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)

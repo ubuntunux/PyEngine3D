@@ -2,9 +2,3 @@
 material = tonemapping
 vertex_shader = quad
 fragment_shader = tonemapping
-
-[Float]
-opacity = 0.0
-
-[Vector4]
-emissive_color = (0.0, 0.0, 1.0, 0.3)

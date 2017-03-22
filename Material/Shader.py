@@ -33,8 +33,9 @@ class Shader:
                              material_template +
                              "\n/* End : Material Template */\n\nvoid main()",
                              self.source, 1)
-        # Compile shaders
+
         try:
+            # Compile shaders
             glShaderSource(shader, shader_code)
             glCompileShader(shader)
             if glGetShaderiv(shader, GL_COMPILE_STATUS) != 1 or True:
@@ -45,7 +46,7 @@ class Shader:
                     logger.error("%s %s shader compile error.\n%s" % (self.name, self.shaderType.name, infoLog))
                 else:
                     # complete
-                    logger.info("%s %s shader compile complete." % (self.name, self.shaderType.name))
+                    logger.info("Complete %s %s compile." % (self.name, self.shaderType.name))
                     return shader
             return None
 

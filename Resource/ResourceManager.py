@@ -290,6 +290,16 @@ class TextureLoader(ResourceLoader, Singleton):
             logger.error(traceback.format_exc())
         return None
 
+    def create_texture(self, textureFileName, internal_format=GL_RGBA, width=1024, height=1024, format=GL_BGRA,
+                       data_type=GL_UNSIGNED_BYTE, data=None, mipmap=True):
+        texture = self.getResource(textureFileName)
+        if texture:
+            return texture
+
+        texture = Texture2D(textureFileName, internal_format, width, height, format, data_type, data, mipmap)
+        self.registResource(texture, "")
+        return texture
+
 
 # -----------------------#
 # CLASS : ResourceManager
@@ -362,7 +372,7 @@ class ResourceManager(Singleton):
             resource = self.getMaterialInstance(resName)
         elif issubclass(resType, Primitive):
             resource = self.getMesh(resName)
-        elif resType == Texture:
+        elif resType == Texture2D:
             resource = self.getTexture(resName)
         else:
             logger.error("%s(%s) is a unknown type resource." % (resName, resType))
