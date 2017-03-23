@@ -8,12 +8,6 @@ from .Texture import Texture2D
 from Render import Renderer
 
 
-def copy_rendertarget(src: Texture2D, dst: Texture2D, filter_type=GL_NEAREST):
-    glBlitFramebuffer(0, 0, src.width, src.height,
-                      0, 0, dst.width, dst.height,
-                      GL_COLOR_BUFFER_BIT, filter_type)
-
-
 class RenderTargets(AutoEnum):
     BACKBUFFER = ()
     DEPTHSTENCIL = ()
@@ -36,20 +30,19 @@ class RenderTargetManager(Singleton):
         fullsize_y = self.renderer.height
         halfsize_x = int(self.renderer.width / 2)
         halfsize_y = int(self.renderer.height / 2)
-        no_mipmap = False
         no_data = None
 
         # Create Render Targets
         self.__create_rendertarget(RenderTargets.BACKBUFFER, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
-                                   GL_UNSIGNED_BYTE, no_data, no_mipmap)
+                                   GL_UNSIGNED_BYTE, no_data)
         self.__create_rendertarget(RenderTargets.DEPTHSTENCIL, GL_DEPTH24_STENCIL8, fullsize_x, fullsize_y,
-                                   GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, no_data, no_mipmap)
+                                   GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, no_data)
         self.__create_rendertarget(RenderTargets.DIFFUSE, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
-                                   GL_UNSIGNED_BYTE, no_data, no_mipmap)
+                                   GL_UNSIGNED_BYTE, no_data)
 
     def __create_rendertarget(self, texture_enum: RenderTargets, internal_format=GL_RGBA, width=1024, height=1024,
-                              texture_format=GL_BGRA, data_type=GL_UNSIGNED_BYTE, data=None, mipmap=True) -> Texture2D:
-        texture = Texture2D(str(texture_enum), internal_format, width, height, texture_format, data_type, data, mipmap)
+                              texture_format=GL_BGRA, data_type=GL_UNSIGNED_BYTE, data=None) -> Texture2D:
+        texture = Texture2D(str(texture_enum), internal_format, width, height, texture_format, data_type, data)
         self.rendertargets[texture_enum.value] = texture
         return texture
 
@@ -72,8 +65,11 @@ class FrameBuffer:
     def begin(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
 
-    def bind_rendertarget(self, colortexture, depthtexture, clear):
+    def bind_rendertarget(self, colortexture, clear_color, depthtexture, clear_depth):
+        clear_flag = 0
         if colortexture:
+            if clear_color:
+                clear_flag |= GL_COLOR_BUFFER_BIT
             colortexture.attach(GL_COLOR_ATTACHMENT0)
             self.rendertarget_width = colortexture.width
             self.rendertarget_height = colortexture.height
@@ -84,11 +80,13 @@ class FrameBuffer:
             #     logger.error("glCheckFramebufferStatus error %d." % gl_error)
 
         if depthtexture:
+            if clear_depth:
+                clear_flag |= GL_DEPTH_BUFFER_BIT
             depthtexture.attach(GL_DEPTH_STENCIL_ATTACHMENT)
 
-        if clear:
+        if clear_flag:
             glClearColor(0.0, 0.0, 0.0, 1.0)
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glClear(clear_flag)
 
     def end(self):
         # Set up to read from the renderbuffer and draw to window-system framebuffer

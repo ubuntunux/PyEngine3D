@@ -285,7 +285,7 @@ class TextureLoader(ResourceLoader, Singleton):
             texture_name = self.splitResourceName(filePath, PathTextures)
             internal_format = self.get_texture_format(image.mode)
             texture_format = internal_format
-            return Texture2D(texture_name, internal_format, ix, iy, texture_format, GL_UNSIGNED_BYTE, data, True)
+            return Texture2D(texture_name, internal_format, ix, iy, texture_format, GL_UNSIGNED_BYTE, data)
         except:
             logger.error(traceback.format_exc())
         return None

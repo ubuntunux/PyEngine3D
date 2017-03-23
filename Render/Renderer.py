@@ -192,7 +192,7 @@ class Renderer(Singleton):
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
-        self.framebuffer.bind_rendertarget(colortexture, depthtexture, True)
+        self.framebuffer.bind_rendertarget(colortexture, True, depthtexture, True)
 
         """
         1. Create multisample textures (or renderbuffers) as render targets (color, depth/stencil, etc.)

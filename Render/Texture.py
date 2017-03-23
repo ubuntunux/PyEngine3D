@@ -7,7 +7,7 @@ from Utilities import Singleton, getClassName, Attributes
 
 class Texture2D:
     def __init__(self, texture_name, internal_format=GL_RGBA, width=1024, height=1024, texture_format=GL_BGRA,
-                 data_type=GL_UNSIGNED_BYTE, data=None, mipmap=True):
+                 data_type=GL_UNSIGNED_BYTE, data=None):
         logger.info("Create " + getClassName(self) + " : " + texture_name)
         self.name = texture_name
         self.width = width
@@ -20,8 +20,7 @@ class Texture2D:
         glBindTexture(GL_TEXTURE_2D, self.texture)
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, texture_format, data_type, data)
-        if mipmap:
-            glGenerateMipmap(GL_TEXTURE_2D)
+        glGenerateMipmap(GL_TEXTURE_2D)
 
         # create indivisual mipmapThis creates a texture with a single mipmap level.
         # You will also need separate glTexSubImage2D calls to upload each mipmap

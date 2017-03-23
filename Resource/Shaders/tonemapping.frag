@@ -1,9 +1,14 @@
 #version 430 core
 
-in vec2 texcoord;
+in struct DATA
+{
+    vec2 texcoord;
+    vec3 position;
+} data;
 
 out vec4 result;
 
 void main() {
-    result = vec4(get_emissive_color(), 1.0);
+    vec4 color = texture(texture_diffuse, data.texcoord.xy);
+    result = vec4(color.xyz * color.xyz, 1.0);
 }

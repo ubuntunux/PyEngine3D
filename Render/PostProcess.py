@@ -3,7 +3,7 @@ from OpenGL.GL import *
 from Core import logger
 from Object import Quad
 from Resource import ResourceManager
-from Render.RenderTarget import RenderTargets, RenderTargetManager, copy_rendertarget
+from Render.RenderTarget import RenderTargets, RenderTargetManager
 import Render
 
 
@@ -28,13 +28,16 @@ class Tonemapping(PostProcess):
         PostProcess.__init__(self, name, material_instance)
 
     def render(self):
-        # texture = RenderTargetManager.instance().get_rendertarget(RenderTargets.BACKBUFFER)
-        # texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        # Render.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, None, False)
-        # self.material_instance.set_uniform_data("texture_diffuse", texture)
+        backbuffer = RenderTargetManager.instance().get_rendertarget(RenderTargets.BACKBUFFER)
+        self.material_instance.set_uniform_data("texture_diffuse", backbuffer)
+
+        texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
+        Render.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
+
+        glClearColor(0.0, 0.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
         
         PostProcess.render(self)
 
-        # copy_rendertarget(texture_diffuse, texture)
         # Render.Renderer.instance().framebuffer.bind_rendertarget(texture, None, False)
 
