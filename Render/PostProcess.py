@@ -33,7 +33,7 @@ class Tonemapping(PostProcess):
         # Render.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, None, False)
         # self.material_instance.set_uniform_data("texture_diffuse", texture)
         
-        PostProcess.render(self, texture)
+        PostProcess.render(self)
 
         # copy_rendertarget(texture_diffuse, texture)
         # Render.Renderer.instance().framebuffer.bind_rendertarget(texture, None, False)
