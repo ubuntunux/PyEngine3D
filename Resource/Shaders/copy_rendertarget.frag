@@ -10,5 +10,5 @@ out vec4 result;
 
 void main() {
     vec4 color = texture(texture_diffuse, data.texcoord.xy);
-    result = vec4(color.xyz * color.xyz, 1.0);
+    result = color;
 }

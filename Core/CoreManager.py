@@ -21,6 +21,7 @@ from Utilities import *
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
 reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 
+
 def IsExtensionSupported(TargetExtension):
     """ Accesses the rendering context to see if it supports an extension.
         Note, that this test only tells you if the OpenGL library supports
@@ -121,7 +122,7 @@ class CoreManager(Singleton):
 
         # creates
         self.resourceManager = ResourceManager.instance()
-        self.renderer = Renderer.instance()
+        self.renderer = Renderer.Renderer.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.sceneManager = SceneManager.instance()
 

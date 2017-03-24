@@ -5,7 +5,6 @@ from OpenGL.GL.EXT.framebuffer_object import *
 from Core import logger
 from Utilities import Singleton, getClassName, Attributes,AutoEnum
 from .Texture import Texture2D
-from Render import Renderer
 
 
 class RenderTargets(AutoEnum):
@@ -20,25 +19,29 @@ class RenderTargetManager(Singleton):
 
     def __init__(self):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
-        self.renderer = None
 
     def initialize(self):
         logger.info("initialize " + getClassName(self))
-        self.renderer = Renderer.Renderer.instance()
+        self.clear()
 
-        fullsize_x = self.renderer.width
-        fullsize_y = self.renderer.height
-        halfsize_x = int(self.renderer.width / 2)
-        halfsize_y = int(self.renderer.height / 2)
+    def create_rendertargets(self, width, height):
+        self.clear()
+
+        fullsize_x = width
+        fullsize_y = height
+        halfsize_x = int(width / 2)
+        halfsize_y = int(height / 2)
         no_data = None
 
-        # Create Render Targets
         self.__create_rendertarget(RenderTargets.BACKBUFFER, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
                                    GL_UNSIGNED_BYTE, no_data)
         self.__create_rendertarget(RenderTargets.DEPTHSTENCIL, GL_DEPTH24_STENCIL8, fullsize_x, fullsize_y,
                                    GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, no_data)
         self.__create_rendertarget(RenderTargets.DIFFUSE, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
                                    GL_UNSIGNED_BYTE, no_data)
+
+    def clear(self):
+        self.rendertargets = [None, ] * RenderTargets.COUNT.value
 
     def __create_rendertarget(self, texture_enum: RenderTargets, internal_format=GL_RGBA, width=1024, height=1024,
                               texture_format=GL_BGRA, data_type=GL_UNSIGNED_BYTE, data=None) -> Texture2D:
@@ -53,17 +56,18 @@ class RenderTargetManager(Singleton):
 class FrameBuffer:
     def __init__(self, width, height):
         logger.info("Create " + getClassName(self))
-        self.framebuffer_width = width
-        self.framebuffer_height = height
         self.rendertarget_width = width
         self.rendertarget_height = height
-        self.framebuffer = glGenFramebuffers(1)
+        self.buffer = glGenFramebuffers(1)
 
     def delete(self):
-        glDeleteFramebuffers(self.framebuffer)
+        glDeleteFramebuffers(self.buffer)
 
-    def begin(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+    def bind(self):
+        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
+
+    def unbind(self):
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def bind_rendertarget(self, colortexture, clear_color, depthtexture, clear_depth):
         clear_flag = 0
@@ -88,13 +92,11 @@ class FrameBuffer:
             glClearColor(0.0, 0.0, 0.0, 1.0)
             glClear(clear_flag)
 
-    def end(self):
-        # Set up to read from the renderbuffer and draw to window-system framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+    def blitFramebuffer(self, framebuffer_width, framebuffer_height):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)
         # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glBlitFramebuffer(0, 0, self.rendertarget_width, self.rendertarget_height,
-                          0, 0, self.framebuffer_width, self.framebuffer_height,
+                          0, 0, framebuffer_width, framebuffer_height,
                           GL_COLOR_BUFFER_BIT, GL_NEAREST)

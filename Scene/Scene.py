@@ -26,8 +26,10 @@ class SceneManager(Singleton):
         self.cameras = []
         self.lights = []
         self.staticmeshes = []
-        self.postprocess = []
         self.objectMap = {}  # All of objects
+
+        # postprocess
+        self.tonemapping = None
 
         # Test Code : scene constants uniform buffer
         self.uniformSceneConstants = None
@@ -88,7 +90,7 @@ class SceneManager(Singleton):
         return light
 
     def create_postprocess(self):
-        self.postprocess.append(PostProcess.Tonemapping(name=self.generateObjectName("tonemapping")))
+        self.tonemapping = PostProcess.Tonemapping(name=self.generateObjectName("tonemapping"))
 
     def createMesh(self, mesh, pos=(0, 0, 0)):
         if mesh:
@@ -200,8 +202,7 @@ class SceneManager(Singleton):
             last_material_instance = material_instance
 
     def render_postprocess(self):
-        for postprocess in self.postprocess:
-            postprocess.render()
+        self.tonemapping.render()
 
     def update(self):
         for camera in self.cameras:

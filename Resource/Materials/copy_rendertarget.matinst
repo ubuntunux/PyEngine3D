@@ -1,4 +1,4 @@
 [Shader]
-material = tonemapping
+material = copy_rendertarget
 vertex_shader = quad
-fragment_shader = tonemapping
+fragment_shader = copy_rendertarget

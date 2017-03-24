@@ -150,10 +150,6 @@ class Renderer(Singleton):
 
     def resizeScene(self, width, height):
         # You have to do pygame.display.set_mode again on Linux.
-        if platformModule.system() == 'Linux':
-            self.screen = pygame.display.set_mode((self.width, self.height),
-                                                  OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
-
         if width <= 0 or height <= 0:
             return
 
@@ -166,8 +162,13 @@ class Renderer(Singleton):
         self.perspective = perspective(self.camera.fov, self.viewportRatio, self.camera.near, self.camera.far)
         self.ortho = ortho(0, self.width, 0, self.height, self.camera.near, self.camera.far)
 
-        # set viewport
-        glViewport(0, 0, width, height)
+        # resize render targets
+        self.rendertarget_manager.create_rendertargets(self.width, self.height)
+
+        # Run pygame.display.set_mode at last!!! very important.
+        if platformModule.system() == 'Linux':
+            self.screen = pygame.display.set_mode((self.width, self.height),
+                                                  OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
 
     def ortho_view(self):
         # Legacy opengl pipeline - set orthographic view
@@ -187,34 +188,25 @@ class Renderer(Singleton):
 
     def renderScene(self):
         # Prepare to render into the renderbuffer and clear buffer
-        self.framebuffer.begin()
+        self.framebuffer.bind()
 
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
         self.framebuffer.bind_rendertarget(colortexture, True, depthtexture, True)
 
-        """
-        1. Create multisample textures (or renderbuffers) as render targets (color, depth/stencil, etc.)
-        2. Attach to an FBO
-        3. Bind the FBO as the DRAW_FRAMEBUFFER
-        4. glEnable( GL_MULTISAMPLE )
-        5. Render to it
-        6. Use glBlitFramebuffer to downsample from multisample (per pixel) to single sample (per pixel)
-        """
-
         # render
         self.render_objects()
         self.render_postprocess()
 
-        # Test Code : reset shader program
+        # reset shader program
         glUseProgram(0)
 
         # render text
         self.console.render()
 
         # blit frame buffer
-        self.framebuffer.end()
+        self.framebuffer.blitFramebuffer(self.width, self.height)
 
         # swap buffer
         pygame.display.flip()

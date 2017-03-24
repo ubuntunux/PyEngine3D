@@ -35,7 +35,6 @@ class Texture2D:
 
     def __del__(self):
         pass
-        # self.delete()
 
     def delete(self):
         glDeleteTextures(1, self.texture)

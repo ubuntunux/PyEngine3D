@@ -1,10 +1,9 @@
 from OpenGL.GL import *
 
 from Core import logger
-from Object import Quad
 from Resource import ResourceManager
 from Render.RenderTarget import RenderTargets, RenderTargetManager
-import Render
+from Render import Renderer
 
 
 class PostProcess:
@@ -22,6 +21,18 @@ class PostProcess:
         self.mesh.draw()
 
 
+class CopyRenderTarget(PostProcess):
+    def __init__(self, name):
+        material_instance = ResourceManager.ResourceManager.instance().getMaterialInstance("copy_rendertarget")
+        PostProcess.__init__(self, name, material_instance)
+
+    def render(self, src_texture, dst_texture):
+        Render.Renderer.instance().framebuffer.bind_rendertarget(dst_texture, False, None, False)
+        texture_diffuse = RenderTargetManager.instance().get_rendertarget(src_texture)
+        self.material_instance.set_uniform_data("texture_diffuse", texture_diffuse)
+        PostProcess.render(self)
+
+
 class Tonemapping(PostProcess):
     def __init__(self, name):
         material_instance = ResourceManager.ResourceManager.instance().getMaterialInstance("tonemapping")
@@ -32,12 +43,6 @@ class Tonemapping(PostProcess):
         self.material_instance.set_uniform_data("texture_diffuse", backbuffer)
 
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        Render.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
-
-        glClearColor(0.0, 0.0, 1.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT)
+        Renderer.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
         
         PostProcess.render(self)
-
-        # Render.Renderer.instance().framebuffer.bind_rendertarget(texture, None, False)
-
