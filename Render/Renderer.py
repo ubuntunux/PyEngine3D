@@ -122,15 +122,6 @@ class Renderer(Singleton):
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
-        # Start - fixed pipe line light setting
-        glLightfv(GL_LIGHT0, GL_POSITION, (-40, 200, 100, 0.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.2, 0.2, 0.2, 1.0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
-        glEnable(GL_LIGHT0)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_COLOR_MATERIAL)
-        # End - fixed pipe line light setting
-
         # build a scene
         self.resizeScene(self.width, self.height)
 
