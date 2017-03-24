@@ -129,9 +129,9 @@ class CoreManager(Singleton):
         # initalize managers
         self.renderer.initScreen()
         self.resourceManager.initialize()
+        self.rendertarget_manager.initialize()
         self.sceneManager.initialize()
         self.renderer.initialize()
-        self.rendertarget_manager.initialize()
 
     def run(self):
         # main loop
