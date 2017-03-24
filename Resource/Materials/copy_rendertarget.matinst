@@ -1,0 +1,4 @@
+[Shader]
+material = tonemapping
+vertex_shader = quad
+fragment_shader = tonemapping
