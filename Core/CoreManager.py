@@ -133,31 +133,24 @@ class CoreManager(Singleton):
         self.sceneManager.initialize()
         self.renderer.initialize()
 
+        # sen created object list to UI
+        self.sendObjectList()
+
     def run(self):
-        # main loop
-        self.update()
+        self.update()  # main loop
 
         # send a message to close ui
         if self.uiCmdQueue:
             self.uiCmdQueue.put(COMMAND.CLOSE_UI)
 
-        # close renderer
         self.renderer.close()
-
-        # close resource manager
         self.resourceManager.close()
-
-        # destory screen
         self.renderer.destroyScreen()
 
-        # save config
-        config.save()
+        config.save()  # save config
         logger.info("Saved config file - " + config.getFilename())
+        logger.info("Process Stop : %s" % getClassName(self))  # process stop
 
-        # process stop
-        logger.info("Process Stop : %s" % getClassName(self))
-
-        # quit
         pygame.quit()
 
     def error(self, msg: object) -> object:
@@ -168,11 +161,16 @@ class CoreManager(Singleton):
         self.running = False
 
     # receive and send messages, communication with GUI
-    def sendObjectName(self, obj):
-        if obj:
-            self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_NAME, obj.name)
-        else:
-            logger.error("Cannot find " + (objName or ""))
+    def sendObjectName(self, objName):
+        self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_NAME, objName)
+
+    def sendObjectList(self):
+        obj_names = self.sceneManager.getObjectNames()
+        for obj_name in obj_names:
+            self.sendObjectName(obj_name)
+
+    def notifyDeleteObject(self, obj_name):
+        self.uiCmdQueue.put(COMMAND.DELETE_OBJECT_NAME, obj_name)
 
     def updateCommand(self):
         while not self.cmdQueue.empty():
@@ -187,10 +185,14 @@ class CoreManager(Singleton):
                 self.renderer.setViewMode(cmd)
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
-                self.resourceManager.createResource(resName, resType)
+                obj = self.resourceManager.createResource(resName, resType)
+                if obj:
+                    self.sendObjectName(obj.name)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
                 resourceList = self.resourceManager.getResourceList()
                 self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
+            elif cmd == COMMAND.REQUEST_OBJECT_LIST:
+                self.sendObjectList()
             elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
                 resName, resType = value
                 attribute = self.resourceManager.getResourceAttribute(resName, resType)
@@ -231,12 +233,19 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10, 10) for i in range(3)]
                         meshName = np.random.choice(self.resourceManager.getMeshNameList())
                         mesh = self.resourceManager.getMesh(meshName)
-                        self.sceneManager.createMesh(mesh, pos=pos)
+                        obj = self.sceneManager.createMesh(mesh, pos=pos)
+                        self.sendObjectName(obj.name)
                 elif keyDown == K_HOME:
                     obj = self.sceneManager.staticMeshes[0]
                     self.sceneManager.setObjectFocus(obj)
                 elif keyDown == K_DELETE:
-                    self.sceneManager.clearObjects()
+                    # Test Code
+                    obj_names = set(self.sceneManager.getObjectNames())
+                    # clear static mesh
+                    self.sceneManager.clearStaticMeshes()
+                    current_obj_names = set(self.sceneManager.getObjectNames())
+                    for obj_name in (obj_names - current_obj_names):
+                        self.notifyDeleteObject(obj_name)
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:

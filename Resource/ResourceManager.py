@@ -392,8 +392,9 @@ class ResourceManager(Singleton):
                 pass
             elif issubclass(resType, Primitive):
                 return self.sceneManager.createMeshHere(resource)
-            elif resType == Texture:
+            elif resType == Texture2D:
                 pass
+        return None
         logger.error("Can't create %s(%s)." % (resName, resType))
 
     # FUNCTIONS : Shader

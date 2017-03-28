@@ -207,8 +207,8 @@ class TransformObject:
         text += "\n\tRight : " + " ".join(["%2.2f" % i for i in self.right])
         text += "\n\tUp : " + " ".join(["%2.2f" % i for i in self.up])
         text += "\n\tMatrix"
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 0]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 1]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 2]])
-        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[:, 3]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[0, :]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[1, :]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[2, :]])
+        text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[3, :]])
         return text

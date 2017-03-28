@@ -71,8 +71,6 @@ class SceneManager(Singleton):
         # regist
         self.cameras.append(camera)
         self.objectMap[camera_name] = camera
-        # send camera name to gui
-        self.coreManager.sendObjectName(camera)
         return camera
 
     def createLight(self):
@@ -85,8 +83,6 @@ class SceneManager(Singleton):
         # regist
         self.lights.append(light)
         self.objectMap[light_name] = light
-        # send light name to gui
-        self.coreManager.sendObjectName(light)
         return light
 
     def create_postprocess(self):
@@ -102,8 +98,6 @@ class SceneManager(Singleton):
             # regist
             self.staticmeshes.append(obj)
             self.objectMap[objName] = obj
-            # send object name to ui
-            self.coreManager.sendObjectName(obj)
             return obj
         else:
             logger.warning("Unknown mesh : %s" % str(mesh))
@@ -112,7 +106,7 @@ class SceneManager(Singleton):
     def createMeshHere(self, mesh):
         camera = self.getMainCamera()
         pos = camera.transform.pos + camera.transform.front * 10.0
-        self.createMesh(mesh, pos=pos)
+        return self.createMesh(mesh, pos=pos)
 
     def clearObjects(self):
         self.cameras = []
@@ -120,8 +114,28 @@ class SceneManager(Singleton):
         self.staticmeshes = []
         self.objectMap = {}
 
+    def clearStaticMeshes(self):
+        for staticmesh in self.staticmeshes:
+            if staticmesh.name in self.objectMap:
+                self.objectMap.pop(staticmesh.name)
+        self.staticmeshes = []
+
+    def deleteObject(self, objName):
+        obj = self.getObject(objName)
+        if obj:
+            self.objectMap.pop(obj.name)
+            if obj in self.cameras:
+                self.lights.pop(obj)
+            if obj in self.lights:
+                self.cameras.pop(obj)
+            if obj in self.staticmeshes:
+                self.staticmeshes.pop(obj)
+
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
+
+    def getObjectNames(self):
+        return self.objectMap.keys()
 
     def getObjects(self):
         return self.objectMap.values()
@@ -150,7 +164,7 @@ class SceneManager(Singleton):
                 selectedObject.setSelected(True)
 
     def setObjectFocus(self, objName):
-        obj = self.getObject(objName+"2")
+        obj = self.getObject(objName)
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 

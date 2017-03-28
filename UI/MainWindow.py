@@ -99,6 +99,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.objectList.itemClicked.connect(self.selectObject)
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
+        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_NAME)), self.deleteObjectName)
         self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)), self.addObjectName)
         self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)), self.fillAttribute)
 
@@ -132,18 +133,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         event.accept()
         self.exit()
 
-    #
+    # ------------------------- #
     # Widget - Resource List
-    #
+    # ------------------------- #
     def addResourceList(self, resourceList):
         for resName, resType in resourceList:
             item = QtGui.QTreeWidgetItem(self.resourceListWidget)
             item.setText(0, resName)
             item.setText(1, resType)
 
-    #
+    # ------------------------- #
     # Widget - Propery Tree
-    #
+    # ------------------------- #
     def checkEditable(self, item=None, column=0):
         """in your connected slot, you can implement any edit-or-not-logic. you want"""
         if item is None:
@@ -243,17 +244,23 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         for item in self.attributeTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
             print(item.text(0), item.text(1))
 
-    #
+    # ------------------------- #
     # Widget - Object List
-    #
+    # ------------------------- #
     def addObjectName(self, objName):
-        # add object name to list
         item = QtGui.QListWidgetItem(objName)
         self.objectList.addItem(item)
 
-    #
+    def deleteObjectName(self, objName):
+        print(objName)
+        items = self.objectList.findItems(objName, QtCore.Qt.MatchContains)
+        for item in items:
+            index = self.objectList.row(item)
+            self.objectList.takeItem(index)
+
+    # ------------------------- #
     # Commands
-    #
+    # ------------------------- #
     def addResource(self, item=None):
         self.coreCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
 
