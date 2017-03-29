@@ -123,7 +123,7 @@ class Renderer(Singleton):
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
         # build a scene
-        self.resizeScene(self.width, self.height)
+        # self.resizeScene(self.width, self.height)
 
     def close(self):
         # record config
