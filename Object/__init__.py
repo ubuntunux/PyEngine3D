@@ -1,5 +1,4 @@
-from .ObjLoader import *
-from .Primitive import *
+from .Mesh import *
 from .TransformObject import TransformObject
 from .BaseObject import BaseObject
 from .StaticMesh import StaticMesh

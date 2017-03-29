@@ -78,14 +78,9 @@ class OBJ:
         self.mtl = None
         self.glList = None
         self.filename = filename
-        self.modifyTime = ''
-        self.fileSize = 0 # byte
 
         # check is exist file
         if os.path.exists(filename):
-            mTime = os.path.getmtime(filename)
-            self.modifyTime = str(datetime.datetime.fromtimestamp(mTime))
-            self.fileSize = os.path.getsize(filename)
             filePath = os.path.split(filename)[0]
             lastMaterial = None
 
@@ -154,10 +149,8 @@ class OBJ:
                         self.faces.append((positions[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([positions[2], positions[3], positions[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
-    # save to mesh
-    def saveToMesh(self):
+    def get_mesh_data(self):
         positions = []
-        colors = []
         normals = []
         texcoords = []
         indices = []
@@ -177,55 +170,12 @@ class OBJ:
                     normals.append(self.normals[normalIndicies[i]])
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
 
-        # generate tangent and bitangent vector
-        positions = np.array(positions, dtype=np.float32)
-        colors = np.array([1.0, 1.0, 1.0, 1.0] * len(positions), dtype=np.float32).reshape(len(positions), 4)
-        normals = np.array(normals, dtype=np.float32)
-        texcoords = np.array(texcoords, dtype=np.float32)
-        indices = np.array(indices, dtype=np.uint32)
-        tangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
-        # bitangents = np.array([[0,0,0],] * len(normals), dtype=np.float32)
-
-        for i in range(0, len(indices), 3):
-            i1, i2, i3 = indices[i:i+3]
-            deltaPos2 = positions[i2] - positions[i1]
-            deltaPos3 = positions[i3] - positions[i1]
-            deltaUV2 = texcoords[i2] - texcoords[i1]
-            deltaUV3 = texcoords[i3] - texcoords[i1]
-            r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-            if r != 0.0:
-                r = 1.0 / (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-            else:
-                r = 0.0
-
-            tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
-            tangent = normalize(tangent)
-            # bitangent = np.cross(tangent, normals[i1])
-            # bitangent = normalize(bitangent)
-
-            tangents[indices[i]] = tangent
-            tangents[indices[i+1]] = tangent
-            tangents[indices[i+2]] = tangent
-            # bitangents[indices[i]] = bitangent
-            # bitangents[indices[i+1]] = bitangent
-            # bitangents[indices[i+2]] = bitangent
-
-        data = dict(filename=self.filename,
-                    modifyTime=self.modifyTime,
-                    fileSize=self.fileSize,
-                    positions=positions.tolist(),
-                    colors=colors.tolist(),
-                    normals=normals.tolist(),
-                    tangents=tangents.tolist(),
-                    # bitangents=bitangents.tolist(),
-                    texcoords=texcoords.tolist(),
-                    indices=indices.tolist())
-
-        # save to file
-        newFilename = os.path.splitext(self.filename)[0] + ".mesh"
-        f = open(newFilename, 'w')
-        pprint.pprint(data, f, compact=True)
-        f.close()
+        mesh_data = dict(
+            positions=positions,
+            normals=normals,
+            texcoords=texcoords,
+            indices=indices)
+        return mesh_data
 
     # Generate
     def generateInstruction(self):
@@ -269,15 +219,3 @@ class OBJ:
     def draw(self):
         if self.glList:
             glCallList(self.glList)
-
-
-def convertToMesh(filePath):
-    for filename in glob.glob(os.path.join(filePath, '*.obj')):
-        obj = OBJ(filename, 1, True)
-        print("Convering :", filename)
-        obj.saveToMesh()
-        print("Done.")
-
-
-if __name__ == '__main__':
-    convertToMesh(PathMeshes)

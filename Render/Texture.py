@@ -9,6 +9,7 @@ class Texture2D:
     def __init__(self, texture_name, internal_format=GL_RGBA, width=1024, height=1024, texture_format=GL_BGRA,
                  data_type=GL_UNSIGNED_BYTE, data=None):
         logger.info("Create " + getClassName(self) + " : " + texture_name)
+
         self.name = texture_name
         self.width = width
         self.height = height

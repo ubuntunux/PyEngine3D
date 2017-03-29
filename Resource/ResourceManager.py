@@ -14,7 +14,7 @@ from Core import logger
 from Utilities import Singleton, getClassName
 from Render import Texture2D
 from Material import *
-from Object import Triangle, Quad, Mesh, Primitive
+from Object import Triangle, Quad, Mesh
 from Scene import SceneManager
 
 
@@ -247,18 +247,46 @@ class MeshLoader(ResourceLoader, Singleton):
         self.registResource(Triangle())
         self.registResource(Quad())
 
+        # convert resource
+        for dirname, dirnames, filenames in os.walk(PathMeshes):
+            for filename in filenames:
+                filepath = os.path.join(dirname, filename)
+                file_ext = os.path.splitext(filename)[1].lower()
+                self.convertResource(filepath, file_ext)
+
     def loadResource(self, filePath):
         try:
             # load from mesh
             f = open(filePath, 'r')
-            meshData = eval(f.read())
+            mesh_data = eval(f.read())
             f.close()
 
             meshName = self.splitResourceName(filePath, PathMeshes)
-            return Mesh(meshName, meshData)
+            return Mesh(meshName, mesh_data)
         except:
             logger.error(traceback.format_exc())
         return None
+
+    def convertResource(self, filepath, file_ext):
+        mesh_data = None
+        if file_ext == ".obj":
+            obj = OBJ(filepath, 1, True)
+            mesh_data = obj.get_mesh_data()
+        elif file_ext == ".dae":
+            pass
+
+        if mesh_data:
+            mTime = os.path.getmtime(filepath)
+            modifyTime = str(datetime.datetime.fromtimestamp(mTime))
+            fileSize = os.path.getsize(filepath)
+            mesh_data['fileSize'] = fileSize
+            mesh_data['filePath'] = filepath
+            mesh_data['modifyTime'] = modifyTime
+
+            meshName = self.splitResourceName(filepath, PathMeshes)
+            mesh = Mesh(meshName, mesh_data)
+            saveFilePath = mesh.saveToFile(PathMeshes)
+            self.registResource(mesh, saveFilePath)
 
 
 # -----------------------#
@@ -370,7 +398,7 @@ class ResourceManager(Singleton):
             resource = self.getMaterialTemplate(resName)
         elif resType == MaterialInstance:
             resource = self.getMaterialInstance(resName)
-        elif issubclass(resType, Primitive):
+        elif issubclass(resType, Mesh):
             resource = self.getMesh(resName)
         elif resType == Texture2D:
             resource = self.getTexture(resName)
@@ -390,7 +418,7 @@ class ResourceManager(Singleton):
                 pass
             elif resType == MaterialInstance:
                 pass
-            elif issubclass(resType, Primitive):
+            elif issubclass(resType, Mesh):
                 return self.sceneManager.createMeshHere(resource)
             elif resType == Texture2D:
                 pass

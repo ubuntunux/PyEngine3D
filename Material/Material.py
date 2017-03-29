@@ -44,8 +44,12 @@ class Material:
         glAttachShader(self.program, self.vertexShader)
         glAttachShader(self.program, self.fragmentShader)
         glLinkProgram(self.program)
+
+        # delete shader
         glDetachShader(self.program, self.vertexShader)
         glDetachShader(self.program, self.fragmentShader)
+        glDeleteShader(self.vertexShader)
+        glDeleteShader(self.fragmentShader)
 
         # build uniform buffer variable
         uniform_contents = re.findall(reFindUniform, self.material_template)
@@ -55,12 +59,9 @@ class Material:
 
     def __del__(self):
         pass
-        # self.delete()
 
     def delete(self):
         glDeleteProgram(self.program)
-        glDeleteShader(self.vertexShader)
-        glDeleteShader(self.fragmentShader)
 
     def useProgram(self):
         glUseProgram(self.program)

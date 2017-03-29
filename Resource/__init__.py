@@ -7,4 +7,5 @@ PathMeshes = os.path.join(PathResources, 'Meshes')
 PathShaders = os.path.join(PathResources, 'Shaders')
 PathTextures = os.path.join(PathResources, 'Textures')
 
+from .ObjLoader import *
 from .ResourceManager import VertexShaderLoader, FragmentShaderLoader, MaterialInstanceLoader, MeshLoader, ResourceManager

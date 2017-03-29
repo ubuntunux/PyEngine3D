@@ -122,8 +122,9 @@ class Renderer(Singleton):
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
-        # build a scene
-        # self.resizeScene(self.width, self.height)
+        # build a scene - windows not need resize..
+        if platformModule.system() == 'Linux':
+            self.resizeScene(self.width, self.height)
 
     def close(self):
         # record config

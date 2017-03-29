@@ -32,7 +32,6 @@ class VertexArrayBuffer:
 
     def __del__(self):
         pass
-        # self.delete()
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
