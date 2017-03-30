@@ -107,6 +107,7 @@
     - OBJ
     - TODO : FBX
     - TODO : Blender
+    - TODO : Collada
     - Textures
 * GUI Tool
     - QT backend
