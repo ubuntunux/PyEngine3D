@@ -1,13 +1,11 @@
-import os, datetime, glob, traceback, pprint
+import os, traceback
 from collections import OrderedDict
 
 import numpy as np
 from PIL import Image
 from OpenGL.GL import *
 
-from Resource import *
 from Core import logger
-from Utilities.Transform import normalize
 
 defaultTexCoord = [0.0, 0.0]
 defaultNormal = [0.1, 0.1, 0.1]

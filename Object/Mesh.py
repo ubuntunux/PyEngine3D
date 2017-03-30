@@ -39,23 +39,23 @@ class Mesh:
 
         vertex_count = len(self.positions)
 
-        if 'colors' in mesh_data:
+        if 'colors' in mesh_data and mesh_data['colors']:
             self.colors = np.array(mesh_data['colors'], dtype=np.float32)
         else:
             self.colors = np.array([1.0, 1.0, 1.0, 1.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
 
-        if 'texcoords' in mesh_data:
+        if 'texcoords' in mesh_data and mesh_data['texcoords']:
             self.texcoords = np.array(mesh_data['texcoords'], dtype=np.float32)
         else:
             self.texcoords = np.array([0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 2)
 
-        if 'normals' in mesh_data:
+        if 'normals' in mesh_data and mesh_data['normals']:
             self.normals = np.array(mesh_data['normals'], dtype=np.float32)
         else:
             self.normals = np.array([0.0, 0.0, 1.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 3)
 
         # Important!! : doing this at last.
-        if 'tangents' in mesh_data:
+        if 'tangents' in mesh_data and mesh_data['tangents']:
             self.tangents = np.array(mesh_data['tangents'], dtype=np.float32)
         else:
             self.computeTangent()

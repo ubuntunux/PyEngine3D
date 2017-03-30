@@ -3,6 +3,7 @@ import glob
 import configparser
 import time
 import traceback
+import datetime
 
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
@@ -273,7 +274,8 @@ class MeshLoader(ResourceLoader, Singleton):
             obj = OBJ(filepath, 1, True)
             mesh_data = obj.get_mesh_data()
         elif file_ext == ".dae":
-            pass
+            obj = Collada(filepath)
+            mesh_data = obj.get_mesh_data()
 
         if mesh_data:
             mTime = os.path.getmtime(filepath)
