@@ -147,8 +147,6 @@ class Triangle(Mesh):
             texcoords=[(0, 0), (1, 0), (0, 1)],
             indices=[0, 1, 2])
         Mesh.__init__(self, getClassName(self).lower(), mesh_data)
-        self.saveToFile(".")
-
 
 
 # ------------------------------#
@@ -163,7 +161,6 @@ class Quad(Mesh):
             texcoords=[(0, 0), (1, 0), (0, 1), (1, 1)],
             indices=[0, 1, 2, 1, 3, 2])
         Mesh.__init__(self, getClassName(self).lower(), mesh_data)
-        self.saveToFile(".")
 
 
 # ------------------------------#
