@@ -179,6 +179,8 @@ class Renderer(Singleton):
         glLoadIdentity()
 
     def renderScene(self):
+        startTime = timeModule.perf_counter()
+
         # Prepare to render into the renderbuffer and clear buffer
         self.framebuffer.bind()
 
@@ -200,8 +202,14 @@ class Renderer(Singleton):
         # blit frame buffer
         self.framebuffer.blitFramebuffer(self.width, self.height)
 
+        endTime = timeModule.perf_counter()
+        renderTime = endTime - startTime
+        startTime = endTime
+
         # swap buffer
         pygame.display.flip()
+        presentTime = timeModule.perf_counter() - startTime
+        return renderTime, presentTime
 
     def render_objects(self):
         # set render state

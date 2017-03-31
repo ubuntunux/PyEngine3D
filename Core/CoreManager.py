@@ -89,7 +89,9 @@ class CoreManager(Singleton):
         self.delta = 0.0
         self.updateTime = 0.0
         self.logicTime = 0.0
+        self.gpuTime = 0.0
         self.renderTime = 0.0
+        self.presentTime = 0.0
         self.currentTime = 0.0
 
         # mouse
@@ -336,18 +338,23 @@ class CoreManager(Singleton):
 
             # render scene
             startTime = time.perf_counter()
-            self.renderer.renderScene()
-            self.renderTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+            renderTime, presentTime = self.renderer.renderScene()
+
+            self.renderTime = renderTime * 1000.0  # millisecond
+            self.presentTime = presentTime * 1000.0  # millisecond
 
             # debug info
             # print(self.fps, self.updateTime)
             self.renderer.console.info("%.2f fps" % self.fps)
             self.renderer.console.info("%.2f ms" % self.updateTime)
             self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
-            self.renderer.console.info("GPU : %.2f ms" % self.renderTime)
+            self.renderer.console.info("GPU : %.2f ms" % self.gpuTime)
+            self.renderer.console.info("Render : %.2f ms" % self.renderTime)
+            self.renderer.console.info("Present : %.2f ms" % self.presentTime)
             
             # selected object transform info
             selectedObject = self.sceneManager.getSelectedObject()
             if selectedObject:
                 self.renderer.console.info("Selected Object : %s" % selectedObject.name)
                 self.renderer.console.info(selectedObject.transform.getTransformInfos())
+            self.gpuTime = (time.perf_counter() - startTime) * 1000.0
