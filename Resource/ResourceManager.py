@@ -252,8 +252,14 @@ class MeshLoader(ResourceLoader, Singleton):
         for dirname, dirnames, filenames in os.walk(PathMeshes):
             for filename in filenames:
                 filepath = os.path.join(dirname, filename)
+                filepath = os.path.abspath(filepath)
                 file_ext = os.path.splitext(filename)[1].lower()
-                self.convertResource(filepath, file_ext)
+                meshName = self.splitResourceName(filepath, PathMeshes)
+                mesh = self.getResource(meshName)
+                mTime = os.path.getmtime(filepath)
+                mTime = str(datetime.datetime.fromtimestamp(mTime))
+                if mesh is None or mTime != mesh.modifyTime:
+                    self.convertResource(filepath, file_ext)
 
     def loadResource(self, filePath):
         try:
