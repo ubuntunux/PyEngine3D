@@ -1,4 +1,4 @@
-from .Mesh import *
+from .Mesh import Mesh, Triangle, Quad
 from .TransformObject import TransformObject
 from .BaseObject import BaseObject
 from .StaticMesh import StaticMesh

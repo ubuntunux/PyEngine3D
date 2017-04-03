@@ -4,12 +4,14 @@ import glob
 import math
 import time as timeModule
 
+import numpy as np
+
 from Core import logger, CoreManager
-from Material import *
 from Object import BaseObject, StaticMesh, Camera, Light
+from OpenGLContext import UniformBlock
 from Resource import ResourceManager
-from Render import Renderer, PostProcess
-from Utilities import *
+from Render import Tonemapping
+from Utilities import Singleton, GetClassName, FLOAT_ZERO
 
 
 class SceneManager(Singleton):
@@ -35,16 +37,17 @@ class SceneManager(Singleton):
         self.uniformSceneConstants = None
         self.uniformLightConstants = None
 
-    def initialize(self):
-        logger.info("initialize " + getClassName(self))
+    def initialize(self, renderer):
+        logger.info("initialize " + GetClassName(self))
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.renderer = Renderer.Renderer.instance()
+        self.renderer = renderer
 
         # Test Code : scene constants uniform buffer
         material_instance = self.resourceManager.getMaterialInstance("default")
-        self.uniformSceneConstants = UniformBlock("sceneConstants", material_instance.program, 144, 0)
-        self.uniformLightConstants = UniformBlock("lightConstants", material_instance.program, 32, 1)
+        program = material_instance.get_program()
+        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 144, 0)
+        self.uniformLightConstants = UniformBlock("lightConstants", program, 32, 1)
 
         # create scene objects ( camera, light, postprocess )
         self.mainCamera = self.createCamera()
@@ -86,7 +89,7 @@ class SceneManager(Singleton):
         return light
 
     def create_postprocess(self):
-        self.tonemapping = PostProcess.Tonemapping(name=self.generateObjectName("tonemapping"))
+        self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
     def createMesh(self, mesh, pos=(0, 0, 0)):
         if mesh:
@@ -188,15 +191,15 @@ class SceneManager(Singleton):
         static_meshes.sort(key=lambda x: id(x.mesh))
         # draw static meshes
         last_mesh = None
-        last_program = None
+        last_material = None
         last_material_instance = None
         for obj in static_meshes:
-            program = obj.material_instance.program if obj.material_instance else None
+            material = obj.material_instance.material if obj.material_instance else None
             mesh = obj.mesh
             material_instance = obj.material_instance
 
-            if last_program != program and program is not None:
-                glUseProgram(program)
+            if last_material != material and material is not None:
+                material.useProgram()
 
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind_material_instance()
@@ -211,7 +214,7 @@ class SceneManager(Singleton):
             if mesh and material_instance:
                 mesh.draw()
 
-            last_program = program
+            last_material = material
             last_mesh = mesh
             last_material_instance = material_instance
 

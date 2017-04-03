@@ -7,13 +7,13 @@ import datetime
 
 from PIL import Image
 
-from . import *
 from Core import logger
-from Utilities import Singleton, getClassName
-from Render import Texture2D
-from Material import *
 from Object import Triangle, Quad, Mesh
+from OpenGLContext import CreateTextureFromFile, VertexShader, FragmentShader, Material, Texture2D
 from Scene import SceneManager
+from Render import MaterialInstance
+from Utilities import Singleton, GetClassName
+from . import *
 
 
 # -----------------------#
@@ -44,7 +44,7 @@ class ResourceLoader(object):
         self.fileExt = fileExt.lower()
 
     def initialize(self):
-        logger.info("initialize " + getClassName(self))
+        logger.info("initialize " + GetClassName(self))
 
         # collect shader files
         for dirname, dirnames, filenames in os.walk(self.dirName):
@@ -73,7 +73,6 @@ class ResourceLoader(object):
                     logger.info("Remove %s file" & filePath)
 
     def registResource(self, resource, filePath=""):
-        resource_name = ""
         if resource is None or not hasattr(resource, "name"):
             resource_name = self.splitResourceName(filePath, self.dirName)
         else:
@@ -202,7 +201,7 @@ class MaterialLoader(ResourceLoader, Singleton):
                 f = open(material_filePath, 'r')
                 material_template = f.read()
                 f.close()
-                material = Material(mat_name=mat_name, vs_name=vs_name, fs_name=fs_name,
+                material = Material(mat_name=combined_name, vs_name=vs_name, fs_name=fs_name,
                                     material_template=material_template)
                 # regist new combined material
                 self.materials[combined_name] = material
@@ -303,35 +302,16 @@ class TextureLoader(ResourceLoader, Singleton):
     def __init__(self):
         super(TextureLoader, self).__init__(PathTextures, ".*")
 
-    def get_texture_format(self, str_image_mode):
-        if str_image_mode == "RGB":
-            return GL_RGB
-        elif str_image_mode == "RGBA":
-            return GL_RGBA
-        return GL_RGBA
-
     def loadResource(self, filePath):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
             data = image.tobytes("raw", image.mode, 0, -1)
             texture_name = self.splitResourceName(filePath, PathTextures)
-            internal_format = self.get_texture_format(image.mode)
-            texture_format = internal_format
-            return Texture2D(texture_name, internal_format, ix, iy, texture_format, GL_UNSIGNED_BYTE, data)
+            return CreateTextureFromFile(texture_name, image.mode, ix, iy, data)
         except:
             logger.error(traceback.format_exc())
         return None
-
-    def create_texture(self, textureFileName, internal_format=GL_RGBA, width=1024, height=1024, format=GL_BGRA,
-                       data_type=GL_UNSIGNED_BYTE, data=None, mipmap=True):
-        texture = self.getResource(textureFileName)
-        if texture:
-            return texture
-
-        texture = Texture2D(textureFileName, internal_format, width, height, format, data_type, data, mipmap)
-        self.registResource(texture, "")
-        return texture
 
 
 # -----------------------#
@@ -367,17 +347,17 @@ class ResourceManager(Singleton):
         """
         result = []
         for resName in self.getVertexShaderNameList():
-            result.append((resName, getClassName(self.getVertexShader(resName))))
+            result.append((resName, GetClassName(self.getVertexShader(resName))))
         for resName in self.getFragmentShaderNameList():
-            result.append((resName, getClassName(self.getFragmentShader(resName))))
+            result.append((resName, GetClassName(self.getFragmentShader(resName))))
         for resName in self.getMaterialTemplateNameList():
-            result.append((resName, getClassName(self.getMaterialTemplate(resName))))
+            result.append((resName, GetClassName(self.getMaterialTemplate(resName))))
         for resName in self.getMaterialInstanceNameList():
-            result.append((resName, getClassName(self.getMaterialInstance(resName))))
+            result.append((resName, GetClassName(self.getMaterialInstance(resName))))
         for resName in self.getMeshNameList():
-            result.append((resName, getClassName(self.getMesh(resName))))
+            result.append((resName, GetClassName(self.getMesh(resName))))
         for resName in self.getTextureNameList():
-            result.append((resName, getClassName(self.getTexture(resName))))
+            result.append((resName, GetClassName(self.getTexture(resName))))
         return result
 
     def getResourceAttribute(self, resName, resTypeName):

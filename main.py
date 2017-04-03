@@ -33,7 +33,8 @@ __version__ = 0.1
 from multiprocessing import Process
 
 # core manager
-from Core import CoreManager, CustomQueue, CustomPipe
+from Core.CoreManager import CoreManager
+from Core.Command import CustomQueue, CustomPipe
 
 
 def run():

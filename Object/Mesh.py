@@ -5,8 +5,8 @@ import traceback
 import numpy as np
 
 from Core import logger
-from Material import VertexArrayBuffer
-from Utilities import *
+from OpenGLContext import VertexArrayBuffer
+from Utilities import Attributes, GetClassName, normalize
 
 
 # ------------------------------#
@@ -23,16 +23,16 @@ class Mesh:
         if 'indices' in mesh_data:
             self.indices = np.array(mesh_data['indices'], dtype=np.uint32)
         else:
-            logger.error("Create %s %s  error. Has no index data." % (getClassName(self), mesh_name))
+            logger.error("Create %s %s  error. Has no index data." % (GetClassName(self), mesh_name))
             return
 
         if 'positions' in mesh_data:
             self.positions = np.array(mesh_data['positions'], dtype=np.float32)
         else:
-            logger.error("Create %s %s  error. Has no position data." % (getClassName(self), mesh_name))
+            logger.error("Create %s %s  error. Has no position data." % (GetClassName(self), mesh_name))
             return
 
-        logger.info("Create %s : %s" % (getClassName(self), mesh_name))
+        logger.info("Create %s : %s" % (GetClassName(self), mesh_name))
 
         vertex_count = len(self.positions)
 
@@ -80,7 +80,7 @@ class Mesh:
 
     def saveToFile(self, savepath):
         savefilepath = os.path.join(savepath, self.name) + ".mesh"
-        logger.info("Save %s : %s" % (getClassName(self), savefilepath))
+        logger.info("Save %s : %s" % (GetClassName(self), savefilepath))
 
         try:
             f = open(savefilepath, 'w')
@@ -143,7 +143,7 @@ class Triangle(Mesh):
             normals=[(0, 0, 1), (0, 0, 1), (0, 0, 1)],
             texcoords=[(0, 0), (1, 0), (0, 1)],
             indices=[0, 1, 2])
-        Mesh.__init__(self, getClassName(self).lower(), mesh_data)
+        Mesh.__init__(self, GetClassName(self).lower(), mesh_data)
 
 
 # ------------------------------#
@@ -157,7 +157,7 @@ class Quad(Mesh):
             normals=[(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)],
             texcoords=[(0, 0), (1, 0), (0, 1), (1, 1)],
             indices=[0, 1, 2, 1, 3, 2])
-        Mesh.__init__(self, getClassName(self).lower(), mesh_data)
+        Mesh.__init__(self, GetClassName(self).lower(), mesh_data)
 
 
 # ------------------------------#

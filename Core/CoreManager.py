@@ -1,4 +1,5 @@
-import platform as libPlatform
+import os
+import platform as platformModule
 import sys
 import time
 import re
@@ -9,60 +10,16 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-from Core import *
 from Resource import ResourceManager
-from Render import Renderer, RenderTargetManager
+from Render import Renderer
 from Scene import SceneManager
-from Utilities import *
-
+from OpenGLContext import RenderTargetManager
+from Utilities import Singleton, GetClassName
+from . import config, logger, COMMAND
 
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
 reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
-
-
-def IsExtensionSupported(TargetExtension):
-    """ Accesses the rendering context to see if it supports an extension.
-        Note, that this test only tells you if the OpenGL library supports
-        the extension. The PyOpenGL system might not actually support the extension.
-    """
-    Extensions = glGetString(GL_EXTENSIONS)
-    Extensions = Extensions.split()
-    bTargetExtension = str.encode(TargetExtension)
-    for extension in Extensions:
-        if extension == bTargetExtension:
-            break
-    else:
-        # not found surpport
-        msg = "OpenGL rendering context does not support '%s'" % TargetExtension
-        logger.error(msg)
-        raise BaseException(msg)
-
-    # Now determine if Python supports the extension
-    # Exentsion names are in the form GL_<group>_<extension_name>
-    # e.g.  GL_EXT_fog_coord
-    # Python divides extension into modules
-    # g_fVBOSupported = IsExtensionSupported ("GL_ARB_vertex_buffer_object")
-    # from OpenGL.GL.EXT.fog_coord import *
-    m = re.match(reCheckGLExtention, TargetExtension)
-    if m:
-        group_name = m.groups()[0]
-        extension_name = m.groups()[1]
-    else:
-        msg = "GL unsupport error, %s" % TargetExtension
-        logger.error(msg)
-        raise BaseException(msg)
-
-    extension_module_name = "OpenGL.GL.%s.%s" % (group_name, extension_name)
-
-    try:
-        __import__(extension_module_name)
-        logger.info("PyOpenGL supports '%s'" % TargetExtension)
-    except:
-        msg = 'Failed to import', extension_module_name
-        logger.error(msg)
-        raise BaseException(msg)
-    return True
 
 
 # ------------------------------#
@@ -109,8 +66,8 @@ class CoreManager(Singleton):
 
     def initialize(self):
         # process start
-        logger.info('Platform : %s' % libPlatform.platform())
-        logger.info("Process Start : %s" % getClassName(self))
+        logger.info('Platform : %s' % platformModule.platform())
+        logger.info("Process Start : %s" % GetClassName(self))
 
         # ready to launch - send message to ui
         self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
@@ -121,18 +78,23 @@ class CoreManager(Singleton):
         if not pygame.font.get_init():
             self.error('Could not render font.')
 
-        # creates
+        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
+        self.renderer = Renderer.instance()
+        self.renderer.initScreen()
+
         self.resourceManager = ResourceManager.instance()
-        self.renderer = Renderer.Renderer.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.sceneManager = SceneManager.instance()
 
         # initalize managers
-        self.renderer.initScreen()
         self.resourceManager.initialize()
         self.rendertarget_manager.initialize()
-        self.sceneManager.initialize()
         self.renderer.initialize()
+        self.sceneManager.initialize(self.renderer)
+
+        # build a scene - windows not need resize..
+        if platformModule.system() == 'Linux':
+            self.renderer.resizeScene()
 
         # sen created object list to UI
         self.sendObjectList()
@@ -150,7 +112,7 @@ class CoreManager(Singleton):
 
         config.save()  # save config
         logger.info("Saved config file - " + config.getFilename())
-        logger.info("Process Stop : %s" % getClassName(self))  # process stop
+        logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
         pygame.quit()
 

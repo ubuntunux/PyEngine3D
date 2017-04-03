@@ -8,6 +8,8 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GL.shaders import *
 
+import Resource
+
 FONT_VERTEX_SHADER = '''
 #version 330 core
 layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
@@ -52,8 +54,6 @@ void main(void)
 }
 '''
 
-defaultFontFile = os.path.join(os.path.split(__file__)[0], 'UbuntuFont.ttf')
-
 
 #
 # CLASS : GLFont
@@ -72,7 +72,7 @@ class GLFont:
     def __init__(self, fontFile, size, margin=(5, 0)):
         if not os.path.exists(fontFile):
             print("Not found fontfile. Alternative use default font.")
-            fontFile = defaultFontFile
+            fontFile = Resource.DefaultFontFile
 
         font = pygame.font.Font(fontFile, size)
 

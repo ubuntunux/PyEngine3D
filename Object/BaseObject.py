@@ -3,17 +3,15 @@ import time, math
 import numpy as np
 
 import Resource
-from Resource import *
 from Object import TransformObject
-from Utilities import getClassName, Attributes
-from Material import UniformMatrix4
+from Utilities import GetClassName, Attributes
 from Core import logger
 
 
 class BaseObject:
     def __init__(self, objName, pos, mesh):
         self.name = objName
-        self.class_name = getClassName(self)
+        self.class_name = GetClassName(self)
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh

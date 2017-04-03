@@ -9,13 +9,11 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from Resource import ResourceManager
-from Core import CoreManager, config, COMMAND
-from Render import *
-from Render.RenderTarget import RenderTargets, RenderTargetManager, FrameBuffer
-from Material import *
-from Scene import SceneManager
-from Utilities import *
+from Utilities import Singleton, perspective, ortho
+from Resource import ResourceManager, DefaultFontFile
+from Core import CoreManager, COMMAND, config, logger
+from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont
+import Scene
 
 
 class Console:
@@ -29,7 +27,7 @@ class Console:
 
     def initialize(self, renderer):
         self.renderer = renderer
-        self.font = GLFont(defaultFontFile, 12, margin=(10, 0))
+        self.font = GLFont(DefaultFontFile, 12, margin=(10, 0))
 
     def close(self):
         pass
@@ -111,7 +109,7 @@ class Renderer(Singleton):
         logger.info("Initialize Renderer")
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.sceneManager = SceneManager.instance()
+        self.sceneManager = Scene.SceneManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.framebuffer = FrameBuffer(self.width, self.height)
 
@@ -121,10 +119,6 @@ class Renderer(Singleton):
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
-
-        # build a scene - windows not need resize..
-        if platformModule.system() == 'Linux':
-            self.resizeScene(self.width, self.height)
 
     def close(self):
         # record config
@@ -140,10 +134,13 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
-    def resizeScene(self, width, height):
+    def resizeScene(self, width=0, height=0):
         # You have to do pygame.display.set_mode again on Linux.
         if width <= 0 or height <= 0:
-            return
+            width = self.width
+            height = self.height
+            if width <= 0 or height <= 0:
+                return
 
         self.width = width
         self.height = height

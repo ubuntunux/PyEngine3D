@@ -1,1 +1,1 @@
-from .Scene import *
+from .Scene import SceneManager

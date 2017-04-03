@@ -1,3 +1,5 @@
+from ctypes import c_void_p
+
 import numpy as np
 from OpenGL.GL import *
 
@@ -55,4 +57,4 @@ class VertexArrayBuffer:
             glDisableVertexAttribArray(i)
 
     def draw_elements(self):
-        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, None)
+        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))

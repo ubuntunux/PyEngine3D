@@ -1,8 +1,8 @@
 from OpenGL.GL import *
 
 from Core import logger
+from OpenGLContext import RenderTargets, RenderTargetManager
 from Resource import ResourceManager
-from Render.RenderTarget import RenderTargets, RenderTargetManager
 from Render import Renderer
 
 
@@ -12,7 +12,6 @@ class PostProcess:
         self.name = name
         self.mesh = ResourceManager.ResourceManager.instance().getMesh("quad")
         self.material_instance = material_instance
-        self.program = self.material_instance.program
 
     def render(self):
         self.material_instance.useProgram()
@@ -43,6 +42,6 @@ class Tonemapping(PostProcess):
         self.material_instance.set_uniform_data("texture_diffuse", backbuffer)
 
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        Renderer.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
+        Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
         
         PostProcess.render(self)

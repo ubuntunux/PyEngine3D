@@ -1,14 +1,32 @@
+from ctypes import c_void_p
+
 from OpenGL.GL import *
 
-from Resource import *
 from Core import logger
-from Utilities import Singleton, getClassName, Attributes
+from Utilities import Singleton, GetClassName, Attributes
+
+
+def get_texture_format(str_image_mode):
+    if str_image_mode == "RGB":
+        return GL_RGB
+    elif str_image_mode == "RGBA":
+        return GL_RGBA
+    return GL_RGBA
+
+
+def CreateTextureFromFile(texture_name, image_mode, width, height, data):
+    """
+    :param image_mode: "RGBA", "RGB"
+    """
+    internal_format = get_texture_format(image_mode)
+    texture_format = internal_format
+    return Texture2D(texture_name, internal_format, width, height, texture_format, GL_UNSIGNED_BYTE, data)
 
 
 class Texture2D:
     def __init__(self, texture_name, internal_format=GL_RGBA, width=1024, height=1024, texture_format=GL_BGRA,
-                 data_type=GL_UNSIGNED_BYTE, data=None):
-        logger.info("Create " + getClassName(self) + " : " + texture_name)
+                 data_type=GL_UNSIGNED_BYTE, data=c_void_p(0)):
+        logger.info("Create " + GetClassName(self) + " : " + texture_name)
 
         self.name = texture_name
         self.width = width
@@ -51,24 +69,3 @@ class Texture2D:
         self.attribute.setAttribute("width", self.width)
         self.attribute.setAttribute("height", self.height)
         return self.attribute
-
-
-# Use Texture2D intead of RenderBuffer.
-class RenderBuffer:
-    """
-    RenderBuffer is fater than Texture2D, but it's read-only.
-    """
-    def __init__(self, texture_name, width, height, internal_format=GL_RGBA):
-        logger.info("Create " + getClassName(self) + " : " + texture_name)
-        self.name = texture_name
-        self.width = width
-        self.height = height
-        self.internal_format = internal_format  # GL_RGBA, GL_DEPTH_COMPONENT32, GL_DEPTH24_STENCIL8
-
-        self.buffer = glGenRenderbuffers(1)
-        glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
-        glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
-
-    def attach(self, attachment=GL_COLOR_ATTACHMENT0):
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.buffer)

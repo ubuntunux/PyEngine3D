@@ -1,6 +1,6 @@
 import numpy as np
 
-from Material import UniformMatrix4
+from OpenGLContext import UniformMatrix4
 from Object import BaseObject
 
 
@@ -14,8 +14,8 @@ class StaticMesh(BaseObject):
     def set_material_instance(self, material_instance):
         BaseObject.set_material_instance(self, material_instance)
         if material_instance:
-            self.matrix_model = UniformMatrix4(material_instance.program, "model")
-            self.matrix_mvp = UniformMatrix4(material_instance.program, "mvp")
+            self.matrix_model = UniformMatrix4(material_instance.get_program(), "model")
+            self.matrix_mvp = UniformMatrix4(material_instance.get_program(), "mvp")
 
     def bind_object(self, vpMatrix):
         self.matrix_model.bind_uniform(self.transform.matrix)

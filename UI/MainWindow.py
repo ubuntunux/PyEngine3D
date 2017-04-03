@@ -7,8 +7,7 @@ import numpy
 
 from Utilities import Singleton, Attribute, Attributes
 from UI import logger
-from Core import *
-import Core
+from Core.Command import *
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
 
