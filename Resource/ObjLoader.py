@@ -2,65 +2,10 @@ import os, traceback
 from collections import OrderedDict
 
 import numpy as np
-from PIL import Image
-from OpenGL.GL import *
-
 from Core import logger
 
 defaultTexCoord = [0.0, 0.0]
 defaultNormal = [0.1, 0.1, 0.1]
-
-
-def LoadMTL(filepath, filename):
-    contents = {}
-    mtl = None
-    # check is exist file
-    filename = os.path.join(filepath, filename)
-    if os.path.isfile(filename):
-        for line in open(filename, "r"):
-            # is comment?
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            
-            # split with space
-            line = line.split()
-            
-            # is empty?
-            if not line:
-                continue
-            
-            preFix = line[0]
-            # create new material
-            if preFix == 'newmtl' and len(line) > 1:
-                mtlName = line[1]
-                mtl = contents[mtlName] = {}
-            elif mtl is None:
-                logger.warn("mtl file doesn't start with newmtl stmt")
-                raise ValueError("mtl file doesn't start with newmtl stmt")
-            elif preFix == 'map_Kd':
-                # load the texture referred to by this declaration
-                texName = os.path.join(filepath, line[1])
-                mtl['map_Kd'] = texName
-                try:
-                    if os.path.exists(texName):
-                        # load texture file
-                        image = Image.open(texName)
-                        ix, iy = image.size
-                        image = image.tobytes("raw", "RGBX", 0, -1)
-
-                        # binding texture
-                        texid = mtl['texture_Kd'] = glGenTextures(1)
-                        glBindTexture(GL_TEXTURE_2D, texid)
-                        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-                except:
-                    logger.error(traceback.format_exc())
-            elif len(line) > 1:
-                mtl[preFix] = list(map(float, line[1:]))
-    return contents
 
 
 class OBJ:
@@ -166,6 +111,7 @@ class OBJ:
                     indexMap[vertIndex] = None
                     positions.append(self.positions[postionIndicies[i]])
                     normals.append(self.normals[normalIndicies[i]])
+
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
 
         mesh_data = dict(

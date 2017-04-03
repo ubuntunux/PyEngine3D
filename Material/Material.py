@@ -6,11 +6,13 @@ import traceback
 
 import numpy as np
 
+from OpenGL.GL import *
+from OpenGL.GL.shaders import *
+from OpenGL.GL.shaders import glDeleteShader
+
 import Resource
-from Render.OpenGLContext import *
 from Core import logger
 from Utilities import Attributes
-import Render
 from Material import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
@@ -38,7 +40,16 @@ class Material:
             return
 
         # create program
-        self.program = create_program(self.vertexShader, self.fragmentShader)
+        self.program = glCreateProgram()
+        glAttachShader(self.program, self.vertexShader)
+        glAttachShader(self.program, self.fragmentShader)
+        glLinkProgram(self.program)
+
+        # delete shader
+        glDetachShader(self.program, self.vertexShader)
+        glDetachShader(self.program, self.fragmentShader)
+        glDeleteShader(self.vertexShader)
+        glDeleteShader(self.fragmentShader)
 
         # build uniform buffer variable
         uniform_contents = re.findall(reFindUniform, self.material_template)

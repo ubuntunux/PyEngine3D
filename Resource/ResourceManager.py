@@ -5,9 +5,6 @@ import time
 import traceback
 import datetime
 
-from OpenGL.GL import *
-from OpenGL.GL.shaders import *
-from OpenGL.GL.shaders import glDetachShader
 from PIL import Image
 
 from . import *

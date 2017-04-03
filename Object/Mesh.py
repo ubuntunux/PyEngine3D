@@ -3,13 +3,10 @@ import pprint
 import traceback
 
 import numpy as np
-from OpenGL.GL import *
 
 from Core import logger
 from Material import VertexArrayBuffer
 from Utilities import *
-
-NONE_OFFSET = ctypes.c_void_p(0)
 
 
 # ------------------------------#
@@ -132,7 +129,7 @@ class Mesh:
         self.vertexBuffer.bindBuffer()
 
     def draw(self):
-        glDrawElements(GL_TRIANGLES, self.indices.nbytes, GL_UNSIGNED_INT, NONE_OFFSET)
+        self.vertexBuffer.draw_elements()
 
 
 # ------------------------------#
@@ -174,9 +171,10 @@ class DebugLine:
         self.color = color
 
     def draw(self):
-        glLineWidth(self.width)
-        glColor3f(1, 1, 1)
-        glBegin(GL_LINES)
-        glVertex3f(*self.pos1)
-        glVertex3f(*self.pos2)
-        glEnd()
+        pass
+        # glLineWidth(self.width)
+        # glColor3f(1, 1, 1)
+        # glBegin(GL_LINES)
+        # glVertex3f(*self.pos1)
+        # glVertex3f(*self.pos2)
+        # glEnd()

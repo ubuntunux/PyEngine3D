@@ -27,8 +27,9 @@ class VertexArrayBuffer:
         glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
 
         self.index_buffer = glGenBuffers(1)
+        self.index_buffer_size = index_data.nbytes
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_data.nbytes, index_data, GL_STATIC_DRAW)
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
     def __del__(self):
         pass
@@ -52,3 +53,6 @@ class VertexArrayBuffer:
     def unbindBuffer(self):
         for i in self.vertex_stride_range:
             glDisableVertexAttribArray(i)
+
+    def draw_elements(self):
+        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, None)
