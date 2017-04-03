@@ -5,11 +5,9 @@ import re
 import traceback
 
 import numpy as np
-from OpenGL.GL import *
-from OpenGL.GL.shaders import *
-from OpenGL.GL.shaders import glDetachShader
 
 import Resource
+from Render.OpenGLContext import *
 from Core import logger
 from Utilities import Attributes
 import Render
@@ -40,16 +38,7 @@ class Material:
             return
 
         # create program
-        self.program = glCreateProgram()
-        glAttachShader(self.program, self.vertexShader)
-        glAttachShader(self.program, self.fragmentShader)
-        glLinkProgram(self.program)
-
-        # delete shader
-        glDetachShader(self.program, self.vertexShader)
-        glDetachShader(self.program, self.fragmentShader)
-        glDeleteShader(self.vertexShader)
-        glDeleteShader(self.fragmentShader)
+        self.program = create_program(self.vertexShader, self.fragmentShader)
 
         # build uniform buffer variable
         uniform_contents = re.findall(reFindUniform, self.material_template)

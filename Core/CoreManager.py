@@ -8,7 +8,6 @@ import threading
 import numpy as np
 import pygame
 from pygame.locals import *
-from OpenGL.GL import *
 
 from Core import *
 from Resource import ResourceManager
