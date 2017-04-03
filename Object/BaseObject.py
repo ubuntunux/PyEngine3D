@@ -59,5 +59,5 @@ class BaseObject:
         # update transform
         self.transform.updateTransform()
 
-    def bind(self):
+    def bind_object(self):
         pass

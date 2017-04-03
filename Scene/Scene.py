@@ -199,9 +199,9 @@ class SceneManager(Singleton):
                 glUseProgram(program)
 
             if last_material_instance != material_instance and material_instance is not None:
-                material_instance.bind()
+                material_instance.bind_material_instance()
 
-            obj.bind(vpMatrix)
+            obj.bind_object(vpMatrix)
 
             # At last, bind buffers
             if last_mesh != mesh and mesh is not None:

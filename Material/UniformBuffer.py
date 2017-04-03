@@ -58,7 +58,7 @@ class UniformVariable:
         if self.location == -1:
             logger.warn("%s location is -1" % variable_name)
 
-    def bind(self, value):
+    def bind_uniform(self, value):
         raise BaseException("You must implement bind function.")
 
 
@@ -68,42 +68,42 @@ class UniformArray(UniformVariable):
 
 
 class UniformInt(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniform1i(self.location, value)
 
 
 class UniformFloat(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniform1f(self.location, value)
 
 
 class UniformVector2(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniform2fv(self.location, 1, value)
 
 
 class UniformVector3(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniform3fv(self.location, 1, value)
 
 
 class UniformVector4(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniform4fv(self.location, 1, value)
 
 
 class UniformMatrix2(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniformMatrix2fv(self.location, 1, GL_FALSE, value)
 
 
 class UniformMatrix3(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniformMatrix3fv(self.location, 1, GL_FALSE, value)
 
 
 class UniformMatrix4(UniformVariable):
-    def bind(self, value):
+    def bind_uniform(self, value):
         glUniformMatrix4fv(self.location, 1, GL_FALSE, value)
 
 
@@ -117,7 +117,7 @@ class UniformTexture2D(UniformVariable):
         self.activateTextureIndex = activateTextureIndex
         self.textureIndex = textureIndex
 
-    def bind(self, texture):
+    def bind_uniform(self, texture):
         glActiveTexture(self.activateTextureIndex)
-        texture.bind() # glBindTexture(texture.target, texture.texture_bind)
+        texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind)
         glUniform1i(self.location, self.textureIndex)

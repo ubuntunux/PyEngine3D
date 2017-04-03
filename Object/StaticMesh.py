@@ -17,6 +17,6 @@ class StaticMesh(BaseObject):
             self.matrix_model = UniformMatrix4(material_instance.program, "model")
             self.matrix_mvp = UniformMatrix4(material_instance.program, "mvp")
 
-    def bind(self, vpMatrix):
-        self.matrix_model.bind(self.transform.matrix)
-        self.matrix_mvp.bind(np.dot(self.transform.matrix, vpMatrix))
+    def bind_object(self, vpMatrix):
+        self.matrix_model.bind_uniform(self.transform.matrix)
+        self.matrix_mvp.bind_uniform(np.dot(self.transform.matrix, vpMatrix))

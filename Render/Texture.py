@@ -40,7 +40,7 @@ class Texture2D:
     def delete(self):
         glDeleteTextures(1, self.texture)
 
-    def bind(self):
+    def bind_texture(self):
         glBindTexture(GL_TEXTURE_2D, self.texture)
 
     def attach(self, attachment=GL_COLOR_ATTACHMENT0):

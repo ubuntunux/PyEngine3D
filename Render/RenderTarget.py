@@ -63,10 +63,10 @@ class FrameBuffer:
     def delete(self):
         glDeleteFramebuffers(self.buffer)
 
-    def bind(self):
+    def bind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
 
-    def unbind(self):
+    def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def bind_rendertarget(self, colortexture, clear_color, depthtexture, clear_depth):

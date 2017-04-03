@@ -15,8 +15,8 @@ class PostProcess:
         self.program = self.material_instance.program
 
     def render(self):
-        glUseProgram(self.program)
-        self.material_instance.bind()
+        self.material_instance.useProgram()
+        self.material_instance.bind_material_instance()
         self.mesh.bindBuffers()
         self.mesh.draw()
 

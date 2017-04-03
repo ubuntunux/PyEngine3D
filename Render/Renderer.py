@@ -10,7 +10,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Resource import ResourceManager
-from Core import CoreManager, config
+from Core import CoreManager, config, COMMAND
 from Render import *
 from Render.RenderTarget import RenderTargets, RenderTargetManager, FrameBuffer
 from Material import *
@@ -182,7 +182,7 @@ class Renderer(Singleton):
         startTime = timeModule.perf_counter()
 
         # Prepare to render into the renderbuffer and clear buffer
-        self.framebuffer.bind()
+        self.framebuffer.bind_framebuffer()
 
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
