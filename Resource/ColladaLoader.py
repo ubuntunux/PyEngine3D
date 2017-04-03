@@ -175,48 +175,48 @@ class Collada:
             self.geometries.append(geometry)
 
     def get_mesh_data(self):
-        # Test Code : only one geometry
-        geometry = self.geometries[0]
+        mesh_datas = []
+        for geometry in self.geometries:
+            positions = []
+            normals = []
+            colors = []
+            texcoords = []
+            indices = []
+            indexMap = OrderedDict()
+            stride_of_index = geometry.stride_of_index
 
-        positions = []
-        normals = []
-        colors = []
-        texcoords = []
-        indices = []
-        indexMap = OrderedDict()
-        stride_of_index = geometry.stride_of_index
+            for i in range(int(len(geometry.vertex_index_list) / stride_of_index)):
+                vertIndices = tuple(geometry.vertex_index_list[i*stride_of_index: i*stride_of_index + stride_of_index])
+                if vertIndices in indexMap:
+                    indices.append(list(indexMap.keys()).index(vertIndices))
+                else:
+                    indices.append(len(indexMap))
+                    indexMap[vertIndices] = None
 
-        for i in range(int(len(geometry.vertex_index_list) / stride_of_index)):
-            vertIndices = tuple(geometry.vertex_index_list[i*stride_of_index: i*stride_of_index + stride_of_index])
-            if vertIndices in indexMap:
-                indices.append(list(indexMap.keys()).index(vertIndices))
-            else:
-                indices.append(len(indexMap))
-                indexMap[vertIndices] = None
+                    if 'VERTEX0' in geometry.semantics:
+                        source_id = geometry.position_source_id
+                        offset = geometry.semantics['VERTEX0']['offset']
+                        positions.append(geometry.sources[source_id][vertIndices[offset]])
 
-                if 'VERTEX0' in geometry.semantics:
-                    source_id = geometry.position_source_id
-                    offset = geometry.semantics['VERTEX0']['offset']
-                    positions.append(geometry.sources[source_id][vertIndices[offset]])
+                    if 'NORMAL0' in geometry.semantics:
+                        source_id = geometry.semantics['NORMAL0']['source']
+                        offset = geometry.semantics['NORMAL0']['offset']
+                        normals.append(geometry.sources[source_id][vertIndices[offset]])
 
-                if 'NORMAL0' in geometry.semantics:
-                    source_id = geometry.semantics['NORMAL0']['source']
-                    offset = geometry.semantics['NORMAL0']['offset']
-                    normals.append(geometry.sources[source_id][vertIndices[offset]])
+                    if 'COLOR0' in geometry.semantics:
+                        source_id = geometry.semantics['COLOR0']['source']
+                        offset = geometry.semantics['COLOR0']['offset']
+                        colors.append(geometry.sources[source_id][vertIndices[offset]])
 
-                if 'COLOR0' in geometry.semantics:
-                    source_id = geometry.semantics['COLOR0']['source']
-                    offset = geometry.semantics['COLOR0']['offset']
-                    colors.append(geometry.sources[source_id][vertIndices[offset]])
+                    if 'TEXCOORD0' in geometry.semantics:
+                        source_id = geometry.semantics['TEXCOORD0']['source']
+                        offset = geometry.semantics['TEXCOORD0']['offset']
+                        texcoords.append(geometry.sources[source_id][vertIndices[offset]])
 
-                if 'TEXCOORD0' in geometry.semantics:
-                    source_id = geometry.semantics['TEXCOORD0']['source']
-                    offset = geometry.semantics['TEXCOORD0']['offset']
-                    texcoords.append(geometry.sources[source_id][vertIndices[offset]])
-
-        mesh_data = dict(
-            positions=positions,
-            normals=normals,
-            texcoords=texcoords,
-            indices=indices)
-        return mesh_data
+            mesh_data = dict(
+                positions=positions,
+                normals=normals,
+                texcoords=texcoords,
+                indices=indices)
+            mesh_datas.append(mesh_data)
+        return mesh_datas

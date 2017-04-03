@@ -274,21 +274,17 @@ class MeshLoader(ResourceLoader, Singleton):
         mesh_data = None
         if file_ext == ".obj":
             obj = OBJ(filepath, 1, True)
-            mesh_data = obj.get_mesh_data()
+            mesh_datas = obj.get_mesh_data()
         elif file_ext == ".dae":
             obj = Collada(filepath)
-            mesh_data = obj.get_mesh_data()
+            mesh_datas = obj.get_mesh_data()
 
-        if mesh_data:
+        # Test Code - Support only 1 geometry!!
+        if mesh_datas:
             mTime = os.path.getmtime(filepath)
             modifyTime = str(datetime.datetime.fromtimestamp(mTime))
-            fileSize = os.path.getsize(filepath)
-            mesh_data['fileSize'] = fileSize
-            mesh_data['filePath'] = filepath
-            mesh_data['modifyTime'] = modifyTime
-
             meshName = self.splitResourceName(filepath, PathMeshes)
-            mesh = Mesh(meshName, mesh_data)
+            mesh = Mesh(meshName, mesh_data, filepath, modifyTime)
             saveFilePath = mesh.saveToFile(PathMeshes)
             self.registResource(mesh, saveFilePath)
 

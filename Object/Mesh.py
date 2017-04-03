@@ -13,12 +13,11 @@ from Utilities import Attributes, GetClassName, normalize
 # CLASS : Mesh
 # ------------------------------#
 class Mesh:
-    def __init__(self, mesh_name, mesh_data):
+    def __init__(self, mesh_name, mesh_data, filepath, modifyTime):
         # meta dats
         self.name = mesh_name
-        self.fileSize = mesh_data['fileSize'] if 'fileSize' in mesh_data else 0
-        self.modifyTime = mesh_data['modifyTime'] if 'modifyTime' in mesh_data else 0
-        self.filePath = mesh_data['filePath'] if 'filePath' in mesh_data else 0
+        self.filePath = filepath
+        self.modifyTime = modifyTime
 
         if 'indices' in mesh_data:
             self.indices = np.array(mesh_data['indices'], dtype=np.uint32)
@@ -69,7 +68,6 @@ class Mesh:
         self.normals = None
         self.tangents = None
         self.texcoords = None
-        self.fileSize = None
         self.modifyTime = None
         self.filePath = None
 

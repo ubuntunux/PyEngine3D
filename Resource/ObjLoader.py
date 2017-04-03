@@ -119,7 +119,7 @@ class OBJ:
             normals=normals,
             texcoords=texcoords,
             indices=indices)
-        return mesh_data
+        return [mesh_data, ]
 
     # Generate
     def generateInstruction(self):
