@@ -357,3 +357,31 @@ def perspective(fovy, aspect, znear, zfar):
     M[2, :] = [0.0, 0.0, (zfar + znear) / depth, 1.0]  # flip Z axis for left hand system.
     M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / depth, 0.0]
     return M
+
+
+def compute_tangent(positions, texcoords, normals, indices):
+    tangents = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
+    # binormals = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
+
+    for i in range(0, len(indices), 3):
+        i1, i2, i3 = indices[i:i + 3]
+        deltaPos2 = positions[i2] - positions[i1]
+        deltaPos3 = positions[i3] - positions[i1]
+        deltaUV2 = texcoords[i2] - texcoords[i1]
+        deltaUV3 = texcoords[i3] - texcoords[i1]
+        r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
+        r = 1.0 / r if r != 0.0 else 0.0
+
+        tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
+        tangent = normalize(tangent)
+        # binormal = (deltaPos3 * deltaUV2[0]   - deltaPos2 * deltaUV3[0]) * r
+        # binormal = normalize(binormal)
+
+        tangents[indices[i]] = tangent
+        tangents[indices[i + 1]] = tangent
+        tangents[indices[i + 2]] = tangent
+        # binormals[indices[i]] = binormal
+        # binormals[indices[i+1]] = binormal
+        # binormals[indices[i+2]] = binormal
+    # return tangents, binormals
+    return tangents

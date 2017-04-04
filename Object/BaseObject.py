@@ -15,12 +15,16 @@ class BaseObject:
         self.selected = False
         self.transform = TransformObject(pos)
         self.mesh = mesh
+        self.geometry_instances = mesh.get_geometry_instances(self) if mesh else None
         self.material_instance = None
         self.attributes = Attributes()
 
     def set_material_instance(self, material_instance):
+        # Test Code : set geometry material instance
         if material_instance:
             self.material_instance = material_instance
+        for geometry_instance in self.geometry_instances:
+            geometry_instance.set_material_instance(material_instance)
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)

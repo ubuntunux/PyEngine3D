@@ -171,56 +171,6 @@ class SceneManager(Singleton):
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
-    def render_objects(self):
-        viewTransform = self.mainCamera.transform
-        perspective = self.renderer.perspective
-        vpMatrix = np.dot(viewTransform.inverse_matrix, perspective)
-
-        # Test Code : bind scene shader constants
-        self.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat,
-                                            perspective.flat,
-                                            viewTransform.pos, FLOAT_ZERO)
-        light = self.lights[0]
-        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
-                                            light.lightColor)
-
-        # Test Code : sort tge list by mesh, material
-        static_meshes = self.getStaticMeshes()[:]
-        static_meshes.sort(key=lambda x: id(x.material_instance))
-        static_meshes.sort(key=lambda x: id(x.mesh))
-        # draw static meshes
-        last_mesh = None
-        last_material = None
-        last_material_instance = None
-        for obj in static_meshes:
-            material = obj.material_instance.material if obj.material_instance else None
-            mesh = obj.mesh
-            material_instance = obj.material_instance
-
-            if last_material != material and material is not None:
-                material.useProgram()
-
-            if last_material_instance != material_instance and material_instance is not None:
-                material_instance.bind_material_instance()
-
-            obj.bind_object(vpMatrix)
-
-            # At last, bind buffers
-            if last_mesh != mesh and mesh is not None:
-                mesh.bindBuffers()
-
-            # draw
-            if mesh and material_instance:
-                mesh.draw()
-
-            last_material = material
-            last_mesh = mesh
-            last_material_instance = material_instance
-
-    def render_postprocess(self):
-        self.tonemapping.render()
-
     def update(self):
         for camera in self.cameras:
             camera.update()

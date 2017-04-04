@@ -4,6 +4,7 @@ import configparser
 import time
 import traceback
 import datetime
+import pprint
 
 from PIL import Image
 
@@ -255,39 +256,55 @@ class MeshLoader(ResourceLoader, Singleton):
                 mesh = self.getResource(meshName, True)
                 mTime = os.path.getmtime(filepath)
                 mTime = str(datetime.datetime.fromtimestamp(mTime))
-                if mesh is None or mTime != mesh.modifyTime:
+                if mesh is None or mTime != mesh.modify_time:
                     self.convertResource(filepath, file_ext)
 
     def loadResource(self, filePath):
         try:
             # load from mesh
             f = open(filePath, 'r')
-            mesh_data = eval(f.read())
+            datas = eval(f.read())
             f.close()
 
+            file_path = datas['file_path'] if 'file_path' in datas else ""
+            modify_time = datas['modify_time'] if 'modify_time' in datas else ""
+            geometry_datas = datas['geometry_datas'] if 'geometry_datas' in datas else []
             meshName = self.splitResourceName(filePath, PathMeshes)
-            return Mesh(meshName, mesh_data)
+            return Mesh(meshName, geometry_datas, file_path, modify_time)
         except:
             logger.error(traceback.format_exc())
         return None
 
+    def saveResource(self, mesh, savefilepath):
+        logger.info("Save %s : %s" % (GetClassName(mesh), savefilepath))
+        try:
+            f = open(savefilepath, 'w')
+            datas = dict(file_path=mesh.file_path,
+                         modify_time=mesh.modify_time,
+                         geometry_datas=mesh.geometry_datas)
+            pprint.pprint(datas, f, compact=True)
+            f.close()
+        except:
+            logger.error(traceback.format_exc())
+        return savefilepath
+
     def convertResource(self, filepath, file_ext):
-        mesh_datas = None
+        geometry_datas = None
         if file_ext == ".obj":
             obj = OBJ(filepath, 1, True)
-            mesh_datas = obj.get_mesh_data()
+            geometry_datas = obj.get_geometry_data()
         elif file_ext == ".dae":
             obj = Collada(filepath)
-            mesh_datas = obj.get_mesh_data()
+            geometry_datas = obj.get_geometry_data()
 
         # Test Code - Support only 1 geometry!!
-        if mesh_datas:
-            mesh_data = mesh_datas[0]
+        if geometry_datas:
             mTime = os.path.getmtime(filepath)
             modifyTime = str(datetime.datetime.fromtimestamp(mTime))
             meshName = self.splitResourceName(filepath, PathMeshes)
-            mesh = Mesh(meshName, mesh_data, filepath, modifyTime)
-            saveFilePath = mesh.saveToFile(PathMeshes)
+            mesh = Mesh(meshName, geometry_datas, filepath, modifyTime)
+            saveFilePath = os.path.join(PathMeshes, meshName) + ".mesh"
+            self.saveResource(mesh, saveFilePath)
             self.registResource(mesh, saveFilePath)
 
 

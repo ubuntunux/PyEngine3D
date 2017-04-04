@@ -11,13 +11,15 @@ class PostProcess:
         logger.info("Create PostProcess : %s" % name)
         self.name = name
         self.mesh = ResourceManager.ResourceManager.instance().getMesh("quad")
+        self.geometry = self.mesh.get_geometry_instances(self)[0]
+        self.geometry.set_material_instance(material_instance)
         self.material_instance = material_instance
 
     def render(self):
         self.material_instance.useProgram()
         self.material_instance.bind_material_instance()
-        self.mesh.bindBuffers()
-        self.mesh.draw()
+        self.geometry.bindBuffers()
+        self.geometry.draw()
 
 
 class CopyRenderTarget(PostProcess):

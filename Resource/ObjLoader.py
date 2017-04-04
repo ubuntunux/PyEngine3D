@@ -21,6 +21,7 @@ class OBJ:
         self.mtl = None
         self.glList = None
         self.filename = filename
+        self.name = ""
 
         # check is exist file
         if os.path.exists(filename):
@@ -46,7 +47,9 @@ class OBJ:
 
                 # auto generate normal flag
                 bNormalAutoGen = True
-
+                # name
+                if preFix == 'o':
+                    self.name = line[1].strip()
                 # vertex position
                 if preFix == 'v' and len(line) >= 4:
                     # apply scale
@@ -56,7 +59,7 @@ class OBJ:
                     bNormalAutoGen = False
                     self.normals.append(list(map(float, line[1:4])))
                 # texture coordinate
-                elif preFix == 'vt'  and len(line) >= 3:
+                elif preFix == 'vt' and len(line) >= 3:
                     self.texcoords.append(list(map(float, line[1:3])))
                 # material name
                 elif preFix in ('usemtl', 'usemat'):
@@ -93,7 +96,7 @@ class OBJ:
                         self.faces.append((positions[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([positions[2], positions[3], positions[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
-    def get_mesh_data(self):
+    def get_geometry_data(self):
         positions = []
         normals = []
         texcoords = []
@@ -114,13 +117,13 @@ class OBJ:
                     normals.append(self.normals[normalIndicies[i]])
 
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
-
-        mesh_data = dict(
-            positions=positions,
-            normals=normals,
-            texcoords=texcoords,
-            indices=indices)
-        return [mesh_data, ]
+        geometry_name = self.name or os.path.splitext(os.path.split(self.filename)[1])[0].lower()
+        geometry_data = dict(geometry_name=geometry_name,
+                             positions=positions,
+                             normals=normals,
+                             texcoords=texcoords,
+                             indices=indices)
+        return [geometry_data, ]
 
     # Generate
     def generateInstruction(self):

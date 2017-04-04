@@ -65,7 +65,7 @@ def convert_triangulate(polygon, vcount, stride=1):
 
 class ColladaGeometry:
     def __init__(self, xml_geometry):
-        self.name = get_attrib(xml_geometry, 'id')
+        self.name = get_attrib(xml_geometry, 'name')
         self.sources = {}  # {'source_id':source_data}
         self.position_source_id = ""
         self.semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
@@ -174,8 +174,8 @@ class Collada:
             geometry = ColladaGeometry(xml_geometry)
             self.geometries.append(geometry)
 
-    def get_mesh_data(self):
-        mesh_datas = []
+    def get_geometry_data(self, multiplier=1.0):
+        geometry_datas = []
         for geometry in self.geometries:
             positions = []
             normals = []
@@ -213,10 +213,14 @@ class Collada:
                         offset = geometry.semantics['TEXCOORD0']['offset']
                         texcoords.append(geometry.sources[source_id][vertIndices[offset]])
 
-            mesh_data = dict(
-                positions=positions,
-                normals=normals,
-                texcoords=texcoords,
-                indices=indices)
-            mesh_datas.append(mesh_data)
-        return mesh_datas
+            if multiplier != 1.0:
+                for i, position in enumerate(positions):
+                    positions[i] = [x * multiplier for x in position]
+
+            geometry_data = dict(geometry_name=geometry.name,
+                                 positions=positions,
+                                 normals=normals,
+                                 texcoords=texcoords,
+                                 indices=indices)
+            geometry_datas.append(geometry_data)
+        return geometry_datas

@@ -20,17 +20,19 @@ class VertexArrayBuffer:
         self.vertex_unitSize = accStridePoint
         self.vertex_stride_range = range(len(self.vertex_strides))
 
-        self.vertex = np.hstack(datas).astype(dtype)
         self.vertex_array = glGenVertexArrays(1)
-        self.vertex_buffer = glGenBuffers(1)
-
         glBindVertexArray(self.vertex_array)
+
+        self.vertex_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.vertex, GL_STATIC_DRAW)
+
+        vertex_datas = np.hstack(datas).astype(dtype)
+        glBufferData(GL_ARRAY_BUFFER, vertex_datas, GL_STATIC_DRAW)
 
         self.index_buffer = glGenBuffers(1)
-        self.index_buffer_size = index_data.nbytes
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
+
+        self.index_buffer_size = index_data.nbytes
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
     def __del__(self):
