@@ -106,10 +106,11 @@ class ResourceLoader(object):
     def loadResource(self, filePath):
         raise BaseException("You must implement loadResource.")
 
-    def getResource(self, resourceName):
+    def getResource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
             return self.resources[resourceName]
-        logger.error("%s cannot found %s resource." % (self.name, resourceName))
+        if not noWarn:
+            logger.error("%s cannot found %s resource." % (self.name, resourceName))
         return None
 
     def getResourceList(self):
@@ -251,7 +252,7 @@ class MeshLoader(ResourceLoader, Singleton):
                 filepath = os.path.abspath(filepath)
                 file_ext = os.path.splitext(filename)[1].lower()
                 meshName = self.splitResourceName(filepath, PathMeshes)
-                mesh = self.getResource(meshName)
+                mesh = self.getResource(meshName, True)
                 mTime = os.path.getmtime(filepath)
                 mTime = str(datetime.datetime.fromtimestamp(mTime))
                 if mesh is None or mTime != mesh.modifyTime:
@@ -271,7 +272,7 @@ class MeshLoader(ResourceLoader, Singleton):
         return None
 
     def convertResource(self, filepath, file_ext):
-        mesh_data = None
+        mesh_datas = None
         if file_ext == ".obj":
             obj = OBJ(filepath, 1, True)
             mesh_datas = obj.get_mesh_data()
@@ -281,6 +282,7 @@ class MeshLoader(ResourceLoader, Singleton):
 
         # Test Code - Support only 1 geometry!!
         if mesh_datas:
+            mesh_data = mesh_datas[0]
             mTime = os.path.getmtime(filepath)
             modifyTime = str(datetime.datetime.fromtimestamp(mTime))
             meshName = self.splitResourceName(filepath, PathMeshes)

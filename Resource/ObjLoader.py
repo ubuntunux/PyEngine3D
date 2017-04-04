@@ -63,7 +63,8 @@ class OBJ:
                     lastMaterial = line[1]
                 # material filename, load material
                 elif preFix == 'mtllib':
-                    self.mtl = LoadMTL(filePath,  line[1])
+                    pass
+                    # self.mtl = LoadMTL(filePath,  line[1])
                 # faces
                 elif preFix == 'f':
                     positions = []

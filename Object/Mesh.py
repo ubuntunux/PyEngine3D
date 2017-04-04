@@ -13,8 +13,9 @@ from Utilities import Attributes, GetClassName, normalize
 # CLASS : Mesh
 # ------------------------------#
 class Mesh:
-    def __init__(self, mesh_name, mesh_data, filepath, modifyTime):
-        # meta dats
+    def __init__(self, mesh_name, mesh_data, filepath="", modifyTime=""):
+        # meta datas
+        self.valid = False
         self.name = mesh_name
         self.filePath = filepath
         self.modifyTime = modifyTime
@@ -61,6 +62,7 @@ class Mesh:
             self.indices, dtype=np.float32)
 
         self.attributes = Attributes()
+        self.valid = True
 
     def clearData(self):
         self.positions = None
@@ -77,26 +79,27 @@ class Mesh:
         return self.attributes
 
     def saveToFile(self, savepath):
-        savefilepath = os.path.join(savepath, self.name) + ".mesh"
-        logger.info("Save %s : %s" % (GetClassName(self), savefilepath))
+        if self.valid:
+            savefilepath = os.path.join(savepath, self.name) + ".mesh"
+            logger.info("Save %s : %s" % (GetClassName(self), savefilepath))
 
-        try:
-            f = open(savefilepath, 'w')
-            save_data = dict(
-                fileSize=self.fileSize,
-                filePath=self.filePath,
-                modifyTime=self.modifyTime,
-                positions=self.positions.tolist(),
-                colors=self.colors.tolist(),
-                normals=self.normals.tolist(),
-                tangents=self.tangents.tolist(),
-                texcoords=self.texcoords.tolist(),
-                indices=self.indices.tolist())
-            pprint.pprint(save_data, f, compact=True)
-            f.close()
-        except:
-            logger.error(traceback.format_exc())
-        return savefilepath
+            try:
+                f = open(savefilepath, 'w')
+                save_data = dict(
+                    filePath=self.filePath,
+                    modifyTime=self.modifyTime,
+                    positions=self.positions.tolist(),
+                    colors=self.colors.tolist(),
+                    normals=self.normals.tolist(),
+                    tangents=self.tangents.tolist(),
+                    texcoords=self.texcoords.tolist(),
+                    indices=self.indices.tolist())
+                pprint.pprint(save_data, f, compact=True)
+                f.close()
+            except:
+                logger.error(traceback.format_exc())
+            return savefilepath
+        return None
 
     def computeTangent(self):
         self.tangents = np.array([0.0, 0.0, 0.0] * len(self.normals), dtype=np.float32).reshape(len(self.normals), 3)
