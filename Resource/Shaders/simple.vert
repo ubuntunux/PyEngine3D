@@ -1,6 +1,6 @@
 #version 430 core
 
-in struct VERTEX_ARRAY
+in struct VERTEX_INPUT
 {
     layout(location=0) vec3 position;
     layout(location=1) vec4 color;

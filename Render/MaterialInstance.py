@@ -102,7 +102,7 @@ class MaterialInstance:
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
-        self.Attributes.setAttribute('material', self.maerial)
+        self.Attributes.setAttribute('material', self.material)
         for uniform_buffer, uniform_data in self.linked_uniform_map.values():
             self.Attributes.setAttribute(uniform_buffer.name, uniform_data)
         return self.Attributes

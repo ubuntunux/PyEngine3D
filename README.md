@@ -25,9 +25,12 @@
  - pygame 1.9.2
 
 ## Features
-* Material System
+* Shader
     - Material Template
     - Material Instance
+    - Shader Parser
+        - #include
+        - insert macro
     - TODO : Shader Cache
 * Actor System
     - StaticMesh

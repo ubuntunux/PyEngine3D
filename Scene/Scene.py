@@ -11,7 +11,7 @@ from Object import BaseObject, StaticMesh, Camera, Light
 from OpenGLContext import UniformBlock
 from Resource import ResourceManager
 from Render import Tonemapping
-from Utilities import Singleton, GetClassName, FLOAT_ZERO
+from Utilities import Singleton, GetClassName, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 
 
 class SceneManager(Singleton):
@@ -46,8 +46,9 @@ class SceneManager(Singleton):
         # Test Code : scene constants uniform buffer
         material_instance = self.resourceManager.getMaterialInstance("default")
         program = material_instance.get_program()
-        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 144, 0)
-        self.uniformLightConstants = UniformBlock("lightConstants", program, 32, 1)
+        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
+                                                  [MATRIX4_IDENTITY, MATRIX4_IDENTITY, FLOAT4_ZERO])
+        self.uniformLightConstants = UniformBlock("lightConstants", program, 1, [FLOAT4_ZERO, FLOAT4_ZERO])
 
         # create scene objects ( camera, light, postprocess )
         self.mainCamera = self.createCamera()

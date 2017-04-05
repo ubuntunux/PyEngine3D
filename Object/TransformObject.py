@@ -8,11 +8,11 @@ class TransformObject:
     def __init__(self, pos):
         # transform
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
-        self.matrix = Identity()
-        self.inverse_matrix = Identity()
-        self.translateMatrix = Identity()
-        self.rotationMatrix = Identity()
-        self.scaleMatrix = Identity()
+        self.matrix = Maxtrix4()
+        self.inverse_matrix = Maxtrix4()
+        self.translateMatrix = Maxtrix4()
+        self.rotationMatrix = Maxtrix4()
+        self.scaleMatrix = Maxtrix4()
 
         self.right = WORLD_RIGHT.copy()
         self.up = WORLD_UP.copy()

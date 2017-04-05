@@ -85,12 +85,7 @@ class Renderer(Singleton):
         # components
         self.lastShader = None
         self.screen = None
-
         self.framebuffer = None
-
-        # TEST_CODE
-        self.uniformSceneConstants = None
-        self.uniformLightConstants = None
 
     def initScreen(self):
         self.width, self.height = config.Screen.size
@@ -223,7 +218,7 @@ class Renderer(Singleton):
         vpMatrix = np.dot(viewTransform.inverse_matrix, self.perspective)
 
         # Test Code : bind scene shader constants
-        self.sceneManager.uniformSceneConstants.bindData(viewTransform.inverse_matrix.flat, self.perspective.flat,
+        self.sceneManager.uniformSceneConstants.bindData(viewTransform.inverse_matrix, self.perspective,
                                                          viewTransform.pos, FLOAT_ZERO)
         light = self.sceneManager.lights[0]
         light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))

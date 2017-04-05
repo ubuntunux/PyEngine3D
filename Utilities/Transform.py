@@ -15,6 +15,11 @@ import numpy as np
 PI = math.pi
 TWO_PI = 2.0 * math.pi
 FLOAT_ZERO = np.float32(0.0)
+FLOAT2_ZERO = np.array([0.0, 0.0], dtype=np.float32)
+FLOAT3_ZERO = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+FLOAT4_ZERO = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+MATRIX3_IDENTITY = np.eye(3, dtype=np.float32)
+MATRIX4_IDENTITY = np.eye(4, dtype=np.float32)
 WORLD_RIGHT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
 WORLD_UP = np.array([0.0, 1.0, 0.0], dtype=np.float32)
 WORLD_FRONT = np.array([0.0, 0.0, 1.0], dtype=np.float32)
@@ -36,7 +41,11 @@ def Float4(x=0.0, y=0.0, z=0.0, w=0.0):
     return np.array([x, y, z, w], dtype=np.float32)
 
 
-def Identity():
+def Maxtrix3():
+    return np.eye(3, dtype=np.float32)
+
+
+def Maxtrix4():
     return np.eye(4, dtype=np.float32)
 
 
@@ -351,7 +360,7 @@ def perspective(fovy, aspect, znear, zfar):
     height = np.tan(fovy / 360.0 * np.pi) * znear
     width = height * aspect
     depth = zfar - znear
-    M = Identity()
+    M = Maxtrix4()
     M[0, :] = [znear / width, 0.0, 0.0, 0.0]
     M[1, :] = [0.0, znear / height, 0.0, 0.0]
     M[2, :] = [0.0, 0.0, (zfar + znear) / depth, 1.0]  # flip Z axis for left hand system.
