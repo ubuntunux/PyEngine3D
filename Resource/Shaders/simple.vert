@@ -7,7 +7,7 @@ in struct VERTEX_INPUT
     layout(location=2) vec3 normal;
     layout(location=3) vec3 tangent;
     layout(location=4) vec2 texcoord;
-} vertex;
+} vs_input;
 
 layout(std140) uniform sceneConstants
 {
@@ -26,5 +26,5 @@ uniform mat4 model;
 uniform mat4 mvp;
 
 void main() {
-    gl_Position = perspective * view * model * vec4(vertex.position, 1.0);
+    gl_Position = perspective * view * model * vec4(vs_input.position, 1.0);
 }

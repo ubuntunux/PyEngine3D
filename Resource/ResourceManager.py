@@ -138,11 +138,8 @@ class VertexShaderLoader(ResourceLoader, Singleton):
 
     def loadResource(self, filePath):
         try:
-            f = open(filePath, 'r')
-            shaderSource = f.read()
-            f.close()
             shaderName = self.splitResourceName(filePath, PathShaders)
-            return VertexShader(shaderName, shaderSource)
+            return VertexShader(shaderName, filePath)
         except:
             logger.error(traceback.format_exc())
         return None
@@ -163,11 +160,8 @@ class FragmentShaderLoader(ResourceLoader, Singleton):
 
     def loadResource(self, filePath):
         try:
-            f = open(filePath, 'r')
-            shaderSource = f.read()
-            f.close()
             shaderName = self.splitResourceName(filePath, PathShaders)
-            return FragmentShader(shaderName, shaderSource)
+            return FragmentShader(shaderName, filePath)
         except:
             logger.error(traceback.format_exc())
         return None

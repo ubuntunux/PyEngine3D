@@ -12,7 +12,7 @@ vec4 get_emissive_color()
 
 vec4 get_base_color()
 {
-    vec4 color = texture(texture_diffuse, data.texCoord.xy);
+    vec4 color = texture(texture_diffuse, vs_output.texCoord.xy);
     color.xyz = color.xyz * brightness * diffuse_color.xyz * diffuse_color.a;
     return color;
 }
@@ -39,8 +39,8 @@ float get_sss_scale()
 
 vec3 get_normal()
 {
-    vec3 normal = texture(texture_normal, data.texCoord.xy).xyz;
-    normal = normalize((data.tangentToWorld * vec4(normal * 2.0 - 1.0, 0.0)).xyz);
+    vec3 normal = texture(texture_normal, vs_output.texCoord.xy).xyz;
+    normal = normalize((vs_output.tangentToWorld * vec4(normal * 2.0 - 1.0, 0.0)).xyz);
     return normal;
 }
 
