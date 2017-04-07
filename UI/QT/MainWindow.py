@@ -60,11 +60,11 @@ class UIThread(QtCore.QThread):
 
 
 class MainWindow(QtGui.QMainWindow, Singleton):
-    def __init__(self, cmdQueue, coreCmdQueue, cmdPipe):
+    def __init__(self, cmdQueue, appCmdQueue, cmdPipe):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
         self.cmdQueue = cmdQueue
-        self.coreCmdQueue = coreCmdQueue
+        self.appCmdQueue = appCmdQueue
         self.cmdPipe = cmdPipe
         self.isFillAttributeTree = False
 
@@ -116,12 +116,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         if self.cmdPipe:
             self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
         # request available mesh list
-        self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
+        self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
     def exit(self, *args):
         if args != () and args[0] is not None:
             logger.info(*args)
-        self.coreCmdQueue.put(COMMAND.CLOSE_APP)
+        self.appCmdQueue.put(COMMAND.CLOSE_APP)
         self.close()
         sys.exit()
 
@@ -186,7 +186,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 currentItem = self.objectList.currentItem()
                 if currentItem:
                     currentObjectName = self.objectList.currentItem().text()
-                    self.coreCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
+                    self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -216,17 +216,17 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         getSelected = self.resourceListWidget.selectedItems()
         if getSelected:
             node = getSelected[0]
-            self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
+            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
 
     def selectObject(self, inst):
         selectedObjectName = inst.text()
         # request selected object infomation to fill attribute widget
-        self.coreCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
-        self.coreCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
+        self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
+        self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
 
     def focusObject(self, inst):
         selectedObjectName = inst.text()
-        self.coreCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
+        self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
 
     def fillAttribute(self, attributes):
         # lock edit attribute ui
@@ -265,15 +265,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Commands
     # ------------------------- #
     def addResource(self, item=None):
-        self.coreCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
+        self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
 
     def setViewMode(self, mode):
-        self.coreCmdQueue.put(mode)
+        self.appCmdQueue.put(mode)
 
 
-def run_editor(cmdQueue, coreCmdQueue, cmdPipe):
+def run_editor(cmdQueue, appCmdQueue, cmdPipe):
     """process - QT Widget"""
     app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance(cmdQueue, coreCmdQueue, cmdPipe)
+    main_window = MainWindow.instance(cmdQueue, appCmdQueue, cmdPipe)
     main_window.show()
     sys.exit(app.exec_())

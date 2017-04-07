@@ -27,9 +27,10 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = 0.1
+__version__ = 0.5
 """
 
+import sys
 from multiprocessing import Process
 
 from Core.Command import CustomQueue, CustomPipe
@@ -43,31 +44,30 @@ class GUIEditor(AutoEnum):
     KIVY = ()
 
 
-def run():
-    coreCmdQueue = None
+def run(editor):
+    appCmdQueue = None
     uiCmdQueue = None
     pipe1, pipe2 = None, None
-    editor = GUIEditor.KIVY
     editor_process = None
 
     # other process - GUIEditor ( QT, Kivy )
     if editor != GUIEditor.CLIENT_MODE:
-        coreCmdQueue = CustomQueue()
+        appCmdQueue = CustomQueue()
         uiCmdQueue = CustomQueue()
         pipe1, pipe2 = CustomPipe()
 
         # Select GUI backend
         if editor == GUIEditor.QT:
             from UI.QT.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+            editor_process = Process(target=run_editor, args=(uiCmdQueue, appCmdQueue, pipe2))
             editor_process.start()
         elif editor == GUIEditor.KIVY:
             from UI.Kivy.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+            editor_process = Process(target=run_editor, args=(uiCmdQueue, appCmdQueue, pipe2))
             editor_process.start()
 
     # Client process
-    coreManager = CoreManager.instance(coreCmdQueue, uiCmdQueue, pipe1)
+    coreManager = CoreManager.instance(appCmdQueue, uiCmdQueue, pipe1)
     coreManager.initialize()
     coreManager.run()
 
@@ -76,4 +76,24 @@ def run():
         editor_process.join()
 
 if __name__ == "__main__":
-    run()
+    editor = GUIEditor.KIVY
+    enums = [editor for editor in dir(GUIEditor) if not editor.startswith("__")]
+    nums = [str(i) for i in range(len(enums))]
+
+    if len(sys.argv) > 1:
+        for enum in enums:
+            if sys.argv[1].upper() == enum:
+                editor = eval("GUIEditor." + enum)
+                break
+    # else:
+    #     try:
+    #         for i, enum in enumerate(enums):
+    #             print("%d. %s" % (i, enum))
+    #         answer = input("Select GUI Editor :")
+    #         if answer in nums:
+    #             editor = eval("GUIEditor." + enums[int(answer)])
+    #         elif answer.upper() in enums:
+    #             editor = eval("GUIEditor.%s" % answer.upper())
+    #     except:
+    #         pass
+    run(editor)
