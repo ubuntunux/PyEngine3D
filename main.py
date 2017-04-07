@@ -32,38 +32,48 @@ __version__ = 0.1
 
 from multiprocessing import Process
 
-# core manager
-from Core.CoreManager import CoreManager
 from Core.Command import CustomQueue, CustomPipe
+from Core.CoreManager import CoreManager
+from Utilities import AutoEnum
+
+
+class GUIEditor(AutoEnum):
+    CLIENT_MODE = ()
+    QT = ()
+    KIVY = ()
 
 
 def run():
     coreCmdQueue = None
     uiCmdQueue = None
     pipe1, pipe2 = None, None
+    editor = GUIEditor.KIVY
+    editor_process = None
 
-    # process - QT
-    editable = True
-    if editable:
+    # other process - GUIEditor ( QT, Kivy )
+    if editor != GUIEditor.CLIENT_MODE:
         coreCmdQueue = CustomQueue()
         uiCmdQueue = CustomQueue()
         pipe1, pipe2 = CustomPipe()
 
-        # main UI
-        from UI import run_editor
-        pEditor = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
-        pEditor.start()
-    else:
-        pEditor = None
+        # Select GUI backend
+        if editor == GUIEditor.QT:
+            from UI.QT.MainWindow import run_editor
+            editor_process = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+            editor_process.start()
+        elif editor == GUIEditor.KIVY:
+            from UI.Kivy.MainWindow import run_editor
+            editor_process = Process(target=run_editor, args=(uiCmdQueue, coreCmdQueue, pipe2))
+            editor_process.start()
 
-    # process - Main Frame
+    # Client process
     coreManager = CoreManager.instance(coreCmdQueue, uiCmdQueue, pipe1)
     coreManager.initialize()
     coreManager.run()
 
-    # QT process end
-    if pEditor:
-        pEditor.join()
+    # GUI Editor process end
+    if editor_process:
+        editor_process.join()
 
 if __name__ == "__main__":
     run()

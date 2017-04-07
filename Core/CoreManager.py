@@ -70,7 +70,8 @@ class CoreManager(Singleton):
         logger.info("Process Start : %s" % GetClassName(self))
 
         # ready to launch - send message to ui
-        self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
+        if self.cmdPipe:
+            self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         # pygame init
         pygame.init()
@@ -124,8 +125,12 @@ class CoreManager(Singleton):
         self.running = False
 
     # receive and send messages, communication with GUI
+    def send(self, *args):
+        if self.uiCmdQueue:
+            self.uiCmdQueue.put(*args)
+
     def sendObjectName(self, objName):
-        self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_NAME, objName)
+        self.send(COMMAND.TRANS_OBJECT_NAME, objName)
 
     def sendObjectList(self):
         obj_names = self.sceneManager.getObjectNames()
@@ -133,9 +138,12 @@ class CoreManager(Singleton):
             self.sendObjectName(obj_name)
 
     def notifyDeleteObject(self, obj_name):
-        self.uiCmdQueue.put(COMMAND.DELETE_OBJECT_NAME, obj_name)
+        self.send(COMMAND.DELETE_OBJECT_NAME, obj_name)
 
     def updateCommand(self):
+        if self.uiCmdQueue is None:
+            return
+
         while not self.cmdQueue.empty():
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
@@ -153,18 +161,18 @@ class CoreManager(Singleton):
                     self.sendObjectName(obj.name)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
                 resourceList = self.resourceManager.getResourceList()
-                self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_LIST, resourceList)
+                self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
             elif cmd == COMMAND.REQUEST_OBJECT_LIST:
                 self.sendObjectList()
             elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
                 resName, resType = value
                 attribute = self.resourceManager.getResourceAttribute(resName, resType)
                 if attribute:
-                    self.uiCmdQueue.put(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
+                    self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
             elif cmd == COMMAND.REQUEST_OBJECT_ATTRIBUTE:
                 attribute = self.sceneManager.getObjectAttribute(value)
                 if attribute:
-                    self.uiCmdQueue.put(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+                    self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
             elif cmd == COMMAND.SET_OBJECT_ATTRIBUTE:
                 objectName, attributeName, attributeValue = value
                 self.sceneManager.setObjectAttribute(objectName, attributeName, attributeValue)

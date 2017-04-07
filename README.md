@@ -17,8 +17,9 @@
  - accelerate 2.0 ( anaconda accelerate library )
  - numpy 1.10.4
  - numba 0.23.1
- - pillow (3.1.1)
+ - pillow 3.1.1
  - pyqt4
+ - kivy 1.9.1
  - pyopengl 3.1
  - pyopengl_accelerate 3.1
  - libpng 1.6.17
@@ -114,7 +115,7 @@
     - TODO : Blender
     - TODO : Collada
     - Textures
-* GUI Tool
+* GUI Edit Tool
     - QT backend
     - Kivy backend
 * Debug

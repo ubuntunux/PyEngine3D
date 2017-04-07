@@ -1,4 +1,7 @@
-import sys, traceback, os, time, traceback
+import sys
+import traceback
+import os
+import time
 from functools import partial
 
 import PyQt4
@@ -110,7 +113,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.attributeTree.itemChanged.connect(self.attributeChanged)
 
         # wait a UI_RUN message, and send success message
-        self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
+        if self.cmdPipe:
+            self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
         # request available mesh list
         self.coreCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
