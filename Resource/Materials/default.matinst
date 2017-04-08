@@ -1,7 +1,8 @@
 [Shader]
-material = default
-vertex_shader = default
-fragment_shader = default
+shader = default
+
+[Define]
+SHADER_DEFINE_TEST = 1
 
 [Int]
 enable_blend = 0

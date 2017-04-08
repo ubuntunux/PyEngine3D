@@ -11,4 +11,4 @@ DefaultFontFile = os.path.join(PathFonts, 'UbuntuFont.ttf')
 
 from .ColladaLoader import Collada
 from .ObjLoader import OBJ
-from .ResourceManager import VertexShaderLoader, FragmentShaderLoader, MaterialInstanceLoader, MeshLoader, ResourceManager
+from .ResourceManager import ShaderLoader, MaterialInstanceLoader, MeshLoader, ResourceManager

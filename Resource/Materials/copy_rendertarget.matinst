@@ -1,4 +1,2 @@
 [Shader]
-material = copy_rendertarget
-vertex_shader = quad
-fragment_shader = copy_rendertarget
+shader = copy_rendertarget

@@ -1,5 +1,6 @@
 #version 430 core
-#version 440 core
+
+//----------- UNIFORM_BLOCK ---------------//
 
 layout(std140, binding=0) uniform sceneConstants
 {
@@ -17,6 +18,12 @@ layout(std140, binding=1) uniform lightConstants
 uniform mat4 model;
 uniform mat4 mvp;
 
+//-------------- MATERIAL_COMPONENTS ---------------//
+
+#include "default_material.glsl"
+
+//----------- INPUT and OUTPUT ---------------//
+
 struct VERTEX_INPUT
 {
     layout(location=0) vec3 position;
@@ -26,7 +33,7 @@ struct VERTEX_INPUT
     layout(location=4) vec2 texcoord;
 };
 
-struct VERTEX_OUT
+struct VERTEX_OUTPUT
 {
     vec3 worldPosition;
     vec4 vertexColor;
@@ -37,9 +44,11 @@ struct VERTEX_OUT
     vec3 lightVector;
 };
 
+//----------- VERTEX_SHADER ---------------//
+
 #ifdef VERTEX_SHADER
 in VERTEX_INPUT vs_input;
-out VERTEX_OUT vs_output;
+out VERTEX_OUTPUT vs_output;
 
 void main() {
     vs_output.vertexColor = vs_input.color;
@@ -56,5 +65,30 @@ void main() {
     vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
     //vs_output.lightVector = normalize(vs_output.lightVector);
     gl_Position = mvp * vec4(vs_input.position, 1.0f);
+}
+#endif
+
+//----------- FRAGMENT_SHADER ---------------//
+
+#ifdef FRAGMENT_SHADER
+in VERTEX_OUTPUT vs_output;
+out vec4 fs_output;
+
+void main() {
+    vec4 baseColor = get_base_color(vs_output.texCoord.xy);
+    if(baseColor.a < 0.333f && enable_blend != 1)
+    {
+        discard;
+    }
+
+    vec3 normalVector = normalize(vs_output.normalVector);
+    vec3 cameraVector = normalize(vs_output.cameraVector);
+    vec3 lightVector = normalize(vs_output.lightVector);
+    vec4 emissiveColor = get_emissive_color();
+    vec3 normal = normalize(vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
+    vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
+    float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
+    specularLighting = pow(specularLighting, 60.0);
+    fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 }
 #endif

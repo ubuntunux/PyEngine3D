@@ -1,6 +1,7 @@
 # reference - http://www.labri.fr/perso/nrougier/teaching/opengl
 import configparser
 from collections import OrderedDict
+import copy
 import os
 import re
 import codecs
@@ -27,13 +28,10 @@ reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')
 reVersion = re.compile("(\#version\s+.+?\n)")
 
 
-def shader_parsing(shader_file_dir, shader_source, material_template, macros={}):
+def shader_parsing(shader_file_dir, shader_source, macros=None):
+    macros = copy.copy(macros) if macros is not None else dict()
     # Insert material template
-    final_code = re.sub(reInsertMaterialBlock,
-                        "\n/* Begin : Material Template */\n" +
-                        material_template +
-                        "\n/* End : Material Template */\n\nvoid main()",
-                        shader_source, 1)
+    final_code = copy.copy(shader_source)
     # Insert macros
     macro_str = ""
     for macro in macros:
@@ -69,17 +67,19 @@ def shader_parsing(shader_file_dir, shader_source, material_template, macros={})
         final_code = re.sub(reVersion, "", final_code)
         # second, insert highest version at first line.
         final_code = versions[-1] + final_code
+    # logger.info(final_code)
     return final_code
 
 
 class Shader:
-    shaderType = None
-    macros = dict()
-
     def __init__(self, shaderName, file_path):
         logger.info("Create " + GetClassName(self) + " : " + shaderName)
         self.name = shaderName
         self.file_path = file_path
+
+        # important!! - common shader macros
+        self.macros = dict(MATERIAL_COMPONENTS=1)
+
         try:
             f = codecs.open(file_path, mode='r', encoding='utf-8')
             self.source = f.read()
@@ -89,13 +89,30 @@ class Shader:
             logger.info("Failed %s file open" % file_path)
         self.attribute = Attributes()
 
-    def compile(self, material_template):
+    def compile(self, shaderType, macros=None):
+        """
+        :param shaderType: GL_VERTEX_SHADER, GL_FRAGMENT_SHADER
+        :param macros: dictionary
+        """
         if self.source == "" or self.source is None:
             return
 
-        shader = glCreateShader(self.shaderType)
+        # create macros
+        combined_macros = copy.copy(macros) if macros is not None else dict()
+        for macro in self.macros:
+            combined_macros[macro] = self.macros[macro]
+
+        if shaderType == GL_VERTEX_SHADER:
+            combined_macros['VERTEX_SHADER'] = 1
+        elif shaderType == GL_FRAGMENT_SHADER:
+            combined_macros['FRAGMENT_SHADER'] = 1
+        else:
+            raise BaseException("Error!! Set valid shaderType.")
+            return
+
+        shader = glCreateShader(shaderType)
         shader_file_dir = os.path.split(self.file_path)[0]
-        shader_code = shader_parsing(shader_file_dir, self.source, material_template, self.macros)
+        shader_code = shader_parsing(shader_file_dir, self.source, combined_macros)
 
         try:
             # Compile shaders
@@ -106,13 +123,12 @@ class Shader:
                 if infoLog:
                     if type(infoLog) == bytes:
                         infoLog = infoLog.decode("utf-8")
-                    logger.error("%s %s shader compile error.\n%s" % (self.name, self.shaderType.name, infoLog))
+                    logger.error("%s %s shader compile error.\n%s" % (self.name, shaderType.name, infoLog))
                 else:
                     # complete
-                    logger.info("Complete %s %s compile." % (self.name, self.shaderType.name))
+                    logger.info("Complete %s %s compile." % (self.name, shaderType.name))
                     return shader
             return None
-
         except:
             logger.error(traceback.format_exc())
         return None
@@ -125,34 +141,23 @@ class Shader:
         return self.attribute
 
 
-class VertexShader(Shader):
-    shaderType = GL_VERTEX_SHADER
-    macros = dict(VERTEX_SHADER=1)
-
-
-class FragmentShader(Shader):
-    shaderType = GL_FRAGMENT_SHADER
-    macros = dict(FRAGMENT_SHADER=1)
-
-
 class Material:
-    def __init__(self, mat_name, vs_name, fs_name, material_template):
+    def __init__(self, shader_name):
         self.valid = False
-        logger.info("%s material is combined : vs(%s), fs(%s)" % (mat_name, vs_name, fs_name))
-        self.name = mat_name
+        logger.info("Create %s material." % shader_name)
+        self.name = shader_name
         self.program = -1
         self.uniform_buffers = OrderedDict({})  # Declaration order is important.
         self.Attributes = Attributes()
 
         # build and link the program
         resourceMgr = Resource.ResourceManager.instance()
-        vs = resourceMgr.getVertexShader(vs_name)
-        fs = resourceMgr.getFragmentShader(fs_name)
-        vertexShader = vs.compile(material_template) if vs else None
-        fragmentShader = fs.compile(material_template) if fs else None
+        shader = resourceMgr.getShader(shader_name)
+        vertexShader = shader.compile(GL_VERTEX_SHADER) if shader else None
+        fragmentShader = shader.compile(GL_FRAGMENT_SHADER) if shader else None
 
         if vertexShader is None or fragmentShader is None:
-            logger.error("%s material compile error." % mat_name)
+            logger.error("%s material compile error." % shader_name)
             return
 
         # create program
@@ -169,7 +174,18 @@ class Material:
 
         # build uniform buffer variable
         textureIndex = 0
-        uniform_contents = re.findall(reFindUniform, material_template)
+
+        print("!!!! Test Code !!!!!!!!!!!!")
+        # material_contents = shader.get_material_contents()
+        material_contents = '''
+            uniform int enable_blend;
+            uniform float brightness;
+            uniform vec4 emissive_color;
+            uniform vec4 diffuse_color;
+            uniform sampler2D texture_diffuse;
+            uniform sampler2D texture_normal;
+                '''
+        uniform_contents = re.findall(reFindUniform, material_contents)
         for uniform_type, uniform_name in uniform_contents:
             uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
             # Important : set texture binding index

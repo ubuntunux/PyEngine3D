@@ -9,10 +9,18 @@ from Utilities import Singleton
 import kivy
 from kivy.app import App
 
+from kivy.config import Config
+Config.set('graphics', 'resizable', '1')
+Config.set('graphics', 'width', '920')
+Config.set('graphics', 'height', '800')
+
 
 # ---------------------#
 # Utilities
 # ---------------------#
+pos_hint_center = {'center_x':0.5, 'center_y':0.5}
+
+
 def add(A, B):
     if type(B) != tuple and type(B) != list:
         return [i + B for i in A]
@@ -95,7 +103,7 @@ class MyApp(App, Singleton):
         self.screenMgr = None
         self.transition = None
         self.emptyScreen = None
-        self.rootWidget = None
+        self.root_widget = None
         self.onTouchPrev = None
         self._keyboard = None
         self.y = 0
@@ -108,6 +116,7 @@ class MyApp(App, Singleton):
         from kivy import metrics
         from kivy.animation import Animation
         from kivy.clock import Clock
+        from kivy.config import Config
         from kivy.core.window import Window
         from kivy.core.audio import SoundLoader
         from kivy.extras.highlight import KivyLexer
@@ -137,6 +146,7 @@ class MyApp(App, Singleton):
             FadeTransition
         from kivy.uix.scrollview import ScrollView
         from kivy.uix.slider import Slider
+        from kivy.uix.spinner import Spinner
         from kivy.uix.stacklayout import StackLayout
         from kivy.uix.textinput import TextInput
         from kivy.uix.togglebutton import ToggleButton
@@ -162,10 +172,10 @@ class MyApp(App, Singleton):
         self.cY = self.H * 0.5
         self.cXY = (self.W * 0.5, self.H * 0.5)
 
-        self.root = self.Widget()
-        self.rootWidget = self.Widget(size=self.WH)
+        self.root = self.FloatLayout(size_hint=(1, 1), pos_hint={'center_x':0.5, 'center_y':0.5})
+        self.root_widget = self.FloatLayout(size_hint=(1, 1), pos_hint={'center_x':0.5, 'center_y':0.5})
 
-        self.screenMgr = self.ScreenManager(size=self.WH)
+        self.screenMgr = self.ScreenManager(size_hint=(1, 1), pos_hint={'center_x':0.5, 'center_y':0.5})
         self.transition = self.WipeTransition()
         # or self.transition = self.SlideTransition(direction="down")
         self.emptyScreen = self.Screen(name="empty screen")
@@ -177,7 +187,7 @@ class MyApp(App, Singleton):
         self.bPopup = False
 
         self.root.add_widget(self.screenMgr)
-        self.root.add_widget(self.rootWidget)
+        self.root.add_widget(self.root_widget)
 
         self.bind(on_start=self.post_build_init)
         self.onTouchPrev = self.popup_exit
@@ -258,7 +268,8 @@ class MyApp(App, Singleton):
         for app in self.appUpdateStateList:
             app.updateState(frameTime)
 
-    def run(self, app=None):
+    def run(self, title, app=None):
+        self.title = title
         self.app = app
         self.regist(app)
         App.run(self)
@@ -275,10 +286,10 @@ class MyApp(App, Singleton):
     # Widget
     # ------------------ #
     def add_widget(self, widget):
-        self.myWidget.add_widget(widget)
+        self.root_widget.add_widget(widget)
 
     def remove_widget(self, widget):
-        self.myWidget.remove_widget(widget)
+        self.root_widget.remove_widget(widget)
 
     # ------------------- #
     # Screen

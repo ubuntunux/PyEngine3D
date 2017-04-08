@@ -32,6 +32,9 @@ class MaterialInstance:
             # pass [Shader] section
             if data_type == 'Shader':
                 continue
+            elif data_type == 'Define':
+                print("TODO : Define is macro in shader")
+                continue
             for data_name in material_inst_file[data_type]:
                 strValue = material_inst_file.get(data_type, data_name)
                 data = CreateUniformData(data_type, strValue)
@@ -39,15 +42,13 @@ class MaterialInstance:
                 if data is not None:
                     self.uniform_datas[data_name] = data
                 else:
-                    logger.error("%s MaterialInstance, %s %s is None." % (self.name, data_type))
+                    logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
 
         # get material
-        if material_inst_file.has_option('Shader', 'material'):
+        if material_inst_file.has_option('Shader', 'shader'):
             try:
-                mat_name = material_inst_file.get('Shader', 'material')
-                vs_name = material_inst_file.get('Shader', 'vertex_shader')
-                fs_name = material_inst_file.get('Shader', 'fragment_shader')
-                material = resourceMgr.getCombinedMaterial(mat_name, vs_name, fs_name)
+                shader_name = material_inst_file.get('Shader', 'shader')
+                material = resourceMgr.getMaterial(shader_name)
                 # link uniform_buffers and uniform_data
                 self.link_uniform_buffers(material)
             except:
@@ -77,7 +78,7 @@ class MaterialInstance:
                 else:
                     # no found uniform data. create and set default uniform data.
                     uniform_data = CreateUniformData(uniform_buffer.data_type)
-                    if uniform_data:
+                    if uniform_data is not None:
                         self.uniform_datas[uniform_name] = uniform_data
 
                 if uniform_data is None:

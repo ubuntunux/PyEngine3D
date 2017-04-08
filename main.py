@@ -76,24 +76,28 @@ def run(editor):
         editor_process.join()
 
 if __name__ == "__main__":
-    editor = GUIEditor.KIVY
-    enums = [editor for editor in dir(GUIEditor) if not editor.startswith("__")]
-    nums = [str(i) for i in range(len(enums))]
+    editor = GUIEditor.QT
 
-    if len(sys.argv) > 1:
-        for enum in enums:
-            if sys.argv[1].upper() == enum:
-                editor = eval("GUIEditor." + enum)
-                break
-    # else:
-    #     try:
-    #         for i, enum in enumerate(enums):
-    #             print("%d. %s" % (i, enum))
-    #         answer = input("Select GUI Editor :")
-    #         if answer in nums:
-    #             editor = eval("GUIEditor." + enums[int(answer)])
-    #         elif answer.upper() in enums:
-    #             editor = eval("GUIEditor.%s" % answer.upper())
-    #     except:
-    #         pass
+    select_editor = False
+    if select_editor:
+        enums = [editor for editor in dir(GUIEditor) if not editor.startswith("__")]
+        enums = sorted(enums, key=lambda enum_str: getattr(GUIEditor, enum_str).value)
+        nums = [str(i) for i in range(len(enums))]
+
+        if len(sys.argv) > 1:
+            for enum in enums:
+                if sys.argv[1].upper() == enum:
+                    editor = eval("GUIEditor." + enum)
+                    break
+        else:
+            try:
+                for i, enum in enumerate(enums):
+                    print("%d. %s" % (i, enum))
+                answer = input("Select GUI Editor :")
+                if answer in nums:
+                    editor = eval("GUIEditor." + enums[int(answer)])
+                elif answer.upper() in enums:
+                    editor = eval("GUIEditor.%s" % answer.upper())
+            except:
+                pass
     run(editor)
