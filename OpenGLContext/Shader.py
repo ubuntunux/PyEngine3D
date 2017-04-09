@@ -16,59 +16,9 @@ from Core import logger
 import Resource
 from Utilities import GetClassName, Attributes
 from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
+from .ShaderParser import shader_parsing, ShaderCode
 
-
-"""
-example) re.sub(reInsertMaterialBlock,
-    "\n\n/* Begin : Material Template */\n" + material + "\n/* End : Material Template */\n\nvoid main()", shader, 1)
-"""
-reInsertMaterialBlock = re.compile("void\s*main\s*\(\s*\)")
-reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")
-reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')
-reVersion = re.compile("(\#version\s+.+?\n)")
-
-
-def shader_parsing(shader_file_dir, shader_source, macros=None):
-    macros = copy.copy(macros) if macros is not None else dict()
-    # Insert material template
-    final_code = copy.copy(shader_source)
-    # Insert macros
-    macro_str = ""
-    for macro in macros:
-        macro_str += "#define %s %d\n" % (macro, macros[macro])
-        final_code = macro_str + final_code
-
-    # include command
-    while True:
-        m = re.search(reInclude, final_code)
-        if m:
-            include_file = os.path.join(shader_file_dir, m.groups()[0])
-            if os.path.exists(include_file):
-                try:
-                    f = codecs.open(include_file, mode='r', encoding='utf-8')
-                    include_source = f.read()
-                    f.close()
-                    # OK : replace include statement to source code
-                    final_code = re.sub(reInclude, include_source, final_code, 1)
-                    continue
-                except:
-                    pass
-            # remove include statement
-            final_code = re.sub(reInclude, "", final_code, 1)
-            logger.error("Cannot open %s file." % include_file)
-            continue
-        break
-
-    # version directive must be first statement and may not be repeated
-    versions = re.findall(reVersion, final_code)
-    if versions:
-        versions.sort()
-        # first, remove all version macro
-        final_code = re.sub(reVersion, "", final_code)
-        # second, insert highest version at first line.
-        final_code = versions[-1] + final_code
-    # logger.info(final_code)
-    return final_code
+reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 
 
 class Shader:
@@ -77,7 +27,7 @@ class Shader:
         self.name = shaderName
         self.file_path = file_path
 
-        # important!! - common shader macros
+        # default shader macros
         self.macros = dict(MATERIAL_COMPONENTS=1)
 
         try:
@@ -108,7 +58,7 @@ class Shader:
             combined_macros['FRAGMENT_SHADER'] = 1
         else:
             raise BaseException("Error!! Set valid shaderType.")
-            return
+            return None
 
         shader = glCreateShader(shaderType)
         shader_file_dir = os.path.split(self.file_path)[0]
@@ -128,7 +78,6 @@ class Shader:
                     # complete
                     logger.info("Complete %s %s compile." % (self.name, shaderType.name))
                     return shader
-            return None
         except:
             logger.error(traceback.format_exc())
         return None
@@ -142,10 +91,10 @@ class Shader:
 
 
 class Material:
-    def __init__(self, shader_name):
+    def __init__(self, combined_material_name, shader_name, macros: dict):
         self.valid = False
-        logger.info("Create %s material." % shader_name)
-        self.name = shader_name
+        logger.info("Create %s material." % combined_material_name)
+        self.name = combined_material_name
         self.program = -1
         self.uniform_buffers = OrderedDict({})  # Declaration order is important.
         self.Attributes = Attributes()
@@ -153,8 +102,8 @@ class Material:
         # build and link the program
         resourceMgr = Resource.ResourceManager.instance()
         shader = resourceMgr.getShader(shader_name)
-        vertexShader = shader.compile(GL_VERTEX_SHADER) if shader else None
-        fragmentShader = shader.compile(GL_FRAGMENT_SHADER) if shader else None
+        vertexShader = shader.compile(GL_VERTEX_SHADER, macros) if shader else None
+        fragmentShader = shader.compile(GL_FRAGMENT_SHADER, macros) if shader else None
 
         if vertexShader is None or fragmentShader is None:
             logger.error("%s material compile error." % shader_name)
@@ -175,7 +124,6 @@ class Material:
         # build uniform buffer variable
         textureIndex = 0
 
-        print("!!!! Test Code !!!!!!!!!!!!")
         # material_contents = shader.get_material_contents()
         material_contents = '''
             uniform int enable_blend;

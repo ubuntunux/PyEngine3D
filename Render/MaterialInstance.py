@@ -28,33 +28,35 @@ class MaterialInstance:
         logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
         # Load data - conversion string to uniform variable
+        shader_name = ""
+        macros = dict()
         for data_type in material_inst_file.sections():
             # pass [Shader] section
             if data_type == 'Shader':
-                continue
+                if material_inst_file.has_option('Shader', 'shader'):
+                    shader_name = material_inst_file.get('Shader', 'shader')
             elif data_type == 'Define':
-                print("TODO : Define is macro in shader")
-                continue
-            for data_name in material_inst_file[data_type]:
-                strValue = material_inst_file.get(data_type, data_name)
-                data = CreateUniformData(data_type, strValue)
-                # append uniform data
-                if data is not None:
-                    self.uniform_datas[data_name] = data
-                else:
-                    logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
+                for data_name in material_inst_file[data_type]:
+                    data = material_inst_file.get(data_type, data_name)
+                    try:
+                        # convert string to numeric
+                        data = float(data) if "." in data else int(data)
+                    except:
+                        pass
+                    macros[data_name] = data
+            else:
+                for data_name in material_inst_file[data_type]:
+                    strValue = material_inst_file.get(data_type, data_name)
+                    data = CreateUniformData(data_type, strValue)
+                    # append uniform data
+                    if data is not None:
+                        self.uniform_datas[data_name] = data
+                    else:
+                        logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
+        # link uniform_buffers and uniform_data
+        material = resourceMgr.getMaterial(shader_name, macros)
+        self.link_uniform_buffers(material)
 
-        # get material
-        if material_inst_file.has_option('Shader', 'shader'):
-            try:
-                shader_name = material_inst_file.get('Shader', 'shader')
-                material = resourceMgr.getMaterial(shader_name)
-                # link uniform_buffers and uniform_data
-                self.link_uniform_buffers(material)
-            except:
-                logger.error(traceback.format_exc())
-
-        # load failed.
         if self.material is None:
             logger.error("%s material instance has no material." % self.name)
             return

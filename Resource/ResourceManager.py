@@ -131,7 +131,7 @@ class ResourceLoader(object):
 # CLASS : ShaderLoader
 # ---------------------------#
 class ShaderLoader(ResourceLoader, Singleton):
-    name = "VertexShaderLoader"
+    name = "ShaderLoader"
 
     def __init__(self):
         super(ShaderLoader, self).__init__(PathShaders, ".glsl")
@@ -163,19 +163,27 @@ class MaterialLoader(ResourceLoader, Singleton):
         logger.info("Regist %s material template filepath " % self.splitResourceName(filePath, self.dirName))
         return filePath
 
-    def getMaterial(self, shader_name):
-        if shader_name in self.materials:
-            return self.materials[shader_name]
+    def generate_material_name(self, shader_name, macros=None):
+        if macros:
+            keys = sorted(macros.keys())
+            add_name = [key + "_" + str(macros[key]) for key in keys]
+            return shader_name + "_" + "_".join(add_name)
+        return shader_name
+
+    def getMaterial(self, shader_name, macros=None):
+        material_name = self.generate_material_name(shader_name, macros)
+        if material_name in self.materials:
+            return self.materials[material_name]
         # create new material and return
         else:
             try:
-                material = Material(shader_name)
+                material = Material(material_name, shader_name, macros)
                 if material.valid:
-                    self.materials[shader_name] = material
+                    self.materials[material_name] = material
                     return material
             except:
                 logger.error(traceback.format_exc())
-        logger.error("There isn't %s material." % shader_name)
+        logger.error("There isn't %s material. (Shader : %s)" % (material_name, shader_name))
         return None
 
 
@@ -368,9 +376,7 @@ class ResourceManager(Singleton):
         resource = self.getResource(resName, resType)
         resType = type(resource)
         if resource:
-            if resType == FragmentShader:
-                pass
-            elif resType == VertexShader:
+            if resType == Shader:
                 pass
             elif resType == Material:
                 pass
@@ -399,8 +405,8 @@ class ResourceManager(Singleton):
     def getMaterialTemplate(self, mat_name):
         return self.materialLoader.getResource(mat_name)
 
-    def getMaterial(self, shader_name):
-        return self.materialLoader.getMaterial(shader_name)
+    def getMaterial(self, shader_name, macros=None):
+        return self.materialLoader.getMaterial(shader_name, macros)
 
     # FUNCTIONS : MaterialInstance
 
