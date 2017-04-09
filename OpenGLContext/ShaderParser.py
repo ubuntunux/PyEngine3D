@@ -21,7 +21,7 @@ class ShaderCode:
         self.block_list = []
         self.valid = False
 
-    def get_final_code(self):
+    def get_final_code_list(self):
         final_code_list = []
         # final_code_list.append("//-----------------------------------------------")
         # final_code_list.append("// Start : " + self.type)
@@ -149,17 +149,8 @@ def shader_parsing(shader_file_dir, shader_source, macros=None):
     code_lines = final_code.splitlines()
     shader_code = ShaderCode()
     shader_code.parsing(shader_file_dir, code_lines)
-    final_code = shader_code.get_final_code()
-    index = 0
-    for i, code in enumerate(final_code):
-        if "Start : MacroBlock" in code:
-            final_code[i] = code + " : " + str(index)
-            index += 1
-        elif "End : MacroBlock" in code:
-            index -= 1
-            final_code[i] = code + " : " + str(index)
-
-    final_code = "\n".join(final_code)
+    final_code_list = shader_code.get_final_code_list()
+    final_code = "\n".join(final_code_list)
 
     # version directive must be first statement and may not be repeated
     versions = re.findall(reVersion, final_code)

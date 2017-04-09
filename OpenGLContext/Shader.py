@@ -62,6 +62,7 @@ class Shader:
 
         shader = glCreateShader(shaderType)
         shader_file_dir = os.path.split(self.file_path)[0]
+        # Shader source code parsing
         shader_code = shader_parsing(shader_file_dir, self.source, combined_macros)
 
         try:
@@ -124,15 +125,16 @@ class Material:
         # build uniform buffer variable
         textureIndex = 0
 
-        # material_contents = shader.get_material_contents()
-        material_contents = '''
-            uniform int enable_blend;
-            uniform float brightness;
-            uniform vec4 emissive_color;
-            uniform vec4 diffuse_color;
-            uniform sampler2D texture_diffuse;
-            uniform sampler2D texture_normal;
-                '''
+        material_contents = shader.get_material_contents()
+        # material_contents = '''
+        #     uniform int enable_blend;
+        #     uniform float brightness;
+        #     uniform vec4 emissive_color;
+        #     uniform vec4 diffuse_color;
+        #     uniform sampler2D texture_diffuse;
+        #     uniform sampler2D texture_normal;
+        #         '''
+
         uniform_contents = re.findall(reFindUniform, material_contents)
         for uniform_type, uniform_name in uniform_contents:
             uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
