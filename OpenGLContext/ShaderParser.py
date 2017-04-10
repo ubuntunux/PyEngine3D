@@ -30,7 +30,7 @@ class ShaderCode:
             if isinstance(block, CodeBlock):
                 final_code_list.append(block.code)
             else:
-                final_code_list += block.get_final_code()
+                final_code_list += block.get_final_code_list()
         # final_code_list.append("//-----------------------------------------------")
         # final_code_list.append("// End : " + self.type)
         # final_code_list.append("//-----------------------------------------------")
