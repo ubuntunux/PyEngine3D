@@ -29,7 +29,7 @@ class MaterialInstance:
 
         # Load data - conversion string to uniform variable
         shader_name = ""
-        macros = dict()
+        macros = OrderedDict()
         for data_type in material_inst_file.sections():
             # pass [Shader] section
             if data_type == 'Shader':
@@ -37,13 +37,7 @@ class MaterialInstance:
                     shader_name = material_inst_file.get('Shader', 'shader')
             elif data_type == 'Define':
                 for data_name in material_inst_file[data_type]:
-                    data = material_inst_file.get(data_type, data_name)
-                    try:
-                        # convert string to numeric
-                        data = float(data) if "." in data else int(data)
-                    except:
-                        pass
-                    macros[data_name] = data
+                    macros[data_name] = material_inst_file.get(data_type, data_name)
             else:
                 for data_name in material_inst_file[data_type]:
                     strValue = material_inst_file.get(data_type, data_name)
