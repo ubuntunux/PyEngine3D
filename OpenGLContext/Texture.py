@@ -33,10 +33,10 @@ class Texture2D:
         self.height = height
         self.attribute = Attributes()
         self.internal_format = internal_format  # The number of channels and the data type
-        self.texture_format = texture_format  # R,G,B,A order. GL_BGRA is faster than GL_RGBA
+        self.buffer_format = texture_format  # R,G,B,A order. GL_BGRA is faster than GL_RGBA
 
-        self.texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self.texture)
+        self.buffer = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self.buffer)
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, texture_format, data_type, data)
         glGenerateMipmap(GL_TEXTURE_2D)
@@ -56,13 +56,10 @@ class Texture2D:
         pass
 
     def delete(self):
-        glDeleteTextures(1, self.texture)
+        glDeleteTextures(1, self.buffer)
 
     def bind_texture(self):
-        glBindTexture(GL_TEXTURE_2D, self.texture)
-
-    def attach(self, attachment=GL_COLOR_ATTACHMENT0):
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, self.texture, 0)
+        glBindTexture(GL_TEXTURE_2D, self.buffer)
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)

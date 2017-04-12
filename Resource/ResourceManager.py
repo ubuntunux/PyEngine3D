@@ -177,10 +177,12 @@ class MaterialLoader(ResourceLoader, Singleton):
         # create new material and return
         else:
             try:
-                material = Material(material_name, shader_name, macros)
-                if material.valid:
-                    self.materials[material_name] = material
-                    return material
+                shader = ResourceManager.instance().getShader(shader_name)
+                if shader:
+                    material = Material(material_name, shader, macros)
+                    if material.valid:
+                        self.materials[material_name] = material
+                        return material
             except:
                 logger.error(traceback.format_exc())
         logger.error("There isn't %s material. (Shader : %s)" % (material_name, shader_name))

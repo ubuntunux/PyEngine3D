@@ -21,6 +21,3 @@ class RenderBuffer:
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
         glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
-
-    def attach(self, attachment=GL_COLOR_ATTACHMENT0):
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.buffer)

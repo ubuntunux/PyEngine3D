@@ -3,7 +3,8 @@ from .GLFont import GLFont
 from .GLUtil import IsExtensionSupported
 from .RenderBuffer import RenderBuffer
 from .RenderTarget import RenderTargets, RenderTargetManager
-from .Shader import Shader, Material
+from .Shader import Shader
+from .Material import Material
 from .Texture import CreateTextureFromFile, Texture2D
 from .UniformBlock import UniformBlock
 from .UniformBuffer import CreateUniformBuffer, CreateUniformData, \

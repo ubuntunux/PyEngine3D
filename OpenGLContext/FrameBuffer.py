@@ -20,12 +20,31 @@ class FrameBuffer:
     def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
+    def attach_texture(self, texture, attachment=GL_COLOR_ATTACHMENT0):
+        """
+        :param colortexture: Texture2D
+        """
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.buffer, 0)
+
+    def attach_renderbuffer(self, renderBuffer, attachment=GL_COLOR_ATTACHMENT0):
+        """
+        :param colortexture: RenderBuffer
+        """
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderBuffer.buffer)
+
     def bind_rendertarget(self, colortexture, clear_color, depthtexture, clear_depth):
+        """
+        :param colortexture: Texture2D
+        :param clear_color: Bool
+        :param depthtexture: Texture2D
+        :param clear_depth: Bool
+        :return: None
+        """
         clear_flag = 0
         if colortexture:
             if clear_color:
                 clear_flag |= GL_COLOR_BUFFER_BIT
-            colortexture.attach(GL_COLOR_ATTACHMENT0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colortexture.buffer, 0)
             self.rendertarget_width = colortexture.width
             self.rendertarget_height = colortexture.height
             glViewport(0, 0, self.rendertarget_width, self.rendertarget_height)
@@ -37,7 +56,7 @@ class FrameBuffer:
         if depthtexture:
             if clear_depth:
                 clear_flag |= GL_DEPTH_BUFFER_BIT
-            depthtexture.attach(GL_DEPTH_STENCIL_ATTACHMENT)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthtexture.buffer, 0)
 
         if clear_flag:
             glClearColor(0.0, 0.0, 0.0, 1.0)

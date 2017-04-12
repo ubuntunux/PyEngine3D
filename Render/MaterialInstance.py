@@ -24,14 +24,14 @@ class MaterialInstance:
 
         # open material instance file
         material_inst_file = configparser.ConfigParser()
+        material_inst_file.optionxform = lambda option: option  # prevent the key value being lowercase
         material_inst_file.read(filePath)
         logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
-        # Load data - conversion string to uniform variable
+        # Load data - create uniform data from config file
         shader_name = ""
         macros = OrderedDict()
         for data_type in material_inst_file.sections():
-            # pass [Shader] section
             if data_type == 'Shader':
                 if material_inst_file.has_option('Shader', 'shader'):
                     shader_name = material_inst_file.get('Shader', 'shader')
@@ -42,7 +42,6 @@ class MaterialInstance:
                 for data_name in material_inst_file[data_type]:
                     strValue = material_inst_file.get(data_type, data_name)
                     data = CreateUniformData(data_type, strValue)
-                    # append uniform data
                     if data is not None:
                         self.uniform_datas[data_name] = data
                     else:

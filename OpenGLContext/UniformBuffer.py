@@ -10,10 +10,11 @@ import Resource
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
     uniform_classes = [UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4, UniformMatrix2,
-                UniformMatrix3, UniformMatrix4, UniformTexture2D]
+                       UniformMatrix3, UniformMatrix4, UniformTexture2D]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
-            return uniform_class(program, uniform_name)
+            uniform_buffer = uniform_class(program, uniform_name)
+            return uniform_buffer if uniform_buffer.valid else None
     return None
 
 
@@ -55,8 +56,10 @@ class UniformVariable:
     def __init__(self, program, variable_name):
         self.name = variable_name
         self.location = glGetUniformLocation(program, variable_name)
+        self.valid = True
         if self.location == -1:
-            logger.warn("%s location is -1" % variable_name)
+            self.valid = False
+            # logger.warn("%s location is -1" % variable_name)
 
     def bind_uniform(self, value):
         raise BaseException("You must implement bind function.")
