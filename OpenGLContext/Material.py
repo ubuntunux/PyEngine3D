@@ -74,6 +74,8 @@ class Material:
         self.check_validate()
         self.check_linked()
 
+        glShaderBinary 이것도 테스트 해보자.
+
         # test precompiled shader
         # format, result = self.retrieve()
         # print(self.program, format, result)
