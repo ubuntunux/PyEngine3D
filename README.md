@@ -6,7 +6,7 @@
     - http://www.opengl-tutorial.org/
     - https://github.com/neutralord/pyopengl-experiments
     - https://github.com/asylum2010/Asylum_Tutorials
-* Check smiliar project
+* Check similar project
     - http://glumpy.github.io/
     - https://github.com/JoshuaSenouf/GLEngine
     - https://github.com/bartwronski/CSharpRenderer
@@ -32,7 +32,7 @@
     - Shader Parser
         - #include
         - insert macro
-    - TODO : Shader Cache
+    - TODO : Precompiled shader load / save
 * Actor System
     - StaticMesh
     - TODO : SkeletalMesh
@@ -54,7 +54,8 @@
     - TODO : sRGB, NormalMap, Linear Color type
     - TODO : source file path and data
 * Render Target Manager
-    - TODO : 2D, 3D, Cube, Array
+    - 2D
+    - TODO : 3D, Cube, Array
 * Rendering
     - TODO : OpenGL Context
     - View Mode

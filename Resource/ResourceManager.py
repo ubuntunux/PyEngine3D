@@ -52,7 +52,7 @@ class ResourceLoader(object):
             for filename in filenames:
                 if self.fileExt == ".*" or self.fileExt == os.path.splitext(filename)[1].lower():
                     filepath = os.path.join(dirname, filename)
-                    resource = self.loadResource(filepath)
+                    resource = self.call_load_resource(filepath)
                     if resource:
                         self.registResource(resource, filepath)
                     else:
@@ -75,7 +75,7 @@ class ResourceLoader(object):
 
     def registResource(self, resource, filePath=""):
         if resource is None or not hasattr(resource, "name"):
-            resource_name = self.splitResourceName(filePath, self.dirName)
+            resource_name = self.getResourceName(filePath, self.dirName)
         else:
             resource_name = resource.name
         newMetaData = MetaData(filePath)
@@ -99,13 +99,13 @@ class ResourceLoader(object):
                 self.metaDatas.pop(resource)
 
     @staticmethod
-    def splitResourceName(filepath, workPath):
+    def getResourceName(filepath, workPath):
         resourceName = os.path.splitext(os.path.relpath(filepath, workPath))[0]
-        resourceName.replace(os.sep, "/")
+        resourceName = resourceName.replace(os.sep, ".")
         return resourceName.lower()
 
-    def loadResource(self, filePath):
-        raise BaseException("You must implement loadResource.")
+    def call_load_resource(self, filePath):
+        raise BaseException("You must implement call_load_resource.")
 
     def getResource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
@@ -136,9 +136,9 @@ class ShaderLoader(ResourceLoader, Singleton):
     def __init__(self):
         super(ShaderLoader, self).__init__(PathShaders, ".glsl")
 
-    def loadResource(self, filePath):
+    def call_load_resource(self, filePath):
         try:
-            shaderName = self.splitResourceName(filePath, PathShaders)
+            shaderName = self.getResourceName(filePath, PathShaders)
             return Shader(shaderName, filePath)
         except:
             logger.error(traceback.format_exc())
@@ -159,8 +159,8 @@ class MaterialLoader(ResourceLoader, Singleton):
         super(MaterialLoader, self).__init__(PathMaterials, ".mat")
         self.materials = {}
 
-    def loadResource(self, filePath):
-        logger.info("Regist %s material template filepath " % self.splitResourceName(filePath, self.dirName))
+    def call_load_resource(self, filePath):
+        logger.info("Regist %s material template filepath " % self.getResourceName(filePath, self.dirName))
         return filePath
 
     def generate_material_name(self, shader_name, macros=None):
@@ -198,8 +198,8 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
     def __init__(self):
         super(MaterialInstanceLoader, self).__init__(PathMaterials, ".matinst")
 
-    def loadResource(self, filePath):
-        material_instance_name = self.splitResourceName(filePath, PathMaterials)
+    def call_load_resource(self, filePath):
+        material_instance_name = self.getResourceName(filePath, PathMaterials)
         material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
         return material_instance if material_instance.valid else None
 
@@ -226,14 +226,14 @@ class MeshLoader(ResourceLoader, Singleton):
                 filepath = os.path.join(dirname, filename)
                 filepath = os.path.abspath(filepath)
                 file_ext = os.path.splitext(filename)[1].lower()
-                meshName = self.splitResourceName(filepath, PathMeshes)
+                meshName = self.getResourceName(filepath, PathMeshes)
                 mesh = self.getResource(meshName, True)
                 mTime = os.path.getmtime(filepath)
                 mTime = str(datetime.datetime.fromtimestamp(mTime))
                 if mesh is None or mTime != mesh.modify_time:
                     self.convertResource(filepath, file_ext)
 
-    def loadResource(self, filePath):
+    def call_load_resource(self, filePath):
         try:
             # load from mesh
             f = open(filePath, 'r')
@@ -243,7 +243,7 @@ class MeshLoader(ResourceLoader, Singleton):
             file_path = datas['file_path'] if 'file_path' in datas else ""
             modify_time = datas['modify_time'] if 'modify_time' in datas else ""
             geometry_datas = datas['geometry_datas'] if 'geometry_datas' in datas else []
-            meshName = self.splitResourceName(filePath, PathMeshes)
+            meshName = self.getResourceName(filePath, PathMeshes)
             return Mesh(meshName, geometry_datas, file_path, modify_time)
         except:
             logger.error(traceback.format_exc())
@@ -275,7 +275,7 @@ class MeshLoader(ResourceLoader, Singleton):
         if geometry_datas:
             mTime = os.path.getmtime(filepath)
             modifyTime = str(datetime.datetime.fromtimestamp(mTime))
-            meshName = self.splitResourceName(filepath, PathMeshes)
+            meshName = self.getResourceName(filepath, PathMeshes)
             mesh = Mesh(meshName, geometry_datas, filepath, modifyTime)
             saveFilePath = os.path.join(PathMeshes, meshName) + ".mesh"
             self.saveResource(mesh, saveFilePath)
@@ -291,16 +291,38 @@ class TextureLoader(ResourceLoader, Singleton):
     def __init__(self):
         super(TextureLoader, self).__init__(PathTextures, ".*")
 
-    def loadResource(self, filePath):
+    def call_load_resource(self, filePath):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
             data = image.tobytes("raw", image.mode, 0, -1)
-            texture_name = self.splitResourceName(filePath, PathTextures)
+            texture_name = self.getResourceName(filePath, PathTextures)
             return CreateTextureFromFile(texture_name, image.mode, ix, iy, data)
         except:
             logger.error(traceback.format_exc())
         return None
+
+
+# -----------------------#
+# CLASS : SceneLoader
+# -----------------------#
+class SceneLoader(ResourceLoader, Singleton):
+    name = "ShaderLoader"
+
+    def __init__(self):
+        super(SceneLoader, self).__init__(PathScenes, ".scene")
+
+    def call_load_resource(self, filePath):
+        try:
+            shaderName = self.getResourceName(filePath, PathShaders)
+            return Shader(shaderName, filePath)
+        except:
+            logger.error(traceback.format_exc())
+        return None
+
+    def close(self):
+        for shader in self.resources.values():
+            shader.delete()
 
 
 # -----------------------#
@@ -310,19 +332,25 @@ class ResourceManager(Singleton):
     name = "ResourceManager"
 
     def __init__(self):
-        self.sceneManager = None
         self.textureLoader = TextureLoader.instance()
         self.shaderLoader = ShaderLoader.instance()
         self.materialLoader = MaterialLoader.instance()
         self.material_instanceLoader = MaterialInstanceLoader.instance()
         self.meshLoader = MeshLoader.instance()
+        self.sceneLoader = SceneLoader.instance()
+
+        self.sceneManager = None
 
     def initialize(self):
+        # initialize
         self.textureLoader.initialize()
         self.shaderLoader.initialize()
         self.materialLoader.initialize()
         self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
+        self.sceneLoader.initialize()
+
+        # get scene manager
         self.sceneManager = SceneManager.instance()
 
     def close(self):
@@ -333,16 +361,14 @@ class ResourceManager(Singleton):
         :return [(resource name, resource type)]:
         """
         result = []
-        for resName in self.getShaderNameList():
-            result.append((resName, GetClassName(self.getShader(resName))))
-        for resName in self.getMaterialTemplateNameList():
-            result.append((resName, GetClassName(self.getMaterialTemplate(resName))))
-        for resName in self.getMaterialInstanceNameList():
-            result.append((resName, GetClassName(self.getMaterialInstance(resName))))
-        for resName in self.getMeshNameList():
-            result.append((resName, GetClassName(self.getMesh(resName))))
-        for resName in self.getTextureNameList():
-            result.append((resName, GetClassName(self.getTexture(resName))))
+        result += [(resName, GetClassName(self.getShader(resName))) for resName in self.getShaderNameList()]
+        result += [(resName, GetClassName(self.getMaterialTemplate(resName))) for resName in
+                   self.getMaterialTemplateNameList()]
+        result += [(resName, GetClassName(self.getMaterialInstance(resName))) for resName in
+                   self.getMaterialInstanceNameList()]
+        result += [(resName, GetClassName(self.getMesh(resName))) for resName in self.getMeshNameList()]
+        result += [(resName, GetClassName(self.getTexture(resName))) for resName in self.getTextureNameList()]
+        result += [(resName, GetClassName(self.getTexture(resName))) for resName in self.getTextureNameList()]
         return result
 
     def getResourceAttribute(self, resName, resTypeName):
@@ -433,3 +459,11 @@ class ResourceManager(Singleton):
 
     def getTexture(self, textureName):
         return self.textureLoader.getResource(textureName)
+
+    # FUNCTIONS : Scene
+
+    def getSceneNameList(self):
+        return self.sceneLoader.getResourceNameList()
+
+    def getScene(self, SceneName):
+        return self.sceneLoader.getResource(SceneName)

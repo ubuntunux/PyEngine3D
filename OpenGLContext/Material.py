@@ -4,6 +4,9 @@ from collections import OrderedDict
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDeleteShader
+from OpenGL.arrays import GLbyteArray
+
+import numpy as np
 
 from Core import logger
 import Resource
@@ -12,6 +15,7 @@ from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
+
 
 class Material:
     def __init__(self, combined_material_name, shader, macros=None):
@@ -54,6 +58,9 @@ class Material:
 
         # create program
         self.program = glCreateProgram()
+        # glProgramParameteri(self.program, GL_PROGRAM_SEPARABLE, GL_TRUE)
+        glProgramParameteri(self.program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE)
+
         glAttachShader(self.program, vertexShader)
         glAttachShader(self.program, fragmentShader)
         glLinkProgram(self.program)
@@ -64,10 +71,53 @@ class Material:
         glDeleteShader(vertexShader)
         glDeleteShader(fragmentShader)
 
+        self.check_validate()
+        self.check_linked()
+
+        # test precompiled shader
+        # format, result = self.retrieve()
+        # print(self.program, format, result)
+        # self.load(format, result)
+
         # create uniform buffers from source code
         self.create_uniform_buffers(self.program, vertexShaderCode, fragmentShaderCode)
 
         self.valid = True
+
+    def retrieve(self):
+        size = GLint()
+        glGetProgramiv(self.program, GL_PROGRAM_BINARY_LENGTH, size)
+        result = GLbyteArray.zeros((size.value,))
+        size2 = GLint()
+        format = GLenum()
+        glGetProgramBinary(self.program, size.value, size2, format, result)
+        return format.value, result
+
+    def load(self, format, binary):
+        glProgramBinary(self.program, format, binary, len(binary))
+        #self.check_validate()
+        #self.check_linked()
+
+    def check_validate(self):
+        glValidateProgram(self.program)
+        validation = glGetProgramiv(self.program, GL_VALIDATE_STATUS)
+        if validation == GL_FALSE:
+            raise RuntimeError(
+                """Validation failure (%s): %s""" % (
+                    validation,
+                    glGetProgramInfoLog(self.program),
+                ))
+        return self.program
+
+    def check_linked(self):
+        link_status = glGetProgramiv(self.program, GL_LINK_STATUS)
+        if link_status == GL_FALSE:
+            raise RuntimeError(
+                """Link failure (%s): %s""" % (
+                    link_status,
+                    glGetProgramInfoLog(self.program),
+                ))
+        return self.program
 
     def create_uniform_buffers(self, program, *code_list):
         gather_code_lines = []

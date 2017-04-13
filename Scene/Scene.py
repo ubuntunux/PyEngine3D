@@ -55,6 +55,12 @@ class SceneManager(Singleton):
         self.createLight()
         self.create_postprocess()
 
+    def load_scene(self, scene_name):
+        pass
+
+    def save_scene(self):
+        pass
+
     def generateObjectName(self, currName):
         index = 0
         if currName in self.objectMap:
