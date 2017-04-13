@@ -1,6 +1,7 @@
 import configparser
 from collections import OrderedDict
 import os
+import re
 import traceback
 
 from Core import logger
@@ -33,12 +34,15 @@ class MaterialInstance:
         macros = OrderedDict()
         for data_type in material_inst_file.sections():
             if data_type == 'Shader':
+                # get shader name
                 if material_inst_file.has_option('Shader', 'shader'):
                     shader_name = material_inst_file.get('Shader', 'shader')
             elif data_type == 'Define':
+                # gather preprocess
                 for data_name in material_inst_file[data_type]:
                     macros[data_name] = material_inst_file.get(data_type, data_name)
             else:
+                # create uniform data
                 for data_name in material_inst_file[data_type]:
                     strValue = material_inst_file.get(data_type, data_name)
                     data = CreateUniformData(data_type, strValue)
@@ -71,7 +75,7 @@ class MaterialInstance:
                 if uniform_name in self.uniform_datas:
                     uniform_data = self.uniform_datas[uniform_name]
                 else:
-                    # no found uniform data. create and set default uniform data.
+                    # cannot found uniform data. just set default uniform data.
                     uniform_data = CreateUniformData(uniform_buffer.data_type)
                     if uniform_data is not None:
                         self.uniform_datas[uniform_name] = uniform_data

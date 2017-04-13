@@ -11,7 +11,7 @@ from Utilities import GetClassName, Attributes
 from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
-
+reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
 
 class Material:
     def __init__(self, combined_material_name, shader, macros=None):
@@ -49,7 +49,7 @@ class Material:
         fragmentShader = self.compile(GL_FRAGMENT_SHADER, fragmentShaderCode)
 
         if vertexShader is None or fragmentShader is None:
-            logger.error("%s material compile error." % shader_name)
+            logger.error("%s material compile error." % shader.name)
             return
 
         # create program
@@ -64,22 +64,44 @@ class Material:
         glDeleteShader(vertexShader)
         glDeleteShader(fragmentShader)
 
-        # build uniform buffer variable
-        textureIndex = 0
+        # create uniform buffers from source code
+        self.create_uniform_buffers(self.program, vertexShaderCode, fragmentShaderCode)
 
-        # material_contents = shader.get_material_contents()
-        material_contents = '''
-            uniform int enable_blend;
-            uniform float brightness;
-            uniform vec4 emissive_color;
-            uniform vec4 diffuse_color;
-            uniform sampler2D texture_diffuse;
-            uniform sampler2D texture_normal;
-                '''
+        self.valid = True
 
+    def create_uniform_buffers(self, program, *code_list):
+        gather_code_lines = []
+        for code in code_list:
+            depth = 0
+            is_in_material_block = False
+            code_lines = code.splitlines()
+            for code_line in code_lines:
+                m = re.search(reMacro, code_line)
+                # find macro
+                if m is not None:
+                    macro_type, macro_value = [group.strip() for group in m.groups()]
+                    if macro_type in ('ifdef', 'ifndef', 'if'):
+                        # increase depth
+                        if is_in_material_block:
+                            depth += 1
+                        # start material block
+                        elif macro_type == 'ifdef' and 'MATERIAL_COMPONENTS' == macro_value.split(" ")[0]:
+                            is_in_material_block = True
+                            depth = 1
+                    elif macro_type == 'endif' and is_in_material_block:
+                        depth -= 1
+                        if depth == 0:
+                            # exit material block
+                            is_in_material_block = False
+                # gather common code in material component
+                elif is_in_material_block:
+                    gather_code_lines.append(code_line)
+
+        textureIndex = 0  # build uniform buffer variable
+        material_contents = "\n".join(gather_code_lines)
         uniform_contents = re.findall(reFindUniform, material_contents)
         for uniform_type, uniform_name in uniform_contents:
-            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
+            uniform_buffer = CreateUniformBuffer(program, uniform_type, uniform_name)
             if uniform_buffer is not None:
                 # Important : set texture binding index
                 if uniform_buffer.__class__ == UniformTexture2D:
@@ -89,11 +111,11 @@ class Material:
             else:
                 logger.warn("%s shader has no %s uniform variable. (or maybe optimized by compiler.)" % (
                             shader.name, uniform_name))
-        self.valid = True
 
     def compile(self, shaderType, shader_code):
         """
         :param shaderType: GL_VERTEX_SHADER, GL_FRAGMENT_SHADER
+        :param shader_code: string
         """
         try:
             # Compile shaders

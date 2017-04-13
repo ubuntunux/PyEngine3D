@@ -19,8 +19,6 @@ from Utilities import GetClassName, Attributes
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]
 reVersion = re.compile("(\#version\s+.+)")  # [version code, ]
 reComment = re.compile("\/\*.+?\*\/", re.DOTALL)
-reMacroStart = re.compile('\#(define|undef|ifdef|ifndef|if|elif|else)\s*(.*)')  # [macro type, expression]
-reMacroEnd = re.compile('\#endif')
 
 
 class Shader:
