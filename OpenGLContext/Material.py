@@ -74,13 +74,6 @@ class Material:
         self.check_validate()
         self.check_linked()
 
-        glShaderBinary 이것도 테스트 해보자.
-
-        # test precompiled shader
-        # format, result = self.retrieve()
-        # print(self.program, format, result)
-        # self.load(format, result)
-
         # create uniform buffers from source code
         self.create_uniform_buffers(self.program, vertexShaderCode, fragmentShaderCode)
 
@@ -89,16 +82,16 @@ class Material:
     def retrieve(self):
         size = GLint()
         glGetProgramiv(self.program, GL_PROGRAM_BINARY_LENGTH, size)
-        result = GLbyteArray.zeros((size.value,))
+        result = np.zeros(size.value)
         size2 = GLint()
         format = GLenum()
         glGetProgramBinary(self.program, size.value, size2, format, result)
-        return format.value, result
+        return format, result
 
-    def load(self, format, binary):
-        glProgramBinary(self.program, format, binary, len(binary))
-        #self.check_validate()
-        #self.check_linked()
+    def load(self, format:GLenum, binary:np.array):
+        glProgramBinary(self.program, format.value, binary, len(binary))
+        self.check_validate()
+        self.check_linked()
 
     def check_validate(self):
         glValidateProgram(self.program)
