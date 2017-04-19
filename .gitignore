@@ -10,3 +10,6 @@ logs/
 *.swp
 *.o
 *.c
+
+# resources
+*.mesh
