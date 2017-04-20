@@ -26,6 +26,9 @@
  - pygame 1.9.2
 
 ## Features
+* Project System
+    - Load/Save project
+    - Resource tree
 * Shader
     - Material Template
     - Material Instance
