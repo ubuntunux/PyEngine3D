@@ -10,9 +10,8 @@ from OpenGL.GLU import *
 
 from Utilities import Singleton, perspective, ortho, FLOAT_ZERO
 from Resource import ResourceManager, DefaultFontFile
-from Core import CoreManager, COMMAND, config, logger
+from Core import CoreManager, SceneManager, COMMAND, logger
 from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont
-import Scene
 
 
 class Console:
@@ -87,22 +86,20 @@ class Renderer(Singleton):
         self.screen = None
         self.framebuffer = None
 
-    def initScreen(self):
-        self.width, self.height = config.Screen.size
-        # It's have to pygame set_mode at first.
-        self.screen = pygame.display.set_mode((self.width, self.height),
-                                              OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
-
     @staticmethod
     def destroyScreen():
         # destroy
         pygame.display.quit()
 
-    def initialize(self):
+    def initialize(self, width, height, screen):
         logger.info("Initialize Renderer")
+        self.width = width
+        self.height = height
+        self.screen = screen
+
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.sceneManager = Scene.SceneManager.instance()
+        self.sceneManager = SceneManager.SceneManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.framebuffer = FrameBuffer(self.width, self.height)
 
@@ -115,8 +112,8 @@ class Renderer(Singleton):
 
     def close(self):
         # record config
-        config.setValue("Screen", "size", [self.width, self.height])
-        config.setValue("Screen", "position", [0, 0])
+        self.coreManager.config.setValue("Screen", "size", [self.width, self.height])
+        self.coreManager.config.setValue("Screen", "position", [0, 0])
 
         # destroy console
         self.console.close()

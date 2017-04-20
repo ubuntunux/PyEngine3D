@@ -1,4 +1,4 @@
-from Core import logger, config
+from Core import logger, CoreManager
 from Object import BaseObject
 
 
@@ -9,6 +9,15 @@ class Camera(BaseObject):
     def __init__(self, name):
         BaseObject.__init__(self, name, (0, 0, 0), None)
 
+        self.fov = None
+        self.near = None
+        self.far = None
+        self.move_speed = None
+        self.pan_speed = None
+        self.rotation_speed = None
+
+    def initialize(self):
+        config = CoreManager.CoreManager.instance().config
         # get properties
         self.fov = config.Camera.fov
         self.near = config.Camera.near

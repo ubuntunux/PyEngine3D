@@ -80,6 +80,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # action menus
         actionExit = self.findChild(QtGui.QAction, "actionExit")
         QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
+        actionOpenProject = self.findChild(QtGui.QAction, "actionOpenProject")
+        QtCore.QObject.connect(actionOpenProject, QtCore.SIGNAL("triggered()"), self.open_project)
+        actionSaveProject = self.findChild(QtGui.QAction, "actionSaveProject")
+        QtCore.QObject.connect(actionSaveProject, QtCore.SIGNAL("triggered()"), self.save_project)
+        actionSaveAsProject = self.findChild(QtGui.QAction, "actionSaveAsProject")
+        QtCore.QObject.connect(actionSaveAsProject, QtCore.SIGNAL("triggered()"), self.save_as_project)
 
         # action draw mode
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
@@ -117,6 +123,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
         # request available mesh list
         self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
+
+    def open_project(self, *args):
+        if args != () and args[0] is not None:
+            logger.info(*args)
+
+    def save_project(self, *args):
+        if args != () and args[0] is not None:
+            logger.info(*args)
+
+    def save_as_project(self, *args):
+        if args != () and args[0] is not None:
+            logger.info(*args)
 
     def exit(self, *args):
         if args != () and args[0] is not None:

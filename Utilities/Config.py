@@ -1,6 +1,8 @@
 import os
 import configparser
 
+from . import Logger
+
 
 # util class
 class Empty:
@@ -26,16 +28,17 @@ def getValue(value):
 #   print(config.Screen.width)
 # ------------------------------ #
 class Config:
-    def __init__(self, configFilename, debug=False):
-        self.debug = debug
+    def __init__(self, configFilename, log_level=Logger.WARN):
+        self.log_level = log_level
         self.filename = configFilename
         self.config = configparser.ConfigParser()
         self.config.read(self.filename)
-        print("Load Config : %s" % self.filename)
+        if self.log_level <= Logger.INFO:
+            print("Load Config : %s" % self.filename)
 
         # set sections
         for section in self.config.sections():
-            if self.debug:
+            if self.log_level == Logger.DEBUG:
                 print("[%s]" % section)
             if not hasattr(self, section):
                 setattr(self, section, Empty())
@@ -43,12 +46,12 @@ class Config:
             # set values
             for option in self.config[section]:
                 value = self.config.get(section, option)
-                if self.debug:
+                if self.log_level == Logger.DEBUG:
                     print("%s = %s" % (option, value))
                 setattr(current_section, option, getValue(value))
 
-    def getValue(self, section, option):
-        return getValue(self.config[section][option])
+    def getValue(self, section, option, default_value=None):
+        return getValue(self.config[section][option]) if self.config.has_option(section, option) else default_value
 
     def setValue(self, section, option, value):
         # set value
@@ -65,7 +68,8 @@ class Config:
     def save(self):
         with open(self.filename, 'w') as configfile:
             self.config.write(configfile)
-            print("Saved Config : " + self.filename)
+            if self.log_level <= Logger.INFO:
+                print("Saved Config : " + self.filename)
 
     def getFilename(self):
         return self.filename

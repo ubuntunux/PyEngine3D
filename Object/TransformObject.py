@@ -1,6 +1,6 @@
 import numpy as np
 
-from Core import logger, config
+from Core import logger
 from Utilities import *
 
 

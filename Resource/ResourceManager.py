@@ -8,10 +8,9 @@ import pprint
 
 from PIL import Image
 
-from Core import logger
+from Core import logger, SceneManager
 from Object import Triangle, Quad, Mesh
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
-from Scene import SceneManager
 from Render import MaterialInstance
 from Utilities import Singleton, GetClassName
 from . import *
@@ -351,7 +350,7 @@ class ResourceManager(Singleton):
         self.sceneLoader.initialize()
 
         # get scene manager
-        self.sceneManager = SceneManager.instance()
+        self.sceneManager = SceneManager.SceneManager.instance()
 
     def close(self):
         pass

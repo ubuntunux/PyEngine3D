@@ -12,10 +12,11 @@ from pygame.locals import *
 
 from Resource import ResourceManager
 from Render import Renderer
-from Scene import SceneManager
+from Core.SceneManager import SceneManager
+from Core.ProjectManager import ProjectManager
 from OpenGLContext import RenderTargetManager
-from Utilities import Singleton, GetClassName
-from . import config, logger, COMMAND
+from Utilities import Singleton, GetClassName, Config
+from . import logger, log_level, COMMAND
 
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
@@ -63,6 +64,9 @@ class CoreManager(Singleton):
         self.renderer = None
         self.rendertarget_manager = None
         self.sceneManager = None
+        self.projectManager = None
+
+        self.config = Config(os.path.join(os.path.split(__file__)[0], "Config.ini"), log_level)
 
     def initialize(self):
         # process start
@@ -75,23 +79,25 @@ class CoreManager(Singleton):
 
         # pygame init
         pygame.init()
+        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
+        width, height = self.config.Screen.size
+        screen = pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
         pygame.font.init()
         if not pygame.font.get_init():
             self.error('Could not render font.')
 
-        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
-        self.renderer = Renderer.instance()
-        self.renderer.initScreen()
-
         self.resourceManager = ResourceManager.instance()
+        self.renderer = Renderer.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.sceneManager = SceneManager.instance()
+        self.projectManager = ProjectManager.instance()
 
         # initalize managers
         self.resourceManager.initialize()
         self.rendertarget_manager.initialize()
-        self.renderer.initialize()
-        self.sceneManager.initialize(self.renderer)
+        self.renderer.initialize(width, height, screen)
+        self.sceneManager.initialize()
+        self.projectManager.initialize()
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
@@ -111,8 +117,8 @@ class CoreManager(Singleton):
         self.resourceManager.close()
         self.renderer.destroyScreen()
 
-        config.save()  # save config
-        logger.info("Saved config file - " + config.getFilename())
+        self.config.save()  # save config
+        logger.info("Saved config file - " + self.config.getFilename())
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
         pygame.quit()

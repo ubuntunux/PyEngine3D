@@ -6,11 +6,11 @@ import time as timeModule
 
 import numpy as np
 
-from Core import logger, CoreManager
+from . import logger, CoreManager
 from Object import BaseObject, StaticMesh, Camera, Light
 from OpenGLContext import UniformBlock
 from Resource import ResourceManager
-from Render import Tonemapping
+from Render import Tonemapping, Renderer
 from Utilities import Singleton, GetClassName, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 
 
@@ -37,11 +37,11 @@ class SceneManager(Singleton):
         self.uniformSceneConstants = None
         self.uniformLightConstants = None
 
-    def initialize(self, renderer):
+    def initialize(self):
         logger.info("initialize " + GetClassName(self))
         self.coreManager = CoreManager.CoreManager.instance()
         self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.renderer = renderer
+        self.renderer = Renderer.instance()
 
         # Test Code : scene constants uniform buffer
         material_instance = self.resourceManager.getMaterialInstance("default")
@@ -78,6 +78,7 @@ class SceneManager(Singleton):
         camera_name = self.generateObjectName("camera")
         logger.info("Create Camera : %s" % camera_name)
         camera = Camera(camera_name)
+        camera.initialize()
         # regist
         self.cameras.append(camera)
         self.objectMap[camera_name] = camera
