@@ -125,16 +125,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
     def open_project(self, *args):
-        if args != () and args[0] is not None:
-            logger.info(*args)
+        filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".", "Project file (*.project)\nAll files (*.*)")
+        with open(filename, 'r') as file:
+            text = file.read()
+            print(text)
 
     def save_project(self, *args):
-        if args != () and args[0] is not None:
-            logger.info(*args)
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save File', ".")
+        with open(filename, 'w') as file:
+            file.write("it's me")
 
     def save_as_project(self, *args):
-        if args != () and args[0] is not None:
-            logger.info(*args)
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save As File', ".")
+        with open(filename, 'w') as file:
+            file.write("it's me")
 
     def exit(self, *args):
         if args != () and args[0] is not None:
