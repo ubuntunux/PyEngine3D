@@ -35,6 +35,12 @@ class COMMAND(AutoEnum):
     REQUEST_PIPE = ()
     PIPE_DONE = ()
 
+    # menu
+    OPEN_PROJECT = ()
+    SAVE_PROJECT = ()
+    SAVE_AS_PROJECT = ()
+    REQUEST_SAVE_AS_PROJECT = ()
+
     # view mode
     VIEWMODE_WIREFRAME = ()
     VIEWMODE_SHADING = ()

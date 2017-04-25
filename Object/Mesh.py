@@ -65,6 +65,11 @@ class Geometry:
 
 class GeometryInstance:
     def __init__(self, geometry, parent_mesh, parent_object):
+        """
+        :param geometry: Geometry
+        :param parent_mesh: Mesh
+        :param parent_object: BaseObject...
+        """
         self.geometry = geometry
         self.parent_mesh = parent_mesh
         self.parent_object = parent_object
@@ -81,13 +86,11 @@ class GeometryInstance:
 
 
 class Mesh:
-    def __init__(self, mesh_name, geometry_datas, file_path="", modify_time=""):
+    def __init__(self, mesh_name, geometry_datas):
         logger.info("Create %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
-        self.file_path = file_path
-        self.modify_time = modify_time
-        self.geometry_datas = geometry_datas  # Test Code : temp data for save
+        self.geometry_datas_for_save = geometry_datas  # Test Code : temp data for save
         self.geometries = []
         self.attributes = Attributes()
 
@@ -97,7 +100,14 @@ class Mesh:
                 self.geometries.append(geometry)
         self.geometry_count = len(self.geometries)
 
+    def get_save_data(self):
+        return self.geometry_datas_for_save
+
     def get_geometry_instances(self, parent_object):
+        """
+        :param parent_object: BaseObject
+        :return:
+        """
         geometry_instances = []
         for geometry in self.geometries:
             geometry_instance = GeometryInstance(geometry, self, parent_object)

@@ -73,10 +73,6 @@ class CoreManager(Singleton):
         logger.info('Platform : %s' % platformModule.platform())
         logger.info("Process Start : %s" % GetClassName(self))
 
-        # ready to launch - send message to ui
-        if self.cmdPipe:
-            self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
-
         # pygame init
         pygame.init()
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
@@ -102,6 +98,10 @@ class CoreManager(Singleton):
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
             self.renderer.resizeScene()
+
+        # ready to launch - send message to ui
+        if self.cmdPipe:
+            self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         # sen created object list to UI
         self.sendObjectList()
@@ -130,10 +130,13 @@ class CoreManager(Singleton):
     def close(self):
         self.running = False
 
-    # receive and send messages, communication with GUI
+    # Send messages
     def send(self, *args):
         if self.uiCmdQueue:
             self.uiCmdQueue.put(*args)
+
+    def request_save_as_project(self):
+        self.send(COMMAND.REQUEST_SAVE_AS_PROJECT)
 
     def sendObjectName(self, objName):
         self.send(COMMAND.TRANS_OBJECT_NAME, objName)
@@ -146,6 +149,7 @@ class CoreManager(Singleton):
     def notifyDeleteObject(self, obj_name):
         self.send(COMMAND.DELETE_OBJECT_NAME, obj_name)
 
+    # Recieve message
     def updateCommand(self):
         if self.uiCmdQueue is None:
             return
@@ -154,12 +158,19 @@ class CoreManager(Singleton):
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
 
-            # close app
+            # Menus
             if cmd == COMMAND.CLOSE_APP:
                 self.close()
                 return
+            elif cmd == COMMAND.OPEN_PROJECT:
+                self.projectManager.open_project(value)
+            elif cmd == COMMAND.SAVE_PROJECT:
+                self.projectManager.save_project()
+            elif cmd == COMMAND.SAVE_AS_PROJECT:
+                self.projectManager.save_as_project(value)
             elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:
                 self.renderer.setViewMode(cmd)
+            # Resource commands
             elif cmd == COMMAND.ADD_RESOURCE:
                 resName, resType = value
                 obj = self.resourceManager.createResource(resName, resType)
@@ -170,6 +181,7 @@ class CoreManager(Singleton):
                 self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
             elif cmd == COMMAND.REQUEST_OBJECT_LIST:
                 self.sendObjectList()
+            # Scene object commands
             elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
                 resName, resType = value
                 attribute = self.resourceManager.getResourceAttribute(resName, resType)

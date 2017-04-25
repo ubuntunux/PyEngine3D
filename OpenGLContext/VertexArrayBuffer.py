@@ -6,17 +6,20 @@ from OpenGL.GL import *
 
 class VertexArrayBuffer:
     def __init__(self, datas, index_data, dtype):
+        """
+        :param datas: example [positions, colors, normals, tangents, texcoords]
+        :param index_data: indicies
+        :param dtype: example, numpy.float32,
+        """
         self.vertex_unitSize = 0
         self.vertex_strides = []
         self.vertex_stride_points = []
         accStridePoint = 0
         for data in datas:
-            if dtype != data.dtype:
-                raise AttributeError("dtype is not %s." % str(data.dtype))
             stride = len(data[0]) if len(data) > 0 else 0
             self.vertex_strides.append(stride)
             self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
-            accStridePoint += stride * np.nbytes[data.dtype]
+            accStridePoint += stride * np.nbytes[dtype]
         self.vertex_unitSize = accStridePoint
         self.vertex_stride_range = range(len(self.vertex_strides))
 
@@ -34,9 +37,6 @@ class VertexArrayBuffer:
 
         self.index_buffer_size = index_data.nbytes
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
-
-    def __del__(self):
-        pass
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)

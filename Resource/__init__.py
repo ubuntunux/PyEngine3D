@@ -1,3 +1,4 @@
+import __main__
 import os
 
 PathResources = os.path.abspath(os.path.split(__file__)[0])

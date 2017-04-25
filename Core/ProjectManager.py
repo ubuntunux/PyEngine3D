@@ -11,6 +11,7 @@ class ProjectManager(Singleton):
         self.coreManager = None
         self.sceneManager = None
         self.resourceManager = None
+        self.project_file_name = ""
 
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
@@ -18,8 +19,30 @@ class ProjectManager(Singleton):
         self.sceneManager = SceneManager.SceneManager.instance()
         self.resourceManager = ResourceManager.instance()
 
-    def load_project(self, scene_name):
-        pass
+    def open_project(self, filename):
+        try:
+            if os.path.exists(filename):
+                print("open ", filename)
+                self.project_file_name = filename
+                return
+        except:
+            logger.error("Failed open %s." % filename)
 
     def save_project(self):
-        pass
+        try:
+            if self.project_file_name:
+                print("save ", self.project_file_name)
+                return
+            else:
+                self.coreManager.request_save_as_project()
+        except:
+            logger.error("Failed save %s." % filename)
+
+    def save_as_project(self, filename):
+        try:
+            if filename:
+                self.project_file_name = filename
+                print("save ", self.project_file_name)
+                return
+        except:
+            logger.error("Failed save %s." % filename)

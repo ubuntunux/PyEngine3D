@@ -27,7 +27,7 @@ def findTreeItem(parentItem, findItemName):
     return None
 
 
-class UIThread(QtCore.QThread):
+class MessageThread(QtCore.QThread):
     def __init__(self, cmdQueue):
         QtCore.QThread.__init__(self)
         self.running = True
@@ -68,11 +68,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdPipe = cmdPipe
         self.isFillAttributeTree = False
 
-        # UIThread
-        self.uiThread = UIThread(self.cmdQueue)
-        self.uiThread.start()
+        # MessageThread
+        self.message_thread = MessageThread(self.cmdQueue)
+        self.message_thread.start()
 
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.CLOSE_UI)), self.exit)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLOSE_UI)), self.exit)
 
         # load ui file
         uic.loadUi(UI_FILENAME, self)
@@ -86,6 +86,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionSaveProject, QtCore.SIGNAL("triggered()"), self.save_project)
         actionSaveAsProject = self.findChild(QtGui.QAction, "actionSaveAsProject")
         QtCore.QObject.connect(actionSaveAsProject, QtCore.SIGNAL("triggered()"), self.save_as_project)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.REQUEST_SAVE_AS_PROJECT)),
+                     self.save_as_project)
 
         # action draw mode
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
@@ -99,17 +101,22 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)), self.addResourceList)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)), self.fillAttribute)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
+                     self.addResourceList)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
+                     self.fillAttribute)
 
         # Object list
         self.objectList = self.findChild(QtGui.QListWidget, "objectList")
         self.objectList.itemClicked.connect(self.selectObject)
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_NAME)), self.deleteObjectName)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)), self.addObjectName)
-        self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)), self.fillAttribute)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_NAME)),
+                     self.deleteObjectName)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)),
+                     self.addObjectName)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)),
+                     self.fillAttribute)
 
         # Object attribute tree
         self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
@@ -124,29 +131,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # request available mesh list
         self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
-    def open_project(self, *args):
-        filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".", "Project file (*.project)\nAll files (*.*)")
-        with open(filename, 'r') as file:
-            text = file.read()
-            print(text)
-
-    def save_project(self, *args):
-        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save File', ".")
-        with open(filename, 'w') as file:
-            file.write("it's me")
-
-    def save_as_project(self, *args):
-        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save As File', ".")
-        with open(filename, 'w') as file:
-            file.write("it's me")
-
-    def exit(self, *args):
-        if args != () and args[0] is not None:
-            logger.info(*args)
-        self.appCmdQueue.put(COMMAND.CLOSE_APP)
-        self.close()
-        sys.exit()
-
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
             self.exit()
@@ -157,6 +141,31 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         logger.info("Bye")
         event.accept()
         self.exit()
+
+    # ------------------------- #
+    # Menu
+    # ------------------------- #
+    def exit(self, *args):
+        if args != () and args[0] is not None:
+            logger.info(*args)
+        self.appCmdQueue.put(COMMAND.CLOSE_APP)
+        self.close()
+        sys.exit()
+
+    def open_project(self):
+        filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".",
+                                                     "Project file (*.project)\nAll files (*.*)")
+        self.appCmdQueue.put(COMMAND.OPEN_PROJECT, filename)
+
+    def save_project(self):
+        self.appCmdQueue.put(COMMAND.SAVE_PROJECT)
+
+    def save_as_project(self):
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save As File', ".")
+        self.appCmdQueue.put(COMMAND.SAVE_AS_PROJECT, filename)
+
+    def setViewMode(self, mode):
+        self.appCmdQueue.put(mode)
 
     # ------------------------- #
     # Widget - Resource List
@@ -288,9 +297,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # ------------------------- #
     def addResource(self, item=None):
         self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
-
-    def setViewMode(self, mode):
-        self.appCmdQueue.put(mode)
 
 
 def run_editor(cmdQueue, appCmdQueue, cmdPipe):
