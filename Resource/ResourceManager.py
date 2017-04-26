@@ -39,9 +39,18 @@ class MetaData:
         self.resource_filepath = resource_filepath
         self.resource_modify_time = modify_time if modify_time else get_modify_time_of_file(resource_filepath)
 
-    def set_source_meta_data(self, source_filepath, source_modify_time=None):
+    def set_source_meta_data(self, source_filepath, modify_time=None):
         self.source_filepath = source_filepath
         self.source_modify_time = modify_time if modify_time else get_modify_time_of_file(source_filepath)
+
+
+# -----------------------#
+# CLASS : Resource
+# -----------------------#
+class Resource:
+    def __init__(self, resource_name, data=None):
+        self.name = resource_name
+        self.data = data
 
 
 # -----------------------#
@@ -49,12 +58,13 @@ class MetaData:
 # -----------------------#
 class ResourceLoader(object):
     name = "ResourceLoader"
+    resource_path = PathResources
+    fileExt = ['.*',]
+    NEED_TO_CONVERT_RESOUCE = False
 
-    def __init__(self, dirName, fileExt):
+    def __init__(self):
         self.resources = {}
         self.metaDatas = {}
-        self.dirName = dirName
-        self.fileExt = [ext.lower() for ext in fileExt.replace(",",";").split(";")]
 
     def initialize(self):
         """
@@ -63,7 +73,7 @@ class ResourceLoader(object):
         logger.info("initialize " + GetClassName(self))
 
         # collect resource files
-        for dirname, dirnames, filenames in os.walk(self.dirName):
+        for dirname, dirnames, filenames in os.walk(self.resource_path):
             for filename in filenames:
                 fileExt = os.path.splitext(filename)[1].lower()
                 if fileExt == '.meta':
@@ -83,7 +93,9 @@ class ResourceLoader(object):
         pass
 
     def find_convert_resources(self, resource_path):
-        # convert resource
+        """
+        Desc : If you use external files, convert the resources.
+        """
         for dirname, dirnames, filenames in os.walk(resource_path):
             for filename in filenames:
                 source_filepath = os.path.join(dirname, filename)
@@ -91,12 +103,15 @@ class ResourceLoader(object):
                 if file_ext not in self.fileExt:
                     source_filepath = os.path.abspath(source_filepath)
                     resource_name = self.getResourceName(source_filepath, resource_path)
-                    meta_data = self.getMetaData(resource_name, noWarn=True)
-                    convert_resource = meta_data is None
-                    if meta_data is not None:
-                        source_modify_time = get_modify_time_of_file(source_filepath)
-                        if meta_data.source_modify_time != source_modify_time:
-                            convert_resource = True
+                    resource = self.getResource(resource_name, noWarn=True)
+                    convert_resource = resource is None
+                    if not convert_resource:
+                        meta_data = self.getMetaData(resource_name, noWarn=True)
+                        if meta_data:
+                            source_modify_time = get_modify_time_of_file(source_filepath)
+                            if meta_data.source_filepath != source_filepath \
+                                    or meta_data.source_modify_time != source_modify_time:
+                                convert_resource = True
                     if convert_resource:
                         self.convert_resource(source_filepath)
 
@@ -195,14 +210,13 @@ class ResourceLoader(object):
 # ---------------------------#
 class ShaderLoader(ResourceLoader, Singleton):
     name = "ShaderLoader"
-
-    def __init__(self):
-        super(ShaderLoader, self).__init__(PathShaders, ".glsl")
+    resource_path = PathShaders
+    fileExt = ['.glsl', ]
 
     def load_resource(self, filePath):
         try:
-            shaderName = self.getResourceName(filePath, PathShaders)
-            return Shader(shaderName, filePath), None
+            shaderName = self.getResourceName(filePath, self.resource_path)
+            return Shader(shaderName, filePath), MetaData(filePath)
         except:
             logger.error(traceback.format_exc())
         return None, None
@@ -217,14 +231,16 @@ class ShaderLoader(ResourceLoader, Singleton):
 # -----------------------#
 class MaterialLoader(ResourceLoader, Singleton):
     name = "MaterialLoader"
+    resource_path = PathMaterials
+    fileExt = ['.mat', ]
 
     def __init__(self):
-        super(MaterialLoader, self).__init__(PathMaterials, ".mat")
+        super(MaterialLoader, self).__init__()
         self.materials = {}
 
     def load_resource(self, filePath):
-        logger.info("Regist %s material template filepath " % self.getResourceName(filePath, self.dirName))
-        return filePath, None
+        logger.info("Regist %s material template filepath " % self.getResourceName(filePath, self.resource_path))
+        return filePath, MetaData(filePath)
 
     def generate_material_name(self, shader_name, macros=None):
         if macros:
@@ -257,14 +273,13 @@ class MaterialLoader(ResourceLoader, Singleton):
 # -----------------------#
 class MaterialInstanceLoader(ResourceLoader, Singleton):
     name = "MaterialInstanceLoader"
-
-    def __init__(self):
-        super(MaterialInstanceLoader, self).__init__(PathMaterials, ".matinst")
+    resource_path = PathMaterials
+    fileExt = ['.matinst', ]
 
     def load_resource(self, filePath):
-        material_instance_name = self.getResourceName(filePath, PathMaterials)
+        material_instance_name = self.getResourceName(filePath, self.resource_path)
         material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
-        return material_instance if material_instance.valid else None, None
+        return material_instance if material_instance.valid else None, MetaData(filePath)
 
 
 # -----------------------#
@@ -272,9 +287,9 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
 # -----------------------#
 class MeshLoader(ResourceLoader, Singleton):
     name = "MeshLoader"
-
-    def __init__(self):
-        super(MeshLoader, self).__init__(PathMeshes, ".mesh")
+    resource_path = PathMeshes
+    fileExt = ['.mesh', ]
+    NEED_TO_CONVERT_RESOUCE = True
 
     def initialize(self):
         # load and regist resource
@@ -284,11 +299,12 @@ class MeshLoader(ResourceLoader, Singleton):
         self.regist_resource(Triangle())
         self.regist_resource(Quad())
 
-        self.find_convert_resources()
+        # If you use external files, convert the resources.
+        self.find_convert_resources(self.resource_path)
 
     def load_resource(self, filePath):
         geometry_data, meta_data = self.load_simple_format(filePath)
-        mesh_name = self.getResourceName(filePath, PathMeshes)
+        mesh_name = self.getResourceName(filePath, self.resource_path)
         mesh = Mesh(mesh_name, geometry_data)
         return mesh, meta_data
 
@@ -308,12 +324,12 @@ class MeshLoader(ResourceLoader, Singleton):
 
         logger.info("Convert Resource : %s" % source_filepath)
         if geometry_datas:
-            meshName = self.getResourceName(source_filepath, PathMeshes)
+            meshName = self.getResourceName(source_filepath, self.resource_path)
             # create mesh
             mesh = Mesh(meshName, geometry_datas)
-            save_filepath = os.path.join(PathMeshes, meshName) + ".mesh"
+            save_filepath = os.path.join(self.resource_path, meshName) + ".mesh"
 
-            meta_data = self.getMetaData(meshName) or MetaData()
+            meta_data = self.getMetaData(meshName) or MetaData(save_filepath)
             meta_data.set_source_meta_data(source_filepath)
             self.save_simple_format(save_filepath, mesh.get_save_data(), meta_data)
             self.regist_resource(mesh, meta_data)
@@ -324,17 +340,17 @@ class MeshLoader(ResourceLoader, Singleton):
 # -----------------------#
 class TextureLoader(ResourceLoader, Singleton):
     name = "TextureLoader"
-
-    def __init__(self):
-        super(TextureLoader, self).__init__(PathTextures, ".*")
+    resource_path = PathTextures
+    fileExt = ['.*', ]
+    NEED_TO_CONVERT_RESOUCE = True
 
     def load_resource(self, filePath):
         try:
             image = Image.open(filePath)
             ix, iy = image.size
             data = image.tobytes("raw", image.mode, 0, -1)
-            texture_name = self.getResourceName(filePath, PathTextures)
-            return CreateTextureFromFile(texture_name, image.mode, ix, iy, data), None
+            texture_name = self.getResourceName(filePath, self.resource_path)
+            return CreateTextureFromFile(texture_name, image.mode, ix, iy, data), MetaData(filePath)
         except:
             logger.error(traceback.format_exc())
         return None, None
@@ -345,14 +361,15 @@ class TextureLoader(ResourceLoader, Singleton):
 # -----------------------#
 class SceneLoader(ResourceLoader, Singleton):
     name = "ShaderLoader"
-
-    def __init__(self):
-        super(SceneLoader, self).__init__(PathScenes, ".scene")
+    resource_path = PathScenes
+    fileExt = ['.scene', ]
 
     def load_resource(self, filePath):
         try:
-            shaderName = self.getResourceName(filePath, PathShaders)
-            return Shader(shaderName, filePath)
+            scene_name = self.getResourceName(filePath, self.resource_path)
+            scene = Resource(scene_name, filePath)
+            meta_data = MetaData(filePath)
+            return scene, meta_data
         except:
             logger.error(traceback.format_exc())
         return None, None

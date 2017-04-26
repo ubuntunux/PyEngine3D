@@ -64,16 +64,13 @@ class Config:
         if not hasattr(self, section):
             setattr(self, section, Empty())
             self.isChanged = True
-            print("not hasattr", section)
         elif not self.isChanged:
             self.isChanged = value != getattr(self, section)
-            print("Changed ", self.isChanged, value, getattr(self, section))
         current_section = getattr(self, section)
         setattr(current_section, option, value)
 
     def save(self):
         if self.isChanged or not os.path.exists(self.filename):
-            print(self.isChanged, not os.path.exists(self.filename))
             with open(self.filename, 'w') as configfile:
                 self.config.write(configfile)
                 if self.log_level <= Logger.INFO:
