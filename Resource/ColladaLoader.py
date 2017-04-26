@@ -4,26 +4,9 @@ import io
 import re
 import traceback
 from collections import OrderedDict
-from xml.etree import ElementTree
 
 from Core import logger
-
-
-ignore_xmlns = re.compile(' xmlns=".+?"')
-
-
-def get_attrib(xml_data, key, default=""):
-    if xml_data is not None and key in xml_data.attrib:
-        return xml_data.attrib[key]
-    return default
-
-
-def get_tag(xml_datadata, default=""):
-    return xml_data.tag if xml_data is not None else default
-
-
-def get_text(xml_data, default=""):
-    return xml_data.text if xml_data is not None else default
+from Utilities import load_xml, get_xml_attrib, get_xml_tag, get_xml_text
 
 
 def convert_float(data, default=0.0):
@@ -65,7 +48,7 @@ def convert_triangulate(polygon, vcount, stride=1):
 
 class ColladaGeometry:
     def __init__(self, xml_geometry):
-        self.name = get_attrib(xml_geometry, 'name')
+        self.name = get_xml_attrib(xml_geometry, 'name')
         self.sources = {}  # {'source_id':source_data}
         self.position_source_id = ""
         self.semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
@@ -78,15 +61,15 @@ class ColladaGeometry:
             # parse sources
             sources = {}  # {'source_id':source_data}
             for xml_source in xml_mesh.findall('source'):
-                source_id = get_attrib(xml_source, 'id')
-                stride = get_attrib(xml_source.find('technique_common/accessor'), 'stride')
+                source_id = get_xml_attrib(xml_source, 'id')
+                stride = get_xml_attrib(xml_source.find('technique_common/accessor'), 'stride')
                 stride = convert_int(stride, 0)
-                source_text = get_text(xml_source.find('float_array'))
+                source_text = get_xml_text(xml_source.find('float_array'))
                 source_data = convert_list(source_text, float, stride)
                 sources[source_id] = source_data
 
                 # get vertex position source id
-            position_source_id = get_attrib(xml_mesh.find('vertices/input'), 'source')
+            position_source_id = get_xml_attrib(xml_mesh.find('vertices/input'), 'source')
             if position_source_id.startswith("#"):
                 position_source_id = position_source_id[1:]
 
@@ -99,28 +82,28 @@ class ColladaGeometry:
                     # parse semantic
                     semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
                     for xml_semantic in xml_polygons.findall('input'):
-                        set_number = get_attrib(xml_semantic, 'set', '0')
-                        semantic = get_attrib(xml_semantic, 'semantic') + set_number  # example VERTEX0, TEXCOORD0
-                        source = get_attrib(xml_semantic, 'source')
+                        set_number = get_xml_attrib(xml_semantic, 'set', '0')
+                        semantic = get_xml_attrib(xml_semantic, 'semantic') + set_number  # example VERTEX0, TEXCOORD0
+                        source = get_xml_attrib(xml_semantic, 'source')
                         if source.startswith("#"):
                             source = source[1:]
-                        offset = convert_int(get_attrib(xml_semantic, 'offset'), 0)
+                        offset = convert_int(get_xml_attrib(xml_semantic, 'offset'), 0)
                         stride_of_index = max(stride_of_index, offset + 1)
                         semantics[semantic] = dict(source=source, offset=offset, set=set)
                     # parse polygon indices
                     if tag == 'triangles':
-                        vertex_index_list = get_text(xml_polygons.find('p'))
+                        vertex_index_list = get_xml_text(xml_polygons.find('p'))
                         vertex_index_list = convert_list(vertex_index_list, int)
                     elif tag == 'polylist' or tag == 'polygons':
                         vcount_list = []
                         polygon_index_list = []
                         if tag == 'polylist':
-                            vcount_list = convert_list(get_text(xml_polygons.find('vcount')), int)
+                            vcount_list = convert_list(get_xml_text(xml_polygons.find('vcount')), int)
                             # flatten list
-                            polygon_index_list = convert_list(get_text(xml_polygons.find('p')), int)
+                            polygon_index_list = convert_list(get_xml_text(xml_polygons.find('p')), int)
                         elif tag == 'polygons':
                             for xml_p in xml_polygons.findall('p'):
-                                polygon_indices = convert_list(get_text(xml_p), int)
+                                polygon_indices = convert_list(get_xml_text(xml_p), int)
                                 # flatten list
                                 polygon_index_list += polygon_indices
                                 vcount_list.append(int(len(polygon_indices) / stride_of_index))
@@ -147,24 +130,20 @@ class ColladaGeometry:
 class Collada:
     def __init__(self, filepath):
         try:
-            f = io.open(filepath, mode="r", encoding="utf-8")
-            xmlData = "".join(list(f))
-            xmlData = re.sub(ignore_xmlns, "", xmlData, count=1)
-            f.close()
-            xml_root = ElementTree.fromstring(xmlData)
+            xml_root = load_xml(filepath)
         except:
             logger.error(traceback.format_exc())
             return
 
-        self.collada_version = get_attrib(xml_root, 'version')
-        self.author = get_text(xml_root.find("asset/contributor/author"))
-        self.authoring_tool = get_text(xml_root.find("asset/contributor/authoring_tool"))
-        self.created = get_text(xml_root.find("asset/created"))
-        self.modified = get_text(xml_root.find("asset/modified"))
-        self.unit_name = get_attrib(xml_root.find("asset/unit"), 'name', 'meter')
-        self.unit_meter = get_attrib(xml_root.find("asset/unit"), 'meter')
+        self.collada_version = get_xml_attrib(xml_root, 'version')
+        self.author = get_xml_text(xml_root.find("asset/contributor/author"))
+        self.authoring_tool = get_xml_text(xml_root.find("asset/contributor/authoring_tool"))
+        self.created = get_xml_text(xml_root.find("asset/created"))
+        self.modified = get_xml_text(xml_root.find("asset/modified"))
+        self.unit_name = get_xml_attrib(xml_root.find("asset/unit"), 'name', 'meter')
+        self.unit_meter = get_xml_attrib(xml_root.find("asset/unit"), 'meter')
         self.unit_meter = convert_float(self.unit_meter)
-        self.up_axis = get_text(xml_root.find("asset/up_axis"))
+        self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
         self.geometries = []
         self.parse_geometries(xml_root)

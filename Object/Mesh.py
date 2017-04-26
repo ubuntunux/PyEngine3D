@@ -20,14 +20,14 @@ class Geometry:
         if 'indices' in geometry_data:
             indices = np.array(geometry_data['indices'], dtype=np.uint32)
         else:
-            logger.error("Create %s %s error. (%d)'s mesh has no index data." % (my_class_name, self.name, i))
+            logger.error("Create %s %s error. Mesh has no index data." % (my_class_name, self.name))
             return
 
         if 'positions' in geometry_data:
             positions = np.array(geometry_data['positions'], dtype=np.float32)
             vertex_count = len(positions)
         else:
-            logger.error("Create %s %s error. (%d)'s mesh has no position data." % (my_class_name, self.name, i))
+            logger.error("Create %s %s error. Mesh has no position data." % (my_class_name, self.name))
             return
 
         if 'colors' in geometry_data and geometry_data['colors']:

@@ -1,5 +1,6 @@
 import os
 import configparser
+import traceback
 
 from . import Logger
 
@@ -9,15 +10,14 @@ class Empty:
     pass
 
 
-def getValue(value):
+def evaluation(value):
     # find value type
     try:
         evalValue = eval(value)
         if type(evalValue) in [int, float, list, tuple, dict]:
             return evalValue
-    except NameError:
-        pass
-    return value
+    except:
+        return value
 
 
 # ------------------------------ #
@@ -30,9 +30,10 @@ def getValue(value):
 class Config:
     def __init__(self, configFilename, log_level=Logger.WARN):
         self.log_level = log_level
+        self.isChanged = False
         self.filename = configFilename
         self.config = configparser.ConfigParser()
-        self.config.read(self.filename)
+        self.config.read(configFilename)
         if self.log_level <= Logger.INFO:
             print("Load Config : %s" % self.filename)
 
@@ -42,16 +43,16 @@ class Config:
                 print("[%s]" % section)
             if not hasattr(self, section):
                 setattr(self, section, Empty())
+            # set value to member variables
             current_section = getattr(self, section)
-            # set values
             for option in self.config[section]:
                 value = self.config.get(section, option)
                 if self.log_level == Logger.DEBUG:
                     print("%s = %s" % (option, value))
-                setattr(current_section, option, getValue(value))
+                setattr(current_section, option, evaluation(value))
 
     def getValue(self, section, option, default_value=None):
-        return getValue(self.config[section][option]) if self.config.has_option(section, option) else default_value
+        return evaluation(self.config[section][option]) if self.config.has_option(section, option) else default_value
 
     def setValue(self, section, option, value):
         # set value
@@ -59,17 +60,25 @@ class Config:
             self.config.add_section(section)
         self.config[section][option] = str(value)
 
-        # set internal method
+        # set value to member variables
         if not hasattr(self, section):
             setattr(self, section, Empty())
+            self.isChanged = True
+            print("not hasattr", section)
+        elif not self.isChanged:
+            self.isChanged = value != getattr(self, section)
+            print("Changed ", self.isChanged, value, getattr(self, section))
         current_section = getattr(self, section)
         setattr(current_section, option, value)
 
     def save(self):
-        with open(self.filename, 'w') as configfile:
-            self.config.write(configfile)
-            if self.log_level <= Logger.INFO:
-                print("Saved Config : " + self.filename)
+        if self.isChanged or not os.path.exists(self.filename):
+            print(self.isChanged, not os.path.exists(self.filename))
+            with open(self.filename, 'w') as configfile:
+                self.config.write(configfile)
+                if self.log_level <= Logger.INFO:
+                    print("Saved Config : " + self.filename)
+        self.isChanged = False
 
     def getFilename(self):
         return self.filename
