@@ -90,7 +90,6 @@ class Mesh:
         logger.info("Create %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
-        self.geometry_datas_for_save = geometry_datas  # Test Code : temp data for save
         self.geometries = []
         self.attributes = Attributes()
 
@@ -99,9 +98,6 @@ class Mesh:
             if geometry.valid:
                 self.geometries.append(geometry)
         self.geometry_count = len(self.geometries)
-
-    def get_save_data(self):
-        return self.geometry_datas_for_save
 
     def get_geometry_instances(self, parent_object):
         """

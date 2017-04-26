@@ -88,6 +88,10 @@ class ResourceLoader(object):
                     else:
                         logger.error("%s load failed." % filename)
 
+        # If you use external files, convert the resources.
+        if self.NEED_TO_CONVERT_RESOUCE:
+            self.find_convert_resources(self.resource_path)
+
     def createResource(self):
         """ TODO : create resource file and regist."""
         pass
@@ -299,13 +303,10 @@ class MeshLoader(ResourceLoader, Singleton):
         self.regist_resource(Triangle())
         self.regist_resource(Quad())
 
-        # If you use external files, convert the resources.
-        self.find_convert_resources(self.resource_path)
-
     def load_resource(self, filePath):
-        geometry_data, meta_data = self.load_simple_format(filePath)
+        resource_data, meta_data = self.load_simple_format(filePath)
         mesh_name = self.getResourceName(filePath, self.resource_path)
-        mesh = Mesh(mesh_name, geometry_data)
+        mesh = Mesh(mesh_name, resource_data)
         return mesh, meta_data
 
     def convert_resource(self, source_filepath):
@@ -329,9 +330,9 @@ class MeshLoader(ResourceLoader, Singleton):
             mesh = Mesh(meshName, geometry_datas)
             save_filepath = os.path.join(self.resource_path, meshName) + ".mesh"
 
-            meta_data = self.getMetaData(meshName) or MetaData(save_filepath)
+            meta_data = self.getMetaData(meshName, noWarn=True) or MetaData(save_filepath)
             meta_data.set_source_meta_data(source_filepath)
-            self.save_simple_format(save_filepath, mesh.get_save_data(), meta_data)
+            self.save_simple_format(save_filepath, geometry_datas, meta_data)
             self.regist_resource(mesh, meta_data)
 
 
@@ -341,16 +342,41 @@ class MeshLoader(ResourceLoader, Singleton):
 class TextureLoader(ResourceLoader, Singleton):
     name = "TextureLoader"
     resource_path = PathTextures
-    fileExt = ['.*', ]
+    fileExt = ['.tex2d', ]
     NEED_TO_CONVERT_RESOUCE = True
 
     def load_resource(self, filePath):
+        resource_data, meta_data = self.load_simple_format(filePath)
+        texture_name = self.getResourceName(filePath, self.resource_path)
+        image_mode = resource_data['image_mode']
+        width = resource_data['width']
+        height = resource_data['height']
+        data = resource_data['data']
+        return CreateTextureFromFile(texture_name, image_mode, width, height, data), meta_data
+
+    def convert_resource(self, source_filepath):
+        print("convert_resource", source_filepath)
+        file_ext = os.path.splitext(source_filepath)[1].lower()
+        if file_ext not in [".gif", ".jpg", ".jpeg", ".png", ".bmp", ".tga", ".tif", ".tiff", ".dds", ".ktx"]:
+            return
+
         try:
-            image = Image.open(filePath)
-            ix, iy = image.size
+            logger.info("Convert Resource : %s" % source_filepath)
+            texture_name = self.getResourceName(source_filepath, self.resource_path)
+            # create texture
+            image = Image.open(source_filepath)
+            image_mode = image.mode
+            width, height = image.size
             data = image.tobytes("raw", image.mode, 0, -1)
-            texture_name = self.getResourceName(filePath, self.resource_path)
-            return CreateTextureFromFile(texture_name, image.mode, ix, iy, data), MetaData(filePath)
+            texture = CreateTextureFromFile(texture_name, image_mode, width, height, data)
+
+            save_filepath = os.path.join(self.resource_path, texture_name) + ".tex2d"
+
+            meta_data = self.getMetaData(texture_name, noWarn=True) or MetaData(save_filepath)
+            meta_data.set_source_meta_data(source_filepath)
+            save_data = dict(image_mode=image_mode, width=width, height=height, data=data)
+            self.save_simple_format(save_filepath, save_data, meta_data)
+            self.regist_resource(texture, meta_data)
         except:
             logger.error(traceback.format_exc())
         return None, None
@@ -422,7 +448,7 @@ class ResourceManager(Singleton):
                    self.getMaterialInstanceNameList()]
         result += [(resName, GetClassName(self.getMesh(resName))) for resName in self.getMeshNameList()]
         result += [(resName, GetClassName(self.getTexture(resName))) for resName in self.getTextureNameList()]
-        result += [(resName, GetClassName(self.getTexture(resName))) for resName in self.getTextureNameList()]
+        result += [(resName, GetClassName(self.getScene(resName))) for resName in self.getSceneNameList()]
         return result
 
     def getResourceAttribute(self, resName, resTypeName):
