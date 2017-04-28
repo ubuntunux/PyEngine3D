@@ -10,11 +10,14 @@ PathScenes = os.path.join(PathResources, 'Scenes')
 PathShaders = os.path.join(PathResources, 'Shaders')
 PathTextures = os.path.join(PathResources, 'Textures')
 
-if not os.path.exists(PathResources):
-    os.makedirs(PathResources)
+# check the directory
+paths = [PathResources, PathFonts, PathMaterials, PathMaterialInstances, PathMeshes, PathScenes, PathShaders, PathTextures]
+for path in paths:
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 DefaultFontFile = os.path.join(PathFonts, 'UbuntuFont.ttf')
 
 from .ColladaLoader import Collada
 from .ObjLoader import OBJ
-from .ResourceManager import ShaderLoader, MaterialInstanceLoader, MeshLoader, ResourceManager
+from .ResourceManager import ResourceManager

@@ -13,7 +13,7 @@ from Core import logger, SceneManager, log_level
 from Object import Triangle, Quad, Mesh
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Render import MaterialInstance
-from Utilities import Singleton, GetClassName, Config
+from Utilities import Singleton, GetClassName, Config, Logger
 from . import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
@@ -66,7 +66,8 @@ class ResourceLoader(object):
     resource_path = PathResources
     resource_version = 0
     fileExt = '.*'
-    CHECK_CONVERT_RESOUCE = False
+    externalFileExt = {}  # { 'WaveFront': '.obj' }
+    USE_EXTERNAL_RESOURCE = False
 
     def __init__(self):
         self.gabage_resources = []
@@ -95,27 +96,35 @@ class ResourceLoader(object):
                         if not convert_resource:
                             # check source file is newer or same.
                             source_modify_time = get_modify_time_of_file(meta_data.source_filepath)
-                            if meta_data.resource_version != self.resource_version \
-                                    or meta_data.source_modify_time != source_modify_time:
+                            if meta_data.resource_version != self.resource_version:
                                 convert_resource = True
+                                logger.log(Logger.MINOR_INFO, "Resource version changed. %d => %d" %
+                                           (meta_data.resource_version, self.resource_version))
+                            elif meta_data.source_modify_time != source_modify_time:
+                                convert_resource = True
+                                logger.log(Logger.MINOR_INFO, "Resource was modified.")
                         if convert_resource:
+                            # done.
                             self.convert_resource(meta_data.source_filepath)
-                    # Don't convert resource, just do register the loaded resource.
-                    if resource and meta_data and not convert_resource:
-                        self.regist_resource(resource, meta_data)
-                    else:
-                        logger.error("%s load failed." % filename)
+
+                    if not convert_resource:
+                        # Don't convert resource, just do register the loaded resource.
+                        if resource and meta_data:
+                            self.regist_resource(resource, meta_data)
+                        else:
+                            logger.error("%s load failed." % filename)
 
         # If you use external files, convert the resources.
-        if self.CHECK_CONVERT_RESOUCE:
+        if self.USE_EXTERNAL_RESOURCE:
             for dirname, dirnames, filenames in os.walk(self.resource_path):
                 for filename in filenames:
                     source_filepath = os.path.join(dirname, filename)
                     file_ext = os.path.splitext(source_filepath)[1].lower()
-                    if file_ext != self.fileExt:
+                    if file_ext in self.externalFileExt.values():
                         source_filepath = os.path.abspath(source_filepath)
                         resource_name = self.getResourceName(source_filepath, self.resource_path)
                         if self.getResource(resource_name, noWarn=True) is None:
+                            logger.log(Logger.MINOR_INFO, "Find new resource. %s" % source_filepath)
                             self.convert_resource(source_filepath)
                         else:
                             meta_data = self.getMetaData(resource_name)
@@ -352,7 +361,10 @@ class MaterialInstanceLoader(ResourceLoader, Singleton):
     def load_resource(self, filePath):
         material_instance_name = self.getResourceName(filePath, self.resource_path)
         material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
-        return material_instance if material_instance.valid else None, MetaData(self.resource_version, filePath)
+        meta_data = MetaData(self.resource_version, filePath)
+        if material_instance and material_instance.valid:
+            return material_instance, meta_data
+        return None, None
 
 
 # -----------------------#
@@ -362,7 +374,8 @@ class MeshLoader(ResourceLoader, Singleton):
     name = "MeshLoader"
     resource_path = PathMeshes
     fileExt = '.mesh'
-    CHECK_CONVERT_RESOUCE = True
+    externalFileExt = dict(WaveFront='.obj', Collada='.dae')
+    USE_EXTERNAL_RESOURCE = True
 
     def initialize(self):
         # load and regist resource
@@ -383,12 +396,12 @@ class MeshLoader(ResourceLoader, Singleton):
         If the resource is newer, save and register the resource.
         """
         file_ext = os.path.splitext(source_filepath)[1].lower()
-        if file_ext == ".obj":
-            obj = OBJ(source_filepath, 1, True)
-            geometry_datas = obj.get_geometry_data()
-        elif file_ext == ".dae":
-            obj = Collada(source_filepath)
-            geometry_datas = obj.get_geometry_data()
+        if file_ext == self.externalFileExt.get('WaveFront'):
+            geometry = OBJ(source_filepath, 1, True)
+            geometry_datas = geometry.get_geometry_data()
+        elif file_ext == self.externalFileExt.get('Collada'):
+            geometry = Collada(source_filepath)
+            geometry_datas = geometry.get_geometry_data()
         else:
             return
 
@@ -407,7 +420,9 @@ class TextureLoader(ResourceLoader, Singleton):
     name = "TextureLoader"
     resource_path = PathTextures
     fileExt = '.texture'
-    CHECK_CONVERT_RESOUCE = True
+    externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
+                           TIFF=".tiff", DXT=".dds", KTX=".ktx")
+    USE_EXTERNAL_RESOURCE = True
 
     def load_resource(self, filePath):
         texture_datas, meta_data = self.load_simple_format(filePath)
@@ -416,7 +431,7 @@ class TextureLoader(ResourceLoader, Singleton):
 
     def convert_resource(self, source_filepath):
         file_ext = os.path.splitext(source_filepath)[1].lower()
-        if file_ext not in [".gif", ".jpg", ".jpeg", ".png", ".bmp", ".tga", ".tif", ".tiff", ".dds", ".ktx"]:
+        if file_ext not in self.externalFileExt.values():
             return
         try:
             logger.info("Convert Resource : %s" % source_filepath)
