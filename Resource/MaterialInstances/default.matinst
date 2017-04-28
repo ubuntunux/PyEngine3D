@@ -2,7 +2,7 @@
 shader = default
 
 [Define]
-SHADER_DEFINE_TEST = 1
+SHADER_DEFINE_TEST = 0
 
 [Int]
 enable_blend = 0
