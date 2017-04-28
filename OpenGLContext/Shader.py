@@ -8,13 +8,9 @@ import codecs
 import traceback
 import uuid
 
-from OpenGL.GL import *
-from OpenGL.GL.shaders import *
-from OpenGL.GL.shaders import glDeleteShader
-
 from Core import logger
 import Resource
-from Utilities import GetClassName, Attributes
+from Utilities import GetClassName, Attributes, Logger
 
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]
 reVersion = re.compile("(\#version\s+.+)")  # [version code, ]
@@ -25,7 +21,7 @@ class Shader:
     default_macros = dict(MATERIAL_COMPONENTS=1)
 
     def __init__(self, shaderName, file_path):
-        logger.info("Create " + GetClassName(self) + " : " + shaderName)
+        logger.info("Load " + GetClassName(self) + " : " + shaderName)
         self.name = shaderName
         self.file_path = file_path
         self.shader_code = ""
@@ -36,14 +32,20 @@ class Shader:
             f.close()
         except:
             self.shader_code = ""
-            logger.info("Failed %s file open" % file_path)
+            logger.error("Failed %s file open" % file_path)
         self.attribute = Attributes()
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
         return self.attribute
 
-    def parsing_final_code(self, shaderType, external_macros):
+    def get_vertex_shader_code(self, external_macros={}):
+        return self.__parsing_final_code__('VERTEX_SHADER', external_macros)
+
+    def get_fragment_shader_code(self, external_macros={}):
+        return self.__parsing_final_code__('FRAGMENT_SHADER', external_macros)
+
+    def __parsing_final_code__(self, shaderType, external_macros):
         if self.shader_code == "" or self.shader_code is None:
             return
 
@@ -57,17 +59,11 @@ class Shader:
         for macro in self.default_macros:
             combined_macros[macro] = self.default_macros[macro]
         # shader type macro
-        if shaderType == GL_VERTEX_SHADER:
-            combined_macros['VERTEX_SHADER'] = "1"
-        elif shaderType == GL_FRAGMENT_SHADER:
-            combined_macros['FRAGMENT_SHADER'] = "1"
-        else:
-            raise BaseException("Error!! Set valid shaderType.")
-            return ""
+        combined_macros[shaderType] = "1"
+
         # external macro
-        if external_macros is not None:
-            for macro in external_macros:
-                combined_macros[macro] = external_macros[macro]
+        for macro in external_macros:
+            combined_macros[macro] = external_macros[macro]
 
         # insert defines to final code
         final_code_lines = ["", ]  # for version define

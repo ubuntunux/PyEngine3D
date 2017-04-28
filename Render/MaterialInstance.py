@@ -27,7 +27,6 @@ class MaterialInstance:
         material_inst_file = configparser.ConfigParser()
         material_inst_file.optionxform = lambda option: option  # prevent the key value being lowercase
         material_inst_file.read(filePath)
-        logger.info("Load Material Instance : %s" % os.path.split(filePath)[1])
 
         # Load data - create uniform data from config file
         shader_name = ""

@@ -14,13 +14,18 @@ def get_texture_format(str_image_mode):
     return GL_RGBA
 
 
-def CreateTextureFromFile(texture_name, image_mode, width, height, data):
-    """
-    :param image_mode: "RGBA", "RGB"
-    """
+def CreateTextureFromFile(texture_name, texture_datas: dict):
+    texture_type = texture_datas.get('texture_type', 'Tex2D')  # texture_type: Tex1D, Tex2D, Tex3D, Cube
+    image_mode = texture_datas.get('image_mode', 'RGBA')  # image_mode: "RGBA", "RGB"
+    width = texture_datas.get('width', 0)
+    height = texture_datas.get('height', 0)
+    data = texture_datas.get('data')
+
     internal_format = get_texture_format(image_mode)
     texture_format = internal_format
-    return Texture2D(texture_name, internal_format, width, height, texture_format, GL_UNSIGNED_BYTE, data)
+    if texture_type == 'Tex2D':
+        return Texture2D(texture_name, internal_format, width, height, texture_format, GL_UNSIGNED_BYTE, data)
+    return None
 
 
 class Texture2D:
