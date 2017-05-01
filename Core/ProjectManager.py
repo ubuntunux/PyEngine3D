@@ -19,6 +19,10 @@ class ProjectManager(Singleton):
         self.sceneManager = SceneManager.SceneManager.instance()
         self.resourceManager = ResourceManager.instance()
 
+
+    def new_project(self, project_name):
+        pass
+
     def open_project(self, filename):
         try:
             if os.path.exists(filename):

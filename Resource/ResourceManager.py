@@ -6,6 +6,7 @@ import traceback
 import datetime
 import pprint
 import re
+import pickle
 from collections import OrderedDict
 
 from PIL import Image
@@ -72,7 +73,7 @@ class ResourceLoader(object):
     resource_dir_name = 'Fonts'
     resource_version = 0
     fileExt = '.*'
-    externalFileExt = {}  # { 'WaveFront': '.obj' }
+    externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
 
     def __init__(self, root_path):
@@ -195,10 +196,9 @@ class ResourceLoader(object):
 
     def load_simple_format(self, filePath):
         try:
-            # load from mesh
-            f = open(filePath, 'r')
-            load_data = eval(f.read())
-            f.close()
+            # Load data (deserialize)
+            with open(filePath, 'rb') as f:
+                load_data = pickle.load(f)
             meta_data = MetaData(load_data.get('resource_version'), filePath)
             meta_data.set_source_meta_data(load_data.get('source_filepath'), load_data.get('source_modify_time'))
             return load_data.get('resource_data'), meta_data
@@ -216,15 +216,15 @@ class ResourceLoader(object):
         logger.info("Save : %s" % save_filepath)
         try:
             # save resource
-            f = open(save_filepath, 'w')
             save_data = dict(
                 resource_version=self.resource_version,
                 source_filepath=meta_data.source_filepath,
                 source_modify_time=meta_data.source_modify_time,
                 resource_data=resource_data
             )
-            pprint.pprint(save_data, f, compact=True)
-            f.close()
+            # store data, serialize
+            with open(save_filepath, 'wb') as f:
+                pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
             # refresh meta data because resource file saved.
             meta_data.set_resource_meta_data(save_filepath)
             # register
