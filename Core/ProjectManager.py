@@ -19,9 +19,14 @@ class ProjectManager(Singleton):
         self.sceneManager = SceneManager.SceneManager.instance()
         self.resourceManager = ResourceManager.instance()
 
-
-    def new_project(self, project_name):
-        pass
+    def new_project(self, filename):
+        try:
+            if filename:
+                self.project_file_name = filename
+                print("new ", self.project_file_name)
+                return
+        except:
+            logger.error("Failed save %s." % filename)
 
     def open_project(self, filename):
         try:

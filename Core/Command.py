@@ -32,10 +32,12 @@ class COMMAND(AutoEnum):
     FAIL = ()
     CLOSE_APP = ()
     CLOSE_UI = ()
+    RELOAD = ()
     REQUEST_PIPE = ()
     PIPE_DONE = ()
 
     # menu
+    NEW_PROJECT = ()
     OPEN_PROJECT = ()
     SAVE_PROJECT = ()
     SAVE_AS_PROJECT = ()

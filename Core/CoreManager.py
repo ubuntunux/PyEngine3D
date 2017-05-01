@@ -107,6 +107,9 @@ class CoreManager(Singleton):
         self.sendObjectList()
 
     def run(self):
+        """
+        :return: reload or not
+        """
         self.update()  # main loop
 
         # send a message to close ui
@@ -122,6 +125,10 @@ class CoreManager(Singleton):
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
         pygame.quit()
+
+        # test code
+        reload = False
+        return reload
 
     def error(self, msg: object) -> object:
         logger.error(msg)
@@ -162,6 +169,8 @@ class CoreManager(Singleton):
             if cmd == COMMAND.CLOSE_APP:
                 self.close()
                 return
+            elif cmd == COMMAND.NEW_PROJECT:
+                self.projectManager.new_project(value)
             elif cmd == COMMAND.OPEN_PROJECT:
                 self.projectManager.open_project(value)
             elif cmd == COMMAND.SAVE_PROJECT:

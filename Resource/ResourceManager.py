@@ -65,7 +65,7 @@ class ResourceLoader(object):
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
-    USE_FILE_COMPRESS = False
+    USE_FILE_COMPRESS = True
 
     def __init__(self, root_path):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
@@ -130,17 +130,10 @@ class ResourceLoader(object):
                                 logger.warn(
                                     "There is another source file.\nOriginal source file : %s\nAnother source file : %s" %
                                     (meta_data.source_filepath, source_filepath))
-        # remove gabage resource
-        self.clearup_gabage_resources()
 
     def create_resource(self):
         """ TODO : create resource file and regist."""
         pass
-
-    def clearup_gabage_resources(self):
-        for gabage_resource in self.gabage_resources:
-            self.delete_resource(gabage_resource)
-        self.gabage_resources = []
 
     def delete_resource(self, resource):
         """ delete resource file and release."""
@@ -512,8 +505,8 @@ class SceneLoader(ResourceLoader):
 class ResourceManager(Singleton):
     name = "ResourceManager"
 
-    def __init__(self):
-        self.root_path = PathResources
+    def __init__(self, root_path=None):
+        self.root_path = root_path if root_path else PathResources
         self.textureLoader = TextureLoader(self.root_path)
         self.shaderLoader = ShaderLoader(self.root_path)
         self.materialLoader = MaterialLoader(self.root_path)
@@ -524,7 +517,7 @@ class ResourceManager(Singleton):
         self.sceneManager = None
 
     def initialize(self):
-        check_directory_and_mkdir(PathResources)
+        check_directory_and_mkdir(self.root_path)
 
         # initialize
         self.textureLoader.initialize()
@@ -539,6 +532,9 @@ class ResourceManager(Singleton):
 
     def close(self):
         pass
+
+    def get_default_font_file(self):
+        return os.path.join(self.root_path, 'Fonts', 'UbuntuFont.ttf')
 
     def getResourceList(self):
         """

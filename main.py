@@ -31,6 +31,8 @@ __version__ = 0.5
 """
 
 import sys
+import os
+import time
 from multiprocessing import Process
 
 from Core.Command import CustomQueue, CustomPipe
@@ -69,11 +71,14 @@ def run(editor):
     # Client process
     coreManager = CoreManager.instance(appCmdQueue, uiCmdQueue, pipe1)
     coreManager.initialize()
-    coreManager.run()
+    reload = coreManager.run()
 
     # GUI Editor process end
     if editor_process:
         editor_process.join()
+
+    return reload  # reload or not
+
 
 if __name__ == "__main__":
     editor = GUIEditor.QT
@@ -100,4 +105,18 @@ if __name__ == "__main__":
                     editor = eval("GUIEditor.%s" % answer.upper())
             except:
                 pass
-    run(editor)
+
+    - New_Project => Copy all default resources to new project dircetory
+    - Open Porject => Reload All! Load only resources of project directory
+
+    while True:
+        # run program!!
+        reload = run(editor)
+        if reload:
+            executable = sys.executable
+            args = sys.argv[:]
+            args.insert(0, sys.executable)
+            time.sleep(1)
+            os.execvp(executable, args)
+        else:
+            break

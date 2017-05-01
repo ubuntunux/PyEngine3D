@@ -80,6 +80,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # action menus
         actionExit = self.findChild(QtGui.QAction, "actionExit")
         QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
+        actionNewProject = self.findChild(QtGui.QAction, "actionNewProject")
+        QtCore.QObject.connect(actionNewProject, QtCore.SIGNAL("triggered()"), self.new_project)
         actionOpenProject = self.findChild(QtGui.QAction, "actionOpenProject")
         QtCore.QObject.connect(actionOpenProject, QtCore.SIGNAL("triggered()"), self.open_project)
         actionSaveProject = self.findChild(QtGui.QAction, "actionSaveProject")
@@ -151,6 +153,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.appCmdQueue.put(COMMAND.CLOSE_APP)
         self.close()
         sys.exit()
+
+    def new_project(self):
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'New Prohect', ".")
+        self.appCmdQueue.put(COMMAND.NEW_PROJECT, filename)
 
     def open_project(self):
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".",
