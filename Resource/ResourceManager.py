@@ -7,6 +7,7 @@ import datetime
 import pprint
 import re
 import pickle
+import gzip
 from collections import OrderedDict
 
 from PIL import Image
@@ -15,23 +16,12 @@ from Core import logger, SceneManager, log_level
 from Object import Triangle, Quad, Mesh
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Render import MaterialInstance
-from Utilities import Singleton, GetClassName, Config, Logger
+from Utilities import Singleton, Config, Logger
+from Utilities import GetClassName, is_gz_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
-
-
-def check_directory(dirname):
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
-
-def get_modify_time_of_file(filepath):
-    timeStamp = 0.0
-    if filepath != "" and os.path.exists(filepath):
-        timeStamp = os.path.getmtime(filepath)
-    return str(datetime.datetime.fromtimestamp(timeStamp))
 
 
 # -----------------------#
@@ -75,10 +65,11 @@ class ResourceLoader(object):
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
+    USE_FILE_COMPRESS = False
 
     def __init__(self, root_path):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
-        check_directory(self.resource_path)
+        check_directory_and_mkdir(self.resource_path)
 
         self.gabage_resources = []
         self.resources = {}
@@ -197,8 +188,12 @@ class ResourceLoader(object):
     def load_simple_format(self, filePath):
         try:
             # Load data (deserialize)
-            with open(filePath, 'rb') as f:
-                load_data = pickle.load(f)
+            if self.USE_FILE_COMPRESS and is_gz_file(filePath):
+                with gzip.open(filePath, 'rb') as f:
+                    load_data = pickle.load(f)
+            else:
+                with open(filePath, 'rb') as f:
+                    load_data = pickle.load(f)
             meta_data = MetaData(load_data.get('resource_version'), filePath)
             meta_data.set_source_meta_data(load_data.get('source_filepath'), load_data.get('source_modify_time'))
             return load_data.get('resource_data'), meta_data
@@ -223,8 +218,12 @@ class ResourceLoader(object):
                 resource_data=resource_data
             )
             # store data, serialize
-            with open(save_filepath, 'wb') as f:
-                pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            if self.USE_FILE_COMPRESS:
+                with gzip.open(save_filepath, 'wb') as f:
+                    pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            else:
+                with open(save_filepath, 'wb') as f:
+                    pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
             # refresh meta data because resource file saved.
             meta_data.set_resource_meta_data(save_filepath)
             # register
@@ -525,7 +524,7 @@ class ResourceManager(Singleton):
         self.sceneManager = None
 
     def initialize(self):
-        check_directory(PathResources)
+        check_directory_and_mkdir(PathResources)
 
         # initialize
         self.textureLoader.initialize()
