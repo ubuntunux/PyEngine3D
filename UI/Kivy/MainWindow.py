@@ -152,7 +152,7 @@ class MainApp(Singleton):
         self.update_message()
 
 
-def run_editor(cmdQueue, appCmdQueue, cmdPipe):
+def run_editor(project_filename, cmdQueue, appCmdQueue, cmdPipe):
     try:
         root_app = MyApp.instance()
         root_app.run('GuineaPig Editor', MainApp.instance(cmdQueue, appCmdQueue, cmdPipe))

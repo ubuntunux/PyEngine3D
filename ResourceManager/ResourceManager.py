@@ -9,6 +9,7 @@ import re
 import pickle
 import gzip
 from collections import OrderedDict
+from distutils.dir_util import copy_tree
 
 from PIL import Image
 
@@ -127,6 +128,7 @@ class ResourceLoader(object):
                         else:
                             meta_data = self.getMetaData(resource_name)
                             if meta_data.source_filepath != source_filepath:
+                                self.convert_resource(resource_filepath, source_filepath)
                                 logger.warn(
                                     "There is another source file.\nOriginal source file : %s\nAnother source file : %s" %
                                     (meta_data.source_filepath, source_filepath))
@@ -505,7 +507,20 @@ class SceneLoader(ResourceLoader):
 class ResourceManager(Singleton):
     name = "ResourceManager"
 
-    def __init__(self, root_path=None):
+    def __init__(self):
+        self.root_path = ""
+        self.textureLoader = None
+        self.shaderLoader = None
+        self.materialLoader = None
+        self.material_instanceLoader = None
+        self.meshLoader = None
+        self.sceneLoader = None
+
+        self.sceneManager = None
+
+    def initialize(self, root_path=""):
+        check_directory_and_mkdir(root_path)
+
         self.root_path = root_path if root_path else PathResources
         self.textureLoader = TextureLoader(self.root_path)
         self.shaderLoader = ShaderLoader(self.root_path)
@@ -515,9 +530,6 @@ class ResourceManager(Singleton):
         self.sceneLoader = SceneLoader(self.root_path)
 
         self.sceneManager = None
-
-    def initialize(self):
-        check_directory_and_mkdir(self.root_path)
 
         # initialize
         self.textureLoader.initialize()
@@ -532,6 +544,10 @@ class ResourceManager(Singleton):
 
     def close(self):
         pass
+
+    def new_project(self, new_project_dir):
+        check_directory_and_mkdir(new_project_dir)
+        copy_tree(PathResources, new_project_dir)
 
     def get_default_font_file(self):
         return os.path.join(self.root_path, 'Fonts', 'UbuntuFont.ttf')

@@ -46,7 +46,7 @@ class GUIEditor(AutoEnum):
     KIVY = ()
 
 
-def run(editor):
+def run(editor, project_filename=""):
     appCmdQueue = None
     uiCmdQueue = None
     pipe1, pipe2 = None, None
@@ -61,62 +61,39 @@ def run(editor):
         # Select GUI backend
         if editor == GUIEditor.QT:
             from UI.QT.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(uiCmdQueue, appCmdQueue, pipe2))
+            editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
             editor_process.start()
         elif editor == GUIEditor.KIVY:
             from UI.Kivy.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(uiCmdQueue, appCmdQueue, pipe2))
+            editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
             editor_process.start()
 
     # Client process
     coreManager = CoreManager.instance(appCmdQueue, uiCmdQueue, pipe1)
-    coreManager.initialize()
-    reload = coreManager.run()
+    coreManager.initialize(project_filename)
+    coreManager.run()
+    open_project_filename = coreManager.get_open_project_filename()
 
     # GUI Editor process end
     if editor_process:
         editor_process.join()
 
-    return reload  # reload or not
+    return open_project_filename  # reload or not
 
 
 if __name__ == "__main__":
     editor = GUIEditor.QT
 
-    select_editor = False
-    if select_editor:
-        enums = [editor for editor in dir(GUIEditor) if not editor.startswith("__")]
-        enums = sorted(enums, key=lambda enum_str: getattr(GUIEditor, enum_str).value)
-        nums = [str(i) for i in range(len(enums))]
-
-        if len(sys.argv) > 1:
-            for enum in enums:
-                if sys.argv[1].upper() == enum:
-                    editor = eval("GUIEditor." + enum)
-                    break
+    # run program!!
+    project_filename = sys.argv[1] if len(sys.argv) > 1 else ""
+    open_project_filename = run(editor, project_filename)
+    if open_project_filename:
+        executable = sys.executable
+        args = sys.argv[:]
+        if len(args) > 1:
+            args[1] = open_project_filename
         else:
-            try:
-                for i, enum in enumerate(enums):
-                    print("%d. %s" % (i, enum))
-                answer = input("Select GUI Editor :")
-                if answer in nums:
-                    editor = eval("GUIEditor." + enums[int(answer)])
-                elif answer.upper() in enums:
-                    editor = eval("GUIEditor.%s" % answer.upper())
-            except:
-                pass
-
-    - New_Project => Copy all default resources to new project dircetory
-    - Open Porject => Reload All! Load only resources of project directory
-
-    while True:
-        # run program!!
-        reload = run(editor)
-        if reload:
-            executable = sys.executable
-            args = sys.argv[:]
-            args.insert(0, sys.executable)
-            time.sleep(1)
-            os.execvp(executable, args)
-        else:
-            break
+            args.append(open_project_filename)
+        args.insert(0, sys.executable)
+        time.sleep(1)
+        os.execvp(executable, args)

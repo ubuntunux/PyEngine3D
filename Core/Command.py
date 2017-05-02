@@ -40,8 +40,6 @@ class COMMAND(AutoEnum):
     NEW_PROJECT = ()
     OPEN_PROJECT = ()
     SAVE_PROJECT = ()
-    SAVE_AS_PROJECT = ()
-    REQUEST_SAVE_AS_PROJECT = ()
 
     # view mode
     VIEWMODE_WIREFRAME = ()

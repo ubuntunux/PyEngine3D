@@ -60,9 +60,10 @@ class MessageThread(QtCore.QThread):
 
 
 class MainWindow(QtGui.QMainWindow, Singleton):
-    def __init__(self, cmdQueue, appCmdQueue, cmdPipe):
+    def __init__(self, project_filename, cmdQueue, appCmdQueue, cmdPipe):
         logger.info("Create MainWindow.")
         super(MainWindow, self).__init__()
+        self.project_filename = project_filename
         self.cmdQueue = cmdQueue
         self.appCmdQueue = appCmdQueue
         self.cmdPipe = cmdPipe
@@ -77,6 +78,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # load ui file
         uic.loadUi(UI_FILENAME, self)
 
+        # set windows title
+        self.setWindowTitle(project_filename if project_filename else "Default Project")
+
         # action menus
         actionExit = self.findChild(QtGui.QAction, "actionExit")
         QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
@@ -86,10 +90,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionOpenProject, QtCore.SIGNAL("triggered()"), self.open_project)
         actionSaveProject = self.findChild(QtGui.QAction, "actionSaveProject")
         QtCore.QObject.connect(actionSaveProject, QtCore.SIGNAL("triggered()"), self.save_project)
-        actionSaveAsProject = self.findChild(QtGui.QAction, "actionSaveAsProject")
-        QtCore.QObject.connect(actionSaveAsProject, QtCore.SIGNAL("triggered()"), self.save_as_project)
-        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.REQUEST_SAVE_AS_PROJECT)),
-                     self.save_as_project)
 
         # action draw mode
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
@@ -130,6 +130,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # wait a UI_RUN message, and send success message
         if self.cmdPipe:
             self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
+
         # request available mesh list
         self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
@@ -165,10 +166,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def save_project(self):
         self.appCmdQueue.put(COMMAND.SAVE_PROJECT)
-
-    def save_as_project(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save As File', ".")
-        self.appCmdQueue.put(COMMAND.SAVE_AS_PROJECT, filename)
 
     def setViewMode(self, mode):
         self.appCmdQueue.put(mode)
@@ -305,9 +302,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
 
 
-def run_editor(cmdQueue, appCmdQueue, cmdPipe):
+def run_editor(project_filename, cmdQueue, appCmdQueue, cmdPipe):
     """process - QT Widget"""
     app = QtGui.QApplication(sys.argv)
-    main_window = MainWindow.instance(cmdQueue, appCmdQueue, cmdPipe)
+    main_window = MainWindow.instance(project_filename, cmdQueue, appCmdQueue, cmdPipe)
     main_window.show()
     sys.exit(app.exec_())

@@ -6,7 +6,7 @@ import traceback
 
 from Core import logger
 from OpenGLContext import CreateUniformData
-from Resource import ResourceManager
+from ResourceManager import ResourceManager
 from Utilities import Attributes
 
 

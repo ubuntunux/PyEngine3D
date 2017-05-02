@@ -1,7 +1,8 @@
 import os
+import traceback
 
 from . import logger, log_level, CoreManager, SceneManager
-from Resource import ResourceManager
+from ResourceManager import ResourceManager
 from Utilities import Singleton, GetClassName, Config
 
 
@@ -11,47 +12,52 @@ class ProjectManager(Singleton):
         self.coreManager = None
         self.sceneManager = None
         self.resourceManager = None
-        self.project_file_name = ""
+        self.project_name = ""
+        self.project_filename = ""
+        self.open_project_filename = ""
 
-    def initialize(self):
-        logger.info("initialize " + GetClassName(self))
+    def initialize(self, project_filename):
+        logger.info("initialize %s : %s" % (GetClassName(self), project_filename))
+        self.open_project_filename = ""
+        self.project_name = os.path.splitext(os.path.split(project_filename)[1])[0]
+        self.project_filename = project_filename
+
         self.coreManager = CoreManager.CoreManager.instance()
         self.sceneManager = SceneManager.SceneManager.instance()
         self.resourceManager = ResourceManager.instance()
+        return True
 
-    def new_project(self, filename):
+    def new_project(self, new_project_dir):
         try:
-            if filename:
-                self.project_file_name = filename
-                print("new ", self.project_file_name)
+            if new_project_dir:
+                project_name = new_project_dir.split(os.sep)[-1]
+                self.resourceManager.new_project(new_project_dir)
+
+                project_filename = os.path.join(new_project_dir, project_name + ".project")
+                f = open(project_filename, "w")
+                f.writelines("%s project" % project_name)
+                f.close()
+
+                self.open_project(project_filename)
                 return
         except:
-            logger.error("Failed save %s." % filename)
+            logger.error("Failed save %s." % project_name)
+            logger.error(traceback.format_exc())
 
-    def open_project(self, filename):
+    def open_project(self, project_filename):
         try:
-            if os.path.exists(filename):
-                print("open ", filename)
-                self.project_file_name = filename
+            if os.path.exists(project_filename):
+                # will be open
+                self.open_project_filename = project_filename
+                self.coreManager.open_project()
                 return
         except:
             logger.error("Failed open %s." % filename)
+            logger.error(traceback.format_exc())
 
     def save_project(self):
         try:
-            if self.project_file_name:
-                print("save ", self.project_file_name)
-                return
-            else:
-                self.coreManager.request_save_as_project()
+            print("save ", self.project_filename)
         except:
             logger.error("Failed save %s." % filename)
-
-    def save_as_project(self, filename):
-        try:
-            if filename:
-                self.project_file_name = filename
-                print("save ", self.project_file_name)
-                return
-        except:
-            logger.error("Failed save %s." % filename)
+            logger.error(traceback.format_exc())

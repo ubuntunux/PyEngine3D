@@ -8,7 +8,6 @@ from OpenGL.arrays import GLbyteArray
 import numpy as np
 
 from Core import logger
-import Resource
 from Utilities import GetClassName, Attributes, Logger
 from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
 

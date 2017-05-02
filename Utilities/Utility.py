@@ -13,7 +13,7 @@ def is_gz_file(filename):
 
 
 def check_directory_and_mkdir(dirname):
-    if not os.path.exists(dirname):
+    if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
 
 

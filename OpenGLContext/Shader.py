@@ -9,7 +9,6 @@ import traceback
 import uuid
 
 from Core import logger
-import Resource
 from Utilities import GetClassName, Attributes, Logger
 
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]

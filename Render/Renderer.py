@@ -9,7 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Utilities import Singleton, perspective, ortho, FLOAT_ZERO
-from Resource import ResourceManager, DefaultFontFile
+from ResourceManager import ResourceManager, DefaultFontFile
 from Core import CoreManager, SceneManager, COMMAND, logger
 from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont
 

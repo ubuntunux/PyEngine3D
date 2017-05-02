@@ -120,7 +120,6 @@
     <addaction name="actionNewProject"/>
     <addaction name="actionOpenProject"/>
     <addaction name="actionSaveProject"/>
-    <addaction name="actionSaveAsProject"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuViewmode">

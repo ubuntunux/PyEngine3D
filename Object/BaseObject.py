@@ -2,7 +2,7 @@ import time, math
 
 import numpy as np
 
-import Resource
+import ResourceManager
 from Object import TransformObject
 from Utilities import GetClassName, Attributes
 from Core import logger
@@ -44,9 +44,9 @@ class BaseObject:
         elif attributeName == 'scale':
             self.transform.setScale(attributeValue)
         elif attributeName == 'mesh':
-            self.mesh = Resource.ResourceManager.instance().getMesh(attributeValue)
+            self.mesh = ResourceManager.ResourceManager.instance().getMesh(attributeValue)
         elif attributeName == 'material_instance':
-            material_instance = Resource.ResourceManager.instance().getMaterialInstance(attributeValue)
+            material_instance = ResourceManager.ResourceManager.instance().getMaterialInstance(attributeValue)
             self.set_material_instance(material_instance)
 
     def setSelected(self, selected):

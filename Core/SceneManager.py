@@ -9,7 +9,7 @@ import numpy as np
 from . import logger, CoreManager
 from Object import BaseObject, StaticMesh, Camera, Light
 from OpenGLContext import UniformBlock
-from Resource import ResourceManager
+from ResourceManager import ResourceManager
 from Render import Tonemapping, Renderer
 from Utilities import Singleton, GetClassName, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 

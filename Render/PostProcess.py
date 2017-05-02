@@ -2,7 +2,7 @@ from OpenGL.GL import *
 
 from Core import logger
 from OpenGLContext import RenderTargets, RenderTargetManager
-from Resource import ResourceManager
+from ResourceManager import ResourceManager
 from Render import Renderer
 
 

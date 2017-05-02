@@ -10,7 +10,7 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-from Resource import ResourceManager
+from ResourceManager import ResourceManager
 from Render import Renderer
 from Core.SceneManager import SceneManager
 from Core.ProjectManager import ProjectManager
@@ -68,10 +68,14 @@ class CoreManager(Singleton):
 
         self.config = Config(os.path.join(os.path.split(__file__)[0], "Config.ini"), log_level)
 
-    def initialize(self):
+    def initialize(self, project_filename=""):
         # process start
         logger.info('Platform : %s' % platformModule.platform())
         logger.info("Process Start : %s" % GetClassName(self))
+
+        # ready to launch - send message to ui
+        if self.cmdPipe:
+            self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         # pygame init
         pygame.init()
@@ -89,29 +93,36 @@ class CoreManager(Singleton):
         self.projectManager = ProjectManager.instance()
 
         # initalize managers
-        self.resourceManager.initialize()
-        self.rendertarget_manager.initialize()
-        self.renderer.initialize(width, height, screen)
-        self.sceneManager.initialize()
-        self.projectManager.initialize()
+        isCorrectProject = self.projectManager.initialize(project_filename)
+        if isCorrectProject:
+            root_path = os.path.split(project_filename)[0]
+            self.resourceManager.initialize(root_path)
+            self.rendertarget_manager.initialize()
+            self.renderer.initialize(width, height, screen)
+            self.sceneManager.initialize()
+        else:
+            # invalid project
+            self.exit()
+            return
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
             self.renderer.resizeScene()
 
-        # ready to launch - send message to ui
-        if self.cmdPipe:
-            self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
-
         # sen created object list to UI
         self.sendObjectList()
 
-    def run(self):
-        """
-        :return: reload or not
-        """
-        self.update()  # main loop
+    def get_open_project_filename(self):
+        return self.projectManager.open_project_filename
 
+    def open_project(self):
+        self.close()
+
+    def run(self):
+        self.update()  # main loop
+        self.exit()  # exit
+
+    def exit(self):
         # send a message to close ui
         if self.uiCmdQueue:
             self.uiCmdQueue.put(COMMAND.CLOSE_UI)
@@ -126,10 +137,6 @@ class CoreManager(Singleton):
 
         pygame.quit()
 
-        # test code
-        reload = False
-        return reload
-
     def error(self, msg: object) -> object:
         logger.error(msg)
         self.close()
@@ -141,9 +148,6 @@ class CoreManager(Singleton):
     def send(self, *args):
         if self.uiCmdQueue:
             self.uiCmdQueue.put(*args)
-
-    def request_save_as_project(self):
-        self.send(COMMAND.REQUEST_SAVE_AS_PROJECT)
 
     def sendObjectName(self, objName):
         self.send(COMMAND.TRANS_OBJECT_NAME, objName)
@@ -175,8 +179,6 @@ class CoreManager(Singleton):
                 self.projectManager.open_project(value)
             elif cmd == COMMAND.SAVE_PROJECT:
                 self.projectManager.save_project()
-            elif cmd == COMMAND.SAVE_AS_PROJECT:
-                self.projectManager.save_as_project(value)
             elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:
                 self.renderer.setViewMode(cmd)
             # Resource commands
