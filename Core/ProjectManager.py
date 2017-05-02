@@ -38,19 +38,17 @@ class ProjectManager(Singleton):
                 f.writelines("%s project" % project_name)
                 f.close()
 
-                self.open_project(project_filename)
-                return
+                self.open_project_next_time(project_filename)
         except:
             logger.error("Failed save %s." % project_name)
             logger.error(traceback.format_exc())
 
-    def open_project(self, project_filename):
+    def open_project_next_time(self, project_filename):
         try:
             if os.path.exists(project_filename):
                 # will be open
                 self.open_project_filename = project_filename
-                self.coreManager.open_project()
-                return
+                self.coreManager.open_project_next_time()
         except:
             logger.error("Failed open %s." % filename)
             logger.error(traceback.format_exc())

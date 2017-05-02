@@ -34,6 +34,7 @@ class CoreManager(Singleton):
 
     def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
         self.running = False
+        self.valid = True
 
         # command
         self.cmdQueue = cmdQueue
@@ -102,8 +103,9 @@ class CoreManager(Singleton):
             self.sceneManager.initialize()
         else:
             # invalid project
+            self.valid = False
             self.exit()
-            return
+            return False
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
@@ -111,11 +113,12 @@ class CoreManager(Singleton):
 
         # sen created object list to UI
         self.sendObjectList()
+        return True
 
     def get_open_project_filename(self):
         return self.projectManager.open_project_filename
 
-    def open_project(self):
+    def open_project_next_time(self):
         self.close()
 
     def run(self):
@@ -126,6 +129,11 @@ class CoreManager(Singleton):
         # send a message to close ui
         if self.uiCmdQueue:
             self.uiCmdQueue.put(COMMAND.CLOSE_UI)
+
+        # record config
+        if self.valid:
+            self.config.setValue("Screen", "size", [self.renderer.width, self.renderer.height])
+            self.config.setValue("Screen", "position", [0, 0])
 
         self.renderer.close()
         self.resourceManager.close()
@@ -176,7 +184,7 @@ class CoreManager(Singleton):
             elif cmd == COMMAND.NEW_PROJECT:
                 self.projectManager.new_project(value)
             elif cmd == COMMAND.OPEN_PROJECT:
-                self.projectManager.open_project(value)
+                self.projectManager.open_project_next_time(value)
             elif cmd == COMMAND.SAVE_PROJECT:
                 self.projectManager.save_project()
             elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:

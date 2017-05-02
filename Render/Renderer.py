@@ -68,8 +68,8 @@ class Console:
 
 class Renderer(Singleton):
     def __init__(self):
-        self.width = 0
-        self.height = 0
+        self.width = 1024
+        self.height = 768
         self.viewportRatio = 1.0
         self.perspective = np.eye(4, dtype=np.float32)
         self.ortho = np.eye(4, dtype=np.float32)
@@ -111,12 +111,9 @@ class Renderer(Singleton):
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
     def close(self):
-        # record config
-        self.coreManager.config.setValue("Screen", "size", [self.width, self.height])
-        self.coreManager.config.setValue("Screen", "position", [0, 0])
-
         # destroy console
-        self.console.close()
+        if self.console:
+            self.console.close()
 
     def setViewMode(self, viewMode):
         if viewMode == COMMAND.VIEWMODE_WIREFRAME:
@@ -129,8 +126,10 @@ class Renderer(Singleton):
         if width <= 0 or height <= 0:
             width = self.width
             height = self.height
-            if width <= 0 or height <= 0:
-                return
+            if width <= 0:
+                width = 1024
+            if height <= 0:
+                height = 768
 
         self.width = width
         self.height = height

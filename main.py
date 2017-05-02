@@ -70,9 +70,12 @@ def run(editor, project_filename=""):
 
     # Client process
     coreManager = CoreManager.instance(appCmdQueue, uiCmdQueue, pipe1)
-    coreManager.initialize(project_filename)
-    coreManager.run()
-    open_project_filename = coreManager.get_open_project_filename()
+    result = coreManager.initialize(project_filename)
+    if result:
+        coreManager.run()
+        open_project_filename = coreManager.get_open_project_filename()
+    else:
+        open_project_filename = ""
 
     # GUI Editor process end
     if editor_process:
