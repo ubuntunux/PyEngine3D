@@ -33,7 +33,6 @@ class ProjectManager(Singleton):
 
             # set default config
             self.config.setDefaultValue("Screen", "size", [1024, 768])
-            self.config.setDefaultValue("Screen", "position", [512, 384])
             self.config.setDefaultValue("Camera", "fov", 45)
             self.config.setDefaultValue("Camera", "near", 0.1)
             self.config.setDefaultValue("Camera", "far", 1000)
