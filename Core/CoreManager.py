@@ -66,8 +66,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.sceneManager = None
         self.projectManager = None
-
-        self.config = Config(os.path.join(os.path.split(__file__)[0], "Config.ini"), log_level)
+        self.config = Config("config.ini", log_level)
 
     def initialize(self, project_filename=""):
         # process start
@@ -78,34 +77,37 @@ class CoreManager(Singleton):
         if self.cmdPipe:
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
-        # pygame init
-        pygame.init()
-        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
-        width, height = self.config.Screen.size
-        screen = pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
-        pygame.font.init()
-        if not pygame.font.get_init():
-            self.error('Could not render font.')
-
         self.resourceManager = ResourceManager.instance()
         self.renderer = Renderer.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.sceneManager = SceneManager.instance()
         self.projectManager = ProjectManager.instance()
 
-        # initalize managers
-        isCorrectProject = self.projectManager.initialize(project_filename)
-        if isCorrectProject:
-            root_path = os.path.split(project_filename)[0]
-            self.resourceManager.initialize(root_path)
-            self.rendertarget_manager.initialize()
-            self.renderer.initialize(width, height, screen)
-            self.sceneManager.initialize()
-        else:
-            # invalid project
+        # check innvalid project
+        if not self.projectManager.initialize(project_filename):
             self.valid = False
             self.exit()
             return False
+
+        # centered window
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+        # pygame init
+        pygame.init()
+        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
+        width, height = self.projectManager.config.Screen.size
+        screen = pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+        pygame.font.init()
+        if not pygame.font.get_init():
+            self.error('Could not render font.')
+
+        pygame.display.set_caption(self.projectManager.project_name)
+
+        # initalize managers
+        self.resourceManager.initialize(self.projectManager.project_dir)
+        self.rendertarget_manager.initialize()
+        self.renderer.initialize(width, height, screen)
+        self.sceneManager.initialize()
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
@@ -115,11 +117,8 @@ class CoreManager(Singleton):
         self.sendObjectList()
         return True
 
-    def get_open_project_filename(self):
-        return self.projectManager.open_project_filename
-
-    def open_project_next_time(self):
-        self.close()
+    def get_next_open_project_filename(self):
+        return self.projectManager.next_open_project_filename
 
     def run(self):
         self.update()  # main loop
@@ -130,20 +129,21 @@ class CoreManager(Singleton):
         if self.uiCmdQueue:
             self.uiCmdQueue.put(COMMAND.CLOSE_UI)
 
-        # record config
+        # write config
         if self.valid:
-            self.config.setValue("Screen", "size", [self.renderer.width, self.renderer.height])
-            self.config.setValue("Screen", "position", [0, 0])
+            self.config.setValue("Project", "recent", self.projectManager.project_filename)
+            self.config.save()  # save config
+
+        # save project
+        self.projectManager.close_project()
 
         self.renderer.close()
         self.resourceManager.close()
         self.renderer.destroyScreen()
 
-        self.config.save()  # save config
-        logger.info("Saved config file - " + self.config.getFilename())
-        logger.info("Process Stop : %s" % GetClassName(self))  # process stop
-
         pygame.quit()
+
+        logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
     def error(self, msg: object) -> object:
         logger.error(msg)

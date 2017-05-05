@@ -156,11 +156,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         sys.exit()
 
     def new_project(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self, 'New Prohect', ".")
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'New Project', os.path.join(".", "Projects"))
         self.appCmdQueue.put(COMMAND.NEW_PROJECT, filename)
 
     def open_project(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', ".",
+        filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', os.path.join(".", "Projects"),
                                                      "Project file (*.project)\nAll files (*.*)")
         self.appCmdQueue.put(COMMAND.OPEN_PROJECT, filename)
 

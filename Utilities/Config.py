@@ -20,6 +20,16 @@ def evaluation(value):
         return value
 
 
+def getValue(config, section, option, default_value=None):
+    return evaluation(config[section][option]) if config.has_option(section, option) else default_value
+
+
+def setValue(config, section, option, value):
+    if not config.has_section(section):
+        config.add_section(section)
+    config.set(section, option, value)
+
+
 # ------------------------------ #
 # CLASS : Configure
 # Usage :
@@ -28,12 +38,15 @@ def evaluation(value):
 #   print(config.Screen.width)
 # ------------------------------ #
 class Config:
-    def __init__(self, configFilename, log_level=Logger.WARN):
+    def __init__(self, configFilename, log_level=Logger.WARN, prevent_lowercase=True):
         self.log_level = log_level
         self.isChanged = False
         self.filename = configFilename
         self.config = configparser.ConfigParser()
         self.config.read(configFilename)
+        # prevent the key value being lowercase
+        if prevent_lowercase:
+            self.config.optionxform = lambda option_name: option_name
         if self.log_level <= Logger.INFO:
             print("Load Config : %s" % self.filename)
 
@@ -50,6 +63,9 @@ class Config:
                 if self.log_level == Logger.DEBUG:
                     print("%s = %s" % (option, value))
                 setattr(current_section, option, evaluation(value))
+
+    def hasValue(self, section, option):
+        return self.config.has_option(section, option)
 
     def getValue(self, section, option, default_value=None):
         return evaluation(self.config[section][option]) if self.config.has_option(section, option) else default_value
@@ -68,6 +84,10 @@ class Config:
             self.isChanged = value != getattr(self, section)
         current_section = getattr(self, section)
         setattr(current_section, option, value)
+
+    def setDefaultValue(self, section, option, value):
+        if not self.hasValue(section, option):
+            self.setValue(section, option, value)
 
     def save(self):
         if self.isChanged or not os.path.exists(self.filename):

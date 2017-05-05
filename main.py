@@ -73,15 +73,15 @@ def run(editor, project_filename=""):
     result = coreManager.initialize(project_filename)
     if result:
         coreManager.run()
-        open_project_filename = coreManager.get_open_project_filename()
+        next_next_open_project_filename = coreManager.get_next_open_project_filename()
     else:
-        open_project_filename = ""
+        next_next_open_project_filename = ""
 
     # GUI Editor process end
     if editor_process:
         editor_process.join()
 
-    return open_project_filename  # reload or not
+    return next_next_open_project_filename  # reload or not
 
 
 if __name__ == "__main__":
@@ -89,14 +89,14 @@ if __name__ == "__main__":
 
     # run program!!
     project_filename = sys.argv[1] if len(sys.argv) > 1 else ""
-    open_project_filename = run(editor, project_filename)
-    if open_project_filename:
+    next_open_project_filename = run(editor, project_filename)
+    if os.path.exists(next_open_project_filename):
         executable = sys.executable
         args = sys.argv[:]
         if len(args) > 1:
-            args[1] = open_project_filename
+            args[1] = next_open_project_filename
         else:
-            args.append(open_project_filename)
+            args.append(next_open_project_filename)
         args.insert(0, sys.executable)
         time.sleep(1)
         os.execvp(executable, args)

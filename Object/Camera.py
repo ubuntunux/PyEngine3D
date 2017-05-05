@@ -1,4 +1,4 @@
-from Core import logger, CoreManager
+from Core import logger, ProjectManager
 from Object import BaseObject
 
 
@@ -17,7 +17,7 @@ class Camera(BaseObject):
         self.rotation_speed = None
 
     def initialize(self):
-        config = CoreManager.CoreManager.instance().config
+        config = ProjectManager.ProjectManager.instance().config
         # get properties
         self.fov = config.Camera.fov
         self.near = config.Camera.near
@@ -25,6 +25,29 @@ class Camera(BaseObject):
         self.move_speed = config.Camera.move_speed
         self.pan_speed = config.Camera.pan_speed
         self.rotation_speed = config.Camera.rotation_speed
+
+    def write_to_config(self, config):
+        config.setValue("Camera", "fov", self.fov)
+        config.setValue("Camera", "near", self.near)
+        config.setValue("Camera", "far", self.far)
+        config.setValue("Camera", "move_speed", self.move_speed)
+        config.setValue("Camera", "pan_speed", self.pan_speed)
+        config.setValue("Camera", "rotation_speed", self.rotation_speed)
+
+    def getAttribute(self):
+        BaseObject.getAttribute(self)
+        self.attributes.setAttribute('fov', self.fov)
+        self.attributes.setAttribute('near', self.near)
+        self.attributes.setAttribute('far', self.far)
+        self.attributes.setAttribute('move_speed', self.move_speed)
+        self.attributes.setAttribute('pan_speed', self.pan_speed)
+        self.attributes.setAttribute('rotation_speed', self.rotation_speed)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue):
+        BaseObject.setAttribute(self, attributeName, attributeValue)
+        if hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
 
     # override : draw
     def draw(self, *args, **kargs):
