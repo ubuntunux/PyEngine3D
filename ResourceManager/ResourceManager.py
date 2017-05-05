@@ -62,11 +62,11 @@ class Resource:
 class ResourceLoader(object):
     name = "ResourceLoader"
     resource_dir_name = 'Fonts'
-    resource_version = 0
+    resource_version = 1
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
-    USE_FILE_COMPRESS = True
+    USE_FILE_COMPRESS_TO_SAVE = True
 
     def __init__(self, root_path):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
@@ -183,12 +183,14 @@ class ResourceLoader(object):
     def load_simple_format(self, filePath):
         try:
             # Load data (deserialize)
-            if self.USE_FILE_COMPRESS and is_gz_file(filePath):
+            if is_gz_file(filePath):
                 with gzip.open(filePath, 'rb') as f:
                     load_data = pickle.load(f)
             else:
-                with open(filePath, 'rb') as f:
-                    load_data = pickle.load(f)
+                # human readable data
+                with open(filePath, 'r') as f:
+                    load_data = eval(f.read())
+
             meta_data = MetaData(load_data.get('resource_version'), filePath)
             meta_data.set_source_meta_data(load_data.get('source_filepath'), load_data.get('source_modify_time'))
             return load_data.get('resource_data'), meta_data
@@ -213,12 +215,13 @@ class ResourceLoader(object):
                 resource_data=resource_data
             )
             # store data, serialize
-            if self.USE_FILE_COMPRESS:
+            if self.USE_FILE_COMPRESS_TO_SAVE:
                 with gzip.open(save_filepath, 'wb') as f:
                     pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
             else:
-                with open(save_filepath, 'wb') as f:
-                    pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                # human readable data
+                with open(save_filepath, 'w') as f:
+                    pprint.pprint(save_data, f)
             # refresh meta data because resource file saved.
             meta_data.set_resource_meta_data(save_filepath)
             # register
@@ -275,9 +278,12 @@ class MaterialLoader(ResourceLoader):
     name = "MaterialLoader"
     resource_dir_name = 'Materials'
     fileExt = '.mat'
+    USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
+        always runtime generate material.
         # ResourceLoader.initialize(self) - for always runtime generate material.
+        TODO : all include files datetime check and refresh
         logger.info("initialize " + GetClassName(self) + ". But will not load anything. Runtime generate material.")
 
     def generate_material_name(self, shader_name, macros=None):
