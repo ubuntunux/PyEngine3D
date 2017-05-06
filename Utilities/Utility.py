@@ -6,7 +6,7 @@ def GetClassName(cls):
     return cls.__class__.__name__
 
 
-def is_gz_file(filename):
+def is_gz_compressed_file(filename):
     with open(filename,'rb') as f:
         return f.read(3) == b'\x1f\x8b\x08'
     return False

@@ -22,6 +22,8 @@ class ProjectManager(Singleton):
         # default project
         if project_filename == "":
             project_filename = DefaultProjectFile
+        else:
+            project_filename = os.path.relpath(project_filename, ".")
 
         logger.info("initialize %s : %s" % (GetClassName(self), project_filename))
         try:

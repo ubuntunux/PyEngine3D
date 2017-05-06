@@ -11,8 +11,9 @@ logging.addLevelName(MINOR_INFO, "MINOR_INFO")
 
 # global variables
 LOGGER = collections.OrderedDict()
-defaultLogPath = os.path.abspath(os.path.abspath(os.getcwd()))
-defaultLogPath = os.path.join(os.path.split(defaultLogPath)[0], "logs")
+# defaultLogPath = os.path.abspath(os.path.abspath(os.getcwd()))
+# defaultLogPath = os.path.join(os.path.split(defaultLogPath)[0], "logs")
+defaultLogPath = "logs"
 
 
 def getLevelName(level):

@@ -24,6 +24,7 @@ class Shader:
         self.name = shaderName
         self.file_path = file_path
         self.shader_code = ""
+        self.include_files = []
 
         try:
             f = codecs.open(file_path, mode='r', encoding='utf-8')
@@ -114,6 +115,8 @@ class Shader:
                             unique_id = include_files[include_file]
                         else:
                             unique_id = "UUID_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, include_file)).replace("-", "_")
+                            include_files[include_file] = unique_id
+                            self.include_files.append(include_file)
                         # insert included code
                         final_code_lines.append("//------------ INCLUDE -------------//")
                         final_code_lines.append("// " + code)  # include comment

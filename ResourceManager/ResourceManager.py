@@ -18,7 +18,7 @@ from Object import Triangle, Quad, Mesh
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Render import MaterialInstance
 from Utilities import Singleton, Config, Logger
-from Utilities import GetClassName, is_gz_file, check_directory_and_mkdir, get_modify_time_of_file
+from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import *
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
@@ -62,17 +62,18 @@ class Resource:
 class ResourceLoader(object):
     name = "ResourceLoader"
     resource_dir_name = 'Fonts'
-    resource_version = 1
+    resource_version = 0
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
-    USE_FILE_COMPRESS_TO_SAVE = True
+    USE_FILE_COMPRESS_TO_SAVE = False
 
     def __init__(self, root_path):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
         check_directory_and_mkdir(self.resource_path)
 
         self.gabage_resources = []
+        self.need_to_convert_resources = []
         self.resources = {}
         self.metaDatas = {}
 
@@ -90,11 +91,11 @@ class ResourceLoader(object):
                     continue
 
                 if ".*" == self.fileExt or fileExt == self.fileExt:
-                    filepath = os.path.abspath(os.path.join(dirname, filename))
+                    filepath = os.path.join(dirname, filename)
                     # get Resource and MetaData
                     resource, meta_data = self.load_resource(filepath)
                     self.regist_resource(resource, meta_data)
-                    convert_resource = resource is None
+                    convert_resource = True if resource is None else self.is_need_to_convert(resource)
                     if meta_data and os.path.exists(meta_data.source_filepath):
                         if not convert_resource:
                             # check source file is newer or same.
@@ -107,7 +108,6 @@ class ResourceLoader(object):
                                 convert_resource = True
                                 logger.log(Logger.MINOR_INFO, "Resource was modified.")
                         if convert_resource:
-                            # done.
                             self.convert_resource(filepath, meta_data.source_filepath)
                     if not convert_resource and (resource is None or meta_data is None):
                         logger.error("%s load failed." % filename)
@@ -119,9 +119,9 @@ class ResourceLoader(object):
                     source_filepath = os.path.join(dirname, filename)
                     file_ext = os.path.splitext(source_filepath)[1].lower()
                     if file_ext in self.externalFileExt.values():
-                        source_filepath = os.path.abspath(source_filepath)
+                        # source_filepath = os.path.abspath(source_filepath)
                         resource_name = self.getResourceName(source_filepath, self.resource_path)
-                        resource_filepath = os.path.abspath(os.path.join(self.resource_path, resource_name + self.fileExt))
+                        resource_filepath = os.path.join(self.resource_path, resource_name + self.fileExt)
                         if self.getResource(resource_name, noWarn=True) is None:
                             logger.log(Logger.MINOR_INFO, "Find new resource. %s" % source_filepath)
                             self.convert_resource(resource_filepath, source_filepath)
@@ -132,6 +132,8 @@ class ResourceLoader(object):
                                 logger.warn(
                                     "There is another source file.\nOriginal source file : %s\nAnother source file : %s" %
                                     (meta_data.source_filepath, source_filepath))
+        # clear
+        self.need_to_convert_resources = []
 
     def create_resource(self):
         """ TODO : create resource file and regist."""
@@ -161,6 +163,9 @@ class ResourceLoader(object):
             if resource.name in self.metaDatas:
                 self.metaDatas.pop(resource.name)
 
+    def is_need_to_convert(self, resource):
+        return resource in self.need_to_convert_resources
+
     def convert_resource(self, resource_filepath, source_filepath):
         """
         Desc : do resource convert, save_simple_format_and_regist resource.
@@ -183,7 +188,7 @@ class ResourceLoader(object):
     def load_simple_format(self, filePath):
         try:
             # Load data (deserialize)
-            if is_gz_file(filePath):
+            if is_gz_compressed_file(filePath):
                 with gzip.open(filePath, 'rb') as f:
                     load_data = pickle.load(f)
             else:
@@ -221,7 +226,7 @@ class ResourceLoader(object):
             else:
                 # human readable data
                 with open(save_filepath, 'w') as f:
-                    pprint.pprint(save_data, f)
+                    pprint.pprint(save_data, f, width=256)
             # refresh meta data because resource file saved.
             meta_data.set_resource_meta_data(save_filepath)
             # register
@@ -278,13 +283,8 @@ class MaterialLoader(ResourceLoader):
     name = "MaterialLoader"
     resource_dir_name = 'Materials'
     fileExt = '.mat'
+    resource_version = 0
     USE_FILE_COMPRESS_TO_SAVE = False
-
-    def initialize(self):
-        always runtime generate material.
-        # ResourceLoader.initialize(self) - for always runtime generate material.
-        TODO : all include files datetime check and refresh
-        logger.info("initialize " + GetClassName(self) + ". But will not load anything. Runtime generate material.")
 
     def generate_material_name(self, shader_name, macros=None):
         if macros:
@@ -297,6 +297,11 @@ class MaterialLoader(ResourceLoader):
         material_datas, meta_data = self.load_simple_format(filePath)
         material_name = self.getResourceName(filePath, self.resource_path, make_lower=False)
         material = Material(material_name, material_datas)
+        if 'include_files' in material_datas:
+            for include_file in material_datas['include_files']:
+                if get_modify_time_of_file(include_file) != material_datas['include_files'][include_file]:
+                    # will be convert
+                    self.need_to_convert_resources.append(material)
         return material, meta_data
 
     def convert_resource(self, resource_filepath, source_filepath):
@@ -318,9 +323,15 @@ class MaterialLoader(ResourceLoader):
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
             material_components = self.parsing_material_components(vertex_shader_code, fragment_shader_code)
+
+            include_files = {}
+            for include_file in shader.include_files:
+                include_files[include_file] = get_modify_time_of_file(include_file)
+
             material_datas = dict(
                 vertex_shader_code=vertex_shader_code,
                 fragment_shader_code=fragment_shader_code,
+                include_files=include_files,
                 material_components=material_components,
                 macros=macros
             )
