@@ -501,7 +501,7 @@ class TextureLoader(ResourceLoader):
 class SceneLoader(ResourceLoader):
     name = "SceneLoader"
     resource_dir_name = 'Scenes'
-    fileExt = ['.scene', ]
+    fileExt = '.scene'
 
     def load_resource(self, filePath):
         try:
