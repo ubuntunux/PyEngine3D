@@ -66,7 +66,7 @@ class ResourceLoader(object):
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
-    USE_FILE_COMPRESS_TO_SAVE = False
+    USE_FILE_COMPRESS_TO_SAVE = True
 
     def __init__(self, root_path):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)

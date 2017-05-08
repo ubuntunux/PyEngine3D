@@ -53,7 +53,7 @@ class ProjectManager(Singleton):
     def new_project(self, new_project_dir):
         try:
             if new_project_dir:
-                project_name = new_project_dir.split(os.sep)[-1]
+                project_name = os.path.split(new_project_dir)[-1]
                 self.resourceManager.new_project(new_project_dir)
 
                 default_project_filename = os.path.join(new_project_dir, os.path.split(DefaultProjectFile)[1])
