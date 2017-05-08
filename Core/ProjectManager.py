@@ -54,7 +54,7 @@ class ProjectManager(Singleton):
         try:
             if new_project_dir:
                 project_name = os.path.split(new_project_dir)[-1]
-                self.resourceManager.new_project(new_project_dir)
+                self.resourceManager.prepare_project_directory(new_project_dir)
 
                 default_project_filename = os.path.join(new_project_dir, os.path.split(DefaultProjectFile)[1])
                 project_filename = os.path.join(new_project_dir, project_name + ".project")

@@ -271,10 +271,6 @@ class ShaderLoader(ResourceLoader):
             logger.error(traceback.format_exc())
         return None, None
 
-    def close(self):
-        for shader in self.resources.values():
-            shader.delete()
-
 
 # -----------------------#
 # CLASS : MaterialLoader
@@ -513,9 +509,14 @@ class SceneLoader(ResourceLoader):
             logger.error(traceback.format_exc())
         return None, None
 
-    def close(self):
-        for shader in self.resources.values():
-            shader.delete()
+
+# -----------------------#
+# CLASS : ScriptLoader
+# -----------------------#
+class ScriptLoader(ResourceLoader):
+    name = "ScriptLoader"
+    resource_dir_name = 'Scripts'
+    fileExt = '.py'
 
 
 # -----------------------#
@@ -532,6 +533,7 @@ class ResourceManager(Singleton):
         self.material_instanceLoader = None
         self.meshLoader = None
         self.sceneLoader = None
+        self.scriptLoader = None
 
         self.sceneManager = None
 
@@ -545,6 +547,7 @@ class ResourceManager(Singleton):
         self.material_instanceLoader = MaterialInstanceLoader(self.root_path)
         self.meshLoader = MeshLoader(self.root_path)
         self.sceneLoader = SceneLoader(self.root_path)
+        self.scriptLoader = ScriptLoader(self.root_path)
 
         self.sceneManager = None
 
@@ -555,6 +558,7 @@ class ResourceManager(Singleton):
         self.material_instanceLoader.initialize()
         self.meshLoader.initialize()
         self.sceneLoader.initialize()
+        self.scriptLoader.initialize()
 
         # get scene manager
         self.sceneManager = SceneManager.SceneManager.instance()
@@ -562,7 +566,7 @@ class ResourceManager(Singleton):
     def close(self):
         pass
 
-    def new_project(self, new_project_dir):
+    def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)
         copy_tree(PathResources, new_project_dir)
 
