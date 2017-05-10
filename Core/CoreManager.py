@@ -4,7 +4,6 @@ import sys
 import time
 import re
 import traceback
-import threading
 
 import numpy as np
 import pygame
