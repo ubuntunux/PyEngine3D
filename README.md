@@ -26,9 +26,6 @@
  - pygame 1.9.2
 
 ## Features
-* Project System
-    - Load/Save project
-    - Resource tree
 * Shader
     - Material Template
     - Material Instance
@@ -46,7 +43,6 @@
     - TODO : SkyBox
     - TODO : Wind
 * Object
-    - TODO : Multiple Geometry Mesh
     - TODO : instancing
     - TODO : skinning
 * Texture Object
@@ -55,12 +51,11 @@
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
     - TODO : Wrap, Mirror, Clamp mode
     - TODO : sRGB, NormalMap, Linear Color type
-    - TODO : source file path and data
 * Render Target Manager
     - 2D
     - TODO : 3D, Cube, Array
 * Rendering
-    - TODO : OpenGL Context
+    - OpenGL Context
     - View Mode
         - Wire, Solid, Lighting, Color
     - TODO : Culling
@@ -107,12 +102,17 @@
     - TODO : input / output
     - TODO : progress bar
     - TODO : button
+* Project System
+    - Load/Save project
+    - Resource tree
+    - project config
 * Scene Manager
     - Object managing
-    - Scene Save/Load
+    - TODO : Scene Save/Load
 * Resource Manager
     - Create/Remove/Regist/Release resources
     - TODO : resource reload system
+    - TODO : resource clear and load whern scene loading
 * Import/Export
     - OBJ
     - TODO : FBX
