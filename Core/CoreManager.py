@@ -190,19 +190,19 @@ class CoreManager(Singleton):
                 self.renderer.setViewMode(cmd)
             # Resource commands
             elif cmd == COMMAND.ADD_RESOURCE:
-                resName, resType = value
-                obj = self.resourceManager.createResource(resName, resType)
+                resName, resTypeName = value
+                obj = self.resourceManager.add_resource(resName, resTypeName)
                 if obj:
                     self.sendObjectName(obj.name)
             elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
-                resourceList = self.resourceManager.getResourceList()
+                resourceList = self.resourceManager.getResourceNameAndTypeList()
                 self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
             elif cmd == COMMAND.REQUEST_OBJECT_LIST:
                 self.sendObjectList()
             # Scene object commands
             elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
-                resName, resType = value
-                attribute = self.resourceManager.getResourceAttribute(resName, resType)
+                resName, resTypeName = value
+                attribute = self.resourceManager.getResourceAttribute(resName, resTypeName)
                 if attribute:
                     self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
             elif cmd == COMMAND.REQUEST_OBJECT_ATTRIBUTE:

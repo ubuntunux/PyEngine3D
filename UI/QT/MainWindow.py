@@ -289,7 +289,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.objectList.addItem(item)
 
     def deleteObjectName(self, objName):
-        print(objName)
         items = self.objectList.findItems(objName, QtCore.Qt.MatchContains)
         for item in items:
             index = self.objectList.row(item)

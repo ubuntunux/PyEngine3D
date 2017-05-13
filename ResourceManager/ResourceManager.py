@@ -13,11 +13,11 @@ from distutils.dir_util import copy_tree
 
 from PIL import Image
 
-from Core import logger, SceneManager, log_level
+from Core import logger, log_level, SceneManager
 from Object import Triangle, Quad, Mesh
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Render import MaterialInstance
-from Utilities import Singleton, Config, Logger
+from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import *
 
@@ -51,9 +51,17 @@ class MetaData:
 # CLASS : Resource
 # -----------------------#
 class Resource:
-    def __init__(self, resource_name, data=None):
+    def __init__(self, resource_name):
+        logger.info("Create Resource : %s" % resource_name)
         self.name = resource_name
-        self.data = data
+        self.attributes = Attributes()
+
+    def getAttribute(self):
+        self.attributes.setAttribute('name', self.name)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue):
+        pass
 
 
 # -----------------------#
@@ -63,6 +71,7 @@ class ResourceLoader(object):
     name = "ResourceLoader"
     resource_dir_name = 'Fonts'
     resource_version = 0
+    resource_type_name = 'None'
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_EXTERNAL_RESOURCE = False
@@ -135,6 +144,14 @@ class ResourceLoader(object):
         # clear
         self.need_to_convert_resources = []
 
+    def add_resource(self, resource_name):
+        """
+        desc: add resource to scene.
+        return resource
+        """
+        logger.warn("add_resource is not implemented.")
+        return None
+
     def create_resource(self):
         """ TODO : create resource file and regist."""
         pass
@@ -152,6 +169,7 @@ class ResourceLoader(object):
         :param resource: resource object ( Texture2D, Mesh, Material ... )
         """
         logger.debug("Register %s." % resource.name)
+        # add resrouce and meta
         self.resources[resource.name] = resource
         if meta_data is not None:
             self.metaDatas[resource.name] = meta_data
@@ -183,7 +201,10 @@ class ResourceLoader(object):
         """
         :return: tuple(Resource object, MetaData)
         """
-        raise BaseException("You must implement load_resource.")
+        resource_name = self.getResourceName(filePath, self.resource_path)
+        resource = Resource(resource_name)
+        meta_data = MetaData(self.resource_version, filePath)
+        return resource, meta_data
 
     def load_simple_format(self, filePath):
         try:
@@ -247,6 +268,12 @@ class ResourceLoader(object):
     def getResourceNameList(self):
         return list(self.resources.keys())
 
+    def getResourceAttribute(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            return resource.getAttribute()
+        return None
+
     def getMetaData(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
             return self.metaDatas[resource_name]
@@ -261,6 +288,7 @@ class ResourceLoader(object):
 class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
+    resource_type_name = 'Shader'
     fileExt = '.glsl'
 
     def load_resource(self, filePath):
@@ -278,6 +306,7 @@ class ShaderLoader(ResourceLoader):
 class MaterialLoader(ResourceLoader):
     name = "MaterialLoader"
     resource_dir_name = 'Materials'
+    resource_type_name = 'Material'
     fileExt = '.mat'
     resource_version = 0
     USE_FILE_COMPRESS_TO_SAVE = False
@@ -392,6 +421,7 @@ class MaterialLoader(ResourceLoader):
 class MaterialInstanceLoader(ResourceLoader):
     name = "MaterialInstanceLoader"
     resource_dir_name = 'MaterialInstances'
+    resource_type_name = 'MaterialInstance'
     fileExt = '.matinst'
 
     def load_resource(self, filePath):
@@ -409,6 +439,7 @@ class MaterialInstanceLoader(ResourceLoader):
 class MeshLoader(ResourceLoader):
     name = "MeshLoader"
     resource_dir_name = 'Meshes'
+    resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
     USE_EXTERNAL_RESOURCE = True
@@ -448,6 +479,12 @@ class MeshLoader(ResourceLoader):
             mesh = Mesh(meshName, geometry_datas)
             self.save_simple_format_and_register(mesh, geometry_datas, source_filepath)
 
+    def add_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            return SceneManager.SceneManager.instance().createMeshHere(resource)
+        return None
+
 
 # -----------------------#
 # CLASS : TextureLoader
@@ -455,6 +492,7 @@ class MeshLoader(ResourceLoader):
 class TextureLoader(ResourceLoader):
     name = "TextureLoader"
     resource_dir_name = 'Textures'
+    resource_type_name = 'Texture'
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx")
@@ -497,17 +535,8 @@ class TextureLoader(ResourceLoader):
 class SceneLoader(ResourceLoader):
     name = "SceneLoader"
     resource_dir_name = 'Scenes'
+    resource_type_name = 'Scene'
     fileExt = '.scene'
-
-    def load_resource(self, filePath):
-        try:
-            scene_name = self.getResourceName(filePath, self.resource_path)
-            scene = Resource(scene_name, filePath)
-            meta_data = MetaData(self.resource_version, filePath)
-            return scene, meta_data
-        except:
-            logger.error(traceback.format_exc())
-        return None, None
 
 
 # -----------------------#
@@ -527,6 +556,7 @@ class ResourceManager(Singleton):
 
     def __init__(self):
         self.root_path = ""
+        self.resource_loaders = []
         self.textureLoader = None
         self.shaderLoader = None
         self.materialLoader = None
@@ -535,33 +565,27 @@ class ResourceManager(Singleton):
         self.sceneLoader = None
         self.scriptLoader = None
 
-        self.sceneManager = None
+    def regist_loader(self, resource_loader_class):
+        resource_loader = resource_loader_class(self.root_path)
+        self.resource_loaders.append(resource_loader)
+        return resource_loader
 
     def initialize(self, root_path=""):
-        check_directory_and_mkdir(root_path)
+        self.root_path = root_path or PathResources
+        check_directory_and_mkdir(self.root_path)
 
-        self.root_path = root_path if root_path else PathResources
-        self.textureLoader = TextureLoader(self.root_path)
-        self.shaderLoader = ShaderLoader(self.root_path)
-        self.materialLoader = MaterialLoader(self.root_path)
-        self.material_instanceLoader = MaterialInstanceLoader(self.root_path)
-        self.meshLoader = MeshLoader(self.root_path)
-        self.sceneLoader = SceneLoader(self.root_path)
-        self.scriptLoader = ScriptLoader(self.root_path)
-
-        self.sceneManager = None
+        # Be careful with the initialization order.
+        self.textureLoader = self.regist_loader(TextureLoader)
+        self.shaderLoader = self.regist_loader(ShaderLoader)
+        self.materialLoader = self.regist_loader(MaterialLoader)
+        self.material_instanceLoader = self.regist_loader(MaterialInstanceLoader)
+        self.meshLoader = self.regist_loader(MeshLoader)
+        self.sceneLoader = self.regist_loader(SceneLoader)
+        self.scriptLoader = self.regist_loader(ScriptLoader)
 
         # initialize
-        self.textureLoader.initialize()
-        self.shaderLoader.initialize()
-        self.materialLoader.initialize()
-        self.material_instanceLoader.initialize()
-        self.meshLoader.initialize()
-        self.sceneLoader.initialize()
-        self.scriptLoader.initialize()
-
-        # get scene manager
-        self.sceneManager = SceneManager.SceneManager.instance()
+        for resource_loader in self.resource_loaders:
+            resource_loader.initialize()
 
     def close(self):
         pass
@@ -573,65 +597,40 @@ class ResourceManager(Singleton):
     def get_default_font_file(self):
         return os.path.join(self.root_path, 'Fonts', 'UbuntuFont.ttf')
 
-    def getResourceList(self):
+    def getResourceNameAndTypeList(self):
         """
         :return [(resource name, resource type)]:
         """
         result = []
-        result += [(resName, GetClassName(self.getShader(resName))) for resName in self.getShaderNameList()]
-        result += [(resName, GetClassName(self.getMaterial(resName))) for resName in self.getMaterialNameList()]
-        result += [(resName, GetClassName(self.getMaterialInstance(resName))) for resName in
-                   self.getMaterialInstanceNameList()]
-        result += [(resName, GetClassName(self.getMesh(resName))) for resName in self.getMeshNameList()]
-        result += [(resName, GetClassName(self.getTexture(resName))) for resName in self.getTextureNameList()]
-        result += [(resName, GetClassName(self.getScene(resName))) for resName in self.getSceneNameList()]
+        for resource_loader in self.resource_loaders:
+            result += [(resName, resource_loader.resource_type_name) for resName in
+                       resource_loader.getResourceNameList()]
         return result
 
-    def getResourceAttribute(self, resName, resTypeName):
-        try:
-            resType = eval(resTypeName)
-            resource = self.getResource(resName, resType)
-            if resource:
-                return resource.getAttribute()
-            return None
-        except:
-            logger.error(traceback.format_exc())
-
-    def getResource(self, resName, resType):
-        resource = None
-        if type(resType) == str:
-            resType = eval(resType)
-
-        if resType == Shader:
-            resource = self.getShader(resName)
-        elif resType == Material:
-            resource = self.getMaterial(resName)
-        elif resType == MaterialInstance:
-            resource = self.getMaterialInstance(resName)
-        elif issubclass(resType, Mesh):
-            resource = self.getMesh(resName)
-        elif resType == Texture2D:
-            resource = self.getTexture(resName)
-        else:
-            logger.error("%s(%s) is a unknown type resource." % (resName, resType))
-        return resource
-
-    def createResource(self, resName, resType):
-        resource = self.getResource(resName, resType)
-        resType = type(resource)
-        if resource:
-            if resType == Shader:
-                pass
-            elif resType == Material:
-                pass
-            elif resType == MaterialInstance:
-                pass
-            elif issubclass(resType, Mesh):
-                return self.sceneManager.createMeshHere(resource)
-            elif resType == Texture2D:
-                pass
+    def getResourceAttribute(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.getResourceAttribute(resource_name)
         return None
-        logger.error("Can't create %s(%s)." % (resName, resType))
+
+    def getResource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.getResource(resource_name)
+        return None
+
+    def add_resource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.add_resource(resource_name)
+        return None
+
+    def find_resource_loader(self, resource_type_name):
+        for resource_loader in self.resource_loaders:
+            if resource_loader.resource_type_name == resource_type_name:
+                return resource_loader
+        logger.error("%s is a unknown resource type." % resource_type_name)
+        return None
 
     # FUNCTIONS : Shader
 

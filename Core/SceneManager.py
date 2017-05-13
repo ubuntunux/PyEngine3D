@@ -11,7 +11,7 @@ from Object import BaseObject, StaticMesh, Camera, Light
 from OpenGLContext import UniformBlock
 from ResourceManager import ResourceManager
 from Render import Tonemapping, Renderer
-from Utilities import Singleton, GetClassName, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
+from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 
 
 class SceneManager(Singleton):
@@ -20,6 +20,7 @@ class SceneManager(Singleton):
         self.resourceManager = None
         self.renderer = None
         self.framebuffer = None
+        self.current_scene = None
 
         # Scene Objects
         self.mainCamera = None
@@ -55,7 +56,10 @@ class SceneManager(Singleton):
         self.createLight()
         self.create_postprocess()
 
-    def load_scene(self, scene_name):
+    def new_scene(self):
+        pass
+
+    def load_scene(self, scene_data):
         pass
 
     def save_scene(self):

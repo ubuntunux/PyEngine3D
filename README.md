@@ -27,8 +27,16 @@
 
 ## Features
 * Project System
-    - Load/Save project
     - Resource tree
+* Scene Manager
+    - Object managing
+* Resource Manager
+    - Create/Remove/Regist/Release resources
+    - project Load/Save
+    - TODO : Scene Save/Load
+    - TODO : Object Save/Load
+        - material instance name
+    - TODO : resource reload system
 * Shader
     - Material Template
     - Material Instance
@@ -107,12 +115,6 @@
     - TODO : input / output
     - TODO : progress bar
     - TODO : button
-* Scene Manager
-    - Object managing
-    - Scene Save/Load
-* Resource Manager
-    - Create/Remove/Regist/Release resources
-    - TODO : resource reload system
 * Import/Export
     - OBJ
     - TODO : FBX
