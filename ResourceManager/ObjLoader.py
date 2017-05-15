@@ -117,7 +117,7 @@ class OBJ:
                     normals.append(self.normals[normalIndicies[i]])
 
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
-        geometry_name = self.name or os.path.splitext(os.path.split(self.filename)[1])[0].lower()
+        geometry_name = self.name or os.path.splitext(os.path.split(self.filename)[1])[0]
         geometry_data = dict(geometry_name=geometry_name,
                              positions=positions,
                              normals=normals,

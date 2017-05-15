@@ -10,7 +10,7 @@ class PostProcess:
     def __init__(self, name, material_instance):
         logger.info("Create PostProcess : %s" % name)
         self.name = name
-        self.mesh = ResourceManager.ResourceManager.instance().getMesh("quad")
+        self.mesh = ResourceManager.ResourceManager.instance().getMesh("Quad")
         self.geometry = self.mesh.get_geometry_instances(self)[0]
         self.geometry.set_material_instance(material_instance)
         self.material_instance = material_instance

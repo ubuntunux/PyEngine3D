@@ -41,13 +41,17 @@ class COMMAND(AutoEnum):
     OPEN_PROJECT = ()
     SAVE_PROJECT = ()
 
+    NEW_SCENE = ()
+    SAVE_SCENE = ()
+
     # view mode
     VIEWMODE_WIREFRAME = ()
     VIEWMODE_SHADING = ()
 
     # resource
-    ADD_RESOURCE = ()
+    ADD_RESOURCE_TO_SCENE = ()
     REQUEST_RESOURCE_LIST = ()
+    CLEAR_OBJECT_LIST = ()
     TRANS_RESOURCE_LIST = ()
     REQUEST_OBJECT_LIST = ()
     TRANS_OBJECT_LIST = ()
@@ -62,6 +66,8 @@ class COMMAND(AutoEnum):
     SET_OBJECT_ATTRIBUTE = ()
     SET_OBJECT_SELECT = ()
     SET_OBJECT_FOCUS = ()
+
+    COUNT = ()
 
 
 def get_command_name(cmd: COMMAND) -> str:

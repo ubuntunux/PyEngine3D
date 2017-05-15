@@ -127,7 +127,7 @@ class Triangle(Mesh):
             texcoords=[(0, 0), (1, 0), (0, 1)],
             indices=[0, 1, 2])
         geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self).lower(), geometry_datas)
+        Mesh.__init__(self, GetClassName(self), geometry_datas)
 
 
 # ------------------------------#
@@ -142,7 +142,7 @@ class Quad(Mesh):
             texcoords=[(0, 0), (1, 0), (0, 1), (1, 1)],
             indices=[0, 1, 2, 1, 3, 2])
         geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self).lower(), geometry_datas)
+        Mesh.__init__(self, GetClassName(self), geometry_datas)
 
 
 # ------------------------------#

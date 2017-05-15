@@ -59,13 +59,16 @@ class CoreManager(Singleton):
         self.wheelDown = False
 
         # managers
-        self.camera = None
+        camera = None
         self.resourceManager = None
         self.renderer = None
         self.rendertarget_manager = None
         self.sceneManager = None
         self.projectManager = None
         self.config = Config("config.ini", log_level)
+
+        self.commands = []
+        self.registCommand()
 
     def initialize(self, project_filename=""):
         # process start
@@ -112,8 +115,6 @@ class CoreManager(Singleton):
         if platformModule.system() == 'Linux':
             self.renderer.resizeScene()
 
-        # sen created object list to UI
-        self.sendObjectList()
         return True
 
     def get_next_open_project_filename(self):
@@ -164,8 +165,72 @@ class CoreManager(Singleton):
         for obj_name in obj_names:
             self.sendObjectName(obj_name)
 
+    def notifyClearScene(self):
+        self.send(COMMAND.CLEAR_OBJECT_LIST)
+
     def notifyDeleteObject(self, obj_name):
         self.send(COMMAND.DELETE_OBJECT_NAME, obj_name)
+
+    def registCommand(self):
+        def nothing(value):
+            pass
+
+        self.commands = [nothing, ] * COMMAND.COUNT.value
+
+        # exit
+        self.commands[COMMAND.CLOSE_APP.value] = lambda value: self.close()
+        # project
+        self.commands[COMMAND.NEW_PROJECT.value] = lambda value: self.projectManager.new_project(value)
+        self.commands[COMMAND.OPEN_PROJECT.value] = lambda value: self.projectManager.open_project_next_time(value)
+        self.commands[COMMAND.SAVE_PROJECT.value] = lambda value: self.projectManager.save_project()
+        # scene
+        self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.sceneManager.new_scene()
+        self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.sceneManager.save_scene()
+        # view mode
+        self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.setViewMode(
+            COMMAND.VIEWMODE_WIREFRAME)
+        self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.setViewMode(
+            COMMAND.VIEWMODE_SHADING)
+
+        # Resource commands
+        def cmd_add_resource_to_scene(value):
+            resName, resTypeName = value
+            obj = self.resourceManager.add_resource_to_scene(resName, resTypeName)
+            if obj:
+                self.sendObjectName(obj.name)
+
+        self.commands[COMMAND.ADD_RESOURCE_TO_SCENE.value] = cmd_add_resource_to_scene
+
+        def cmd_request_resource_list(value):
+            resourceList = self.resourceManager.getResourceNameAndTypeList()
+            self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
+
+        self.commands[COMMAND.REQUEST_RESOURCE_LIST.value] = cmd_request_resource_list
+        self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
+
+        # Scene object commands
+        def cmd_request_resource_attribute(value):
+            resName, resTypeName = value
+            attribute = self.resourceManager.getResourceAttribute(resName, resTypeName)
+            if attribute:
+                self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
+
+        self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
+
+        def cmd_request_object_attribute(value):
+            attribute = self.sceneManager.getObjectAttribute(value)
+            if attribute:
+                self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+
+        self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
+
+        def cmd_set_object_attribute(value):
+            objectName, attributeName, attributeValue = value
+            self.sceneManager.setObjectAttribute(objectName, attributeName, attributeValue)
+
+        self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
+        self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
+        self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
 
     # Recieve message
     def updateCommand(self):
@@ -175,47 +240,7 @@ class CoreManager(Singleton):
         while not self.cmdQueue.empty():
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
-
-            # Menus
-            if cmd == COMMAND.CLOSE_APP:
-                self.close()
-                return
-            elif cmd == COMMAND.NEW_PROJECT:
-                self.projectManager.new_project(value)
-            elif cmd == COMMAND.OPEN_PROJECT:
-                self.projectManager.open_project_next_time(value)
-            elif cmd == COMMAND.SAVE_PROJECT:
-                self.projectManager.save_project()
-            elif COMMAND.VIEWMODE_WIREFRAME.value <= cmd.value <= COMMAND.VIEWMODE_SHADING.value:
-                self.renderer.setViewMode(cmd)
-            # Resource commands
-            elif cmd == COMMAND.ADD_RESOURCE:
-                resName, resTypeName = value
-                obj = self.resourceManager.add_resource(resName, resTypeName)
-                if obj:
-                    self.sendObjectName(obj.name)
-            elif cmd == COMMAND.REQUEST_RESOURCE_LIST:
-                resourceList = self.resourceManager.getResourceNameAndTypeList()
-                self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
-            elif cmd == COMMAND.REQUEST_OBJECT_LIST:
-                self.sendObjectList()
-            # Scene object commands
-            elif cmd == COMMAND.REQUEST_RESOURCE_ATTRIBUTE:
-                resName, resTypeName = value
-                attribute = self.resourceManager.getResourceAttribute(resName, resTypeName)
-                if attribute:
-                    self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
-            elif cmd == COMMAND.REQUEST_OBJECT_ATTRIBUTE:
-                attribute = self.sceneManager.getObjectAttribute(value)
-                if attribute:
-                    self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
-            elif cmd == COMMAND.SET_OBJECT_ATTRIBUTE:
-                objectName, attributeName, attributeValue = value
-                self.sceneManager.setObjectAttribute(objectName, attributeName, attributeValue)
-            elif cmd == COMMAND.SET_OBJECT_SELECT:
-                self.sceneManager.setSelectedObject(value)
-            elif cmd == COMMAND.SET_OBJECT_FOCUS:
-                self.sceneManager.setObjectFocus(value)
+            self.commands[cmd.value](value)
 
     def updateEvent(self):
         self.mouseDelta[:] = self.mousePos - self.mouseOldPos
@@ -265,11 +290,11 @@ class CoreManager(Singleton):
         btnL, btnM, btnR = pygame.mouse.get_pressed()
 
         # get camera
-        self.camera = self.sceneManager.getMainCamera()
-        cameraTransform = self.camera.transform
-        move_speed = self.camera.move_speed * self.delta
-        pan_speed = self.camera.pan_speed * self.delta
-        rotation_speed = self.camera.rotation_speed * self.delta
+        camera = self.sceneManager.getMainCamera()
+        cameraTransform = camera.transform
+        move_speed = camera.move_speed * self.delta
+        pan_speed = camera.pan_speed * self.delta
+        rotation_speed = camera.rotation_speed * self.delta
 
         if keydown[K_LSHIFT]:
             move_speed *= 4.0
@@ -320,7 +345,7 @@ class CoreManager(Singleton):
         while self.running:
             currentTime = time.perf_counter()
             delta = currentTime - self.currentTime
-            
+
             if delta < self.minDelta:
                 continue
 
@@ -356,7 +381,7 @@ class CoreManager(Singleton):
             self.renderer.console.info("GPU : %.2f ms" % self.gpuTime)
             self.renderer.console.info("Render : %.2f ms" % self.renderTime)
             self.renderer.console.info("Present : %.2f ms" % self.presentTime)
-            
+
             # selected object transform info
             selectedObject = self.sceneManager.getSelectedObject()
             if selectedObject:

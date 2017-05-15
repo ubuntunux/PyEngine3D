@@ -81,15 +81,21 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # set windows title
         self.setWindowTitle(project_filename if project_filename else "Default Project")
 
-        # action menus
+        # exit
         actionExit = self.findChild(QtGui.QAction, "actionExit")
         QtCore.QObject.connect(actionExit, QtCore.SIGNAL("triggered()"), self.exit)
+        # project
         actionNewProject = self.findChild(QtGui.QAction, "actionNewProject")
         QtCore.QObject.connect(actionNewProject, QtCore.SIGNAL("triggered()"), self.new_project)
         actionOpenProject = self.findChild(QtGui.QAction, "actionOpenProject")
         QtCore.QObject.connect(actionOpenProject, QtCore.SIGNAL("triggered()"), self.open_project)
         actionSaveProject = self.findChild(QtGui.QAction, "actionSaveProject")
         QtCore.QObject.connect(actionSaveProject, QtCore.SIGNAL("triggered()"), self.save_project)
+        # scene
+        actionNewScene = self.findChild(QtGui.QAction, "actionNewScene")
+        QtCore.QObject.connect(actionNewScene, QtCore.SIGNAL("triggered()"), self.new_scene)
+        actionSaveScene = self.findChild(QtGui.QAction, "actionSaveScene")
+        QtCore.QObject.connect(actionSaveScene, QtCore.SIGNAL("triggered()"), self.save_scene)
 
         # action draw mode
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
@@ -101,7 +107,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
-        self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
+        self.resourceListWidget.itemDoubleClicked.connect(self.addResourceToScene)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
@@ -119,6 +125,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                      self.addObjectName)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)),
                      self.fillAttribute)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_OBJECT_LIST)),
+                     self.clearObjectList)
 
         # Object attribute tree
         self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
@@ -166,6 +174,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def save_project(self):
         self.appCmdQueue.put(COMMAND.SAVE_PROJECT)
+
+    def new_scene(self):
+        self.appCmdQueue.put(COMMAND.NEW_SCENE)
+
+    def save_scene(self):
+        self.appCmdQueue.put(COMMAND.SAVE_SCENE)
 
     def setViewMode(self, mode):
         self.appCmdQueue.put(mode)
@@ -294,11 +308,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             index = self.objectList.row(item)
             self.objectList.takeItem(index)
 
+    def clearObjectList(self, *args):
+        for i in range(self.objectList.count()):
+            self.objectList.takeItem(0)
+
+
     # ------------------------- #
     # Commands
     # ------------------------- #
-    def addResource(self, item=None):
-        self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))  # send message and receive
+    def addResourceToScene(self, item=None):
+        self.appCmdQueue.put(COMMAND.ADD_RESOURCE_TO_SCENE, (item.text(0), item.text(1)))  # send message and receive
 
 
 def run_editor(project_filename, cmdQueue, appCmdQueue, cmdPipe):
