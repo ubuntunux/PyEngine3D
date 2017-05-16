@@ -24,6 +24,9 @@ from . import *
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
 
+# notify
+global core_manager
+
 
 # -----------------------#
 # CLASS : MetaData
@@ -167,20 +170,14 @@ class ResourceLoader(object):
         '''
         pass
 
-    def save_resource(self, resource_name, resource_data):
+    def create_resource(self, resource_name):
         if resource_name in self.resources:
-            resource = self.getResource(resource_name)
-        else:
-            resource = Resource(resource_name)
-        # save
-        self.save_simple_format_and_register(resource, resource_data)
-        # regist
-        metadata = self.getMetaData(resource_name)
-        self.regist_resource(resource, metadata)
+            return self.getResource(resource_name)
+        return Resource(resource_name)
 
-    def create_resource(self):
-        """ TODO : create resource file and regist."""
-        pass
+    def create_resource_and_save(self, resource_name, resource_data):
+        resource = self.create_resource(resource_name)
+        self.save_simple_format_and_register(resource, resource_data)
 
     def delete_resource(self, resource):
         """ delete resource file and release."""
@@ -195,10 +192,13 @@ class ResourceLoader(object):
         :param resource: resource object ( Texture2D, Mesh, Material ... )
         """
         logger.debug("Register %s." % resource.name)
-        # add resrouce and meta
+        notify_new_resource = resource.name not in self.resources
         self.resources[resource.name] = resource
         if meta_data is not None:
             self.metaDatas[resource.name] = meta_data
+        if notify_new_resource:
+            resource_info = (resource.name, self.resource_type_name)
+            core_manager.sendResourceInfo(resource_info)
 
     def release_resource(self, resource):
         if resource:
@@ -608,6 +608,9 @@ class ResourceManager(Singleton):
         return resource_loader
 
     def initialize(self, root_path=""):
+        global core_manager
+        core_manager = CoreManager.CoreManager.instance()
+
         self.root_path = root_path or PathResources
         check_directory_and_mkdir(self.root_path)
 

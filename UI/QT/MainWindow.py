@@ -111,22 +111,31 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_INFO)),
+                     self.addResourceInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
                      self.fillAttribute)
 
+        self.btnAddResource = self.findChild(QtGui.QPushButton, "btnAddResource")
+        self.btnAddResource.clicked.connect(self.addResourceToScene)
+
         # Object list
-        self.objectList = self.findChild(QtGui.QListWidget, "objectList")
+        self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
+        self.objectList.setSortingEnabled(True)
         self.objectList.itemClicked.connect(self.selectObject)
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
-        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_NAME)),
-                     self.deleteObjectName)
-        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)),
-                     self.addObjectName)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_INFO)),
+                     self.deleteObjectInfo)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_INFO)),
+                     self.addObjectInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)),
                      self.fillAttribute)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_OBJECT_LIST)),
                      self.clearObjectList)
+
+        self.btnRemoveObject = self.findChild(QtGui.QPushButton, "btnRemoveObject")
+        self.btnRemoveObject.clicked.connect(self.deleteObject)
 
         # Object attribute tree
         self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
@@ -138,9 +147,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # wait a UI_RUN message, and send success message
         if self.cmdPipe:
             self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
-
-        # request available mesh list
-        self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_LIST)
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
@@ -183,15 +189,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def setViewMode(self, mode):
         self.appCmdQueue.put(mode)
-
-    # ------------------------- #
-    # Widget - Resource List
-    # ------------------------- #
-    def addResourceList(self, resourceList):
-        for resName, resType in resourceList:
-            item = QtGui.QTreeWidgetItem(self.resourceListWidget)
-            item.setText(0, resName)
-            item.setText(1, resType)
 
     # ------------------------- #
     # Widget - Propery Tree
@@ -260,22 +257,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item.setText(1, str(value))
         item.oldValue = item.text(1)  # set old value
 
-    def selectResource(self):
-        getSelected = self.resourceListWidget.selectedItems()
-        if getSelected:
-            node = getSelected[0]
-            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
-
-    def selectObject(self, inst):
-        selectedObjectName = inst.text()
-        # request selected object infomation to fill attribute widget
-        self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
-        self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
-
-    def focusObject(self, inst):
-        selectedObjectName = inst.text()
-        self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
-
     def fillAttribute(self, attributes):
         # lock edit attribute ui
         self.isFillAttributeTree = True
@@ -296,28 +277,69 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             print(item.text(0), item.text(1))
 
     # ------------------------- #
+    # Widget - Resource List
+    # ------------------------- #
+    def addResourceList(self, resourceList):
+        for resName, resType in resourceList:
+            item = QtGui.QTreeWidgetItem(self.resourceListWidget)
+            item.setText(0, resName)
+            item.setText(1, resType)
+
+    def addResourceInfo(self, resource_info):
+        resource_name, resource_type = resource_info
+        item = QtGui.QTreeWidgetItem(self.resourceListWidget)
+        item.setText(0, resource_name)
+        item.setText(1, resource_type)
+
+    def addResourceToScene(self, item=None):
+        if item is False:  # button clicked
+            selectedItems = self.resourceListWidget.selectedItems()
+            if selectedItems:
+                item = selectedItems[0]
+        self.appCmdQueue.put(COMMAND.ADD_RESOURCE_TO_SCENE, (item.text(0), item.text(1)))  # send message and receive
+
+    def selectResource(self):
+        getSelected = self.resourceListWidget.selectedItems()
+        if getSelected:
+            node = getSelected[0]
+            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
+
+    # ------------------------- #
     # Widget - Object List
     # ------------------------- #
-    def addObjectName(self, objName):
-        item = QtGui.QListWidgetItem(objName)
-        self.objectList.addItem(item)
+    def addObjectInfo(self, object_info):
+        object_name, object_type = object_info
+        item = QtGui.QTreeWidgetItem(self.objectList)
+        item.setText(0, object_name)
+        item.setText(1, object_type)
 
-    def deleteObjectName(self, objName):
-        items = self.objectList.findItems(objName, QtCore.Qt.MatchContains)
+    def deleteObject(self, *args):
+        selectedItems = self.objectList.selectedItems()
+        for selectedItem in selectedItems:
+            self.appCmdQueue.put(COMMAND.DELETE_OBJECT, selectedItem.text(0))
+
+    def deleteObjectInfo(self, objName):
+        items = self.objectList.findItems(objName, QtCore.Qt.MatchContains, column=0)
         for item in items:
-            index = self.objectList.row(item)
-            self.objectList.takeItem(index)
+            index = self.objectList.indexOfTopLevelItem(item)
+            self.objectList.takeTopLevelItem(index)
 
     def clearObjectList(self, *args):
-        for i in range(self.objectList.count()):
-            self.objectList.takeItem(0)
+        self.objectList.clear()
 
+    def selectObject(self):
+        selectedItems = self.objectList.selectedItems()
+        if selectedItems:
+            item = selectedItems[0]
+            selectedObjectName = item.text(0)
+            # request selected object infomation to fill attribute widget
+            self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
+            self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
 
-    # ------------------------- #
-    # Commands
-    # ------------------------- #
-    def addResourceToScene(self, item=None):
-        self.appCmdQueue.put(COMMAND.ADD_RESOURCE_TO_SCENE, (item.text(0), item.text(1)))  # send message and receive
+    def focusObject(self, item=None):
+        if item:
+            selectedObjectName = item.text(0)
+            self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selectedObjectName)
 
 
 def run_editor(project_filename, cmdQueue, appCmdQueue, cmdPipe):

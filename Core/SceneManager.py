@@ -103,7 +103,7 @@ class SceneManager(Singleton):
         for static_mesh in self.staticmeshes:
             scene_data['meshes'].append((static_mesh.mesh.name, static_mesh.transform.getPos().tolist()))
 
-        self.resourceManager.sceneLoader.save_resource(self.current_scene_name, scene_data)
+        self.resourceManager.sceneLoader.create_resource_and_save(self.current_scene_name, scene_data)
 
     def generateObjectName(self, currName):
         index = 0
@@ -177,17 +177,23 @@ class SceneManager(Singleton):
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
-        if obj:
+        if obj and obj != self.mainCamera:
             self.objectMap.pop(obj.name)
             if obj in self.cameras:
-                self.lights.pop(obj)
+                self.cameras.remove(obj)
             if obj in self.lights:
-                self.cameras.pop(obj)
+                self.lights.remove(obj)
             if obj in self.staticmeshes:
-                self.staticmeshes.pop(obj)
+                self.staticmeshes.remove(obj)
+            self.coreManager.notifyDeleteObject(objName)
 
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
+
+    def getObjectInfo(self, object_name):
+        obj = self.getObject(object_name)
+        object_info = (object_name, GetClassName(obj))
+        return object_info
 
     def getObjectNames(self):
         return self.objectMap.keys()

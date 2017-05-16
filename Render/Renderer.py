@@ -216,9 +216,11 @@ class Renderer(Singleton):
         # Test Code : bind scene shader constants
         self.sceneManager.uniformSceneConstants.bindData(viewTransform.inverse_matrix, self.perspective,
                                                          viewTransform.pos, FLOAT_ZERO)
-        light = self.sceneManager.lights[0]
-        light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-        self.sceneManager.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO, light.lightColor)
+
+        if len(self.sceneManager.lights) > 0:
+            light = self.sceneManager.lights[0]
+            light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
+            self.sceneManager.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO, light.lightColor)
 
         # Test Code : sort tge list by mesh, material
         static_meshes = self.sceneManager.getStaticMeshes()[:]

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>912</width>
+    <width>1079</width>
     <height>801</height>
    </rect>
   </property>
@@ -15,91 +15,106 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="1">
-     <widget class="QListWidget" name="objectList">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="contextMenuPolicy">
-       <enum>Qt::DefaultContextMenu</enum>
-      </property>
-      <property name="midLineWidth">
-       <number>0</number>
-      </property>
-      <property name="batchSize">
-       <number>100</number>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <layout class="QHBoxLayout" name="layoutProperty">
-      <item>
-       <widget class="QTreeWidget" name="attributeTree">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="lineWidth">
-         <number>1</number>
-        </property>
-        <property name="autoExpandDelay">
-         <number>0</number>
-        </property>
-        <column>
-         <property name="text">
-          <string>Attribute</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Value</string>
-         </property>
-        </column>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="0">
-     <widget class="QTreeWidget" name="resourceListWidget">
-      <property name="columnCount">
-       <number>2</number>
-      </property>
-      <column>
-       <property name="text">
-        <string>Name</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Type</string>
-       </property>
-      </column>
-     </widget>
-    </item>
-    <item row="1" column="0">
+    <item row="6" column="4">
      <widget class="QPushButton" name="btnAddResource">
       <property name="text">
        <string>Add Resource</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
+    <item row="0" column="4">
+     <widget class="QTreeWidget" name="resourceListWidget">
+      <property name="columnCount">
+       <number>2</number>
+      </property>
+      <column>
+       <property name="text">
+        <string>Resource Name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Resource Type</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="6" column="5">
      <widget class="QPushButton" name="btnRemoveObject">
       <property name="text">
        <string>Remove</string>
       </property>
      </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QTreeWidget" name="objectListWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text">
+        <string>Object Name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Object Type</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="6">
+     <widget class="QTreeWidget" name="attributeTree">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="lineWidth">
+       <number>1</number>
+      </property>
+      <property name="autoExpandDelay">
+       <number>0</number>
+      </property>
+      <column>
+       <property name="text">
+        <string>Attribute</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Value</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="btnAddCamera">
+        <property name="text">
+         <string>Add Camera</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnAddLight">
+        <property name="text">
+         <string>Add Light</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2"/>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -108,7 +123,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>912</width>
+     <width>1079</width>
      <height>19</height>
     </rect>
    </property>
