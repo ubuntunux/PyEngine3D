@@ -48,15 +48,24 @@
         - #include
         - insert macro
     - TODO : Precompiled shader load / save
-* Actor System
+* Transparent Rendering
+    - TODO : blend mode
+        - Additive, Multiply, Blending
+* Light
+    - TODO : Dominant Directional Light, Spot, point, area light
+    - TODO : SkyLight, AmbientLight, Spherical Harmonic Light
+    - TODO : Shadow
+* Camera
+    - nothing...
+* Components
     - StaticMesh
     - TODO : SkeletalMesh
     - TODO : Tree, Foliage
     - TODO : Landscape
-    - Camera
-    - Light
     - TODO : SkyBox
     - TODO : Wind
+    - TODO : Ocean, River
+    - TODO : Envirment Cube map
 * Object
     - TODO : Multiple Geometry Mesh
     - TODO : instancing
@@ -72,7 +81,7 @@
     - 2D
     - TODO : 3D, Cube, Array
 * Rendering
-    - TODO : OpenGL Context
+    - OpenGL Context
     - View Mode
         - Wire, Solid, Lighting, Color
     - TODO : Culling
@@ -92,9 +101,6 @@
     - TODO : Fog
     - TODO : Volumtric Scattering
     - TODO : Atmospheric Scattering
-* Transparent Rendering
-    - TODO : blend mode
-        - Additive, Multiply, Blending
 * Particle System
     - TODO
 * PostProcess
