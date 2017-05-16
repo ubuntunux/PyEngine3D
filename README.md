@@ -48,6 +48,11 @@
         - #include
         - insert macro
     - TODO : Precompiled shader load / save
+* MaterialInstance
+    - Create Editor
+    - Color Picker
+    - Resource Picker
+    - Float, Vector4, Matrix, Macro, Int
 * Transparent Rendering
     - TODO : blend mode
         - Additive, Multiply, Blending
