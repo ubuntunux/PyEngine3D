@@ -9,3 +9,4 @@ from .Command import COMMAND, get_command_name, CustomPipe, CustomQueue
 from .CoreManager import CoreManager
 from .SceneManager import SceneManager
 from .ProjectManager import ProjectManager
+from .Renderer import Renderer

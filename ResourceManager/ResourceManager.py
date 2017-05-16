@@ -14,9 +14,8 @@ from distutils.dir_util import copy_tree
 from PIL import Image
 
 from Core import logger, log_level, CoreManager, SceneManager
-from Object import Triangle, Quad, Mesh
+from Object import Triangle, Quad, Mesh, MaterialInstance
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
-from Render import MaterialInstance
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import *

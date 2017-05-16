@@ -10,7 +10,7 @@ import pygame
 from pygame.locals import *
 
 from ResourceManager import ResourceManager
-from Render import Renderer
+from Core.Renderer import Renderer
 from Core.SceneManager import SceneManager
 from Core.ProjectManager import ProjectManager
 from OpenGLContext import RenderTargetManager
