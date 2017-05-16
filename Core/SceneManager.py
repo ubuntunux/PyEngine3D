@@ -91,6 +91,9 @@ class SceneManager(Singleton):
         self.coreManager.sendObjectList()
 
     def save_scene(self):
+        if self.current_scene_name == "":
+            self.current_scene_name = self.resourceManager.sceneLoader.get_new_resource_name()
+
         scene_data = dict(
             camera=self.mainCamera.name,
             light=self.lights[0].name,
@@ -100,8 +103,7 @@ class SceneManager(Singleton):
         for static_mesh in self.staticmeshes:
             scene_data['meshes'].append((static_mesh.mesh.name, static_mesh.transform.getPos().tolist()))
 
-        resource = self.resourceManager.getScene(self.current_scene_name)
-        self.resourceManager.sceneLoader.save_simple_format_and_register(resource, scene_data)
+        self.resourceManager.sceneLoader.save_resource(self.current_scene_name, scene_data)
 
     def generateObjectName(self, currName):
         index = 0

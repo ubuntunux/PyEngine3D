@@ -167,6 +167,17 @@ class ResourceLoader(object):
         '''
         pass
 
+    def save_resource(self, resource_name, resource_data):
+        if resource_name in self.resources:
+            resource = self.getResource(resource_name)
+        else:
+            resource = Resource(resource_name)
+        # save
+        self.save_simple_format_and_register(resource, resource_data)
+        # regist
+        metadata = self.getMetaData(resource_name)
+        self.regist_resource(resource, metadata)
+
     def create_resource(self):
         """ TODO : create resource file and regist."""
         pass
