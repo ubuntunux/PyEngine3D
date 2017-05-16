@@ -29,6 +29,18 @@
 * Project System
     - Load/Save project
     - Resource tree
+* Scene Manager
+    - Object managing
+    - Scene Save/Load
+* Resource Manager
+    - Create/Remove/Regist/Release resources
+    - TODO : resource reload system
+* Import/Export
+    - OBJ
+    - TODO : FBX
+    - TODO : Blender
+    - TODO : Collada
+    - Textures
 * Shader
     - Material Template
     - Material Instance
@@ -107,18 +119,6 @@
     - TODO : input / output
     - TODO : progress bar
     - TODO : button
-* Scene Manager
-    - Object managing
-    - Scene Save/Load
-* Resource Manager
-    - Create/Remove/Regist/Release resources
-    - TODO : resource reload system
-* Import/Export
-    - OBJ
-    - TODO : FBX
-    - TODO : Blender
-    - TODO : Collada
-    - Textures
 * GUI Edit Tool
     - QT backend
     - Kivy backend
