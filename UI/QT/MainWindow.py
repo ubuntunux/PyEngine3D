@@ -108,6 +108,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resourceListWidget.setSortingEnabled(True)
+        self.resourceListWidget.sortItems(0, 0)
+        self.resourceListWidget.sortItems(1, 0)
         self.resourceListWidget.itemDoubleClicked.connect(self.addResourceToScene)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
@@ -123,6 +125,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.objectList.setSortingEnabled(True)
+        self.objectList.sortItems(0, 0)
+        self.objectList.sortItems(1, 0)
         self.objectList.itemClicked.connect(self.selectObject)
         self.objectList.itemActivated.connect(self.selectObject)
         self.objectList.itemDoubleClicked.connect(self.focusObject)
