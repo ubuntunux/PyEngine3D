@@ -107,6 +107,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
+        self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.itemDoubleClicked.connect(self.addResourceToScene)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
