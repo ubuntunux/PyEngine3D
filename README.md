@@ -29,8 +29,8 @@
 
 ## Features
 * TODO : Blender3D plugin
-    - transfer geometry, animation datas
-    - edit animation
+    - transfer geometry, animation, scene datas
+    - edit animation, scene, sequence, particles in blender
 * Project System
     - Load/Save project
     - Resource tree
