@@ -28,6 +28,9 @@
  - pygame 1.9.2
 
 ## Features
+* TODO : Blender3D plugin
+    - transfer geometry, animation datas
+    - edit animation
 * Project System
     - Load/Save project
     - Resource tree
