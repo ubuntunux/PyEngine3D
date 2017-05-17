@@ -1,4 +1,4 @@
-![PyEngine3D](https://github.com/ubuntunux/PyEngine3D/PyEngine3D.png)
+![PyEngine3D](https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png)
 
 ### What is PyEngine3D
 * Opensource Opengl 3D engine was written in python.
