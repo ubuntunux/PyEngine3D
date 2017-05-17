@@ -20,7 +20,7 @@ class SceneManager(Singleton):
         self.resourceManager = None
         self.renderer = None
         self.framebuffer = None
-        self.current_scene_name = ""
+        self.__current_scene_name = ""
 
         # Scene Objects
         self.mainCamera = None
@@ -54,6 +54,10 @@ class SceneManager(Singleton):
         # new scene
         self.new_scene()
 
+    def set_current_scene_name(self, scene_name):
+        self.__current_scene_name = scene_name
+        self.coreManager.set_window_title(scene_name)
+
     def clear_scene(self):
         self.coreManager.notifyClearScene()
         self.tonemapping = None
@@ -66,18 +70,18 @@ class SceneManager(Singleton):
     def new_scene(self):
         self.clear_scene()
 
-        # create scene objects ( camera, light, postprocess )
+        # create scene objects
         self.mainCamera = self.createCamera()
         self.createLight()
         self.create_postprocess()
 
-        self.current_scene_name = self.resourceManager.sceneLoader.get_new_resource_name()
+        self.set_current_scene_name(self.resourceManager.sceneLoader.get_new_resource_name())
         # send object list to ui
         self.coreManager.sendObjectList()
 
     def open_scene(self, scene_name, scene_data):
         self.clear_scene()
-        self.current_scene_name = scene_name
+        self.set_current_scene_name(scene_name)
 
         self.mainCamera = self.createCamera(scene_data.get('camera'))
         self.createLight(scene_data.get('light'))
@@ -91,8 +95,8 @@ class SceneManager(Singleton):
         self.coreManager.sendObjectList()
 
     def save_scene(self):
-        if self.current_scene_name == "":
-            self.current_scene_name = self.resourceManager.sceneLoader.get_new_resource_name()
+        if self.__current_scene_name == "":
+            self.set_current_scene_name(self.resourceManager.sceneLoader.get_new_resource_name())
 
         scene_data = dict(
             camera=self.mainCamera.name,
@@ -103,7 +107,7 @@ class SceneManager(Singleton):
         for static_mesh in self.staticmeshes:
             scene_data['meshes'].append((static_mesh.mesh.name, static_mesh.transform.getPos().tolist()))
 
-        self.resourceManager.sceneLoader.create_resource_and_save(self.current_scene_name, scene_data)
+        self.resourceManager.sceneLoader.create_resource_and_save(self.__current_scene_name, scene_data)
 
     def generateObjectName(self, currName):
         index = 0

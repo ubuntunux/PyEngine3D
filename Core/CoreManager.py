@@ -103,8 +103,6 @@ class CoreManager(Singleton):
         if not pygame.font.get_init():
             self.error('Could not render font.')
 
-        pygame.display.set_caption(self.projectManager.project_name)
-
         # initalize managers
         self.resourceManager.initialize(self.projectManager.project_dir)
         self.rendertarget_manager.initialize()
@@ -114,8 +112,11 @@ class CoreManager(Singleton):
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
             self.renderer.resizeScene()
-
         return True
+
+    @staticmethod
+    def set_window_title(title):
+        pygame.display.set_caption(title)
 
     def get_next_open_project_filename(self):
         return self.projectManager.next_open_project_filename
