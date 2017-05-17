@@ -54,9 +54,9 @@ class BaseObject:
 
     def update(self):
         # TEST_CODE
-        self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
-        self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
-        self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
+        # self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
+        # self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
+        # self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update transform
         self.transform.updateTransform()
