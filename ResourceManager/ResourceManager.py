@@ -464,7 +464,7 @@ class MaterialInstanceLoader(ResourceLoader):
 # -----------------------#
 class MeshLoader(ResourceLoader):
     name = "MeshLoader"
-    resource_version = 1
+    resource_version = 0
     resource_dir_name = 'Meshes'
     resource_type_name = 'Mesh'
     fileExt = '.mesh'

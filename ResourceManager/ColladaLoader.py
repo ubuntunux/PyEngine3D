@@ -1,5 +1,6 @@
 # https://www.khronos.org/collada/
 
+import os
 import io
 import re
 import traceback
@@ -47,35 +48,62 @@ def convert_triangulate(polygon, vcount, stride=1):
         triangulated_list += indices_list[i]
 
 
+def parsing_source_data(xml_element):
+    sources = {}
+    for xml_source in xml_element.findall('source'):
+        source_id = get_xml_attrib(xml_source, 'id')
+        stride = get_xml_attrib(xml_source.find('technique_common/accessor'), 'stride')
+        stride = convert_int(stride, 0)
+        source_data = None
+        for tag, data_type in [('float_array', float), ('Name_array', str)]:
+            xml_array = xml_source.find(tag)
+            if xml_array is not None:
+                source_text = get_xml_text(xml_array)
+                if source_text:
+                    source_data = convert_list(source_text, data_type, stride)
+                break
+        sources[source_id] = source_data
+    return sources
+
+
+def parsing_sematic(xml_element):
+    # parse semantic
+    semantics = {}
+    for xml_semantic in xml_element.findall('input'):
+        set_number = get_xml_attrib(xml_semantic, 'set', '0')
+        semantic = get_xml_attrib(xml_semantic, 'semantic') + set_number  # ex) VERTEX0, TEXCOORD0
+        source = get_xml_attrib(xml_semantic, 'source')
+        if source.startswith("#"):
+            source = source[1:]
+        offset = convert_int(get_xml_attrib(xml_semantic, 'offset'), 0)
+        semantics[semantic] = dict(source=source, offset=offset, set=set_number)
+    return semantics
+
+
 class ColladaGeometry:
     def __init__(self, xml_geometry):
-        self.name = get_xml_attrib(xml_geometry, 'name')
         self.valid = False
+        self.name = get_xml_attrib(xml_geometry, 'name')
+        self.id = get_xml_attrib(xml_geometry, 'id')
         self.positions = []
         self.normals = []
         self.colors = []
         self.texcoords = []
         self.indices = []
-        self.parsing_geomtry(xml_geometry)
+        self.parsing(xml_geometry)
 
-    def parsing_geomtry(self, xml_geometry):
+    def parsing(self, xml_geometry):
         sources = {}  # {'source_id':source_data}
         position_source_id = ""
         semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
         vertex_index_list = []  # flatten vertex list as triangle
-        stride_of_index = 0
+        semantic_stride = 0
 
         # parse mesh
         xml_mesh = xml_geometry.find('mesh')
         if xml_mesh is not None:
             # parse sources
-            for xml_source in xml_mesh.findall('source'):
-                source_id = get_xml_attrib(xml_source, 'id')
-                stride = get_xml_attrib(xml_source.find('technique_common/accessor'), 'stride')
-                stride = convert_int(stride, 0)
-                source_text = get_xml_text(xml_source.find('float_array'))
-                source_data = convert_list(source_text, float, stride)
-                sources[source_id] = source_data
+            sources = parsing_source_data(xml_mesh)
 
             # get vertex position source id
             position_source_id = get_xml_attrib(xml_mesh.find('vertices/input'), 'source')
@@ -87,15 +115,9 @@ class ColladaGeometry:
                 xml_polygons = xml_mesh.find(tag)
                 if xml_polygons is not None:
                     # parse semantic
-                    for xml_semantic in xml_polygons.findall('input'):
-                        set_number = get_xml_attrib(xml_semantic, 'set', '0')
-                        semantic = get_xml_attrib(xml_semantic, 'semantic') + set_number  # example VERTEX0, TEXCOORD0
-                        source = get_xml_attrib(xml_semantic, 'source')
-                        if source.startswith("#"):
-                            source = source[1:]
-                        offset = convert_int(get_xml_attrib(xml_semantic, 'offset'), 0)
-                        stride_of_index = max(stride_of_index, offset + 1)
-                        semantics[semantic] = dict(source=source, offset=offset, set=set)
+                    semantics = parsing_sematic(xml_polygons)
+                    semantic_stride = len(semantics)
+
                     # parse polygon indices
                     if tag == 'triangles':
                         vertex_index_list = get_xml_text(xml_polygons.find('p'))
@@ -112,26 +134,25 @@ class ColladaGeometry:
                                 polygon_indices = convert_list(get_xml_text(xml_p), int)
                                 # flatten list
                                 polygon_index_list += polygon_indices
-                                vcount_list.append(int(len(polygon_indices) / stride_of_index))
+                                vcount_list.append(int(len(polygon_indices) / semantic_stride))
                         # triangulate
                         vertex_index_list = []
                         elapsed_vindex = 0
                         for vcount in vcount_list:
                             if vcount == 3:
                                 vertex_index_list += polygon_index_list[
-                                                     elapsed_vindex: elapsed_vindex + vcount * stride_of_index]
+                                                     elapsed_vindex: elapsed_vindex + vcount * semantic_stride]
                             else:
                                 polygon_indices = polygon_index_list[
-                                                  elapsed_vindex: elapsed_vindex + vcount * stride_of_index]
-                                vertex_index_list += convert_triangulate(polygon_indices, vcount, stride_of_index)
-                            elapsed_vindex += vcount * stride_of_index
+                                                  elapsed_vindex: elapsed_vindex + vcount * semantic_stride]
+                                vertex_index_list += convert_triangulate(polygon_indices, vcount, semantic_stride)
+                            elapsed_vindex += vcount * semantic_stride
                     # make geomtry data
-                    self.build_gemetry_data(sources, position_source_id, semantics, vertex_index_list,
-                                            stride_of_index)
+                    self.build(sources, position_source_id, semantics, vertex_index_list, semantic_stride)
                     self.valid = True
                     return  # done
 
-    def build_gemetry_data(self, sources, position_source_id, semantics, vertex_index_list, stride_of_index):
+    def build(self, sources, position_source_id, semantics, vertex_index_list, semantic_stride):
         self.positions = []
         self.normals = []
         self.colors = []
@@ -139,8 +160,98 @@ class ColladaGeometry:
         self.indices = []
         indexMap = OrderedDict()
 
-        for i in range(int(len(vertex_index_list) / stride_of_index)):
-            vertIndices = tuple(vertex_index_list[i * stride_of_index: i * stride_of_index + stride_of_index])
+        for i in range(int(len(vertex_index_list) / semantic_stride)):
+            vertIndices = tuple(vertex_index_list[i * semantic_stride: i * semantic_stride + semantic_stride])
+            if vertIndices in indexMap:
+                self.indices.append(list(indexMap.keys()).index(vertIndices))
+            else:
+                self.indices.append(len(indexMap))
+                indexMap[vertIndices] = ()
+
+                if 'VERTEX0' in semantics:
+                    source_id = position_source_id
+                    offset = semantics['VERTEX0']['offset']
+                    self.positions.append(sources[source_id][vertIndices[offset]])
+
+                if 'NORMAL0' in semantics:
+                    source_id = semantics['NORMAL0']['source']
+                    offset = semantics['NORMAL0']['offset']
+                    self.normals.append(sources[source_id][vertIndices[offset]])
+
+                if 'COLOR0' in semantics:
+                    source_id = semantics['COLOR0']['source']
+                    offset = semantics['COLOR0']['offset']
+                    self.colors.append(sources[source_id][vertIndices[offset]])
+
+                if 'TEXCOORD0' in semantics:
+                    source_id = semantics['TEXCOORD0']['source']
+                    offset = semantics['TEXCOORD0']['offset']
+                    self.texcoords.append(sources[source_id][vertIndices[offset]])
+
+
+class ColladaContoller:
+    def __init__(self, xml_controller):
+        self.valid = False
+        self.name = get_xml_attrib(xml_controller, 'name')
+        self.id = get_xml_attrib(xml_controller, 'id')
+        self.bind_shape_matrix = None
+        self.parsing(xml_controller)
+
+    def parsing(self, xml_controller):
+        sources = {}  # {'source_id':source_data}
+        bind_shape_matrix = []
+        position_source_id = ""
+        semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
+        vertex_index_list = []  # flatten vertex list as triangle
+        semantic_stride = 0
+
+        # parse mesh
+        xml_skin = xml_controller.find('skin')
+        if xml_skin is not None:
+            # parsing bind_shape_matrix
+            xml_bind_shape_matrix = xml_skin.find('bind_shape_matrix')
+            if xml_bind_shape_matrix is not None:
+                bind_shape_matrix = get_xml_text(xml_bind_shape_matrix, None)
+                if bind_shape_matrix:
+                    bind_shape_matrix = convert_list(bind_shape_matrix)
+                else:
+                    bind_shape_matrix = [0, ] * 16  # matrix4x4
+
+            # parse sources
+            sources = parsing_source_data(xml_skin)
+
+            # parse vertex_weights
+            xml_vertex_weights = xml_skin.find('vertex_weights')
+            if xml_vertex_weights is not None:
+                # parse semantic
+                semantics = parsing_sematic(xml_vertex_weights)
+                semantic_stride = len(semantics)
+
+                # parse vertex_weights
+                vcount_text = get_xml_text(xml_vertex_weights.find('vcount'))
+                v_text = get_xml_text(xml_vertex_weights.find('v'))
+                vcount_list = []
+                skin_index_list = []
+                if vcount_text:
+                    vcount_list = convert_list(vcount_text, int)
+                if v_text:
+                    skin_index_list = convert_list(v_text, int)
+
+                # make geomtry data
+                self.build(sources, semantics, vcount_list, skin_index_list, semantic_stride)
+                self.valid = True
+                return  # done
+
+    def build(self, sources, semantics, vcount_list, skin_index_list, semantic_stride):
+        self.positions = []
+        self.normals = []
+        self.colors = []
+        self.texcoords = []
+        self.indices = []
+        indexMap = OrderedDict()
+
+        for i in range(int(len(skin_index_list) / semantic_stride)):
+            vertIndices = tuple(skin_index_list[i * semantic_stride: i * semantic_stride + semantic_stride])
             if vertIndices in indexMap:
                 self.indices.append(list(indexMap.keys()).index(vertIndices))
             else:
@@ -187,14 +298,16 @@ class Collada:
         self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
         self.geometries = []
+        self.controllers = []
         self.animations = []
 
-        self.parse_geometries(xml_root)
-
-    def parse_geometries(self, xml_root):
         for xml_geometry in xml_root.findall('library_geometries/geometry'):
             geometry = ColladaGeometry(xml_geometry)
             self.geometries.append(geometry)
+
+        for xml_controller in xml_root.findall('library_controllers/controller'):
+            controller = ColladaContoller(xml_controller)
+            self.controllers.append(controller)
 
     def get_geometry_data(self):
         geometry_datas = []
@@ -206,3 +319,8 @@ class Collada:
                 texcoords=copy.copy(geometry.texcoords),
                 indices=copy.copy(geometry.indices)
             ))
+
+# from Core import logger
+# xml_root = load_xml(os.path.join('..', 'Resource', 'Meshes', 'anim.dae'))
+# xml_controllers = xml_root.findall('library_controllers/controller')
+# ColladaContoller(xml_controllers[0])
