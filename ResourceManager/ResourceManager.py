@@ -464,11 +464,13 @@ class MaterialInstanceLoader(ResourceLoader):
 # -----------------------#
 class MeshLoader(ResourceLoader):
     name = "MeshLoader"
+    resource_version = 1
     resource_dir_name = 'Meshes'
     resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
     USE_EXTERNAL_RESOURCE = True
+    USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
         # load and regist resource

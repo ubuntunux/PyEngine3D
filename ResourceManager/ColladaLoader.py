@@ -3,6 +3,7 @@
 import io
 import re
 import traceback
+import copy
 from collections import OrderedDict
 
 from Core import logger
@@ -49,17 +50,25 @@ def convert_triangulate(polygon, vcount, stride=1):
 class ColladaGeometry:
     def __init__(self, xml_geometry):
         self.name = get_xml_attrib(xml_geometry, 'name')
-        self.sources = {}  # {'source_id':source_data}
-        self.position_source_id = ""
-        self.semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
-        self.vertex_index_list = []  # flatten vertex list as triangle
-        self.stride_of_index = 0
+        self.valid = False
+        self.positions = []
+        self.normals = []
+        self.colors = []
+        self.texcoords = []
+        self.indices = []
+        self.parsing_geomtry(xml_geometry)
+
+    def parsing_geomtry(self, xml_geometry):
+        sources = {}  # {'source_id':source_data}
+        position_source_id = ""
+        semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
+        vertex_index_list = []  # flatten vertex list as triangle
+        stride_of_index = 0
 
         # parse mesh
         xml_mesh = xml_geometry.find('mesh')
         if xml_mesh is not None:
             # parse sources
-            sources = {}  # {'source_id':source_data}
             for xml_source in xml_mesh.findall('source'):
                 source_id = get_xml_attrib(xml_source, 'id')
                 stride = get_xml_attrib(xml_source.find('technique_common/accessor'), 'stride')
@@ -68,19 +77,16 @@ class ColladaGeometry:
                 source_data = convert_list(source_text, float, stride)
                 sources[source_id] = source_data
 
-                # get vertex position source id
+            # get vertex position source id
             position_source_id = get_xml_attrib(xml_mesh.find('vertices/input'), 'source')
             if position_source_id.startswith("#"):
                 position_source_id = position_source_id[1:]
 
             # parse polygons
-            vertex_index_list = []
             for tag in ('polygons', 'polylist', 'triangles'):
                 xml_polygons = xml_mesh.find(tag)
                 if xml_polygons is not None:
-                    stride_of_index = 0
                     # parse semantic
-                    semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
                     for xml_semantic in xml_polygons.findall('input'):
                         set_number = get_xml_attrib(xml_semantic, 'set', '0')
                         semantic = get_xml_attrib(xml_semantic, 'semantic') + set_number  # example VERTEX0, TEXCOORD0
@@ -113,18 +119,53 @@ class ColladaGeometry:
                         for vcount in vcount_list:
                             if vcount == 3:
                                 vertex_index_list += polygon_index_list[
-                                                     elapsed_vindex:elapsed_vindex + vcount * stride_of_index]
+                                                     elapsed_vindex: elapsed_vindex + vcount * stride_of_index]
                             else:
                                 polygon_indices = polygon_index_list[
-                                                  elapsed_vindex:elapsed_vindex + vcount * stride_of_index]
+                                                  elapsed_vindex: elapsed_vindex + vcount * stride_of_index]
                                 vertex_index_list += convert_triangulate(polygon_indices, vcount, stride_of_index)
                             elapsed_vindex += vcount * stride_of_index
-                    self.sources = sources
-                    self.position_source_id = position_source_id
-                    self.semantics = semantics
-                    self.vertex_index_list = vertex_index_list
-                    self.stride_of_index = stride_of_index
-                    break
+                    # make geomtry data
+                    self.build_gemetry_data(sources, position_source_id, semantics, vertex_index_list,
+                                            stride_of_index)
+                    self.valid = True
+                    return  # done
+
+    def build_gemetry_data(self, sources, position_source_id, semantics, vertex_index_list, stride_of_index):
+        self.positions = []
+        self.normals = []
+        self.colors = []
+        self.texcoords = []
+        self.indices = []
+        indexMap = OrderedDict()
+
+        for i in range(int(len(vertex_index_list) / stride_of_index)):
+            vertIndices = tuple(vertex_index_list[i * stride_of_index: i * stride_of_index + stride_of_index])
+            if vertIndices in indexMap:
+                self.indices.append(list(indexMap.keys()).index(vertIndices))
+            else:
+                self.indices.append(len(indexMap))
+                indexMap[vertIndices] = ()
+
+                if 'VERTEX0' in semantics:
+                    source_id = position_source_id
+                    offset = semantics['VERTEX0']['offset']
+                    self.positions.append(sources[source_id][vertIndices[offset]])
+
+                if 'NORMAL0' in semantics:
+                    source_id = semantics['NORMAL0']['source']
+                    offset = semantics['NORMAL0']['offset']
+                    self.normals.append(sources[source_id][vertIndices[offset]])
+
+                if 'COLOR0' in semantics:
+                    source_id = semantics['COLOR0']['source']
+                    offset = semantics['COLOR0']['offset']
+                    self.colors.append(sources[source_id][vertIndices[offset]])
+
+                if 'TEXCOORD0' in semantics:
+                    source_id = semantics['TEXCOORD0']['source']
+                    offset = semantics['TEXCOORD0']['offset']
+                    self.texcoords.append(sources[source_id][vertIndices[offset]])
 
 
 class Collada:
@@ -146,6 +187,8 @@ class Collada:
         self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
         self.geometries = []
+        self.animations = []
+
         self.parse_geometries(xml_root)
 
     def parse_geometries(self, xml_root):
@@ -153,53 +196,13 @@ class Collada:
             geometry = ColladaGeometry(xml_geometry)
             self.geometries.append(geometry)
 
-    def get_geometry_data(self, multiplier=1.0):
+    def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
-            positions = []
-            normals = []
-            colors = []
-            texcoords = []
-            indices = []
-            indexMap = OrderedDict()
-            stride_of_index = geometry.stride_of_index
-
-            for i in range(int(len(geometry.vertex_index_list) / stride_of_index)):
-                vertIndices = tuple(geometry.vertex_index_list[i*stride_of_index: i*stride_of_index + stride_of_index])
-                if vertIndices in indexMap:
-                    indices.append(list(indexMap.keys()).index(vertIndices))
-                else:
-                    indices.append(len(indexMap))
-                    indexMap[vertIndices] = None
-
-                    if 'VERTEX0' in geometry.semantics:
-                        source_id = geometry.position_source_id
-                        offset = geometry.semantics['VERTEX0']['offset']
-                        positions.append(geometry.sources[source_id][vertIndices[offset]])
-
-                    if 'NORMAL0' in geometry.semantics:
-                        source_id = geometry.semantics['NORMAL0']['source']
-                        offset = geometry.semantics['NORMAL0']['offset']
-                        normals.append(geometry.sources[source_id][vertIndices[offset]])
-
-                    if 'COLOR0' in geometry.semantics:
-                        source_id = geometry.semantics['COLOR0']['source']
-                        offset = geometry.semantics['COLOR0']['offset']
-                        colors.append(geometry.sources[source_id][vertIndices[offset]])
-
-                    if 'TEXCOORD0' in geometry.semantics:
-                        source_id = geometry.semantics['TEXCOORD0']['source']
-                        offset = geometry.semantics['TEXCOORD0']['offset']
-                        texcoords.append(geometry.sources[source_id][vertIndices[offset]])
-
-            if multiplier != 1.0:
-                for i, position in enumerate(positions):
-                    positions[i] = [x * multiplier for x in position]
-
-            geometry_data = dict(geometry_name=geometry.name,
-                                 positions=positions,
-                                 normals=normals,
-                                 texcoords=texcoords,
-                                 indices=indices)
-            geometry_datas.append(geometry_data)
-        return geometry_datas
+            geometry_datas.append(dict(
+                positions=copy.copy(geometry.positions),
+                normals=copy.copy(geometry.normals),
+                colors=copy.copy(geometry.colors),
+                texcoords=copy.copy(geometry.texcoords),
+                indices=copy.copy(geometry.indices)
+            ))
