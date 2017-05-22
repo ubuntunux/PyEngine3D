@@ -3,7 +3,7 @@ import traceback
 
 import numpy as np
 
-from Core import logger
+from Common import logger
 from OpenGLContext import VertexArrayBuffer
 from Utilities import Attributes, GetClassName, normalize, compute_tangent
 

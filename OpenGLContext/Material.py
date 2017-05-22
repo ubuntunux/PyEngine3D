@@ -7,9 +7,9 @@ from OpenGL.arrays import GLbyteArray
 
 import numpy as np
 
-from Core import logger
 from Utilities import GetClassName, Attributes, Logger
 from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
+from Common import logger
 
 
 class Material:

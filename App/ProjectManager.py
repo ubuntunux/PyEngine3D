@@ -2,8 +2,7 @@ import os
 import traceback
 import configparser
 
-from . import logger, log_level, CoreManager, SceneManager
-from ResourceManager import ResourceManager, DefaultProjectFile
+from Common import logger, log_level
 from Utilities import Singleton, GetClassName, Config
 
 
@@ -18,10 +17,14 @@ class ProjectManager(Singleton):
         self.config = None
         self.next_open_project_filename = ""
 
-    def initialize(self, project_filename=""):
+    def initialize(self, core_manager, project_filename=""):
+        self.coreManager = core_manager
+        self.sceneManager = core_manager.sceneManager
+        self.resourceManager = core_manager.resourceManager
+
         # default project
         if project_filename == "":
-            project_filename = DefaultProjectFile
+            project_filename = self.resourceManager.DefaultProjectFile
         else:
             project_filename = os.path.relpath(project_filename, ".")
 
@@ -44,10 +47,6 @@ class ProjectManager(Singleton):
         except:
             logger.info("Cannot open %s : %s" % (GetClassName(self), project_filename))
             return False
-
-        self.coreManager = CoreManager.CoreManager.instance()
-        self.sceneManager = SceneManager.SceneManager.instance()
-        self.resourceManager = ResourceManager.ResourceManager.instance()
         return True
 
     def new_project(self, new_project_dir):
@@ -56,7 +55,8 @@ class ProjectManager(Singleton):
                 project_name = os.path.split(new_project_dir)[-1]
                 self.resourceManager.prepare_project_directory(new_project_dir)
 
-                default_project_filename = os.path.join(new_project_dir, os.path.split(DefaultProjectFile)[1])
+                default_project_filename = os.path.join(new_project_dir,
+                                                        os.path.split(self.resourceManager.DefaultProjectFile)[1])
                 project_filename = os.path.join(new_project_dir, project_name + ".project")
                 if os.path.exists(default_project_filename) and not os.path.exists(project_filename):
                     os.rename(default_project_filename, project_filename)
@@ -82,7 +82,7 @@ class ProjectManager(Singleton):
 
     def save_project(self):
         try:
-            if self.config and self.project_filename != DefaultProjectFile:
+            if self.config and self.project_filename != self.resourceManager.DefaultProjectFile:
                 main_camera = self.coreManager.sceneManager.getMainCamera()
                 if main_camera:
                     main_camera.write_to_config(self.config)

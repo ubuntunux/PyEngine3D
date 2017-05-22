@@ -5,7 +5,7 @@ from multiprocessing import Queue, Pipe
 
 # logger
 from Utilities import AutoEnum, MINOR_INFO
-from Core import logger
+from Common import logger
 
 # UTIL : call stack function for log
 reTraceStack = re.compile("File \"(.+?)\", line (\d+?), .+")  # [0] filename, [1] line number

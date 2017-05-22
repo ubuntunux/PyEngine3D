@@ -3,8 +3,8 @@ import traceback
 import numpy as np
 from OpenGL.GL import *
 
-from Core import logger
-import ResourceManager
+from Common import logger
+from App import CoreManager
 
 
 def CreateUniformBuffer(program, uniform_type, uniform_name):
@@ -42,7 +42,7 @@ def CreateUniformData(data_type, strValue=""):
             """TODO"""
             pass
         elif data_type == 'Texture2D':
-            texture = ResourceManager.ResourceManager.instance().getTexture(strValue or 'empty')
+            texture = CoreManager.instance().resourceManager.getTexture(strValue or 'empty')
             return texture
     except ValueError:
         logger.error(traceback.format_exc())

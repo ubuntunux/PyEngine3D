@@ -1,4 +1,5 @@
-from Core import logger, ProjectManager
+from Common import logger
+from App.CoreManager import CoreManager
 from Object import BaseObject
 
 
@@ -17,7 +18,7 @@ class Camera(BaseObject):
         self.rotation_speed = None
 
     def initialize(self):
-        config = ProjectManager.ProjectManager.instance().config
+        config = CoreManager.instance().projectManager.config
         # get properties
         self.fov = config.Camera.fov
         self.near = config.Camera.near

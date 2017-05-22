@@ -4,19 +4,16 @@ import os
 import re
 import traceback
 
-from Core import logger
+from Common import logger
+from App import CoreManager
 from OpenGLContext import CreateUniformData
-from ResourceManager import ResourceManager
 from Utilities import Attributes
 
 
 class MaterialInstance:
-    resourceMgr = None
-
     def __init__(self, material_instance_name, filePath):
         self.valid = False
         logger.info("Create Material Instance : " + material_instance_name)
-        resourceMgr = ResourceManager.ResourceManager.instance()
         self.name = material_instance_name
         self.material = None
         self.uniform_datas = {}
@@ -50,7 +47,7 @@ class MaterialInstance:
                     else:
                         logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
         # link uniform_buffers and uniform_data
-        material = resourceMgr.getMaterial(shader_name, macros)
+        material = CoreManager.instance().resourceManager.getMaterial(shader_name, macros)
         self.link_uniform_buffers(material)
 
         if self.material is None:

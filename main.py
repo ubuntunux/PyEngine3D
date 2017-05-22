@@ -35,8 +35,8 @@ import os
 import time
 from multiprocessing import Process
 
-from Core.Command import CustomQueue, CustomPipe
-from Core.CoreManager import CoreManager
+from Common.Command import CustomQueue, CustomPipe
+from App.CoreManager import CoreManager
 from Utilities import AutoEnum
 
 
@@ -69,8 +69,8 @@ def run(editor, project_filename=""):
             editor_process.start()
 
     # Client process
-    coreManager = CoreManager.instance(appCmdQueue, uiCmdQueue, pipe1)
-    result = coreManager.initialize(project_filename)
+    coreManager = CoreManager.instance()
+    result = coreManager.initialize(appCmdQueue, uiCmdQueue, pipe1, project_filename)
     if result:
         coreManager.run()
         next_next_open_project_filename = coreManager.get_next_open_project_filename()

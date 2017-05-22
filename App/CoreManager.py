@@ -9,13 +9,8 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-from ResourceManager import ResourceManager
-from Core.Renderer import Renderer
-from Core.SceneManager import SceneManager
-from Core.ProjectManager import ProjectManager
-from OpenGLContext import RenderTargetManager
+from Common import logger, log_level, COMMAND
 from Utilities import Singleton, GetClassName, Config
-from . import logger, log_level, COMMAND
 
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
@@ -31,14 +26,14 @@ class CoreManager(Singleton):
     CoreManager usage for debug what are woring manager..
     """
 
-    def __init__(self, cmdQueue, uiCmdQueue, cmdPipe):
+    def __init__(self):
         self.running = False
         self.valid = True
 
         # command
-        self.cmdQueue = cmdQueue
-        self.uiCmdQueue = uiCmdQueue
-        self.cmdPipe = cmdPipe
+        self.cmdQueue = None
+        self.uiCmdQueue = None
+        self.cmdPipe = None
 
         # timer
         self.fps = 0.0
@@ -65,28 +60,41 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.sceneManager = None
         self.projectManager = None
-        self.config = Config("config.ini", log_level)
+        self.config = None
 
         self.commands = []
-        self.registCommand()
 
-    def initialize(self, project_filename=""):
+    def initialize(self, cmdQueue, uiCmdQueue, cmdPipe, project_filename=""):
         # process start
         logger.info('Platform : %s' % platformModule.platform())
         logger.info("Process Start : %s" % GetClassName(self))
+
+        self.cmdQueue = cmdQueue
+        self.uiCmdQueue = uiCmdQueue
+        self.cmdPipe = cmdPipe
+
+        self.config = Config("config.ini", log_level)
+
+        self.registCommand()
 
         # ready to launch - send message to ui
         if self.cmdPipe:
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
+        from ResourceManager import ResourceManager
+        from OpenGLContext import RenderTargetManager
+        from .SceneManager import SceneManager
+        from .ProjectManager import ProjectManager
+        from .Renderer import Renderer
+
         self.resourceManager = ResourceManager.instance()
-        self.renderer = Renderer.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
+        self.renderer = Renderer.instance()
         self.sceneManager = SceneManager.instance()
         self.projectManager = ProjectManager.instance()
 
         # check innvalid project
-        if not self.projectManager.initialize(project_filename):
+        if not self.projectManager.initialize(self, project_filename):
             self.valid = False
             self.exit()
             return False
@@ -104,10 +112,10 @@ class CoreManager(Singleton):
             self.error('Could not render font.')
 
         # initalize managers
-        self.resourceManager.initialize(self.projectManager.project_dir)
+        self.resourceManager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize()
-        self.renderer.initialize(width, height, screen)
-        self.sceneManager.initialize()
+        self.renderer.initialize(self, width, height, screen)
+        self.sceneManager.initialize(self)
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':

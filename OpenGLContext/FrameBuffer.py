@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 
-from Core import logger
 from Utilities import GetClassName
+from Common import logger
 
 
 class FrameBuffer:

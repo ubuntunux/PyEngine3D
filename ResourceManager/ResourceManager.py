@@ -13,18 +13,16 @@ from distutils.dir_util import copy_tree
 
 from PIL import Image
 
-from Core import logger, log_level, CoreManager, SceneManager
+from Common import logger, log_level
+from App import CoreManager
 from Object import Triangle, Quad, Mesh, MaterialInstance
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
-from . import *
+from . import Collada, OBJ
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
-
-# notify
-global core_manager
 
 
 # -----------------------#
@@ -79,7 +77,9 @@ class ResourceLoader(object):
     USE_EXTERNAL_RESOURCE = False
     USE_FILE_COMPRESS_TO_SAVE = True
 
-    def __init__(self, root_path):
+    def __init__(self, core_manager, root_path):
+        self.core_manager = core_manager
+        self.scene_manager = core_manager.sceneManager
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
         check_directory_and_mkdir(self.resource_path)
 
@@ -197,7 +197,7 @@ class ResourceLoader(object):
             self.metaDatas[resource.name] = meta_data
         if notify_new_resource:
             resource_info = (resource.name, self.resource_type_name)
-            core_manager.sendResourceInfo(resource_info)
+            self.core_manager.sendResourceInfo(resource_info)
 
     def release_resource(self, resource):
         if resource:
@@ -452,7 +452,7 @@ class MaterialInstanceLoader(ResourceLoader):
 
     def load_resource(self, filePath):
         material_instance_name = self.getResourceName(filePath, self.resource_path)
-        material_instance = MaterialInstance(material_instance_name=material_instance_name, filePath=filePath)
+        material_instance = MaterialInstance(material_instance_name, filePath)
         meta_data = MetaData(self.resource_version, filePath)
         if material_instance and material_instance.valid:
             return material_instance, meta_data
@@ -510,7 +510,7 @@ class MeshLoader(ResourceLoader):
     def add_resource_to_scene(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
-            return SceneManager.SceneManager.instance().createMeshHere(resource)
+            return self.scene_manager.createMeshHere(resource)
         return None
 
 
@@ -574,7 +574,7 @@ class SceneLoader(ResourceLoader):
         meta_data = self.getMetaData(resource_name)
         if os.path.exists(meta_data.resource_filepath):
             scene_datas, meta_data = self.load_simple_format(meta_data.resource_filepath)
-            SceneManager.SceneManager.instance().open_scene(resource_name, scene_datas)
+            self.scene_manager.open_scene(resource_name, scene_datas)
 
 
 # -----------------------#
@@ -591,10 +591,15 @@ class ScriptLoader(ResourceLoader):
 # -----------------------#
 class ResourceManager(Singleton):
     name = "ResourceManager"
+    PathResources = 'Resource'
+    DefaultFontFile = os.path.join(PathResources, 'Fonts', 'UbuntuFont.ttf')
+    DefaultProjectFile = os.path.join(PathResources, "default.project")
 
     def __init__(self):
         self.root_path = ""
         self.resource_loaders = []
+        self.core_manager= None
+        self.scene_manager = None
         self.textureLoader = None
         self.shaderLoader = None
         self.materialLoader = None
@@ -604,13 +609,13 @@ class ResourceManager(Singleton):
         self.scriptLoader = None
 
     def regist_loader(self, resource_loader_class):
-        resource_loader = resource_loader_class(self.root_path)
+        resource_loader = resource_loader_class(self.core_manager, self.root_path)
         self.resource_loaders.append(resource_loader)
         return resource_loader
 
-    def initialize(self, root_path=""):
-        global core_manager
-        core_manager = CoreManager.CoreManager.instance()
+    def initialize(self, core_manager, root_path=""):
+        self.core_manager = core_manager
+        self.scene_manager = core_manager.sceneManager
 
         self.root_path = root_path or PathResources
         check_directory_and_mkdir(self.root_path)
@@ -633,7 +638,7 @@ class ResourceManager(Singleton):
 
     def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)
-        copy_tree(PathResources, new_project_dir)
+        copy_tree(self.PathResources, new_project_dir)
 
     def get_default_font_file(self):
         return os.path.join(self.root_path, 'Fonts', 'UbuntuFont.ttf')

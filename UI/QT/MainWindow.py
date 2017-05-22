@@ -10,7 +10,7 @@ import numpy
 
 from Utilities import Singleton, Attribute, Attributes
 from UI import logger
-from Core.Command import *
+from Common.Command import *
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
 
@@ -235,7 +235,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # send data
                 currentItem = self.objectList.currentItem()
                 if currentItem:
-                    currentObjectName = self.objectList.currentItem().text()
+                    currentObjectName = self.objectList.currentItem().text(0)
                     self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
             except:
                 logger.error(traceback.format_exc())

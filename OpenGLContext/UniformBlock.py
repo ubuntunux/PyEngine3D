@@ -3,7 +3,7 @@ from ctypes import c_void_p
 import numpy as np
 from OpenGL.GL import *
 
-from Core import logger
+from Common import logger
 
 
 class UniformBlock:

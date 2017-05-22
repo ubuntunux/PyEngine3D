@@ -1,7 +1,8 @@
 import numpy as np
 
 from Utilities import *
-from Core import logger
+from Common import logger
+from App import CoreManager
 from Object import StaticMesh
 
 

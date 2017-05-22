@@ -7,7 +7,7 @@ import traceback
 import copy
 from collections import OrderedDict
 
-from Core import logger
+from Common import logger
 from Utilities import load_xml, get_xml_attrib, get_xml_tag, get_xml_text
 
 
@@ -320,7 +320,7 @@ class Collada:
                 indices=copy.copy(geometry.indices)
             ))
 
-# from Core import logger
+
 # xml_root = load_xml(os.path.join('..', 'Resource', 'Meshes', 'anim.dae'))
 # xml_controllers = xml_root.findall('library_controllers/controller')
 # ColladaContoller(xml_controllers[0])

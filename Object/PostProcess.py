@@ -1,16 +1,15 @@
 from OpenGL.GL import *
 
-from Core import logger, Renderer
+from Common import logger
+from App import CoreManager
 from OpenGLContext import RenderTargets, RenderTargetManager
-from ResourceManager import ResourceManager
 
-global renderer
 
 class PostProcess:
     def __init__(self, name, material_instance):
         logger.info("Create PostProcess : %s" % name)
         self.name = name
-        self.mesh = ResourceManager.ResourceManager.instance().getMesh("Quad")
+        self.mesh = CoreManager.instance().resourceManager.getMesh("Quad")
         self.geometry = self.mesh.get_geometry_instances(self)[0]
         self.geometry.set_material_instance(material_instance)
         self.material_instance = material_instance
@@ -24,11 +23,11 @@ class PostProcess:
 
 class CopyRenderTarget(PostProcess):
     def __init__(self, name):
-        material_instance = ResourceManager.ResourceManager.instance().getMaterialInstance("copy_rendertarget")
+        material_instance = CoreManager.instance().resourceManager.getMaterialInstance("copy_rendertarget")
         PostProcess.__init__(self, name, material_instance)
 
     def render(self, src_texture, dst_texture):
-        Renderer.Renderer.instance().framebuffer.bind_rendertarget(dst_texture, False, None, False)
+        CoreManager.instance().renderer.framebuffer.bind_rendertarget(dst_texture, False, None, False)
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(src_texture)
         self.material_instance.set_uniform_data("texture_diffuse", texture_diffuse)
         PostProcess.render(self)
@@ -36,7 +35,7 @@ class CopyRenderTarget(PostProcess):
 
 class Tonemapping(PostProcess):
     def __init__(self, name):
-        material_instance = ResourceManager.ResourceManager.instance().getMaterialInstance("tonemapping")
+        material_instance = CoreManager.instance().resourceManager.getMaterialInstance("tonemapping")
         PostProcess.__init__(self, name, material_instance)
 
     def render(self):
@@ -44,5 +43,5 @@ class Tonemapping(PostProcess):
         self.material_instance.set_uniform_data("texture_diffuse", backbuffer)
 
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        Renderer.Renderer.instance().framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
+        CoreManager.instance().renderer.framebuffer.bind_rendertarget(texture_diffuse, True, None, False)
         PostProcess.render(self)

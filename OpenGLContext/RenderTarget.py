@@ -2,8 +2,8 @@ from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from Core import logger
 from Utilities import Singleton, GetClassName, Attributes,AutoEnum
+from Common import logger
 from .Texture import Texture2D
 
 

@@ -2,7 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from Core import logger
+from Common import logger
 
 
 # Use Texture2D intead of RenderBuffer.

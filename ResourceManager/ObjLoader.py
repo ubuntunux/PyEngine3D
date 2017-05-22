@@ -2,7 +2,8 @@ import os, traceback
 from collections import OrderedDict
 
 import numpy as np
-from Core import logger
+
+from Common import logger
 
 defaultTexCoord = [0.0, 0.0]
 defaultNormal = [0.1, 0.1, 0.1]

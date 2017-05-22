@@ -8,8 +8,8 @@ import codecs
 import traceback
 import uuid
 
-from Core import logger
 from Utilities import GetClassName, Attributes, Logger
+from Common import logger
 
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]
 reVersion = re.compile("(\#version\s+.+)")  # [version code, ]

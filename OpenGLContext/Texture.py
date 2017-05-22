@@ -2,8 +2,8 @@ from ctypes import c_void_p
 
 from OpenGL.GL import *
 
-from Core import logger
 from Utilities import Singleton, GetClassName, Attributes
+from Common import logger
 
 
 def get_texture_format(str_image_mode):

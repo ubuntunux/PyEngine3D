@@ -8,7 +8,7 @@ from OpenGL.GLU import *
 from OpenGL.GL.shaders import *
 from OpenGL.raw.GL.EXT.texture_compression_s3tc import *
 
-from Core import logger
+from Common import logger
 
 
 def loadDDS(imagepath):

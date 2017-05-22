@@ -8,9 +8,8 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from Common import logger, log_level, COMMAND
 from Utilities import Singleton, perspective, ortho, FLOAT_ZERO
-from ResourceManager import ResourceManager, DefaultFontFile
-from Core import CoreManager, SceneManager, COMMAND, logger
 from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont
 
 
@@ -25,7 +24,7 @@ class Console:
 
     def initialize(self, renderer):
         self.renderer = renderer
-        self.font = GLFont(DefaultFontFile, 12, margin=(10, 0))
+        self.font = GLFont(self.renderer.coreManager.resourceManager.DefaultFontFile, 12, margin=(10, 0))
 
     def close(self):
         pass
@@ -91,15 +90,15 @@ class Renderer(Singleton):
         # destroy
         pygame.display.quit()
 
-    def initialize(self, width, height, screen):
+    def initialize(self, core_manager, width, height, screen):
         logger.info("Initialize Renderer")
         self.width = width
         self.height = height
         self.screen = screen
 
-        self.coreManager = CoreManager.CoreManager.instance()
-        self.resourceManager = ResourceManager.ResourceManager.instance()
-        self.sceneManager = SceneManager.SceneManager.instance()
+        self.coreManager = core_manager
+        self.resourceManager = core_manager.resourceManager
+        self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = RenderTargetManager.instance()
         self.framebuffer = FrameBuffer(self.width, self.height)
 

@@ -8,7 +8,6 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GL.shaders import *
 
-import ResourceManager
 
 FONT_VERTEX_SHADER = '''
 #version 330 core
@@ -70,10 +69,6 @@ class GLFont:
     VBO = 0
 
     def __init__(self, fontFile, size, margin=(5, 0)):
-        if not os.path.exists(fontFile):
-            print("Not found fontfile. Alternative use default font.")
-            fontFile = ResourceManager.DefaultFontFile
-
         font = pygame.font.Font(fontFile, size)
 
         self.size = size
