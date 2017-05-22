@@ -235,7 +235,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # send data
                 currentItem = self.objectList.currentItem()
                 if currentItem:
-                    currentObjectName = self.objectList.currentItem().text()
+                    currentObjectName = self.objectList.currentItem().text(0)
                     self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
             except:
                 logger.error(traceback.format_exc())
