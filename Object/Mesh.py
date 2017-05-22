@@ -23,12 +23,29 @@ class Geometry:
             logger.error("Create %s %s error. Mesh has no index data." % (my_class_name, self.name))
             return
 
+        vertex_count = 0
         if 'positions' in geometry_data:
             positions = np.array(geometry_data['positions'], dtype=np.float32)
             vertex_count = len(positions)
         else:
             logger.error("Create %s %s error. Mesh has no position data." % (my_class_name, self.name))
             return
+
+        if 'bone_indicies' in geometry_data:
+            bone_indicies = np.array([0.0, 0.0, 0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
+            for i in range(min(vertex_count, len(geometry_data['bone_indicies']))):
+                for j in range(min(4, len(geometry_data['bone_indicies'][i]))):
+                    bone_indicies[i][j] = geometry_data['bone_indicies'][i][j]
+        else:
+            bone_indicies = []
+
+        if 'bone_weights' in geometry_data:
+            bone_weights = np.array([0.0, 0.0, 0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
+            for i in range(min(vertex_count, len(geometry_data['bone_weights']))):
+                for j in range(min(4, len(geometry_data['bone_weights'][i]))):
+                    bone_weights[i][j] = geometry_data['bone_weights'][i][j]
+        else:
+            bone_weights = []
 
         if 'colors' in geometry_data and geometry_data['colors']:
             colors = np.array(geometry_data['colors'], dtype=np.float32)
@@ -52,8 +69,15 @@ class Geometry:
             tangents = compute_tangent(positions, texcoords, normals, indices)
             geometry_data['tangents'] = tangents.tolist()
 
-        self.vertexBuffer = VertexArrayBuffer([positions, colors, normals, tangents, texcoords], indices,
-                                              dtype=np.float32)
+        # Test Code
+        logger.warn("Test Code")
+        has_bone = len(bone_indicies) > 0
+        if has_bone:
+            self.vertexBuffer = VertexArrayBuffer(
+                [positions, colors, normals, tangents, texcoords, bone_indicies, bone_weights], indices, dtype=np.float32)
+        else:
+            self.vertexBuffer = VertexArrayBuffer([positions, colors, normals, tangents, texcoords], indices,
+                                                  dtype=np.float32)
         self.valid = True
 
     def bindBuffers(self):

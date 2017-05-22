@@ -1,3 +1,4 @@
+import copy
 import os, traceback
 from collections import OrderedDict
 
@@ -119,11 +120,11 @@ class OBJ:
 
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
         geometry_name = self.name or os.path.splitext(os.path.split(self.filename)[1])[0]
-        geometry_data = dict(geometry_name=geometry_name,
-                             positions=positions,
-                             normals=normals,
-                             texcoords=texcoords,
-                             indices=indices)
+        geometry_data = dict(geometry_name=copy.deepcopy(geometry_name),
+                             positions=copy.deepcopy(positions),
+                             normals=copy.deepcopy(normals),
+                             texcoords=copy.deepcopy(texcoords),
+                             indices=copy.deepcopy(indices))
         return [geometry_data, ]
 
     # Generate
