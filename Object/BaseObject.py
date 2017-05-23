@@ -11,32 +11,34 @@ from App import CoreManager
 class BaseObject:
     def __init__(self, objName, pos, mesh):
         self.name = objName
-        self.class_name = GetClassName(self)
         self.selected = False
         self.transform = TransformObject(pos)
-        self.mesh = mesh
-        self.geometry_instances = mesh.get_geometry_instances(self) if mesh else None
-        self.material_instance = None
+        self.mesh = None
+        self.geometry_instances = []
+        self.set_mesh(mesh)
         self.attributes = Attributes()
 
-    def set_material_instance(self, material_instance):
-        # Test Code : set geometry material instance
-        if material_instance:
-            self.material_instance = material_instance
-        for geometry_instance in self.geometry_instances:
-            geometry_instance.set_material_instance(material_instance)
+    def set_mesh(self, mesh):
+        if mesh:
+            self.mesh = mesh
+            self.geometry_instances = mesh.get_geometry_instances(self)
+
+    def set_material_instance(self, material_instance, index=0):
+        if index < self.mesh.geometry_count:
+            self.geometry_instances[index].set_material_instance(material_instance)
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('pos', self.transform.pos)
-        self.attributes.setAttribute('matrix', self.transform.matrix)
         self.attributes.setAttribute('rot', self.transform.rot)
         self.attributes.setAttribute('scale', self.transform.scale)
         self.attributes.setAttribute('mesh', self.mesh)
-        self.attributes.setAttribute('material_instance', self.material_instance)
+        material_instances = [geometry.material_instance.name if geometry.material_instance else '' for geometry in
+                              self.geometry_instances]
+        self.attributes.setAttribute('material_instances', material_instances)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue):
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'pos':
             self.transform.setPos(attributeValue)
         elif attributeName == 'rot':
@@ -44,10 +46,13 @@ class BaseObject:
         elif attributeName == 'scale':
             self.transform.setScale(attributeValue)
         elif attributeName == 'mesh':
-            self.mesh = CoreManager.instance().resourceManager.getMesh(attributeValue)
-        elif attributeName == 'material_instance':
-            material_instance = CoreManager.instance().resourceManager.getMaterialInstance(attributeValue)
-            self.set_material_instance(material_instance)
+            mesh = CoreManager.instance().resourceManager.getMesh(attributeValue)
+            if mesh and self.mesh != mesh:
+                self.set_mesh(mesh)
+        elif attributeName == 'material_instances':
+            material_instance = CoreManager.instance().resourceManager.getMaterialInstance(
+                attributeValue[attribute_index])
+            self.set_material_instance(material_instance, attribute_index)
 
     def setSelected(self, selected):
         self.selected = selected

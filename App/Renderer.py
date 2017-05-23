@@ -226,15 +226,16 @@ class Renderer(Singleton):
         geometry_instances = []
         for static_mesh in static_meshes:
             geometry_instances += static_mesh.geometry_instances
-        geometry_instances.sort(key=lambda x: id(x.geometry))
+        geometry_instances.sort(key=lambda x: id(x.parent_geometry))
 
         # draw static meshes
+        default_material_instance = self.resourceManager.getDefaultMaterialInstance()
         last_geometry = None
         last_material = None
         last_material_instance = None
         for geometry_instance in geometry_instances:
             obj = geometry_instance.parent_object
-            material_instance = geometry_instance.material_instance
+            material_instance = geometry_instance.get_material_instance() or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
@@ -246,7 +247,7 @@ class Renderer(Singleton):
             obj.bind_object(vpMatrix)
 
             # At last, bind buffers
-            if last_geometry != geometry_instance.geometry and geometry_instance is not None:
+            if last_geometry != geometry_instance.parent_geometry and geometry_instance is not None:
                 geometry_instance.bindBuffers()
 
             # draw
@@ -254,7 +255,7 @@ class Renderer(Singleton):
                 geometry_instance.draw()
 
             last_material = material
-            last_geometry = geometry_instance.geometry
+            last_geometry = geometry_instance.parent_geometry
             last_material_instance = material_instance
 
     def render_postprocess(self):

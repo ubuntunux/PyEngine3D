@@ -210,9 +210,9 @@ class SceneManager(Singleton):
         obj = self.getObject(objName)
         return obj.getAttribute() if obj else None
 
-    def setObjectAttribute(self, objectName, attributeName, attributeValue):
+    def setObjectAttribute(self, objectName, objectType, attributeName, attributeValue, attribute_index):
         obj = self.getObject(objectName)
-        obj and obj.setAttribute(attributeName, attributeValue)
+        obj and obj.setAttribute(attributeName, attributeValue, attribute_index)
 
     def getSelectedObject(self):
         return self.selectedObject

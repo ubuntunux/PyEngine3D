@@ -67,6 +67,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdQueue = cmdQueue
         self.appCmdQueue = appCmdQueue
         self.cmdPipe = cmdPipe
+        self.selected_item_name = ''
+        self.selected_item_type = ''
+        self.selected_item_categoty = ''
         self.isFillAttributeTree = False
 
         # MessageThread
@@ -117,7 +120,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_INFO)),
                      self.addResourceInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
-                     self.fillAttribute)
+                     self.fillResourceAttribute)
 
         self.btnAddResource = self.findChild(QtGui.QPushButton, "btnAddResource")
         self.btnAddResource.clicked.connect(self.addResourceToScene)
@@ -135,7 +138,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_INFO)),
                      self.addObjectInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)),
-                     self.fillAttribute)
+                     self.fillObjectAttribute)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_OBJECT_LIST)),
                      self.clearObjectList)
 
@@ -215,6 +218,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 if item.oldValue == item.text(1):
                     return
                 item.oldValue = item.text(1)
+                index = item.index
                 # check array type, then combine components
                 parent = item.parent()
                 if type(parent) == QtGui.QTreeWidgetItem and parent.dataType in (tuple, list, numpy.ndarray):
@@ -232,17 +236,19 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 else:
                     attributeName = item.text(0)
                     value = item.dataType(item.text(1))
-                # send data
-                currentItem = self.objectList.currentItem()
-                if currentItem:
-                    currentObjectName = self.objectList.currentItem().text(0)
-                    self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE, (currentObjectName, attributeName, value))
+
+                if self.selected_item_categoty == 'Resource':
+                    self.appCmdQueue.put(COMMAND.SET_RESOURCE_ATTRIBUTE,
+                                         (self.selected_item_name, self.selected_item_type, attributeName, value, index))
+                elif self.selected_item_categoty == 'Object':
+                    self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE,
+                                         (self.selected_item_name, self.selected_item_type, attributeName, value, index))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
-    def addAttribute(self, parent, attributeName, value):
+    def addAttribute(self, parent, attributeName, value, depth=0, index=0):
         item = QtGui.QTreeWidgetItem(parent)
         item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
         item.setExpanded(True)
@@ -250,6 +256,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(0, attributeName)
         item.dataType = type(value)
         item.remove = False  # this is flag for remove item when Layout Refresh
+        item.depth = depth
+        item.index = index
 
         # set value
         if item.dataType == bool:  # bool type
@@ -257,10 +265,22 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         elif item.dataType in (tuple, list, numpy.ndarray):  # set list type
             item.setText(1, "")  # set value to None
             for i, itemValue in enumerate(value):  # add child component
-                self.addAttribute(item, "[%d]" % i, itemValue)
+                self.addAttribute(item, "[%d]" % i, itemValue, depth + 1, i)
         else:  # set general type value - int, float, string
             item.setText(1, str(value))
         item.oldValue = item.text(1)  # set old value
+
+    def fillResourceAttribute(self, attributes):
+        self.selected_item_name = self.resourceListWidget.currentItem().text(0)
+        self.selected_item_type = self.resourceListWidget.currentItem().text(1)
+        self.selected_item_categoty = 'Resource'
+        self.fillAttribute(attributes)
+
+    def fillObjectAttribute(self, attributes):
+        self.selected_item_name = self.objectList.currentItem().text(0)
+        self.selected_item_type = self.objectList.currentItem().text(1)
+        self.selected_item_categoty = 'Object'
+        self.fillAttribute(attributes)
 
     def fillAttribute(self, attributes):
         # lock edit attribute ui

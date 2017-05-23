@@ -229,6 +229,13 @@ class CoreManager(Singleton):
 
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
 
+        def cmd_set_resource_attribute(value):
+            resourceName, resourceType, attributeName, attributeValue, attribute_index = value
+            self.resourceManager.setResourceAttribute(resourceName, resourceType, attributeName, attributeValue,
+                                                      attribute_index)
+
+        self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
+
         # Scene object commands
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.sceneManager.deleteObject(value)
@@ -241,8 +248,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
-            objectName, attributeName, attributeValue = value
-            self.sceneManager.setObjectAttribute(objectName, attributeName, attributeValue)
+            objectName, objectType, attributeName, attributeValue, attribute_index = value
+            self.sceneManager.setObjectAttribute(objectName, objectType, attributeName, attributeValue, attribute_index)
 
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)

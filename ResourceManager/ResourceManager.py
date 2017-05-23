@@ -60,7 +60,7 @@ class Resource:
         self.attributes.setAttribute('name', self.name)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue):
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
         pass
 
 
@@ -284,7 +284,7 @@ class ResourceLoader(object):
     def getResource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
             return self.resources[resourceName]
-        if not noWarn:
+        if not noWarn and resourceName:
             logger.error("%s cannot found %s resource." % (self.name, resourceName))
         return None
 
@@ -299,6 +299,11 @@ class ResourceLoader(object):
         if resource:
             return resource.getAttribute()
         return None
+
+    def setResourceAttribute(self, resource_name, attribute_name, attribute_value, attribute_index):
+        resource = self.getResource(resource_name)
+        if resource:
+            resource.setAttribute(attribute_name, attribute_value, attribute_index)
 
     def getMetaData(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
@@ -651,7 +656,13 @@ class ResourceManager(Singleton):
         for resource_loader in self.resource_loaders:
             result += [(resName, resource_loader.resource_type_name) for resName in
                        resource_loader.getResourceNameList()]
-        return result
+        return
+
+    def setResourceAttribute(self, resource_name, resource_type_name, attribute_name, attribute_value, attribute_index):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.setResourceAttribute(resource_name, attribute_name, attribute_value, attribute_index)
+        return None
 
     def getResourceAttribute(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
@@ -701,6 +712,9 @@ class ResourceManager(Singleton):
 
     def getMaterialInstance(self, name):
         return self.material_instanceLoader.getResource(name)
+
+    def getDefaultMaterialInstance(self):
+        return self.material_instanceLoader.getResource('default')
 
     # FUNCTIONS : Mesh
 

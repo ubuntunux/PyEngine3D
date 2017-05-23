@@ -11,8 +11,8 @@ class StaticMesh(BaseObject):
         self.matrix_mvp = None
         self.set_material_instance(material_instance)
 
-    def set_material_instance(self, material_instance):
-        BaseObject.set_material_instance(self, material_instance)
+    def set_material_instance(self, material_instance, index=0):
+        BaseObject.set_material_instance(self, material_instance, index)
         if material_instance:
             self.matrix_model = UniformMatrix4(material_instance.get_program(), "model")
             self.matrix_mvp = UniformMatrix4(material_instance.get_program(), "mvp")

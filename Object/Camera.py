@@ -45,8 +45,8 @@ class Camera(BaseObject):
         self.attributes.setAttribute('rotation_speed', self.rotation_speed)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue):
-        BaseObject.setAttribute(self, attributeName, attributeValue)
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        BaseObject.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 

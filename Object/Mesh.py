@@ -6,12 +6,15 @@ import numpy as np
 from Common import logger
 from OpenGLContext import VertexArrayBuffer
 from Utilities import Attributes, GetClassName, normalize, compute_tangent
+from App import CoreManager
 
 
 class Geometry:
     def __init__(self, geometry_data):
         self.valid = False
-        self.name = geometry_data['geometry_name'] if 'geometry_name' in geometry_data else ""
+        self.name = geometry_data.get('geometry_name', '')
+        material_instance_name = geometry_data.get('material_instance', '')
+        self.material_instance = CoreManager.instance().resourceManager.getMaterialInstance(material_instance_name)
         self.vertexBuffer = None
 
         my_class_name = GetClassName(self)
@@ -80,6 +83,9 @@ class Geometry:
                                                   dtype=np.float32)
         self.valid = True
 
+    def set_material_instance(self, material_instance):
+        self.material_instance = material_instance
+
     def bindBuffers(self):
         self.vertexBuffer.bindBuffer()
 
@@ -88,25 +94,28 @@ class Geometry:
 
 
 class GeometryInstance:
-    def __init__(self, geometry, parent_mesh, parent_object):
+    def __init__(self, parent_geometry, parent_mesh, parent_object):
         """
         :param geometry: Geometry
         :param parent_mesh: Mesh
         :param parent_object: BaseObject...
         """
-        self.geometry = geometry
+        self.parent_geometry = parent_geometry
         self.parent_mesh = parent_mesh
         self.parent_object = parent_object
-        self.material_instance = None
+        self.material_instance = parent_geometry.material_instance
+
+    def get_material_instance(self):
+        return self.material_instance or self.parent_geometry.material_instance if self.parent_geometry else None
 
     def set_material_instance(self, material_instance):
         self.material_instance = material_instance
 
     def bindBuffers(self):
-        self.geometry.vertexBuffer.bindBuffer()
+        self.parent_geometry.vertexBuffer.bindBuffer()
 
     def draw(self):
-        self.geometry.vertexBuffer.draw_elements()
+        self.parent_geometry.vertexBuffer.draw_elements()
 
 
 class Mesh:
@@ -139,7 +148,18 @@ class Mesh:
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
+        material_instances = [geometry.material_instance.name if geometry.material_instance else '' for geometry in self.geometries]
+        self.attributes.setAttribute("material_instances", material_instances)
         return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if attributeName == 'material_instances':
+            material_instance = CoreManager.instance().resourceManager.getMaterialInstance(attributeValue[attribute_index])
+            self.set_material_instance(material_instance, attribute_index)
+
+    def set_material_instance(self, material_instance, index=0):
+        if index < self.geometry_count:
+            self.geometries[index].set_material_instance(material_instance)
 
 
 class Triangle(Mesh):
