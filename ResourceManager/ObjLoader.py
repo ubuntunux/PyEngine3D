@@ -120,7 +120,7 @@ class OBJ:
 
                     texcoords.append(self.texcoords[texcoordIndicies[i]])
         geometry_name = self.name or os.path.splitext(os.path.split(self.filename)[1])[0]
-        geometry_data = dict(geometry_name=copy.deepcopy(geometry_name),
+        geometry_data = dict(name=copy.deepcopy(geometry_name),
                              positions=copy.deepcopy(positions),
                              normals=copy.deepcopy(normals),
                              texcoords=copy.deepcopy(texcoords),

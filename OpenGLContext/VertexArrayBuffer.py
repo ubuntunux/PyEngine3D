@@ -5,12 +5,13 @@ from OpenGL.GL import *
 
 
 class VertexArrayBuffer:
-    def __init__(self, datas, index_data, dtype):
+    def __init__(self, name, datas, index_data, dtype=np.float32):
         """
         :param datas: example [positions, colors, normals, tangents, texcoords]
         :param index_data: indicies
         :param dtype: example, numpy.float32,
         """
+        self.name = name
         self.vertex_unitSize = 0
         self.vertex_strides = []
         self.vertex_stride_points = []

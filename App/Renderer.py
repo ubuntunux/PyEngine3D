@@ -223,19 +223,19 @@ class Renderer(Singleton):
 
         # Test Code : sort tge list by mesh, material
         static_meshes = self.sceneManager.getStaticMeshes()[:]
-        geometry_instances = []
+        geometries = []
         for static_mesh in static_meshes:
-            geometry_instances += static_mesh.geometry_instances
-        geometry_instances.sort(key=lambda x: id(x.parent_geometry))
+            geometries += static_mesh.geometries
+        geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         # draw static meshes
         default_material_instance = self.resourceManager.getDefaultMaterialInstance()
-        last_geometry = None
+        last_vertex_buffer = None
         last_material = None
         last_material_instance = None
-        for geometry_instance in geometry_instances:
-            obj = geometry_instance.parent_object
-            material_instance = geometry_instance.get_material_instance() or default_material_instance
+        for geometry in geometries:
+            obj = geometry.parent_object
+            material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
@@ -247,15 +247,15 @@ class Renderer(Singleton):
             obj.bind_object(vpMatrix)
 
             # At last, bind buffers
-            if last_geometry != geometry_instance.parent_geometry and geometry_instance is not None:
-                geometry_instance.bindBuffers()
+            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
+                geometry.bindBuffers()
 
             # draw
-            if geometry_instance and material_instance:
-                geometry_instance.draw()
+            if geometry and material_instance:
+                geometry.draw()
 
             last_material = material
-            last_geometry = geometry_instance.parent_geometry
+            last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance
 
     def render_postprocess(self):

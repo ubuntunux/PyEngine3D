@@ -10,112 +10,21 @@ from App import CoreManager
 
 
 class Geometry:
-    def __init__(self, geometry_data):
-        self.valid = False
-        self.name = geometry_data.get('geometry_name', '')
-        material_instance_name = geometry_data.get('material_instance', '')
-        self.material_instance = CoreManager.instance().resourceManager.getMaterialInstance(material_instance_name)
-        self.vertexBuffer = None
-
-        my_class_name = GetClassName(self)
-        logger.info("Create %s : %s" % (my_class_name, self.name))
-
-        if 'indices' in geometry_data:
-            indices = np.array(geometry_data['indices'], dtype=np.uint32)
-        else:
-            logger.error("Create %s %s error. Mesh has no index data." % (my_class_name, self.name))
-            return
-
-        vertex_count = 0
-        if 'positions' in geometry_data:
-            positions = np.array(geometry_data['positions'], dtype=np.float32)
-            vertex_count = len(positions)
-        else:
-            logger.error("Create %s %s error. Mesh has no position data." % (my_class_name, self.name))
-            return
-
-        if 'bone_indicies' in geometry_data:
-            bone_indicies = np.array([0.0, 0.0, 0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
-            for i in range(min(vertex_count, len(geometry_data['bone_indicies']))):
-                for j in range(min(4, len(geometry_data['bone_indicies'][i]))):
-                    bone_indicies[i][j] = geometry_data['bone_indicies'][i][j]
-        else:
-            bone_indicies = []
-
-        if 'bone_weights' in geometry_data:
-            bone_weights = np.array([0.0, 0.0, 0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
-            for i in range(min(vertex_count, len(geometry_data['bone_weights']))):
-                for j in range(min(4, len(geometry_data['bone_weights'][i]))):
-                    bone_weights[i][j] = geometry_data['bone_weights'][i][j]
-        else:
-            bone_weights = []
-
-        if 'colors' in geometry_data and geometry_data['colors']:
-            colors = np.array(geometry_data['colors'], dtype=np.float32)
-        else:
-            colors = np.array([1.0, 1.0, 1.0, 1.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 4)
-
-        if 'texcoords' in geometry_data and geometry_data['texcoords']:
-            texcoords = np.array(geometry_data['texcoords'], dtype=np.float32)
-        else:
-            texcoords = np.array([0.0, 0.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 2)
-
-        if 'normals' in geometry_data and geometry_data['normals']:
-            normals = np.array(geometry_data['normals'], dtype=np.float32)
-        else:
-            normals = np.array([0.0, 0.0, 1.0] * vertex_count, dtype=np.float32).reshape(vertex_count, 3)
-
-        # Important!! : doing this at last.
-        if 'tangents' in geometry_data and geometry_data['tangents']:
-            tangents = np.array(geometry_data['tangents'], dtype=np.float32)
-        else:
-            tangents = compute_tangent(positions, texcoords, normals, indices)
-            geometry_data['tangents'] = tangents.tolist()
-
-        # Test Code
-        logger.warn("Test Code")
-        has_bone = len(bone_indicies) > 0
-        if has_bone:
-            self.vertexBuffer = VertexArrayBuffer(
-                [positions, colors, normals, tangents, texcoords, bone_indicies, bone_weights], indices, dtype=np.float32)
-        else:
-            self.vertexBuffer = VertexArrayBuffer([positions, colors, normals, tangents, texcoords], indices,
-                                                  dtype=np.float32)
-        self.valid = True
-
-    def set_material_instance(self, material_instance):
-        self.material_instance = material_instance
-
-    def bindBuffers(self):
-        self.vertexBuffer.bindBuffer()
-
-    def draw(self):
-        self.vertexBuffer.draw_elements()
-
-
-class GeometryInstance:
-    def __init__(self, parent_geometry, parent_mesh, parent_object):
-        """
-        :param geometry: Geometry
-        :param parent_mesh: Mesh
-        :param parent_object: BaseObject...
-        """
-        self.parent_geometry = parent_geometry
-        self.parent_mesh = parent_mesh
+    def __init__(self, parent_object, vertex_buffer, material_instance):
+        self.name = vertex_buffer.name
+        self.vertex_buffer = vertex_buffer
         self.parent_object = parent_object
-        self.material_instance = parent_geometry.material_instance
-
-    def get_material_instance(self):
-        return self.material_instance or self.parent_geometry.material_instance if self.parent_geometry else None
+        self.material_instance = None
+        self.set_material_instance(material_instance)
 
     def set_material_instance(self, material_instance):
         self.material_instance = material_instance
 
     def bindBuffers(self):
-        self.parent_geometry.vertexBuffer.bindBuffer()
+        self.vertex_buffer.bindBuffer()
 
     def draw(self):
-        self.parent_geometry.vertexBuffer.draw_elements()
+        self.vertex_buffer.draw_elements()
 
 
 class Mesh:
@@ -123,43 +32,85 @@ class Mesh:
         logger.info("Create %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
-        self.geometries = []
+        self.vertex_buffers = []
         self.attributes = Attributes()
 
-        for geometry_data in geometry_datas:
-            geometry = Geometry(geometry_data)
-            if geometry.valid:
-                self.geometries.append(geometry)
-        self.geometry_count = len(self.geometries)
+        self.create_vertex_buffers(geometry_datas)
 
-    def get_geometry_instances(self, parent_object):
-        """
-        :param parent_object: BaseObject
-        :return:
-        """
-        geometry_instances = []
-        for geometry in self.geometries:
-            geometry_instance = GeometryInstance(geometry, self, parent_object)
-            geometry_instances.append(geometry_instance)
-        return geometry_instances
+    def create_vertex_buffers(self, geometry_datas):
+        for geometry_index, geometry_data in enumerate(geometry_datas):
+            vertex_buffer_name = geometry_data.get('name', "%s_%d" % (self.name, geometry_index))
+            logger.info("create %s geometry." % vertex_buffer_name)
 
-    def get_geometry_count(self):
-        return self.geometry_count
+            vertex_count = len(geometry_data.get('positions', []))
+            if vertex_count == 0:
+                logger.error("%s geometry has no position data." % vertex_buffer_name)
+                continue
+
+            positions = np.array(geometry_data['positions'], dtype=np.float32)
+
+            if 'indices' not in geometry_data:
+                logger.error("%s geometry has no index data." % vertex_buffer_name)
+                continue
+
+            indices = np.array(geometry_data['indices'], dtype=np.uint32)
+
+            bone_indicies = geometry_data.get('bone_indicies', None)
+            if bone_indicies:
+                if 4 * vertex_count == sum([len(bone_index_list) for bone_index_list in bone_indicies]):
+                    bone_indicies = np.array(bone_indicies, dtype=np.float32)
+                else:
+                    new_bone_indicies = np.array([[0.0, 0.0, 0.0, 0.0]] * vertex_count, dtype=np.float32)
+                    for i in range(min(vertex_count, len(bone_indicies))):
+                        for j in range(min(4, len(bone_indicies[i]))):
+                            new_bone_indicies[i][j] = bone_indicies[i][j]
+                    geometry_data['bone_indicies'] = new_bone_indicies.tolist()
+                    bone_indicies = new_bone_indicies
+
+            bone_weights = geometry_data.get('bone_weights', None)
+            if bone_weights:
+                if 4 * vertex_count == sum([len(bone_weight_list) for bone_weight_list in bone_weights]):
+                    bone_weights = np.array(bone_weights, dtype=np.float32)
+                else:
+                    new_bone_weights = np.array([[0.0, 0.0, 0.0, 0.0]] * vertex_count, dtype=np.float32)
+                    for i in range(min(vertex_count, len(bone_weights))):
+                        for j in range(min(4, len(bone_weights[i]))):
+                            new_bone_weights[i][j] = bone_weights[i][j]
+                    geometry_data['bone_weights'] = new_bone_weights.tolist()
+                    bone_weights = new_bone_weights
+
+            colors = np.array(geometry_data.get('colors', []), dtype=np.float32)
+            if len(colors) == 0:
+                colors = np.array([[1.0, 1.0, 1.0, 1.0]] * vertex_count, dtype=np.float32)
+
+            texcoords = np.array(geometry_data.get('texcoords', []), dtype=np.float32)
+            if len(texcoords) == 0:
+                texcoords = np.array([[0.0, 0.0]] * vertex_count, dtype=np.float32)
+
+            normals = np.array(geometry_data.get('normals', []), dtype=np.float32)
+            if len(normals) == 0:
+                normals = np.array([[0.0, 0.0, 1.0], ] * vertex_count, dtype=np.float32)
+
+            tangents = np.array(geometry_data.get('tangents', []), dtype=np.float32)
+            if len(tangents) == 0:
+                tangents = compute_tangent(positions, texcoords, normals, indices)
+                geometry_data['tangents'] = tangents.tolist()
+
+            if bone_indicies is not None and bone_weights is not None:
+                vertexBuffer = VertexArrayBuffer(vertex_buffer_name,
+                                                 [positions, colors, normals, tangents, texcoords, bone_indicies,
+                                                  bone_weights], indices)
+            else:
+                vertexBuffer = VertexArrayBuffer(vertex_buffer_name, [positions, colors, normals, tangents, texcoords],
+                                                 indices)
+            self.vertex_buffers.append(vertexBuffer)
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
-        material_instances = [geometry.material_instance.name if geometry.material_instance else '' for geometry in self.geometries]
-        self.attributes.setAttribute("material_instances", material_instances)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if attributeName == 'material_instances':
-            material_instance = CoreManager.instance().resourceManager.getMaterialInstance(attributeValue[attribute_index])
-            self.set_material_instance(material_instance, attribute_index)
-
-    def set_material_instance(self, material_instance, index=0):
-        if index < self.geometry_count:
-            self.geometries[index].set_material_instance(material_instance)
+        pass
 
 
 class Triangle(Mesh):

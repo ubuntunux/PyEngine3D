@@ -2,6 +2,7 @@ from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
+from Object import Geometry
 from OpenGLContext import RenderTargets, RenderTargetManager
 
 
@@ -10,8 +11,7 @@ class PostProcess:
         logger.info("Create PostProcess : %s" % name)
         self.name = name
         self.mesh = CoreManager.instance().resourceManager.getMesh("Quad")
-        self.geometry = self.mesh.get_geometry_instances(self)[0]
-        self.geometry.set_material_instance(material_instance)
+        self.geometry = Geometry(self, self.mesh.vertex_buffers[0], material_instance)
         self.material_instance = material_instance
 
     def render(self):

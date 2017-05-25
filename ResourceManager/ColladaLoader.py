@@ -332,6 +332,7 @@ class Collada:
         geometry_datas = []
         for geometry in self.geometries:
             geometry_data = dict(
+                name=geometry.name,
                 positions=copy.deepcopy(geometry.positions),
                 normals=copy.deepcopy(geometry.normals),
                 colors=copy.deepcopy(geometry.colors),
