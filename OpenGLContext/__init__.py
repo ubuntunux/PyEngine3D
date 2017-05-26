@@ -7,7 +7,7 @@ from .Shader import Shader
 from .Material import Material
 from .Texture import CreateTextureFromFile, Texture2D
 from .UniformBlock import UniformBlock
-from .UniformBuffer import CreateUniformBuffer, CreateUniformData, \
+from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformArray, UniformInt, UniformFloat, \
                             UniformVector2, UniformVector3, UniformVector4, \
                             UniformMatrix2, UniformMatrix3, UniformMatrix4, \

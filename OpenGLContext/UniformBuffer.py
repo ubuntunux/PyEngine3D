@@ -18,7 +18,7 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
     return None
 
 
-def CreateUniformData(data_type, strValue=""):
+def CreateUniformDataFromString(data_type, strValue=""):
     """ return converted data from string or default data """
     try:
         if data_type == 'Float':

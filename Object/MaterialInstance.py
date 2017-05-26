@@ -6,7 +6,7 @@ import traceback
 
 from Common import logger
 from App import CoreManager
-from OpenGLContext import CreateUniformData
+from OpenGLContext import CreateUniformDataFromString
 from Utilities import Attributes
 
 
@@ -41,14 +41,14 @@ class MaterialInstance:
                 # create uniform data
                 for data_name in material_inst_file[data_type]:
                     strValue = material_inst_file.get(data_type, data_name)
-                    data = CreateUniformData(data_type, strValue)
+                    data = CreateUniformDataFromString(data_type, strValue)
                     if data is not None:
                         self.uniform_datas[data_name] = data
                     else:
                         logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
         # link uniform_buffers and uniform_data
         material = CoreManager.instance().resourceManager.getMaterial(shader_name, macros)
-        self.link_uniform_buffers(material)
+        self.set_material(material)
 
         if self.material is None:
             logger.error("%s material instance has no material." % self.name)
@@ -60,19 +60,21 @@ class MaterialInstance:
         self.linked_uniform_map = OrderedDict({})
         self.Attributes.clear()
 
-    def link_uniform_buffers(self, material):
-        if material:
+    def set_material(self, material):
+        if material and self.material != material:
             self.material = material
+
+            # link_uniform_buffers
             self.linked_uniform_map = OrderedDict({})
-            uniform_names = material.uniform_buffers.keys()
+            uniform_names = self.material.uniform_buffers.keys()
             for uniform_name in uniform_names:
-                uniform_buffer = material.uniform_buffers[uniform_name]
+                uniform_buffer = self.material.uniform_buffers[uniform_name]
                 # find uniform data
                 if uniform_name in self.uniform_datas:
                     uniform_data = self.uniform_datas[uniform_name]
                 else:
                     # cannot found uniform data. just set default uniform data.
-                    uniform_data = CreateUniformData(uniform_buffer.data_type)
+                    uniform_data = CreateUniformDataFromString(uniform_buffer.data_type)
                     if uniform_data is not None:
                         self.uniform_datas[uniform_name] = uniform_data
 
