@@ -21,9 +21,6 @@ from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ
 
-reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
-reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
-
 
 # -----------------------#
 # CLASS : MetaData
@@ -378,7 +375,7 @@ class MaterialLoader(ResourceLoader):
         if shader:
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
-            material_components = self.parsing_material_components(vertex_shader_code, fragment_shader_code)
+            material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
 
             include_files = {}
             for include_file in shader.include_files:
@@ -414,36 +411,6 @@ class MaterialLoader(ResourceLoader):
                 return material
         logger.error("%s cannot found %s resource." % (self.name, material_name))
         return None
-
-    def parsing_material_components(self, vertexShaderCode, fragmentShaderCode):
-        material_components = []
-        code_list = [vertexShaderCode, fragmentShaderCode]
-        for code in code_list:
-            depth = 0
-            is_in_material_block = False
-            code_lines = code.splitlines()
-            for code_line in code_lines:
-                m = re.search(reMacro, code_line)
-                # find macro
-                if m is not None:
-                    macro_type, macro_value = [group.strip() for group in m.groups()]
-                    if macro_type in ('ifdef', 'ifndef', 'if'):
-                        # increase depth
-                        if is_in_material_block:
-                            depth += 1
-                        # start material block
-                        elif macro_type == 'ifdef' and 'MATERIAL_COMPONENTS' == macro_value.split(" ")[0]:
-                            is_in_material_block = True
-                            depth = 1
-                    elif macro_type == 'endif' and is_in_material_block:
-                        depth -= 1
-                        if depth == 0:
-                            # exit material block
-                            is_in_material_block = False
-                # gather common code in material component
-                elif is_in_material_block:
-                    material_components.append(code_line)
-        return re.findall(reFindUniform, "\n".join(material_components))
 
 
 # -----------------------#
