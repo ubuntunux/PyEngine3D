@@ -42,7 +42,7 @@ def CreateUniformDataFromString(data_type, strValue=""):
             """TODO"""
             pass
         elif data_type == 'Texture2D':
-            texture = CoreManager.instance().resourceManager.getTexture(strValue or 'empty')
+            texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
             return texture
     except ValueError:
         logger.error(traceback.format_exc())

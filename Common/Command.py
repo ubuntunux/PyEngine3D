@@ -49,7 +49,10 @@ class COMMAND(AutoEnum):
     VIEWMODE_SHADING = ()
 
     # resource
-    ADD_RESOURCE_TO_SCENE = ()
+    ADD_RESOURCE = ()
+    SAVE_RESOURCE = ()
+    DELETE_RESOURCE = ()
+    DELETE_RESOURCE_INFO = ()
     REQUEST_RESOURCE_LIST = ()
     TRANS_RESOURCE_LIST = ()
     TRANS_RESOURCE_INFO = ()

@@ -47,7 +47,7 @@ class MaterialInstance:
                     else:
                         logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
         # link uniform_buffers and uniform_data
-        material = CoreManager.instance().resourceManager.getMaterial(shader_name, macros)
+        material = CoreManager.instance().resource_manager.getMaterial(shader_name, macros)
         self.set_material(material)
 
         if self.material is None:

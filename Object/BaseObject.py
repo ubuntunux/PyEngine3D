@@ -14,13 +14,15 @@ class BaseObject:
         self.selected = False
         self.transform = TransformObject(pos)
         self.geometries = []
+        self.mesh = None
         self.set_mesh(mesh)
         self.attributes = Attributes()
 
     def set_mesh(self, mesh):
         if mesh:
+            self.mesh = mesh
             for vertex_buffer in mesh.vertex_buffers:
-                material_instance = CoreManager.instance().resourceManager.getDefaultMaterialInstance()
+                material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
                 geometry = Geometry(self, vertex_buffer, material_instance)
                 self.geometries.append(geometry)
 
@@ -47,11 +49,11 @@ class BaseObject:
         elif attributeName == 'scale':
             self.transform.setScale(attributeValue)
         elif attributeName == 'mesh':
-            mesh = CoreManager.instance().resourceManager.getMesh(attributeValue)
+            mesh = CoreManager.instance().resource_manager.getMesh(attributeValue)
             if mesh and self.mesh != mesh:
                 self.set_mesh(mesh)
         elif attributeName == 'material_instances':
-            material_instance = CoreManager.instance().resourceManager.getMaterialInstance(
+            material_instance = CoreManager.instance().resource_manager.getMaterialInstance(
                 attributeValue[attribute_index])
             self.set_material_instance(material_instance, attribute_index)
 

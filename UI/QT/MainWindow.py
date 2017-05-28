@@ -2,16 +2,29 @@ import sys
 import traceback
 import os
 import time
-from functools import partial
 
 import PyQt4
 from PyQt4 import Qt, QtCore, QtGui, uic
+from PyQt4.Qt import *
 import numpy
 
 from Utilities import Singleton, Attribute, Attributes
 from UI import logger
 from Common.Command import *
+from .Widgets import InputDialogDemo
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
+
+
+def addDirtyMark(text):
+    if not text.startswith('*'):
+        return '*' + text
+    return text
+
+
+def removeDirtyMark(text):
+    if text.startswith('*'):
+        return text[1:]
+    return text
 
 
 def findTreeItem(parentItem, findItemName):
@@ -67,8 +80,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.cmdQueue = cmdQueue
         self.appCmdQueue = appCmdQueue
         self.cmdPipe = cmdPipe
-        self.selected_item_name = ''
-        self.selected_item_type = ''
+        self.selected_item = None
         self.selected_item_categoty = ''
         self.isFillAttributeTree = False
 
@@ -113,7 +125,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.sortItems(0, 0)
         self.resourceListWidget.sortItems(1, 0)
-        self.resourceListWidget.itemDoubleClicked.connect(self.addResourceToScene)
+        self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
@@ -121,9 +133,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                      self.addResourceInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
                      self.fillResourceAttribute)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_RESOURCE_INFO)),
+                     self.delete_resource_info)
 
-        self.btnAddResource = self.findChild(QtGui.QPushButton, "btnAddResource")
-        self.btnAddResource.clicked.connect(self.addResourceToScene)
+        btn = self.findChild(QtGui.QPushButton, "btnAddResource")
+        btn.clicked.connect(self.addResource)
+
+        btn = self.findChild(QtGui.QPushButton, "btnSaveResource")
+        btn.clicked.connect(self.saveResource)
+
+        btn = self.findChild(QtGui.QPushButton, "btnDeleteResource")
+        btn.clicked.connect(self.deleteResource)
+
+        btn = self.findChild(QtGui.QPushButton, "btnTest")
+        btn.clicked.connect(self.test)
 
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
@@ -142,8 +165,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_OBJECT_LIST)),
                      self.clearObjectList)
 
-        self.btnRemoveObject = self.findChild(QtGui.QPushButton, "btnRemoveObject")
-        self.btnRemoveObject.clicked.connect(self.deleteObject)
+        btn = self.findChild(QtGui.QPushButton, "btnRemoveObject")
+        btn.clicked.connect(self.deleteObject)
 
         # Object attribute tree
         self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
@@ -212,7 +235,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.attributeTree.editItem(item, column)
 
     def attributeChanged(self, item):
-        if not self.isFillAttributeTree:
+        if not self.isFillAttributeTree and self.selected_item:
             try:
                 # check value chaned
                 if item.oldValue == item.text(1):
@@ -237,12 +260,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     attributeName = item.text(0)
                     value = item.dataType(item.text(1))
 
+                selected_item_name = self.selected_item.text(0)
+                selected_item_type = self.selected_item.text(1)
+
+                # send changed data
                 if self.selected_item_categoty == 'Resource':
                     self.appCmdQueue.put(COMMAND.SET_RESOURCE_ATTRIBUTE,
-                                         (self.selected_item_name, self.selected_item_type, attributeName, value, index))
+                                         (selected_item_name, selected_item_type, attributeName, value, index))
                 elif self.selected_item_categoty == 'Object':
                     self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE,
-                                         (self.selected_item_name, self.selected_item_type, attributeName, value, index))
+                                         (selected_item_name, selected_item_type, attributeName, value, index))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -271,14 +298,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.oldValue = item.text(1)  # set old value
 
     def fillResourceAttribute(self, attributes):
-        self.selected_item_name = self.resourceListWidget.currentItem().text(0)
-        self.selected_item_type = self.resourceListWidget.currentItem().text(1)
+        self.selected_item = self.resourceListWidget.currentItem()
         self.selected_item_categoty = 'Resource'
         self.fillAttribute(attributes)
 
     def fillObjectAttribute(self, attributes):
-        self.selected_item_name = self.objectList.currentItem().text(0)
-        self.selected_item_type = self.objectList.currentItem().text(1)
+        self.selected_item = self.objectList.currentItem()
         self.selected_item_categoty = 'Object'
         self.fillAttribute(attributes)
 
@@ -304,6 +329,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # ------------------------- #
     # Widget - Resource List
     # ------------------------- #
+    def getSelectedResource(self):
+        selectedItems = self.resourceListWidget.selectedItems()
+        return selectedItems[0] if selectedItems else None
+
     def addResourceList(self, resourceList):
         for resName, resType in resourceList:
             item = QtGui.QTreeWidgetItem(self.resourceListWidget)
@@ -316,18 +345,42 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(0, resource_name)
         item.setText(1, resource_type)
 
-    def addResourceToScene(self, item=None):
-        if item is False:  # button clicked
-            selectedItems = self.resourceListWidget.selectedItems()
-            if selectedItems:
-                item = selectedItems[0]
-        self.appCmdQueue.put(COMMAND.ADD_RESOURCE_TO_SCENE, (item.text(0), item.text(1)))  # send message and receive
+    def addResource(self, item=None):
+        if not item:  # button clicked
+            item = self.getSelectedResource()
+        if item:
+            self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))
 
     def selectResource(self):
-        getSelected = self.resourceListWidget.selectedItems()
-        if getSelected:
-            node = getSelected[0]
-            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (node.text(0), node.text(1)))
+        item = self.getSelectedResource()
+        if item:
+            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (item.text(0), item.text(1)))
+
+    def saveResource(self, item=None):
+        if not item:
+            item = self.getSelectedResource()
+        if item:
+            self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (item.text(0), item.text(1)))
+
+    def deleteResource(self, item=None):
+        if not item:
+            item = self.getSelectedResource()
+        if item:
+            choice = QtGui.QMessageBox.question(self, 'Delete resource.',
+                                                "Are you sure you want to delete this resource?",
+                                                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            if choice == QtGui.QMessageBox.Yes:
+                self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (item.text(0), item.text(1)))
+
+    def delete_resource_info(self, resource_name):
+        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
+        for item in items:
+            index = self.resourceListWidget.indexOfTopLevelItem(item)
+            self.resourceListWidget.takeTopLevelItem(index)
+
+    def test(self):
+        myPopUp = InputDialogDemo(self, "Create Static Mesh")
+        myPopUp.exec_()
 
     # ------------------------- #
     # Widget - Object List

@@ -54,8 +54,7 @@ class CoreManager(Singleton):
         self.wheelDown = False
 
         # managers
-        camera = None
-        self.resourceManager = None
+        self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
         self.sceneManager = None
@@ -87,7 +86,7 @@ class CoreManager(Singleton):
         from .ProjectManager import ProjectManager
         from .Renderer import Renderer
 
-        self.resourceManager = ResourceManager.instance()
+        self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.renderer = Renderer.instance()
         self.sceneManager = SceneManager.instance()
@@ -112,7 +111,7 @@ class CoreManager(Singleton):
             self.error('Could not render font.')
 
         # initalize managers
-        self.resourceManager.initialize(self, self.projectManager.project_dir)
+        self.resource_manager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize()
         self.renderer.initialize(self, width, height, screen)
         self.sceneManager.initialize(self)
@@ -147,7 +146,7 @@ class CoreManager(Singleton):
         self.projectManager.close_project()
 
         self.renderer.close()
-        self.resourceManager.close()
+        self.resource_manager.close()
         self.renderer.destroyScreen()
 
         pygame.quit()
@@ -169,14 +168,18 @@ class CoreManager(Singleton):
     def sendResourceInfo(self, resource_info):
         self.send(COMMAND.TRANS_RESOURCE_INFO, resource_info)
 
-    def sendObjectInfo(self, object_info):
-        self.send(COMMAND.TRANS_OBJECT_INFO, object_info)
+    def notifyDeleteResource(self, resource_name):
+        self.send(COMMAND.DELETE_RESOURCE_INFO, resource_name)
+
+    def sendObjectInfo(self, object_name):
+        object_info = self.sceneManager.getObjectInfo(object_name)
+        if object_info:
+            self.send(COMMAND.TRANS_OBJECT_INFO, object_info)
 
     def sendObjectList(self):
         obj_names = self.sceneManager.getObjectNames()
         for obj_name in obj_names:
-            object_info = self.sceneManager.getObjectInfo(obj_name)
-            self.sendObjectInfo(object_info)
+            self.sendObjectInfo(obj_name)
 
     def notifyClearScene(self):
         self.send(COMMAND.CLEAR_OBJECT_LIST)
@@ -186,6 +189,7 @@ class CoreManager(Singleton):
 
     def registCommand(self):
         def nothing(value):
+            logger.warn("Nothing to do.")
             pass
 
         self.commands = [nothing, ] * COMMAND.COUNT.value
@@ -206,34 +210,37 @@ class CoreManager(Singleton):
             COMMAND.VIEWMODE_SHADING)
 
         # Resource commands
-        def cmd_add_resource_to_scene(value):
+        def cmd_add_resource(value):
             resName, resTypeName = value
-            obj = self.resourceManager.add_resource_to_scene(resName, resTypeName)
-            if obj:
-                object_info = self.sceneManager.getObjectInfo(obj.name)
-                self.sendObjectInfo(object_info)
+            self.resource_manager.add_resource(resName, resTypeName)
+        self.commands[COMMAND.ADD_RESOURCE.value] = cmd_add_resource
 
-        self.commands[COMMAND.ADD_RESOURCE_TO_SCENE.value] = cmd_add_resource_to_scene
+        def cmd_request_save_resource(value):
+            resName, resTypeName = value
+            self.resource_manager.request_save_resource(resName, resTypeName)
+        self.commands[COMMAND.SAVE_RESOURCE.value] = cmd_request_save_resource
+
+        def cmd_delete_resource(value):
+            resName, resTypeName = value
+            self.resource_manager.delete_resource(resName, resTypeName)
+        self.commands[COMMAND.DELETE_RESOURCE.value] = cmd_delete_resource
 
         def cmd_request_resource_list(value):
-            resourceList = self.resourceManager.getResourceNameAndTypeList()
+            resourceList = self.resource_manager.getResourceNameAndTypeList()
             self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
-
         self.commands[COMMAND.REQUEST_RESOURCE_LIST.value] = cmd_request_resource_list
 
         def cmd_request_resource_attribute(value):
             resName, resTypeName = value
-            attribute = self.resourceManager.getResourceAttribute(resName, resTypeName)
+            attribute = self.resource_manager.getResourceAttribute(resName, resTypeName)
             if attribute:
                 self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
-
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
 
         def cmd_set_resource_attribute(value):
             resourceName, resourceType, attributeName, attributeValue, attribute_index = value
-            self.resourceManager.setResourceAttribute(resourceName, resourceType, attributeName, attributeValue,
+            self.resource_manager.setResourceAttribute(resourceName, resourceType, attributeName, attributeValue,
                                                       attribute_index)
-
         self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
 
         # Scene object commands
@@ -244,14 +251,13 @@ class CoreManager(Singleton):
             attribute = self.sceneManager.getObjectAttribute(value)
             if attribute:
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
-
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
             objectName, objectType, attributeName, attributeValue, attribute_index = value
             self.sceneManager.setObjectAttribute(objectName, objectType, attributeName, attributeValue, attribute_index)
-
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
+
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
         self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
 
@@ -285,12 +291,12 @@ class CoreManager(Singleton):
                     self.renderer.console.toggle()
                 elif keyDown == K_1:
                     for i in range(100):
-                        pos = [np.random.uniform(-10, 10) for i in range(3)]
-                        meshName = np.random.choice(self.resourceManager.getMeshNameList())
-                        mesh = self.resourceManager.getMesh(meshName)
-                        obj = self.sceneManager.createMesh(mesh, pos=pos)
-                        object_info = self.sceneManager.getObjectInfo(obj.name)
-                        self.sendObjectInfo(object_info)
+                        pos = [np.random.uniform(-10, 10) for x in range(3)]
+                        meshName = np.random.choice(self.resource_manager.getMeshNameList())
+                        mesh = self.resource_manager.getMesh(meshName)
+                        obj = self.sceneManager.addMesh(mesh, pos=pos)
+                        if obj:
+                            self.sendObjectInfo(obj.name)
                 elif keyDown == K_HOME:
                     obj = self.sceneManager.staticMeshes[0]
                     self.sceneManager.setObjectFocus(obj)

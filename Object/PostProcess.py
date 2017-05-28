@@ -10,7 +10,7 @@ class PostProcess:
     def __init__(self, name, material_instance):
         logger.info("Create PostProcess : %s" % name)
         self.name = name
-        self.mesh = CoreManager.instance().resourceManager.getMesh("Quad")
+        self.mesh = CoreManager.instance().resource_manager.getMesh("Quad")
         self.geometry = Geometry(self, self.mesh.vertex_buffers[0], material_instance)
         self.material_instance = material_instance
 
@@ -23,7 +23,7 @@ class PostProcess:
 
 class CopyRenderTarget(PostProcess):
     def __init__(self, name):
-        material_instance = CoreManager.instance().resourceManager.getMaterialInstance("copy_rendertarget")
+        material_instance = CoreManager.instance().resource_manager.getMaterialInstance("copy_rendertarget")
         PostProcess.__init__(self, name, material_instance)
 
     def render(self, src_texture, dst_texture):
@@ -35,7 +35,7 @@ class CopyRenderTarget(PostProcess):
 
 class Tonemapping(PostProcess):
     def __init__(self, name):
-        material_instance = CoreManager.instance().resourceManager.getMaterialInstance("tonemapping")
+        material_instance = CoreManager.instance().resource_manager.getMaterialInstance("tonemapping")
         PostProcess.__init__(self, name, material_instance)
 
     def render(self):

@@ -107,6 +107,7 @@ class Mesh:
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
+        self.attributes.setAttribute("geometries", [vertex_buffer.name for vertex_buffer in self.vertex_buffers])
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):

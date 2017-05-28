@@ -24,7 +24,7 @@ class Console:
 
     def initialize(self, renderer):
         self.renderer = renderer
-        self.font = GLFont(self.renderer.coreManager.resourceManager.DefaultFontFile, 12, margin=(10, 0))
+        self.font = GLFont(self.renderer.coreManager.resource_manager.DefaultFontFile, 12, margin=(10, 0))
 
     def close(self):
         pass
@@ -75,7 +75,7 @@ class Renderer(Singleton):
         self.viewMode = GL_FILL
         # managers
         self.coreManager = None
-        self.resourceManager = None
+        self.resource_manager = None
         self.sceneManager = None
         self.rendertarget_manager = None
         # console font
@@ -97,7 +97,7 @@ class Renderer(Singleton):
         self.screen = screen
 
         self.coreManager = core_manager
-        self.resourceManager = core_manager.resourceManager
+        self.resource_manager = core_manager.resource_manager
         self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = RenderTargetManager.instance()
         self.framebuffer = FrameBuffer(self.width, self.height)
@@ -229,7 +229,7 @@ class Renderer(Singleton):
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         # draw static meshes
-        default_material_instance = self.resourceManager.getDefaultMaterialInstance()
+        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
         last_vertex_buffer = None
         last_material = None
         last_material_instance = None

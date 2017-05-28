@@ -15,13 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="6" column="4">
-     <widget class="QPushButton" name="btnAddResource">
-      <property name="text">
-       <string>Add Resource</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="4">
      <widget class="QTreeWidget" name="resourceListWidget">
       <property name="columnCount">
@@ -39,7 +32,7 @@
       </column>
      </widget>
     </item>
-    <item row="6" column="5">
+    <item row="5" column="5">
      <widget class="QPushButton" name="btnRemoveObject">
       <property name="text">
        <string>Remove</string>
@@ -98,6 +91,19 @@
     <item row="0" column="0" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
+       <widget class="QLabel" name="labelAddResource">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Add resource to scene</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnAddCamera">
         <property name="text">
          <string>Add Camera</string>
@@ -112,7 +118,66 @@
        </widget>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2"/>
+       <widget class="QPushButton" name="btnAddResource">
+        <property name="text">
+         <string>Add Resource</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelCreateReousrce">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Create resource</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QPushButton" name="btnTest">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item row="5" column="4">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="btnSaveResource">
+        <property name="text">
+         <string>Save Resource</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="btnDeleteResource">
+        <property name="text">
+         <string>Delete Resource</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>

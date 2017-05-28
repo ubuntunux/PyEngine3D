@@ -10,7 +10,7 @@ class ProjectManager(Singleton):
     def __init__(self):
         self.coreManager = None
         self.sceneManager = None
-        self.resourceManager = None
+        self.resource_manager = None
         self.project_name = ""
         self.project_dir = ""
         self.project_filename = ""
@@ -20,11 +20,11 @@ class ProjectManager(Singleton):
     def initialize(self, core_manager, project_filename=""):
         self.coreManager = core_manager
         self.sceneManager = core_manager.sceneManager
-        self.resourceManager = core_manager.resourceManager
+        self.resource_manager = core_manager.resource_manager
 
         # default project
         if project_filename == "":
-            project_filename = self.resourceManager.DefaultProjectFile
+            project_filename = self.resource_manager.DefaultProjectFile
         else:
             project_filename = os.path.relpath(project_filename, ".")
 
@@ -53,10 +53,10 @@ class ProjectManager(Singleton):
         try:
             if new_project_dir:
                 project_name = os.path.split(new_project_dir)[-1]
-                self.resourceManager.prepare_project_directory(new_project_dir)
+                self.resource_manager.prepare_project_directory(new_project_dir)
 
                 default_project_filename = os.path.join(new_project_dir,
-                                                        os.path.split(self.resourceManager.DefaultProjectFile)[1])
+                                                        os.path.split(self.resource_manager.DefaultProjectFile)[1])
                 project_filename = os.path.join(new_project_dir, project_name + ".project")
                 if os.path.exists(default_project_filename) and not os.path.exists(project_filename):
                     os.rename(default_project_filename, project_filename)
@@ -82,7 +82,7 @@ class ProjectManager(Singleton):
 
     def save_project(self):
         try:
-            if self.config and self.project_filename != self.resourceManager.DefaultProjectFile:
+            if self.config and self.project_filename != self.resource_manager.DefaultProjectFile:
                 main_camera = self.coreManager.sceneManager.getMainCamera()
                 if main_camera:
                     main_camera.write_to_config(self.config)
