@@ -29,7 +29,7 @@ class Geometry:
 
 class Mesh:
     def __init__(self, mesh_name, geometry_datas):
-        logger.info("Create %s : %s" % (GetClassName(self), mesh_name))
+        logger.info("Load %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
         self.vertex_buffers = []
@@ -40,7 +40,7 @@ class Mesh:
     def create_vertex_buffers(self, geometry_datas):
         for geometry_index, geometry_data in enumerate(geometry_datas):
             vertex_buffer_name = geometry_data.get('name', "%s_%d" % (self.name, geometry_index))
-            logger.info("create %s geometry." % vertex_buffer_name)
+            logger.info("Load %s geometry." % vertex_buffer_name)
 
             vertex_count = len(geometry_data.get('positions', []))
             if vertex_count == 0:

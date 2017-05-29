@@ -118,13 +118,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btnAddResource">
-        <property name="text">
-         <string>Add Resource</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="labelCreateReousrce">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -165,17 +158,24 @@
     </item>
     <item row="5" column="4">
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
+      <item row="0" column="1">
        <widget class="QPushButton" name="btnSaveResource">
         <property name="text">
          <string>Save Resource</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="0" column="2">
        <widget class="QPushButton" name="btnDeleteResource">
         <property name="text">
          <string>Delete Resource</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="btnOpenResource">
+        <property name="text">
+         <string>Open Resource</string>
         </property>
        </widget>
       </item>

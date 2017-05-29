@@ -15,7 +15,7 @@ from Common import logger
 class Material:
     def __init__(self, material_name, material_datas={}):
         self.valid = False
-        logger.info("Create %s material." % material_name)
+        logger.info("Load %s material." % material_name)
 
         vertex_shader_code = material_datas.get('vertex_shader_code', "")
         fragment_shader_code = material_datas.get('fragment_shader_code', "")

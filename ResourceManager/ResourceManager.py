@@ -26,42 +26,110 @@ from . import Collada, OBJ
 # -----------------------#
 class MetaData:
     def __init__(self, resource_version, resource_filepath):
+        self.filepath = os.path.splitext(resource_filepath)[0] + ".meta"
         self.resource_version = resource_version
-        self.resource_filepath = ""
-        self.resource_modify_time = ""
+        self.resource_filepath = resource_filepath
+        self.resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.source_filepath = ""
         self.source_modify_time = ""
+        self.changed = False
 
-        self.set_resource_meta_data(resource_filepath)
+        self.load_meta_file()
+        self.save_meta_file()
 
     def set_resource_meta_data(self, resource_filepath, modify_time=None):
+        resource_modify_time = modify_time or get_modify_time_of_file(resource_filepath)
+        self.changed |= self.resource_filepath != resource_filepath
+        self.changed |= self.resource_modify_time != resource_modify_time
         self.resource_filepath = resource_filepath
-        self.resource_modify_time = modify_time if modify_time else get_modify_time_of_file(resource_filepath)
+        self.resource_modify_time = resource_modify_time
+
+        if self.changed:
+            self.save_meta_file()
 
     def set_source_meta_data(self, source_filepath, modify_time=None):
+        source_modify_time = modify_time or get_modify_time_of_file(source_filepath)
+        self.changed |= self.source_filepath != source_filepath
+        self.changed |= self.source_modify_time != source_modify_time
         self.source_filepath = source_filepath
-        self.source_modify_time = modify_time if modify_time else get_modify_time_of_file(source_filepath)
+        self.source_modify_time = source_modify_time
+
+        if self.changed:
+            self.save_meta_file()
+
+    def load_meta_file(self):
+        if os.path.exists(self.filepath):
+            with open(self.filepath, 'r') as f:
+                load_data = eval(f.read())
+                resource_version = load_data.get("resource_version", None)
+                resource_filepath = load_data.get("resource_filepath", None)
+                resource_modify_time = load_data.get("resource_modify_time", None)
+                source_filepath = load_data.get("source_filepath", None)
+                source_modify_time = load_data.get("source_modify_time", None)
+
+                self.changed |= self.resource_version != resource_version
+                self.changed |= self.resource_filepath != resource_filepath
+                self.changed |= self.resource_modify_time != resource_modify_time
+                self.changed |= self.source_filepath != source_filepath
+                self.changed |= self.source_modify_time != source_modify_time
+
+                if resource_version is not None:
+                    self.resource_version = resource_version
+                if source_filepath is not None:
+                    self.source_filepath = source_filepath
+                if source_modify_time is not None:
+                    self.source_modify_time = source_modify_time
+
+                if self.changed:
+                    self.save_meta_file()
+
+    def save_meta_file(self):
+        if (self.changed or not os.path.exists(self.filepath)) and os.path.exists(self.resource_filepath):
+            with open(self.filepath, 'w') as f:
+                save_data = dict(
+                    resource_version=self.resource_version,
+                    resource_filepath=self.resource_filepath,
+                    resource_modify_time=self.resource_modify_time,
+                    source_filepath=self.source_filepath,
+                    source_modify_time=self.source_modify_time,
+                )
+                pprint.pprint(save_data, f)
+            self.changed = False
+
+    def delete_meta_file(self):
+        if os.path.exists(self.filepath):
+            os.remove(self.filepath)
 
 
 # -----------------------#
 # CLASS : Resource
 # -----------------------#
 class Resource:
-    def __init__(self, resource_name):
-        logger.info("Create Resource : %s" % resource_name)
+    def __init__(self, resource_name, resource_type_name):
         self.name = resource_name
+        self.type_name = resource_type_name
         self.is_loaded = False
-        self.attributes = Attributes()
+        self.data = None
+        self.meta_data = None
 
-    def set_loaded(self, loaded):
-        self.is_loaded = loaded
+    def set_data(self, data):
+        if data:
+            self.data = data
+            self.is_loaded = True
+
+    def get_data(self):
+        if self.data is None:
+            ResourceManager.instance().load_resource(self.name, self.type_name)
+        return self.data
 
     def getAttribute(self):
-        self.attributes.setAttribute('name', self.name)
-        return self.attributes
+        if self.data:
+            return self.data.getAttribute()
+        return None
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        pass
+        if self.data:
+            self.data.setAttribute(attributeName, attributeValue, attribute_index)
 
 
 # -----------------------#
@@ -74,7 +142,6 @@ class ResourceLoader(object):
     resource_type_name = 'None'
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
-    USE_EXTERNAL_RESOURCE = False
     USE_FILE_COMPRESS_TO_SAVE = True
 
     def __init__(self, core_manager, root_path):
@@ -84,70 +151,76 @@ class ResourceLoader(object):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
         check_directory_and_mkdir(self.resource_path)
 
-        self.gabage_resources = []
-        self.need_to_convert_resources = []
+        self.externalFileList = []
         self.resources = {}
         self.metaDatas = {}
 
+    @staticmethod
+    def getResourceName(filepath, workPath, make_lower=True):
+        resourceName = os.path.splitext(os.path.relpath(filepath, workPath))[0]
+        resourceName = resourceName.replace(os.sep, ".")
+        return resourceName if make_lower else resourceName
+
     def initialize(self):
-        """
-         Do load_resource and regist_resource.
-        """
         logger.info("initialize " + GetClassName(self))
 
         # collect resource files
         for dirname, dirnames, filenames in os.walk(self.resource_path):
             for filename in filenames:
                 fileExt = os.path.splitext(filename)[1]
-                if fileExt == '.meta':
-                    continue
-
                 if ".*" == self.fileExt or fileExt == self.fileExt:
                     filepath = os.path.join(dirname, filename)
-                    # get Resource and MetaData
-                    resource, meta_data = self.load_resource(filepath)
+                    resource_name = self.getResourceName(filepath, self.resource_path)
+                    resource = Resource(resource_name, self.resource_type_name)
+                    meta_data = MetaData(self.resource_version, filepath)
                     self.regist_resource(resource, meta_data)
-                    convert_resource = True if resource is None else self.is_need_to_convert(resource)
-                    if meta_data and os.path.exists(meta_data.source_filepath):
-                        if not convert_resource:
-                            # check source file is newer or same.
-                            source_modify_time = get_modify_time_of_file(meta_data.source_filepath)
-                            if meta_data.resource_version != self.resource_version:
-                                convert_resource = True
-                                logger.log(Logger.MINOR_INFO, "Resource version changed. %d => %d" %
-                                           (meta_data.resource_version, self.resource_version))
-                            elif meta_data.source_modify_time != source_modify_time:
-                                convert_resource = True
-                                logger.log(Logger.MINOR_INFO, "Resource was modified.")
-                        if convert_resource:
-                            self.convert_resource(filepath, meta_data.source_filepath)
-                    if not convert_resource and (resource is None or meta_data is None):
-                        logger.error("%s load failed." % filename)
 
         # If you use external files, convert the resources.
-        if self.USE_EXTERNAL_RESOURCE:
+        if self.externalFileExt:
+            # gather external source files
             for dirname, dirnames, filenames in os.walk(self.resource_path):
                 for filename in filenames:
                     source_filepath = os.path.join(dirname, filename)
                     file_ext = os.path.splitext(source_filepath)[1]
                     if file_ext in self.externalFileExt.values():
-                        resource_name = self.getResourceName(source_filepath, self.resource_path)
-                        resource_filepath = os.path.join(self.resource_path, resource_name + self.fileExt)
-                        # Create the new resource from exterial file.
-                        if self.getResource(resource_name, noWarn=True) is None:
-                            logger.info("Create the new resource from %s." % source_filepath)
-                            self.convert_resource(resource_filepath, source_filepath)
+                        self.externalFileList.append(source_filepath)
+            # convert external file to rsource file.
+            for source_filepath in self.externalFileList:
+                resource_name = self.getResourceName(source_filepath, self.resource_path)
+                resource = self.getResource(resource_name, noWarn=True)
+                meta_data = self.getMetaData(resource_name, noWarn=True)
+                # Create the new resource from exterial file.
+                if resource is None:
+                    logger.info("Create the new resource from %s." % source_filepath)
+                    resource = self.create_resource(resource_name)
+                    self.convert_resource(resource, source_filepath)
+                elif meta_data:
+                    # Refresh the resource from external file.
+                    source_modify_time = get_modify_time_of_file(source_filepath)
+                    if meta_data.resource_version != self.resource_version \
+                        or (meta_data.source_filepath == source_filepath \
+                            and meta_data.source_modify_time != source_modify_time):
+                        self.convert_resource(resource, source_filepath)
+                        logger.info("Refresh the new resource from %s." % source_filepath)
+            # clear list
+            self.externalFileList = []
+
+        # clear gabage meta file
+        for dirname, dirnames, filenames in os.walk(self.resource_path):
+            for filename in filenames:
+                file_ext = os.path.splitext(filename)[1]
+                if file_ext == '.meta':
+                    filepath = os.path.join(dirname, filename)
+                    resource_name = self.getResourceName(filepath, self.resource_path)
+                    resource = self.getResource(resource_name, noWarn=True)
+                    meta_data = self.getMetaData(resource_name, noWarn=True)
+                    if resource is None:
+                        if meta_data:
+                            meta_data.delete_meta_file()
+                            self.metaDatas.pop(resource_name)
                         else:
-                            # Refresh the resource from external file.
-                            meta_data = self.getMetaData(resource_name, noWarn=True)
-                            if meta_data:
-                                source_modify_time = get_modify_time_of_file(source_filepath)
-                                if meta_data.source_filepath == source_filepath \
-                                        and meta_data.source_modify_time != source_modify_time:
-                                    self.convert_resource(resource_filepath, source_filepath)
-                                    logger.info("Refresh the new resource from %s." % source_filepath)
-        # clear
-        self.need_to_convert_resources = []
+                            logger.info("Delete the %s." % filepath)
+                            os.remove(filepath)
 
     def get_new_resource_name(self, prefix=""):
         num = 0
@@ -158,143 +231,22 @@ class ResourceLoader(object):
             num += 1
         return ''
 
-    def add_resource(self, resource_name):
-        """
-        desc: add resource to scene or create resource.
-        """
-        logger.warn("add_resource is not implemented in %s." % self.name)
-
-    def open_resource(self, resource_name):
-        '''
-        Actually open a resource file.
-        '''
-        logger.warn("open_resource is not implemented in %s." % self.name)
-
-    def create_resource(self, resource_name):
-        if resource_name in self.resources:
-            return self.getResource(resource_name)
-        resource = Resource(resource_name)
-        self.regist_resource(resource)
-        return resource
-
-    def request_save_resource(self, resource_name):
-        logger.warn("request_save_resource is not implemented in %s." % self.name)
-
-    def save_resource(self, resource_name, resource_data):
-        resource = self.getResource(resource_name)
-        if resource_name:
-            self.save_resource_data(resource, resource_data)
-
-    def delete_resource(self, resource_name):
-        resource = self.getResource(resource_name)
-        if resource:
-            logger.info("Deleted the %s." % resource.name)
-            if resource.name in self.metaDatas:
-                resource_filepath = self.metaDatas[resource.name].resource_filepath
-            else:
-                resource_filepath = ""
-            if os.path.exists(resource_filepath):
-                os.remove(resource_filepath)
-            self.unregist_resource(resource)
-
-    def regist_resource(self, resource, meta_data=None):
-        """
-        :param resource: resource object ( Texture2D, Mesh, Material ... )
-        """
-        logger.debug("Register %s." % resource.name)
-        notify_new_resource = resource.name not in self.resources
-        self.resources[resource.name] = resource
-        if meta_data is not None:
-            self.metaDatas[resource.name] = meta_data
-        if notify_new_resource:
-            resource_info = (resource.name, self.resource_type_name)
-            self.core_manager.sendResourceInfo(resource_info)
-
-    def unregist_resource(self, resource):
-        if resource:
-            if resource.name in self.resources:
-                self.resources.pop(resource.name)
-            if resource.name in self.metaDatas:
-                self.metaDatas.pop(resource.name)
-            self.core_manager.notifyDeleteResource(resource.name)
-
-    def is_need_to_convert(self, resource):
-        return resource in self.need_to_convert_resources
-
-    def convert_resource(self, resource_filepath, source_filepath):
-        """
-        Desc : do resource convert, save_simple_format_and_regist resource.
-        :param source_filepath:
-        """
-        pass
-
-    @staticmethod
-    def getResourceName(filepath, workPath, make_lower=True):
-        resourceName = os.path.splitext(os.path.relpath(filepath, workPath))[0]
-        resourceName = resourceName.replace(os.sep, ".")
-        return resourceName if make_lower else resourceName
-
-    def load_resource(self, filePath):
-        """
-        :return: tuple(Resource object, MetaData)
-        """
-        resource_name = self.getResourceName(filePath, self.resource_path)
-        resource = Resource(resource_name)
-        meta_data = MetaData(self.resource_version, filePath)
-        return resource, meta_data
-
-    def load_resource_data(self, filePath):
-        try:
-            # Load data (deserialize)
-            if is_gz_compressed_file(filePath):
-                with gzip.open(filePath, 'rb') as f:
-                    load_data = pickle.load(f)
-            else:
-                # human readable data
-                with open(filePath, 'r') as f:
-                    load_data = eval(f.read())
-
-            meta_data = MetaData(load_data.get('resource_version'), filePath)
-            meta_data.set_source_meta_data(load_data.get('source_filepath', ''), load_data.get('source_modify_time'))
-            return load_data.get('resource_data'), meta_data
-        except:
-            logger.error("file open error : %s" % filePath)
-            logger.error(traceback.format_exc())
-        return None, None
-
-    def save_resource_data(self, resource, resource_data, source_filepath=""):
-        save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
-        meta_data = self.getMetaData(resource.name, noWarn=True) or MetaData(self.resource_version, save_filepath)
-        meta_data.set_source_meta_data(source_filepath)
-        logger.info("Save : %s" % save_filepath)
-        try:
-            # save resource
-            save_data = dict(
-                resource_version=self.resource_version,
-                source_filepath=meta_data.source_filepath,
-                source_modify_time=meta_data.source_modify_time,
-                resource_data=resource_data
-            )
-            # store data, serialize
-            if self.USE_FILE_COMPRESS_TO_SAVE:
-                with gzip.open(save_filepath, 'wb') as f:
-                    pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
-            else:
-                # human readable data
-                with open(save_filepath, 'w') as f:
-                    pprint.pprint(save_data, f, width=256)
-            # refresh meta data because resource file saved.
-            meta_data.set_resource_meta_data(save_filepath)
-            # register
-            self.regist_resource(resource, meta_data)
-        except:
-            logger.error(traceback.format_exc())
+    def convert_resource(self, resource, source_filepath):
+        logger.warn("convert_resource is not implemented in %s." % self.name)
 
     def getResource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
             return self.resources[resourceName]
         if not noWarn and resourceName:
             logger.error("%s cannot found %s resource." % (self.name, resourceName))
+        return None
+
+    def getResourceData(self, resourceName, noWarn=False):
+        resource = self.getResource(resourceName, noWarn)
+        if resource:
+            if not resource.is_loaded:
+                self.load_resource(resourceName)
+            return resource.data
         return None
 
     def getResourceList(self):
@@ -314,17 +266,99 @@ class ResourceLoader(object):
         if resource:
             resource.setAttribute(attribute_name, attribute_value, attribute_index)
 
-    def setResourceLoaded(self, resource_name, loaded):
-        resource = self.getResource(resource_name)
-        if resource:
-            resource.set_loaded(loaded)
-
     def getMetaData(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
             return self.metaDatas[resource_name]
         if not noWarn:
             logger.error("Not found meta data of %s." % resource_name)
         return None
+
+    def create_resource(self, resource_name, resource_data=None):
+        if resource_name in self.resources:
+            return self.getResource(resource_name)
+        resource = Resource(resource_name, self.resource_type_name)
+        if resource_data:
+            resource.set_data(resource_data)
+        filepath = os.path.join(self.resource_path, resource_name) + self.fileExt
+        meta_data = MetaData(self.resource_version, filepath)
+        self.regist_resource(resource, meta_data)
+        return resource
+
+    def regist_resource(self, resource, meta_data=None):
+        logger.info("Regist %s : %s" % (self.resource_type_name, resource.name))
+        self.resources[resource.name] = resource
+        if meta_data is not None:
+            self.metaDatas[resource.name] = meta_data
+            resource.meta_data = meta_data
+        # The new resource registered.
+        if resource:
+            resource_info = (resource.name, self.resource_type_name)
+            self.core_manager.sendResourceInfo(resource_info)
+
+    def unregist_resource(self, resource):
+        if resource:
+            if resource.name in self.metaDatas:
+                self.metaDatas.pop(resource.name)
+            if resource.name in self.resources:
+                self.resources.pop(resource.name)
+            self.core_manager.notifyDeleteResource(resource.name)
+
+    def open_resource(self, resource_name):
+        logger.warn("open_resource is not implemented in %s." % self.name)
+
+    def request_save_resource(self, resource_name):
+        logger.warn("request_save_resource is not implemented in %s." % self.name)
+
+    def load_resource(self, resource_name):
+        logger.warn("load_resource is not implemented in %s." % self.name)
+
+    def save_resource(self, resource_name, resource_data):
+        logger.warn("save_resource is not implemented in %s." % self.name)
+
+    def load_resource_data(self, filePath):
+        try:
+            # Load data (deserialize)
+            if is_gz_compressed_file(filePath):
+                with gzip.open(filePath, 'rb') as f:
+                    load_data = pickle.load(f)
+            else:
+                # human readable data
+                with open(filePath, 'r') as f:
+                    load_data = eval(f.read())
+            return load_data
+        except:
+            logger.error("file open error : %s" % filePath)
+        return None
+
+    def save_resource_data(self, resource, save_data, source_filepath=""):
+        save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
+        logger.info("Save : %s" % save_filepath)
+        try:
+            # store data, serialize
+            if self.USE_FILE_COMPRESS_TO_SAVE:
+                with gzip.open(save_filepath, 'wb') as f:
+                    pickle.dump(save_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+            else:
+                # human readable data
+                with open(save_filepath, 'w') as f:
+                    pprint.pprint(save_data, f, width=256)
+            # refresh meta data because resource file saved.
+            resource.meta_data.set_resource_meta_data(save_filepath)
+            resource.meta_data.set_source_meta_data(source_filepath)
+        except:
+            logger.error(traceback.format_exc())
+
+    def delete_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            logger.info("Deleted the %s." % resource.name)
+            if resource.name in self.metaDatas:
+                resource_filepath = self.metaDatas[resource.name].resource_filepath
+            else:
+                resource_filepath = ""
+            if os.path.exists(resource_filepath):
+                os.remove(resource_filepath)
+            self.unregist_resource(resource)
 
 
 # ---------------------------#
@@ -336,13 +370,10 @@ class ShaderLoader(ResourceLoader):
     resource_type_name = 'Shader'
     fileExt = '.glsl'
 
-    def load_resource(self, filePath):
-        try:
-            shaderName = self.getResourceName(filePath, self.resource_path)
-            return Shader(shaderName, filePath), MetaData(self.resource_version, filePath)
-        except:
-            logger.error(traceback.format_exc())
-        return None, None
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        shader = Shader(resource.name, resource.meta_data.resource_filepath)
+        resource.set_data(shader)
 
 
 # -----------------------#
@@ -363,32 +394,31 @@ class MaterialLoader(ResourceLoader):
             return shader_name + "_" + "_".join(add_name)
         return shader_name
 
-    def load_resource(self, filePath):
-        material_datas, meta_data = self.load_resource_data(filePath)
-        material_name = self.getResourceName(filePath, self.resource_path, make_lower=False)
-        material = Material(material_name, material_datas)
-        if 'include_files' in material_datas:
-            for include_file in material_datas['include_files']:
-                if get_modify_time_of_file(include_file) != material_datas['include_files'][include_file]:
-                    # will be convert
-                    self.need_to_convert_resources.append(material)
-        return material, meta_data
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        meta_data = resource.meta_data
+        material_datas = self.load_resource_data(meta_data.resource_filepath)
+        material = Material(resource.name, material_datas)
+        resource.set_data(material)
+        include_files = material_datas.get('include_files', [])
+        for include_file in include_files:
+            if get_modify_time_of_file(include_file) != include_files[include_file]:
+                self.convert_resource(resource, meta_data.source_filepath)
 
-    def convert_resource(self, resource_filepath, source_filepath):
+    def convert_resource(self, resource, source_filepath):
         shader_name = self.getResourceName(source_filepath, ResourceManager.instance().shaderLoader.resource_path)
         shader = ResourceManager.instance().getShader(shader_name)
         if shader:
-            material_datas, meta_data = self.load_resource_data(resource_filepath)
-            if material_datas and meta_data:
+            material_datas = self.load_resource_data(resource.resource_filepath)
+            if material_datas:
                 macros = material_datas.get('macros', {})
-                # It's will be generate material.
-                self.generate_new_material(shader_name, macros)
+                self.generate_new_material(resource, shader_name, macros)
 
-    def generate_new_material(self, shader_name, macros={}):
+    def generate_new_material(self, resource, shader_name, macros={}):
         material_name = self.generate_material_name(shader_name, macros)
         logger.info("Generate new material : %s" % material_name)
-        shader = ResourceManager.instance().shaderLoader.getResource(shader_name)
-        shader_meta_data = ResourceManager.instance().shaderLoader.getMetaData(shader_name)
+        shader = self.resource_manager.getShader(shader_name)
+        shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)
         if shader:
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
@@ -413,19 +443,18 @@ class MaterialLoader(ResourceLoader):
                     source_filepath = shader_meta_data.resource_filepath
                 else:
                     source_filepath = ""
-                self.save_resource_data(material, material_datas, source_filepath)
-            return material
-        return None
+                self.save_resource_data(resource, material_datas, source_filepath)
+                # convert done
+                resource.set_data(material)
 
     def getMaterial(self, shader_name, macros={}):
         material_name = self.generate_material_name(shader_name, macros)
-        material = self.getResource(material_name, noWarn=True)
-        if material:
-            return material
-        else:
-            material = self.generate_new_material(shader_name, macros)
-            if material:
-                return material
+        resource = self.getResource(material_name)
+        if resource is None:
+            resource = self.create_resource(material_name)
+            self.generate_new_material(resource, shader_name, macros)
+        if resource:
+            return resource.get_data()
         logger.error("%s cannot found %s resource." % (self.name, material_name))
         return None
 
@@ -439,67 +468,11 @@ class MaterialInstanceLoader(ResourceLoader):
     resource_type_name = 'MaterialInstance'
     fileExt = '.matinst'
 
-    def load_resource(self, filePath):
-        material_instance_name = self.getResourceName(filePath, self.resource_path)
-        material_instance = MaterialInstance(material_instance_name, filePath)
-        meta_data = MetaData(self.resource_version, filePath)
-        if material_instance and material_instance.valid:
-            return material_instance, meta_data
-        return None, None
-
-
-# -----------------------#
-# CLASS : MeshLoader
-# -----------------------#
-class MeshLoader(ResourceLoader):
-    name = "MeshLoader"
-    resource_version = 0
-    resource_dir_name = 'Meshes'
-    resource_type_name = 'Mesh'
-    fileExt = '.mesh'
-    externalFileExt = dict(WaveFront='.obj', Collada='.dae')
-    USE_EXTERNAL_RESOURCE = True
-    USE_FILE_COMPRESS_TO_SAVE = True
-
-    def initialize(self):
-        # load and regist resource
-        super(MeshLoader, self).initialize()
-
-        # Regist basic meshs
-        self.regist_resource(Triangle())
-        self.regist_resource(Quad())
-
-    def load_resource(self, filePath):
-        resource_data, meta_data = self.load_resource_data(filePath)
-        mesh_name = self.getResourceName(filePath, self.resource_path)
-        mesh = Mesh(mesh_name, resource_data)
-        return mesh, meta_data
-
-    def convert_resource(self, resource_filepath, source_filepath):
-        """
-        If the resource is newer, save and register the resource.
-        """
-        file_ext = os.path.splitext(source_filepath)[1]
-        if file_ext == self.externalFileExt.get('WaveFront'):
-            geometry = OBJ(source_filepath, 1, True)
-            geometry_datas = geometry.get_geometry_data()
-        elif file_ext == self.externalFileExt.get('Collada'):
-            geometry = Collada(source_filepath)
-            geometry_datas = geometry.get_geometry_data()
-        else:
-            return
-
-        logger.info("Convert Resource : %s" % source_filepath)
-        if geometry_datas:
-            meshName = self.getResourceName(resource_filepath, self.resource_path)
-            # create mesh
-            mesh = Mesh(meshName, geometry_datas)
-            self.save_resource_data(mesh, geometry_datas, source_filepath)
-
-    def add_resource(self, resource_name):
-        mesh = self.getResource(resource_name)
-        if mesh:
-            self.scene_manager.addMeshHere(resource)
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        meta_data = resource.meta_data
+        material_instance = MaterialInstance(resource.name, meta_data.resource_filepath)
+        resource.set_data(material_instance)
 
 
 # -----------------------#
@@ -512,15 +485,15 @@ class TextureLoader(ResourceLoader):
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx")
-    USE_EXTERNAL_RESOURCE = True
 
-    def load_resource(self, filePath):
-        texture_datas, meta_data = self.load_resource_data(filePath)
-        texture_name = self.getResourceName(filePath, self.resource_path)
-        texture = CreateTextureFromFile(texture_name, texture_datas)
-        return texture, meta_data
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        meta_data = resource.meta_data
+        texture_datas = self.load_resource_data(meta_data.resource_filepath)
+        texture = CreateTextureFromFile(resource.name, texture_datas)
+        resource.set_data(texture)
 
-    def convert_resource(self, resource_filepath, source_filepath):
+    def convert_resource(self, resource, source_filepath):
         file_ext = os.path.splitext(source_filepath)[1]
         if file_ext not in self.externalFileExt.values():
             return
@@ -541,18 +514,60 @@ class TextureLoader(ResourceLoader):
                 data=data
             )
             texture = CreateTextureFromFile(texture_name, texture_datas)
-            self.save_resource_data(texture, texture_datas, source_filepath)
+            resource.set_data(texture)
+            self.save_resource_data(resource, texture_datas, source_filepath)
         except:
             logger.error(traceback.format_exc())
 
 
 # -----------------------#
-# CLASS : ScriptLoader
+# CLASS : MeshLoader
 # -----------------------#
-class ScriptLoader(ResourceLoader):
-    name = "ScriptLoader"
-    resource_dir_name = 'Scripts'
-    fileExt = '.py'
+class MeshLoader(ResourceLoader):
+    name = "MeshLoader"
+    resource_version = 0
+    resource_dir_name = 'Meshes'
+    resource_type_name = 'Mesh'
+    fileExt = '.mesh'
+    externalFileExt = dict(WaveFront='.obj', Collada='.dae')
+    USE_FILE_COMPRESS_TO_SAVE = True
+
+    def initialize(self):
+        # load and regist resource
+        super(MeshLoader, self).initialize()
+
+        # Regist basic meshs
+        self.create_resource("Triangle", Triangle())
+        self.create_resource("Quad", Quad())
+
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        mesh_data = self.load_resource_data(resource.meta_data.resource_filepath)
+        mesh = Mesh(resource.name, mesh_data)
+        resource.set_data(mesh)
+
+    def convert_resource(self, resoure, source_filepath):
+        file_ext = os.path.splitext(source_filepath)[1]
+        if file_ext == self.externalFileExt.get('WaveFront'):
+            geometry = OBJ(source_filepath, 1, True)
+            geometry_datas = geometry.get_geometry_data()
+        elif file_ext == self.externalFileExt.get('Collada'):
+            geometry = Collada(source_filepath)
+            geometry_datas = geometry.get_geometry_data()
+        else:
+            return
+
+        logger.info("Convert Resource : %s" % source_filepath)
+        if geometry_datas:
+            # create mesh
+            mesh = Mesh(resoure.name, geometry_datas)
+            resoure.set_data(mesh)
+            self.save_resource_data(resoure, geometry_datas, source_filepath)
+
+    def open_resource(self, resource_name):
+        mesh = self.getResourceData(resource_name)
+        if mesh:
+            self.scene_manager.addMeshHere(mesh)
 
 
 # -----------------------#
@@ -578,7 +593,7 @@ class ObjectLoader(ResourceLoader):
             scene_datas, meta_data = self.load_resource_data(meta_data.resource_filepath)
             self.scene_manager.open_scene(resource_name, scene_datas)
 
-    def add_resource(self, resource_name):
+    def open_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
             self.scene_manager.addMeshHere(resource)
@@ -594,12 +609,6 @@ class SceneLoader(ResourceLoader):
     fileExt = '.scene'
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def load_resource(self, filePath):
-        return ResourceLoader.load_resource(self, filePath)
-
-    def add_resource(self, resource_name):
-        self.open_resource(resource_name)
-
     def request_save_resource(self, resource_name):
         if resource_name == self.scene_manager.get_current_scene_name():
             self.scene_manager.save_scene()
@@ -607,9 +616,22 @@ class SceneLoader(ResourceLoader):
     def open_resource(self, resource_name):
         meta_data = self.getMetaData(resource_name)
         if meta_data and os.path.exists(meta_data.resource_filepath):
-            scene_datas, meta_data = self.load_resource_data(meta_data.resource_filepath)
+            scene_datas = self.load_resource_data(meta_data.resource_filepath)
             self.scene_manager.open_scene(resource_name, scene_datas)
-            self.setResourceLoaded(resource_name, True)
+
+    def save_resource(self, resource_name, resource_data):
+        resource = self.getResource(resource_name)
+        if resource:
+            self.save_resource_data(resource, resource_data)
+
+
+# -----------------------#
+# CLASS : ScriptLoader
+# -----------------------#
+class ScriptLoader(ResourceLoader):
+    name = "ScriptLoader"
+    resource_dir_name = 'Scripts'
+    fileExt = '.py'
 
 
 # -----------------------#
@@ -661,6 +683,8 @@ class ResourceManager(Singleton):
         for resource_loader in self.resource_loaders:
             resource_loader.initialize()
 
+        logger.info("Resource register done.")
+
     def close(self):
         pass
 
@@ -693,16 +717,27 @@ class ResourceManager(Singleton):
             return resource_loader.getResourceAttribute(resource_name)
         return None
 
-    def getResource(self, resource_name, resource_type_name):
+    def getResourceData(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.getResource(resource_name)
+            return resource_loader.getResourceData(resource_name)
         return None
 
-    def add_resource(self, resource_name, resource_type_name):
+    def getMetaData(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            resource_loader.add_resource(resource_name)
+            return resource_loader.getMetaData(resource_name)
+        return None
+
+    def load_resource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            resource_loader.load_resource(resource_name)
+
+    def open_resource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            resource_loader.open_resource(resource_name)
 
     def request_save_resource(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
@@ -724,7 +759,7 @@ class ResourceManager(Singleton):
     # FUNCTIONS : Shader
 
     def getShader(self, shaderName):
-        return self.shaderLoader.getResource(shaderName)
+        return self.shaderLoader.getResourceData(shaderName)
 
     def getShaderNameList(self):
         return self.shaderLoader.getResourceNameList()
@@ -743,10 +778,10 @@ class ResourceManager(Singleton):
         return self.material_instanceLoader.getResourceNameList()
 
     def getMaterialInstance(self, name):
-        return self.material_instanceLoader.getResource(name) or self.getDefaultMaterialInstance()
+        return self.material_instanceLoader.getResourceData(name) or self.getDefaultMaterialInstance()
 
     def getDefaultMaterialInstance(self):
-        return self.material_instanceLoader.getResource('default')
+        return self.material_instanceLoader.getResourceData('default')
 
     # FUNCTIONS : Mesh
 
@@ -754,7 +789,7 @@ class ResourceManager(Singleton):
         return self.meshLoader.getResourceNameList()
 
     def getMesh(self, meshName):
-        return self.meshLoader.getResource(meshName)
+        return self.meshLoader.getResourceData(meshName)
 
     # FUNCTIONS : Texture
 
@@ -762,7 +797,7 @@ class ResourceManager(Singleton):
         return self.textureLoader.getResourceNameList()
 
     def getTexture(self, textureName):
-        return self.textureLoader.getResource(textureName)
+        return self.textureLoader.getResourceData(textureName)
 
     # FUNCTIONS : Object
 
@@ -770,7 +805,7 @@ class ResourceManager(Singleton):
         return self.objectLoader.getResourceNameList()
 
     def getObject(self, meshName):
-        return self.objectLoader.getResource(meshName)
+        return self.objectLoader.getResourceData(meshName)
 
     # FUNCTIONS : Scene
 
@@ -778,4 +813,4 @@ class ResourceManager(Singleton):
         return self.sceneLoader.getResourceNameList()
 
     def getScene(self, SceneName):
-        return self.sceneLoader.getResource(SceneName)
+        return self.sceneLoader.getResourceData(SceneName)

@@ -210,10 +210,10 @@ class CoreManager(Singleton):
             COMMAND.VIEWMODE_SHADING)
 
         # Resource commands
-        def cmd_add_resource(value):
+        def cmd_open_resource(value):
             resName, resTypeName = value
-            self.resource_manager.add_resource(resName, resTypeName)
-        self.commands[COMMAND.ADD_RESOURCE.value] = cmd_add_resource
+            self.resource_manager.open_resource(resName, resTypeName)
+        self.commands[COMMAND.OPEN_RESOURCE.value] = cmd_open_resource
 
         def cmd_request_save_resource(value):
             resName, resTypeName = value

@@ -125,7 +125,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.sortItems(0, 0)
         self.resourceListWidget.sortItems(1, 0)
-        self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
+        self.resourceListWidget.itemDoubleClicked.connect(self.openResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
@@ -136,8 +136,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_RESOURCE_INFO)),
                      self.delete_resource_info)
 
-        btn = self.findChild(QtGui.QPushButton, "btnAddResource")
-        btn.clicked.connect(self.addResource)
+        btn = self.findChild(QtGui.QPushButton, "btnOpenResource")
+        btn.clicked.connect(self.openResource)
 
         btn = self.findChild(QtGui.QPushButton, "btnSaveResource")
         btn.clicked.connect(self.saveResource)
@@ -345,11 +345,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(0, resource_name)
         item.setText(1, resource_type)
 
-    def addResource(self, item=None):
+    def openResource(self, item=None):
         if not item:  # button clicked
             item = self.getSelectedResource()
         if item:
-            self.appCmdQueue.put(COMMAND.ADD_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
 
     def selectResource(self):
         item = self.getSelectedResource()
@@ -367,7 +367,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item = self.getSelectedResource()
         if item:
             choice = QtGui.QMessageBox.question(self, 'Delete resource.',
-                                                "Are you sure you want to delete this resource?",
+                                                "Are you sure you want to delete the \"%s\" %s?" % (
+                                                item.text(0), item.text(1)),
                                                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             if choice == QtGui.QMessageBox.Yes:
                 self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (item.text(0), item.text(1)))

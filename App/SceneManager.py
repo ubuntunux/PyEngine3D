@@ -90,7 +90,7 @@ class SceneManager(Singleton):
         self.addLight(scene_data.get('light'))
         self.add_postprocess()
 
-        for mesh_name, pos in scene_data.get('meshes'):
+        for mesh_name, pos in scene_data.get('meshes', []):
             mesh = self.resource_manager.getMesh(mesh_name)
             self.addMesh(mesh, pos)
 

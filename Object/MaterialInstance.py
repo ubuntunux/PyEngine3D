@@ -13,7 +13,7 @@ from Utilities import Attributes
 class MaterialInstance:
     def __init__(self, material_instance_name, filePath):
         self.valid = False
-        logger.info("Create Material Instance : " + material_instance_name)
+        logger.info("Load Material Instance : " + material_instance_name)
         self.name = material_instance_name
         self.material = None
         self.uniform_datas = {}

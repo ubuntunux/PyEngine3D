@@ -20,6 +20,7 @@ reVariable = re.compile('[a-z|A-Z|_]+[a-z|A-Z|_|0-9]*')
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
 
+
 class Shader:
     default_macros = dict(MATERIAL_COMPONENTS=1)
 
