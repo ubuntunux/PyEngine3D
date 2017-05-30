@@ -340,8 +340,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item.setText(1, resType)
 
     def addResourceInfo(self, resource_info):
-        resource_name, resource_type = resource_info
+        resource_name, resource_type, is_loaded = resource_info
         item = QtGui.QTreeWidgetItem(self.resourceListWidget)
+        # if not is_loaded:
+        #     item.setTextColor(0, QtGui.QColor("gray"))
+        #     item.setTextColor(1, QtGui.QColor("gray"))
+
         item.setText(0, resource_name)
         item.setText(1, resource_type)
 

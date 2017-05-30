@@ -40,11 +40,11 @@
 * Resource Manager
     - Create/Remove/Regist/Release resources
     - TODO : resource reload system
-* Import/Export
+* Import
     - OBJ
     - TODO : FBX
     - TODO : Blender
-    - TODO : Collada
+    - Collada
     - Textures
 * Shader
     - Material Template
@@ -77,7 +77,7 @@
     - TODO : Ocean, River
     - TODO : Envirment Cube map
 * Object
-    - TODO : Multiple Geometry Mesh
+    - Multiple Geometry Mesh
     - TODO : instancing
     - TODO : skinning
 * Texture Object

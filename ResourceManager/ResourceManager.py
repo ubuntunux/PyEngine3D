@@ -117,8 +117,13 @@ class Resource:
             self.data = data
             self.is_loaded = True
 
+    def clear_data(self):
+        self.data = None
+        self.is_loaded = False
+
     def get_data(self):
         if self.data is None:
+            # load resource
             ResourceManager.instance().load_resource(self.name, self.type_name)
         return self.data
 
@@ -275,7 +280,8 @@ class ResourceLoader(object):
 
     def create_resource(self, resource_name, resource_data=None):
         if resource_name in self.resources:
-            return self.getResource(resource_name)
+            logger.warn('Resource name is duplicated. %s' % resource_name)
+            resource_name = self.get_new_resource_name(resource_name)
         resource = Resource(resource_name, self.resource_type_name)
         if resource_data:
             resource.set_data(resource_data)
@@ -292,7 +298,7 @@ class ResourceLoader(object):
             resource.meta_data = meta_data
         # The new resource registered.
         if resource:
-            resource_info = (resource.name, self.resource_type_name)
+            resource_info = (resource.name, self.resource_type_name, resource.is_loaded)
             self.core_manager.sendResourceInfo(resource_info)
 
     def unregist_resource(self, resource):
@@ -580,23 +586,10 @@ class ObjectLoader(ResourceLoader):
     fileExt = '.object'
     USE_FILE_COMPRESS_TO_SAVE = True
 
-    def create_resource(self, resource_name):
-        if resource_name in self.resources:
-            return self.getResource(resource_name)
-        resource = Resource(resource_name)
-        self.regist_resource(resource)
-        return resource
-
     def open_resource(self, resource_name):
-        meta_data = self.getMetaData(resource_name)
-        if os.path.exists(meta_data.resource_filepath):
-            scene_datas, meta_data = self.load_resource_data(meta_data.resource_filepath)
-            self.scene_manager.open_scene(resource_name, scene_datas)
-
-    def open_resource(self, resource_name):
-        resource = self.getResource(resource_name)
-        if resource:
-            self.scene_manager.addMeshHere(resource)
+        object = self.getResourceData(resource_name)
+        if object:
+            self.scene_manager.addMeshHere(object)
 
 
 # -----------------------#
