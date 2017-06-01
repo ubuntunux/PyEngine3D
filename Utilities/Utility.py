@@ -1,3 +1,5 @@
+import sys
+import gc
 import os
 import datetime
 
@@ -22,3 +24,15 @@ def get_modify_time_of_file(filepath):
     if filepath != "" and os.path.exists(filepath):
         timeStamp = os.path.getmtime(filepath)
     return str(datetime.datetime.fromtimestamp(timeStamp))
+
+
+def delete_from_referrer(obj):
+    """
+    desc : Find and remove all references to obj.
+    """
+    referrers = gc.get_referrers(obj)
+    for referrer in referrers:
+        if type(referrer) == dict:
+            for key, value in referrer.items():
+                if value is obj:
+                    referrer[key] = None

@@ -130,7 +130,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_INFO)),
-                     self.addResourceInfo)
+                     self.setResourceInfo)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
                      self.fillResourceAttribute)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_RESOURCE_INFO)),
@@ -339,15 +339,22 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item.setText(0, resName)
             item.setText(1, resType)
 
-    def addResourceInfo(self, resource_info):
+    def setResourceInfo(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
-        item = QtGui.QTreeWidgetItem(self.resourceListWidget)
-        # if not is_loaded:
-        #     item.setTextColor(0, QtGui.QColor("gray"))
-        #     item.setTextColor(1, QtGui.QColor("gray"))
+        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
+        if items and len(items) > 0:
+            item = items[0]
+        else:
+            item = QtGui.QTreeWidgetItem(self.resourceListWidget)
+            item.setText(0, resource_name)
+            item.setText(1, resource_type)
 
-        item.setText(0, resource_name)
-        item.setText(1, resource_type)
+        if not is_loaded:
+            item.setTextColor(0, QtGui.QColor("gray"))
+            item.setTextColor(1, QtGui.QColor("gray"))
+        else:
+            item.setTextColor(0, QtGui.QColor("black"))
+            item.setTextColor(1, QtGui.QColor("black"))
 
     def openResource(self, item=None):
         if not item:  # button clicked
