@@ -9,7 +9,7 @@ from App import CoreManager
 
 
 class BaseObject:
-    def __init__(self, objName, pos, mesh):
+    def __init__(self, objName, pos, mesh, material_instance):
         self.name = objName
         self.selected = False
         self.transform = TransformObject(pos)
@@ -17,10 +17,11 @@ class BaseObject:
         self.mesh = None
         self.set_mesh(mesh)
         self.attributes = Attributes()
+        self.set_material_instance(material_instance)
 
     def set_mesh(self, mesh):
+        self.mesh = mesh
         if mesh:
-            self.mesh = mesh
             for vertex_buffer in mesh.vertex_buffers:
                 material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
                 geometry = Geometry(self, vertex_buffer, material_instance)
@@ -68,6 +69,3 @@ class BaseObject:
 
         # update transform
         self.transform.updateTransform()
-
-    def bind_object(self):
-        pass

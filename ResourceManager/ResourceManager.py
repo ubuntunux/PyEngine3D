@@ -112,10 +112,14 @@ class Resource:
         self.data = None
         self.meta_data = None
 
+    def get_resource_info(self):
+        return self.name, self.type_name, self.is_loaded
+
     def set_data(self, data):
         if data:
             self.data = data
             self.is_loaded = True
+            ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
 
     def clear_data(self):
         self.data = None
@@ -298,7 +302,7 @@ class ResourceLoader(object):
             resource.meta_data = meta_data
         # The new resource registered.
         if resource:
-            resource_info = (resource.name, self.resource_type_name, resource.is_loaded)
+            resource_info = resource.get_resource_info()
             self.core_manager.sendResourceInfo(resource_info)
 
     def unregist_resource(self, resource):

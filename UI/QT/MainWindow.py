@@ -345,21 +345,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def setResourceInfo(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
         items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
-        if items and len(items) > 0:
-            item = items[0]
+        for item in items:
+            if item.text(1) == resource_type:
+                break
         else:
             item = QtGui.QTreeWidgetItem(self.resourceListWidget)
-            item.setText(0, resource_name)
-            item.setText(1, resource_type)
 
         item.is_loaded = is_loaded
-
-        if not is_loaded:
-            item.setTextColor(0, QtGui.QColor("gray"))
-            item.setTextColor(1, QtGui.QColor("gray"))
-        else:
-            item.setTextColor(0, QtGui.QColor("black"))
-            item.setTextColor(1, QtGui.QColor("black"))
+        fontColor = 'black' if is_loaded else 'gray'
+        item.setTextColor(0, QtGui.QColor(fontColor))
+        item.setTextColor(1, QtGui.QColor(fontColor))
+        item.setText(0, resource_name)
+        item.setText(1, resource_type)
 
     def openResource(self, item=None):
         if not item:  # button clicked

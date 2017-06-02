@@ -1,4 +1,4 @@
-from .Mesh import Geometry, Mesh, Triangle, Quad
+from .Mesh import ScreenQuad, Geometry, Mesh, Triangle, Quad
 from .TransformObject import TransformObject
 from .BaseObject import BaseObject
 from .StaticMesh import StaticMesh

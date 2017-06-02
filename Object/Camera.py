@@ -8,7 +8,7 @@ from Object import BaseObject
 # ------------------------------ #
 class Camera(BaseObject):
     def __init__(self, name):
-        BaseObject.__init__(self, name, (0, 0, 0), None)
+        BaseObject.__init__(self, name, (0, 0, 0), None, None)
 
         self.fov = None
         self.near = None
@@ -49,10 +49,6 @@ class Camera(BaseObject):
         BaseObject.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
-
-    # override : draw
-    def draw(self, *args, **kargs):
-        pass
 
     def update(self):
         self.transform.updateTransform()

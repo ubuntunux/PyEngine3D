@@ -2,7 +2,7 @@ from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
-from Object import Geometry
+from Object import ScreenQuad
 from OpenGLContext import RenderTargets, RenderTargetManager
 
 
@@ -11,7 +11,7 @@ class PostProcess:
         logger.info("Create PostProcess : %s" % name)
         self.name = name
         self.mesh = CoreManager.instance().resource_manager.getMesh("Quad")
-        self.geometry = Geometry(self, self.mesh.vertex_buffers[0], material_instance)
+        self.geometry = ScreenQuad(self.mesh.vertex_buffers[0], material_instance)
         self.material_instance = material_instance
 
     def render(self):

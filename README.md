@@ -45,7 +45,7 @@
     - TODO : FBX
     - TODO : Blender
     - Collada
-    - Textures
+    - Textures ( dds, png, jpg, gif, bmp, tga, ... )
 * Shader
     - Material Template
     - Material Instance

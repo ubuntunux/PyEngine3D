@@ -4,16 +4,15 @@ import traceback
 import numpy as np
 
 from Common import logger
-from OpenGLContext import VertexArrayBuffer
+from OpenGLContext import VertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize, compute_tangent
 from App import CoreManager
 
 
-class Geometry:
-    def __init__(self, parent_object, vertex_buffer, material_instance):
+class ScreenQuad:
+    def __init__(self, vertex_buffer, material_instance):
         self.name = vertex_buffer.name
         self.vertex_buffer = vertex_buffer
-        self.parent_object = parent_object
         self.material_instance = None
         self.set_material_instance(material_instance)
 
@@ -21,6 +20,31 @@ class Geometry:
         self.material_instance = material_instance
 
     def bindBuffers(self):
+        self.vertex_buffer.bindBuffer()
+
+    def draw(self):
+        self.vertex_buffer.draw_elements()
+
+
+class Geometry:
+    def __init__(self, parent_object, vertex_buffer, material_instance):
+        self.name = vertex_buffer.name
+        self.vertex_buffer = vertex_buffer
+        self.parent_object = parent_object
+        self.matrix_model = None
+        self.matrix_mvp = None
+        self.material_instance = None
+        self.set_material_instance(material_instance)
+
+    def set_material_instance(self, material_instance):
+        self.material_instance = material_instance
+        if material_instance:
+            self.matrix_model = UniformMatrix4(material_instance.get_program(), "model")
+            self.matrix_mvp = UniformMatrix4(material_instance.get_program(), "mvp")
+
+    def bindBuffers(self, vpMatrix):
+        self.matrix_model.bind_uniform(self.parent_object.transform.matrix)
+        self.matrix_mvp.bind_uniform(np.dot(self.parent_object.transform.matrix, vpMatrix))
         self.vertex_buffer.bindBuffer()
 
     def draw(self):

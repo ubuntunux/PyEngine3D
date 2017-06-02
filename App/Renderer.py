@@ -244,11 +244,9 @@ class Renderer(Singleton):
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind_material_instance()
 
-            obj.bind_object(vpMatrix)
-
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
-                geometry.bindBuffers()
+                geometry.bindBuffers(vpMatrix)
 
             # draw
             if geometry and material_instance:
