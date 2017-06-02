@@ -307,11 +307,14 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.selected_item_categoty = 'Object'
         self.fillAttribute(attributes)
 
+    def clearAttribute(self):
+        self.attributeTree.clear()  # clear
+
     def fillAttribute(self, attributes):
         # lock edit attribute ui
         self.isFillAttributeTree = True
 
-        self.attributeTree.clear()  # clear
+        self.clearAttribute()
 
         # fill properties of selected object
         for attribute in attributes.getAttributes():
@@ -349,6 +352,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             item.setText(0, resource_name)
             item.setText(1, resource_type)
 
+        item.is_loaded = is_loaded
+
         if not is_loaded:
             item.setTextColor(0, QtGui.QColor("gray"))
             item.setTextColor(1, QtGui.QColor("gray"))
@@ -365,7 +370,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def selectResource(self):
         item = self.getSelectedResource()
         if item:
-            self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (item.text(0), item.text(1)))
+            if item.is_loaded:
+                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (item.text(0), item.text(1)))
+            else:
+                self.clearAttribute()
 
     def saveResource(self, item=None):
         if not item:
