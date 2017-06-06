@@ -15,6 +15,8 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
             return uniform_buffer if uniform_buffer.valid else None
+    else:
+        logger.error('Cannot matched to %s type of %s.' % (uniform_type, uniform_name))
     return None
 
 
@@ -39,8 +41,16 @@ def CreateUniformDataFromString(data_type, strValue=""):
             else:
                 return np.array([1.0, ] * componentCount, dtype=np.float32)
         elif data_type in ('Matrix2', 'Matrix3', 'Matrix4'):
-            """TODO"""
-            pass
+            componentCount = int(data_type[-1])
+            if strValue:
+                vecValue = eval(strValue)
+                if len(vecValue) == componentCount:
+                    return np.array(vecValue, dtype=np.float32)
+                else:
+                    logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
+                    raise ValueError
+            else:
+                return np.eye(componentCount, dtype=np.float32)
         elif data_type == 'Texture2D':
             texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
             return texture
@@ -129,7 +139,7 @@ class UniformMatrix3(UniformVariable):
 
 class UniformMatrix4(UniformVariable):
     data_type = "Matrix4"
-    uniform_type = "mat3"
+    uniform_type = "mat4"
 
     def bind_uniform(self, value):
         glUniformMatrix4fv(self.location, 1, GL_FALSE, value)

@@ -432,7 +432,7 @@ class MaterialLoader(ResourceLoader):
         if shader:
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
-            material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
+            uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
 
             include_files = {}
             for include_file in shader.include_files:
@@ -442,7 +442,7 @@ class MaterialLoader(ResourceLoader):
                 vertex_shader_code=vertex_shader_code,
                 fragment_shader_code=fragment_shader_code,
                 include_files=include_files,
-                material_components=material_components,
+                uniforms=uniforms,
                 macros=macros
             )
             # create material

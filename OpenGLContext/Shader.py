@@ -205,6 +205,15 @@ class Shader:
             final_code_lines.append(code)
         return '\n'.join(final_code_lines)
 
+    def parsing_uniforms(self, vertexShaderCode, fragmentShaderCode):
+        vextex_uniforms = re.findall(reFindUniform, vertexShaderCode)
+        fragment_uniforms = re.findall(reFindUniform, fragmentShaderCode)
+        uniforms = []
+        for uniform_name in vextex_uniforms + fragment_uniforms:
+            if uniform_name not in uniforms:
+                uniforms.append(uniform_name)
+        return uniforms
+
     def parsing_material_components(self, vertexShaderCode, fragmentShaderCode):
         material_components = []
         code_list = [vertexShaderCode, fragmentShaderCode]

@@ -10,7 +10,7 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import Singleton, perspective, ortho, FLOAT_ZERO
-from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont
+from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont, UniformMatrix4
 
 
 class Console:
@@ -233,6 +233,7 @@ class Renderer(Singleton):
         last_vertex_buffer = None
         last_material = None
         last_material_instance = None
+        last_object = None
         for geometry in geometries:
             obj = geometry.parent_object
             material_instance = geometry.material_instance or default_material_instance
@@ -252,6 +253,7 @@ class Renderer(Singleton):
             if geometry and material_instance:
                 geometry.draw()
 
+            last_object = obj
             last_material = material
             last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance

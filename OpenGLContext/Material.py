@@ -19,13 +19,14 @@ class Material:
 
         vertex_shader_code = material_datas.get('vertex_shader_code', "")
         fragment_shader_code = material_datas.get('fragment_shader_code', "")
-        material_components = material_datas.get('material_components', [])
+        uniforms = material_datas.get('uniforms', [])
 
         self.name = material_name
+        self.lastTextureIndex = 0
         self.program = -1
         self.uniform_buffers = OrderedDict({})  # Declaration order is important.
         self.Attributes = Attributes()
-        self.valid = self.create_program(vertex_shader_code, fragment_shader_code, material_components)
+        self.valid = self.create_program(vertex_shader_code, fragment_shader_code, uniforms)
 
         if not self.valid:
             logger.error("Failed create %s material." % self.name)
@@ -41,11 +42,23 @@ class Material:
     def useProgram(self):
         glUseProgram(self.program)
 
-    def create_program(self, vertexShaderCode, fragmentShaderCode, material_components):
+    def create_uniform_buffer(self, uniform_type, uniform_name):
+        uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
+        if uniform_buffer is not None:
+            # Important : set texture binding index
+            if uniform_buffer.__class__ == UniformTexture2D:
+                uniform_buffer.set_texture_index(self.lastTextureIndex)
+                self.lastTextureIndex += 1
+            self.uniform_buffers[uniform_name] = uniform_buffer
+        else:
+            logger.warn("%s material has no %s uniform variable. (or maybe optimized by compiler.)" % (
+                self.name, uniform_name))
+
+    def create_program(self, vertexShaderCode, fragmentShaderCode, uniforms):
         """
         :param vertexShaderCode: string
         :param fragmentShaderCode: sring
-        :param material_components: [ (uniform_type, uniform_name), ... ]
+        :param uniforms: [ (uniform_type, uniform_name), ... ]
         """
         vertexShader = self.compile(GL_VERTEX_SHADER, vertexShaderCode)
         fragmentShader = self.compile(GL_FRAGMENT_SHADER, fragmentShaderCode)
@@ -75,18 +88,8 @@ class Material:
             return False
 
         # create uniform buffers from source code
-        textureIndex = 0  # build uniform buffer variable
-        for uniform_type, uniform_name in material_components:
-            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
-            if uniform_buffer is not None:
-                # Important : set texture binding index
-                if uniform_buffer.__class__ == UniformTexture2D:
-                    uniform_buffer.set_texture_index(textureIndex)
-                    textureIndex += 1
-                self.uniform_buffers[uniform_name] = uniform_buffer
-            else:
-                logger.warn("%s shader has no %s uniform variable. (or maybe optimized by compiler.)" % (
-                    shader.name, uniform_name))
+        for uniform_type, uniform_name in uniforms:
+            self.create_uniform_buffer(uniform_type, uniform_name)
         return True
 
     def compile(self, shaderType, shader_code):
