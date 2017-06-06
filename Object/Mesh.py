@@ -38,13 +38,8 @@ class Geometry:
 
     def set_material_instance(self, material_instance):
         self.material_instance = material_instance
-        if material_instance:
-            self.matrix_model = UniformMatrix4(material_instance.get_program(), "model")
-            self.matrix_mvp = UniformMatrix4(material_instance.get_program(), "mvp")
 
-    def bindBuffers(self, vpMatrix):
-        self.matrix_model.bind_uniform(self.parent_object.transform.matrix)
-        self.matrix_mvp.bind_uniform(np.dot(self.parent_object.transform.matrix, vpMatrix))
+    def bindBuffers(self):
         self.vertex_buffer.bindBuffer()
 
     def draw(self):
