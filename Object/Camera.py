@@ -1,14 +1,14 @@
 from Common import logger
 from App.CoreManager import CoreManager
-from Object import BaseObject
+from Object import StaticMeshInst
 
 
 # ------------------------------ #
 # CLASS : Camera
 # ------------------------------ #
-class Camera(BaseObject):
-    def __init__(self, name):
-        BaseObject.__init__(self, name, (0, 0, 0), None, None)
+class Camera(StaticMeshInst):
+    def __init__(self, name, object_data):
+        StaticMeshInst.__init__(self, name, object_data)
 
         self.fov = None
         self.near = None
@@ -36,7 +36,7 @@ class Camera(BaseObject):
         config.setValue("Camera", "rotation_speed", self.rotation_speed)
 
     def getAttribute(self):
-        BaseObject.getAttribute(self)
+        StaticMeshInst.getAttribute(self)
         self.attributes.setAttribute('fov', self.fov)
         self.attributes.setAttribute('near', self.near)
         self.attributes.setAttribute('far', self.far)
@@ -46,7 +46,7 @@ class Camera(BaseObject):
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        BaseObject.setAttribute(self, attributeName, attributeValue, attribute_index)
+        StaticMeshInst.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 

@@ -243,11 +243,11 @@ class Renderer(Singleton):
                 material.useProgram()
 
             if last_material_instance != material_instance and material_instance is not None:
-                material_instance.bind_material_instance()
+                material_instance.bind()
 
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
-                geometry.bindBuffers()
+                geometry.bindBuffer()
 
             if last_object != obj and material_instance:
                 material_instance.bind_uniform_data('model', obj.transform.matrix)
@@ -270,4 +270,7 @@ class Renderer(Singleton):
         glBlendEquation(GL_FUNC_ADD)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.sceneManager.tonemapping.render()
+        mesh = self.resource_manager.getMesh("Quad")
+        mesh.bindBuffer()
+        self.sceneManager.tonemapping.bind()
+        mesh.draw()

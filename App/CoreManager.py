@@ -215,10 +215,10 @@ class CoreManager(Singleton):
             self.resource_manager.open_resource(resName, resTypeName)
         self.commands[COMMAND.OPEN_RESOURCE.value] = cmd_open_resource
 
-        def cmd_request_save_resource(value):
+        def cmd_save_resource(value):
             resName, resTypeName = value
-            self.resource_manager.request_save_resource(resName, resTypeName)
-        self.commands[COMMAND.SAVE_RESOURCE.value] = cmd_request_save_resource
+            self.resource_manager.save_resource(resName, resTypeName)
+        self.commands[COMMAND.SAVE_RESOURCE.value] = cmd_save_resource
 
         def cmd_delete_resource(value):
             resName, resTypeName = value
@@ -292,11 +292,12 @@ class CoreManager(Singleton):
                 elif keyDown == K_1:
                     for i in range(100):
                         pos = [np.random.uniform(-10, 10) for x in range(3)]
-                        meshName = np.random.choice(self.resource_manager.getMeshNameList())
-                        mesh = self.resource_manager.getMesh(meshName)
-                        obj = self.sceneManager.addMesh(mesh, pos=pos)
-                        if obj:
-                            self.sendObjectInfo(obj.name)
+                        objName = np.random.choice(self.resource_manager.getObjectNameList())
+                        source_obj = self.resource_manager.getObject(objName)
+                        object_data = dict(pos=pos, source_object=source_obj)
+                        obj_instance = self.sceneManager.addObject(object_data)
+                        if obj_instance:
+                            self.sendObjectInfo(obj_instance.name)
                 elif keyDown == K_HOME:
                     obj = self.sceneManager.staticMeshes[0]
                     self.sceneManager.setObjectFocus(obj)

@@ -9,37 +9,22 @@ from Utilities import Attributes, GetClassName, normalize, compute_tangent
 from App import CoreManager
 
 
-class ScreenQuad:
-    def __init__(self, vertex_buffer, material_instance):
-        self.name = vertex_buffer.name
-        self.vertex_buffer = vertex_buffer
-        self.material_instance = None
-        self.set_material_instance(material_instance)
-
-    def set_material_instance(self, material_instance):
-        self.material_instance = material_instance
-
-    def bindBuffers(self):
-        self.vertex_buffer.bindBuffer()
-
-    def draw(self):
-        self.vertex_buffer.draw_elements()
-
-
 class Geometry:
-    def __init__(self, parent_object, vertex_buffer, material_instance):
+    def __init__(self, parent_mesh, parent_object, vertex_buffer, material_instance):
         self.name = vertex_buffer.name
-        self.vertex_buffer = vertex_buffer
+        self.parent_mesh = parent_mesh
         self.parent_object = parent_object
-        self.matrix_model = None
-        self.matrix_mvp = None
-        self.material_instance = None
-        self.set_material_instance(material_instance)
+        self.vertex_buffer = vertex_buffer
+        self.material_instance = material_instance
+
+    @staticmethod
+    def get_instance(geometry, parent_object):
+        return Geometry(geometry.parent_mesh, parent_object, geometry.vertex_buffer, geometry.material_instance)
 
     def set_material_instance(self, material_instance):
         self.material_instance = material_instance
 
-    def bindBuffers(self):
+    def bindBuffer(self):
         self.vertex_buffer.bindBuffer()
 
     def draw(self):
@@ -52,9 +37,15 @@ class Mesh:
 
         self.name = mesh_name
         self.vertex_buffers = []
+        self.create_vertex_buffers(geometry_datas)
         self.attributes = Attributes()
 
-        self.create_vertex_buffers(geometry_datas)
+    def get_geometries(self, parent_object, material_instance):
+        geometries = []
+        for vertex_buffer in self.vertex_buffers:
+            geometries.append(Geometry(parent_mesh=self, parent_object=parent_object, vertex_buffer=vertex_buffer,
+                                       material_instance=material_instance))
+        return geometries
 
     def create_vertex_buffers(self, geometry_datas):
         for geometry_index, geometry_data in enumerate(geometry_datas):
@@ -131,6 +122,15 @@ class Mesh:
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         pass
+
+    def bindBuffer(self, index=0):
+        if index < len(self.vertex_buffers):
+            self.vertex_buffers[index].bindBuffer()
+
+    def draw(self, index=0):
+        if index < len(self.vertex_buffers):
+            self.vertex_buffers[index].draw_elements()
+
 
 
 class Triangle(Mesh):

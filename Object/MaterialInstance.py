@@ -85,7 +85,7 @@ class MaterialInstance:
                 # link between uniform buffer and data.
                 self.linked_uniform_map[uniform_name] = [uniform_buffer, uniform_data]
 
-    def bind_material_instance(self):
+    def bind(self):
         for uniform_buffer, uniform_data in self.linked_uniform_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 

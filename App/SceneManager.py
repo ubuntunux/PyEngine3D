@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import BaseObject, StaticMesh, Camera, Light, Tonemapping
+from Object import StaticMeshInst, Camera, Light, Tonemapping
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 
@@ -90,24 +90,24 @@ class SceneManager(Singleton):
         self.addLight(scene_data.get('light'))
         self.add_postprocess()
 
-        for mesh_name, pos in scene_data.get('meshes', []):
-            mesh = self.resource_manager.getMesh(mesh_name)
-            self.addMesh(mesh, pos)
+        for object_data in scene_data.get('staticmeshes', []):
+            source_object = self.resource_manager.getObject(object_data.get('source_object'))
+            object_data['source_object'] = source_object
+            self.addObject(object_data)
 
     def save_scene(self):
         if self.__current_scene_name == "":
             self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
+        self.resource_manager.sceneLoader.save_resource(self.__current_scene_name)
 
+    def get_save_data(self):
+        staticmeshes = [static_mesh.get_save_data() for static_mesh in self.staticmeshes]
         scene_data = dict(
             camera=self.mainCamera.name,
             light=self.lights[0].name,
-            meshes=[]
+            staticmeshes=staticmeshes
         )
-
-        for static_mesh in self.staticmeshes:
-            scene_data['meshes'].append((static_mesh.mesh.name, static_mesh.transform.getPos().tolist()))
-
-        self.sceneLoader.save_resource(self.__current_scene_name, scene_data)
+        return scene_data
 
     def generateObjectName(self, currName):
         index = 0
@@ -124,7 +124,7 @@ class SceneManager(Singleton):
             return self.cameras
         elif Light == object_type:
             return self.lights
-        elif StaticMesh == object_type:
+        elif StaticMeshInst == object_type:
             return self.staticmeshes
         return None
 
@@ -147,41 +147,51 @@ class SceneManager(Singleton):
     def addCamera(self, name=''):
         camera_name = self.generateObjectName(name or "camera")
         logger.info("add Camera : %s" % camera_name)
-        camera = Camera(camera_name)
+        object_data = dict(
+            pos=(0, 0, 0),
+            source_object=self.resource_manager.getObject('Camera'),
+        )
+        camera = Camera(camera_name, object_data)
         camera.initialize()
-        # regist
         self.regist_object(camera)
         return camera
 
     def addLight(self, name=''):
         light_name = self.generateObjectName(name or "light")
         logger.info("add Light : %s" % light_name)
-        # add light
-        mesh = self.resource_manager.getMesh('sphere')
-        material_instance = self.resource_manager.getDefaultMaterialInstance()
-        light = Light(light_name, (0, 0, 0), mesh, material_instance)
-        # regist
+        object_data = dict(
+            pos=(0, 0, 0),
+            source_object=self.resource_manager.getObject('Light'),
+            lightColor=(1.0, 1.0, 1.0, 1.0)
+        )
+        light = Light(light_name, object_data)
         self.regist_object(light)
         return light
 
     def add_postprocess(self):
         self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
-    def addMesh(self, mesh, pos=(0, 0, 0)):
-        objName = self.generateObjectName(mesh.name)
-        logger.info("add Mesh : %s" % objName)
-        # add mesh
-        material_instance = self.resource_manager.getDefaultMaterialInstance()
-        obj = StaticMesh(objName=objName or mesh.name, pos=pos, mesh=mesh, material_instance=material_instance)
+    def addObject(self, object_data):
+        source_obj = object_data.get('source_object')
+        if source_obj:
+            objName = self.generateObjectName(source_obj.name)
+            objType = GetClassName(source_obj)
+            logger.info("add %s : %s" % (objType, objName))
 
-        # regist
-        self.regist_object(obj)
-        return obj
+            if 'StaticMesh' == objType:
+                obj_instance = StaticMeshInst(objName, object_data)
+            else:
+                obj_instance = None
+            # regist
+            self.regist_object(obj_instance)
+            return obj_instance
+        return None
 
-    def addMeshHere(self, mesh):
+    def addObjectHere(self, source_object):
         camera = self.getMainCamera()
         pos = camera.transform.pos + camera.transform.front * 10.0
-        return self.addMesh(mesh, pos=pos)
+        object_data = dict(source_object=source_object, pos=pos)
+        return self.addObject(object_data)
 
     def clearObjects(self):
         self.cameras = []

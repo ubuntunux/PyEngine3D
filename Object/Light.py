@@ -3,10 +3,11 @@ import numpy as np
 from Utilities import *
 from Common import logger
 from App import CoreManager
-from Object import BaseObject
+from Object import StaticMeshInst
 
 
-class Light(BaseObject):
-    def __init__(self, name, pos, mesh, material_instance, lightColor=(1.0, 1.0, 1.0, 1.0)):
-        BaseObject.__init__(self, name, pos, mesh, material_instance)
+class Light(StaticMeshInst):
+    def __init__(self, name, object_data):
+        StaticMeshInst.__init__(self, name, object_data)
+        lightColor = object_data.get('lightColor', (1.0, 1.0, 1.0, 1.0))
         self.lightColor = np.array(lightColor, dtype=np.float32)
