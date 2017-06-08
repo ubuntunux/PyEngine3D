@@ -290,14 +290,16 @@ class CoreManager(Singleton):
                 elif keyDown == K_BACKQUOTE:
                     self.renderer.console.toggle()
                 elif keyDown == K_1:
-                    for i in range(100):
-                        pos = [np.random.uniform(-10, 10) for x in range(3)]
-                        objName = np.random.choice(self.resource_manager.getObjectNameList())
-                        source_obj = self.resource_manager.getObject(objName)
-                        object_data = dict(pos=pos, source_object=source_obj)
-                        obj_instance = self.sceneManager.addObject(object_data)
-                        if obj_instance:
-                            self.sendObjectInfo(obj_instance.name)
+                    object_name_list = self.resource_manager.getObjectNameList()
+                    if object_name_list:
+                        for i in range(100):
+                            pos = [np.random.uniform(-10, 10) for x in range(3)]
+                            objName = np.random.choice(object_name_list)
+                            source_obj = self.resource_manager.getObject(objName)
+                            object_data = dict(pos=pos, source_object=source_obj)
+                            obj_instance = self.sceneManager.addObject(object_data)
+                            if obj_instance:
+                                self.sendObjectInfo(obj_instance.name)
                 elif keyDown == K_HOME:
                     obj = self.sceneManager.staticMeshes[0]
                     self.sceneManager.setObjectFocus(obj)
