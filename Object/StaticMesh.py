@@ -75,7 +75,7 @@ class StaticMeshInst:
     def __init__(self, name, object_data):
         self.name = name
         self.selected = False
-        self.source_object = object_data.get('source_object')
+        self.source_object = CoreManager.instance().resource_manager.getObject(object_data.get('source_object'))
         self.transform = TransformObject(object_data.get('pos', [0, 0, 0]))
         self.transform.setRot(object_data.get('rot', [0, 0, 0]))
         self.transform.setScale(object_data.get('scale', [1, 1, 1]))

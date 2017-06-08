@@ -168,8 +168,8 @@ class CoreManager(Singleton):
     def sendResourceInfo(self, resource_info):
         self.send(COMMAND.TRANS_RESOURCE_INFO, resource_info)
 
-    def notifyDeleteResource(self, resource_name):
-        self.send(COMMAND.DELETE_RESOURCE_INFO, resource_name)
+    def notifyDeleteResource(self, resource_info):
+        self.send(COMMAND.DELETE_RESOURCE_INFO, resource_info)
 
     def sendObjectInfo(self, object_name):
         object_info = self.sceneManager.getObjectInfo(object_name)
@@ -295,8 +295,7 @@ class CoreManager(Singleton):
                         for i in range(100):
                             pos = [np.random.uniform(-10, 10) for x in range(3)]
                             objName = np.random.choice(object_name_list)
-                            source_obj = self.resource_manager.getObject(objName)
-                            object_data = dict(pos=pos, source_object=source_obj)
+                            object_data = dict(source_object=objName, pos=pos)
                             obj_instance = self.sceneManager.addObject(object_data)
                             if obj_instance:
                                 self.sendObjectInfo(obj_instance.name)

@@ -132,12 +132,12 @@ class Resource:
         return self.data
 
     def getAttribute(self):
-        if self.data:
+        if self.data and hasattr(self.data, 'getAttribute'):
             return self.data.getAttribute()
         return None
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if self.data:
+        if self.data and hasattr(self.data, 'setAttribute'):
             self.data.setAttribute(attributeName, attributeValue, attribute_index)
 
 
@@ -302,8 +302,7 @@ class ResourceLoader(object):
             resource.meta_data = meta_data
         # The new resource registered.
         if resource:
-            resource_info = resource.get_resource_info()
-            self.core_manager.sendResourceInfo(resource_info)
+            self.core_manager.sendResourceInfo(resource.get_resource_info())
 
     def unregist_resource(self, resource):
         if resource:
@@ -311,7 +310,7 @@ class ResourceLoader(object):
                 self.metaDatas.pop(resource.name)
             if resource.name in self.resources:
                 self.resources.pop(resource.name)
-            self.core_manager.notifyDeleteResource(resource.name)
+            self.core_manager.notifyDeleteResource(resource.get_resource_info())
 
     def open_resource(self, resource_name):
         logger.warn("open_resource is not implemented in %s." % self.name)
@@ -597,6 +596,17 @@ class ObjectLoader(ResourceLoader):
     fileExt = '.object'
     USE_FILE_COMPRESS_TO_SAVE = False
 
+    def initialize(self):
+        # load and regist resource
+        super(ObjectLoader, self).initialize()
+
+        # Regist basic meshs
+        object_data = dict(mesh=self.resource_manager.getMesh('Triangle'))
+        self.create_resource("Triangle", StaticMesh("Triangle", object_data))
+
+        object_data = dict(mesh=self.resource_manager.getMesh('Quad'))
+        self.create_resource("Quad", StaticMesh("Quad", object_data))
+
     def create_object(self, mesh):
         resource = self.create_resource(mesh.name)
         object_data = dict(mesh=mesh)
@@ -616,9 +626,7 @@ class ObjectLoader(ResourceLoader):
             resource.set_data(obj)
 
     def open_resource(self, resource_name):
-        source_obj = self.getResourceData(resource_name)
-        if source_obj:
-            self.scene_manager.addObjectHere(source_obj)
+        self.scene_manager.addObjectHere(resource_name)
 
 
 # -----------------------#
@@ -636,12 +644,20 @@ class SceneLoader(ResourceLoader):
         if resource and resource_name == self.scene_manager.get_current_scene_name():
             scene_data = self.scene_manager.get_save_data()
             self.save_resource_data(resource, scene_data)
+            resource.set_data(scene_data)
 
-    def open_resource(self, resource_name):
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
         meta_data = self.getMetaData(resource_name)
-        if meta_data and os.path.exists(meta_data.resource_filepath):
+        if resource and meta_data and os.path.exists(meta_data.resource_filepath):
             scene_datas = self.load_resource_data(meta_data.resource_filepath)
             self.scene_manager.open_scene(resource_name, scene_datas)
+            resource.set_data(scene_datas)
+
+    def open_resource(self, resource_name):
+        scene_data = self.getResourceData(resource_name)
+        if scene_data:
+            self.scene_manager.open_scene(resource_name, scene_data)
 
 
 # -----------------------#

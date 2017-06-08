@@ -122,6 +122,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
+        self.resourceListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.sortItems(0, 0)
         self.resourceListWidget.sortItems(1, 0)
@@ -150,6 +151,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
+        self.objectList.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.objectList.setSortingEnabled(True)
         self.objectList.sortItems(0, 0)
         self.objectList.sortItems(1, 0)
@@ -333,8 +335,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # Widget - Resource List
     # ------------------------- #
     def getSelectedResource(self):
-        selectedItems = self.resourceListWidget.selectedItems()
-        return selectedItems[0] if selectedItems else None
+        return self.resourceListWidget.selectedItems()
 
     def addResourceList(self, resourceList):
         for resName, resType in resourceList:
@@ -359,41 +360,42 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(1, resource_type)
 
     def openResource(self, item=None):
-        if not item:  # button clicked
-            item = self.getSelectedResource()
-        if item:
+        items = self.getSelectedResource()
+        for item in items:
             self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
 
     def selectResource(self):
-        item = self.getSelectedResource()
-        if item:
-            if item.is_loaded:
-                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (item.text(0), item.text(1)))
+        items = self.getSelectedResource()
+        if items and len(items) > 0:
+            if items[0].is_loaded:
+                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (items[0].text(0), items[0].text(1)))
             else:
                 self.clearAttribute()
 
     def saveResource(self, item=None):
-        if not item:
-            item = self.getSelectedResource()
-        if item:
+        items = self.getSelectedResource()
+        for item in items:
             self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (item.text(0), item.text(1)))
 
     def deleteResource(self, item=None):
-        if not item:
-            item = self.getSelectedResource()
-        if item:
+        items = self.getSelectedResource()
+
+        if items and len(items) > 0:
+            contents = "\n".join(["%s : %s" % (item.text(1), item.text(0)) for item in items])
             choice = QtGui.QMessageBox.question(self, 'Delete resource.',
-                                                "Are you sure you want to delete the \"%s\" %s?" % (
-                                                item.text(0), item.text(1)),
+                                                "Are you sure you want to delete the\n%s?" % contents,
                                                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             if choice == QtGui.QMessageBox.Yes:
-                self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (item.text(0), item.text(1)))
+                for item in items:
+                    self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (item.text(0), item.text(1)))
 
-    def delete_resource_info(self, resource_name):
+    def delete_resource_info(self, resource_info):
+        resource_name, resource_type_name, is_loaded = resource_info
         items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
         for item in items:
-            index = self.resourceListWidget.indexOfTopLevelItem(item)
-            self.resourceListWidget.takeTopLevelItem(index)
+            if item.text(1) == resource_type_name:
+                index = self.resourceListWidget.indexOfTopLevelItem(item)
+                self.resourceListWidget.takeTopLevelItem(index)
 
     def test(self):
         myPopUp = InputDialogDemo(self, "Create Static Mesh")

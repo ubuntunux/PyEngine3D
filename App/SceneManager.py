@@ -69,6 +69,9 @@ class SceneManager(Singleton):
         self.lights = []
         self.staticmeshes = []
         self.objectMap = {}
+        resource = self.resource_manager.sceneLoader.getResource(self.__current_scene_name)
+        if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
+            self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
 
     def new_scene(self):
         self.clear_scene()
@@ -92,7 +95,6 @@ class SceneManager(Singleton):
 
         for object_data in scene_data.get('staticmeshes', []):
             source_object = self.resource_manager.getObject(object_data.get('source_object'))
-            object_data['source_object'] = source_object
             self.addObject(object_data)
 
     def save_scene(self):
@@ -149,7 +151,7 @@ class SceneManager(Singleton):
         logger.info("add Camera : %s" % camera_name)
         object_data = dict(
             pos=(0, 0, 0),
-            source_object=self.resource_manager.getObject('Camera'),
+            source_object='Quad',
         )
         camera = Camera(camera_name, object_data)
         camera.initialize()
@@ -161,7 +163,7 @@ class SceneManager(Singleton):
         logger.info("add Light : %s" % light_name)
         object_data = dict(
             pos=(0, 0, 0),
-            source_object=self.resource_manager.getObject('Light'),
+            source_object='Quad',
             lightColor=(1.0, 1.0, 1.0, 1.0)
         )
         light = Light(light_name, object_data)
@@ -172,7 +174,8 @@ class SceneManager(Singleton):
         self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
     def addObject(self, object_data):
-        source_obj = object_data.get('source_object')
+        object_name = object_data.get('source_object')
+        source_obj = self.resource_manager.getObject(object_name)
         if source_obj:
             objName = self.generateObjectName(source_obj.name)
             objType = GetClassName(source_obj)
@@ -187,10 +190,10 @@ class SceneManager(Singleton):
             return obj_instance
         return None
 
-    def addObjectHere(self, source_object):
+    def addObjectHere(self, object_name):
         camera = self.getMainCamera()
         pos = camera.transform.pos + camera.transform.front * 10.0
-        object_data = dict(source_object=source_object, pos=pos)
+        object_data = dict(source_object=object_name, pos=pos)
         return self.addObject(object_data)
 
     def clearObjects(self):
