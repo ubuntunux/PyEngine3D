@@ -12,7 +12,6 @@ class StaticMesh:
     def __init__(self, name, object_data):
         self.name = name
         self.mesh = None
-        self.instances = []
         self.geometries = []
         self.attributes = Attributes()
         self.set_mesh(object_data.get('mesh'))
@@ -20,14 +19,6 @@ class StaticMesh:
         material_instances = object_data.get('material_instances', [])
         for i, material_instance in enumerate(material_instances):
             self.set_material_instance(material_instance, i)
-
-    def regist(self, instance_obj):
-        if instance_obj not in self.instances:
-            self.instances.append(instance_obj)
-
-    def unregist(self, instance_obj):
-        if instance_obj in self.instances:
-            self.instances.remove(instance_obj)
 
     def set_mesh(self, mesh):
         self.mesh = mesh
@@ -86,7 +77,6 @@ class StaticMeshInst:
 
         # replace data from source object
         if self.source_object:
-            self.source_object.regist(self)
             self.mesh = self.source_object.mesh
             self.geometries = [Geometry.get_instance(geometry, self) for geometry in self.source_object.geometries]
 
