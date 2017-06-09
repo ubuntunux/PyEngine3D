@@ -1,3 +1,4 @@
+import copy
 import os
 import glob
 import configparser
@@ -35,7 +36,6 @@ class MetaData:
         self.changed = False
 
         self.load_meta_file()
-        self.save_meta_file()
 
     def set_resource_meta_data(self, resource_filepath, modify_time=None):
         resource_modify_time = modify_time or get_modify_time_of_file(resource_filepath)
@@ -73,15 +73,16 @@ class MetaData:
                 self.changed |= self.source_filepath != source_filepath
                 self.changed |= self.source_modify_time != source_modify_time
 
-                if resource_version is not None:
-                    self.resource_version = resource_version
                 if source_filepath is not None:
                     self.source_filepath = source_filepath
                 if source_modify_time is not None:
                     self.source_modify_time = source_modify_time
+        else:
+            # save meta file
+            self.changed = True
 
-                if self.changed:
-                    self.save_meta_file()
+        if self.changed:
+            self.save_meta_file()
 
     def save_meta_file(self):
         if (self.changed or not os.path.exists(self.filepath)) and os.path.exists(self.resource_filepath):
@@ -341,6 +342,7 @@ class ResourceLoader(object):
             return load_data
         except:
             logger.error("file open error : %s" % filePath)
+            logger.error(traceback.format_exc())
         return None
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
@@ -540,12 +542,12 @@ class TextureLoader(ResourceLoader):
 # -----------------------#
 class MeshLoader(ResourceLoader):
     name = "MeshLoader"
-    resource_version = 0
+    resource_version = 1
     resource_dir_name = 'Meshes'
     resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
-    USE_FILE_COMPRESS_TO_SAVE = True
+    USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
         # load and regist resource
@@ -559,7 +561,7 @@ class MeshLoader(ResourceLoader):
         resource = self.getResource(resource_name)
         mesh_data = self.load_resource_data(resource.meta_data.resource_filepath)
         if mesh_data:
-            mesh = Mesh(resource.name, mesh_data)
+            mesh = Mesh(resource.name, **mesh_data)
             resource.set_data(mesh)
 
     def convert_resource(self, resoure, source_filepath):
@@ -576,9 +578,10 @@ class MeshLoader(ResourceLoader):
         logger.info("Convert Resource : %s" % source_filepath)
         if geometry_datas:
             # create mesh
-            mesh = Mesh(resoure.name, geometry_datas)
+            mesh = Mesh(resoure.name, geometry_datas=geometry_datas)
             resoure.set_data(mesh)
-            self.save_resource_data(resoure, geometry_datas, source_filepath)
+            save_data = mesh.get_save_data()
+            self.save_resource_data(resoure, save_data, source_filepath)
 
     def open_resource(self, resource_name):
         mesh = self.getResourceData(resource_name)
@@ -601,16 +604,12 @@ class ObjectLoader(ResourceLoader):
         super(ObjectLoader, self).initialize()
 
         # Regist basic meshs
-        object_data = dict(mesh=self.resource_manager.getMesh('Triangle'))
-        self.create_resource("Triangle", StaticMesh("Triangle", object_data))
-
-        object_data = dict(mesh=self.resource_manager.getMesh('Quad'))
-        self.create_resource("Quad", StaticMesh("Quad", object_data))
+        self.create_resource("Triangle", StaticMesh("Triangle", mesh=self.resource_manager.getMesh('Triangle')))
+        self.create_resource("Quad", StaticMesh("Quad", mesh=self.resource_manager.getMesh('Quad')))
 
     def create_object(self, mesh):
         resource = self.create_resource(mesh.name)
-        object_data = dict(mesh=mesh)
-        obj = StaticMesh(resource.name, object_data)
+        obj = StaticMesh(resource.name, mesh=mesh)
         resource.set_data(obj)
         self.save_resource(resource.name)
 
@@ -621,12 +620,13 @@ class ObjectLoader(ResourceLoader):
             mesh = self.resource_manager.getMesh(object_data.get('mesh'))
             material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
                                   for material_instance_name in object_data.get('material_instances', [])]
-            object_data = dict(mesh=mesh, material_instances=material_instances)
-            obj = StaticMesh(resource.name, object_data)
+            obj = StaticMesh(resource.name, mesh=mesh, material_instances=material_instances)
             resource.set_data(obj)
 
     def open_resource(self, resource_name):
-        self.scene_manager.addObjectHere(resource_name)
+        obj = self.getResourceData(resource_name)
+        if obj:
+            self.scene_manager.addObjectHere(obj)
 
 
 # -----------------------#

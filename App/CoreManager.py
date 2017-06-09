@@ -295,8 +295,8 @@ class CoreManager(Singleton):
                         for i in range(100):
                             pos = [np.random.uniform(-10, 10) for x in range(3)]
                             objName = np.random.choice(object_name_list)
-                            object_data = dict(source_object=objName, pos=pos)
-                            obj_instance = self.sceneManager.addObject(object_data)
+                            source_obj = self.resource_manager.getObject(objName)
+                            obj_instance = self.sceneManager.addObject(source_object=source_obj, pos=pos)
                             if obj_instance:
                                 self.sendObjectInfo(obj_instance.name)
                 elif keyDown == K_HOME:

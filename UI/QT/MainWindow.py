@@ -29,7 +29,7 @@ def removeDirtyMark(text):
 
 def findTreeItem(parentItem, findItemName):
     if type(parentItem) == QtGui.QTreeWidget:
-        for item in parentItem.findItems("", QtCore.Qt.MatchContains):
+        for item in parentItem.findItems("", QtCore.Qt.MatchExactly):
             if item.text(0) == findItemName:
                 return item
     elif type(parentItem) == QtGui.QTreeWidgetItem:
@@ -328,7 +328,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.isFillAttributeTree = False
 
     def showProperties(self):
-        for item in self.attributeTree.findItems("", QtCore.Qt.MatchContains | QtCore.Qt.MatchRecursive):
+        for item in self.attributeTree.findItems("", QtCore.Qt.MatchExactly | QtCore.Qt.MatchRecursive):
             print(item.text(0), item.text(1))
 
     # ------------------------- #
@@ -345,7 +345,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def setResourceInfo(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
-        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
+        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchExactly, column=0)
         for item in items:
             if item.text(1) == resource_type:
                 break
@@ -391,7 +391,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def delete_resource_info(self, resource_info):
         resource_name, resource_type_name, is_loaded = resource_info
-        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchContains, column=0)
+        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchExactly, column=0)
         for item in items:
             if item.text(1) == resource_type_name:
                 index = self.resourceListWidget.indexOfTopLevelItem(item)
@@ -416,7 +416,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.appCmdQueue.put(COMMAND.DELETE_OBJECT, selectedItem.text(0))
 
     def deleteObjectInfo(self, objName):
-        items = self.objectList.findItems(objName, QtCore.Qt.MatchContains, column=0)
+        items = self.objectList.findItems(objName, QtCore.Qt.MatchExactly, column=0)
         for item in items:
             index = self.objectList.indexOfTopLevelItem(item)
             self.objectList.takeTopLevelItem(index)

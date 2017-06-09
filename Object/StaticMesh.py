@@ -3,51 +3,33 @@ import time, math
 import numpy as np
 
 from Common import logger
-from Object import TransformObject, Geometry
+from Object import TransformObject, GeometryInstance
 from Utilities import GetClassName, Attributes
 from App import CoreManager
 
 
 class StaticMesh:
-    def __init__(self, name, object_data):
+    def __init__(self, name, **data):
         self.name = name
-        self.mesh = None
-        self.geometries = []
+        self.mesh = data.get('mesh')
+        default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
+        self.material_instances = [default_material_instance, ] * self.mesh.get_geometry_count() if self.mesh else 0
+        for i, material_instance in enumerate(data.get('material_instances', [])):
+            self.material_instances[i] = material_instance
         self.attributes = Attributes()
-        self.set_mesh(object_data.get('mesh'))
-
-        material_instances = object_data.get('material_instances', [])
-        for i, material_instance in enumerate(material_instances):
-            self.set_material_instance(material_instance, i)
-
-    def set_mesh(self, mesh):
-        self.mesh = mesh
-        if mesh:
-            material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
-            self.geometries = mesh.get_geometries(self, material_instance)
-        else:
-            self.geometries = []
-
-    def set_material_instance(self, material_instance, index=0):
-        if index < len(self.geometries):
-            self.geometries[index].set_material_instance(material_instance)
-
-    def get_material_instances(self):
-        return [geometry.material_instance for geometry in self.geometries]
 
     def get_save_data(self):
         save_data = dict(
             object_type=GetClassName(self),
             mesh=self.mesh.name if self.mesh is not None else '',
-            material_instances=[material_instance.name for material_instance in self.get_material_instances()]
+            material_instances=[material_instance.name for material_instance in self.material_instances]
         )
         return save_data
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('mesh', self.mesh)
-        material_instances = [geometries.material_instance.name if geometries.material_instance else '' for geometries in
-                              self.geometries]
+        material_instances = [material_instance.name for material_instance in self.material_instances]
         self.attributes.setAttribute('material_instances', material_instances)
         return self.attributes
 
@@ -62,31 +44,39 @@ class StaticMesh:
             self.set_material_instance(material_instance, attribute_index)
 
 
-class StaticMeshInst:
-    def __init__(self, name, object_data):
+class StaticMeshActor:
+    def __init__(self, name, **object_data):
         self.name = name
         self.selected = False
-        self.source_object = CoreManager.instance().resource_manager.getObject(object_data.get('source_object'))
+        self.staticmesh = object_data.get('source_object')
+        # material instances
+        self.material_instances = object_data.get('material_instances', [])
+        if self.staticmesh and self.staticmesh.mesh:
+            geometry_count = self.staticmesh.mesh.get_geometry_count()
+            if len(self.material_instances) < geometry_count:
+                default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
+                for i in range(geometry_count - len(self.material_instances)):
+                    self.material_instances.append(default_material_instance)
+
         self.transform = TransformObject(object_data.get('pos', [0, 0, 0]))
         self.transform.setRot(object_data.get('rot', [0, 0, 0]))
         self.transform.setScale(object_data.get('scale', [1, 1, 1]))
 
-        self.mesh = None
-        self.geometries = []
+        self.geometry_instances = []
         self.attributes = Attributes()
 
         # replace data from source object
-        if self.source_object:
-            self.mesh = self.source_object.mesh
-            self.geometries = [Geometry.get_instance(geometry, self) for geometry in self.source_object.geometries]
-
-    def get_source_name(self):
-        return self.source_object.name if self.source_object else ''
+        if self.staticmesh:
+            mesh = self.staticmesh.mesh
+            for i, geometry in enumerate(mesh.geometries):
+                geometry_instance = GeometryInstance(parent_actor=self, geometry=geometry,
+                                                     material_instance=self.material_instances[i])
+                self.geometry_instances.append(geometry_instance)
 
     def get_save_data(self):
         save_data = dict(
             object_type=GetClassName(self),
-            source_object=self.get_source_name(),
+            source_object=self.staticmesh.name if self.staticmesh else '',
             pos=self.transform.pos.tolist(),
             rot=self.transform.rot.tolist(),
             scale=self.transform.scale.tolist()
@@ -98,12 +88,7 @@ class StaticMeshInst:
         self.attributes.setAttribute('pos', self.transform.pos)
         self.attributes.setAttribute('rot', self.transform.rot)
         self.attributes.setAttribute('scale', self.transform.scale)
-        if self.source_object:
-            self.attributes.setAttribute('source_object', self.get_source_name())
-        self.attributes.setAttribute('mesh', self.mesh)
-        material_instances = [geometries.material_instance.name if geometries.material_instance else '' for geometries in
-                              self.geometries]
-        self.attributes.setAttribute('material_instances', material_instances)
+        self.attributes.setAttribute('source_object', self.staticmesh.name if self.staticmesh else '')
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):

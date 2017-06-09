@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import StaticMeshInst, Camera, Light, Tonemapping
+from Object import StaticMeshActor, Camera, Light, Tonemapping
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
 
@@ -94,8 +94,9 @@ class SceneManager(Singleton):
         self.add_postprocess()
 
         for object_data in scene_data.get('staticmeshes', []):
-            source_object = self.resource_manager.getObject(object_data.get('source_object'))
-            self.addObject(object_data)
+            if type(object_data['source_object']) == str:
+                object_data['source_object'] = self.resource_manager.getObject(object_data.get('source_object'))
+            self.addObject(**object_data)
 
     def save_scene(self):
         if self.__current_scene_name == "":
@@ -126,7 +127,7 @@ class SceneManager(Singleton):
             return self.cameras
         elif Light == object_type:
             return self.lights
-        elif StaticMeshInst == object_type:
+        elif StaticMeshActor == object_type:
             return self.staticmeshes
         return None
 
@@ -149,11 +150,9 @@ class SceneManager(Singleton):
     def addCamera(self, name=''):
         camera_name = self.generateObjectName(name or "camera")
         logger.info("add Camera : %s" % camera_name)
-        object_data = dict(
-            pos=(0, 0, 0),
-            source_object='Quad',
-        )
-        camera = Camera(camera_name, object_data)
+        camera = Camera(camera_name,
+                        pos=(0, 0, 0),
+                        source_object=self.resource_manager.getObject('Quad'))
         camera.initialize()
         self.regist_object(camera)
         return camera
@@ -161,28 +160,25 @@ class SceneManager(Singleton):
     def addLight(self, name=''):
         light_name = self.generateObjectName(name or "light")
         logger.info("add Light : %s" % light_name)
-        object_data = dict(
-            pos=(0, 0, 0),
-            source_object='Quad',
-            lightColor=(1.0, 1.0, 1.0, 1.0)
-        )
-        light = Light(light_name, object_data)
+        light = Light(light_name,
+                      pos=(0, 0, 0),
+                      source_object=self.resource_manager.getObject('Quad'),
+                      lightColor=(1.0, 1.0, 1.0, 1.0))
         self.regist_object(light)
         return light
 
     def add_postprocess(self):
         self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
-    def addObject(self, object_data):
-        object_name = object_data.get('source_object')
-        source_obj = self.resource_manager.getObject(object_name)
+    def addObject(self, **object_data):
+        source_obj = object_data.get('source_object')
         if source_obj:
             objName = self.generateObjectName(source_obj.name)
             objType = GetClassName(source_obj)
             logger.info("add %s : %s" % (objType, objName))
 
             if 'StaticMesh' == objType:
-                obj_instance = StaticMeshInst(objName, object_data)
+                obj_instance = StaticMeshActor(objName, **object_data)
             else:
                 obj_instance = None
             # regist
@@ -190,11 +186,10 @@ class SceneManager(Singleton):
             return obj_instance
         return None
 
-    def addObjectHere(self, object_name):
+    def addObjectHere(self, obj):
         camera = self.getMainCamera()
         pos = camera.transform.pos + camera.transform.front * 10.0
-        object_data = dict(source_object=object_name, pos=pos)
-        return self.addObject(object_data)
+        return self.addObject(source_object=obj, pos=pos)
 
     def clearObjects(self):
         self.cameras = []
