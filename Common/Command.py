@@ -50,6 +50,7 @@ class COMMAND(AutoEnum):
 
     # resource
     OPEN_RESOURCE = ()
+    LOAD_RESOURCE = ()
     SAVE_RESOURCE = ()
     DELETE_RESOURCE = ()
     DELETE_RESOURCE_INFO = ()

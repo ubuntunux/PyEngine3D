@@ -3,6 +3,7 @@ from collections import OrderedDict
 import os
 import re
 import traceback
+import copy
 
 from Common import logger
 from App import CoreManager
@@ -15,9 +16,12 @@ class MaterialInstance:
         self.valid = False
         logger.info("Load Material Instance : " + material_instance_name)
         self.name = material_instance_name
+        self.shader_name = ""
         self.material = None
         self.uniform_datas = {}
+        self.macros = OrderedDict()
         self.linked_uniform_map = OrderedDict({})
+        self.linked_material_component_map = OrderedDict({})
         self.Attributes = Attributes()
 
         # open material instance file
@@ -26,17 +30,15 @@ class MaterialInstance:
         material_inst_file.read(filePath)
 
         # Load data - create uniform data from config file
-        shader_name = ""
-        macros = OrderedDict()
         for data_type in material_inst_file.sections():
             if data_type == 'Shader':
                 # get shader name
                 if material_inst_file.has_option('Shader', 'shader'):
-                    shader_name = material_inst_file.get('Shader', 'shader')
+                    self.shader_name = material_inst_file.get('Shader', 'shader')
             elif data_type == 'Define':
                 # gather preprocess
                 for data_name in material_inst_file[data_type]:
-                    macros[data_name] = material_inst_file.get(data_type, data_name)
+                    self.macros[data_name] = eval(material_inst_file.get(data_type, data_name))
             else:
                 # create uniform data
                 for data_name in material_inst_file[data_type]:
@@ -46,8 +48,9 @@ class MaterialInstance:
                         self.uniform_datas[data_name] = data
                     else:
                         logger.error("%s MaterialInstance, %s is None." % (self.name, data_type))
+
         # link uniform_buffers and uniform_data
-        material = CoreManager.instance().resource_manager.getMaterial(shader_name, macros)
+        material = CoreManager.instance().resource_manager.getMaterial(self.shader_name, self.macros)
         self.set_material(material)
 
         if self.material is None:
@@ -65,8 +68,10 @@ class MaterialInstance:
             self.material = material
 
             # link_uniform_buffers
-            self.linked_uniform_map = OrderedDict({})
+            self.linked_uniform_map = OrderedDict()
+            self.linked_material_component_map = OrderedDict()
             uniform_names = self.material.uniform_buffers.keys()
+            material_component_names = self.material.material_component_names
             for uniform_name in uniform_names:
                 uniform_buffer = self.material.uniform_buffers[uniform_name]
                 # find uniform data
@@ -84,9 +89,11 @@ class MaterialInstance:
 
                 # link between uniform buffer and data.
                 self.linked_uniform_map[uniform_name] = [uniform_buffer, uniform_data]
+                if uniform_name in material_component_names:
+                    self.linked_material_component_map[uniform_name] = self.linked_uniform_map[uniform_name]
 
     def bind(self):
-        for uniform_buffer, uniform_data in self.linked_uniform_map.values():
+        for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 
     def bind_uniform_data(self, uniform_name, uniform_data):
@@ -110,6 +117,18 @@ class MaterialInstance:
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
         self.Attributes.setAttribute('material', self.material)
-        for uniform_buffer, uniform_data in self.linked_uniform_map.values():
+        for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             self.Attributes.setAttribute(uniform_buffer.name, uniform_data)
+        for key in self.macros:
+            self.Attributes.setAttribute(key, self.macros[key])
+        return self.Attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if attributeName in self.linked_material_component_map:
+            self.set_uniform_data(attributeName, attributeValue)
+        elif attributeName in self.macros:
+            if self.macros[attributeName] != attributeValue:
+                self.macros[attributeName] = attributeValue
+                material = CoreManager.instance().resource_manager.getMaterial(self.shader_name, self.macros)
+                self.set_material(material)
         return self.Attributes

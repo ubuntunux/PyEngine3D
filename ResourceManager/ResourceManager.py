@@ -165,9 +165,8 @@ class ResourceLoader(object):
         self.resources = {}
         self.metaDatas = {}
 
-    @staticmethod
-    def getResourceName(filepath, workPath, make_lower=True):
-        resourceName = os.path.splitext(os.path.relpath(filepath, workPath))[0]
+    def getResourceName(self, filepath, make_lower=True):
+        resourceName = os.path.splitext(os.path.relpath(filepath, self.resource_path))[0]
         resourceName = resourceName.replace(os.sep, ".")
         return resourceName if make_lower else resourceName
 
@@ -180,7 +179,7 @@ class ResourceLoader(object):
                 fileExt = os.path.splitext(filename)[1]
                 if ".*" == self.fileExt or fileExt == self.fileExt:
                     filepath = os.path.join(dirname, filename)
-                    resource_name = self.getResourceName(filepath, self.resource_path)
+                    resource_name = self.getResourceName(filepath)
                     resource = Resource(resource_name, self.resource_type_name)
                     meta_data = MetaData(self.resource_version, filepath)
                     self.regist_resource(resource, meta_data)
@@ -196,7 +195,7 @@ class ResourceLoader(object):
                         self.externalFileList.append(source_filepath)
             # convert external file to rsource file.
             for source_filepath in self.externalFileList:
-                resource_name = self.getResourceName(source_filepath, self.resource_path)
+                resource_name = self.getResourceName(source_filepath)
                 resource = self.getResource(resource_name, noWarn=True)
                 meta_data = self.getMetaData(resource_name, noWarn=True)
                 # Create the new resource from exterial file.
@@ -221,7 +220,7 @@ class ResourceLoader(object):
                 file_ext = os.path.splitext(filename)[1]
                 if file_ext == '.meta':
                     filepath = os.path.join(dirname, filename)
-                    resource_name = self.getResourceName(filepath, self.resource_path)
+                    resource_name = self.getResourceName(filepath)
                     resource = self.getResource(resource_name, noWarn=True)
                     meta_data = self.getMetaData(resource_name, noWarn=True)
                     if resource is None:
@@ -331,15 +330,16 @@ class ResourceLoader(object):
 
     def load_resource_data(self, filePath):
         try:
-            # Load data (deserialize)
-            if is_gz_compressed_file(filePath):
-                with gzip.open(filePath, 'rb') as f:
-                    load_data = pickle.load(f)
-            else:
-                # human readable data
-                with open(filePath, 'r') as f:
-                    load_data = eval(f.read())
-            return load_data
+            if os.path.exists(filePath):
+                # Load data (deserialize)
+                if is_gz_compressed_file(filePath):
+                    with gzip.open(filePath, 'rb') as f:
+                        load_data = pickle.load(f)
+                else:
+                    # human readable data
+                    with open(filePath, 'r') as f:
+                        load_data = eval(f.read())
+                return load_data
         except:
             logger.error("file open error : %s" % filePath)
             logger.error(traceback.format_exc())
@@ -422,7 +422,7 @@ class MaterialLoader(ResourceLoader):
                     self.convert_resource(resource, meta_data.source_filepath)
 
     def convert_resource(self, resource, source_filepath):
-        shader_name = self.getResourceName(source_filepath, ResourceManager.instance().shaderLoader.resource_path)
+        shader_name = self.resource_manager.shaderLoader.getResourceName(source_filepath)
         shader = ResourceManager.instance().getShader(shader_name)
         if shader:
             material_datas = self.load_resource_data(resource.resource_filepath)
@@ -439,6 +439,7 @@ class MaterialLoader(ResourceLoader):
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
             uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
+            material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
 
             include_files = {}
             for include_file in shader.include_files:
@@ -449,6 +450,7 @@ class MaterialLoader(ResourceLoader):
                 fragment_shader_code=fragment_shader_code,
                 include_files=include_files,
                 uniforms=uniforms,
+                material_components=material_components,
                 macros=macros
             )
             # create material
@@ -516,7 +518,7 @@ class TextureLoader(ResourceLoader):
             return
         try:
             logger.info("Convert Resource : %s" % source_filepath)
-            texture_name = self.getResourceName(source_filepath, self.resource_path)
+            texture_name = self.getResourceName(source_filepath)
             # create texture
             texture_type = 'Tex2D'
             image = Image.open(source_filepath)
@@ -542,12 +544,12 @@ class TextureLoader(ResourceLoader):
 # -----------------------#
 class MeshLoader(ResourceLoader):
     name = "MeshLoader"
-    resource_version = 1
+    resource_version = 0
     resource_dir_name = 'Meshes'
     resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
-    USE_FILE_COMPRESS_TO_SAVE = False
+    USE_FILE_COMPRESS_TO_SAVE = True
 
     def initialize(self):
         # load and regist resource
@@ -597,6 +599,7 @@ class ObjectLoader(ResourceLoader):
     resource_dir_name = 'Objects'
     resource_type_name = 'Object'
     fileExt = '.object'
+    externalFileExt = dict(Mesh='.mesh')
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
@@ -651,6 +654,11 @@ class SceneLoader(ResourceLoader):
         meta_data = self.getMetaData(resource_name)
         if resource and meta_data and os.path.exists(meta_data.resource_filepath):
             scene_datas = self.load_resource_data(meta_data.resource_filepath)
+            for object_data in scene_datas.get('staticmeshes', []):
+                object_data['source_object'] = self.resource_manager.getObject(object_data.get('source_object'))
+                for i, material_instance in enumerate(object_data['material_instances']):
+                    object_data['material_instances'][i] = self.resource_manager.getMaterialInstance(material_instance)
+
             self.scene_manager.open_scene(resource_name, scene_datas)
             resource.set_data(scene_datas)
 

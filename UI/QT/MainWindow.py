@@ -122,11 +122,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
+        self.resource_menu = QMenu()
+        self.resource_menu.addAction(self.tr("Load"), self.loadResource)
+        self.resource_open_action = self.resource_menu.addAction(self.tr("Open"), self.openResource)
+        self.resource_menu.addAction(self.tr("Save"), self.saveResource)
+        self.resource_menu.addAction(self.tr("Delete"), self.deleteResource)
+        self.resourceListWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.resourceListWidget.customContextMenuRequested.connect(self.openResourceMenu)
         self.resourceListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.sortItems(0, 0)
         self.resourceListWidget.sortItems(1, 0)
-        self.resourceListWidget.itemDoubleClicked.connect(self.openResource)
+        self.resourceListWidget.itemDoubleClicked.connect(self.loadResource)
         self.resourceListWidget.itemClicked.connect(self.selectResource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
                      self.addResourceList)
@@ -151,6 +158,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
+        self.object_menu = QMenu()
+        self.object_menu.addAction(self.tr("Remove"), self.deleteObject)
+        self.objectList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.objectList.customContextMenuRequested.connect(self.openObjectMenu)
         self.objectList.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.objectList.setSortingEnabled(True)
         self.objectList.sortItems(0, 0)
@@ -222,6 +233,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def setViewMode(self, mode):
         self.appCmdQueue.put(mode)
+
+    def openResourceMenu(self, position):
+        self.resource_menu.exec_(self.resourceListWidget.viewport().mapToGlobal(position))
+
+    def openObjectMenu(self, position):
+        self.object_menu.exec_(self.objectList.viewport().mapToGlobal(position))
 
     # ------------------------- #
     # Widget - Propery Tree
@@ -359,11 +376,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(0, resource_name)
         item.setText(1, resource_type)
 
-    def openResource(self, item=None):
-        items = self.getSelectedResource()
-        for item in items:
-            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
-
     def selectResource(self):
         items = self.getSelectedResource()
         if items and len(items) > 0:
@@ -371,6 +383,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (items[0].text(0), items[0].text(1)))
             else:
                 self.clearAttribute()
+
+    def openResource(self, item=None):
+        items = self.getSelectedResource()
+        for item in items:
+            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
+
+    def loadResource(self, item=None):
+        items = self.getSelectedResource()
+        for item in items:
+            self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (item.text(0), item.text(1)))
 
     def saveResource(self, item=None):
         items = self.getSelectedResource()

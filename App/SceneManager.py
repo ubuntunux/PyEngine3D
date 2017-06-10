@@ -94,8 +94,6 @@ class SceneManager(Singleton):
         self.add_postprocess()
 
         for object_data in scene_data.get('staticmeshes', []):
-            if type(object_data['source_object']) == str:
-                object_data['source_object'] = self.resource_manager.getObject(object_data.get('source_object'))
             self.addObject(**object_data)
 
     def save_scene(self):

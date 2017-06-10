@@ -20,6 +20,8 @@ class Material:
         vertex_shader_code = material_datas.get('vertex_shader_code', "")
         fragment_shader_code = material_datas.get('fragment_shader_code', "")
         uniforms = material_datas.get('uniforms', [])
+        self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
+        self.macros = material_datas.get('macros', {})
 
         self.name = material_name
         self.lastTextureIndex = 0

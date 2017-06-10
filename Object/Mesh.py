@@ -16,6 +16,9 @@ class GeometryInstance:
         self.geometry = geometry
         self.material_instance = material_instance
 
+    def get_material_instance(self):
+        return self.material_instance
+
     def set_material_instance(self, material_instance):
         self.material_instance = material_instance
 

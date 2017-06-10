@@ -215,6 +215,11 @@ class CoreManager(Singleton):
             self.resource_manager.open_resource(resName, resTypeName)
         self.commands[COMMAND.OPEN_RESOURCE.value] = cmd_open_resource
 
+        def cmd_load_resource(value):
+            resName, resTypeName = value
+            self.resource_manager.load_resource(resName, resTypeName)
+        self.commands[COMMAND.LOAD_RESOURCE.value] = cmd_load_resource
+
         def cmd_save_resource(value):
             resName, resTypeName = value
             self.resource_manager.save_resource(resName, resTypeName)
