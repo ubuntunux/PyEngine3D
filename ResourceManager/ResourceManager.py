@@ -504,26 +504,6 @@ class MaterialInstanceLoader(ResourceLoader):
     fileExt = '.matinst'
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def initialize(self):
-        super(MaterialInstanceLoader, self).initialize()
-        if self.getResourceData('default') is None:
-            self.createDefaultMaterialInstance()
-
-    def createDefaultMaterialInstance(self):
-        material = self.resource_manager.getMaterial('default')
-        if material:
-            self.create_material_instance(material)
-            material_instance = self.getResourceData('default')
-            if material_instance is None:
-                logger.error('Failed to default material instance.')
-
-    def create_material_instance(self, material):
-        if material:
-            resource = self.create_resource(material.name)
-            material_instance = MaterialInstance(resource.name, material=material)
-            resource.set_data(material_instance)
-            self.save_resource(resource.name)
-
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         meta_data = resource.meta_data
@@ -534,6 +514,24 @@ class MaterialInstanceLoader(ResourceLoader):
                 material_instance_data['material'] = material
                 material_instance = MaterialInstance(resource.name, **material_instance_data)
                 resource.set_data(material_instance)
+
+    def create_material_instance(self, material):
+        if material:
+            resource = self.create_resource(material.name)
+            material_instance = MaterialInstance(resource.name, material=material)
+            if material_instance.valid:
+                resource.set_data(material_instance)
+                self.save_resource(resource.name)
+            else:
+                logger.error('Failed to default material instance.')
+
+    def getMaterialInstance(self, material_instance_name):
+        material_instance = self.getResourceData(material_instance_name)
+        if material_instance is None:
+            material = self.resource_manager.getMaterial(material_instance_name)
+            self.create_material_instance(material)
+            material_instance = self.getResourceData(material_instance_name)
+        return material_instance
 
 
 # -----------------------#
@@ -864,10 +862,10 @@ class ResourceManager(Singleton):
         return self.material_instanceLoader.getResourceNameList()
 
     def getMaterialInstance(self, name):
-        return self.material_instanceLoader.getResourceData(name) or self.getDefaultMaterialInstance()
+        return self.material_instanceLoader.getMaterialInstance(name)
 
     def getDefaultMaterialInstance(self):
-        return self.material_instanceLoader.getResourceData('default')
+        return self.material_instanceLoader.getMaterialInstance('default')
 
     # FUNCTIONS : Mesh
 
