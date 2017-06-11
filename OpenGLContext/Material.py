@@ -21,12 +21,13 @@ class Material:
         fragment_shader_code = material_datas.get('fragment_shader_code', "")
         uniforms = material_datas.get('uniforms', [])
         self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
-        self.macros = material_datas.get('macros', {})
+        self.macros = material_datas.get('macros', OrderedDict())
 
         self.name = material_name
+        self.shader_name = material_datas.get('shader_name', '')
         self.lastTextureIndex = 0
         self.program = -1
-        self.uniform_buffers = OrderedDict({})  # Declaration order is important.
+        self.uniform_buffers = dict()  # OrderedDict()  # Declaration order is important.
         self.Attributes = Attributes()
         self.valid = self.create_program(vertex_shader_code, fragment_shader_code, uniforms)
 

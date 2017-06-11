@@ -15,6 +15,7 @@ reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name,
 reVersion = re.compile("(\#version\s+.+)")  # [version code, ]
 reComment = re.compile("\/\*.+?\*\/", re.DOTALL)
 reMacroStart = re.compile('\#(define|undef|endif|ifdef|ifndef|if|elif|else)\s*(.*)')  # [macro type, expression]
+reDefineMacro = re.compile('\#define\s*(.*)')  # [macro type, expression]
 reVariable = re.compile('[a-z|A-Z|_]+[a-z|A-Z|_|0-9]*')
 
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
@@ -189,6 +190,7 @@ class Shader:
                         else:
                             unique_id = "UUID_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, include_file)).replace("-", "_")
                             include_files[include_file] = unique_id
+
                             self.include_files.append(include_file)
                         # insert included code
                         final_code_lines.append("//------------ INCLUDE -------------//")
@@ -204,6 +206,32 @@ class Shader:
             # append code block
             final_code_lines.append(code)
         return '\n'.join(final_code_lines)
+
+    def parsing_macros(self, vertexShaderCode, fragmentShaderCode):
+        vextex_defines = re.findall(reDefineMacro, vertexShaderCode)
+        fragment_defines = re.findall(reDefineMacro, fragmentShaderCode)
+        macros = OrderedDict()
+
+        for expression in vextex_defines + fragment_defines:
+            define_expression = expression.split('(')[0].strip()
+            if ' ' in define_expression:
+                define_name, define_value = define_expression.split(' ', 1)
+            else:
+                define_name, define_value = define_expression, ''
+
+            define_name = define_name.strip()
+            define_value = define_value.strip()
+
+            # ignore
+            if define_name in ('MATERIAL_COMPONENTS', 'VERTEX_SHADER', 'FRAGMENT_SHADER') or \
+                    define_name.startswith('UUID_'):
+                continue
+            try:
+                define_value = eval(define_value)
+            except:
+                pass
+            macros[define_name] = define_value
+        return macros
 
     def parsing_uniforms(self, vertexShaderCode, fragmentShaderCode):
         vextex_uniforms = re.findall(reFindUniform, vertexShaderCode)

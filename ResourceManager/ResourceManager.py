@@ -390,6 +390,11 @@ class ShaderLoader(ResourceLoader):
         shader = Shader(resource.name, resource.meta_data.resource_filepath)
         resource.set_data(shader)
 
+    def open_resource(self, resource_name):
+        shader = self.getResourceData(resource_name)
+        if shader:
+            self.resource_manager.materialLoader.getMaterial(resource_name)
+
 
 # -----------------------#
 # CLASS : MaterialLoader
@@ -402,12 +407,10 @@ class MaterialLoader(ResourceLoader):
     resource_version = 0
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def generate_material_name(self, shader_name, macros=None):
-        if macros:
-            keys = sorted(macros.keys())
-            add_name = [key + "_" + str(macros[key]) for key in keys]
-            return shader_name + "_" + "_".join(add_name)
-        return shader_name
+    def open_resource(self, resource_name):
+        material = self.getResourceData(resource_name)
+        if material:
+            self.resource_manager.material_instanceLoader.create_material_instance(material)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -427,8 +430,15 @@ class MaterialLoader(ResourceLoader):
         if shader:
             material_datas = self.load_resource_data(resource.resource_filepath)
             if material_datas:
-                macros = material_datas.get('macros', {})
+                macros = material_datas.get('macros', OrderedDict())
                 self.generate_new_material(resource, shader_name, macros)
+
+    def generate_material_name(self, shader_name, macros=None):
+        if macros:
+            keys = sorted(macros.keys())
+            add_name = [key + "_" + str(macros[key]) for key in keys]
+            return shader_name + "_" + "_".join(add_name)
+        return shader_name
 
     def generate_new_material(self, resource, shader_name, macros={}):
         material_name = self.generate_material_name(shader_name, macros)
@@ -438,6 +448,7 @@ class MaterialLoader(ResourceLoader):
         if shader:
             vertex_shader_code = shader.get_vertex_shader_code(macros)
             fragment_shader_code = shader.get_fragment_shader_code(macros)
+            final_macros = shader.parsing_macros(vertex_shader_code, fragment_shader_code)
             uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
             material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
 
@@ -446,12 +457,13 @@ class MaterialLoader(ResourceLoader):
                 include_files[include_file] = get_modify_time_of_file(include_file)
 
             material_datas = dict(
+                shader_name=shader_name,
                 vertex_shader_code=vertex_shader_code,
                 fragment_shader_code=fragment_shader_code,
                 include_files=include_files,
                 uniforms=uniforms,
                 material_components=material_components,
-                macros=macros
+                macros=final_macros
             )
             # create material
             material = Material(material_name, material_datas)
@@ -466,14 +478,19 @@ class MaterialLoader(ResourceLoader):
                 resource.set_data(material)
 
     def getMaterial(self, shader_name, macros={}):
+        if shader_name == '':
+            logger.error("Error : Cannot create material. Because material name is empty.")
+            return None
+
         material_name = self.generate_material_name(shader_name, macros)
-        resource = self.getResource(material_name)
-        if resource is None:
-            resource = self.create_resource(material_name)
-            self.generate_new_material(resource, shader_name, macros)
-        if resource:
-            return resource.get_data()
-        logger.error("%s cannot found %s resource." % (self.name, material_name))
+        if shader_name:
+            resource = self.getResource(material_name)
+            if resource is None:
+                resource = self.create_resource(material_name)
+                self.generate_new_material(resource, shader_name, macros)
+            if resource:
+                return resource.get_data()
+        logger.error("%s cannot found %s material." % (self.name, material_name))
         return None
 
 
@@ -485,12 +502,38 @@ class MaterialInstanceLoader(ResourceLoader):
     resource_dir_name = 'MaterialInstances'
     resource_type_name = 'MaterialInstance'
     fileExt = '.matinst'
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def initialize(self):
+        super(MaterialInstanceLoader, self).initialize()
+        if self.getResourceData('default') is None:
+            self.createDefaultMaterialInstance()
+
+    def createDefaultMaterialInstance(self):
+        material = self.resource_manager.getMaterial('default')
+        if material:
+            self.create_material_instance(material)
+            material_instance = self.getResourceData('default')
+            if material_instance is None:
+                logger.error('Failed to default material instance.')
+
+    def create_material_instance(self, material):
+        if material:
+            resource = self.create_resource(material.name)
+            material_instance = MaterialInstance(resource.name, material=material)
+            resource.set_data(material_instance)
+            self.save_resource(resource.name)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         meta_data = resource.meta_data
-        material_instance = MaterialInstance(resource.name, meta_data.resource_filepath)
-        resource.set_data(material_instance)
+        material_instance_data = self.load_resource_data(meta_data.resource_filepath)
+        if material_instance_data:
+            material = self.resource_manager.getMaterial(material_instance_data['material'])
+            if material:
+                material_instance_data['material'] = material
+                material_instance = MaterialInstance(resource.name, **material_instance_data)
+                resource.set_data(material_instance)
 
 
 # -----------------------#
@@ -812,7 +855,7 @@ class ResourceManager(Singleton):
     def getMaterialNameList(self):
         return self.materialLoader.getResourceNameList()
 
-    def getMaterial(self, shader_name, macros=None):
+    def getMaterial(self, shader_name, macros={}):
         return self.materialLoader.getMaterial(shader_name, macros)
 
     # FUNCTIONS : MaterialInstance
