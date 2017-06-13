@@ -37,6 +37,12 @@ class MetaData:
 
         self.load_meta_file()
 
+    def is_resource_file_changed(self):
+        return self.resource_modify_time != get_modify_time_of_file(self.resource_filepath)
+
+    def is_source_file_changed(self):
+        return self.source_modify_time != get_modify_time_of_file(self.source_filepath)
+
     def set_resource_meta_data(self, resource_filepath, modify_time=None):
         resource_modify_time = modify_time or get_modify_time_of_file(resource_filepath)
         self.changed |= self.resource_filepath != resource_filepath
@@ -109,34 +115,30 @@ class Resource:
     def __init__(self, resource_name, resource_type_name):
         self.name = resource_name
         self.type_name = resource_type_name
-        self.is_loaded = False
         self.data = None
         self.meta_data = None
 
     def get_resource_info(self):
-        return self.name, self.type_name, self.is_loaded
+        return self.name, self.type_name, self.data is not None
 
     def copy_data(self, data):
-        if data:
-            if self.data:
-                for key in data.__dict__:
-                    self.data.__dict__[key] = data[key]
-            else:
-                self.set_data(data)
+        if data and self.data:
+            for key in data.__dict__:
+                self.data.__dict__[key] = data.__dict__[key]
 
     def set_data(self, data):
         if data:
-            self.data = data
-            self.is_loaded = True
-            ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
+            if self.data is None:
+                self.data = data
+                ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
+            else:
+                self.copy_data(data)
 
     def clear_data(self):
         self.data = None
-        self.is_loaded = False
 
     def get_data(self):
-        if self.data is None:
-            # load resource
+        if self.data is None or self.meta_data.is_resource_file_changed():
             ResourceManager.instance().load_resource(self.name, self.type_name)
         return self.data
 
@@ -272,11 +274,7 @@ class ResourceLoader(object):
 
     def getResourceData(self, resourceName, noWarn=False):
         resource = self.getResource(resourceName, noWarn)
-        if resource:
-            if not resource.is_loaded:
-                self.load_resource(resourceName)
-            return resource.data
-        return None
+        return resource.get_data() if resource else None
 
     def getResourceList(self):
         return list(self.resources.values())
@@ -505,10 +503,7 @@ class MaterialLoader(ResourceLoader):
                     source_filepath = ""
                 self.save_resource_data(resource, material_datas, source_filepath)
                 # convert done
-                if resource.data:
-                    resource.copy_data(material)
-                else:
-                    resource.set_data(material)
+                resource.set_data(material)
                 return True
         logger.error("Failed to generate_new_material %s." % material_name)
         return False
