@@ -35,6 +35,13 @@ class StaticMesh:
     def get_material_instance(self, index):
         return self.material_instances[index] if index < len(self.material_instances) else None
 
+    def get_material_instance_name(self, index):
+        material_instance = self.get_material_instance(index)
+        return material_instance.name if material_instance else ''
+
+    def get_material_instance_names(self):
+        return [self.get_material_instance_name(i) for i in range(self.get_material_count())]
+
     def set_material_instance(self, material_instance, attribute_index):
         if attribute_index < len(self.material_instances):
             self.material_instances[attribute_index] = material_instance
@@ -42,8 +49,7 @@ class StaticMesh:
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('mesh', self.mesh)
-        material_instances = [material_instance.name for material_instance in self.material_instances]
-        self.attributes.setAttribute('material_instances', material_instances)
+        self.attributes.setAttribute('material_instances', self.get_material_instance_names())
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -100,8 +106,11 @@ class StaticMeshActor:
     def get_material_instance(self, index):
         return self.geometry_instances[index].get_material_instance()
 
+    def get_material_instance_name(self, index):
+        return self.geometry_instances[index].get_material_instance_name()
+
     def get_material_instance_names(self):
-        return [self.geometry_instances[i].get_material_instance().name for i in range(self.get_material_count())]
+        return [self.geometry_instances[i].get_material_instance_name() for i in range(self.get_material_count())]
 
     def set_material_instance(self, material_instance, index):
         if index < len(self.geometry_instances):
