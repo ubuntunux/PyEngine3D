@@ -69,12 +69,15 @@ class Shader:
 
         # external macro
         for macro in external_macros:
-            combined_macros[macro] = external_macros[macro]
+            if external_macros[macro] is None or external_macros[macro] is '':
+                combined_macros[macro] = 0
+            else:
+                combined_macros[macro] = external_macros[macro]
 
         # insert defines to final code
         final_code_lines = ["", ]  # for version define
         for macro in combined_macros:
-            final_code_lines.append("#define %s %s" % (macro, combined_macros[macro]))
+            final_code_lines.append("#define %s %s" % (macro, str(combined_macros[macro])))
 
         # insert version as comment
         include_files = dict()  # { 'filename': uuid }
@@ -104,6 +107,11 @@ class Shader:
                         define_name, define_value = define_expression.split(' ', 1)
                     else:
                         define_name, define_value = define_expression, None
+
+                    # check external macro
+                    if macro == 'define' and define_name in external_macros:
+                        continue  # ignore legacy macro
+
                     if macro == 'define' and define_name not in combined_macros:
                         combined_macros[define_name] = define_value
                     elif macro == 'undef' and define_name in combined_macros:
@@ -130,7 +138,7 @@ class Shader:
                                 if final_value not in combined_macros:
                                     break
                                 variable = final_value
-                            expression = re.sub(reVariable, final_value, expression, 1)
+                            expression = re.sub(reVariable, str(final_value), expression, 1)
                     expression = expression.replace('&&', ' and ')
                     expression = expression.replace('||', ' or ')
                     expression = re.sub('\!?!\=', 'not ', expression)

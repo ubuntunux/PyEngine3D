@@ -25,8 +25,11 @@ class MaterialInstance:
         self.Attributes = Attributes()
 
         material = data.get('material')
-        self.macros = copy.copy(material.macros)
 
+        # get source macro data from material
+        if material:
+            self.macros = copy.copy(material.macros)
+        # overwrite loaded macro data
         macros = data.get('macros', OrderedDict())
         for define_name, define_value in macros.items():
             self.macros[define_name] = define_value
@@ -36,7 +39,11 @@ class MaterialInstance:
                 pass
 
         # if macro was changed then get a new material.
-        material = CoreManager.instance().resource_manager.getMaterial(material.shader_name, self.macros)
+        if material:
+            shader_name = material.shader_name
+        else:
+            shader_name = data.get('shader_name', 'default')
+        material = CoreManager.instance().resource_manager.getMaterial(shader_name, self.macros)
 
         # link uniform_buffers and uniform_data
         self.set_material(material)
@@ -68,7 +75,8 @@ class MaterialInstance:
                 uniform_datas[uniform_name] = uniform_data
 
         save_data = dict(
-            material=self.material.name if self.material else '',
+            shader_name=self.material.shader_name if self.material else 'default',
+            material=self.material.name if self.material else 'default',
             macros=self.macros,
             uniform_datas=uniform_datas,
         )

@@ -537,12 +537,11 @@ class MaterialInstanceLoader(ResourceLoader):
             meta_data = resource.meta_data
             material_instance_data = self.load_resource_data(meta_data.resource_filepath)
             if material_instance_data:
-                material = self.resource_manager.getMaterial(material_instance_data['material'])
-                if material:
-                    material_instance_data['material'] = material
-                    material_instance = MaterialInstance(resource.name, **material_instance_data)
+                material_instance_data['material'] = self.resource_manager.getMaterial(material_instance_data['material'])
+                material_instance = MaterialInstance(resource.name, **material_instance_data)
+                if material_instance.valid:
                     resource.set_data(material_instance)
-                    return True
+                return material_instance.valid
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
@@ -750,7 +749,7 @@ class SceneLoader(ResourceLoader):
                         object_data['material_instances'][i] = self.resource_manager.getMaterialInstance(material_instance)
 
                 self.scene_manager.open_scene(resource_name, scene_datas)
-                resource.set_data(scene_datas)
+                # resource.set_data(scene_datas)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
