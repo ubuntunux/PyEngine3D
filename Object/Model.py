@@ -10,15 +10,22 @@ from App import CoreManager
 class Model:
     def __init__(self, name, **data):
         self.name = name
-        self.mesh = data.get('mesh')
-        default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
-        self.material_instances = [default_material_instance, ] * self.mesh.get_geometry_count() if self.mesh else 0
-        for i, material_instance in enumerate(data.get('material_instances', [])):
-            self.set_material_instance(material_instance, i)
+        self.mesh = None
+        self.material_instances = []
+        self.set_mesh(data.get('mesh'))
         self.attributes = Attributes()
 
     def set_mesh(self, mesh):
-        self.mesh = mesh
+        if mesh:
+            self.mesh = mesh
+            geometry_count = mesh.get_geometry_count()
+            material_instance_count = len(self.material_instances)
+            if geometry_count < material_instance_count:
+                self.material_instances = self.material_instances[:geometry_count]
+            else:
+                default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
+                self.material_instances.extend(
+                    [default_material_instance, ] * (geometry_count - material_instance_count))
 
     def get_save_data(self):
         save_data = dict(
