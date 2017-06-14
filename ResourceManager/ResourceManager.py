@@ -29,10 +29,12 @@ class MetaData:
     def __init__(self, resource_version, resource_filepath):
         self.filepath = os.path.splitext(resource_filepath)[0] + ".meta"
         self.resource_version = resource_version
+        self.old_resource_version = -1
         self.resource_filepath = resource_filepath
         self.resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.source_filepath = ""
         self.source_modify_time = ""
+        self.version_updated = False
         self.changed = False
 
         self.load_meta_file()
@@ -43,24 +45,30 @@ class MetaData:
     def is_source_file_changed(self):
         return self.source_modify_time != get_modify_time_of_file(self.source_filepath)
 
-    def set_resource_meta_data(self, resource_filepath, modify_time=None):
-        resource_modify_time = modify_time or get_modify_time_of_file(resource_filepath)
+    def set_resource_version(self, resource_version, save=True):
+        self.changed = self.resource_version != resource_version
+        self.resource_version = resource_version
+        if self.changed and save:
+            self.save_meta_file()
+
+    def set_resource_meta_data(self, resource_filepath, save=True):
+        resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.changed |= self.resource_filepath != resource_filepath
         self.changed |= self.resource_modify_time != resource_modify_time
         self.resource_filepath = resource_filepath
         self.resource_modify_time = resource_modify_time
 
-        if self.changed:
+        if self.changed and save:
             self.save_meta_file()
 
-    def set_source_meta_data(self, source_filepath, modify_time=None):
-        source_modify_time = modify_time or get_modify_time_of_file(source_filepath)
+    def set_source_meta_data(self, source_filepath, save=True):
+        source_modify_time = get_modify_time_of_file(source_filepath)
         self.changed |= self.source_filepath != source_filepath
         self.changed |= self.source_modify_time != source_modify_time
         self.source_filepath = source_filepath
         self.source_modify_time = source_modify_time
 
-        if self.changed:
+        if self.changed and save:
             self.save_meta_file()
 
     def load_meta_file(self):
@@ -79,6 +87,8 @@ class MetaData:
                 self.changed |= self.source_filepath != source_filepath
                 self.changed |= self.source_modify_time != source_modify_time
 
+                if resource_version is not None:
+                    self.resource_version = resource_version
                 if source_filepath is not None:
                     self.source_filepath = source_filepath
                 if source_modify_time is not None:
@@ -376,8 +386,10 @@ class ResourceLoader(object):
                 with open(save_filepath, 'w') as f:
                     pprint.pprint(save_data, f, width=256)
             # refresh meta data because resource file saved.
-            resource.meta_data.set_resource_meta_data(save_filepath)
-            resource.meta_data.set_source_meta_data(source_filepath)
+            resource.meta_data.set_resource_meta_data(save_filepath, save=False)
+            resource.meta_data.set_source_meta_data(source_filepath, save=False)
+            resource.meta_data.set_resource_version(self.resource_version, save=False)
+            resource.meta_data.save_meta_file()
         except:
             logger.error(traceback.format_exc())
 
@@ -629,7 +641,7 @@ class MeshLoader(ResourceLoader):
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
     external_dir_name = os.path.join('Externals', 'Meshes')
-    USE_FILE_COMPRESS_TO_SAVE = True
+    USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
         # load and regist resource
@@ -653,21 +665,20 @@ class MeshLoader(ResourceLoader):
     def convert_resource(self, resoure, source_filepath):
         file_ext = os.path.splitext(source_filepath)[1]
         if file_ext == self.externalFileExt.get('WaveFront'):
-            geometry = OBJ(source_filepath, 1, True)
-            geometry_datas = geometry.get_geometry_data()
+            mesh = OBJ(source_filepath, 1, True)
+            mesh_data = mesh.get_mesh_data()
         elif file_ext == self.externalFileExt.get('Collada'):
-            geometry = Collada(source_filepath)
-            geometry_datas = geometry.get_geometry_data()
+            mesh = Collada(source_filepath)
+            mesh_data = mesh.get_mesh_data()
         else:
             return
 
         logger.info("Convert Resource : %s" % source_filepath)
-        if geometry_datas:
+        if mesh_data:
             # create mesh
-            mesh = Mesh(resoure.name, geometry_datas=geometry_datas)
+            mesh = Mesh(resoure.name, mesh_data=mesh_data)
             resoure.set_data(mesh)
-            save_data = mesh.get_save_data()
-            self.save_resource_data(resoure, save_data, source_filepath)
+            self.save_resource_data(resoure, mesh_data, source_filepath)
 
     def open_resource(self, resource_name):
         mesh = self.getResourceData(resource_name)

@@ -86,8 +86,8 @@ def parsing_sematic(xml_element):
 class ColladaGeometry:
     def __init__(self, xml_geometry, controllers):
         self.valid = False
-        self.name = get_xml_attrib(xml_geometry, 'name')
-        self.id = get_xml_attrib(xml_geometry, 'id')
+        self.name = get_xml_attrib(xml_geometry, 'name').replace('.', '_')
+        self.id = get_xml_attrib(xml_geometry, 'id').replace('.', '_')
 
         self.positions = []
         self.bone_indicies = []
@@ -214,8 +214,8 @@ class ColladaGeometry:
 class ColladaContoller:
     def __init__(self, xml_controller):
         self.valid = False
-        self.name = get_xml_attrib(xml_controller, 'name')
-        self.id = get_xml_attrib(xml_controller, 'id')
+        self.name = get_xml_attrib(xml_controller, 'name').replace('.', '_')
+        self.id = get_xml_attrib(xml_controller, 'id').replace('.', '_')
         self.skin_source = ""
         self.bone_indicies = []
         self.bone_weights = []
@@ -328,6 +328,27 @@ class Collada:
             geometry = ColladaGeometry(xml_geometry, self.controllers)
             self.geometries.append(geometry)
 
+    def get_mesh_data(self):
+        geometry_datas = self.get_geometry_data()
+        skeleton_datas = self.get_skeleton_data()
+        mesh_data = dict(
+            geometry_datas=geometry_datas,
+            skeleton_datas=skeleton_datas
+        )
+        return mesh_data
+
+    def get_skeleton_data(self):
+        skeleton_datas = []
+        for controller in self.controllers:
+            skeleton_data = dict(
+                name=controller.name,
+                bone_names=controller.bone_names,
+                bone_matrices=controller.bone_matrices,
+                bind_shape_matrix=controller.bind_shape_matrix
+            )
+            skeleton_datas.append(skeleton_data)
+        return skeleton_datas
+
     def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
@@ -339,12 +360,11 @@ class Collada:
                 texcoords=copy.deepcopy(geometry.texcoords),
                 indices=copy.deepcopy(geometry.indices)
             )
-            if len(geometry.bone_indicies) > 0:
+            if geometry.controller:
+                geometry_data['skeleton'] = geometry.controller.name
                 geometry_data['bone_indicies'] = copy.deepcopy(geometry.bone_indicies)
-            if len(geometry.bone_weights) > 0:
                 geometry_data['bone_weights'] = copy.deepcopy(geometry.bone_weights)
             geometry_datas.append(geometry_data)
-
         return geometry_datas
 
-# Collada(os.path.join('..', 'Resource', 'Meshes', 'anim.dae'))
+# Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'anim.dae'))

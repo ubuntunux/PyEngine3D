@@ -6,6 +6,7 @@ import numpy as np
 from Common import logger
 from OpenGLContext import CreateGeometryBuffer, VertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize
+from Object import Skeleton
 from App import CoreManager
 
 
@@ -37,24 +38,19 @@ class Mesh:
         logger.info("Load %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
-        self.geometry_datas = mesh_data.get('geometry_datas', [])
-        self.geometries = CreateGeometryBuffer(self.geometry_datas)
+        self.geometries = CreateGeometryBuffer(mesh_data.get('geometry_datas', []))
+        self.skeletons = []
+        for skeleton_data in mesh_data.get('skeleton_datas', []):
+            skeleton = Skeleton(**skeleton_data)
+            self.skeletons.append(skeleton)
         self.attributes = Attributes()
-
-    def clear_data(self):
-        self.geometry_datas = None
-
-    def get_save_data(self):
-        save_data = dict(
-            geometry_datas=self.geometry_datas
-        )
-        return save_data
 
     def get_geometry_count(self):
         return len(self.geometries)
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
+        self.attributes.setAttribute("geometries", [geometry.name for geometry in self.geometries])
         self.attributes.setAttribute("geometries", [geometry.name for geometry in self.geometries])
         return self.attributes
 

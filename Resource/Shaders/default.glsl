@@ -1,5 +1,7 @@
 #version 430 core
 
+#define SKELETAL 0
+
 //----------- UNIFORM_BLOCK ---------------//
 
 layout(std140, binding=0) uniform sceneConstants
@@ -31,6 +33,10 @@ struct VERTEX_INPUT
     layout(location=2) vec3 normal;
     layout(location=3) vec3 tangent;
     layout(location=4) vec2 texcoord;
+#if SKELETAL
+    layout(location=5) vec4 bone_indicies;
+    layout(location=6) vec4 bone_weights;
+#endif
 };
 
 struct VERTEX_OUTPUT
@@ -42,6 +48,10 @@ struct VERTEX_OUTPUT
     vec2 texCoord;
     vec3 cameraVector;
     vec3 lightVector;
+#if SKELETAL
+    vec4 bone_indicies;
+    vec4 bone_weights;
+#endif
 };
 
 //----------- VERTEX_SHADER ---------------//
@@ -58,6 +68,11 @@ void main() {
     vs_output.tangentToWorld = model * mat4(vec4(vs_input.tangent, 0.0), vec4(bitangent, 0.0), vec4(vs_input.normal, 0.0),
         vec4(0.0, 0.0, 0.0, 1.0));
     vs_output.texCoord = vs_input.texcoord;
+
+#if SKELETAL
+    vs_output.bone_indicies = vs_input.bone_indicies;
+    vs_output.bone_weights = vs_input.bone_weights;
+#endif
 
     vs_output.cameraVector = cameraPosition.xyz - vs_output.worldPosition;
     //vs_output.cameraVector = normalize(vs_output.cameraVector);
@@ -89,6 +104,10 @@ void main() {
     vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
+#if SKELETAL
+    fs_output = vec4(vs_output.bone_weights.xyz + lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
+#else
     fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
+#endif
 }
 #endif
