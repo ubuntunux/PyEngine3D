@@ -15,7 +15,7 @@ from distutils.dir_util import copy_tree
 from PIL import Image
 
 from Common import logger, log_level
-from Object import MaterialInstance, Triangle, Quad, Mesh, StaticMesh
+from Object import MaterialInstance, Triangle, Quad, Mesh, Model
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -672,32 +672,32 @@ class MeshLoader(ResourceLoader):
     def open_resource(self, resource_name):
         mesh = self.getResourceData(resource_name)
         if mesh:
-            self.resource_manager.objectLoader.create_object(mesh)
+            self.resource_manager.modelLoader.create_model(mesh)
 
 
 # -----------------------#
-# CLASS : ObjectLoader
+# CLASS : ModelLoader
 # -----------------------#
-class ObjectLoader(ResourceLoader):
-    name = "ObjectLoader"
-    resource_dir_name = 'Objects'
-    resource_type_name = 'Object'
-    fileExt = '.object'
+class ModelLoader(ResourceLoader):
+    name = "ModelLoader"
+    resource_dir_name = 'Models'
+    resource_type_name = 'Model'
+    fileExt = '.model'
     externalFileExt = dict(Mesh='.mesh')
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def initialize(self):
         # load and regist resource
-        super(ObjectLoader, self).initialize()
+        super(ModelLoader, self).initialize()
 
         # Regist basic meshs
-        self.create_resource("Triangle", StaticMesh("Triangle", mesh=self.resource_manager.getMesh('Triangle')))
-        self.create_resource("Quad", StaticMesh("Quad", mesh=self.resource_manager.getMesh('Quad')))
+        self.create_resource("Triangle", Model("Triangle", mesh=self.resource_manager.getMesh('Triangle')))
+        self.create_resource("Quad", Model("Quad", mesh=self.resource_manager.getMesh('Quad')))
 
-    def create_object(self, mesh):
+    def create_model(self, mesh):
         resource = self.create_resource(mesh.name)
-        obj = StaticMesh(resource.name, mesh=mesh)
-        resource.set_data(obj)
+        model = Model(resource.name, mesh=mesh)
+        resource.set_data(model)
         self.save_resource(resource.name)
 
     def load_resource(self, resource_name):
@@ -708,16 +708,16 @@ class ObjectLoader(ResourceLoader):
                 mesh = self.resource_manager.getMesh(object_data.get('mesh'))
                 material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
                                       for material_instance_name in object_data.get('material_instances', [])]
-                obj = StaticMesh(resource.name, mesh=mesh, material_instances=material_instances)
+                obj = Model(resource.name, mesh=mesh, material_instances=material_instances)
                 resource.set_data(obj)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
     def open_resource(self, resource_name):
-        obj = self.getResourceData(resource_name)
-        if obj:
-            self.scene_manager.addObjectHere(obj)
+        model = self.getResourceData(resource_name)
+        if model:
+            self.scene_manager.addObjectHere(model)
 
 
 # -----------------------#
@@ -744,7 +744,7 @@ class SceneLoader(ResourceLoader):
             if resource and meta_data and os.path.exists(meta_data.resource_filepath):
                 scene_datas = self.load_resource_data(meta_data.resource_filepath)
                 for object_data in scene_datas.get('staticmeshes', []):
-                    object_data['source_object'] = self.resource_manager.getObject(object_data.get('source_object'))
+                    object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
                     for i, material_instance in enumerate(object_data['material_instances']):
                         object_data['material_instances'][i] = self.resource_manager.getMaterialInstance(material_instance)
 
@@ -790,7 +790,7 @@ class ResourceManager(Singleton):
         self.meshLoader = None
         self.sceneLoader = None
         self.scriptLoader = None
-        self.objectLoader = None
+        self.modelLoader = None
 
     def regist_loader(self, resource_loader_class):
         resource_loader = resource_loader_class(self.core_manager, self.root_path)
@@ -812,7 +812,7 @@ class ResourceManager(Singleton):
         self.meshLoader = self.regist_loader(MeshLoader)
         self.sceneLoader = self.regist_loader(SceneLoader)
         self.scriptLoader = self.regist_loader(ScriptLoader)
-        self.objectLoader = self.regist_loader(ObjectLoader)
+        self.modelLoader = self.regist_loader(ModelLoader)
 
         # initialize
         for resource_loader in self.resource_loaders:
@@ -936,11 +936,11 @@ class ResourceManager(Singleton):
 
     # FUNCTIONS : Object
 
-    def getObjectNameList(self):
-        return self.objectLoader.getResourceNameList()
+    def getModelNameList(self):
+        return self.modelLoader.getResourceNameList()
 
-    def getObject(self, meshName):
-        return self.objectLoader.getResourceData(meshName)
+    def getModel(self, modelName):
+        return self.modelLoader.getResourceData(modelName)
 
     # FUNCTIONS : Scene
 

@@ -295,13 +295,13 @@ class CoreManager(Singleton):
                 elif keyDown == K_BACKQUOTE:
                     self.renderer.console.toggle()
                 elif keyDown == K_1:
-                    object_name_list = self.resource_manager.getObjectNameList()
+                    object_name_list = self.resource_manager.getModelNameList()
                     if object_name_list:
                         for i in range(100):
                             pos = [np.random.uniform(-10, 10) for x in range(3)]
                             objName = np.random.choice(object_name_list)
-                            source_obj = self.resource_manager.getObject(objName)
-                            obj_instance = self.sceneManager.addObject(source_object=source_obj, pos=pos)
+                            model = self.resource_manager.getModel(objName)
+                            obj_instance = self.sceneManager.addObject(model=model, pos=pos)
                             if obj_instance:
                                 self.sendObjectInfo(obj_instance.name)
                 elif keyDown == K_HOME:

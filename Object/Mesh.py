@@ -4,7 +4,7 @@ import traceback
 import numpy as np
 
 from Common import logger
-from OpenGLContext import CreateGeometry, VertexArrayBuffer, UniformMatrix4
+from OpenGLContext import CreateGeometryBuffer, VertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize
 from App import CoreManager
 
@@ -38,7 +38,7 @@ class Mesh:
 
         self.name = mesh_name
         self.geometry_datas = mesh_data.get('geometry_datas', [])
-        self.geometries = CreateGeometry(self.geometry_datas)
+        self.geometries = CreateGeometryBuffer(self.geometry_datas)
         self.attributes = Attributes()
 
     def clear_data(self):

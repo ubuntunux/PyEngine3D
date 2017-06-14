@@ -7,7 +7,7 @@ from Common import logger
 from Utilities import compute_tangent
 
 
-def CreateGeometry(geometry_datas):
+def CreateGeometryBuffer(geometry_datas):
     geometries = []
     for geometry_index, geometry_data in enumerate(geometry_datas):
         geometry_name = geometry_data.get('name', "Geometry_%d" % geometry_index)

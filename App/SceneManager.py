@@ -150,7 +150,7 @@ class SceneManager(Singleton):
         logger.info("add Camera : %s" % camera_name)
         camera = Camera(camera_name,
                         pos=(0, 0, 0),
-                        source_object=self.resource_manager.getObject('Quad'))
+                        model=self.resource_manager.getModel('Quad'))
         camera.initialize()
         self.regist_object(camera)
         return camera
@@ -160,7 +160,7 @@ class SceneManager(Singleton):
         logger.info("add Light : %s" % light_name)
         light = Light(light_name,
                       pos=(0, 0, 0),
-                      source_object=self.resource_manager.getObject('Quad'),
+                      model=self.resource_manager.getModel('Quad'),
                       lightColor=(1.0, 1.0, 1.0, 1.0))
         self.regist_object(light)
         return light
@@ -169,13 +169,13 @@ class SceneManager(Singleton):
         self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
     def addObject(self, **object_data):
-        source_obj = object_data.get('source_object')
-        if source_obj:
-            objName = self.generateObjectName(source_obj.name)
-            objType = GetClassName(source_obj)
+        model = object_data.get('model')
+        if model:
+            objName = self.generateObjectName(model.name)
+            objType = GetClassName(model)
             logger.info("add %s : %s" % (objType, objName))
 
-            if 'StaticMesh' == objType:
+            if 'Model' == objType:
                 obj_instance = StaticMeshActor(objName, **object_data)
             else:
                 obj_instance = None
@@ -184,10 +184,10 @@ class SceneManager(Singleton):
             return obj_instance
         return None
 
-    def addObjectHere(self, obj):
+    def addObjectHere(self, model):
         camera = self.getMainCamera()
         pos = camera.transform.pos + camera.transform.front * 10.0
-        return self.addObject(source_object=obj, pos=pos)
+        return self.addObject(model=model, pos=pos)
 
     def clearObjects(self):
         self.cameras = []
