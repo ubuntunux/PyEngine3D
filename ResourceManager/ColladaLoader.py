@@ -7,8 +7,10 @@ import traceback
 import copy
 from collections import OrderedDict
 
+import numpy as np
+
 from Common import logger
-from Utilities import load_xml, get_xml_attrib, get_xml_tag, get_xml_text
+from Utilities import *
 
 
 def convert_float(data, default=0.0):
@@ -83,11 +85,80 @@ def parsing_sematic(xml_element):
     return semantics
 
 
+class ColladaNode:
+    def __init__(self, xml_node, parent=None, depth=0):
+        self.valid = False
+        self.name = get_xml_attrib(xml_node, 'name').replace('.', '_')
+        self.id = get_xml_attrib(xml_node, 'id').replace('.', '_')
+        self.type = get_xml_attrib(xml_node, 'type')
+        self.matrix = Maxtrix4()
+        self.parent = parent
+        self.children = []
+
+        self.instance_controller = None
+        xml_instance_controller = xml_node.find('instance_controller')
+        if xml_instance_controller is not None:
+            self.instance_controller = get_xml_attrib(xml_instance_controller, 'url')
+            if self.instance_controller.startswith('#'):
+                self.instance_controller = self.instance_controller[1:]
+
+        self.instance_geometry = None
+        xml_instance_geometry = xml_node.find('instance_geometry')
+        if xml_instance_geometry is not None:
+            self.instance_geometry = get_xml_attrib(xml_instance_geometry, 'url')
+            if self.instance_geometry.startswith('#'):
+                self.instance_geometry = self.instance_geometry[1:]
+
+        self.parsing_matrix(xml_node)
+
+        for xml_child_node in xml_node.findall('node'):
+            child = ColladaNode(xml_child_node, self, depth+1)
+            self.children.append(child)
+
+    def parsing_matrix(self, xml_node):
+        xml_matrix = xml_node.find('matrix')
+        if xml_matrix is not None:
+            matrix = get_xml_text(xml_matrix)
+            matrix = [eval(x) for x in matrix.split()]
+            if len(matrix) == 16:
+                # column major matrix to row major matrix
+                self.matrix = np.array(matrix, dtype=np.float32).reshape(4, 4).T
+        else:
+            xml_translate = xml_node.find('translate')
+            if xml_translate is not None:
+                translation = [eval(x) for x in get_xml_text(xml_translate).split()]
+                if len(translation) == 3:
+                    matrix_translate(self.matrix, *translation)
+                else:
+                    logger.error('%s node has a invalid translate.' % self.name)
+            xml_rotates = xml_node.findall('rotate')
+            for xml_rotate in xml_rotates:
+                rotation = [eval(x) for x in get_xml_text(xml_rotate).split()]
+                if len(rotation) == 4:
+                    axis = get_xml_attrib(xml_rotate, 'sid')
+                    if axis == 'rotationX':
+                        matrix_rotateX(self.matrix, rotation[3])
+                    elif axis == 'rotationY':
+                        matrix_rotateY(self.matrix, rotation[3])
+                    elif axis == 'rotationZ':
+                        matrix_rotateZ(self.matrix, rotation[3])
+                    else:
+                        logger.error('%s node has a invalid rotate.' % self.name)
+            xml_scale = xml_node.find('scale')
+            if xml_scale is not None:
+                scale = [eval(x) for x in get_xml_text(xml_scale).split()]
+                if len(scale) == 3:
+                    matrix_scale(self.matrix, *scale)
+                else:
+                    logger.error('%s node has a invalid scale.' % self.name)
+
+
 class ColladaGeometry:
     def __init__(self, xml_geometry, controllers):
         self.valid = False
         self.name = get_xml_attrib(xml_geometry, 'name').replace('.', '_')
         self.id = get_xml_attrib(xml_geometry, 'id').replace('.', '_')
+        print("Geometry", self.name, self.id)
 
         self.positions = []
         self.bone_indicies = []
@@ -216,6 +287,7 @@ class ColladaContoller:
         self.valid = False
         self.name = get_xml_attrib(xml_controller, 'name').replace('.', '_')
         self.id = get_xml_attrib(xml_controller, 'id').replace('.', '_')
+        print("Controller", self.name or "No Name", self.id)
         self.skin_source = ""
         self.bone_indicies = []
         self.bone_weights = []
@@ -316,9 +388,13 @@ class Collada:
         self.unit_meter = convert_float(self.unit_meter)
         self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
+        self.nodes = []
         self.geometries = []
         self.controllers = []
         self.animations = []
+        for xml_node in xml_root.findall('library_visual_scenes/visual_scene/node'):
+            node = ColladaNode(xml_node)
+            self.nodes.append(node)
 
         for xml_controller in xml_root.findall('library_controllers/controller'):
             controller = ColladaContoller(xml_controller)
@@ -367,4 +443,4 @@ class Collada:
             geometry_datas.append(geometry_data)
         return geometry_datas
 
-# Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'anim.dae'))
+Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'collada_test_02.dae'))

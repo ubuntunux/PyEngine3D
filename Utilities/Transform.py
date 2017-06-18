@@ -204,7 +204,7 @@ def getTranslateMatrix(x, y, z):
     return np.array(T, dtype=np.float32)
 
 
-def translate(M, x, y, z):
+def matrix_translate(M, x, y, z):
     T = [[1, 0, 0, 0],
          [0, 1, 0, 0],
          [0, 0, 1, 0],
@@ -221,7 +221,7 @@ def getScaleMatrix(x, y, z):
     return np.array(S, dtype=np.float32)
 
 
-def scale(M, x, y, z):
+def matrix_scale(M, x, y, z):
     S = [[x, 0, 0, 0],
          [0, y, 0, 0],
          [0, 0, z, 0],
@@ -263,7 +263,7 @@ def getRotationMatrixZ(radian):
     return R
 
 
-def rotateX(M, radian):
+def matrix_rotateX(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -274,7 +274,7 @@ def rotateX(M, radian):
     M[...] = np.dot(R, M)
 
 
-def rotateY(M, radian):
+def matrix_rotateY(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -285,7 +285,7 @@ def rotateY(M, radian):
     M[...] = np.dot(R, M)
 
 
-def rotateZ(M, radian):
+def matrix_rotateZ(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -296,7 +296,7 @@ def rotateZ(M, radian):
     M[...] = np.dot(R, M)
 
 
-def rotate(M, radian, x, y, z):
+def matrix_rotate(M, radian, x, y, z):
     c, s = math.cos(radian), math.sin(radian)
     n = math.sqrt(x * x + y * y + z * z)
     x /= n
