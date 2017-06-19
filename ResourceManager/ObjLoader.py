@@ -127,6 +127,14 @@ class OBJ:
                              indices=copy.deepcopy(indices))
         return [geometry_data, ]
 
+    def get_mesh_data(self):
+        geometry_datas = self.get_geometry_data()
+        # skeleton_datas = self.get_skeleton_data()
+        mesh_data = dict(
+            geometry_datas=geometry_datas
+        )
+        return mesh_data
+
     # Generate
     def generateInstruction(self):
         self.glList = glGenLists(1)

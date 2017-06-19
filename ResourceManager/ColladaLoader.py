@@ -443,4 +443,4 @@ class Collada:
             geometry_datas.append(geometry_data)
         return geometry_datas
 
-Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'collada_test_02.dae'))
+# Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'collada_test_02.dae'))

@@ -18,8 +18,8 @@ class Skeleton:
         self.bones = []
         self.bind_shape_matrix = skeleton_data.get('bind_shape_matrix', '')
 
-        bone_names = skeleton_data.get('bone_names', [])
-        bone_matrices = skeleton_data.get('bone_matrices', [])
+        bone_names = skeleton_data.get('bone_names') or []
+        bone_matrices = skeleton_data.get('bone_matrices') or []
         bone_count = len(bone_matrices)
         for i, bone_name in enumerate(bone_names):
             bone_matrix = np.array(bone_matrices[i], dtype=np.float32) if i < bone_count else Maxtrix4()
