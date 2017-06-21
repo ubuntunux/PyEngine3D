@@ -4,14 +4,16 @@ from Utilities import *
 
 
 class TransformObject:
-    def __init__(self, pos):
+    def __init__(self, local=None):
         # transform
+        print("TransformObject", local)
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
-        self.matrix = Maxtrix4()
-        self.inverse_matrix = Maxtrix4()
-        self.translateMatrix = Maxtrix4()
-        self.rotationMatrix = Maxtrix4()
-        self.scaleMatrix = Maxtrix4()
+        self.local = local if local is not None else Matrix4()
+        self.matrix = Matrix4()
+        self.inverse_matrix = Matrix4()
+        self.translateMatrix = Matrix4()
+        self.rotationMatrix = Matrix4()
+        self.scaleMatrix = Matrix4()
 
         self.right = WORLD_RIGHT.copy()
         self.up = WORLD_UP.copy()
@@ -23,7 +25,7 @@ class TransformObject:
         self.scaled = True
         self.updated = True
         self.force_update = True
-        self.pos = Float3(*pos)
+        self.pos = Float3()
         self.oldPos = Float3()
         self.rot = Float3()
         self.oldRot = Float3()
@@ -193,7 +195,9 @@ class TransformObject:
 
         if self.updated or self.force_update:
             self.force_update = False
-            self.matrix = np.dot(self.scaleMatrix, np.dot(self.rotationMatrix, self.translateMatrix))
+            self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
+            self.matrix = np.dot(self.scaleMatrix, self.matrix)
+            self.matrix = np.dot(self.local, self.matrix)
 
     def updateInverseTransform(self):
         if self.updated:

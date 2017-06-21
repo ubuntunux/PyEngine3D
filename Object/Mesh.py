@@ -5,7 +5,7 @@ import numpy as np
 
 from Common import logger
 from OpenGLContext import CreateGeometryBuffer, VertexArrayBuffer, UniformMatrix4
-from Utilities import Attributes, GetClassName, normalize
+from Utilities import Attributes, GetClassName, normalize, Matrix4
 from Object import Skeleton
 from App import CoreManager
 
@@ -50,7 +50,6 @@ class Mesh:
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
-        self.attributes.setAttribute("geometries", [geometry.name for geometry in self.geometries])
         self.attributes.setAttribute("geometries", [geometry.name for geometry in self.geometries])
         return self.attributes
 

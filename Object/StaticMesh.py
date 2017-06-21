@@ -4,7 +4,7 @@ import numpy as np
 
 from Common import logger
 from Object import TransformObject, GeometryInstance, Model
-from Utilities import GetClassName, Attributes
+from Utilities import GetClassName, Attributes, Matrix4
 from App import CoreManager
 
 
@@ -13,14 +13,14 @@ class StaticMeshActor:
         self.name = name
         self.selected = False
         self.attributes = Attributes()
-
-        self.transform = TransformObject(object_data.get('pos', [0, 0, 0]))
-        self.transform.setRot(object_data.get('rot', [0, 0, 0]))
-        self.transform.setScale(object_data.get('scale', [1, 1, 1]))
-
         self.model = None
         self.geometry_instances = []
         self.set_model(object_data.get('model'))
+
+        self.transform = TransformObject()
+        self.transform.setPos(object_data.get('pos', [0, 0, 0]))
+        self.transform.setRot(object_data.get('rot', [0, 0, 0]))
+        self.transform.setScale(object_data.get('scale', [1, 1, 1]))
 
         material_instances = object_data.get('material_instances', [])
         for i, material_instance in enumerate(material_instances):

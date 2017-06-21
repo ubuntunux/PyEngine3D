@@ -13,6 +13,7 @@ from collections import OrderedDict
 from distutils.dir_util import copy_tree
 
 from PIL import Image
+from numpy import array, float32
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Mesh, Model
@@ -676,7 +677,7 @@ class MeshLoader(ResourceLoader):
         logger.info("Convert Resource : %s" % source_filepath)
         if mesh_data:
             # create mesh
-            mesh = Mesh(resoure.name, mesh_data=mesh_data)
+            mesh = Mesh(resoure.name, **mesh_data)
             resoure.set_data(mesh)
             self.save_resource_data(resoure, mesh_data, source_filepath)
 

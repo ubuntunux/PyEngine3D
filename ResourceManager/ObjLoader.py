@@ -98,6 +98,12 @@ class OBJ:
                         self.faces.append((positions[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([positions[2], positions[3], positions[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
+    def get_mesh_data(self):
+        mesh_data = dict(
+            geometry_datas=self.get_geometry_data()
+        )
+        return mesh_data
+
     def get_geometry_data(self):
         positions = []
         normals = []

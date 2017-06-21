@@ -9,7 +9,7 @@ import numpy as np
 from Common import logger
 from Object import StaticMeshActor, Camera, Light, Tonemapping
 from OpenGLContext import UniformBlock
-from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY
+from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4
 
 
 class SceneManager(Singleton):
