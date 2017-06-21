@@ -47,7 +47,7 @@ class MetaData:
         return self.source_modify_time != get_modify_time_of_file(self.source_filepath)
 
     def set_resource_version(self, resource_version, save=True):
-        self.changed = self.resource_version != resource_version
+        self.changed |= self.resource_version != resource_version
         self.resource_version = resource_version
         if self.changed and save:
             self.save_meta_file()
