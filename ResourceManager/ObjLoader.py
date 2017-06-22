@@ -98,18 +98,12 @@ class OBJ:
                         self.faces.append((positions[:3], normals[:3], texcoords[:3], lastMaterial))
                         self.faces.append(([positions[2], positions[3], positions[0]], [normals[2], normals[3], normals[0]], [texcoords[2], texcoords[3], texcoords[0]], lastMaterial))
 
-    def get_mesh_data(self):
-        mesh_data = dict(
-            geometry_datas=self.get_geometry_data()
-        )
-        return mesh_data
-
     def get_geometry_data(self):
         positions = []
         normals = []
         texcoords = []
         indices = []
-        indexMap = OrderedDict()
+        indexMap = []
 
         for face in self.faces:
             # exclude material
@@ -117,10 +111,10 @@ class OBJ:
             for i in range(len(postionIndicies)):
                 vertIndex = (postionIndicies[i], normalIndicies[i], texcoordIndicies[i])
                 if vertIndex in indexMap:
-                    indices.append(list(indexMap.keys()).index(vertIndex))
+                    indices.append(indexMap.index(vertIndex))
                 else:
                     indices.append(len(indexMap))
-                    indexMap[vertIndex] = None
+                    indexMap.append(vertIndex)
                     positions.append(self.positions[postionIndicies[i]])
                     normals.append(self.normals[normalIndicies[i]])
 
