@@ -202,7 +202,7 @@ class Renderer(Singleton):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
-        glFrontFace(GL_CW)
+        glFrontFace(GL_CCW)
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)

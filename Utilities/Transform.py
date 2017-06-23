@@ -74,23 +74,23 @@ def euler_to_matrix(pitch, yaw, roll, rotationMatrix):
     pass
 
 
-def matrix_rotation(pitch, yaw, roll, rotationMatrix):
-    ch = math.cos(yaw)
-    sh = math.sin(yaw)
-    ca = math.cos(roll)
-    sa = math.sin(roll)
-    cb = math.cos(pitch)
-    sb = math.sin(pitch)
+def matrix_rotation(rx, ry, rz, rotationMatrix):
+    ch = math.cos(ry)
+    sh = math.sin(ry)
+    ca = math.cos(rz)
+    sa = math.sin(rz)
+    cb = math.cos(rx)
+    sb = math.sin(rx)
 
     rotationMatrix[:, 0] = [ch*ca, sh*sb - ch*sa*cb, ch*sa*sb + sh*cb, 0.0]
     rotationMatrix[:, 1] = [sa, ca*cb, -ca*sb, 0.0]
     rotationMatrix[:, 2] = [-sh*ca, sh*sa*cb + ch*sb, -sh*sa*sb + ch*cb, 0.0]
 
 
-def matrix_to_vectors(rotationMatrix, right, up, front):
-    right[:] = rotationMatrix[0, 0:3]
-    up[:] = rotationMatrix[1, 0:3]
-    front[:] = rotationMatrix[2, 0:3]
+def matrix_to_vectors(rotationMatrix, axis_x, axis_y, axis_z):
+    axis_x[:] = rotationMatrix[0, 0:3]
+    axis_y[:] = rotationMatrix[1, 0:3]
+    axis_z[:] = rotationMatrix[2, 0:3]
 
 
 def get_quaternion(axis, radian):
@@ -119,13 +119,13 @@ def muliply_quaternion(quaternion1, quaternion2):
     return Float4(qW, qX, qY, qZ)
 
 
-def euler_to_quaternion(pitch, yaw, roll, quat):
-    t0 = math.cos(roll * 0.5)
-    t1 = math.sin(roll * 0.5)
-    t2 = math.cos(pitch * 0.5)
-    t3 = math.sin(pitch * 0.5)
-    t4 = math.cos(yaw * 0.5)
-    t5 = math.sin(yaw * 0.5)
+def euler_to_quaternion(rx, ry, rz, quat):
+    t0 = math.cos(rz * 0.5)
+    t1 = math.sin(rz * 0.5)
+    t2 = math.cos(rx * 0.5)
+    t3 = math.sin(rx * 0.5)
+    t4 = math.cos(ry * 0.5)
+    t5 = math.sin(ry * 0.5)
     t0t2 = t0 * t2
     t0t3 = t0 * t3
     t1t2 = t1 * t2
@@ -340,7 +340,6 @@ def ortho(left, right, bottom, top, znear, zfar):
 
 def perspective(fovy, aspect, znear, zfar):
     assert (znear != zfar)
-    '''
     # common equation
     h = np.tan(fovy / 360.0 * np.pi) * znear
     w = h * aspect
@@ -349,22 +348,11 @@ def perspective(fovy, aspect, znear, zfar):
     top = h
     bottom = -h
 
-    M = Identity()
+    M = Matrix4()
     M[0, :] = [2.0 * znear / (right - left), 0.0, 0.0, 0.0]
     M[1, :] = [0.0, 2.0 * znear / (top - bottom), 0.0, 0.0]
-    M[2, :] = [(right + left) / (right - left), 0.0, -(zfar + znear) / (zfar - znear), -1.0]
-    M[3, :] = [0.0, (top + bottom) / (top - bottom), -2.0 * znear * zfar / (zfar - znear), 0.0]
-    return M
-    '''
-
-    height = np.tan(fovy / 360.0 * np.pi) * znear
-    width = height * aspect
-    depth = zfar - znear
-    M = Matrix4()
-    M[0, :] = [znear / width, 0.0, 0.0, 0.0]
-    M[1, :] = [0.0, znear / height, 0.0, 0.0]
-    M[2, :] = [0.0, 0.0, (zfar + znear) / depth, 1.0]  # flip Z axis for left hand system.
-    M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / depth, 0.0]
+    M[2, :] = [(right + left) / (right - left), (top + bottom) / (top - bottom), -(zfar + znear) / (zfar - znear), -1.0]
+    M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / (zfar - znear), 0.0]
     return M
 
 
