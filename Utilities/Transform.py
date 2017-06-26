@@ -310,16 +310,14 @@ def matrix_rotate(M, radian, x, y, z):
     M[...] = np.dot(R, M)
 
 
-def lookat(eye, target, up):
-    F = target[:3] - eye[:3]
-    f = normalize(F)
-    U = normalize(up[:3])
-    s = np.cross(f, U)
+def lookat(matrix, eye, target, up):
+    f = normalize(target - eye)
+    s = np.cross(f, up)
     u = np.cross(s, f)
-    M = np.eye(4, dtype=np.float32)
-    M[:3, :3] = np.vstack([s, u, -f])
-    T = getTranslateMatrix(*(-eye))
-    return M * T
+    matrix[0, 0:3] = s
+    matrix[1, 0:3] = u
+    matrix[2, 0:3] = -f
+    matrix[3, 0:3] = [-np.dot(s, eye), -np.dot(u, eye), -np.dot(f, eye)]
 
 
 def ortho(left, right, bottom, top, znear, zfar):

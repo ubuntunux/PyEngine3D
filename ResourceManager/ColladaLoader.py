@@ -471,6 +471,14 @@ class Collada:
     def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
+            for i, position in enumerate(geometry.positions):
+                position = [position[0], position[1], position[2], 1.0]
+                geometry.positions[i] = np.dot(position, geometry.matrix)[:3]
+
+            for i, normal in enumerate(geometry.normals):
+                normal = [normal[0], normal[1], normal[2], 0.0]
+                geometry.normals[i] = np.dot(normal, geometry.matrix)[:3]
+
             geometry_data = dict(
                 name=geometry.name,
                 matrix=copy.deepcopy(geometry.matrix),
@@ -489,5 +497,5 @@ class Collada:
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'untitled.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'suzan2.dae'))
     mesh.get_mesh_data()

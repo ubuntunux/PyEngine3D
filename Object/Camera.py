@@ -50,6 +50,9 @@ class Camera(StaticMeshActor):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
+    def get_view_dir(self):
+        return -self.transform.front
+
     def update(self):
         self.transform.updateTransform()
         self.transform.updateInverseTransform()  # update view matrix

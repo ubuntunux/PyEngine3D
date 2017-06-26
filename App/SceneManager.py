@@ -186,7 +186,7 @@ class SceneManager(Singleton):
 
     def addObjectHere(self, model):
         camera = self.getMainCamera()
-        pos = camera.transform.pos + camera.transform.front * 10.0
+        pos = camera.transform.pos + camera.get_view_dir() * 10.0
         return self.addObject(model=model, pos=pos)
 
     def clearObjects(self):
