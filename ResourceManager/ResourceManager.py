@@ -642,7 +642,7 @@ class MeshLoader(ResourceLoader):
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
     external_dir_name = os.path.join('Externals', 'Meshes')
-    USE_FILE_COMPRESS_TO_SAVE = False
+    USE_FILE_COMPRESS_TO_SAVE = True
 
     def initialize(self):
         # load and regist resource

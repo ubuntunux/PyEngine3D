@@ -423,8 +423,7 @@ class Collada:
         self.created = get_xml_text(xml_root.find("asset/created"))
         self.modified = get_xml_text(xml_root.find("asset/modified"))
         self.unit_name = get_xml_attrib(xml_root.find("asset/unit"), 'name', 'meter')
-        self.unit_meter = get_xml_attrib(xml_root.find("asset/unit"), 'meter')
-        self.unit_meter = convert_float(self.unit_meter)
+        self.unit_meter = convert_float(get_xml_attrib(xml_root.find("asset/unit"), 'meter'))
         self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
         self.nodes = []
@@ -471,6 +470,10 @@ class Collada:
     def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
+            # swap y and z
+            if self.up_axis == 'Z_UP':
+                geometry.matrix = np.dot(geometry.matrix, getRotationMatrixX(-HALF_PI))
+
             for i, position in enumerate(geometry.positions):
                 position = [position[0], position[1], position[2], 1.0]
                 geometry.positions[i] = np.dot(position, geometry.matrix)[:3]

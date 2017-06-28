@@ -12,8 +12,9 @@ This implementation uses row vectors and matrices are written in a row-major ord
 import math
 import numpy as np
 
+HALF_PI = math.pi * 0.5
 PI = math.pi
-TWO_PI = 2.0 * math.pi
+TWO_PI = math.pi * 2.0
 FLOAT_ZERO = np.float32(0.0)
 FLOAT2_ZERO = np.array([0.0, 0.0], dtype=np.float32)
 FLOAT3_ZERO = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -117,6 +118,13 @@ def muliply_quaternion(quaternion1, quaternion2):
     qZ = ((z * num) + (num2 * w)) + num10
     qW = (w * num) - num9
     return Float4(qW, qX, qY, qZ)
+
+
+def vector_multiply_quaternion(vector, quaternion):
+    qv = Float3(quaternion[1], quaternion[2], quaternion[3])
+    qw = quaternion[0]
+    u = np.cross(vector, qv)
+    return vector + u * 2.0 * qw + np.cross(qv, u) * 2.0
 
 
 def euler_to_quaternion(rx, ry, rz, quat):
