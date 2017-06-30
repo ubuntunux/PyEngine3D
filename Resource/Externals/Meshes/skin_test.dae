@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.78.0 commit date:2016-09-26, commit time:12:42, hash:4bb1e22</authoring_tool>
     </contributor>
-    <created>2017-07-01T00:56:47</created>
-    <modified>2017-07-01T00:56:47</modified>
+    <created>2017-07-01T03:16:27</created>
+    <modified>2017-07-01T03:16:27</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -92,7 +92,7 @@
           </technique_common>
         </source>
         <source id="Armature_Suzanne_001-skin-bind_poses">
-          <float_array id="Armature_Suzanne_001-skin-bind_poses-array" count="32">1 0 0 0 0 0 1 -0.8127056 0 -1 0 -3.173189 0 0 0 1 1 0 0 0 0 0 1 -1.812705 0 -1 0 -3.173189 0 0 0 1</float_array>
+          <float_array id="Armature_Suzanne_001-skin-bind_poses-array" count="32">1 0 0 0 0 0 1 -0.8127056 0 -1 0 -3.173189 0 0 0 1 1 0 0 0 0 0 1 -2.423439 0 -1 0 -3.173189 0 0 0 1</float_array>
           <technique_common>
             <accessor source="#Armature_Suzanne_001-skin-bind_poses-array" count="2" stride="16">
               <param name="TRANSFORM" type="float4x4"/>
@@ -131,7 +131,7 @@
         <node id="Bone" name="Bone" sid="Bone" type="JOINT">
           <matrix sid="transform">1 0 0 0 0 0 -1 0 0 1 0 0 0 0 0 1</matrix>
           <node id="Bone_001" name="Bone.001" sid="Bone_001" type="JOINT">
-            <matrix sid="transform">1 0 0 0 0 1 0 1 0 0 1 0 0 0 0 1</matrix>
+            <matrix sid="transform">1 0 0 0 0 1 0 1.610733 0 0 1 0 0 0 0 1</matrix>
             <extra>
               <technique profile="blender">
                 <connect>1</connect>
