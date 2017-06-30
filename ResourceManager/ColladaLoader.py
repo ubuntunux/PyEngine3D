@@ -453,6 +453,7 @@ class Collada:
         return mesh_data
 
     def get_skeleton_data(self):
+        # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         skeleton_datas = []
         for controller in self.controllers:
             skeleton_data = dict(
@@ -465,6 +466,7 @@ class Collada:
                 bind_shape_matrix=controller.bind_shape_matrix
             )
             skeleton_datas.append(skeleton_data)
+        print(skeleton_datas)
         return skeleton_datas
 
     def get_geometry_data(self):
@@ -496,9 +498,38 @@ class Collada:
                 geometry_data['bone_indicies'] = copy.deepcopy(geometry.bone_indicies)
                 geometry_data['bone_weights'] = copy.deepcopy(geometry.bone_weights)
             geometry_datas.append(geometry_data)
+            print(geometry.name)
+            print(geometry.matrix)
         return geometry_datas
+
+'''
+<bind_shape_matrix>
+    # geometry world matrix
+    1 0 0 2.98023e-8 / 0 1 0 -3.173189 / 0 0 1 1.868991 / 0 0 0 1
+</bind_shape_matrix>
+
+<float_array id="Armature_Suzanne_001-skin-bind_poses-array" count="32">
+    # bone world inverse matrix
+    1 0 0 0 / 0 0 1 -0.8127056 / 0 -1 0 -3.173189 / 0 0 0 1
+    1 0 0 0 / 0 0 1 -2.423439 / 0 -1 0 -3.173189 / 0 0 0 1
+</float_array>
+
+# visual scene nodes
+<amature matrix sid="transform">
+    # amature world matrix
+    1 0 0 2.98023e-8 / 0 1 0 -3.173189 / 0 0 1 0.8127055 / 0 0 0 1
+</matrix>
+<bone matrix sid="transform">
+    # bone local matrix
+    1 0 0 0 / 0 0 -1 0 / 0 1 0 0 / 0 0 0 1
+</matrix>
+<bone.001 matrix sid="transform">
+    # bone local matrix
+    1 0 0 0 / 0 1 0 1.610733 / 0 0 1 0 / 0 0 0 1
+</matrix>
+'''
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'suzan2.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'skin_test.dae'))
     mesh.get_mesh_data()

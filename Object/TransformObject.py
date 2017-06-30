@@ -5,8 +5,6 @@ from Utilities import *
 
 class TransformObject:
     def __init__(self, local=None):
-        # transform
-        print("TransformObject", local)
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
         self.local = local if local is not None else Matrix4()
         self.matrix = Matrix4()
