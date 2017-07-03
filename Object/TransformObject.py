@@ -193,9 +193,9 @@ class TransformObject:
 
         if self.updated or self.force_update:
             self.force_update = False
-            self.matrix = np.dot(self.rotationMatrix, self.translateMatrix)
-            self.matrix = np.dot(self.scaleMatrix, self.matrix)
-            self.matrix = np.dot(self.local, self.matrix)
+            self.matrix = np.dot(self.local, self.scaleMatrix)
+            self.matrix = np.dot(self.matrix, self.rotationMatrix)
+            self.matrix = np.dot(self.matrix, self.translateMatrix)
 
     def updateInverseTransform(self):
         if self.updated:

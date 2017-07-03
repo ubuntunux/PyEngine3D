@@ -40,19 +40,6 @@ def convert_list(data, data_type=float, stride=1):
         return [data_list[i * stride:i * stride + stride] for i in range(int(len(data_list) / stride))]
 
 
-def convert_triangulate(polygon, vcount, stride=1):
-    indices_list = [polygon[i * stride:i * stride + stride] for i in range(int(len(polygon) / stride))]
-    triangulated_list = []
-    # first triangle
-    triangulated_list += indices_list[0]
-    triangulated_list += indices_list[1]
-    triangulated_list += indices_list[2]
-    for i in range(3, vcount):
-        triangulated_list += indices_list[0]
-        triangulated_list += indices_list[i - 1]
-        triangulated_list += indices_list[i]
-
-
 def parsing_source_data(xml_element):
     sources = {}
     for xml_source in xml_element.findall('source'):
@@ -116,7 +103,7 @@ class ColladaNode:
             matrix = [eval(x) for x in matrix.split()]
             if len(matrix) == 16:
                 # column major matrix to row major matrix
-                self.matrix = np.array(matrix, dtype=np.float32).reshape(4, 4).T
+                self.matrix = np.array(matrix, dtype=np.float32).reshape(4, 4)
         else:
             xml_translate = xml_node.find('translate')
             if xml_translate is not None:
@@ -154,7 +141,7 @@ class ColladaContoller:
         self.id = get_xml_attrib(xml_controller, 'id').replace('.', '_')
         self.skin_source = ""
         self.matrix = Matrix4()
-        self.bind_shape_matrix = [0, ] * 16  # matrix4x4
+        self.bind_shape_matrix = Matrix4()
         self.hierachy = dict()
 
         self.bone_names = []
@@ -180,7 +167,7 @@ class ColladaContoller:
                 tree[child.name] = dict()
                 if child.name in self.bone_names:
                     index = self.bone_names.index(child.name)
-                    self.bone_matrices[index] = child.matrix
+                    self.bone_matrices[index] = child.matrix.copy()
                 else:
                     # maybe dummy...
                     pass
@@ -205,7 +192,7 @@ class ColladaContoller:
             # parsing bind_shape_matrix
             bind_shape_matrix = get_xml_text(xml_skin.find('bind_shape_matrix'), None)
             if bind_shape_matrix:
-                self.bind_shape_matrix = convert_list(bind_shape_matrix)
+                self.bind_shape_matrix = np.array(convert_list(bind_shape_matrix), dtype=np.float32).reshape(4, 4)
             else:
                 self.bind_shape_matrix = Matrix4()
 
@@ -260,7 +247,7 @@ class ColladaContoller:
         if 'INV_BIND_MATRIX0' in joins_semantics:
             inv_bind_matrix_source = joins_semantics['INV_BIND_MATRIX0'].get('source', '')
             self.inv_bind_matrices = sources.get(inv_bind_matrix_source, [])
-            self.inv_bind_matrices = [np.array(inv_bind_matrix, dtype=np.float32).reshape(4, 4).T for inv_bind_matrix in
+            self.inv_bind_matrices = [np.array(inv_bind_matrix, dtype=np.float32).reshape(4, 4) for inv_bind_matrix in
                                       self.inv_bind_matrices]
         self.valid = True
 
@@ -292,6 +279,10 @@ class ColladaGeometry:
             if self.name == node.name:
                 self.matrix = node.matrix
                 break
+
+        if self.controller:
+            # coulmn-major matrix calculation.
+            self.matrix = np.dot(controller.bind_shape_matrix, self.matrix)
 
         self.parsing(xml_geometry)
 
@@ -455,34 +446,36 @@ class Collada:
     def get_skeleton_data(self):
         # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         skeleton_datas = []
+        check_duplicated = []
         for controller in self.controllers:
-            skeleton_data = dict(
-                name=controller.name,
-                matrix=controller.matrix,
-                hierachy=controller.hierachy,
-                bone_names=controller.bone_names,
-                bone_matrices=controller.bone_matrices,
-                inv_bind_matrices=controller.inv_bind_matrices,
-                bind_shape_matrix=controller.bind_shape_matrix
-            )
-            skeleton_datas.append(skeleton_data)
-        print(skeleton_datas)
+            if controller.name not in check_duplicated:
+                check_duplicated.append(controller.name)
+                skeleton_data = dict(
+                    name=controller.name,
+                    # matrix of Amature
+                    matrix=convert_matrix(controller.matrix, True, self.up_axis),
+                    hierachy=controller.hierachy,  # bone names map as hierachy
+                    bone_names=controller.bone_names,  # bone name list
+                    # local matrix of bone
+                    bone_matrices=[convert_matrix(matrix, True, self.up_axis) for matrix in controller.bone_matrices],
+                    # inv matrix of bone
+                    inv_bind_matrices=[convert_matrix(matrix, True, self.up_axis) for matrix in
+                                       controller.inv_bind_matrices],
+                )
+                skeleton_datas.append(skeleton_data)
         return skeleton_datas
 
     def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
             # swap y and z
-            if self.up_axis == 'Z_UP':
-                geometry.matrix = np.dot(geometry.matrix, getRotationMatrixX(-HALF_PI))
+            geometry.matrix = convert_matrix(geometry.matrix, True, self.up_axis)
 
             for i, position in enumerate(geometry.positions):
-                position = [position[0], position[1], position[2], 1.0]
-                geometry.positions[i] = np.dot(position, geometry.matrix)[:3]
+                geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.matrix)[:3]
 
             for i, normal in enumerate(geometry.normals):
-                normal = [normal[0], normal[1], normal[2], 0.0]
-                geometry.normals[i] = np.dot(normal, geometry.matrix)[:3]
+                geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.matrix)[:3]
 
             geometry_data = dict(
                 name=geometry.name,
@@ -498,8 +491,6 @@ class Collada:
                 geometry_data['bone_indicies'] = copy.deepcopy(geometry.bone_indicies)
                 geometry_data['bone_weights'] = copy.deepcopy(geometry.bone_weights)
             geometry_datas.append(geometry_data)
-            print(geometry.name)
-            print(geometry.matrix)
         return geometry_datas
 
 '''
@@ -514,22 +505,22 @@ class Collada:
     1 0 0 0 / 0 0 1 -2.423439 / 0 -1 0 -3.173189 / 0 0 0 1
 </float_array>
 
-# visual scene nodes
+# visual scene nodes - affect to only non-skinned mesh and amature(root skeleton)
 <amature matrix sid="transform">
     # amature world matrix
     1 0 0 2.98023e-8 / 0 1 0 -3.173189 / 0 0 1 0.8127055 / 0 0 0 1
 </matrix>
 <bone matrix sid="transform">
-    # bone local matrix
+    # not use - bone local matrix
     1 0 0 0 / 0 0 -1 0 / 0 1 0 0 / 0 0 0 1
 </matrix>
 <bone.001 matrix sid="transform">
-    # bone local matrix
+    # not use - bone local matrix
     1 0 0 0 / 0 1 0 1.610733 / 0 0 1 0 / 0 0 0 1
 </matrix>
 '''
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'skin_test.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'skin_test3.dae'))
     mesh.get_mesh_data()

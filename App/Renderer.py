@@ -9,7 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
-from Utilities import Singleton, perspective, ortho, FLOAT_ZERO
+from Utilities import Singleton, perspective, ortho, FLOAT_ZERO, Matrix4
 from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont, UniformMatrix4
 
 
@@ -255,12 +255,41 @@ class Renderer(Singleton):
 
             # draw
             if geometry_instance and material_instance:
-                geometry_instance.draw()
+                pass
+                # geometry_instance.draw()
 
             last_actor = actor
             last_material = material
             last_geometry = geometry_instance.geometry
             last_material_instance = material_instance
+
+        # draw bones
+        mesh = self.resource_manager.getMesh("Cube")
+        material_instance = self.resource_manager.getMaterialInstance("debug_bone")
+
+        if mesh and material_instance:
+            material_instance.useProgram()
+            material_instance.bind()
+            mesh.bindBuffer()
+
+            for static_mesh in static_meshes:
+                if static_mesh.model and static_mesh.model.mesh and static_mesh.model.mesh.skeletons:
+                    skeletons = static_mesh.model.mesh.skeletons
+                    for skeleton in skeletons:
+                        bone_count = len(skeleton.bones)
+                        matrix = static_mesh.transform.matrix
+                        for i, bone in enumerate(skeleton.bones):
+                            material_instance.bind_uniform_data('model', Matrix4())
+                            material_instance.bind_uniform_data('mvp', np.dot(Matrix4(), vpMatrix))
+
+                            matrix = np.dot(matrix, np.linalg.inv(bone.inv_bind_matrix))
+
+                            material_instance.bind_uniform_data("mat1", matrix)
+                            if i+1 < bone_count:
+                                material_instance.bind_uniform_data("mat2", np.dot(matrix, np.linalg.inv(skeleton.bones[i+1].inv_bind_matrix)))
+                            else:
+                                material_instance.bind_uniform_data("mat2", matrix)
+                            mesh.draw()
 
     def render_postprocess(self):
         glEnable(GL_BLEND)

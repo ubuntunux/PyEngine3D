@@ -362,6 +362,31 @@ def perspective(fovy, aspect, znear, zfar):
     return M
 
 
+def convert_triangulate(polygon, vcount, stride=1):
+    indices_list = [polygon[i * stride:i * stride + stride] for i in range(int(len(polygon) / stride))]
+    triangulated_list = []
+    # first triangle
+    triangulated_list += indices_list[0]
+    triangulated_list += indices_list[1]
+    triangulated_list += indices_list[2]
+    t1 = indices_list[1]  # center of poylgon
+    t2 = indices_list[2]
+    for i in range(3, vcount):
+        triangulated_list += t2
+        triangulated_list += t1
+        triangulated_list += indices_list[i]
+        t2 = indices_list[i]
+
+
+def convert_matrix(matrix, transpose, up_axis):
+    if transpose:
+        matrix = matrix.T
+    if up_axis == 'Z_UP':
+        # row_major matrix compute order
+        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
+    return matrix
+
+
 def compute_tangent(positions, texcoords, normals, indices):
     tangents = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
     # binormals = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)

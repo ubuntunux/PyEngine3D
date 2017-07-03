@@ -28,7 +28,6 @@ class Bone:
 class Skeleton:
     def __init__(self, **skeleton_data):
         self.name = skeleton_data.get('name', '')
-        self.bind_shape_matrix = skeleton_data.get('bind_shape_matrix', '')
         print("Skeleton", self.name)
 
         self.bones = []
@@ -40,10 +39,13 @@ class Skeleton:
             for bone_name in hierachy:
                 if bone_name in self.bone_names:
                     index = self.bone_names.index(bone_name)
-                    inv_bind_matrix = self.inv_bind_matrices[index] if index < len(self.inv_bind_matrices) else Matrix4()
-                    bone_matrix = self.bone_matrices[index] if index < len(self.bone_matrices) else Matrix4()
-                    bone = Bone(name=bone_name, index=index, depth=depth, bone_matrix=bone_matrix,
-                                inv_bind_matrix=inv_bind_matrix)
+                    bone = Bone(
+                        name=bone_name,
+                        index=index,
+                        depth=depth,
+                        bone_matrix=self.bone_matrices[index],
+                        inv_bind_matrix=self.inv_bind_matrices[index]
+                    )
                     if parent_bone is None:
                         self.bones.append(bone)  # root bone
                     else:

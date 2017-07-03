@@ -16,7 +16,7 @@ from PIL import Image
 from numpy import array, float32
 
 from Common import logger, log_level
-from Object import MaterialInstance, Triangle, Quad, Mesh, Model
+from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -651,6 +651,7 @@ class MeshLoader(ResourceLoader):
         # Regist basic meshs
         self.create_resource("Triangle", Triangle())
         self.create_resource("Quad", Quad())
+        self.create_resource("Cube", Cube())
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
