@@ -255,8 +255,7 @@ class Renderer(Singleton):
 
             # draw
             if geometry_instance and material_instance:
-                pass
-                # geometry_instance.draw()
+                geometry_instance.draw()
 
             last_actor = actor
             last_material = material
@@ -264,6 +263,8 @@ class Renderer(Singleton):
             last_material_instance = material_instance
 
         # draw bones
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
         mesh = self.resource_manager.getMesh("Cube")
         material_instance = self.resource_manager.getMaterialInstance("debug_bone")
 
@@ -272,24 +273,28 @@ class Renderer(Singleton):
             material_instance.bind()
             mesh.bindBuffer()
 
+            def draw_bone(mesh, material_instance, bone, root_matrix):
+                if bone.children:
+                    for child_bone in bone.children:
+                        material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
+                        material_instance.bind_uniform_data("mat2", np.dot(np.linalg.inv(child_bone.inv_bind_matrix), root_matrix))
+                        mesh.draw()
+                        draw_bone(mesh, material_instance, child_bone, root_matrix)
+                else:
+                    material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
+                    child_bone_inv_bind_matrix = np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix)
+                    child_bone_inv_bind_matrix[3, :] += child_bone_inv_bind_matrix[1, :]
+                    material_instance.bind_uniform_data("mat2", child_bone_inv_bind_matrix)
+                    mesh.draw()
+
             for static_mesh in static_meshes:
                 if static_mesh.model and static_mesh.model.mesh and static_mesh.model.mesh.skeletons:
                     skeletons = static_mesh.model.mesh.skeletons
                     for skeleton in skeletons:
-                        bone_count = len(skeleton.bones)
                         matrix = static_mesh.transform.matrix
-                        for i, bone in enumerate(skeleton.bones):
-                            material_instance.bind_uniform_data('model', Matrix4())
-                            material_instance.bind_uniform_data('mvp', np.dot(Matrix4(), vpMatrix))
+                        for bone in skeleton.bones:
+                            draw_bone(mesh, material_instance, bone, matrix)
 
-                            matrix = np.dot(matrix, np.linalg.inv(bone.inv_bind_matrix))
-
-                            material_instance.bind_uniform_data("mat1", matrix)
-                            if i+1 < bone_count:
-                                material_instance.bind_uniform_data("mat2", np.dot(matrix, np.linalg.inv(skeleton.bones[i+1].inv_bind_matrix)))
-                            else:
-                                material_instance.bind_uniform_data("mat2", matrix)
-                            mesh.draw()
 
     def render_postprocess(self):
         glEnable(GL_BLEND)

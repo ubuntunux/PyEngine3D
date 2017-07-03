@@ -378,15 +378,6 @@ def convert_triangulate(polygon, vcount, stride=1):
         t2 = indices_list[i]
 
 
-def convert_matrix(matrix, transpose, up_axis):
-    if transpose:
-        matrix = matrix.T
-    if up_axis == 'Z_UP':
-        # row_major matrix compute order
-        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
-    return matrix
-
-
 def compute_tangent(positions, texcoords, normals, indices):
     tangents = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
     # binormals = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)

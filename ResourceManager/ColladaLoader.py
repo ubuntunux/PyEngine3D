@@ -40,6 +40,23 @@ def convert_list(data, data_type=float, stride=1):
         return [data_list[i * stride:i * stride + stride] for i in range(int(len(data_list) / stride))]
 
 
+def convert_matrix(matrix, transpose, up_axis):
+    if transpose:
+        matrix = matrix.T
+    if up_axis == 'Z_UP':
+        # row_major matrix compute order
+        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
+    return matrix
+
+
+def swap_matrix(matrix, transpose, up_axis):
+    if transpose:
+        matrix = matrix.T
+    if up_axis == 'Z_UP':
+        return np.array([matrix[0, :].copy(), matrix[2, :].copy(), -matrix[1, :].copy(), matrix[3, :].copy()])
+    return matrix
+
+
 def parsing_source_data(xml_element):
     sources = {}
     for xml_source in xml_element.findall('source'):
@@ -450,6 +467,9 @@ class Collada:
         for controller in self.controllers:
             if controller.name not in check_duplicated:
                 check_duplicated.append(controller.name)
+                inv_bind_matrices = copy.deepcopy(controller.inv_bind_matrices)
+                inv_bind_matrices = [swap_matrix(matrix, True, self.up_axis) for matrix in inv_bind_matrices]
+
                 skeleton_data = dict(
                     name=controller.name,
                     # matrix of Amature
@@ -459,8 +479,7 @@ class Collada:
                     # local matrix of bone
                     bone_matrices=[convert_matrix(matrix, True, self.up_axis) for matrix in controller.bone_matrices],
                     # inv matrix of bone
-                    inv_bind_matrices=[convert_matrix(matrix, True, self.up_axis) for matrix in
-                                       controller.inv_bind_matrices],
+                    inv_bind_matrices=inv_bind_matrices
                 )
                 skeleton_datas.append(skeleton_data)
         return skeleton_datas
@@ -492,33 +511,6 @@ class Collada:
                 geometry_data['bone_weights'] = copy.deepcopy(geometry.bone_weights)
             geometry_datas.append(geometry_data)
         return geometry_datas
-
-'''
-<bind_shape_matrix>
-    # geometry world matrix
-    1 0 0 2.98023e-8 / 0 1 0 -3.173189 / 0 0 1 1.868991 / 0 0 0 1
-</bind_shape_matrix>
-
-<float_array id="Armature_Suzanne_001-skin-bind_poses-array" count="32">
-    # bone world inverse matrix
-    1 0 0 0 / 0 0 1 -0.8127056 / 0 -1 0 -3.173189 / 0 0 0 1
-    1 0 0 0 / 0 0 1 -2.423439 / 0 -1 0 -3.173189 / 0 0 0 1
-</float_array>
-
-# visual scene nodes - affect to only non-skinned mesh and amature(root skeleton)
-<amature matrix sid="transform">
-    # amature world matrix
-    1 0 0 2.98023e-8 / 0 1 0 -3.173189 / 0 0 1 0.8127055 / 0 0 0 1
-</matrix>
-<bone matrix sid="transform">
-    # not use - bone local matrix
-    1 0 0 0 / 0 0 -1 0 / 0 1 0 0 / 0 0 0 1
-</matrix>
-<bone.001 matrix sid="transform">
-    # not use - bone local matrix
-    1 0 0 0 / 0 1 0 1.610733 / 0 0 1 0 / 0 0 0 1
-</matrix>
-'''
 
 
 if __name__ == '__main__':
