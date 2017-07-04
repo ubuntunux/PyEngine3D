@@ -34,6 +34,7 @@ def convert_list(data, data_type=float, stride=1):
         data_list = [data_type(x) for x in data.strip().split()]
     else:
         return []
+
     if stride < 2:
         return data_list
     else:
@@ -58,6 +59,10 @@ def swap_matrix(matrix, transpose, up_axis):
 
 
 def parsing_source_data(xml_element):
+    """
+    :param xml_element:
+    :return: {'source_id':source_data}
+    """
     sources = {}
     for xml_source in xml_element.findall('source'):
         source_id = get_xml_attrib(xml_source, 'id')
@@ -76,11 +81,16 @@ def parsing_source_data(xml_element):
 
 
 def parsing_sematic(xml_element):
-    # parse semantic
+    """
+    :param xml_element:
+    :return: {'semantic':{'source', 'offset', 'set'}
+    """
     semantics = {}
     for xml_semantic in xml_element.findall('input'):
         set_number = get_xml_attrib(xml_semantic, 'set', '0')
-        semantic = get_xml_attrib(xml_semantic, 'semantic') + set_number  # ex) VERTEX0, TEXCOORD0
+        semantic = get_xml_attrib(xml_semantic, 'semantic')
+        if set_number != '' and set_number != '0':
+            semantic += set_number  # ex) VERTEX0, TEXCOORD0
         source = get_xml_attrib(xml_semantic, 'source')
         if source.startswith("#"):
             source = source[1:]
@@ -90,6 +100,9 @@ def parsing_sematic(xml_element):
 
 
 class ColladaNode:
+    """
+    Parsing Visual Scene Node
+    """
     def __init__(self, xml_node, parent=None, depth=0):
         self.valid = False
         self.name = get_xml_attrib(xml_node, 'name').replace('.', '_')
@@ -116,12 +129,13 @@ class ColladaNode:
     def parsing_matrix(self, xml_node):
         xml_matrix = xml_node.find('matrix')
         if xml_matrix is not None:
+            # transform matrix
             matrix = get_xml_text(xml_matrix)
             matrix = [eval(x) for x in matrix.split()]
             if len(matrix) == 16:
-                # column major matrix to row major matrix
                 self.matrix = np.array(matrix, dtype=np.float32).reshape(4, 4)
         else:
+            # location, rotation, scale
             xml_translate = xml_node.find('translate')
             if xml_translate is not None:
                 translation = [eval(x) for x in get_xml_text(xml_translate).split()]
@@ -194,12 +208,6 @@ class ColladaContoller:
             build_hierachy(root_node, self.hierachy)
 
     def parsing(self, xml_controller):
-        sources = {}  # {'source_id':source_data}
-        joins_semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
-        weights_semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
-        vertex_index_list = []  # flatten vertex list as triangle
-
-        # parse mesh
         xml_skin = xml_controller.find('skin')
         if xml_skin is not None:
             self.skin_source = get_xml_attrib(xml_skin, 'source', "")
@@ -218,6 +226,7 @@ class ColladaContoller:
 
             # get vertex position source id
             xml_joints = xml_skin.find('joints')
+            joins_semantics = {}
             if xml_joints is not None:
                 joins_semantics = parsing_sematic(xml_joints)
 
@@ -247,25 +256,76 @@ class ColladaContoller:
             indicies = v_list[i: i + vcount * semantic_stride]
             i += vcount * semantic_stride
             for v in range(vcount):
-                if 'JOINT0' in weights_semantics:
-                    offset = weights_semantics['JOINT0']['offset']
+                if 'JOINT' in weights_semantics:
+                    offset = weights_semantics['JOINT']['offset']
                     bone_indicies.append(indicies[offset + v * semantic_stride])
-                if 'WEIGHT0' in weights_semantics:
-                    source_id = weights_semantics['WEIGHT0']['source']
-                    offset = weights_semantics['WEIGHT0']['offset']
+                if 'WEIGHT' in weights_semantics:
+                    source_id = weights_semantics['WEIGHT']['source']
+                    offset = weights_semantics['WEIGHT']['offset']
                     bone_weights.append(sources[source_id][indicies[offset + v * semantic_stride]])
             self.bone_indicies.append(bone_indicies)
             self.bone_weights.append(bone_weights)
         # joints
-        if 'JOINT0' in joins_semantics:
-            joints_source = joins_semantics['JOINT0'].get('source', '')
+        if 'JOINT' in joins_semantics:
+            joints_source = joins_semantics['JOINT'].get('source', '')
             self.bone_names = sources.get(joints_source, [])
         # INV_BIND_MATRIX
-        if 'INV_BIND_MATRIX0' in joins_semantics:
-            inv_bind_matrix_source = joins_semantics['INV_BIND_MATRIX0'].get('source', '')
+        if 'INV_BIND_MATRIX' in joins_semantics:
+            inv_bind_matrix_source = joins_semantics['INV_BIND_MATRIX'].get('source', '')
             self.inv_bind_matrices = sources.get(inv_bind_matrix_source, [])
             self.inv_bind_matrices = [np.array(inv_bind_matrix, dtype=np.float32).reshape(4, 4) for inv_bind_matrix in
                                       self.inv_bind_matrices]
+        self.valid = True
+
+
+class ColladaAnimation:
+    def __init__(self, xml_animation):
+        self.valid = False
+        self.id = get_xml_attrib(xml_animation, 'id').replace('.', '_')
+
+        self.target = ""  # transform(Matrix), location.X ... scale.z
+        self.type = ""
+        self.inputs = []
+        self.outputs = []
+        self.interpolations = []
+        self.in_tangents = []
+        self.out_tangents = []
+
+        self.parsing(xml_animation)
+
+    def parsing(self, xml_animation):
+        sources = parsing_source_data(xml_animation)
+
+        joins_semantics = {}
+        xml_sampler = xml_animation.find('sampler')
+        if xml_sampler is not None:
+            joins_semantics = parsing_sematic(xml_sampler)
+
+        xml_channel = xml_animation.find('channel')
+        target = get_xml_attrib(xml_channel, 'target')
+        if '/' in target:
+            self.target, self.type = target.split('/', 1)
+
+        if 'INPUT' in joins_semantics:
+            source_name = joins_semantics['INPUT'].get('source', '')
+            self.inputs = sources.get(source_name, [])
+
+        if 'OUTPUT' in joins_semantics:
+            source_name = joins_semantics['OUTPUT'].get('source', '')
+            self.outputs = sources.get(source_name, [])
+
+        if 'INTERPOLATION' in joins_semantics:
+            source_name = joins_semantics['INTERPOLATION'].get('source', '')
+            self.interpolations = sources.get(source_name, [])
+
+        if 'IN_TANGENT' in joins_semantics:
+            source_name = joins_semantics['IN_TANGENT'].get('source', '')
+            self.in_tangents = sources.get(source_name, [])
+
+        if 'OUT_TANGENT' in joins_semantics:
+            source_name = joins_semantics['OUT_TANGENT'].get('source', '')
+            self.out_tangents = sources.get(source_name, [])
+
         self.valid = True
 
 
@@ -298,25 +358,19 @@ class ColladaGeometry:
                 break
 
         if self.controller:
-            # coulmn-major matrix calculation.
+            # precompute bind_shape_matrix as coulmn-major matrix calculation.
             self.matrix = np.dot(controller.bind_shape_matrix, self.matrix)
 
         self.parsing(xml_geometry)
 
     def parsing(self, xml_geometry):
-        sources = {}  # {'source_id':source_data}
-        position_source_id = ""
-        semantics = {}  # {'semantic':{'source', 'offset', 'set'}}
-        vertex_index_list = []  # flatten vertex list as triangle
-        semantic_stride = 0
-
-        # parse mesh
         xml_mesh = xml_geometry.find('mesh')
         if xml_mesh is not None:
             # parse sources
             sources = parsing_source_data(xml_mesh)
 
             # get vertex position source id
+            position_source_id = ""
             for xml_position in xml_mesh.findall('vertices/input'):
                 if get_xml_attrib(xml_position, 'semantic') == 'POSITION':
                     position_source_id = get_xml_attrib(xml_position, 'source')
@@ -333,6 +387,7 @@ class ColladaGeometry:
                     semantic_stride = len(semantics)
 
                     # parse polygon indices
+                    vertex_index_list = []  # flatten vertex list as triangle
                     if tag == 'triangles':
                         vertex_index_list = get_xml_text(xml_polygons.find('p'))
                         vertex_index_list = convert_list(vertex_index_list, int)
@@ -350,7 +405,6 @@ class ColladaGeometry:
                                 polygon_index_list += polygon_indices
                                 vcount_list.append(int(len(polygon_indices) / semantic_stride))
                         # triangulate
-                        vertex_index_list = []
                         elapsed_vindex = 0
                         for vcount in vcount_list:
                             if vcount == 3:
@@ -366,8 +420,6 @@ class ColladaGeometry:
                     return  # done
 
     def build(self, sources, position_source_id, semantics, semantic_stride, vertex_index_list):
-        isSwapYZ = False
-
         # check vertex count with bone weight count
         if self.controller:
             vertex_count = len(sources[position_source_id]) if position_source_id  else 0
@@ -386,33 +438,29 @@ class ColladaGeometry:
                 self.indices.append(len(indexMap))
                 indexMap.append(vertIndices)
 
-                if 'VERTEX0' in semantics:
+                if 'VERTEX' in semantics:
                     source_id = position_source_id
-                    offset = semantics['VERTEX0']['offset']
+                    offset = semantics['VERTEX']['offset']
                     posisiton = sources[source_id][vertIndices[offset]]
-                    if isSwapYZ:
-                        posisiton[1], posisiton[2] = -posisiton[2], posisiton[1]
                     self.positions.append(posisiton)
                     if self.controller:
                         self.bone_indicies.append(self.controller.bone_indicies[vertIndices[offset]])
                         self.bone_weights.append(self.controller.bone_weights[vertIndices[offset]])
 
-                if 'NORMAL0' in semantics:
-                    source_id = semantics['NORMAL0']['source']
-                    offset = semantics['NORMAL0']['offset']
+                if 'NORMAL' in semantics:
+                    source_id = semantics['NORMAL']['source']
+                    offset = semantics['NORMAL']['offset']
                     normal = sources[source_id][vertIndices[offset]]
-                    if isSwapYZ:
-                        normal[1], normal[2] = -normal[2], normal[1]
                     self.normals.append(normal)
 
-                if 'COLOR0' in semantics:
-                    source_id = semantics['COLOR0']['source']
-                    offset = semantics['COLOR0']['offset']
+                if 'COLOR' in semantics:
+                    source_id = semantics['COLOR']['source']
+                    offset = semantics['COLOR']['offset']
                     self.colors.append(sources[source_id][vertIndices[offset]])
 
-                if 'TEXCOORD0' in semantics:
-                    source_id = semantics['TEXCOORD0']['source']
-                    offset = semantics['TEXCOORD0']['offset']
+                if 'TEXCOORD' in semantics:
+                    source_id = semantics['TEXCOORD']['source']
+                    offset = semantics['TEXCOORD']['offset']
                     self.texcoords.append(sources[source_id][vertIndices[offset]])
         self.valid = True
 
@@ -443,6 +491,10 @@ class Collada:
             node = ColladaNode(xml_node)
             self.nodes.append(node)
 
+        for xml_animation in xml_root.findall('library_animations/animation'):
+            animation = ColladaAnimation(xml_animation)
+            self.animations.append(animation)
+
         for xml_controller in xml_root.findall('library_controllers/controller'):
             controller = ColladaContoller(xml_controller, self.nodes)
             self.controllers.append(controller)
@@ -454,9 +506,11 @@ class Collada:
     def get_mesh_data(self):
         geometry_datas = self.get_geometry_data()
         skeleton_datas = self.get_skeleton_data()
+        animation_datas = self.get_animation_data()
         mesh_data = dict(
             geometry_datas=geometry_datas,
-            skeleton_datas=skeleton_datas
+            skeleton_datas=skeleton_datas,
+            animation_datas=animation_datas
         )
         return mesh_data
 
@@ -483,6 +537,10 @@ class Collada:
                 )
                 skeleton_datas.append(skeleton_data)
         return skeleton_datas
+
+    def get_animation_data(self):
+        animation_datas = []
+        return animation_datas
 
     def get_geometry_data(self):
         geometry_datas = []
@@ -514,5 +572,5 @@ class Collada:
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'skin_test3.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'collada_test_01.dae'))
     mesh.get_mesh_data()
