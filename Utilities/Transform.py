@@ -7,6 +7,7 @@ quaternion - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Eu
 
 This implementation uses row vectors and matrices are written in a row-major order.
 
+reference - http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 """
 
 import math
@@ -149,6 +150,39 @@ def euler_to_quaternion(rx, ry, rz, quat):
     quat[3] = qz * n
 
 
+def matrix_to_quaternion(matrix):
+    m00, m01, m02, m03 = matrix[0, :]
+    m10, m11, m12, m13 = matrix[1, :]
+    m20, m21, m22, m23 = matrix[2, :]
+
+    tr = m00 + m11 + m22
+    if tr > 0.0:
+        S = math.sqrt(tr+1.0) * 2.0
+        qw = 0.25 * S
+        qx = (m12 - m21) / S
+        qy = (m20 - m02) / S
+        qz = (m01 - m10) / S
+    elif m00 > m11 and m00 > m22:
+        S = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
+        qw = (m12 - m21) / S
+        qx = 0.25 * S
+        qy = (m10 + m01) / S
+        qz = (m20 + m02) / S
+    elif m11 > m22:
+        S = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
+        qw = (m20 - m02) / S
+        qx = (m10 + m01) / S
+        qy = 0.25 * S
+        qz = (m21 + m12) / S
+    else:
+        S = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
+        qw = (m01 - m10) / S
+        qx = (m20 + m02) / S
+        qy = (m21 + m12) / S
+        qz = 0.25 * S
+    return normalize(Float4(qw, qx, qy, qz))
+
+
 def quaternion_to_matrix(quat, rotationMatrix):
     qw, qx, qy, qz = quat[:]
     # inhomogeneous expression
@@ -182,7 +216,6 @@ def quaternion_to_matrix(quat, rotationMatrix):
     rotationMatrix[2, :] = [qxqz + qyqw, qyqz - qxqw, qwqw - qxqx - qyqy + qzqz, 0.0]
     rotationMatrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
-
 
 def slerp(quaternion1, quaternion2, amount):
     num = amount
@@ -316,6 +349,29 @@ def matrix_rotate(M, radian, x, y, z):
                   [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
                   [0, 0, 0, 1]]).T
     M[...] = np.dot(R, M)
+
+
+def extract_location(matrix):
+    return Float3(matrix[3, 0], matrix[3, 1], matrix[3, 2])
+
+
+def extract_rotation(matrix):
+    """
+     extract quaternion from matrix
+    """
+    scale = extract_scale(matrix)
+    rotation = Matrix4()
+    rotation[0, :] = matrix[0, :] / scale[0]
+    rotation[1, :] = matrix[1, :] / scale[1]
+    rotation[2, :] = matrix[2, :] / scale[2]
+    return matrix_to_quaternion(rotation)
+
+
+def extract_scale(matrix):
+    sX = np.linalg.norm(matrix[0, :])
+    sY = np.linalg.norm(matrix[1, :])
+    sZ = np.linalg.norm(matrix[2, :])
+    return Float3(sX, sY, sZ)
 
 
 def lookat(matrix, eye, target, up):

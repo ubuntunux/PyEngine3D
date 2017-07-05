@@ -283,8 +283,8 @@ class ColladaAnimation:
         self.valid = False
         self.id = get_xml_attrib(xml_animation, 'id').replace('.', '_')
 
-        self.target = ""  # transform(Matrix), location.X ... scale.z
-        self.type = ""
+        self.target = ""  # target bone name
+        self.type = ""  # transform(Matrix), location.X ... scale.z
         self.inputs = []
         self.outputs = []
         self.interpolations = []
@@ -325,8 +325,11 @@ class ColladaAnimation:
         if 'OUT_TANGENT' in joins_semantics:
             source_name = joins_semantics['OUT_TANGENT'].get('source', '')
             self.out_tangents = sources.get(source_name, [])
-
         self.valid = True
+
+        # print()
+        # for key in self.__dict__:
+        #     print(key, self.__dict__[key])
 
 
 class ColladaGeometry:
@@ -473,6 +476,7 @@ class Collada:
             logger.error(traceback.format_exc())
             return
 
+        self.name = os.path.splitext(os.path.split(filepath)[1])[0]
         self.collada_version = get_xml_attrib(xml_root, 'version')
         self.author = get_xml_text(xml_root.find("asset/contributor/author"))
         self.authoring_tool = get_xml_text(xml_root.find("asset/contributor/authoring_tool"))
@@ -491,13 +495,13 @@ class Collada:
             node = ColladaNode(xml_node)
             self.nodes.append(node)
 
-        for xml_animation in xml_root.findall('library_animations/animation'):
-            animation = ColladaAnimation(xml_animation)
-            self.animations.append(animation)
-
         for xml_controller in xml_root.findall('library_controllers/controller'):
             controller = ColladaContoller(xml_controller, self.nodes)
             self.controllers.append(controller)
+
+        for xml_animation in xml_root.findall('library_animations/animation'):
+            animation = ColladaAnimation(xml_animation)
+            self.animations.append(animation)
 
         for xml_geometry in xml_root.findall('library_geometries/geometry'):
             geometry = ColladaGeometry(xml_geometry, self.controllers, self.nodes)
@@ -506,7 +510,7 @@ class Collada:
     def get_mesh_data(self):
         geometry_datas = self.get_geometry_data()
         skeleton_datas = self.get_skeleton_data()
-        animation_datas = self.get_animation_data()
+        animation_datas = self.get_animation_data(skeleton_datas)
         mesh_data = dict(
             geometry_datas=geometry_datas,
             skeleton_datas=skeleton_datas,
@@ -538,8 +542,41 @@ class Collada:
                 skeleton_datas.append(skeleton_data)
         return skeleton_datas
 
-    def get_animation_data(self):
+    def get_animation_data(self, skeleton_datas):
         animation_datas = []
+
+        for animation in self.animations:
+            # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
+            if animation.type != 'transform':
+                continue
+
+            skeleton_name = ''
+            for skeleton_data in skeleton_datas:
+                if animation.target in skeleton_data['bone_names']:
+                    skeleton_name = skeleton_data['name']
+                    break
+            else:
+                continue
+
+            animation_name = "%s_%s_%s" % (self.name, skeleton_name, animation.target)
+            transforms = [swap_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, self.up_axis) for
+                          transform in animation.outputs]
+            animation_data = dict(
+                name=animation_name,
+                skeleton_name=skeleton_name,
+                target=animation.target,
+                times=animation.inputs,
+                locations=[extract_location(matrix) for matrix in transforms],
+                rotations=[extract_rotation(matrix) for matrix in transforms],
+                scales=[extract_scale(matrix) for matrix in transforms],
+                interpoations=animation.interpolations,
+                in_tangents=animation.in_tangents,
+                out_tangents=animation.out_tangents
+            )
+            for key in animation_data:
+                print(key, animation_data[key])
+            print()
+            animation_datas.append(animation_data)
         return animation_datas
 
     def get_geometry_data(self):
@@ -572,5 +609,5 @@ class Collada:
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'collada_test_01.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'anim_test2.dae'))
     mesh.get_mesh_data()
