@@ -46,7 +46,7 @@ def convert_matrix(matrix, transpose, up_axis):
         matrix = matrix.T
     if up_axis == 'Z_UP':
         # row_major matrix compute order
-        return np.dot(getRotationMatrixX(-HALF_PI), matrix)
+        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
     return matrix
 
 
