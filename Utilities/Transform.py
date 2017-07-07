@@ -266,7 +266,7 @@ def matrix_translate(M, x, y, z):
          [0, 0, 1, 0],
          [x, y, z, 1]]
     T = np.array(T, dtype=np.float32)
-    M[...] = np.dot(T, M)
+    M[...] = np.dot(M, T)
 
 
 def getScaleMatrix(x, y, z):
@@ -290,7 +290,7 @@ def matrix_scale(M, x, y, z):
          [0, 0, z, 0],
          [0, 0, 0, 1]]
     S = np.array(S, dtype=np.float32)
-    M[...] = np.dot(S, M)
+    M[...] = np.dot(M, S)
 
 
 def getRotationMatrixX(radian):
@@ -334,7 +334,7 @@ def matrix_rotateX(M, radian):
          [0.0, cosT, sinT, 0.0],
          [0.0, -sinT, cosT, 0.0],
          [0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-    M[...] = np.dot(R, M)
+    M[...] = np.dot(M, R)
 
 
 def matrix_rotateY(M, radian):
@@ -345,7 +345,7 @@ def matrix_rotateY(M, radian):
          [0.0, 1.0, 0.0, 0.0],
          [sinT, 0.0, cosT, 0.0],
          [0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-    M[...] = np.dot(R, M)
+    M[...] = np.dot(M, R)
 
 
 def matrix_rotateZ(M, radian):
@@ -356,7 +356,7 @@ def matrix_rotateZ(M, radian):
          [-sinT, cosT, 0.0, 0.0],
          [0.0, 0.0, 1.0, 0.0],
          [0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-    M[...] = np.dot(R, M)
+    M[...] = np.dot(M, R)
 
 
 def matrix_rotate(M, radian, x, y, z):
@@ -370,7 +370,7 @@ def matrix_rotate(M, radian, x, y, z):
                   [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
                   [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
                   [0, 0, 0, 1]]).T
-    M[...] = np.dot(R, M)
+    M[...] = np.dot(M, R)
 
 
 def extract_location(matrix):
