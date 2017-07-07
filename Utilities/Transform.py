@@ -217,6 +217,7 @@ def quaternion_to_matrix(quat, rotationMatrix):
     rotationMatrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
 
+
 def slerp(quaternion1, quaternion2, amount):
     num = amount
     num2 = 0.0
@@ -237,12 +238,26 @@ def slerp(quaternion1, quaternion2, amount):
     return (num3 * quaternion1) + (num2 * quaternion2)
 
 
+def setIdentityMatrix(M):
+    M[...] = [[1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0]]
+
+
 def getTranslateMatrix(x, y, z):
     T = [[1, 0, 0, 0],
          [0, 1, 0, 0],
          [0, 0, 1, 0],
          [x, y, z, 1]]
     return np.array(T, dtype=np.float32)
+
+
+def setTranslateMatrix(M, x, y, z):
+    M[:] = [[1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [x, y, z, 1]]
 
 
 def matrix_translate(M, x, y, z):
@@ -260,6 +275,13 @@ def getScaleMatrix(x, y, z):
          [0, 0, z, 0],
          [0, 0, 0, 1]]
     return np.array(S, dtype=np.float32)
+
+
+def setScaleMatrix(M, x, y, z):
+    M[:] = [[x, 0, 0, 0],
+            [0, y, 0, 0],
+            [0, 0, z, 0],
+            [0, 0, 0, 1]]
 
 
 def matrix_scale(M, x, y, z):

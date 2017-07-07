@@ -6,7 +6,7 @@ import numpy as np
 from Common import logger
 from OpenGLContext import CreateGeometryBuffer, VertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize, Matrix4
-from Object import Skeleton
+from Object import Skeleton, AnimationNode
 from App import CoreManager
 
 
@@ -39,11 +39,27 @@ class Mesh:
 
         self.name = mesh_name
         self.geometries = CreateGeometryBuffer(mesh_data.get('geometry_datas', []))
+
         self.skeletons = []
         for skeleton_data in mesh_data.get('skeleton_datas', []):
             skeleton = Skeleton(**skeleton_data)
             self.skeletons.append(skeleton)
+
+        self.animation_frame_count = 0
+        self.animation_nodes = {}
+        for animation_data in mesh_data.get('animation_datas', []):
+            animation_node = AnimationNode(**animation_data)
+            self.animation_frame_count = max(self.animation_frame_count, len(animation_node.times))
+            self.animation_nodes[animation_node.target] = animation_node
+
         self.attributes = Attributes()
+
+    def get_animation_transform(self, bone_name, frame=0):
+        animation_node = self.animation_nodes.get(bone_name)
+        return animation_node.get_transform(frame) if animation_node else None
+
+    def get_animation_frame_count(self):
+        return self.animation_frame_count
 
     def get_geometry_count(self):
         return len(self.geometries)

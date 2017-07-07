@@ -46,7 +46,7 @@ def convert_matrix(matrix, transpose, up_axis):
         matrix = matrix.T
     if up_axis == 'Z_UP':
         # row_major matrix compute order
-        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
+        return np.dot(getRotationMatrixX(-HALF_PI), matrix)
     return matrix
 
 
@@ -550,6 +550,7 @@ class Collada:
             if animation.type != 'transform':
                 continue
 
+            # filter only bone
             skeleton_name = ''
             for skeleton_data in skeleton_datas:
                 if animation.target in skeleton_data['bone_names']:
@@ -559,13 +560,22 @@ class Collada:
                 continue
 
             animation_name = "%s_%s_%s" % (self.name, skeleton_name, animation.target)
-            transforms = [swap_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, self.up_axis) for
-                          transform in animation.outputs]
+            # if len(animation_datas) == 0:
+            #     # only root bone adjust convert_matrix for swap Y-Z Axis
+            #     transforms = [convert_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, self.up_axis)
+            #                   for transform in animation.outputs]
+            # else:
+            #     # just Transpose child bones
+            #     transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
+
+            # just transpose bones
+            transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
+
             animation_data = dict(
                 name=animation_name,
-                skeleton_name=skeleton_name,
                 target=animation.target,
                 times=animation.inputs,
+                transforms=[matrix for matrix in transforms],
                 locations=[extract_location(matrix) for matrix in transforms],
                 rotations=[extract_rotation(matrix) for matrix in transforms],
                 scales=[extract_scale(matrix) for matrix in transforms],
@@ -573,9 +583,6 @@ class Collada:
                 in_tangents=animation.in_tangents,
                 out_tangents=animation.out_tangents
             )
-            for key in animation_data:
-                print(key, animation_data[key])
-            print()
             animation_datas.append(animation_data)
         return animation_datas
 
@@ -609,5 +616,5 @@ class Collada:
 
 
 if __name__ == '__main__':
-    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'anim_test2.dae'))
+    mesh = Collada(os.path.join('..', 'Resource', 'Externals', 'Meshes', 'skeleton1.dae'))
     mesh.get_mesh_data()

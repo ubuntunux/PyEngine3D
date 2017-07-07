@@ -9,7 +9,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
-from Utilities import Singleton, perspective, ortho, FLOAT_ZERO, Matrix4
+from Utilities import *
 from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont, UniformMatrix4
 
 
@@ -273,28 +273,43 @@ class Renderer(Singleton):
             material_instance.bind()
             mesh.bindBuffer()
 
-            def draw_bone(mesh, material_instance, bone, root_matrix):
+            def draw_bone(mesh, skeleton_mesh, parent_matrix, material_instance, bone, root_matrix, isAnimation):
                 if bone.children:
                     for child_bone in bone.children:
-                        material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
-                        material_instance.bind_uniform_data("mat2", np.dot(np.linalg.inv(child_bone.inv_bind_matrix), root_matrix))
+                        bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
+                        child_transform = np.dot(skeleton_mesh.get_animation_transform(child_bone.name, frame), bone_transform)
+                        if isAnimation:
+                            material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
+                            material_instance.bind_uniform_data("mat2", np.dot(child_transform, root_matrix))
+                        else:
+                            material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
+                            material_instance.bind_uniform_data("mat2", np.dot(np.linalg.inv(child_bone.inv_bind_matrix), root_matrix))
                         mesh.draw()
-                        draw_bone(mesh, material_instance, child_bone, root_matrix)
+                        draw_bone(mesh, skeleton_mesh, bone_transform.copy(), material_instance, child_bone, root_matrix, isAnimation)
                 else:
-                    material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
-                    child_bone_inv_bind_matrix = np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix)
-                    child_bone_inv_bind_matrix[3, :] += child_bone_inv_bind_matrix[1, :]
-                    material_instance.bind_uniform_data("mat2", child_bone_inv_bind_matrix)
+                    if isAnimation:
+                        bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
+                    else:
+                        bone_transform = np.linalg.inv(bone.inv_bind_matrix)
+                    material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
+                    child_transform = np.dot(bone_transform, root_matrix)
+                    child_transform[3, :] += child_transform[1, :]
+                    material_instance.bind_uniform_data("mat2", child_transform)
                     mesh.draw()
 
             for static_mesh in static_meshes:
                 if static_mesh.model and static_mesh.model.mesh and static_mesh.model.mesh.skeletons:
                     skeletons = static_mesh.model.mesh.skeletons
+                    skeleton_mesh = static_mesh.model.mesh
+                    frame_count = skeleton_mesh.get_animation_frame_count()
+                    frame = int(math.fmod(self.coreManager.currentTime * 20.0, frame_count))
+                    isAnimation = frame_count > 0
                     for skeleton in skeletons:
                         matrix = static_mesh.transform.matrix
+                        # TEST : swap Y-Z root bone
+                        matrix = np.dot(getRotationMatrixX(-HALF_PI), matrix)
                         for bone in skeleton.bones:
-                            draw_bone(mesh, material_instance, bone, matrix)
-
+                            draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):
         glEnable(GL_BLEND)

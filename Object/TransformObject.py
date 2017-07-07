@@ -160,7 +160,7 @@ class TransformObject:
 
         if self.moved and any(self.oldPos != self.pos) or self.force_update:
             self.oldPos[...] = self.pos
-            self.translateMatrix = getTranslateMatrix(self.pos[0], self.pos[1], self.pos[2])
+            setTranslateMatrix(self.translateMatrix, self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
             self.updated = True
 
@@ -187,19 +187,19 @@ class TransformObject:
 
         if self.scaled and any(self.oldScale != self.scale) or self.force_update:
             self.oldScale[...] = self.scale
-            self.scaleMatrix = getScaleMatrix(self.scale[0], self.scale[1], self.scale[2])
+            setScaleMatrix(self.scaleMatrix, self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
             self.updated = True
 
         if self.updated or self.force_update:
             self.force_update = False
-            self.matrix = np.dot(self.local, self.scaleMatrix)
-            self.matrix = np.dot(self.matrix, self.rotationMatrix)
-            self.matrix = np.dot(self.matrix, self.translateMatrix)
+            self.matrix[:] = np.dot(self.local, self.scaleMatrix)[:]
+            self.matrix[:] = np.dot(self.matrix, self.rotationMatrix)[:]
+            self.matrix[:] = np.dot(self.matrix, self.translateMatrix)[:]
 
     def updateInverseTransform(self):
         if self.updated:
-            self.inverse_matrix = np.linalg.inv(self.matrix)
+            self.inverse_matrix[:] = np.linalg.inv(self.matrix)[:]
 
     def getTransformInfos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])
