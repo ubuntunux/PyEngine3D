@@ -274,23 +274,24 @@ class Renderer(Singleton):
             mesh.bindBuffer()
 
             def draw_bone(mesh, skeleton_mesh, parent_matrix, material_instance, bone, root_matrix, isAnimation):
+                if isAnimation:
+                    bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
+                else:
+                    bone_transform = np.linalg.inv(bone.inv_bind_matrix)
+
                 if bone.children:
                     for child_bone in bone.children:
-                        bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
-                        child_transform = np.dot(skeleton_mesh.get_animation_transform(child_bone.name, frame), bone_transform)
                         if isAnimation:
-                            material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
-                            material_instance.bind_uniform_data("mat2", np.dot(child_transform, root_matrix))
+                            bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
+                            child_transform = np.dot(skeleton_mesh.get_animation_transform(child_bone.name, frame), bone_transform)
                         else:
-                            material_instance.bind_uniform_data("mat1", np.dot(np.linalg.inv(bone.inv_bind_matrix), root_matrix))
-                            material_instance.bind_uniform_data("mat2", np.dot(np.linalg.inv(child_bone.inv_bind_matrix), root_matrix))
+                            bone_transform = np.linalg.inv(bone.inv_bind_matrix)
+                            child_transform = np.linalg.inv(child_bone.inv_bind_matrix)
+                        material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
+                        material_instance.bind_uniform_data("mat2", np.dot(child_transform, root_matrix))
                         mesh.draw()
                         draw_bone(mesh, skeleton_mesh, bone_transform.copy(), material_instance, child_bone, root_matrix, isAnimation)
                 else:
-                    if isAnimation:
-                        bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
-                    else:
-                        bone_transform = np.linalg.inv(bone.inv_bind_matrix)
                     material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
                     child_transform = np.dot(bone_transform, root_matrix)
                     child_transform[3, :] += child_transform[1, :]

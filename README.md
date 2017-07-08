@@ -21,6 +21,7 @@
  - numba 0.23.1
  - pillow 3.1.1
  - pyqt4
+ - pybullet 1.2.1
  - kivy 1.9.1
  - pyopengl 3.1
  - pyopengl_accelerate 3.1
