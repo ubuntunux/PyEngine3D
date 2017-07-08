@@ -12,6 +12,8 @@ reference - http://www.euclideanspace.com/maths/geometry/rotations/conversions/m
 
 import math
 import numpy as np
+from numpy.linalg import norm
+
 
 HALF_PI = math.pi * 0.5
 PI = math.pi
@@ -216,6 +218,10 @@ def quaternion_to_matrix(quat, rotationMatrix):
     rotationMatrix[2, :] = [qxqz + qyqw, qyqz - qxqw, qwqw - qxqx - qyqy + qzqz, 0.0]
     rotationMatrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
+
+
+def lerp(vector1, vector2, t):
+    return vector1 * (1.0 - t) + vector2 * t
 
 
 def slerp(quaternion1, quaternion2, amount):
