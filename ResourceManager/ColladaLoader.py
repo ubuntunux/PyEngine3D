@@ -570,9 +570,9 @@ class Collada:
             # swap y and z
             geometry.matrix = swap_up_axis_matrix(geometry.matrix, True, False, self.up_axis)
 
+            # precompute bind_shape_matrix
             for i, position in enumerate(geometry.positions):
                 geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.matrix)[:3]
-
             for i, normal in enumerate(geometry.normals):
                 geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.matrix)[:3]
 
