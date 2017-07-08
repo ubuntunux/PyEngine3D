@@ -373,6 +373,25 @@ def matrix_rotate(M, radian, x, y, z):
     M[...] = np.dot(M, R)
 
 
+def swap_up_axis_matrix(matrix, transpose, isInverseMatrix, up_axis):
+    if transpose:
+        matrix = matrix.T
+    if up_axis == 'Z_UP':
+        if isInverseMatrix:
+            return np.dot(getRotationMatrixX(HALF_PI), matrix)
+        else:
+            return np.dot(matrix, getRotationMatrixX(-HALF_PI))
+    return matrix
+
+
+def swap_matrix(matrix, transpose, up_axis):
+    if transpose:
+        matrix = matrix.T
+    if up_axis == 'Z_UP':
+        return np.array([matrix[0, :].copy(), matrix[2, :].copy(), -matrix[1, :].copy(), matrix[3, :].copy()])
+    return matrix
+
+
 def extract_location(matrix):
     return Float3(matrix[3, 0], matrix[3, 1], matrix[3, 2])
 

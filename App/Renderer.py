@@ -302,12 +302,10 @@ class Renderer(Singleton):
                     skeletons = static_mesh.model.mesh.skeletons
                     skeleton_mesh = static_mesh.model.mesh
                     frame_count = skeleton_mesh.get_animation_frame_count()
-                    frame = int(math.fmod(self.coreManager.currentTime * 20.0, frame_count))
+                    frame = int(math.fmod(self.coreManager.currentTime * 20.0, frame_count)) if frame_count > 0 else 0
                     isAnimation = frame_count > 0
                     for skeleton in skeletons:
                         matrix = static_mesh.transform.matrix
-                        # TEST : swap Y-Z root bone
-                        matrix = np.dot(getRotationMatrixX(-HALF_PI), matrix)
                         for bone in skeleton.bones:
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 

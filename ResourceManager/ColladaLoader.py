@@ -41,23 +41,6 @@ def convert_list(data, data_type=float, stride=1):
         return [data_list[i * stride:i * stride + stride] for i in range(int(len(data_list) / stride))]
 
 
-def convert_matrix(matrix, transpose, up_axis):
-    if transpose:
-        matrix = matrix.T
-    if up_axis == 'Z_UP':
-        # row_major matrix compute order
-        return np.dot(matrix, getRotationMatrixX(-HALF_PI))
-    return matrix
-
-
-def swap_matrix(matrix, transpose, up_axis):
-    if transpose:
-        matrix = matrix.T
-    if up_axis == 'Z_UP':
-        return np.array([matrix[0, :].copy(), matrix[2, :].copy(), -matrix[1, :].copy(), matrix[3, :].copy()])
-    return matrix
-
-
 def parsing_source_data(xml_element):
     """
     :param xml_element:
@@ -519,23 +502,22 @@ class Collada:
         return mesh_data
 
     def get_skeleton_data(self):
-        # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         skeleton_datas = []
         check_duplicated = []
         for controller in self.controllers:
             if controller.name not in check_duplicated:
                 check_duplicated.append(controller.name)
                 inv_bind_matrices = copy.deepcopy(controller.inv_bind_matrices)
-                inv_bind_matrices = [swap_matrix(matrix, True, self.up_axis) for matrix in inv_bind_matrices]
+                inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in inv_bind_matrices]
 
                 skeleton_data = dict(
                     name=controller.name,
                     # matrix of Amature
-                    matrix=convert_matrix(controller.matrix, True, self.up_axis),
+                    matrix=swap_up_axis_matrix(controller.matrix, True, False, self.up_axis),
                     hierachy=controller.hierachy,  # bone names map as hierachy
                     bone_names=controller.bone_names,  # bone name list
                     # local matrix of bone
-                    bone_matrices=[convert_matrix(matrix, True, self.up_axis) for matrix in controller.bone_matrices],
+                    bone_matrices=[swap_up_axis_matrix(matrix, True, False, self.up_axis) for matrix in controller.bone_matrices],
                     # inv matrix of bone
                     inv_bind_matrices=inv_bind_matrices
                 )
@@ -551,25 +533,21 @@ class Collada:
                 continue
 
             # filter only bone
-            skeleton_name = ''
             for skeleton_data in skeleton_datas:
                 if animation.target in skeleton_data['bone_names']:
-                    skeleton_name = skeleton_data['name']
                     break
             else:
                 continue
 
-            animation_name = "%s_%s_%s" % (self.name, skeleton_name, animation.target)
-            # if len(animation_datas) == 0:
-            #     # only root bone adjust convert_matrix for swap Y-Z Axis
-            #     transforms = [convert_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, self.up_axis)
-            #                   for transform in animation.outputs]
-            # else:
-            #     # just Transpose child bones
-            #     transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
-
-            # just transpose bones
-            transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
+            animation_name = "%s_%s_%s" % (self.name, skeleton_data['name'], animation.target)
+            # is root bone of hierachy?
+            if animation.target in skeleton_data['hierachy']:
+                # only root bone adjust convert_matrix for swap Y-Z Axis
+                transforms = [swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, False, self.up_axis)
+                              for transform in animation.outputs]
+            else:
+                # just Transpose child bones
+                transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
 
             animation_data = dict(
                 name=animation_name,
@@ -590,7 +568,7 @@ class Collada:
         geometry_datas = []
         for geometry in self.geometries:
             # swap y and z
-            geometry.matrix = convert_matrix(geometry.matrix, True, self.up_axis)
+            geometry.matrix = swap_up_axis_matrix(geometry.matrix, True, False, self.up_axis)
 
             for i, position in enumerate(geometry.positions):
                 geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.matrix)[:3]

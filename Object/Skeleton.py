@@ -6,8 +6,8 @@ from Object import TransformObject
 
 class Bone:
     def __init__(self, name, index, depth, bone_matrix, inv_bind_matrix):
+        # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         self.name = name
-        print("Bone", self.name)
         self.transform = TransformObject.TransformObject()
         self.matrix = bone_matrix
         self.inv_bind_matrix = inv_bind_matrix
@@ -28,7 +28,6 @@ class Bone:
 class Skeleton:
     def __init__(self, **skeleton_data):
         self.name = skeleton_data.get('name', '')
-        print("Skeleton", self.name)
 
         self.bones = []
         self.bone_names = skeleton_data.get('bone_names', [])
