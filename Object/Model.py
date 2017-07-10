@@ -13,6 +13,10 @@ class Model:
         self.mesh = None
         self.material_instances = []
         self.set_mesh(data.get('mesh'))
+
+        for i, material_instance in enumerate(data.get('material_instances', [])):
+            self.set_material_instance(material_instance, i)
+
         self.attributes = Attributes()
 
     def set_mesh(self, mesh):

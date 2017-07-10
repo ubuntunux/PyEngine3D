@@ -223,20 +223,20 @@ class Renderer(Singleton):
 
         # Test Code : sort tge list by mesh, material
         static_meshes = self.sceneManager.getStaticMeshes()[:]
-        geometry_instances = []
+        geometries = []
         for static_mesh in static_meshes:
-            geometry_instances += static_mesh.geometry_instances
-        geometry_instances.sort(key=lambda x: id(x.geometry))
+            geometries += static_mesh.geometries
+        geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         # draw static meshes
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()
-        last_geometry = None
+        last_vertex_buffer = None
         last_material = None
         last_material_instance = None
         last_actor = None
-        for geometry_instance in geometry_instances:
-            actor = geometry_instance.parent_actor
-            material_instance = geometry_instance.material_instance or default_material_instance
+        for geometry in geometries:
+            actor = geometry.parent
+            material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
@@ -246,20 +246,23 @@ class Renderer(Singleton):
                 material_instance.bind()
 
             # At last, bind buffers
-            if geometry_instance is not None and last_geometry != geometry_instance.geometry:
-                geometry_instance.bindBuffer()
+            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
+                geometry.bindBuffer()
+                frame = math.fmod(self.coreManager.currentTime * 30.0, 16)
+                animation_buffer = actor.model.mesh.get_animation_transform_list(0, frame)
+                material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, vpMatrix))
 
             # draw
-            if geometry_instance and material_instance:
-                geometry_instance.draw()
+            if geometry and material_instance:
+                geometry.draw()
 
             last_actor = actor
             last_material = material
-            last_geometry = geometry_instance.geometry
+            last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance
 
         # draw bones

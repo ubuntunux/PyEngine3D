@@ -31,5 +31,3 @@ class AnimationNode:
             matrix_scale(self.transform, *scale)
             self.transform[3, 0:3] = location
         return self.transform
-
-

@@ -116,9 +116,9 @@ class MaterialInstance:
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 
-    def bind_uniform_data(self, uniform_name, uniform_data):
+    def bind_uniform_data(self, uniform_name, uniform_data, num=1):
         if uniform_name in self.linked_uniform_map:
-            self.linked_uniform_map[uniform_name][0].bind_uniform(uniform_data)
+            self.linked_uniform_map[uniform_name][0].bind_uniform(uniform_data, num)
         else:
             logger.error('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 

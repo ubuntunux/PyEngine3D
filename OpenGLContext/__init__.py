@@ -12,4 +12,4 @@ from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformVector2, UniformVector3, UniformVector4, \
                             UniformMatrix2, UniformMatrix3, UniformMatrix4, \
                             UniformTexture2D
-from .VertexArrayBuffer import VertexArrayBuffer, CreateGeometryBuffer
+from .VertexArrayBuffer import VertexArrayBuffer, CreateVertexArrayBuffer

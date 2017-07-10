@@ -513,9 +513,7 @@ class Collada:
         return skeleton_datas
 
     def get_animation_data(self, skeleton_datas):
-        animation_datas = []
-
-        use_accumulated_transform = False
+        use_accumulated_transform = True
 
         def precompute_animation(children_hierachy, parent_matrix, frame=0):
             for child in children_hierachy:
@@ -545,6 +543,7 @@ class Collada:
                         precompute_animation(skeleton_data['hierachy'][animation.target], transform, frame)
 
         # make animation data
+        animation_datas = []
         for animation in self.animations:
             # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
             if animation.type != 'transform':
@@ -587,6 +586,7 @@ class Collada:
 
             geometry_data = dict(
                 name=geometry.name,
+                skeleton_name=geometry.controller.name if geometry.controller else '',
                 bind_shape_matrix=copy.deepcopy(geometry.bind_shape_matrix),
                 positions=copy.deepcopy(geometry.positions),
                 normals=copy.deepcopy(geometry.normals),

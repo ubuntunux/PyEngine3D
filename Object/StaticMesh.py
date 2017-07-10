@@ -3,7 +3,7 @@ import time, math
 import numpy as np
 
 from Common import logger
-from Object import TransformObject, GeometryInstance, Model
+from Object import TransformObject, Geometry, Model
 from Utilities import GetClassName, Attributes, Matrix4
 from App import CoreManager
 
@@ -14,7 +14,7 @@ class StaticMeshActor:
         self.selected = False
         self.attributes = Attributes()
         self.model = None
-        self.geometry_instances = []
+        self.geometries = []
         self.set_model(object_data.get('model'))
 
         self.transform = TransformObject()
@@ -29,13 +29,15 @@ class StaticMeshActor:
     def set_model(self, model):
         if model and model.mesh:
             self.model = model
-            self.geometry_instances = []
+            self.geometries = []
             default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
             for i, geometry in enumerate(model.mesh.geometries):
                 material_instance = model.get_material_instance(i) or default_material_instance
-                geometry_instance = GeometryInstance(parent_actor=self, geometry=geometry,
-                                                     material_instance=material_instance)
-                self.geometry_instances.append(geometry_instance)
+                geometry = Geometry(parent=self,
+                                    vertex_buffer=geometry.vertex_buffer,
+                                    material_instance=material_instance,
+                                    skeleton=geometry.skeleton)
+                self.geometries.append(geometry)
 
     def get_save_data(self):
         save_data = dict(
@@ -48,20 +50,20 @@ class StaticMeshActor:
         return save_data
 
     def get_material_count(self):
-        return len(self.geometry_instances)
+        return len(self.geometries)
 
     def get_material_instance(self, index):
-        return self.geometry_instances[index].get_material_instance()
+        return self.geometries[index].get_material_instance()
 
     def get_material_instance_name(self, index):
-        return self.geometry_instances[index].get_material_instance_name()
+        return self.geometries[index].get_material_instance_name()
 
     def get_material_instance_names(self):
-        return [self.geometry_instances[i].get_material_instance_name() for i in range(self.get_material_count())]
+        return [self.geometries[i].get_material_instance_name() for i in range(self.get_material_count())]
 
     def set_material_instance(self, material_instance, index):
-        if index < len(self.geometry_instances):
-            self.geometry_instances[index].set_material_instance(material_instance)
+        if index < len(self.geometries):
+            self.geometries[index].set_material_instance(material_instance)
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)

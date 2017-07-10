@@ -71,7 +71,7 @@ class UniformVariable:
             self.valid = False
             # logger.warn("%s location is -1" % variable_name)
 
-    def bind_uniform(self, value):
+    def bind_uniform(self, value, num=1):
         raise BaseException("You must implement bind function.")
 
 
@@ -83,57 +83,57 @@ class UniformArray(UniformVariable):
 class UniformInt(UniformVariable):
     uniform_type = "int"
 
-    def bind_uniform(self, value):
+    def bind_uniform(self, value, num=1):
         glUniform1i(self.location, value)
 
 
 class UniformFloat(UniformVariable):
     uniform_type = "float"
 
-    def bind_uniform(self, value):
+    def bind_uniform(self, value, num=1):
         glUniform1f(self.location, value)
 
 
 class UniformVector2(UniformVariable):
     uniform_type = "vec2"
 
-    def bind_uniform(self, value):
-        glUniform2fv(self.location, 1, value)
+    def bind_uniform(self, value, num=1):
+        glUniform2fv(self.location, num, value)
 
 
 class UniformVector3(UniformVariable):
     uniform_type = "vec3"
 
-    def bind_uniform(self, value):
-        glUniform3fv(self.location, 1, value)
+    def bind_uniform(self, value, num=1):
+        glUniform3fv(self.location, num, value)
 
 
 class UniformVector4(UniformVariable):
     uniform_type = "vec4"
 
-    def bind_uniform(self, value):
-        glUniform4fv(self.location, 1, value)
+    def bind_uniform(self, value, num=1):
+        glUniform4fv(self.location, num, value)
 
 
 class UniformMatrix2(UniformVariable):
     uniform_type = "mat2"
 
-    def bind_uniform(self, value):
-        glUniformMatrix2fv(self.location, 1, GL_FALSE, value)
+    def bind_uniform(self, value, num=1):
+        glUniformMatrix2fv(self.location, num, GL_FALSE, value)
 
 
 class UniformMatrix3(UniformVariable):
     uniform_type = "mat3"
 
-    def bind_uniform(self, value):
-        glUniformMatrix3fv(self.location, 1, GL_FALSE, value)
+    def bind_uniform(self, value, num=1):
+        glUniformMatrix3fv(self.location, num, GL_FALSE, value)
 
 
 class UniformMatrix4(UniformVariable):
     uniform_type = "mat4"
 
-    def bind_uniform(self, value):
-        glUniformMatrix4fv(self.location, 1, GL_FALSE, value)
+    def bind_uniform(self, value, num=1):
+        glUniformMatrix4fv(self.location, num, GL_FALSE, value)
 
 
 class UniformTexture2D(UniformVariable):
@@ -148,7 +148,7 @@ class UniformTexture2D(UniformVariable):
         self.activateTextureIndex = eval("GL_TEXTURE%d" % textureIndex)
         self.textureIndex = textureIndex
 
-    def bind_uniform(self, texture):
+    def bind_uniform(self, texture, num=1):
         glActiveTexture(self.activateTextureIndex)
         texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind)
         glUniform1i(self.location, self.textureIndex)

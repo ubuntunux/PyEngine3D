@@ -4,18 +4,19 @@ import traceback
 import numpy as np
 
 from Common import logger
-from OpenGLContext import CreateGeometryBuffer, VertexArrayBuffer, UniformMatrix4
+from OpenGLContext import CreateVertexArrayBuffer, VertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize, Matrix4
 from Object import Skeleton, AnimationNode
 from App import CoreManager
 
 
-class GeometryInstance:
-    def __init__(self, parent_actor, geometry, material_instance):
-        self.name = geometry.name
-        self.parent_actor = parent_actor
-        self.geometry = geometry
+class Geometry:
+    def __init__(self, parent, vertex_buffer, material_instance, skeleton):
+        self.name = vertex_buffer.name
+        self.parent = parent
+        self.vertex_buffer = vertex_buffer
         self.material_instance = material_instance
+        self.skeleton = skeleton
 
     def get_material_instance(self):
         return self.material_instance
@@ -27,10 +28,10 @@ class GeometryInstance:
         self.material_instance = material_instance
 
     def bindBuffer(self):
-        self.geometry.bindBuffer()
+        self.vertex_buffer.bindBuffer()
 
     def draw(self):
-        self.geometry.draw_elements()
+        self.vertex_buffer.draw_elements()
 
 
 class Mesh:
@@ -38,7 +39,6 @@ class Mesh:
         logger.info("Load %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
-        self.geometries = CreateGeometryBuffer(mesh_data.get('geometry_datas', []))
 
         self.skeletons = []
         for skeleton_data in mesh_data.get('skeleton_datas', []):
@@ -52,7 +52,33 @@ class Mesh:
             self.animation_frame_count = max(self.animation_frame_count, len(animation_node.times))
             self.animation_nodes[animation_node.target] = animation_node
 
+        self.geometries = []
+        for geometry_data in mesh_data.get('geometry_datas', []):
+            vertex_buffer = CreateVertexArrayBuffer(geometry_data)
+            if vertex_buffer:
+                # find skeleton of geometry
+                for skeleton in self.skeletons:
+                    if skeleton.name == geometry_data.get('skeleton_name', ''):
+                        break
+                else:
+                    skeleton = None
+                # create geometry
+                geometry = Geometry(parent=self,
+                                    vertex_buffer=vertex_buffer,
+                                    material_instance=None,
+                                    skeleton=skeleton)
+                self.geometries.append(geometry)
+
         self.attributes = Attributes()
+
+    def get_animation_transform_list(self, skeleton_index=0, frame=0):
+        if skeleton_index < len(self.skeletons):
+            skeleton = self.skeletons[skeleton_index]
+            buffers = np.array(
+                [np.dot(skeleton.bones[i].inv_bind_matrix, self.get_animation_transform(bone_name, frame))
+                 for i, bone_name in enumerate(skeleton.bone_names)], dtype=np.float32)
+            return buffers
+        return None
 
     def get_animation_transform(self, bone_name, frame=0):
         animation_node = self.animation_nodes.get(bone_name)
@@ -78,7 +104,7 @@ class Mesh:
 
     def draw(self, index=0):
         if index < len(self.geometries):
-            self.geometries[index].draw_elements()
+            self.geometries[index].draw()
 
 
 class Triangle(Mesh):

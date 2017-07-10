@@ -245,9 +245,12 @@ class Shader:
         vextex_uniforms = re.findall(reFindUniform, vertexShaderCode)
         fragment_uniforms = re.findall(reFindUniform, fragmentShaderCode)
         uniforms = []
-        for uniform_name in vextex_uniforms + fragment_uniforms:
-            if uniform_name not in uniforms:
-                uniforms.append(uniform_name)
+        for uniform in vextex_uniforms + fragment_uniforms:
+            uniform_type, uniform_name = uniform
+            if '[' in uniform_name:
+                uniform = (uniform_type, uniform_name[:uniform_name.find('[')])
+            if uniform not in uniforms:
+                uniforms.append(uniform)
         return uniforms
 
     def parsing_material_components(self, vertexShaderCode, fragmentShaderCode):

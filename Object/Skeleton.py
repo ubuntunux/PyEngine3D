@@ -29,7 +29,7 @@ class Skeleton:
         self.name = skeleton_data.get('name', '')
 
         self.bone_names = skeleton_data.get('bone_names', [])
-        self.bones = [None for i in range(len(self.bone_names))]
+        self.bones = [None, ] * len(self.bone_names)
         self.hierachy = []
 
         inv_bind_matrices = skeleton_data.get('inv_bind_matrices', [])
