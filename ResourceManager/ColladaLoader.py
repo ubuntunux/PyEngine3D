@@ -149,46 +149,19 @@ class ColladaNode:
 
 
 class ColladaContoller:
-    def __init__(self, xml_controller, nodes):
+    def __init__(self, xml_controller):
         self.valid = False
         self.name = get_xml_attrib(xml_controller, 'name').replace('.', '_')
         self.id = get_xml_attrib(xml_controller, 'id').replace('.', '_')
         self.skin_source = ""
-        self.matrix = Matrix4()
         self.bind_shape_matrix = Matrix4()
-        self.hierachy = dict()
 
         self.bone_names = []
         self.bone_indicies = []
         self.bone_weights = []
         self.inv_bind_matrices = []
-        self.bone_matrices = []
 
         self.parsing(xml_controller)
-
-        # find root amature
-        root_node = None
-        for node in nodes:
-            if self.name == node.name:
-                self.matrix = node.matrix
-                root_node = node
-                break
-
-        self.bone_matrices = [Matrix4() for i in range(len(self.bone_names))]
-
-        def build_hierachy(current_node, tree):
-            for child in current_node.children:
-                tree[child.name] = dict()
-                if child.name in self.bone_names:
-                    index = self.bone_names.index(child.name)
-                    self.bone_matrices[index] = child.matrix.copy()
-                else:
-                    # maybe dummy...
-                    pass
-                build_hierachy(child, tree[child.name])
-
-        if root_node:
-            build_hierachy(root_node, self.hierachy)
 
     def parsing(self, xml_controller):
         xml_skin = xml_controller.find('skin')
@@ -337,15 +310,15 @@ class ColladaGeometry:
                 break
 
         # find matrix
-        self.matrix = Matrix4()
+        self.bind_shape_matrix = Matrix4()
         for node in nodes:
             if self.name == node.name:
-                self.matrix = node.matrix
+                self.bind_shape_matrix = node.matrix
                 break
 
         if self.controller:
             # precompute bind_shape_matrix as coulmn-major matrix calculation.
-            self.matrix = np.dot(controller.bind_shape_matrix, self.matrix)
+            self.bind_shape_matrix = np.dot(controller.bind_shape_matrix, self.bind_shape_matrix)
 
         self.parsing(xml_geometry)
 
@@ -475,11 +448,12 @@ class Collada:
         self.animations = []
 
         for xml_node in xml_root.findall('library_visual_scenes/visual_scene/node'):
+            # recursive hierachy nodes
             node = ColladaNode(xml_node)
             self.nodes.append(node)
 
         for xml_controller in xml_root.findall('library_controllers/controller'):
-            controller = ColladaContoller(xml_controller, self.nodes)
+            controller = ColladaContoller(xml_controller)
             self.controllers.append(controller)
 
         for xml_animation in xml_root.findall('library_animations/animation'):
@@ -507,19 +481,33 @@ class Collada:
         for controller in self.controllers:
             if controller.name not in check_duplicated:
                 check_duplicated.append(controller.name)
+
+                hierachy = {}
+                root_node = None
+                # find root amature
+                for node in self.nodes:
+                    if node.name == controller.name:
+                        root_node = node
+                        break
+
+                def build_hierachy(parent_node, hierachy_tree):
+                    for child in parent_node.children:
+                        hierachy_tree[child.name] = dict()
+                        build_hierachy(child, hierachy_tree[child.name])
+
+                if root_node:
+                    # recursive build hierachy of bones
+                    build_hierachy(root_node, hierachy)
+
+                # what!
                 inv_bind_matrices = copy.deepcopy(controller.inv_bind_matrices)
                 inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in inv_bind_matrices]
 
                 skeleton_data = dict(
                     name=controller.name,
-                    # matrix of Amature
-                    matrix=swap_up_axis_matrix(controller.matrix, True, False, self.up_axis),
-                    hierachy=controller.hierachy,  # bone names map as hierachy
-                    bone_names=controller.bone_names,  # bone name list
-                    # local matrix of bone
-                    bone_matrices=[swap_up_axis_matrix(matrix, True, False, self.up_axis) for matrix in controller.bone_matrices],
-                    # inv matrix of bone
-                    inv_bind_matrices=inv_bind_matrices
+                    hierachy=hierachy,  # bone names map as hierachy
+                    bone_names=controller.bone_names,  # bone name list ordered by index
+                    inv_bind_matrices=inv_bind_matrices  # inverse matrix of bone
                 )
                 skeleton_datas.append(skeleton_data)
         return skeleton_datas
@@ -553,7 +541,7 @@ class Collada:
                 name=animation_name,
                 target=animation.target,
                 times=animation.inputs,
-                transforms=[matrix for matrix in transforms],
+                # transforms=[matrix for matrix in transforms],
                 locations=[extract_location(matrix) for matrix in transforms],
                 rotations=[extract_rotation(matrix) for matrix in transforms],
                 scales=[extract_scale(matrix) for matrix in transforms],
@@ -568,17 +556,17 @@ class Collada:
         geometry_datas = []
         for geometry in self.geometries:
             # swap y and z
-            geometry.matrix = swap_up_axis_matrix(geometry.matrix, True, False, self.up_axis)
+            geometry.bind_shape_matrix = swap_up_axis_matrix(geometry.bind_shape_matrix, True, False, self.up_axis)
 
             # precompute bind_shape_matrix
             for i, position in enumerate(geometry.positions):
-                geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.matrix)[:3]
+                geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.bind_shape_matrix)[:3]
             for i, normal in enumerate(geometry.normals):
-                geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.matrix)[:3]
+                geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.bind_shape_matrix)[:3]
 
             geometry_data = dict(
                 name=geometry.name,
-                matrix=copy.deepcopy(geometry.matrix),
+                bind_shape_matrix=copy.deepcopy(geometry.bind_shape_matrix),
                 positions=copy.deepcopy(geometry.positions),
                 normals=copy.deepcopy(geometry.normals),
                 colors=copy.deepcopy(geometry.colors),

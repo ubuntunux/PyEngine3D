@@ -8,7 +8,7 @@ class AnimationNode:
         self.target = animation_data.get('target', '')
         self.times = animation_data.get('times', [])
         self.transform = Matrix4()
-        self.transforms = animation_data.get('transforms', [])
+        # self.transforms = animation_data.get('transforms', [])
         self.locations = animation_data.get('locations', [])
         self.rotations = animation_data.get('rotations', [])
         self.scales = animation_data.get('scales', [])
@@ -30,8 +30,6 @@ class AnimationNode:
             quaternion_to_matrix(rotation, self.transform)
             matrix_scale(self.transform, *scale)
             self.transform[3, 0:3] = location
-
-            # self.transform[...] = self.transforms[frame][...] * (1.0 - rate) + self.transforms[next_frame][...] * rate
         return self.transform
 
 

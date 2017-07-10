@@ -5,11 +5,10 @@ from Object import TransformObject
 
 
 class Bone:
-    def __init__(self, name, index, depth, bone_matrix, inv_bind_matrix):
+    def __init__(self, name, index, depth, inv_bind_matrix):
         # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         self.name = name
         self.transform = TransformObject.TransformObject()
-        self.matrix = bone_matrix
         self.inv_bind_matrix = inv_bind_matrix
         self.parent = None
         self.children = []
@@ -29,10 +28,10 @@ class Skeleton:
     def __init__(self, **skeleton_data):
         self.name = skeleton_data.get('name', '')
 
-        self.bones = []
         self.bone_names = skeleton_data.get('bone_names', [])
-        self.inv_bind_matrices = skeleton_data.get('inv_bind_matrices', [])
-        self.bone_matrices = skeleton_data.get('bone_matrices', [])
+        self.bones = [None, ] * len(self.bone_names)
+
+        inv_bind_matrices = skeleton_data.get('inv_bind_matrices', [])
 
         def build_bone(hierachy, parent_bone, depth):
             for bone_name in hierachy:
@@ -42,15 +41,21 @@ class Skeleton:
                         name=bone_name,
                         index=index,
                         depth=depth,
-                        bone_matrix=self.bone_matrices[index],
-                        inv_bind_matrix=self.inv_bind_matrices[index]
+                        inv_bind_matrix=inv_bind_matrices[index]
                     )
-                    if parent_bone is None:
-                        self.bones.append(bone)  # root bone
-                    else:
+                    self.bones[index] = bone
+                    if parent_bone is not None:
                         parent_bone.add_child(bone)
+                    # recursive build bone
                     build_bone(hierachy[bone_name], bone, depth+1)
 
         build_bone(skeleton_data.get('hierachy', {}), None, 0)
+        print(self.name)
+        print(self.bone_names)
+        print(self.bones)
+        print(skeleton_data.get('hierachy', {}))
+        print()
+
+
 
 
