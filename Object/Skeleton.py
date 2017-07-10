@@ -29,7 +29,8 @@ class Skeleton:
         self.name = skeleton_data.get('name', '')
 
         self.bone_names = skeleton_data.get('bone_names', [])
-        self.bones = [None, ] * len(self.bone_names)
+        self.bones = [None for i in range(len(self.bone_names))]
+        self.hierachy = []
 
         inv_bind_matrices = skeleton_data.get('inv_bind_matrices', [])
 
@@ -44,18 +45,11 @@ class Skeleton:
                         inv_bind_matrix=inv_bind_matrices[index]
                     )
                     self.bones[index] = bone
-                    if parent_bone is not None:
+                    if parent_bone is None:
+                        # add root
+                        self.hierachy.append(bone)
+                    else:
                         parent_bone.add_child(bone)
                     # recursive build bone
                     build_bone(hierachy[bone_name], bone, depth+1)
-
         build_bone(skeleton_data.get('hierachy', {}), None, 0)
-        print(self.name)
-        print(self.bone_names)
-        print(self.bones)
-        print(skeleton_data.get('hierachy', {}))
-        print()
-
-
-
-

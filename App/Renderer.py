@@ -275,15 +275,15 @@ class Renderer(Singleton):
 
             def draw_bone(mesh, skeleton_mesh, parent_matrix, material_instance, bone, root_matrix, isAnimation):
                 if isAnimation:
-                    bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
+                    bone_transform = skeleton_mesh.get_animation_transform(bone.name, frame)
                 else:
                     bone_transform = np.linalg.inv(bone.inv_bind_matrix)
 
                 if bone.children:
                     for child_bone in bone.children:
                         if isAnimation:
-                            bone_transform = np.dot(skeleton_mesh.get_animation_transform(bone.name, frame), parent_matrix)
-                            child_transform = np.dot(skeleton_mesh.get_animation_transform(child_bone.name, frame), bone_transform)
+                            bone_transform = skeleton_mesh.get_animation_transform(bone.name, frame)
+                            child_transform = skeleton_mesh.get_animation_transform(child_bone.name, frame)
                         else:
                             bone_transform = np.linalg.inv(bone.inv_bind_matrix)
                             child_transform = np.linalg.inv(child_bone.inv_bind_matrix)
@@ -307,7 +307,7 @@ class Renderer(Singleton):
                     isAnimation = frame_count > 0.0
                     for skeleton in skeletons:
                         matrix = static_mesh.transform.matrix
-                        for bone in skeleton.bones:
+                        for bone in skeleton.hierachy:
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):

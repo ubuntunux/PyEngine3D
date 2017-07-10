@@ -515,6 +515,36 @@ class Collada:
     def get_animation_data(self, skeleton_datas):
         animation_datas = []
 
+        use_accumulated_transform = False
+
+        def precompute_animation(children_hierachy, parent_matrix, frame=0):
+            for child in children_hierachy:
+                for child_anim in self.animations:
+                    if child_anim.target == child:
+                        # just Transpose child bones
+                        transform = np.array(child_anim.outputs[frame], dtype=np.float32).reshape(4, 4).T
+                        if use_accumulated_transform:
+                            # compute row major order
+                            transform = np.dot(transform, parent_matrix)
+                        child_anim.outputs[frame] = transform
+                        precompute_animation(children_hierachy[child_anim.target], transform, frame)
+
+        for animation in self.animations:
+            # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
+            if animation.type != 'transform':
+                continue
+
+            for skeleton_data in skeleton_datas:
+                # is root bone?
+                if animation.target in skeleton_data['hierachy']:
+                    for frame, transform in enumerate(animation.outputs):
+                        # only root bone adjust convert_matrix for swap Y-Z Axis
+                        transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True,
+                                                        False, self.up_axis)
+                        animation.outputs[frame] = transform
+                        precompute_animation(skeleton_data['hierachy'][animation.target], transform, frame)
+
+        # make animation data
         for animation in self.animations:
             # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
             if animation.type != 'transform':
@@ -528,23 +558,14 @@ class Collada:
                 continue
 
             animation_name = "%s_%s_%s" % (self.name, skeleton_data['name'], animation.target)
-            # is root bone of hierachy?
-            if animation.target in skeleton_data['hierachy']:
-                # only root bone adjust convert_matrix for swap Y-Z Axis
-                transforms = [swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, False, self.up_axis)
-                              for transform in animation.outputs]
-            else:
-                # just Transpose child bones
-                transforms = [np.array(transform, dtype=np.float32).reshape(4, 4).T for transform in animation.outputs]
-
             animation_data = dict(
                 name=animation_name,
                 target=animation.target,
                 times=animation.inputs,
                 # transforms=[matrix for matrix in transforms],
-                locations=[extract_location(matrix) for matrix in transforms],
-                rotations=[extract_rotation(matrix) for matrix in transforms],
-                scales=[extract_scale(matrix) for matrix in transforms],
+                locations=[extract_location(matrix) for matrix in animation.outputs],
+                rotations=[extract_rotation(matrix) for matrix in animation.outputs],
+                scales=[extract_scale(matrix) for matrix in animation.outputs],
                 interpoations=animation.interpolations,
                 in_tangents=animation.in_tangents,
                 out_tangents=animation.out_tangents
