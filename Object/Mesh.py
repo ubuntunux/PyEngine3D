@@ -72,13 +72,13 @@ class Mesh:
         self.attributes = Attributes()
 
     def get_animation_transform_list(self, skeleton_index=0, frame=0):
-        if skeleton_index < len(self.skeletons):
+        if skeleton_index < len(self.skeletons) and len(self.animation_nodes) > 0:
             skeleton = self.skeletons[skeleton_index]
             buffers = np.array(
                 [np.dot(skeleton.bones[i].inv_bind_matrix, self.get_animation_transform(bone_name, frame))
                  for i, bone_name in enumerate(skeleton.bone_names)], dtype=np.float32)
             return buffers
-        return None
+        return []
 
     def get_animation_transform(self, bone_name, frame=0):
         animation_node = self.animation_nodes.get(bone_name)
