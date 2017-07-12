@@ -201,8 +201,8 @@ class Renderer(Singleton):
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glEnable(GL_CULL_FACE)
-        glFrontFace(GL_CCW)
+        glDisable(GL_CULL_FACE)
+        #glFrontFace(GL_CCW)
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
@@ -245,8 +245,6 @@ class Renderer(Singleton):
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind()
 
-            나머지 Bone Weight값을 0이면 안되고 -1로 해보자
-
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
                 geometry.bindBuffer()
@@ -273,7 +271,7 @@ class Renderer(Singleton):
         mesh = self.resource_manager.getMesh("Cube")
         material_instance = self.resource_manager.getMaterialInstance("debug_bone")
 
-        if mesh and material_instance:
+        if False and mesh and material_instance:
             material_instance.useProgram()
             material_instance.bind()
             mesh.bindBuffer()

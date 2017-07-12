@@ -68,7 +68,6 @@ class Mesh:
                                     material_instance=None,
                                     skeleton=skeleton)
                 self.geometries.append(geometry)
-
         self.attributes = Attributes()
 
     def get_animation_transform_list(self, skeleton_index=0, frame=0):

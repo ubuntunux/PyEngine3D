@@ -205,20 +205,28 @@ class ColladaContoller:
     def build(self, sources, joins_semantics, weights_semantics, vcount_list, v_list):
         semantic_stride = len(weights_semantics)
         # build weights and indicies
-        i = 0
+        max_bone = 4  # max influence bone count per vertex
+        weight_source_id = weights_semantics['WEIGHT']['source']
+        weight_sources = sources[weight_source_id]
+        index = 0
         for vcount in vcount_list:
             bone_indicies = []
             bone_weights = []
-            indicies = v_list[i: i + vcount * semantic_stride]
-            i += vcount * semantic_stride
-            for v in range(vcount):
+            indicies = v_list[index: index + vcount * semantic_stride]
+            index += vcount * semantic_stride
+            for v in range(max_bone):
                 if 'JOINT' in weights_semantics:
                     offset = weights_semantics['JOINT']['offset']
-                    bone_indicies.append(indicies[offset + v * semantic_stride])
+                    if v < vcount:
+                        bone_indicies.append(indicies[offset + v * semantic_stride])
+                    else:
+                        bone_indicies.append(0)
                 if 'WEIGHT' in weights_semantics:
-                    source_id = weights_semantics['WEIGHT']['source']
                     offset = weights_semantics['WEIGHT']['offset']
-                    bone_weights.append(sources[source_id][indicies[offset + v * semantic_stride]])
+                    if v < vcount:
+                        bone_weights.append(weight_sources[indicies[offset + v * semantic_stride]])
+                    else:
+                        bone_weights.append(0.0)
             self.bone_indicies.append(bone_indicies)
             self.bone_weights.append(bone_weights)
         # joints
@@ -499,9 +507,8 @@ class Collada:
                     # recursive build hierachy of bones
                     build_hierachy(root_node, hierachy)
 
-                # what!
-                inv_bind_matrices = copy.deepcopy(controller.inv_bind_matrices)
-                inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in inv_bind_matrices]
+                inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in
+                                     controller.inv_bind_matrices]
 
                 skeleton_data = dict(
                     name=controller.name,
@@ -564,7 +571,7 @@ class Collada:
                 # transforms=[matrix for matrix in transforms],
                 locations=[extract_location(matrix) for matrix in animation.outputs],
                 rotations=[extract_rotation(matrix) for matrix in animation.outputs],
-                scales=[extract_scale(matrix) for matrix in animation.outputs],
+                scales=[np.array([1.0, 1.0, 1.0], dtype=np.float32) for matrix in animation.outputs],
                 interpoations=animation.interpolations,
                 in_tangents=animation.in_tangents,
                 out_tangents=animation.out_tangents
@@ -575,29 +582,39 @@ class Collada:
     def get_geometry_data(self):
         geometry_datas = []
         for geometry in self.geometries:
+            skeleton_name = ""
+            bone_indicies = []
+            bone_weights = []
+
+            if geometry.controller:
+                skeleton_name = geometry.controller.name
+                bone_indicies = copy.deepcopy(geometry.bone_indicies)
+                bone_weights = copy.deepcopy(geometry.bone_weights)
+
             # swap y and z
             geometry.bind_shape_matrix = swap_up_axis_matrix(geometry.bind_shape_matrix, True, False, self.up_axis)
 
             # precompute bind_shape_matrix
             for i, position in enumerate(geometry.positions):
                 geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.bind_shape_matrix)[:3]
+
             for i, normal in enumerate(geometry.normals):
                 geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.bind_shape_matrix)[:3]
+                geometry.normals[i] = normalize(geometry.normals[i])
 
             geometry_data = dict(
                 name=geometry.name,
-                skeleton_name=geometry.controller.name if geometry.controller else '',
-                bind_shape_matrix=copy.deepcopy(geometry.bind_shape_matrix),
                 positions=copy.deepcopy(geometry.positions),
                 normals=copy.deepcopy(geometry.normals),
                 colors=copy.deepcopy(geometry.colors),
                 texcoords=copy.deepcopy(geometry.texcoords),
-                indices=copy.deepcopy(geometry.indices)
+                indices=copy.deepcopy(geometry.indices),
+                bind_shape_matrix=copy.deepcopy(geometry.bind_shape_matrix),
+                skeleton_name=skeleton_name,
+                bone_indicies=bone_indicies,
+                bone_weights=bone_weights,
             )
-            if geometry.controller:
-                geometry_data['skeleton'] = geometry.controller.name
-                geometry_data['bone_indicies'] = copy.deepcopy(geometry.bone_indicies)
-                geometry_data['bone_weights'] = copy.deepcopy(geometry.bone_weights)
+
             geometry_datas.append(geometry_data)
         return geometry_datas
 

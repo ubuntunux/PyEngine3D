@@ -15,7 +15,10 @@ layout(std140, binding=1) uniform lightConstants
     vec4 lightColor;
 };
 
-uniform mat4 bone_matrices[62];
+const int MAX_BONES_PER_VERTEX = 4;
+const int MAX_BONES = 72;
+
+uniform mat4 bone_matrices[MAX_BONES];
 uniform mat4 model;
 uniform mat4 mvp;
 
@@ -56,31 +59,34 @@ in VERTEX_INPUT vs_input;
 out VERTEX_OUTPUT vs_output;
 
 void main() {
+    vec4 localPosition = vec4(0.0, 0.0, 0.0, 0.0);
+    vec3 vertexNormal = vec3(0.0, 0.0, 0.0);
+    vec3 vertexTangent = vec3(0.0, 0.0, 0.0);
+
+    for(int i=0; i<MAX_BONES_PER_VERTEX; ++i)
+    {
+        localPosition += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
+        vertexNormal += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.normal, 0.0)).xyz * vs_input.bone_weights[i];
+        vertexTangent += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.tangent, 0.0)).xyz * vs_input.bone_weights[i];
+    }
+    localPosition /= localPosition.w;
+    vertexNormal = normalize(vertexNormal);
+    vertexTangent = normalize(vertexTangent);
+
     vs_output.vertexColor = vs_input.color;
-    vs_output.worldPosition = (model * vec4(vs_input.position, 1.0)).xyz;
-
-    vec3 localPosition = vs_input.position;
-
-    localPosition += (bone_matrices[int(vs_input.bone_indicies.x)] * vec4(vs_input.position, 1.0)).xyz * vs_input.bone_weights.xxx;
-    localPosition += (bone_matrices[int(vs_input.bone_indicies.y)] * vec4(vs_input.position, 1.0)).xyz * vs_input.bone_weights.yyy;
-    localPosition += (bone_matrices[int(vs_input.bone_indicies.z)] * vec4(vs_input.position, 1.0)).xyz * vs_input.bone_weights.zzz;
-    localPosition += (bone_matrices[int(vs_input.bone_indicies.w)] * vec4(vs_input.position, 1.0)).xyz * vs_input.bone_weights.www;
+    vs_output.worldPosition = (model * localPosition).xyz;
 
     vs_output.bone_indicies = vs_input.bone_indicies;
     vs_output.bone_weights = vs_input.bone_weights;
 
-    vs_output.normalVector = (model * vec4(vs_input.normal, 0.0)).xyz;
-    vec3 bitangent = cross(vs_input.tangent, vs_input.normal);
-    vs_output.tangentToWorld = model * mat4(vec4(vs_input.tangent, 0.0), vec4(bitangent, 0.0), vec4(vs_input.normal, 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0));
+    vs_output.normalVector = (model * vec4(vertexNormal, 0.0)).xyz;
+    vec3 bitangent = cross(vertexTangent, vertexNormal);
+    vs_output.tangentToWorld = model * mat4(vec4(vertexTangent, 0.0), vec4(vertexNormal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     vs_output.texCoord = vs_input.texcoord;
 
     vs_output.cameraVector = cameraPosition.xyz - vs_output.worldPosition;
-    //vs_output.cameraVector = normalize(vs_output.cameraVector);
-
     vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
-    //vs_output.lightVector = normalize(vs_output.lightVector);
-    gl_Position = mvp * vec4(localPosition, 1.0f);
+    gl_Position = mvp * localPosition;
 }
 #endif
 
@@ -100,12 +106,13 @@ void main() {
     vec3 normalVector = normalize(vs_output.normalVector);
     vec3 cameraVector = normalize(vs_output.cameraVector);
     vec3 lightVector = normalize(vs_output.lightVector);
+    lightVector = vec3(0.0, 1.0, 0.0);
     vec4 emissiveColor = get_emissive_color();
-    vec3 normal = normalize(vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
+    vec3 normal = normalVector + (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
+    normal = normalize(normal);
     vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
-    fs_output = vec4(vs_output.bone_weights.xyz + lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
-
+    fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 }
 #endif

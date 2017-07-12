@@ -1,0 +1,12 @@
+{'macros': OrderedDict(),
+ 'material': 'skeleton',
+ 'shader_name': 'skeleton',
+ 'uniform_datas': {'bone_matrices': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'brightness': 1.0,
+                   'diffuse_color': [1.0, 1.0, 1.0, 1.0],
+                   'emissive_color': [1.0, 1.0, 1.0, 0.5],
+                   'enable_blend': 0,
+                   'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'mvp': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'texture_diffuse': 'Wool_D',
+                   'texture_normal': 'Wool_N'}}

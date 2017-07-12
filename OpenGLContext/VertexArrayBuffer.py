@@ -24,29 +24,9 @@ def CreateVertexArrayBuffer(geometry_data):
 
     indices = np.array(geometry_data['indices'], dtype=np.uint32)
 
-    bone_indicies = geometry_data.get('bone_indicies', None)
-    if bone_indicies:
-        if 4 * vertex_count == sum([len(bone_index_list) for bone_index_list in bone_indicies]):
-            bone_indicies = np.array(bone_indicies, dtype=np.float32)
-        else:
-            new_bone_indicies = np.array([[0.0, 0.0, 0.0, 0.0]] * vertex_count, dtype=np.float32)
-            for i in range(min(vertex_count, len(bone_indicies))):
-                for j in range(min(4, len(bone_indicies[i]))):
-                    new_bone_indicies[i][j] = bone_indicies[i][j]
-            geometry_data['bone_indicies'] = new_bone_indicies.tolist()
-            bone_indicies = new_bone_indicies
+    bone_indicies = np.array(geometry_data.get('bone_indicies', []), dtype=np.float32)
 
-    bone_weights = geometry_data.get('bone_weights', None)
-    if bone_weights:
-        if 4 * vertex_count == sum([len(bone_weight_list) for bone_weight_list in bone_weights]):
-            bone_weights = np.array(bone_weights, dtype=np.float32)
-        else:
-            new_bone_weights = np.array([[0.0, 0.0, 0.0, 0.0]] * vertex_count, dtype=np.float32)
-            for i in range(min(vertex_count, len(bone_weights))):
-                for j in range(min(4, len(bone_weights[i]))):
-                    new_bone_weights[i][j] = bone_weights[i][j]
-            geometry_data['bone_weights'] = new_bone_weights.tolist()
-            bone_weights = new_bone_weights
+    bone_weights = np.array(geometry_data.get('bone_weights', []), dtype=np.float32)
 
     colors = np.array(geometry_data.get('colors', []), dtype=np.float32)
     if len(colors) == 0:
@@ -65,7 +45,7 @@ def CreateVertexArrayBuffer(geometry_data):
         tangents = compute_tangent(positions, texcoords, normals, indices)
         geometry_data['tangents'] = tangents.tolist()
 
-    if bone_indicies is not None and bone_weights is not None:
+    if 0 < len(bone_indicies) and 0 < len(bone_weights):
         vertex_array_buffer = VertexArrayBuffer(geometry_name,
                                      [positions, colors, normals, tangents, texcoords, bone_indicies,
                                       bone_weights], indices)
