@@ -245,7 +245,7 @@ class Renderer(Singleton):
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind()
 
-            나머지 Bone Weight값이 0이아닌경우가 있는거 같다.
+            나머지 Bone Weight값을 0이면 안되고 -1로 해보자
 
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
