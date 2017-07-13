@@ -248,8 +248,10 @@ class Renderer(Singleton):
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
                 geometry.bindBuffer()
-                animation_buffer = geometry.parent_actor.get_animation_buffer()
-                material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
+
+                if 0 < actor.mesh.get_animation_frame_count():
+                    animation_buffer = geometry.parent_actor.get_animation_buffer()
+                    material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
