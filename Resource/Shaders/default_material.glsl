@@ -44,7 +44,7 @@ float get_sss_scale()
 vec3 get_normal(vec2 texcoord)
 {
     // Y-Up
-    vec3 normal = texture(texture_normal, texcoord).xzy * 0.5 - 0.5;
+    vec3 normal = texture(texture_normal, texcoord).xzy * 2.0 - 1.0;
     return normalize(normal);
 }
 

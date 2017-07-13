@@ -106,9 +106,8 @@ void main() {
     vec3 normalVector = normalize(vs_output.normalVector);
     vec3 cameraVector = normalize(vs_output.cameraVector);
     vec3 lightVector = normalize(vs_output.lightVector);
-    lightVector = vec3(0.0, 1.0, 0.0);
     vec4 emissiveColor = get_emissive_color();
-    vec3 normal = normalVector + (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
+    vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
     normal = normalize(normal);
     vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
     float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);

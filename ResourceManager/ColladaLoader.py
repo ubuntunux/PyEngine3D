@@ -500,8 +500,9 @@ class Collada:
 
                 def build_hierachy(parent_node, hierachy_tree):
                     for child in parent_node.children:
-                        hierachy_tree[child.name] = dict()
-                        build_hierachy(child, hierachy_tree[child.name])
+                        if child.name in controller.bone_names:
+                            hierachy_tree[child.name] = dict()
+                            build_hierachy(child, hierachy_tree[child.name])
 
                 if root_node:
                     # recursive build hierachy of bones
@@ -521,18 +522,27 @@ class Collada:
 
     def get_animation_data(self, skeleton_datas):
         use_accumulated_transform = True
+        use_relative_matrix = False
 
-        def precompute_animation(children_hierachy, parent_matrix, frame=0):
+        def precompute_animation(children_hierachy, bone_names, inv_bind_matrices, parent_matrix, frame=0):
             for child in children_hierachy:
                 for child_anim in self.animations:
                     if child_anim.target == child:
-                        # just Transpose child bones
-                        transform = np.array(child_anim.outputs[frame], dtype=np.float32).reshape(4, 4).T
+                        # just Transpose child bones, no swap y-z.
+                        child_transform = np.array(child_anim.outputs[frame], dtype=np.float32).reshape(4, 4).T
                         if use_accumulated_transform:
-                            # compute row major order
-                            transform = np.dot(transform, parent_matrix)
-                        child_anim.outputs[frame] = transform
-                        precompute_animation(children_hierachy[child_anim.target], transform, frame)
+                            child_transform = np.dot(child_transform, parent_matrix)
+
+                        if use_relative_matrix:
+                            child_bone_index = bone_names.index(child_anim.target)
+                            child_inv_bind_matrix = inv_bind_matrices[child_bone_index]
+                            child_anim.outputs[frame] = np.dot(child_inv_bind_matrix, child_transform)
+                        else:
+                            child_anim.outputs[frame] = child_transform
+                        # recursive precompute animation
+                        precompute_animation(children_hierachy[child_anim.target], bone_names, inv_bind_matrices,
+                                             child_transform, frame)
+                        break
 
         for animation in self.animations:
             # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
@@ -540,14 +550,24 @@ class Collada:
                 continue
 
             for skeleton_data in skeleton_datas:
+                hierachy = skeleton_data['hierachy']
+                bone_names = skeleton_data['bone_names']
+                inv_bind_matrices = skeleton_data['inv_bind_matrices']
+
                 # is root bone?
-                if animation.target in skeleton_data['hierachy']:
+                if animation.target in hierachy:
                     for frame, transform in enumerate(animation.outputs):
                         # only root bone adjust convert_matrix for swap Y-Z Axis
                         transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True,
                                                         False, self.up_axis)
-                        animation.outputs[frame] = transform
-                        precompute_animation(skeleton_data['hierachy'][animation.target], transform, frame)
+                        if use_relative_matrix:
+                            bone_index = bone_names.index(animation.target)
+                            inv_bind_matrix = inv_bind_matrices[bone_index]
+                            animation.outputs[frame] = np.dot(inv_bind_matrix, transform)
+                        else:
+                            animation.outputs[frame] = transform
+                        precompute_animation(hierachy[animation.target], bone_names, inv_bind_matrices, transform,
+                                             frame)
 
         # make animation data
         animation_datas = []
@@ -609,7 +629,6 @@ class Collada:
                 colors=copy.deepcopy(geometry.colors),
                 texcoords=copy.deepcopy(geometry.texcoords),
                 indices=copy.deepcopy(geometry.indices),
-                bind_shape_matrix=copy.deepcopy(geometry.bind_shape_matrix),
                 skeleton_name=skeleton_name,
                 bone_indicies=bone_indicies,
                 bone_weights=bone_weights,

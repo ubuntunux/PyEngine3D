@@ -11,12 +11,19 @@ from App import CoreManager
 
 
 class Geometry:
-    def __init__(self, parent, vertex_buffer, material_instance, skeleton):
-        self.name = vertex_buffer.name
-        self.parent = parent
-        self.vertex_buffer = vertex_buffer
-        self.material_instance = material_instance
-        self.skeleton = skeleton
+    def __init__(self, **geometry_data):
+        self.name = geometry_data.get('name', '')
+        self.parent_actor = geometry_data.get('parent_actor')
+        self.parent_mesh = geometry_data.get('parent_mesh')
+        self.parent_geometry = geometry_data.get('parent_geometry')
+        self.vertex_buffer = geometry_data.get('vertex_buffer')
+        self.material_instance = geometry_data.get('material_instance')
+        self.skeleton = geometry_data.get('skeleton')
+
+        if self.parent_geometry is not None:
+            self.parent_mesh = self.parent_geometry.parent_mesh
+            self.vertex_buffer = self.parent_geometry.vertex_buffer
+            self.skeleton = self.parent_geometry.skeleton
 
     def get_material_instance(self):
         return self.material_instance
@@ -63,19 +70,23 @@ class Mesh:
                 else:
                     skeleton = None
                 # create geometry
-                geometry = Geometry(parent=self,
-                                    vertex_buffer=vertex_buffer,
-                                    material_instance=None,
-                                    skeleton=skeleton)
+                geometry = Geometry(
+                    name=vertex_buffer.name,
+                    parent_mesh=self,
+                    vertex_buffer=vertex_buffer,
+                    skeleton=skeleton
+                )
                 self.geometries.append(geometry)
         self.attributes = Attributes()
 
-    def get_animation_transform_list(self, skeleton_index=0, frame=0):
+    def get_animation_buffer(self, skeleton_index=0, frame=0):
         if skeleton_index < len(self.skeletons) and len(self.animation_nodes) > 0:
             skeleton = self.skeletons[skeleton_index]
-            buffers = np.array(
-                [np.dot(skeleton.bones[i].inv_bind_matrix, self.get_animation_transform(bone_name, frame))
-                 for i, bone_name in enumerate(skeleton.bone_names)], dtype=np.float32)
+
+            def func(i, bone_name):
+                return np.dot(skeleton.bones[i].inv_bind_matrix, self.get_animation_transform(bone_name, frame))
+
+            buffers = np.array([func(i, bone_name) for i, bone_name in enumerate(skeleton.bone_names)], dtype=np.float32)
             return buffers
         return []
 

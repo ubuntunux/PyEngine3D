@@ -201,8 +201,8 @@ class Renderer(Singleton):
         # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glDisable(GL_CULL_FACE)
-        #glFrontFace(GL_CCW)
+        glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CCW)
         glDisable(GL_BLEND)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
@@ -235,7 +235,7 @@ class Renderer(Singleton):
         last_material_instance = None
         last_actor = None
         for geometry in geometries:
-            actor = geometry.parent
+            actor = geometry.parent_actor
             material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
@@ -248,8 +248,7 @@ class Renderer(Singleton):
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
                 geometry.bindBuffer()
-                frame = math.fmod(self.coreManager.currentTime * 30.0, 16)
-                animation_buffer = actor.model.mesh.get_animation_transform_list(0, frame)
+                animation_buffer = geometry.parent_actor.get_animation_buffer()
                 material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
             if last_actor != actor and material_instance:

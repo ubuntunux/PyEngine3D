@@ -398,7 +398,7 @@ class CoreManager(Singleton):
             self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
             # update actors
-            self.sceneManager.update()
+            self.sceneManager.update_scene(delta)
 
             # render scene
             startTime = time.perf_counter()

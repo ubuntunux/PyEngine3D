@@ -1,4 +1,5 @@
-import time, math
+import time
+import math
 
 import numpy as np
 
@@ -13,10 +14,18 @@ class StaticMeshActor:
         self.name = name
         self.selected = False
         self.attributes = Attributes()
+
+        # components
         self.model = None
+        self.mesh = None
         self.geometries = []
         self.set_model(object_data.get('model'))
 
+        # animation
+        self.frame = 0.0
+        self.animation_buffer = []
+
+        # transform
         self.transform = TransformObject()
         self.transform.setPos(object_data.get('pos', [0, 0, 0]))
         self.transform.setRot(object_data.get('rot', [0, 0, 0]))
@@ -24,19 +33,21 @@ class StaticMeshActor:
 
         material_instances = object_data.get('material_instances', [])
         for i, material_instance in enumerate(material_instances):
-            self.set_material_instance(i, material_instance)
+            self.set_material_instance(material_instance, i)
 
     def set_model(self, model):
         if model and model.mesh:
             self.model = model
+            self.mesh = model.mesh
             self.geometries = []
             default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
             for i, geometry in enumerate(model.mesh.geometries):
                 material_instance = model.get_material_instance(i) or default_material_instance
-                geometry = Geometry(parent=self,
-                                    vertex_buffer=geometry.vertex_buffer,
-                                    material_instance=material_instance,
-                                    skeleton=geometry.skeleton)
+                geometry = Geometry(
+                    parent_actor=self,
+                    parent_geometry=geometry,
+                    material_instance=material_instance
+                )
                 self.geometries.append(geometry)
 
     def get_save_data(self):
@@ -65,6 +76,9 @@ class StaticMeshActor:
         if index < len(self.geometries):
             self.geometries[index].set_material_instance(material_instance)
 
+    def get_animation_buffer(self):
+        return self.animation_buffer
+
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
         self.attributes.setAttribute('pos', self.transform.pos)
@@ -89,11 +103,20 @@ class StaticMeshActor:
     def setSelected(self, selected):
         self.selected = selected
 
-    def update(self):
+    def update(self, dt):
         # TEST_CODE
-        # self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
-        # self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
-        # self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
+        self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
+        self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
+        self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update transform
         self.transform.updateTransform()
+
+        # update animation
+        if self.mesh:
+            count = self.mesh.get_animation_frame_count()
+            if count > 0:
+                self.frame = math.fmod(self.frame + dt * 30.0, self.mesh.get_animation_frame_count())
+            else:
+                self.frame = 0.0
+            self.animation_buffer = self.mesh.get_animation_buffer(0, self.frame)

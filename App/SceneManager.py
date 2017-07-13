@@ -254,12 +254,12 @@ class SceneManager(Singleton):
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
-    def update(self):
+    def update_scene(self, dt):
         for camera in self.cameras:
             camera.update()
 
         for light in self.lights:
-            light.update()
+            light.update(dt)
 
         for obj in self.staticmeshes:
-            obj.update()
+            obj.update(dt)
