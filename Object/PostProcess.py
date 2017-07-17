@@ -23,13 +23,12 @@ class CopyRenderTarget(PostProcess):
         PostProcess.__init__(self, name, material_instance)
 
     def bind(self, src_texture, dst_texture):
-        '''
+        """
         :param src_texture: enum RenderTargets
         :param dst_texture: Texture2D
         :return:
-        '''
-        CoreManager.instance().renderer.framebuffer.bind_rendertarget(dst_texture, clear_color=False, depthtexture=None,
-                                                                      clear_depth=False)
+        """
+        CoreManager.instance().renderer.framebuffer.bind_color_texture(dst_texture)
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(src_texture)
         self.material_instance.set_uniform_data("texture_diffuse", texture_diffuse)
         PostProcess.bind(self)
@@ -46,8 +45,5 @@ class Tonemapping(PostProcess):
         self.material_instance.bind_uniform_data("texture_diffuse", backbuffer)
 
         texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        CoreManager.instance().renderer.framebuffer.bind_rendertarget(texture_diffuse,
-                                                                      clear_color=True,
-                                                                      depthtexture=None,
-                                                                      clear_depth=False)
+        CoreManager.instance().renderer.framebuffer.bind_color_texture(texture_diffuse, (0.0, 0.0, 0.0, 1.0))
 

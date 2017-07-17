@@ -5,11 +5,12 @@ import numpy as np
 
 from Common import logger
 from Object import TransformObject, Geometry, Model
-from Utilities import GetClassName, Attributes, Matrix4
+from OpenGLContext import UniformBlock
+from Utilities import *
 from App import CoreManager
 
 
-class StaticMeshActor:
+class StaticActor:
     def __init__(self, name, **object_data):
         self.name = name
         self.selected = False

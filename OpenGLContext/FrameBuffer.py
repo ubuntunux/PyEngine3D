@@ -32,35 +32,33 @@ class FrameBuffer:
         """
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderBuffer.buffer)
 
-    def bind_rendertarget(self, colortexture, clear_color, depthtexture, clear_depth):
+    def bind_color_texture(self, texture, clear_color=None):
+        self.bind_render_target(GL_COLOR_BUFFER_BIT, texture, clear_color)
+
+    def bind_depth_texture(self, texture, clear_color=None):
+        self.bind_render_target(GL_DEPTH_BUFFER_BIT, texture, clear_color)
+
+    def bind_render_target(self, target, texture, clear_color=None):
         """
+        :param target: GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
         :param colortexture: Texture2D
-        :param clear_color: Bool
-        :param depthtexture: Texture2D
-        :param clear_depth: Bool
-        :return: None
+        :param clear_color: None or 4 Color Tuple
         """
-        clear_flag = 0
-        if colortexture:
-            if clear_color:
-                clear_flag |= GL_COLOR_BUFFER_BIT
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colortexture.buffer, 0)
-            self.rendertarget_width = colortexture.width
-            self.rendertarget_height = colortexture.height
+        if target == GL_COLOR_BUFFER_BIT:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.buffer, 0)
+            self.rendertarget_width = texture.width
+            self.rendertarget_height = texture.height
             glViewport(0, 0, self.rendertarget_width, self.rendertarget_height)
 
             # gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
             # if gl_error != GL_FRAMEBUFFER_COMPLETE:
             #     logger.error("glCheckFramebufferStatus error %d." % gl_error)
+        elif target == GL_DEPTH_BUFFER_BIT:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, texture.buffer, 0)
 
-        if depthtexture:
-            if clear_depth:
-                clear_flag |= GL_DEPTH_BUFFER_BIT
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthtexture.buffer, 0)
-
-        if clear_flag:
-            glClearColor(0.0, 0.0, 0.0, 1.0)
-            glClear(clear_flag)
+        if clear_color:
+            glClearColor(*clear_color)
+            glClear(target)
 
     def blitFramebuffer(self, framebuffer_width, framebuffer_height):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active

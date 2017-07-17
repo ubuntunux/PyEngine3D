@@ -1,18 +1,24 @@
+import numpy as np
+
 from Common import logger
 from App.CoreManager import CoreManager
-from Object import StaticMeshActor
+from Object import StaticActor
+from Utilities import perspective, ortho
 
 
 # ------------------------------ #
 # CLASS : Camera
 # ------------------------------ #
-class Camera(StaticMeshActor):
+class Camera(StaticActor):
     def __init__(self, name, **object_data):
-        StaticMeshActor.__init__(self, name, **object_data)
+        StaticActor.__init__(self, name, **object_data)
 
         self.fov = None
         self.near = None
         self.far = None
+        self.perspective = np.eye(4, dtype=np.float32)
+        self.ortho = np.eye(4, dtype=np.float32)
+        self.vp_matrix = np.eye(4, dtype=np.float32)
         self.move_speed = None
         self.pan_speed = None
         self.rotation_speed = None
@@ -36,7 +42,7 @@ class Camera(StaticMeshActor):
         config.setValue("Camera", "rotation_speed", self.rotation_speed)
 
     def getAttribute(self):
-        StaticMeshActor.getAttribute(self)
+        StaticActor.getAttribute(self)
         self.attributes.setAttribute('fov', self.fov)
         self.attributes.setAttribute('near', self.near)
         self.attributes.setAttribute('far', self.far)
@@ -46,13 +52,21 @@ class Camera(StaticMeshActor):
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        StaticMeshActor.setAttribute(self, attributeName, attributeValue, attribute_index)
+        StaticActor.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
     def get_view_dir(self):
         return -self.transform.front
 
+    def get_view_matrix(self):
+        return self.transform.inverse_matrix
+
+    def update_viewport(self, width, height, viewportRatio):
+        self.perspective = perspective(self.fov, viewportRatio, self.near, self.far)
+        self.ortho = ortho(0, width, 0, height, self.near, self.far)
+
     def update(self):
         self.transform.updateTransform()
         self.transform.updateInverseTransform()  # update view matrix
+        self.vp_matrix[...] = np.dot(self.transform.inverse_matrix, self.perspective)[...]

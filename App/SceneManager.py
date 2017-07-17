@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import StaticMeshActor, Camera, Light, Tonemapping
+from Object import StaticActor, Camera, Light, Tonemapping
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4
 
@@ -27,7 +27,7 @@ class SceneManager(Singleton):
 
         self.cameras = []
         self.lights = []
-        self.staticmeshes = []
+        self.static_actors = []
         self.objectMap = {}  # All of objects
 
         # postprocess
@@ -45,7 +45,7 @@ class SceneManager(Singleton):
         self.renderer = core_manager.renderer
 
         # Test Code : scene constants uniform buffer
-        material_instance = self.resource_manager.getDefaultMaterialInstance()
+        material_instance = self.resource_manager.getMaterialInstance('scene_constants')
         program = material_instance.get_program()
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   [MATRIX4_IDENTITY, MATRIX4_IDENTITY, FLOAT4_ZERO])
@@ -53,6 +53,18 @@ class SceneManager(Singleton):
 
         # new scene
         self.new_scene()
+
+    def bind_scene_constants(self):
+        camera = self.getMainCamera()
+        if camera:
+            self.uniformSceneConstants.bindData(camera.get_view_matrix(),
+                                                camera.perspective,
+                                                camera.transform.getPos(),
+                                                FLOAT_ZERO)
+        if len(self.lights) > 0:
+            light = self.lights[0]
+            light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
+            self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO, light.lightColor)
 
     def get_current_scene_name(self):
         return self.__current_scene_name
@@ -67,7 +79,7 @@ class SceneManager(Singleton):
         self.mainCamera = None
         self.cameras = []
         self.lights = []
-        self.staticmeshes = []
+        self.static_actors = []
         self.objectMap = {}
         resource = self.resource_manager.sceneLoader.getResource(self.__current_scene_name)
         if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
@@ -102,11 +114,11 @@ class SceneManager(Singleton):
         self.resource_manager.sceneLoader.save_resource(self.__current_scene_name)
 
     def get_save_data(self):
-        staticmeshes = [static_mesh.get_save_data() for static_mesh in self.staticmeshes]
+        static_actors = [static_actor.get_save_data() for static_actor in self.static_actors]
         scene_data = dict(
             camera=self.mainCamera.name,
             light=self.lights[0].name,
-            staticmeshes=staticmeshes
+            static_actors=static_actors
         )
         return scene_data
 
@@ -125,8 +137,8 @@ class SceneManager(Singleton):
             return self.cameras
         elif Light == object_type:
             return self.lights
-        elif StaticMeshActor == object_type:
-            return self.staticmeshes
+        elif StaticActor == object_type:
+            return self.static_actors
         return None
 
     def regist_object(self, object):
@@ -176,7 +188,7 @@ class SceneManager(Singleton):
             logger.info("add %s : %s" % (objType, objName))
 
             if 'Model' == objType:
-                obj_instance = StaticMeshActor(objName, **object_data)
+                obj_instance = StaticActor(objName, **object_data)
             else:
                 obj_instance = None
             # regist
@@ -192,14 +204,14 @@ class SceneManager(Singleton):
     def clearObjects(self):
         self.cameras = []
         self.lights = []
-        self.staticmeshes = []
+        self.static_actors = []
         self.objectMap = {}
 
-    def clearStaticMeshes(self):
-        for staticmesh in self.staticmeshes:
-            if staticmesh.name in self.objectMap:
-                self.objectMap.pop(staticmesh.name)
-        self.staticmeshes = []
+    def clear_static_actors(self):
+        for static_actor in self.static_actors:
+            if static_actor.name in self.objectMap:
+                self.objectMap.pop(static_actor.name)
+        self.static_actors = []
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
@@ -209,8 +221,8 @@ class SceneManager(Singleton):
                 self.cameras.remove(obj)
             if obj in self.lights:
                 self.lights.remove(obj)
-            if obj in self.staticmeshes:
-                self.staticmeshes.remove(obj)
+            if obj in self.static_actors:
+                self.static_actors.remove(obj)
             self.coreManager.notifyDeleteObject(objName)
 
     def getObject(self, objName):
@@ -226,8 +238,8 @@ class SceneManager(Singleton):
     def getObjects(self):
         return self.objectMap.values()
 
-    def getStaticMeshes(self):
-        return self.staticmeshes
+    def get_static_actors(self):
+        return self.static_actors
 
     def getObjectAttribute(self, objName):
         obj = self.getObject(objName)
@@ -261,5 +273,5 @@ class SceneManager(Singleton):
         for light in self.lights:
             light.update(dt)
 
-        for obj in self.staticmeshes:
+        for obj in self.static_actors:
             obj.update(dt)

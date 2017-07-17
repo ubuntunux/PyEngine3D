@@ -69,9 +69,7 @@ class Renderer(Singleton):
     def __init__(self):
         self.width = 1024
         self.height = 768
-        self.viewportRatio = 1.0
-        self.perspective = np.eye(4, dtype=np.float32)
-        self.ortho = np.eye(4, dtype=np.float32)
+        self.viewportRatio = float(self.width) / float(self.height)
         self.viewMode = GL_FILL
         # managers
         self.coreManager = None
@@ -133,11 +131,11 @@ class Renderer(Singleton):
         self.width = width
         self.height = height
         self.viewportRatio = float(width) / float(height)
+
         camera = self.sceneManager.getMainCamera()
 
-        # get viewport matrix matrix
-        self.perspective = perspective(camera.fov, self.viewportRatio, camera.near, camera.far)
-        self.ortho = ortho(0, self.width, 0, self.height, camera.near, camera.far)
+        # update perspective and ortho
+        camera.update_viewport(width, height, self.viewportRatio)
 
         # resize render targets
         self.rendertarget_manager.create_rendertargets(self.width, self.height)
@@ -167,16 +165,21 @@ class Renderer(Singleton):
     def renderScene(self):
         startTime = timeModule.perf_counter()
 
-        # Prepare to render into the renderbuffer and clear buffer
+        # bind back buffer and depth buffer, then clear
         self.framebuffer.bind_framebuffer()
 
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
-        self.framebuffer.bind_rendertarget(colortexture, True, depthtexture, True)
+        self.framebuffer.bind_color_texture(colortexture, (0.0, 0.0, 0.0, 1.0))
+        self.framebuffer.bind_depth_texture(depthtexture, (0.0, 0.0, 0.0, 1.0))
+
+        # bind scene constants
+        self.sceneManager.bind_scene_constants()
 
         # render
         self.render_objects()
+        # self.render_bones()
         self.render_postprocess()
 
         # reset shader program
@@ -198,7 +201,6 @@ class Renderer(Singleton):
         return renderTime, presentTime
 
     def render_objects(self):
-        # set render state
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
@@ -208,24 +210,13 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        camera = self.sceneManager.getMainCamera()
-        viewTransform = camera.transform
-        vpMatrix = np.dot(viewTransform.inverse_matrix, self.perspective)
+        vpMatrix = self.sceneManager.getMainCamera().vp_matrix
 
-        # Test Code : bind scene shader constants
-        self.sceneManager.uniformSceneConstants.bindData(viewTransform.inverse_matrix, self.perspective,
-                                                         viewTransform.pos, FLOAT_ZERO)
-
-        if len(self.sceneManager.lights) > 0:
-            light = self.sceneManager.lights[0]
-            light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-            self.sceneManager.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO, light.lightColor)
-
-        # Test Code : sort tge list by mesh, material
-        static_meshes = self.sceneManager.getStaticMeshes()[:]
+        # Test Code : sort list by mesh, material
+        static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
-        for static_mesh in static_meshes:
-            geometries += static_mesh.geometries
+        for static_actor in static_actors:
+            geometries += static_actor.geometries
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         # draw static meshes
@@ -249,13 +240,12 @@ class Renderer(Singleton):
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
                 geometry.bindBuffer()
 
-                if 0 < actor.mesh.get_animation_frame_count():
-                    animation_buffer = geometry.parent_actor.get_animation_buffer()
-                    material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
-
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, vpMatrix))
+                if 0 < actor.mesh.get_animation_frame_count():
+                    animation_buffer = actor.get_animation_buffer()
+                    material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
             # draw
             if geometry and material_instance:
@@ -266,13 +256,14 @@ class Renderer(Singleton):
             last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance
 
-        # draw bones
+    def render_bones(self):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         mesh = self.resource_manager.getMesh("Cube")
         material_instance = self.resource_manager.getMaterialInstance("debug_bone")
+        static_actors = self.sceneManager.get_static_actors()[:]
 
-        if False and mesh and material_instance:
+        if mesh and material_instance:
             material_instance.useProgram()
             material_instance.bind()
             mesh.bindBuffer()
@@ -302,15 +293,15 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data("mat2", child_transform)
                     mesh.draw()
 
-            for static_mesh in static_meshes:
-                if static_mesh.model and static_mesh.model.mesh and static_mesh.model.mesh.skeletons:
-                    skeletons = static_mesh.model.mesh.skeletons
-                    skeleton_mesh = static_mesh.model.mesh
+            for static_actor in static_actors:
+                if static_actor.model and static_actor.model.mesh and static_actor.model.mesh.skeletons:
+                    skeletons = static_actor.model.mesh.skeletons
+                    skeleton_mesh = static_actor.model.mesh
                     frame_count = skeleton_mesh.get_animation_frame_count()
                     frame = math.fmod(self.coreManager.currentTime * 30.0, frame_count) if frame_count > 0.0 else 0.0
                     isAnimation = frame_count > 0.0
                     for skeleton in skeletons:
-                        matrix = static_mesh.transform.matrix
+                        matrix = static_actor.transform.matrix
                         for bone in skeleton.hierachy:
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
