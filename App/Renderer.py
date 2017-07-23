@@ -212,7 +212,8 @@ class Renderer(Singleton):
 
         # render shadow
         vp_matrix = np.dot(light.transform.inverse_matrix, camera.perspective)
-        self.render_objects(vp_matrix)
+        lvp_matrix = np.dot(light.transform.inverse_matrix, camera.perspective)
+        self.render_objects(vp_matrix, lvp_matrix)
         self.framebuffer_shadowmap.unbind_framebuffer()
 
         # render object
@@ -231,7 +232,7 @@ class Renderer(Singleton):
         default_material_instance.bind_uniform_data("texture_shadow", shadowmap)
         default_material_instance.bind()
         vp_matrix = camera.vp_matrix
-        self.render_objects(vp_matrix)
+        self.render_objects(vp_matrix, lvp_matrix)
 
         # self.render_bones()
         # self.render_postprocess()
@@ -254,7 +255,7 @@ class Renderer(Singleton):
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
-    def render_objects(self, vpMatrix, specify_material_instance=None):
+    def render_objects(self, vpMatrix, lvp_matrix, specify_material_instance=None):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
@@ -298,6 +299,7 @@ class Renderer(Singleton):
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, vpMatrix))
+                material_instance.bind_uniform_data('lmvp', np.dot(actor.transform.matrix, lvp_matrix))
                 if 0 < actor.mesh.get_animation_frame_count():
                     animation_buffer = actor.get_animation_buffer()
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))

@@ -12,6 +12,7 @@ uniform mat4 bone_matrices[MAX_BONES];
 
 uniform mat4 model;
 uniform mat4 mvp;
+uniform mat4 lmvp;
 uniform sampler2D texture_shadow;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
@@ -42,6 +43,8 @@ struct VERTEX_OUTPUT
     vec2 texCoord;
     vec3 cameraVector;
     vec3 lightVector;
+    vec2 shadowUV;
+    vec4 screenPos;
 };
 
 //----------- VERTEX_SHADER ---------------//
@@ -83,7 +86,11 @@ void main() {
     // point light dir
     // vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
     vs_output.lightVector = lightDir.xyz;
+    vs_output.shadowUV = (lmvp * localPosition).xy;
+    vs_output.shadowUV /= vs_output.screenPos.w;
+    vs_output.shadowUV = vs_output.shadowUV * vec2(0.5, -0.5) + 0.5;
     gl_Position = mvp * localPosition;
+    vs_output.screenPos = gl_Position;
 }
 #endif
 
@@ -98,7 +105,7 @@ void main() {
 
     if(baseColor.a >= 0.0)
     {
-        fs_output.xyz = abs(texture(texture_shadow, vs_output.texCoord.xy).xxx);
+        fs_output.xyz = vec3(vs_output.screenPos.z > texture(texture_shadow, vs_output.shadowUV).x ? 1.0 : 0.0);
         fs_output.a = 1.0;
         return;
     }
