@@ -10,7 +10,8 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont, UniformMatrix4
+from Object import Camera, Light
+from OpenGLContext import RenderTargets, RenderTargetManager, FrameBuffer, GLFont, UniformMatrix4, UniformBlock
 
 
 class Console:
@@ -82,6 +83,11 @@ class Renderer(Singleton):
         self.lastShader = None
         self.screen = None
         self.framebuffer = None
+        self.framebuffer_shadowmap = None
+
+        # Test Code : scene constants uniform buffer
+        self.uniformSceneConstants = None
+        self.uniformLightConstants = None
 
     @staticmethod
     def destroyScreen():
@@ -98,11 +104,24 @@ class Renderer(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = RenderTargetManager.instance()
-        self.framebuffer = FrameBuffer(self.width, self.height)
+        self.framebuffer = FrameBuffer()
+        self.framebuffer_shadowmap = FrameBuffer()
 
         # console font
         self.console = Console()
         self.console.initialize(self)
+
+        # Test Code : scene constants uniform buffer
+        material_instance = self.resource_manager.getMaterialInstance('scene_constants')
+        program = material_instance.get_program()
+        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
+                                                  [MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY,
+                                                   FLOAT4_ZERO])
+        self.uniformLightConstants = UniformBlock("lightConstants", program, 1,
+                                                  [FLOAT4_ZERO,
+                                                   FLOAT4_ZERO,
+                                                   FLOAT4_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -165,22 +184,57 @@ class Renderer(Singleton):
     def renderScene(self):
         startTime = timeModule.perf_counter()
 
-        # bind back buffer and depth buffer, then clear
-        self.framebuffer.bind_framebuffer()
+        # bind scene constants
+        camera = self.sceneManager.getMainCamera()
+        lights = self.sceneManager.get_object_list(Light)
+        vp_matrix = None
 
+        if not camera or len(lights) < 1:
+            return
+
+        colortexture_copy = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER_COPY)
+        shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        self.framebuffer_shadowmap.set_color_texture(colortexture_copy, (0.0, 0.0, 0.0, 1.0))
+        self.framebuffer_shadowmap.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
+        self.framebuffer_shadowmap.bind_framebuffer()
+
+        self.uniformSceneConstants.bindData(camera.get_view_matrix(),
+                                            camera.perspective,
+                                            camera.transform.getPos(),
+                                            FLOAT_ZERO)
+
+        light = lights[0]
+        light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
+        light.transform.updateInverseTransform()  # update view matrix
+        self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
+                                            light.transform.front, FLOAT_ZERO,
+                                            light.lightColor)
+
+        # render shadow
+        vp_matrix = np.dot(light.transform.inverse_matrix, camera.perspective)
+        self.render_objects(vp_matrix)
+        self.framebuffer_shadowmap.unbind_framebuffer()
+
+        # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
-        self.framebuffer.bind_color_texture(colortexture, (0.0, 0.0, 0.0, 1.0))
-        self.framebuffer.bind_depth_texture(depthtexture, (0.0, 0.0, 0.0, 1.0))
+        self.framebuffer.set_color_texture(colortexture, (0.0, 0.0, 0.0, 1.0))
+        self.framebuffer.set_depth_texture(depthtexture, (1.0, 1.0, 1.0, 0.0))
 
-        # bind scene constants
-        self.sceneManager.bind_scene_constants()
+        # bind back buffer and depth buffer, then clear
+        self.framebuffer.bind_framebuffer()
 
-        # render
-        self.render_objects()
+        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
+        default_material_instance.useProgram()
+        shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER_COPY)
+        default_material_instance.bind_uniform_data("texture_shadow", shadowmap)
+        default_material_instance.bind()
+        vp_matrix = camera.vp_matrix
+        self.render_objects(vp_matrix)
+
         # self.render_bones()
-        self.render_postprocess()
+        # self.render_postprocess()
 
         # reset shader program
         glUseProgram(0)
@@ -200,7 +254,7 @@ class Renderer(Singleton):
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
-    def render_objects(self):
+    def render_objects(self, vpMatrix, specify_material_instance=None):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
@@ -209,8 +263,6 @@ class Renderer(Singleton):
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
-
-        vpMatrix = self.sceneManager.getMainCamera().vp_matrix
 
         # Test Code : sort list by mesh, material
         static_actors = self.sceneManager.get_static_actors()[:]
@@ -227,7 +279,10 @@ class Renderer(Singleton):
         last_actor = None
         for geometry in geometries:
             actor = geometry.parent_actor
-            material_instance = geometry.material_instance or default_material_instance
+            if specify_material_instance:
+                material_instance = specify_material_instance
+            else:
+                material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:

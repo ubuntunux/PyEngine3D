@@ -9,8 +9,10 @@ from .Texture import Texture2D
 
 class RenderTargets(AutoEnum):
     BACKBUFFER = ()
+    BACKBUFFER_COPY = ()
     DEPTHSTENCIL = ()
     DIFFUSE = ()
+    SHADOWMAP = ()
     COUNT = ()
 
 
@@ -35,10 +37,14 @@ class RenderTargetManager(Singleton):
 
         self.__create_rendertarget(RenderTargets.BACKBUFFER, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
                                    GL_UNSIGNED_BYTE, no_data)
+        self.__create_rendertarget(RenderTargets.BACKBUFFER_COPY, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
+                                   GL_UNSIGNED_BYTE, no_data)
         self.__create_rendertarget(RenderTargets.DEPTHSTENCIL, GL_DEPTH24_STENCIL8, fullsize_x, fullsize_y,
                                    GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, no_data)
         self.__create_rendertarget(RenderTargets.DIFFUSE, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
                                    GL_UNSIGNED_BYTE, no_data)
+        self.__create_rendertarget(RenderTargets.SHADOWMAP, GL_DEPTH_COMPONENT32, fullsize_x, fullsize_y,
+                                   GL_DEPTH_COMPONENT, GL_FLOAT, no_data)
 
     def clear(self):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value

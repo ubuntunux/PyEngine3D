@@ -10,6 +10,7 @@ layout(std140, binding=0) uniform sceneConstants
 layout(std140, binding=1) uniform lightConstants
 {
     vec4 lightPosition;
+    vec4 lightDir;
     vec4 lightColor;
 };
 

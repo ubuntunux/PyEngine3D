@@ -298,7 +298,7 @@ class CoreManager(Singleton):
                     object_name_list = self.resource_manager.getModelNameList()
                     if object_name_list:
                         for i in range(100):
-                            pos = [np.random.uniform(-10, 10) for x in range(3)]
+                            pos = [np.random.uniform(-100, 100) for x in range(3)]
                             objName = np.random.choice(object_name_list)
                             model = self.resource_manager.getModel(objName)
                             obj_instance = self.sceneManager.addObject(model=model, pos=pos)

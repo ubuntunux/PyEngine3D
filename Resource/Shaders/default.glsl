@@ -12,6 +12,7 @@ uniform mat4 bone_matrices[MAX_BONES];
 
 uniform mat4 model;
 uniform mat4 mvp;
+uniform sampler2D texture_shadow;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
 
@@ -79,7 +80,9 @@ void main() {
     vs_output.texCoord = vs_input.texcoord;
 
     vs_output.cameraVector = cameraPosition.xyz - vs_output.worldPosition;
-    vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
+    // point light dir
+    // vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
+    vs_output.lightVector = lightDir.xyz;
     gl_Position = mvp * localPosition;
 }
 #endif
@@ -102,10 +105,11 @@ void main() {
     vec3 lightVector = normalize(vs_output.lightVector);
     vec4 emissiveColor = get_emissive_color();
     vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
-    normal = normalize(normal);
-    vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normal), 0.0, 1.0);
-    float specularLighting = clamp(dot(reflect(-lightVector, normal), cameraVector), 0.0, 1.0);
+    normalVector = normalize(normal);
+    vec3 diffuseLighting = baseColor.xyz * clamp(dot(lightVector, normalVector), 0.0, 1.0);
+    float specularLighting = clamp(dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
     fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
+    fs_output.xyz = mix(texture(texture_shadow, vs_output.texCoord.xy).xxx, fs_output.xyz, 0.001);
 }
 #endif

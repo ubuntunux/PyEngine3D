@@ -38,9 +38,9 @@ class ProjectManager(Singleton):
 
             # set default config
             self.config.setDefaultValue("Screen", "size", [1024, 768])
-            self.config.setDefaultValue("Camera", "fov", 45)
+            self.config.setDefaultValue("Camera", "fov", 60)
             self.config.setDefaultValue("Camera", "near", 0.1)
-            self.config.setDefaultValue("Camera", "far", 1000)
+            self.config.setDefaultValue("Camera", "far", 2000.0)  # 2 km
             self.config.setDefaultValue("Camera", "move_speed", 50.0)
             self.config.setDefaultValue("Camera", "pan_speed", 5.0)
             self.config.setDefaultValue("Camera", "rotation_speed", 0.3)

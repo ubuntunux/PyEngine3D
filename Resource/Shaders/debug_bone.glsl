@@ -4,18 +4,7 @@
 
 //----------- UNIFORM_BLOCK ---------------//
 
-layout(std140, binding=0) uniform sceneConstants
-{
-    mat4 view;
-    mat4 perspective;
-    vec4 cameraPosition;
-};
-
-layout(std140, binding=1) uniform lightConstants
-{
-    vec4 lightPosition;
-    vec4 lightColor;
-};
+#include "scene_constants.glsl"
 
 uniform mat4 mat1;
 uniform mat4 mat2;

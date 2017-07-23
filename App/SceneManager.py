@@ -33,10 +33,6 @@ class SceneManager(Singleton):
         # postprocess
         self.tonemapping = None
 
-        # Test Code : scene constants uniform buffer
-        self.uniformSceneConstants = None
-        self.uniformLightConstants = None
-
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
         self.coreManager = core_manager
@@ -44,27 +40,8 @@ class SceneManager(Singleton):
         self.sceneLoader = self.resource_manager.sceneLoader
         self.renderer = core_manager.renderer
 
-        # Test Code : scene constants uniform buffer
-        material_instance = self.resource_manager.getMaterialInstance('scene_constants')
-        program = material_instance.get_program()
-        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
-                                                  [MATRIX4_IDENTITY, MATRIX4_IDENTITY, FLOAT4_ZERO])
-        self.uniformLightConstants = UniformBlock("lightConstants", program, 1, [FLOAT4_ZERO, FLOAT4_ZERO])
-
         # new scene
         self.new_scene()
-
-    def bind_scene_constants(self):
-        camera = self.getMainCamera()
-        if camera:
-            self.uniformSceneConstants.bindData(camera.get_view_matrix(),
-                                                camera.perspective,
-                                                camera.transform.getPos(),
-                                                FLOAT_ZERO)
-        if len(self.lights) > 0:
-            light = self.lights[0]
-            light.transform.setPos((math.sin(timeModule.time()) * 10.0, 0.0, math.cos(timeModule.time()) * 10.0))
-            self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO, light.lightColor)
 
     def get_current_scene_name(self):
         return self.__current_scene_name

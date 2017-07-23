@@ -105,7 +105,7 @@ class OBJ:
         indices = []
         indexMap = []
 
-        for face in self.faces:
+        for n, face in enumerate(self.faces):
             # exclude material
             postionIndicies, normalIndicies, texcoordIndicies, material = face
             for i in range(len(postionIndicies)):
