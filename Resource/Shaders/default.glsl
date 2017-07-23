@@ -95,6 +95,14 @@ out vec4 fs_output;
 
 void main() {
     vec4 baseColor = get_base_color(vs_output.texCoord.xy);
+
+    if(baseColor.a >= 0.0)
+    {
+        fs_output.xyz = abs(texture(texture_shadow, vs_output.texCoord.xy).xxx);
+        fs_output.a = 1.0;
+        return;
+    }
+
     if(baseColor.a < 0.333f && enable_blend != 1)
     {
         discard;
@@ -110,6 +118,5 @@ void main() {
     float specularLighting = clamp(dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
     fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
-    fs_output.xyz = mix(texture(texture_shadow, vs_output.texCoord.xy).xxx, fs_output.xyz, 0.001);
 }
 #endif
