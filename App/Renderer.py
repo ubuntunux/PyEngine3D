@@ -70,7 +70,7 @@ class Renderer(Singleton):
     def __init__(self):
         self.width = 1024
         self.height = 768
-        self.viewportRatio = float(self.width) / float(self.height)
+        self.aspect = float(self.width) / float(self.height)
         self.viewMode = GL_FILL
         # managers
         self.coreManager = None
@@ -149,12 +149,11 @@ class Renderer(Singleton):
 
         self.width = width
         self.height = height
-        self.viewportRatio = float(width) / float(height)
-
-        camera = self.sceneManager.getMainCamera()
+        self.aspect = float(width) / float(height)
 
         # update perspective and ortho
-        camera.update_viewport(width, height, self.viewportRatio)
+        camera = self.sceneManager.getMainCamera()
+        camera.update_projection(self.aspect)
 
         # resize render targets
         self.rendertarget_manager.create_rendertargets(self.width, self.height)
@@ -177,7 +176,7 @@ class Renderer(Singleton):
         camera = self.sceneManager.getMainCamera()
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(camera.fov, self.viewportRatio, camera.near, camera.far)
+        gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -187,7 +186,6 @@ class Renderer(Singleton):
         # bind scene constants
         camera = self.sceneManager.getMainCamera()
         lights = self.sceneManager.get_object_list(Light)
-        vp_matrix = None
 
         if not camera or len(lights) < 1:
             return
@@ -199,21 +197,24 @@ class Renderer(Singleton):
         self.framebuffer_shadowmap.bind_framebuffer()
 
         self.uniformSceneConstants.bindData(camera.get_view_matrix(),
-                                            camera.perspective,
+                                            camera.projection,
                                             camera.transform.getPos(),
                                             FLOAT_ZERO)
 
         light = lights[0]
-        light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
+        # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         light.transform.updateInverseTransform()  # update view matrix
         self.uniformLightConstants.bindData(light.transform.getPos(), FLOAT_ZERO,
                                             light.transform.front, FLOAT_ZERO,
                                             light.lightColor)
 
         # render shadow
-        vp_matrix = np.dot(light.transform.inverse_matrix, camera.perspective)
-        lvp_matrix = np.dot(light.transform.inverse_matrix, camera.perspective)
-        self.render_objects(vp_matrix, lvp_matrix)
+        width, height, depth = 500, 500, 500
+        projection = ortho(-width, width, -height, height, -depth, depth)
+        view_projection = Matrix4()
+        view_projection[...] = camera.transform.inverse_matrix[...]
+        view_projection = np.dot(view_projection, projection)
+        self.render_objects(view_projection)
         self.framebuffer_shadowmap.unbind_framebuffer()
 
         # render object
@@ -222,17 +223,10 @@ class Renderer(Singleton):
 
         self.framebuffer.set_color_texture(colortexture, (0.0, 0.0, 0.0, 1.0))
         self.framebuffer.set_depth_texture(depthtexture, (1.0, 1.0, 1.0, 0.0))
-
-        # bind back buffer and depth buffer, then clear
         self.framebuffer.bind_framebuffer()
 
-        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
-        default_material_instance.useProgram()
-        shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER_COPY)
-        default_material_instance.bind_uniform_data("texture_shadow", shadowmap)
-        default_material_instance.bind()
-        vp_matrix = camera.vp_matrix
-        self.render_objects(vp_matrix, lvp_matrix)
+        view_projection = camera.view_projection
+        self.render_objects(view_projection)
 
         # self.render_bones()
         # self.render_postprocess()
@@ -255,7 +249,7 @@ class Renderer(Singleton):
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
-    def render_objects(self, vpMatrix, lvp_matrix, specify_material_instance=None):
+    def render_objects(self, view_projection, specify_material_instance=None):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
@@ -298,8 +292,7 @@ class Renderer(Singleton):
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
-                material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, vpMatrix))
-                material_instance.bind_uniform_data('lmvp', np.dot(actor.transform.matrix, lvp_matrix))
+                material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
                 if 0 < actor.mesh.get_animation_frame_count():
                     animation_buffer = actor.get_animation_buffer()
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))

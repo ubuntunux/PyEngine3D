@@ -58,8 +58,9 @@ def createLogger(name, directory, level):
                 return
 
     # set file handler
-    szTime = "%04d%02d%02d%02d%02d%02d" % (time.localtime()[:6])
-    logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
+    # szTime = "%04d%02d%02d%02d%02d%02d" % (time.localtime()[:6])
+    # logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
+    logFilename = os.path.join(directory, name + '.log')
     fileHandler = logging.FileHandler(logFilename)
     fileHandler.setFormatter(formatter)
     newLogger.addHandler(fileHandler)

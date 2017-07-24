@@ -3,7 +3,7 @@ import numpy as np
 from Common import logger
 from App.CoreManager import CoreManager
 from Object import StaticActor
-from Utilities import perspective, ortho
+from Utilities import *
 
 
 # ------------------------------ #
@@ -13,15 +13,15 @@ class Camera(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
-        self.fov = None
-        self.near = None
-        self.far = None
-        self.perspective = np.eye(4, dtype=np.float32)
-        self.ortho = np.eye(4, dtype=np.float32)
-        self.vp_matrix = np.eye(4, dtype=np.float32)
-        self.move_speed = None
-        self.pan_speed = None
-        self.rotation_speed = None
+        self.aspect = 0.0
+        self.fov = 0.0
+        self.near = 0.0
+        self.far = 0.0
+        self.projection = Matrix4()
+        self.view_projection = Matrix4()
+        self.move_speed = 0.0
+        self.pan_speed = 0.0
+        self.rotation_speed = 0.0
 
     def initialize(self):
         config = CoreManager.instance().projectManager.config
@@ -62,11 +62,11 @@ class Camera(StaticActor):
     def get_view_matrix(self):
         return self.transform.inverse_matrix
 
-    def update_viewport(self, width, height, viewportRatio):
-        self.perspective = perspective(self.fov, viewportRatio, self.near, self.far)
-        self.ortho = ortho(0, width, 0, height, self.near, self.far)
+    def update_projection(self, aspect):
+        self.projection = perspective(self.fov, aspect, self.near, self.far)
+        # self.projection = ortho(width * -0.5, width * 0.5, height * -0.5, height * 0.5, self.near, self.far)
 
     def update(self):
         self.transform.updateTransform()
         self.transform.updateInverseTransform()  # update view matrix
-        self.vp_matrix[...] = np.dot(self.transform.inverse_matrix, self.perspective)[...]
+        self.view_projection[...] = np.dot(self.transform.inverse_matrix, self.projection)[...]

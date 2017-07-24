@@ -46,8 +46,8 @@ class Tonemapping(PostProcess):
         PostProcess.bind(self)
 
         framebuffer = CoreManager.instance().renderer.framebuffer
-        texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.DIFFUSE)
-        framebuffer.set_color_texture(texture_diffuse, (0.0, 0.0, 0.0, 1.0))
+        texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.BACKBUFFER)
+        framebuffer.set_color_texture(texture_diffuse)
         framebuffer.set_depth_texture(None)
         framebuffer.bind_framebuffer()
 
