@@ -24,27 +24,47 @@ def CreateTextureFromFile(texture_name, texture_datas: dict):
     internal_format = get_texture_format(image_mode)
     texture_format = internal_format
     if texture_type == 'Tex2D':
-        return Texture2D(texture_name, internal_format, width, height, texture_format, GL_UNSIGNED_BYTE, data)
+        return Texture2D(name=texture_name,
+                         internal_format=internal_format,
+                         texture_format=texture_format,
+                         width=width,
+                         height=height,
+                         data_type=GL_UNSIGNED_BYTE,
+                         data=data)
     return None
 
 
 class Texture2D:
-    def __init__(self, texture_name, internal_format=GL_RGBA, width=1024, height=1024, texture_format=GL_BGRA,
-                 data_type=GL_UNSIGNED_BYTE, data=c_void_p(0)):
-        logger.info("Load " + GetClassName(self) + " : " + texture_name)
+    def __init__(self, **texture_data):
+        self.name = texture_data.get('name')
+        logger.info("Load " + GetClassName(self) + " : " + self.name)
 
-        self.name = texture_name
-        self.width = width
-        self.height = height
-        self.attribute = Attributes()
-        self.internal_format = internal_format  # The number of channels and the data type
-        self.buffer_format = texture_format  # R,G,B,A order. GL_BGRA is faster than GL_RGBA
+        self.width = texture_data.get('width', 1024)
+        self.height = texture_data.get('height', 1024)
+        # The number of channels and the data type
+        self.internal_format = texture_data.get('internal_format', GL_RGBA)
+        # R,G,B,A order. GL_BGRA is faster than GL_RGBA
+        self.texture_format = texture_data.get('texture_format', GL_BGRA)
+        data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
+        data = texture_data.get('data', c_void_p(0))
+        enable_mipmap = texture_data.get('enable_mipmap', True)
+        min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
+        mag_filter = texture_data.get('mag_filter', GL_LINEAR)
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.buffer)
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     self.internal_format,
+                     self.width,
+                     self.height,
+                     0,
+                     self.texture_format,
+                     data_type,
+                     data)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, texture_format, data_type, data)
-        glGenerateMipmap(GL_TEXTURE_2D)
+        if enable_mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D)
 
         # create indivisual mipmapThis creates a texture with a single mipmap level.
         # You will also need separate glTexSubImage2D calls to upload each mipmap
@@ -53,9 +73,11 @@ class Texture2D:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
+
+        self.attribute = Attributes()
 
     def __del__(self):
         pass

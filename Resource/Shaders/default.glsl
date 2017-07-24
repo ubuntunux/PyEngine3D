@@ -106,6 +106,7 @@ void main() {
     if(baseColor.a >= 0.0)
     {
         fs_output.xyz = vec3(vs_output.screenPos.z > texture(texture_shadow, vs_output.shadowUV).x ? 1.0 : 0.0);
+        fs_output.xyz = fs_output.xyz * 0.001 + texture(texture_shadow, vs_output.texCoord.xy).xxx;
         fs_output.a = 1.0;
         return;
     }

@@ -33,27 +33,55 @@ class RenderTargetManager(Singleton):
         fullsize_y = height
         halfsize_x = int(width / 2)
         halfsize_y = int(height / 2)
-        no_data = None
 
-        self.__create_rendertarget(RenderTargets.BACKBUFFER, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
-                                   GL_UNSIGNED_BYTE, no_data)
-        self.__create_rendertarget(RenderTargets.BACKBUFFER_COPY, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
-                                   GL_UNSIGNED_BYTE, no_data)
-        self.__create_rendertarget(RenderTargets.DEPTHSTENCIL, GL_DEPTH24_STENCIL8, fullsize_x, fullsize_y,
-                                   GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, no_data)
-        self.__create_rendertarget(RenderTargets.DIFFUSE, GL_RGBA8, fullsize_x, fullsize_y, GL_BGRA,
-                                   GL_UNSIGNED_BYTE, no_data)
-        self.__create_rendertarget(RenderTargets.SHADOWMAP, GL_DEPTH_COMPONENT32, fullsize_x, fullsize_y,
-                                   GL_DEPTH_COMPONENT, GL_FLOAT, no_data)
+        render_target = RenderTargets.BACKBUFFER
+        self.rendertargets[render_target.value] = Texture2D(name=str(render_target),
+                                                            width=fullsize_x,
+                                                            height=fullsize_y,
+                                                            internal_format=GL_RGBA8,
+                                                            texture_format=GL_BGRA,
+                                                            data_type=GL_UNSIGNED_BYTE)
+
+        render_target = RenderTargets.BACKBUFFER_COPY
+        self.rendertargets[render_target.value] = Texture2D(name=str(render_target),
+                                                            width=fullsize_x,
+                                                            height=fullsize_y,
+                                                            internal_format=GL_RGBA8,
+                                                            texture_format=GL_BGRA,
+                                                            data_type=GL_UNSIGNED_BYTE)
+
+        render_target = RenderTargets.DEPTHSTENCIL
+        self.rendertargets[render_target.value] = Texture2D(name=str(render_target),
+                                                            width=fullsize_x,
+                                                            height=fullsize_y,
+                                                            internal_format=GL_DEPTH24_STENCIL8,
+                                                            texture_format=GL_DEPTH_STENCIL,
+                                                            data_type=GL_UNSIGNED_INT_24_8,
+                                                            min_filter=GL_NEAREST,
+                                                            mag_filter=GL_NEAREST,
+                                                            enable_mipmap = False)
+
+        render_target = RenderTargets.DIFFUSE
+        self.rendertargets[render_target.value] = Texture2D(name=str(render_target),
+                                                            width=fullsize_x,
+                                                            height=fullsize_y,
+                                                            internal_format=GL_RGBA8,
+                                                            texture_format=GL_BGRA,
+                                                            data_type=GL_UNSIGNED_BYTE)
+
+        render_target = RenderTargets.SHADOWMAP
+        self.rendertargets[render_target.value] = Texture2D(name=str(render_target),
+                                                            width=fullsize_x,
+                                                            height=fullsize_y,
+                                                            internal_format=GL_DEPTH_COMPONENT32,
+                                                            texture_format=GL_DEPTH_COMPONENT,
+                                                            data_type=GL_FLOAT,
+                                                            min_filter=GL_NEAREST,
+                                                            mag_filter=GL_NEAREST,
+                                                            enable_mipmap=False)
 
     def clear(self):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
-
-    def __create_rendertarget(self, texture_enum: RenderTargets, internal_format=GL_RGBA, width=1024, height=1024,
-                              texture_format=GL_BGRA, data_type=GL_UNSIGNED_BYTE, data=None) -> Texture2D:
-        texture = Texture2D(str(texture_enum), internal_format, width, height, texture_format, data_type, data)
-        self.rendertargets[texture_enum.value] = texture
-        return texture
 
     def get_rendertarget(self, texture_enum: RenderTargets) -> Texture2D:
         return self.rendertargets[texture_enum.value]

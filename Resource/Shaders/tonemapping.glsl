@@ -16,7 +16,7 @@ out vec4 fs_output;
 
 void main() {
     vec2 texcoord = vs_output.texcoord.xy;
-    vec4 color = texture(texture_diffuse, vs_output.texcoord.xy);
+    vec4 color = textureLod(texture_diffuse, vs_output.texcoord.xy, 0.0);
     // fs_output.xyz = color.xyz * color.xyz;
     // depth normalize
     fs_output.xyz = vec3(log(1.0 / (1.0 - color.x)) * 0.1);
