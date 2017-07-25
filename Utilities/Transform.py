@@ -448,7 +448,13 @@ def ortho(left, right, bottom, top, znear, zfar):
 
 
 def perspective(fovy, aspect, znear, zfar):
-    assert (znear != zfar)
+    if znear == zfar:
+        znear = 0.0
+        zfar = znear + 1000.0
+
+    if fovy <= 0.0:
+        fovy = 45.0
+
     # common equation
     h = np.tan(fovy / 360.0 * np.pi) * znear
     w = h * aspect

@@ -22,20 +22,25 @@ class FrameBuffer:
     def delete(self):
         glDeleteFramebuffers(self.buffer)
 
-    def attach_texture(self, texture, attachment=GL_COLOR_ATTACHMENT0):
-        """
-        :param colortexture: Texture2D
-        """
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.buffer, 0)
+    def clear(self):
+        self.set_color_texture(None)
+        self.set_depth_texture(None)
 
-    def attach_renderbuffer(self, renderBuffer, attachment=GL_COLOR_ATTACHMENT0):
-        """
-        :param colortexture: RenderBuffer
-        """
+    def set_viewport(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        glViewport(x, y, width, height)
 
     def set_color_texture(self, texture, clear_color=None):
         for i in range(len(self.color_textures)):
+            if self.color_textures[i]:
+                self.color_textures[i].set_attachment(False)
+
             if i == 0:
+                if texture:
+                    texture.set_attachment(True)
                 self.color_textures[i] = texture
             else:
                 self.color_textures[i] = None
@@ -48,7 +53,12 @@ class FrameBuffer:
         """
         texture_count = len(textures)
         for i in range(len(self.color_textures)):
+            if self.color_textures[i]:
+                self.color_textures[i].set_attachment(False)
+
             if i < texture_count:
+                if textures[i]:
+                    textures[i].set_attachment(True)
                 self.color_textures[i] = textures[i]
             else:
                 self.color_textures[i] = None
@@ -59,16 +69,23 @@ class FrameBuffer:
         :param texture: Texture2D
         :param clear_color: None or 4 Color Tuple
         """
+        if self.depth_texture:
+            self.depth_texture.set_attachment(False)
+
+        if texture:
+            texture.set_attachment(True)
         self.depth_texture = texture
         self.clear_depth = clear_color
 
     def bind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
-
         # bind color textures
         for i, color_texture in enumerate(self.color_textures):
             if color_texture:
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, color_texture.buffer, 0)
+                # important
+                glDrawBuffer(GL_COLOR_ATTACHMENT0 + i)
+                glReadBuffer(GL_COLOR_ATTACHMENT0 + i)
             else:
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0)
 
@@ -79,7 +96,7 @@ class FrameBuffer:
                 glClearColor(*self.clear_color)
                 glClear(GL_COLOR_BUFFER_BIT)
         else:
-            # We need to explicitly tell OpenGL we're not going to render any color data.
+            # Important - We need to explicitly tell OpenGL we're not going to render any color data.
             glDrawBuffer(GL_NONE)
             glReadBuffer(GL_NONE)
 
@@ -109,14 +126,7 @@ class FrameBuffer:
     def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def set_viewport(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        glViewport(x, y, width,height)
-
-    def blitFramebuffer(self, framebuffer_width, framebuffer_height):
+    def blit_framebuffer(self, framebuffer_width, framebuffer_height):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)

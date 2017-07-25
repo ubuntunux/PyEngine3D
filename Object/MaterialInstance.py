@@ -52,7 +52,7 @@ class MaterialInstance:
             # and set the loaded uniform data.
             uniform_datas = data.get('uniform_datas', {})
             for data_name, data_value in uniform_datas.items():
-                self.set_uniform_data(data_name, data_value)
+                self.set_uniform_data_from_string(data_name, data_value)
         else:
             logger.error("%s material instance has no material." % self.name)
             return
@@ -112,31 +112,38 @@ class MaterialInstance:
             for uniform_name in old_uniform_names:
                 self.linked_uniform_map.pop(uniform_name)
 
-    def bind(self):
+    def bind_material_instance(self):
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 
     def bind_uniform_data(self, uniform_name, uniform_data, num=1):
-        if uniform_name in self.linked_uniform_map:
-            self.linked_uniform_map[uniform_name][0].bind_uniform(uniform_data, num)
+        uniform = self.linked_uniform_map.get(uniform_name)
+        if uniform:
+            uniform[0].bind_uniform(uniform_data, num)
         else:
             logger.error('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 
     def set_uniform_data(self, uniform_name, uniform_data):
-        if uniform_name in self.linked_uniform_map:
-            uniform_buffer = self.linked_uniform_map[uniform_name][0]
+        uniform = self.linked_uniform_map.get(uniform_name)
+        if uniform:
+            uniform[1] = uniform_data
+
+    def set_uniform_data_from_string(self, uniform_name, str_uniform_data):
+        uniform = self.linked_uniform_map.get(uniform_name)
+        if uniform:
+            uniform_buffer = uniform[0]
             if uniform_buffer:
-                uniform_data = CreateUniformDataFromString(uniform_buffer.uniform_type, uniform_data)
+                uniform_data = CreateUniformDataFromString(uniform_buffer.uniform_type, str_uniform_data)
                 if uniform_data is not None:
-                    self.linked_uniform_map[uniform_name][1] = uniform_data
+                    uniform[1] = uniform_data
         else:
-            logger.error('%s material instance has no %s uniform variable %s.' % (self.name, uniform_name, uniform_data))
+            logger.error('%s material instance has no %s uniform variable %s.' % (self.name, uniform_name, str_uniform_data))
 
     def get_program(self):
         return self.material.program
 
-    def useProgram(self):
-        self.material.useProgram()
+    def use_program(self):
+        self.material.use_program()
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
@@ -149,7 +156,7 @@ class MaterialInstance:
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if attributeName in self.linked_material_component_map:
-            self.set_uniform_data(attributeName, attributeValue)
+            self.set_uniform_data_from_string(attributeName, attributeValue)
         elif attributeName in self.macros:
             if self.macros[attributeName] != attributeValue:
                 self.macros[attributeName] = attributeValue

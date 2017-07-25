@@ -112,7 +112,7 @@ class CoreManager(Singleton):
 
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
-        self.rendertarget_manager.initialize()
+        self.rendertarget_manager.initialize(self)
         self.renderer.initialize(self, width, height, screen)
         self.sceneManager.initialize(self)
 
@@ -171,15 +171,16 @@ class CoreManager(Singleton):
     def notifyDeleteResource(self, resource_info):
         self.send(COMMAND.DELETE_RESOURCE_INFO, resource_info)
 
-    def sendObjectInfo(self, object_name):
-        object_info = self.sceneManager.getObjectInfo(object_name)
-        if object_info:
-            self.send(COMMAND.TRANS_OBJECT_INFO, object_info)
+    def sendObjectInfo(self, obj):
+        object_name = obj.name if hasattr(obj, 'name') else str(obj)
+        object_class_name = GetClassName(obj)
+        self.send(COMMAND.TRANS_OBJECT_INFO, (object_name, object_class_name))
 
     def sendObjectList(self):
         obj_names = self.sceneManager.getObjectNames()
         for obj_name in obj_names:
-            self.sendObjectInfo(obj_name)
+            obj = self.sceneManager.getObject(obj_name)
+            self.sendObjectInfo(obj)
 
     def notifyClearScene(self):
         self.send(COMMAND.CLEAR_OBJECT_LIST)
@@ -276,10 +277,47 @@ class CoreManager(Singleton):
             cmd, value = self.cmdQueue.get()
             self.commands[cmd.value](value)
 
+    def event_rendertarget(self, keyDown, key_pressed):
+        done = False
+        if key_pressed[K_LCTRL]:
+            if K_0 <= keyDown and keyDown <= K_9:
+                self.renderer.set_debug_rendertarget(keyDown - K_0)
+                done = True
+        return done
+
+    def event_object(self, keyDown, key_pressed):
+        done = False
+        if keyDown == K_1:
+            object_name_list = self.resource_manager.getModelNameList()
+            if object_name_list:
+                for i in range(100):
+                    pos = [np.random.uniform(-100, 100) for x in range(3)]
+                    objName = np.random.choice(object_name_list)
+                    model = self.resource_manager.getModel(objName)
+                    obj_instance = self.sceneManager.addObject(model=model, pos=pos)
+                    if obj_instance:
+                        self.sendObjectInfo(obj_instance)
+            done = True
+        elif keyDown == K_HOME:
+            obj = self.sceneManager.static_actors[0]
+            self.sceneManager.setObjectFocus(obj)
+            done = True
+        elif keyDown == K_DELETE:
+            # Test Code
+            obj_names = set(self.sceneManager.getObjectNames())
+            # clear static mesh
+            self.sceneManager.clear_static_actors()
+            current_obj_names = set(self.sceneManager.getObjectNames())
+            for obj_name in (obj_names - current_obj_names):
+                self.notifyDeleteObject(obj_name)
+            done = True
+        return done
+
     def updateEvent(self):
         self.mouseDelta[:] = self.mousePos - self.mouseOldPos
         self.mouseOldPos[:] = self.mousePos
         self.wheelUp, self.wheelDown = False, False
+        key_pressed = pygame.key.get_pressed()
 
         # Keyboard & Mouse Events
         for event in pygame.event.get():
@@ -289,32 +327,20 @@ class CoreManager(Singleton):
             elif eventType == VIDEORESIZE:
                 self.renderer.resizeScene(*event.dict['size'])
             elif eventType == KEYDOWN:
+                subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
                 if keyDown == K_ESCAPE:
                     self.close()
-                elif keyDown == K_BACKQUOTE:
+                elif keyDown == K_BACKQUOTE and not subkey_down:
                     self.renderer.console.toggle()
-                elif keyDown == K_1:
-                    object_name_list = self.resource_manager.getModelNameList()
-                    if object_name_list:
-                        for i in range(100):
-                            pos = [np.random.uniform(-100, 100) for x in range(3)]
-                            objName = np.random.choice(object_name_list)
-                            model = self.resource_manager.getModel(objName)
-                            obj_instance = self.sceneManager.addObject(model=model, pos=pos)
-                            if obj_instance:
-                                self.sendObjectInfo(obj_instance.name)
-                elif keyDown == K_HOME:
-                    obj = self.sceneManager.static_actors[0]
-                    self.sceneManager.setObjectFocus(obj)
-                elif keyDown == K_DELETE:
-                    # Test Code
-                    obj_names = set(self.sceneManager.getObjectNames())
-                    # clear static mesh
-                    self.sceneManager.clear_static_actors()
-                    current_obj_names = set(self.sceneManager.getObjectNames())
-                    for obj_name in (obj_names - current_obj_names):
-                        self.notifyDeleteObject(obj_name)
+                if self.event_rendertarget(keyDown, key_pressed):
+                    pass
+                elif self.event_object(keyDown, key_pressed):
+                    pass
+                else:
+                    pass
+
+
             elif eventType == MOUSEMOTION:
                 self.mousePos[:] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:

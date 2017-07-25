@@ -10,13 +10,14 @@ from Utilities import *
 # CLASS : Camera
 # ------------------------------ #
 class Camera(StaticActor):
-    def __init__(self, name, **object_data):
+    def __init__(self, name, scene_manager, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
         self.aspect = 0.0
         self.fov = 0.0
         self.near = 0.0
         self.far = 0.0
+        self.scene_manager = scene_manager
         self.projection = Matrix4()
         self.view_projection = Matrix4()
         self.move_speed = 0.0
@@ -55,6 +56,8 @@ class Camera(StaticActor):
         StaticActor.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
+            # update viewport
+            self.scene_manager.renderer.resizeScene()
 
     def get_view_dir(self):
         return -self.transform.front
@@ -64,7 +67,6 @@ class Camera(StaticActor):
 
     def update_projection(self, aspect):
         self.projection = perspective(self.fov, aspect, self.near, self.far)
-        # self.projection = ortho(width * -0.5, width * 0.5, height * -0.5, height * 0.5, self.near, self.far)
 
     def update(self):
         self.transform.updateTransform()

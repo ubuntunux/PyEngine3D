@@ -39,13 +39,15 @@ class Texture2D:
         self.name = texture_data.get('name')
         logger.info("Load " + GetClassName(self) + " : " + self.name)
 
+        self.attachment = False
+
         self.width = texture_data.get('width', 1024)
         self.height = texture_data.get('height', 1024)
         # The number of channels and the data type
         self.internal_format = texture_data.get('internal_format', GL_RGBA)
         # R,G,B,A order. GL_BGRA is faster than GL_RGBA
         self.texture_format = texture_data.get('texture_format', GL_BGRA)
-        data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
+        self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         data = texture_data.get('data', c_void_p(0))
         enable_mipmap = texture_data.get('enable_mipmap', True)
         min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
@@ -60,7 +62,7 @@ class Texture2D:
                      self.height,
                      0,
                      self.texture_format,
-                     data_type,
+                     self.data_type,
                      data)
 
         if enable_mipmap:
@@ -85,8 +87,13 @@ class Texture2D:
     def delete(self):
         glDeleteTextures(1, self.buffer)
 
+    def set_attachment(self, attachment):
+        self.attachment = attachment
+
     def bind_texture(self):
         glBindTexture(GL_TEXTURE_2D, self.buffer)
+        if self.attachment:
+            logger.error("%s was attached to framebuffer." % self.name)
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)

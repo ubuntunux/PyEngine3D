@@ -35,7 +35,7 @@ class UniformBlock:
     def delete(self):
         glDeleteBuffers(1, self.buffer)
 
-    def bindData(self, *datas):
+    def bind_uniform_block(self, *datas):
         # serialize
         index = 0
         for data in datas:

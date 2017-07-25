@@ -42,7 +42,7 @@ class Material:
     def delete(self):
         glDeleteProgram(self.program)
 
-    def useProgram(self):
+    def use_program(self):
         glUseProgram(self.program)
 
     def create_uniform_buffer(self, uniform_type, uniform_name):

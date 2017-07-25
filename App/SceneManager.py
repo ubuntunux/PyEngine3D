@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import StaticActor, Camera, Light, Tonemapping
+from Object import StaticActor, Camera, Light
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4
 
@@ -30,9 +30,6 @@ class SceneManager(Singleton):
         self.static_actors = []
         self.objectMap = {}  # All of objects
 
-        # postprocess
-        self.tonemapping = None
-
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
         self.coreManager = core_manager
@@ -52,7 +49,6 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.coreManager.notifyClearScene()
-        self.tonemapping = None
         self.mainCamera = None
         self.cameras = []
         self.lights = []
@@ -68,7 +64,6 @@ class SceneManager(Singleton):
         # add scene objects
         self.mainCamera = self.addCamera()
         self.addLight()
-        self.add_postprocess()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
@@ -80,7 +75,6 @@ class SceneManager(Singleton):
 
         self.mainCamera = self.addCamera(scene_data.get('camera'))
         self.addLight(scene_data.get('light'))
-        self.add_postprocess()
 
         for object_data in scene_data.get('staticmeshes', []):
             self.addObject(**object_data)
@@ -123,7 +117,7 @@ class SceneManager(Singleton):
             object_list = self.get_object_list(type(object))
             object_list.append(object)
             self.objectMap[object.name] = object
-            self.coreManager.sendObjectInfo(object.name)
+            self.coreManager.sendObjectInfo(object)
 
     def unregist_resource(self, object):
         if object and object.name in self.objectMap:
@@ -138,6 +132,7 @@ class SceneManager(Singleton):
         camera_name = self.generateObjectName(name or "camera")
         logger.info("add Camera : %s" % camera_name)
         camera = Camera(camera_name,
+                        scene_manager=self,
                         pos=(0, 0, 0),
                         model=self.resource_manager.getModel('Quad'))
         camera.initialize()
@@ -153,9 +148,6 @@ class SceneManager(Singleton):
                       lightColor=(1.0, 1.0, 1.0, 1.0))
         self.regist_object(light)
         return light
-
-    def add_postprocess(self):
-        self.tonemapping = Tonemapping(name=self.generateObjectName("tonemapping"))
 
     def addObject(self, **object_data):
         model = object_data.get('model')
@@ -204,10 +196,6 @@ class SceneManager(Singleton):
 
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
-
-    def getObjectInfo(self, object_name):
-        obj = self.getObject(object_name)
-        return (object_name, GetClassName(obj)) if obj else None
 
     def getObjectNames(self):
         return self.objectMap.keys()
