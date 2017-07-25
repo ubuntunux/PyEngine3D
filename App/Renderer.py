@@ -218,12 +218,14 @@ class Renderer(Singleton):
                                                       light.lightColor)
 
         # render shadow
-        width, height, depth = 500, 500, 500
+        width, height, depth = 300, 300, 300
         projection = ortho(-width, width, -height, height, -depth, depth)
-        view_projection = Matrix4()
-        view_projection[...] = camera.transform.inverse_matrix[...]
-        view_projection = np.dot(view_projection, projection)
-        self.render_objects(view_projection)
+        # view_projection = Matrix4()
+        # view_projection[...] = camera.transform.inverse_matrix[...]
+        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos() + light.transform.front * 100.0))
+        shadow_projection = np.dot(light.transform.inverse_matrix, lightPosMatrix)
+        shadow_projection = np.dot(shadow_projection, projection)
+        self.render_objects(shadow_projection)
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
@@ -234,7 +236,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
 
         view_projection = camera.view_projection
-        self.render_objects(view_projection)
+        self.render_objects(view_projection, True, shadow_projection, shadowmap)
 
         # self.render_bones()
         self.render_postprocess()
@@ -275,7 +277,7 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-    def render_objects(self, view_projection, specify_material_instance=None):
+    def render_objects(self, view_projection, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
         static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
@@ -291,10 +293,7 @@ class Renderer(Singleton):
         last_actor = None
         for geometry in geometries:
             actor = geometry.parent_actor
-            if specify_material_instance:
-                material_instance = specify_material_instance
-            else:
-                material_instance = geometry.material_instance or default_material_instance
+            material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
@@ -310,6 +309,9 @@ class Renderer(Singleton):
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
+                if render_shadow:
+                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
+                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if 0 < actor.mesh.get_animation_frame_count():
                     animation_buffer = actor.get_animation_buffer()
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
@@ -389,9 +391,10 @@ class Renderer(Singleton):
         mesh.bindBuffer()
 
         # tonemapping
+        # self.tonemapping.use_program()
+        # texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        # self.tonemapping.set_uniform_data("texture_diffuse", texture_diffuse)
         # self.tonemapping.bind_material_instance()
-        # texture_diffuse = RenderTargetManager.instance().get_rendertarget(RenderTargets.SHADOWMAP)
-        # self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
         # mesh.draw()
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:

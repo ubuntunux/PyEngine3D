@@ -19,8 +19,8 @@ void main() {
     vec4 color = textureLod(texture_diffuse, vs_output.texcoord.xy, 0.0);
     // fs_output.xyz = color.xyz * color.xyz;
     // depth normalize
-    // fs_output.xyz = vec3(log(1.0 / (1.0 - color.x)) * 0.1);
-    fs_output.xyz = color.xxx;
-    fs_output.a = 0.5;
+    fs_output.xyz = vec3(log(1.0 / (1.0 - color.x)) * 0.1);
+    // fs_output.xyz = color.xxx;
+    fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER

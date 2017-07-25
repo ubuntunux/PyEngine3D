@@ -12,6 +12,8 @@ uniform mat4 bone_matrices[MAX_BONES];
 
 uniform mat4 model;
 uniform mat4 mvp;
+uniform mat4 shadow_matrix;
+uniform sampler2D shadow_texture;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
 
@@ -110,5 +112,11 @@ void main() {
     float specularLighting = clamp(dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0);
     fs_output = vec4(lightColor.xyz * (diffuseLighting + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
+
+    vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
+    shadow_uv.xyz /= shadow_uv.w;
+    shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
+    float shadow = texture(shadow_texture, shadow_uv.xy).x < shadow_uv.z - shadow_bias ? 0.5 : 1.0;
+    fs_output.xyz *= shadow;
 }
 #endif

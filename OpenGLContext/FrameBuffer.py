@@ -124,9 +124,11 @@ class FrameBuffer:
             logger.error("glCheckFramebufferStatus error %d." % gl_error)
 
     def unbind_framebuffer(self):
+        self.clear()
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def blit_framebuffer(self, framebuffer_width, framebuffer_height):
+        self.clear()
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)
