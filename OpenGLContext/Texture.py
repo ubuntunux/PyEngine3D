@@ -52,6 +52,7 @@ class Texture2D:
         enable_mipmap = texture_data.get('enable_mipmap', True)
         min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         mag_filter = texture_data.get('mag_filter', GL_LINEAR)
+        wrap = texture_data.get('wrap', GL_REPEAT)
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.buffer)
@@ -73,8 +74,8 @@ class Texture2D:
         # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
         # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
@@ -83,6 +84,9 @@ class Texture2D:
 
     def __del__(self):
         pass
+
+    def is_depth_texture(self):
+        return self.texture_format == GL_DEPTH_COMPONENT or self.texture_format == GL_DEPTH_STENCIL
 
     def delete(self):
         glDeleteTextures(1, self.buffer)

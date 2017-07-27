@@ -280,7 +280,7 @@ class CoreManager(Singleton):
     def event_rendertarget(self, keyDown, key_pressed):
         done = False
         if key_pressed[K_LCTRL]:
-            if K_0 <= keyDown and keyDown <= K_9:
+            if keyDown == K_BACKQUOTE or (K_0 <= keyDown <= K_9):
                 self.renderer.set_debug_rendertarget(keyDown - K_0)
                 done = True
         return done
@@ -290,7 +290,7 @@ class CoreManager(Singleton):
         if keyDown == K_1:
             object_name_list = self.resource_manager.getModelNameList()
             if object_name_list:
-                for i in range(100):
+                for i in range(20):
                     pos = [np.random.uniform(-100, 100) for x in range(3)]
                     objName = np.random.choice(object_name_list)
                     model = self.resource_manager.getModel(objName)
@@ -329,16 +329,14 @@ class CoreManager(Singleton):
             elif eventType == KEYDOWN:
                 subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
-                if keyDown == K_ESCAPE:
-                    self.close()
-                elif keyDown == K_BACKQUOTE and not subkey_down:
-                    self.renderer.console.toggle()
                 if self.event_rendertarget(keyDown, key_pressed):
                     pass
                 elif self.event_object(keyDown, key_pressed):
                     pass
-                else:
-                    pass
+                elif keyDown == K_ESCAPE:
+                    self.close()
+                elif keyDown == K_BACKQUOTE and not subkey_down:
+                    self.renderer.console.toggle()
 
 
             elif eventType == MOUSEMOTION:

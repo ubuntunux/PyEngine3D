@@ -78,8 +78,8 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_UNSIGNED_BYTE)
 
         self.create_rendertarget(RenderTargets.SHADOWMAP,
-                                 width=fullsize_x,
-                                 height=fullsize_y,
+                                 width=2048,
+                                 height=2048,
                                  internal_format=GL_DEPTH_COMPONENT32,
                                  texture_format=GL_DEPTH_COMPONENT,
                                  data_type=GL_FLOAT,

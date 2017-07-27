@@ -134,8 +134,11 @@ class Resource:
 
     def copy_data(self, data):
         if data and self.data:
-            for key in data.__dict__:
-                self.data.__dict__[key] = data.__dict__[key]
+            if type(self.data) is dict:
+                self.data = copy.deepcopy(data)
+            else:
+                for key in data.__dict__:
+                    self.data.__dict__[key] = data.__dict__[key]
 
     def set_data(self, data):
         if data:
@@ -748,7 +751,7 @@ class SceneLoader(ResourceLoader):
         if resource and resource_name == self.scene_manager.get_current_scene_name():
             scene_data = self.scene_manager.get_save_data()
             self.save_resource_data(resource, scene_data)
-            resource.set_data(scene_data)
+            # resource.set_data(scene_data)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -756,7 +759,7 @@ class SceneLoader(ResourceLoader):
             meta_data = self.getMetaData(resource_name)
             if resource and meta_data and os.path.exists(meta_data.resource_filepath):
                 scene_datas = self.load_resource_data(meta_data.resource_filepath)
-                for object_data in scene_datas.get('staticmeshes', []):
+                for object_data in scene_datas.get('static_actors', []):
                     object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
                     for i, material_instance in enumerate(object_data['material_instances']):
                         object_data['material_instances'][i] = self.resource_manager.getMaterialInstance(material_instance)

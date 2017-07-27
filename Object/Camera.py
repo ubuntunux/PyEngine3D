@@ -13,6 +13,7 @@ class Camera(StaticActor):
     def __init__(self, name, scene_manager, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
+        self.meter_per_unit = 1.0
         self.aspect = 0.0
         self.fov = 0.0
         self.near = 0.0
@@ -35,6 +36,8 @@ class Camera(StaticActor):
         self.rotation_speed = config.Camera.rotation_speed
 
     def write_to_config(self, config):
+        config.setValue("Camera", "meter_per_unit", self.meter_per_unit)
+        config.setValue("Camera", "aspect", self.aspect)
         config.setValue("Camera", "fov", self.fov)
         config.setValue("Camera", "near", self.near)
         config.setValue("Camera", "far", self.far)
@@ -66,6 +69,7 @@ class Camera(StaticActor):
         return self.transform.inverse_matrix
 
     def update_projection(self, aspect):
+        self.aspect = aspect
         self.projection = perspective(self.fov, aspect, self.near, self.far)
 
     def update(self):

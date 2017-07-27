@@ -83,7 +83,7 @@ class Renderer(Singleton):
         self.lastShader = None
         self.screen = None
         self.framebuffer = None
-        self.debug_rendertarget = None
+        self.debug_rendertarget = None  # Texture2D
 
         # postprocess
         self.tonemapping = None
@@ -218,13 +218,14 @@ class Renderer(Singleton):
                                                       light.lightColor)
 
         # render shadow
-        width, height, depth = 300, 300, 300
-        projection = ortho(-width, width, -height, height, -depth, depth)
-        # view_projection = Matrix4()
-        # view_projection[...] = camera.transform.inverse_matrix[...]
-        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos() + light.transform.front * 100.0))
-        shadow_projection = np.dot(light.transform.inverse_matrix, lightPosMatrix)
-        shadow_projection = np.dot(shadow_projection, projection)
+        shadow_distance = 20.0 / camera.meter_per_unit
+        width, height = shadow_distance * 0.5, shadow_distance * 0.5
+        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+
+        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
+        shadow_projection = light.transform.inverse_matrix[...]
+        shadow_projection[3, 0:3] = light.transform.front; # * -shadow_distance * 0.5
+        shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
         self.render_objects(shadow_projection)
 
         # render object
@@ -392,13 +393,13 @@ class Renderer(Singleton):
 
         # tonemapping
         # self.tonemapping.use_program()
-        # texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        # texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         # self.tonemapping.set_uniform_data("texture_diffuse", texture_diffuse)
         # self.tonemapping.bind_material_instance()
         # mesh.draw()
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
             self.copy_rendertarget.use_program()
-            self.copy_rendertarget.set_uniform_data("texture_diffuse", self.debug_rendertarget)
-            self.copy_rendertarget.bind_material_instance()
+            self.copy_rendertarget.bind_uniform_data("is_depth_texture", self.debug_rendertarget.is_depth_texture())
+            self.copy_rendertarget.bind_uniform_data("texture_diffuse", self.debug_rendertarget)
             mesh.draw()

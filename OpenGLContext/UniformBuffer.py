@@ -9,8 +9,8 @@ from App import CoreManager
 
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
-    uniform_classes = [UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4, UniformMatrix2,
-                       UniformMatrix3, UniformMatrix4, UniformTexture2D]
+    uniform_classes = [UniformBool, UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4,
+                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
@@ -23,7 +23,9 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
 def CreateUniformDataFromString(data_type, strValue=None):
     """ return converted data from string or default data """
     try:
-        if data_type == 'float':
+        if data_type == 'bool':
+            return np.bool(strValue) if strValue else np.bool(False)
+        elif data_type == 'float':
             # return float(strValue) if strValue else 0.0
             return np.float32(strValue) if strValue else np.float32(0)
         elif data_type == 'int':
@@ -78,6 +80,13 @@ class UniformVariable:
 class UniformArray(UniformVariable):
     """future work : http://pyopengl.sourceforge.net/context/tutorials/shader_7.html"""
     uniform_type = ""
+
+
+class UniformBool(UniformVariable):
+    uniform_type = "bool"
+
+    def bind_uniform(self, value, num=1):
+        glUniform1i(self.location, value)
 
 
 class UniformInt(UniformVariable):

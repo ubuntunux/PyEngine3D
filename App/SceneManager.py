@@ -76,8 +76,11 @@ class SceneManager(Singleton):
         self.mainCamera = self.addCamera(scene_data.get('camera'))
         self.addLight(scene_data.get('light'))
 
-        for object_data in scene_data.get('staticmeshes', []):
+        for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)
+
+        # resize scene
+        self.renderer.resizeScene()
 
     def save_scene(self):
         if self.__current_scene_name == "":

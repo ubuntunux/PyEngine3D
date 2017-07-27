@@ -116,7 +116,7 @@ void main() {
     vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-    float shadow = texture(shadow_texture, shadow_uv.xy).x < shadow_uv.z - shadow_bias ? 0.5 : 1.0;
+    float shadow = texture(shadow_texture, shadow_uv.xy).x <= shadow_uv.z - shadow_bias ? 0.5 : 1.0;
     fs_output.xyz *= shadow;
 }
 #endif
