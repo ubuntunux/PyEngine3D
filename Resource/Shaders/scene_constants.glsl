@@ -5,6 +5,7 @@ layout(std140, binding=0) uniform sceneConstants
     mat4 view;
     mat4 perspective;
     vec4 cameraPosition;
+    vec4 near_far;
 };
 
 layout(std140, binding=1) uniform lightConstants

@@ -1,5 +1,7 @@
 #version 430 core
 
+#include "utility.glsl"
+#include "scene_constants.glsl"
 #include "quad.glsl"
 
 uniform bool is_depth_texture;
@@ -15,8 +17,9 @@ void main() {
     fs_output = texture(texture_diffuse, vs_output.texcoord.xy);
     if(is_depth_texture)
     {
-        // depth normalize
-        fs_output.xyz = vec3(log(1.0 / (1.0 - fs_output.x)) * 0.1);
+        float distance = distance_to_depth(near_far.x, near_far.y, fs_output.x);
+        fs_output.xyz = vec3(distance);
+        fs_output.a = 1.0;
     }
 }
 #endif // FRAGMENT_SHADER

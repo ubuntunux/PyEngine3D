@@ -125,6 +125,7 @@ class Renderer(Singleton):
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   [MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
+                                                   FLOAT4_ZERO,
                                                    FLOAT4_ZERO])
         self.uniformLightConstants = UniformBlock("lightConstants", program, 1,
                                                   [FLOAT4_ZERO,
@@ -201,14 +202,13 @@ class Renderer(Singleton):
         self.render_objects_begin()
 
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
-        self.framebuffer.set_color_texture(None)
-        self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
+        self.framebuffer.set_color_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
         self.uniformSceneConstants.bind_uniform_block(camera.get_view_matrix(),
                                                       camera.projection,
-                                                      camera.transform.getPos(),
-                                                      FLOAT_ZERO)
+                                                      camera.transform.getPos(), FLOAT_ZERO,
+                                                      Float4(camera.near, camera.far, 0.0, 0.0))
 
         light = lights[0]
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
@@ -220,13 +220,15 @@ class Renderer(Singleton):
         # render shadow
         shadow_distance = 20.0 / camera.meter_per_unit
         width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+        projection = ortho(-width, width, -height, height, camera.near, camera.far)
 
         lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
         shadow_projection = light.transform.inverse_matrix[...]
-        shadow_projection[3, 0:3] = light.transform.front; # * -shadow_distance * 0.5
+        shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
         shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
-        self.render_objects(shadow_projection)
+
+        shadowmap_material_instance = self.resource_manager.getMaterialInstance("shadowmap")
+        self.render_objects(shadow_projection, shadowmap_material_instance)
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
@@ -237,7 +239,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
 
         view_projection = camera.view_projection
-        self.render_objects(view_projection, True, shadow_projection, shadowmap)
+        self.render_objects(view_projection, None, True, shadow_projection, shadowmap)
 
         # self.render_bones()
         self.render_postprocess()
@@ -278,7 +280,8 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-    def render_objects(self, view_projection, render_shadow=False, shadow_projection=None, shadow_texture=None):
+    def render_objects(self, view_projection, specify_material_instance=None, render_shadow=False,
+                       shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
         static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
@@ -294,7 +297,10 @@ class Renderer(Singleton):
         last_actor = None
         for geometry in geometries:
             actor = geometry.parent_actor
-            material_instance = geometry.material_instance or default_material_instance
+            if specify_material_instance:
+                material_instance = specify_material_instance
+            else:
+                material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
