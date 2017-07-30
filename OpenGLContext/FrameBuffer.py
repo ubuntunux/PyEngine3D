@@ -5,13 +5,12 @@ from Common import logger
 
 
 class FrameBuffer:
-    color_texture_count = 4
-
     def __init__(self):
         logger.info("Create " + GetClassName(self))
         self.buffer = glGenFramebuffers(1)
-        self.color_textures = [None, ] * self.color_texture_count
-        self.attachments = [0, ] * self.color_texture_count
+        self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
+        self.color_textures = [None, ] * self.max_draw_buffers
+        self.attachments = [0, ] * self.max_draw_buffers
         self.clear_color = None
         self.depth_texture = None
         self.clear_depth = None
