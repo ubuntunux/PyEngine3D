@@ -202,7 +202,8 @@ class Renderer(Singleton):
         self.render_objects_begin()
 
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
-        self.framebuffer.set_color_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
+        self.framebuffer.set_color_texture(None)
+        self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
         self.uniformSceneConstants.bind_uniform_block(camera.get_view_matrix(),
@@ -228,7 +229,7 @@ class Renderer(Singleton):
         shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
         shadowmap_material_instance = self.resource_manager.getMaterialInstance("shadowmap")
-        self.render_objects(shadow_projection, shadowmap_material_instance, False, shadow_projection)
+        self.render_objects(shadow_projection, shadowmap_material_instance)
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)

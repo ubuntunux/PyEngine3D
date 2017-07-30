@@ -17,4 +17,4 @@ layout(std140, binding=1) uniform lightConstants
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 72;
-const float shadow_bias = 0.00000005;
+const float shadow_bias = 0.00001;

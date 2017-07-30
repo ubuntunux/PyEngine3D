@@ -39,8 +39,8 @@ void main() {
 
     vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
-    shadow_uv.xy = shadow_uv.xy * 0.5 + 0.5;
-    float shadow_d = depth_to_distance(near_far.x, near_far.y, shadow_uv.z);
+    shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
+    float shadow_d = shadow_uv.z;
 
     float shadow_distance = texture(shadow_texture, shadow_uv.xy).x;
     float shadow = shadow_distance <= shadow_d - shadow_bias ? 0.2 : 1.0;
