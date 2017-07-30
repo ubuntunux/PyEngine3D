@@ -80,9 +80,9 @@ class RenderTargetManager(Singleton):
         self.create_rendertarget(RenderTargets.SHADOWMAP,
                                  width=2048,
                                  height=2048,
-                                 internal_format=GL_R32F,
-                                 texture_format=GL_RED,
-                                 data_type=GL_FLOAT,
+                                 internal_format=GL_R32UI,
+                                 texture_format=GL_RED_INTEGER,
+                                 data_type=GL_UNSIGNED_INT,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
                                  enable_mipmap=False)

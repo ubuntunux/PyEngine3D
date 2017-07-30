@@ -43,7 +43,7 @@ void main() {
     float shadow_d = depth_to_distance(near_far.x, near_far.y, shadow_uv.z);
 
     float shadow_distance = texture(shadow_texture, shadow_uv.xy).x;
-    float shadow = shadow_distance <= shadow_d ? 0.2 : 1.0;
+    float shadow = shadow_distance <= shadow_d - shadow_bias ? 0.2 : 1.0;
     fs_output.xyz *= shadow;
 }
 #endif

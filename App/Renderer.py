@@ -228,7 +228,7 @@ class Renderer(Singleton):
         shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
         shadowmap_material_instance = self.resource_manager.getMaterialInstance("shadowmap")
-        self.render_objects(shadow_projection, shadowmap_material_instance)
+        self.render_objects(shadow_projection, shadowmap_material_instance, False, shadow_projection)
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
@@ -316,8 +316,8 @@ class Renderer(Singleton):
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
+                material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                 if render_shadow:
-                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if 0 < actor.mesh.get_animation_frame_count():
                     animation_buffer = actor.get_animation_buffer()
