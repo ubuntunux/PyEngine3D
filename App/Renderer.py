@@ -219,9 +219,9 @@ class Renderer(Singleton):
                                                       light.lightColor)
 
         # render shadow
-        shadow_distance = 20.0 / camera.meter_per_unit
+        shadow_distance = 10.0 / camera.meter_per_unit
         width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, camera.near, camera.far)
+        projection = ortho(-width, width, -height, height, camera.near, camera.far * 0.1)
 
         lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
         shadow_projection = light.transform.inverse_matrix[...]
@@ -233,9 +233,11 @@ class Renderer(Singleton):
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
+        normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
-        self.framebuffer.set_color_texture(colortexture, (0.0, 0.0, 0.0, 1.0))
+        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture], (0.0, 0.0, 0.0, 1.0))
         self.framebuffer.set_depth_texture(depthtexture, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
@@ -315,10 +317,10 @@ class Renderer(Singleton):
                 geometry.bindBuffer()
 
             if last_actor != actor and material_instance:
-                material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
-                material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                 if render_shadow:
+                    material_instance.bind_uniform_data('model', actor.transform.matrix)
+                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if 0 < actor.mesh.get_animation_frame_count():
                     animation_buffer = actor.get_animation_buffer()

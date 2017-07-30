@@ -438,10 +438,10 @@ def ortho(left, right, bottom, top, znear, zfar):
 
     M = np.zeros((4, 4), dtype=np.float32)
     M[0, 0] = +2.0 / (right - left)
-    M[3, 0] = -(right + left) / float(right - left)
     M[1, 1] = +2.0 / (top - bottom)
-    M[3, 1] = -(top + bottom) / float(top - bottom)
     M[2, 2] = -2.0 / (zfar - znear)
+    M[3, 0] = -(right + left) / float(right - left)
+    M[3, 1] = -(top + bottom) / float(top - bottom)
     M[3, 2] = -(zfar + znear) / float(zfar - znear)
     M[3, 3] = 1.0
     return M

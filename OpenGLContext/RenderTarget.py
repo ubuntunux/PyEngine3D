@@ -32,7 +32,7 @@ class RenderTargetManager(Singleton):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
 
     def get_rendertarget(self, texture_enum: RenderTargets) -> Texture2D:
-        return self.rendertargets[texture_enum.value]
+        return self.rendertargets[texture_enum.value] if texture_enum.value < len(self.rendertargets) else None
 
     def create_rendertarget(self, rendertarget_enum, **kwargs):
         rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
@@ -53,13 +53,6 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE)
 
-        self.create_rendertarget(RenderTargets.WORLD_NORMAL,
-                                 width=fullsize_x,
-                                 height=fullsize_y,
-                                 internal_format=GL_RGBA8,
-                                 texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
-
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
                                  width=fullsize_x,
                                  height=fullsize_y,
@@ -71,6 +64,13 @@ class RenderTargetManager(Singleton):
                                  enable_mipmap=False)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE)
+
+        self.create_rendertarget(RenderTargets.WORLD_NORMAL,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,

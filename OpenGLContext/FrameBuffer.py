@@ -11,6 +11,7 @@ class FrameBuffer:
         logger.info("Create " + GetClassName(self))
         self.buffer = glGenFramebuffers(1)
         self.color_textures = [None, ] * self.color_texture_count
+        self.attachments = [0, ] * self.color_texture_count
         self.clear_color = None
         self.depth_texture = None
         self.clear_depth = None
@@ -80,14 +81,21 @@ class FrameBuffer:
     def bind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
         # bind color textures
+        attach_count = 0
         for i, color_texture in enumerate(self.color_textures):
+            attachment = GL_COLOR_ATTACHMENT0 + i
             if color_texture:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, color_texture.buffer, 0)
-                # important
-                glDrawBuffer(GL_COLOR_ATTACHMENT0 + i)
-                glReadBuffer(GL_COLOR_ATTACHMENT0 + i)
+                attach_count += 1
+                self.attachments[i] = attachment
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, color_texture.buffer, 0)
+                # just for single render target.
+                # glDrawBuffer(attachment)
+                glReadBuffer(attachment)
             else:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0)
+                self.attachments[i] = 0
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
+        # Specifies a list of color buffers to be drawn into
+        glDrawBuffers(attach_count, self.attachments)
 
         if self.color_textures[0]:
             self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height)
