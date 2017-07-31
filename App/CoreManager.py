@@ -279,7 +279,7 @@ class CoreManager(Singleton):
 
     def event_rendertarget(self, keyDown, key_pressed):
         done = False
-        if key_pressed[K_LCTRL]:
+        if key_pressed[K_LCTRL] and key_pressed[K_LSHIFT] and key_pressed[K_LALT]:
             if keyDown == K_BACKQUOTE or (K_0 <= keyDown <= K_9):
                 self.renderer.set_debug_rendertarget(keyDown - K_0)
                 done = True

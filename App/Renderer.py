@@ -87,6 +87,7 @@ class Renderer(Singleton):
 
         # postprocess
         self.tonemapping = None
+        self.screeen_space_reflection = None
         self.copy_rendertarget = None
 
         # Test Code : scene constants uniform buffer
@@ -117,6 +118,7 @@ class Renderer(Singleton):
 
         # postprocess
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
+        self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
         self.copy_rendertarget = self.resource_manager.getMaterialInstance("copy_rendertarget")
 
         # Test Code : scene constants uniform buffer
@@ -124,6 +126,10 @@ class Renderer(Singleton):
         program = material_instance.get_program()
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   [MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO])
@@ -206,8 +212,14 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
+        view_origin = camera.get_view_matrix().copy()
+        view_origin[3, 0:3] = [0.0, 0.0, 0.0]
         self.uniformSceneConstants.bind_uniform_block(camera.get_view_matrix(),
+                                                      np.linalg.inv(camera.get_view_matrix()),
+                                                      view_origin,
+                                                      np.linalg.inv(view_origin),
                                                       camera.projection,
+                                                      np.linalg.inv(camera.projection),
                                                       camera.transform.getPos(), FLOAT_ZERO,
                                                       Float4(camera.near, camera.far, 0.0, 0.0))
 
@@ -228,8 +240,7 @@ class Renderer(Singleton):
         shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
         shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
-        shadowmap_material_instance = self.resource_manager.getMaterialInstance("shadowmap")
-        self.render_objects(shadow_projection, shadowmap_material_instance)
+        self.render_objects(shadow_projection, True)
 
         # render object
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
@@ -242,7 +253,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
 
         view_projection = camera.view_projection
-        self.render_objects(view_projection, None, True, shadow_projection, shadowmap)
+        self.render_objects(view_projection, False, True, shadow_projection, shadowmap)
 
         # self.render_bones()
         self.render_postprocess()
@@ -254,6 +265,9 @@ class Renderer(Singleton):
         self.console.render()
 
         # blit frame buffer
+        backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        self.framebuffer.set_color_texture(backbuffer)
+        self.framebuffer.bind_framebuffer()
         self.framebuffer.blit_framebuffer(self.width, self.height)
 
         endTime = timeModule.perf_counter()
@@ -283,8 +297,7 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-    def render_objects(self, view_projection, specify_material_instance=None, render_shadow=False,
-                       shadow_projection=None, shadow_texture=None):
+    def render_objects(self, view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
         static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
@@ -300,8 +313,12 @@ class Renderer(Singleton):
         last_actor = None
         for geometry in geometries:
             actor = geometry.parent_actor
-            if specify_material_instance:
-                material_instance = specify_material_instance
+            actor_has_bone = 0 < actor.mesh.get_animation_frame_count()
+            if cast_shadow:
+                if actor_has_bone:
+                    material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
+                else:
+                    material_instance = self.resource_manager.getMaterialInstance("shadowmap")
             else:
                 material_instance = geometry.material_instance or default_material_instance
             material = material_instance.material if material_instance else None
@@ -322,7 +339,7 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('model', actor.transform.matrix)
                     material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
-                if 0 < actor.mesh.get_animation_frame_count():
+                if actor_has_bone:
                     animation_buffer = actor.get_animation_buffer()
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
@@ -392,13 +409,14 @@ class Renderer(Singleton):
         glBlendEquation(GL_FUNC_ADD)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        camera = self.sceneManager.getMainCamera()
+        mesh = self.resource_manager.getMesh("Quad")
+        mesh.bindBuffer()
+
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
-
-        mesh = self.resource_manager.getMesh("Quad")
-        mesh.bindBuffer()
 
         # tonemapping
         # self.tonemapping.use_program()
@@ -407,7 +425,31 @@ class Renderer(Singleton):
         # self.tonemapping.bind_material_instance()
         # mesh.draw()
 
+
+        texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
+        self.framebuffer.set_color_texture(texture_ssr, [0.0, 0.0, 0.0, 0.0])
+        self.framebuffer.bind_framebuffer()
+
+        texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
+        texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
+        texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
+
+        relativeViewProjection = camera.get_view_matrix().copy()
+        relativeViewProjection[3, 0:3] = [0.0, 0.0, 0.0]
+        relativeViewProjection = np.dot(relativeViewProjection, camera.projection)
+
+        self.screeen_space_reflection.use_program()
+        self.screeen_space_reflection.bind_uniform_data("relativeViewProj", relativeViewProjection)
+        self.screeen_space_reflection.bind_uniform_data("invRelativeViewProj", np.linalg.inv(relativeViewProjection))
+        self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
+        self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
+        self.screeen_space_reflection.bind_material_instance()
+        mesh.draw()
+
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
+            self.framebuffer.set_color_texture(backbuffer)
+            self.framebuffer.bind_framebuffer()
             self.copy_rendertarget.use_program()
             self.copy_rendertarget.bind_uniform_data("is_depth_texture", self.debug_rendertarget.is_depth_texture())
             self.copy_rendertarget.bind_uniform_data("texture_diffuse", self.debug_rendertarget)

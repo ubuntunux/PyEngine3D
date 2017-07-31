@@ -3,7 +3,11 @@
 layout(std140, binding=0) uniform sceneConstants
 {
     mat4 view;
+    mat4 inv_view;
+    mat4 view_origin;
+    mat4 inv_view_origin;
     mat4 perspective;
+    mat4 inv_perspective;
     vec4 cameraPosition;
     vec4 near_far;
 };

@@ -9,10 +9,11 @@ from .Texture import Texture2D
 
 class RenderTargets(AutoEnum):
     BACKBUFFER = ()
-    WORLD_NORMAL = ()
     DEPTHSTENCIL = ()
     DIFFUSE = ()
+    WORLD_NORMAL = ()
     SHADOWMAP = ()
+    SCREEN_SPACE_REFLECTION = ()
     COUNT = ()
 
 
@@ -86,3 +87,10 @@ class RenderTargetManager(Singleton):
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
                                  enable_mipmap=False)
+
+        self.create_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE)
