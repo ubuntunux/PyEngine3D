@@ -19,11 +19,23 @@ class Camera(StaticActor):
         self.near = 0.0
         self.far = 0.0
         self.scene_manager = scene_manager
-        self.projection = Matrix4()
-        self.view_projection = Matrix4()
         self.move_speed = 0.0
         self.pan_speed = 0.0
         self.rotation_speed = 0.0
+
+        self.front = Float4()
+
+        self.projection = Matrix4()
+
+        self.view = Matrix4()
+        self.view_origin = Matrix4()
+        self.view_projection = Matrix4()
+        self.view_origin_projection = Matrix4()
+
+        self.prev_view = Matrix4()
+        self.prev_view_origin = Matrix4()
+        self.prev_view_projection = Matrix4()
+        self.prev_view_origin_projection = Matrix4()
 
     def initialize(self):
         config = CoreManager.instance().projectManager.config
@@ -62,17 +74,26 @@ class Camera(StaticActor):
             # update viewport
             self.scene_manager.renderer.resizeScene()
 
-    def get_view_dir(self):
-        return -self.transform.front
-
-    def get_view_matrix(self):
-        return self.transform.inverse_matrix
-
     def update_projection(self, aspect):
         self.aspect = aspect
-        self.projection = perspective(self.fov, aspect, self.near, self.far)
+        projection = perspective(self.fov, aspect, self.near, self.far)
+        self.projection[...] = projection
+        self.update(True)
 
-    def update(self):
-        self.transform.updateTransform()
-        self.transform.updateInverseTransform()  # update view matrix
-        self.view_projection[...] = np.dot(self.transform.inverse_matrix, self.projection)[...]
+    def update(self, force_update=False):
+        updated = self.transform.updateTransform()
+        if updated or force_update:
+            self.transform.updateInverseTransform()  # update view matrix
+            self.front = -self.transform.front
+
+            self.prev_view = self.transform.prev_inverse_matrix
+            self.prev_view_origin[...] = self.view_origin
+            self.prev_view_projection[...] = self.view_projection
+            self.prev_view_origin_projection[...] = self.view_origin_projection
+
+            self.view = self.transform.inverse_matrix
+            self.view_origin[...] = self.view
+            self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
+            self.view_projection[...] = np.dot(self.view, self.projection)
+            self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
+

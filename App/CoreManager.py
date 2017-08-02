@@ -314,8 +314,8 @@ class CoreManager(Singleton):
         return done
 
     def updateEvent(self):
-        self.mouseDelta[:] = self.mousePos - self.mouseOldPos
-        self.mouseOldPos[:] = self.mousePos
+        self.mouseDelta[...] = self.mousePos - self.mouseOldPos
+        self.mouseOldPos[...] = self.mousePos
         self.wheelUp, self.wheelDown = False, False
         key_pressed = pygame.key.get_pressed()
 
@@ -337,10 +337,8 @@ class CoreManager(Singleton):
                     self.close()
                 elif keyDown == K_BACKQUOTE and not subkey_down:
                     self.renderer.console.toggle()
-
-
             elif eventType == MOUSEMOTION:
-                self.mousePos[:] = pygame.mouse.get_pos()
+                self.mousePos[...] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
                 self.wheelUp = event.button == 4
                 self.wheelDown = event.button == 5

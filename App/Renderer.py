@@ -212,12 +212,10 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
-        view_origin = camera.get_view_matrix().copy()
-        view_origin[3, 0:3] = [0.0, 0.0, 0.0]
-        self.uniformSceneConstants.bind_uniform_block(camera.get_view_matrix(),
-                                                      np.linalg.inv(camera.get_view_matrix()),
-                                                      view_origin,
-                                                      np.linalg.inv(view_origin),
+        self.uniformSceneConstants.bind_uniform_block(camera.view,
+                                                      np.linalg.inv(camera.view),
+                                                      camera.view_origin,
+                                                      np.linalg.inv(camera.view_origin),
                                                       camera.projection,
                                                       np.linalg.inv(camera.projection),
                                                       camera.transform.getPos(), FLOAT_ZERO,
@@ -236,9 +234,9 @@ class Renderer(Singleton):
         projection = ortho(-width, width, -height, height, camera.near, camera.far * 0.1)
 
         lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
-        shadow_projection = light.transform.inverse_matrix[...]
+        shadow_projection = light.transform.inverse_matrix.copy()
         shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
-        shadow_projection = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
+        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
         self.render_objects(shadow_projection, True)
 
@@ -434,13 +432,9 @@ class Renderer(Singleton):
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
-        relativeViewProjection = camera.get_view_matrix().copy()
-        relativeViewProjection[3, 0:3] = [0.0, 0.0, 0.0]
-        relativeViewProjection = np.dot(relativeViewProjection, camera.projection)
-
         self.screeen_space_reflection.use_program()
-        self.screeen_space_reflection.bind_uniform_data("relativeViewProj", relativeViewProjection)
-        self.screeen_space_reflection.bind_uniform_data("invRelativeViewProj", np.linalg.inv(relativeViewProjection))
+        # self.screeen_space_reflection.bind_uniform_data("viewOriginProj", camera.view_origin_projection)
+        # self.screeen_space_reflection.bind_uniform_data("invViewOriginProj", np.linalg.inv(camera.view_origin_projection))
         self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)

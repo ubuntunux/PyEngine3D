@@ -8,8 +8,6 @@ uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_depth;
 
-uniform mat4 relativeViewProj;
-uniform mat4 invRelativeViewProj;
 
 //----------- FRAGMENT_SHADER ---------------//
 

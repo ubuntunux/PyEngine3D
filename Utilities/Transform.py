@@ -13,7 +13,7 @@ reference - http://www.euclideanspace.com/maths/geometry/rotations/conversions/m
 import math
 import numpy as np
 from numpy.linalg import norm
-
+from functools import reduce
 
 HALF_PI = math.pi * 0.5
 PI = math.pi
@@ -66,6 +66,10 @@ def normalize(v):
     if m == 0:
         return v
     return v / m
+
+
+def dot_arrays(*array_list):
+    return reduce(np.dot, array_list)
 
 
 def euler_to_matrix(pitch, yaw, roll, rotationMatrix):
@@ -394,7 +398,12 @@ def swap_matrix(matrix, transpose, up_axis):
     if transpose:
         matrix = matrix.T
     if up_axis == 'Z_UP':
-        return np.array([matrix[0, :].copy(), matrix[2, :].copy(), -matrix[1, :].copy(), matrix[3, :].copy()])
+        return np.array(
+            [matrix[0, :].copy(),
+             matrix[2, :].copy(),
+             -matrix[1, :].copy(),
+             matrix[3, :].copy()]
+        )
     return matrix
 
 
