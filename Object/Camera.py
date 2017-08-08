@@ -84,6 +84,7 @@ class Camera(StaticActor):
         updated = self.transform.updateTransform()
         if updated or force_update:
             self.transform.updateInverseTransform()  # update view matrix
+            # negative front
             self.front = -self.transform.front
 
             self.prev_view = self.transform.prev_inverse_matrix

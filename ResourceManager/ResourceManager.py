@@ -306,7 +306,7 @@ class ResourceLoader(object):
     def setResourceAttribute(self, resource_name, attribute_name, attribute_value, attribute_index):
         # rename resource
         if attribute_name == 'name':
-            self.rename_resource(resource_name, attributeValue)
+            self.rename_resource(resource_name, attribute_value)
         else:
             # set other attributes
             resource = self.getResource(resource_name)
