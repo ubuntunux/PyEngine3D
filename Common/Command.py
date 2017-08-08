@@ -49,8 +49,9 @@ class COMMAND(AutoEnum):
     VIEWMODE_SHADING = ()
 
     # resource
-    OPEN_RESOURCE = ()
     LOAD_RESOURCE = ()
+    OPEN_RESOURCE = ()
+    DUPLICATE_RESOURCE = ()
     SAVE_RESOURCE = ()
     DELETE_RESOURCE = ()
     DELETE_RESOURCE_INFO = ()

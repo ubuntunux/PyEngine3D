@@ -124,7 +124,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resource_menu = QMenu()
         self.resource_menu.addAction(self.tr("Load"), self.loadResource)
-        self.resource_open_action = self.resource_menu.addAction(self.tr("Open"), self.openResource)
+        self.resource_menu.addAction(self.tr("Open"), self.openResource)
+        self.resource_menu.addAction(self.tr("Duplicate"), self.duplicateResource)
         self.resource_menu.addAction(self.tr("Save"), self.saveResource)
         self.resource_menu.addAction(self.tr("Delete"), self.deleteResource)
         self.resourceListWidget.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -384,15 +385,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             else:
                 self.clearAttribute()
 
+    def loadResource(self, item=None):
+        items = self.getSelectedResource()
+        for item in items:
+            self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (item.text(0), item.text(1)))
+
     def openResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
             self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
 
-    def loadResource(self, item=None):
+    def duplicateResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.DUPLICATE_RESOURCE, (item.text(0), item.text(1)))
 
     def saveResource(self, item=None):
         items = self.getSelectedResource()

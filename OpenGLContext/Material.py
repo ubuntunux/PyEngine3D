@@ -1,3 +1,5 @@
+import copy
+import traceback
 from collections import OrderedDict
 
 from OpenGL.GL import *
@@ -7,9 +9,10 @@ from OpenGL.arrays import GLbyteArray
 
 import numpy as np
 
+from Common import logger
 from Utilities import GetClassName, Attributes, Logger
 from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
-from Common import logger
+from App import CoreManager
 
 
 class Material:
@@ -36,8 +39,17 @@ class Material:
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
-        self.Attributes.setAttribute('type', type(self))
+        self.Attributes.setAttribute('shader_name', self.shader_name)
+        for key in self.macros:
+            self.Attributes.setAttribute(key, self.macros[key])
         return self.Attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if attributeName in self.macros and self.macros[attributeName] != attributeValue:
+            new_macros = copy.deepcopy(self.macros)
+            new_macros[attributeName] = attributeValue
+            # if macro was changed then create a new material.
+            CoreManager.instance().resource_manager.getMaterial(self.shader_name, new_macros)
 
     def delete(self):
         glDeleteProgram(self.program)

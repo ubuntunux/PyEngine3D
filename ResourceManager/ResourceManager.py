@@ -11,6 +11,7 @@ import pickle
 import gzip
 from collections import OrderedDict
 from distutils.dir_util import copy_tree
+import shutil
 
 from PIL import Image
 from numpy import array, float32
@@ -303,9 +304,14 @@ class ResourceLoader(object):
         return None
 
     def setResourceAttribute(self, resource_name, attribute_name, attribute_value, attribute_index):
-        resource = self.getResource(resource_name)
-        if resource:
-            resource.setAttribute(attribute_name, attribute_value, attribute_index)
+        # rename resource
+        if attribute_name == 'name':
+            self.rename_resource(resource_name, attributeValue)
+        else:
+            # set other attributes
+            resource = self.getResource(resource_name)
+            if resource:
+                resource.setAttribute(attribute_name, attribute_value, attribute_index)
 
     def getMetaData(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
@@ -344,11 +350,33 @@ class ResourceLoader(object):
                 self.resources.pop(resource.name)
             self.core_manager.notifyDeleteResource(resource.get_resource_info())
 
-    def open_resource(self, resource_name):
-        logger.warn("open_resource is not implemented in %s." % self.name)
+    def rename_resource(self, resource_name, new_name):
+        if new_name and resource_name != new_name:
+            resource_data = self.getResourceData(resource_name)
+            resource = self.create_resource(new_name, resource_data)
+            if resource:
+                if resource_data and hasattr(resource_data, 'name'):
+                    resource_data.name = resource.name
+                self.save_resource(resource.name)
+                self.delete_resource(resource_name)
+                logger.info("rename_resource : %s to %s" % (resource_name, new_name))
 
     def load_resource(self, resource_name):
         logger.warn("load_resource is not implemented in %s." % self.name)
+
+    def open_resource(self, resource_name):
+        logger.warn("open_resource is not implemented in %s." % self.name)
+
+    def duplicate_resource(self, resource_name):
+        logger.warn("duplicate_resource is not implemented in %s." % self.name)
+        # meta_data = self.getMetaData(resource_name)
+        # new_resource = self.create_resource(resource_name)
+        # new_meta_data = self.getMetaData(new_resource.name)
+        #
+        # if os.path.exists(meta_data.source_filepath) and not os.path.exists(new_meta_data.source_filepath):
+        #     shutil.copy(meta_data.source_filepath, new_meta_data.source_filepath)
+        #     self.load_resource(new_resource.name)
+        #     logger.info("duplicate_resource : %s to %s" % (resource_name, new_resource_name))
 
     def save_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -431,7 +459,7 @@ class ShaderLoader(ResourceLoader):
     def open_resource(self, resource_name):
         shader = self.getResourceData(resource_name)
         if shader:
-            self.resource_manager.materialLoader.getMaterial(resource_name)
+            self.resource_manager.material_instanceLoader.create_material_instance(resource_name)
 
 
 # -----------------------#
@@ -448,7 +476,8 @@ class MaterialLoader(ResourceLoader):
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
         if material:
-            self.resource_manager.material_instanceLoader.create_material_instance(material)
+            self.resource_manager.material_instanceLoader.create_material_instance(material.shader_name,
+                                                                                   material.macros)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -553,7 +582,6 @@ class MaterialInstanceLoader(ResourceLoader):
             meta_data = resource.meta_data
             material_instance_data = self.load_resource_data(meta_data.resource_filepath)
             if material_instance_data:
-                material_instance_data['material'] = self.resource_manager.getMaterial(material_instance_data['material'])
                 material_instance = MaterialInstance(resource.name, **material_instance_data)
                 if material_instance.valid:
                     resource.set_data(material_instance)
@@ -561,22 +589,22 @@ class MaterialInstanceLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def create_material_instance(self, material):
-        if material:
-            resource = self.create_resource(material.name)
-            material_instance = MaterialInstance(resource.name, material=material)
+    def create_material_instance(self, shader_name, macros=None):
+        if shader_name:
+            resource_name = self.get_new_resource_name(shader_name)
+            material_instance = MaterialInstance(resource_name, shader_name=shader_name, macros=macros)
             if material_instance.valid:
+                resource = self.create_resource(shader_name)
                 resource.set_data(material_instance)
                 self.save_resource(resource.name)
                 return True
-        logger.error('Failed to default material instance.')
+        logger.error('Failed to %s material instance.' % shader_name)
         return False
 
-    def getMaterialInstance(self, material_instance_name):
+    def getMaterialInstance(self, material_instance_name, macros=None):
         material_instance = self.getResourceData(material_instance_name)
         if material_instance is None:
-            material = self.resource_manager.getMaterial(material_instance_name)
-            if self.create_material_instance(material):
+            if self.create_material_instance(shader_name=material_instance_name, macros=macros):
                 material_instance = self.getResourceData(material_instance_name)
             else:
                 material_instance = self.getResourceData('default')
@@ -890,10 +918,20 @@ class ResourceManager(Singleton):
         if resource_loader:
             resource_loader.open_resource(resource_name)
 
+    def duplicate_resource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            resource_loader.duplicate_resource(resource_name)
+
     def save_resource(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
             resource_loader.save_resource(resource_name)
+
+    def rename_resource(self, resource_name, resource_type_name):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            resource_loader.rename_resource(resource_name)
 
     def delete_resource(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
