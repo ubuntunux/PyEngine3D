@@ -24,7 +24,8 @@ class StaticActor:
 
         # animation
         self.frame = 0.0
-        self.animation_buffer = []
+        # TODO : change to numpy array
+        self.animation_buffers = [None, ] * self.mesh.get_animation_count()
 
         # transform
         self.transform = TransformObject()
@@ -77,8 +78,8 @@ class StaticActor:
         if index < len(self.geometries):
             self.geometries[index].set_material_instance(material_instance)
 
-    def get_animation_buffer(self):
-        return self.animation_buffer
+    def get_animation_buffer(self, skeleton_index=0):
+        return self.animation_buffers[skeleton_index]
 
     def getAttribute(self):
         self.attributes.setAttribute('name', self.name)
@@ -115,9 +116,12 @@ class StaticActor:
 
         # update animation
         if self.mesh:
-            count = self.mesh.get_animation_frame_count()
-            if count > 0:
-                self.frame = math.fmod(self.frame + dt * 30.0, self.mesh.get_animation_frame_count())
-            else:
-                self.frame = 0.0
-            self.animation_buffer = self.mesh.get_animation_buffer(0, self.frame)
+            for i in range(self.mesh.get_animation_count()):
+                if self.mesh.animations[i]:
+                    count = self.mesh.get_animation_frame_count(i)
+                    if count > 0:
+                        self.frame = math.fmod(self.frame + dt * 30.0, self.mesh.get_animation_frame_count(i))
+                    else:
+                        self.frame = 0.0
+                    # TODO : change to numpy array, and have to change to copy form, [...]
+                    self.animation_buffers[i] = self.mesh.get_animation_transforms(i, self.frame)

@@ -311,7 +311,7 @@ class Renderer(Singleton):
         last_actor = None
         for geometry in geometries:
             actor = geometry.parent_actor
-            actor_has_bone = 0 < actor.mesh.get_animation_frame_count()
+            actor_has_bone = geometry.skeleton is not None
             if cast_shadow:
                 if actor_has_bone:
                     material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
@@ -329,7 +329,7 @@ class Renderer(Singleton):
 
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
-                geometry.bindBuffer()
+                geometry.bind_vertex_buffer()
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
@@ -338,12 +338,12 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if actor_has_bone:
-                    animation_buffer = actor.get_animation_buffer()
+                    animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
 
             # draw
             if geometry and material_instance:
-                geometry.draw()
+                geometry.draw_elements()
 
             last_actor = actor
             last_material = material
@@ -360,7 +360,7 @@ class Renderer(Singleton):
         if mesh and material_instance:
             material_instance.use_program()
             material_instance.bind()
-            mesh.bindBuffer()
+            mesh.bind_vertex_buffer()
 
             def draw_bone(mesh, skeleton_mesh, parent_matrix, material_instance, bone, root_matrix, isAnimation):
                 if isAnimation:
@@ -378,14 +378,14 @@ class Renderer(Singleton):
                             child_transform = np.linalg.inv(child_bone.inv_bind_matrix)
                         material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
                         material_instance.bind_uniform_data("mat2", np.dot(child_transform, root_matrix))
-                        mesh.draw()
+                        mesh.draw_elements()
                         draw_bone(mesh, skeleton_mesh, bone_transform.copy(), material_instance, child_bone, root_matrix, isAnimation)
                 else:
                     material_instance.bind_uniform_data("mat1", np.dot(bone_transform, root_matrix))
                     child_transform = np.dot(bone_transform, root_matrix)
                     child_transform[3, :] += child_transform[1, :]
                     material_instance.bind_uniform_data("mat2", child_transform)
-                    mesh.draw()
+                    mesh.draw_elements()
 
             for static_actor in static_actors:
                 if static_actor.model and static_actor.model.mesh and static_actor.model.mesh.skeletons:
@@ -409,7 +409,7 @@ class Renderer(Singleton):
 
         camera = self.sceneManager.getMainCamera()
         mesh = self.resource_manager.getMesh("Quad")
-        mesh.bindBuffer()
+        mesh.bind_vertex_buffer()
 
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         self.framebuffer.set_color_texture(backbuffer)
@@ -421,7 +421,7 @@ class Renderer(Singleton):
         # texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         # self.tonemapping.set_uniform_data("texture_diffuse", texture_diffuse)
         # self.tonemapping.bind_material_instance()
-        # mesh.draw()
+        # mesh.draw_elements()
 
 
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
@@ -439,7 +439,7 @@ class Renderer(Singleton):
         self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.screeen_space_reflection.bind_material_instance()
-        mesh.draw()
+        mesh.draw_elements()
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
             self.framebuffer.set_color_texture(backbuffer)
@@ -447,4 +447,4 @@ class Renderer(Singleton):
             self.copy_rendertarget.use_program()
             self.copy_rendertarget.bind_uniform_data("is_depth_texture", self.debug_rendertarget.is_depth_texture())
             self.copy_rendertarget.bind_uniform_data("texture_diffuse", self.debug_rendertarget)
-            mesh.draw()
+            mesh.draw_elements()

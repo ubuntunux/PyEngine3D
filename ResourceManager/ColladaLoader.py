@@ -524,6 +524,26 @@ class Collada:
         use_accumulated_transform = True
         use_relative_matrix = False
 
+        def get_empty_animation_node_data(animation_node_name, bone_name):
+            return dict(
+                name=animation_node_name,
+                target=bone_name
+            )
+
+        def get_animation_node_data(animation_node_name, animation_node):
+            return dict(
+                name=animation_node_name,
+                target=animation_node.target,
+                times=animation_node.inputs,
+                # transforms=[matrix for matrix in transforms],
+                locations=[extract_location(matrix) for matrix in animation_node.outputs],
+                rotations=[extract_rotation(matrix) for matrix in animation_node.outputs],
+                scales=[np.array([1.0, 1.0, 1.0], dtype=np.float32) for matrix in animation_node.outputs],
+                interpoations=animation_node.interpolations,
+                in_tangents=animation_node.in_tangents,
+                out_tangents=animation_node.out_tangents
+            )
+
         def precompute_animation(children_hierachy, bone_names, inv_bind_matrices, parent_matrix, frame=0):
             for child in children_hierachy:
                 for child_anim in self.animations:
@@ -544,18 +564,21 @@ class Collada:
                                              child_transform, frame)
                         break
 
-        for animation in self.animations:
-            # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
-            if animation.type != 'transform':
-                continue
+        # precompute_animation
+        animation_datas = []
+        for skeleton_data in skeleton_datas:
+            hierachy = skeleton_data['hierachy']  # tree data
+            bone_names = skeleton_data['bone_names']
+            inv_bind_matrices = skeleton_data['inv_bind_matrices']
 
-            for skeleton_data in skeleton_datas:
-                hierachy = skeleton_data['hierachy']
-                bone_names = skeleton_data['bone_names']
-                inv_bind_matrices = skeleton_data['inv_bind_matrices']
+            for animation in self.animations:
+                # Currently, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
+                if animation.type != 'transform':
+                    continue
 
-                # is root bone?
+                # Find root bone and skeleton data
                 if animation.target in hierachy:
+                    # precompute all animation frames
                     for frame, transform in enumerate(animation.outputs):
                         # only root bone adjust convert_matrix for swap Y-Z Axis
                         transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True,
@@ -566,37 +589,23 @@ class Collada:
                             animation.outputs[frame] = np.dot(inv_bind_matrix, transform)
                         else:
                             animation.outputs[frame] = transform
+                        # recursive precompute animation
                         precompute_animation(hierachy[animation.target], bone_names, inv_bind_matrices, transform,
                                              frame)
-
-        # make animation data
-        animation_datas = []
-        for animation in self.animations:
-            # Now, parsing only Transform Matrix. Future will pasing from location, rotation, scale.
-            if animation.type != 'transform':
-                continue
-
-            # filter only bone
-            for skeleton_data in skeleton_datas:
-                if animation.target in skeleton_data['bone_names']:
-                    break
-            else:
-                continue
-
-            animation_name = "%s_%s_%s" % (self.name, skeleton_data['name'], animation.target)
-            animation_data = dict(
-                name=animation_name,
-                target=animation.target,
-                times=animation.inputs,
-                # transforms=[matrix for matrix in transforms],
-                locations=[extract_location(matrix) for matrix in animation.outputs],
-                rotations=[extract_rotation(matrix) for matrix in animation.outputs],
-                scales=[np.array([1.0, 1.0, 1.0], dtype=np.float32) for matrix in animation.outputs],
-                interpoations=animation.interpolations,
-                in_tangents=animation.in_tangents,
-                out_tangents=animation.out_tangents
-            )
+            # generate animation data
+            animation_data = []  # bone animation data list order by bone index
             animation_datas.append(animation_data)
+            for bone_name in bone_names:
+                for animation in self.animations:
+                    if animation.target == bone_name:
+                        animation_node_name = "%s_%s_%s" % (self.name, skeleton_data['name'], bone_name)
+                        animation_data.append(get_animation_node_data(animation_node_name, animation))
+                        break
+                else:
+                    logger.warn('not found %s animation datas' % bone_name)
+                    animation_node_name = "%s_%s_%s" % (self.name, skeleton_data['name'], bone_name)
+                    animation_data.append(get_empty_animation_node_data(animation_node_name, bone_name))
+
         return animation_datas
 
     def get_geometry_data(self):

@@ -1,4 +1,4 @@
-from .Animation import AnimationNode
+from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
 from .Mesh import Geometry, Mesh, Triangle, Quad, Cube
 from .Model import Model

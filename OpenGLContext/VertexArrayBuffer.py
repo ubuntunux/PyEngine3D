@@ -95,7 +95,7 @@ class VertexArrayBuffer:
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
 
-    def bindBuffer(self):
+    def bind_vertex_buffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
         for i in self.vertex_stride_range:
@@ -106,7 +106,7 @@ class VertexArrayBuffer:
         # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
-    def unbindBuffer(self):
+    def unbind_vertex_buffer(self):
         for i in self.vertex_stride_range:
             glDisableVertexAttribArray(i)
 

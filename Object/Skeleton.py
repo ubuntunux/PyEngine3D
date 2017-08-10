@@ -25,8 +25,9 @@ class Bone:
 
 
 class Skeleton:
-    def __init__(self, **skeleton_data):
+    def __init__(self, index, **skeleton_data):
         self.name = skeleton_data.get('name', '')
+        self.index = index
 
         self.bone_names = skeleton_data.get('bone_names', [])
         self.bones = [None, ] * len(self.bone_names)
