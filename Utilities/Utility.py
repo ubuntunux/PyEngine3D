@@ -20,10 +20,10 @@ def check_directory_and_mkdir(dirname):
 
 
 def get_modify_time_of_file(filepath):
-    timeStamp = 0.0
     if filepath != "" and os.path.exists(filepath):
         timeStamp = os.path.getmtime(filepath)
-    return str(datetime.datetime.fromtimestamp(timeStamp))
+        return str(datetime.datetime.fromtimestamp(timeStamp))
+    return str(datetime.datetime.min)
 
 
 def delete_from_referrer(obj):
