@@ -107,8 +107,8 @@ class MaterialInstance:
         uniform = self.linked_uniform_map.get(uniform_name)
         if uniform:
             uniform[0].bind_uniform(uniform_data, num)
-        else:
-            logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
+        # else:
+        #     logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 
     def set_uniform_data(self, uniform_name, uniform_data):
         uniform = self.linked_uniform_map.get(uniform_name)

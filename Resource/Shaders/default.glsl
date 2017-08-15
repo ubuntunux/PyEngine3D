@@ -7,7 +7,6 @@
 uniform mat4 shadow_matrix;
 uniform sampler2D shadow_texture;
 
-
 //-------------- MATERIAL_COMPONENTS ---------------//
 
 #include "default_material.glsl"
@@ -46,9 +45,22 @@ void main() {
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
     float shadow_d = shadow_uv.z;
 
-    float shadow_distance = texture(shadow_texture, shadow_uv.xy).x;
-    float shadow = shadow_distance <= shadow_d - shadow_bias ? 0.2 : 1.0;
-    fs_output.xyz *= shadow;
+    float shadow_factor = texture(shadow_texture, shadow_uv.xy).x <= shadow_d - shadow_bias ? 0.0 : 1.0;
+    float weight = 1.0;
+    const int kernel = 4;
+    const vec2 inv_shadow_map_size = 1.0 / textureSize(shadow_texture, 0);
+    for(int y=0;y<kernel;++y)
+    {
+        for(int x=0;x<kernel;++x)
+        {
+            shadow_factor += texture(shadow_texture, shadow_uv.xy + inv_shadow_map_size * vec2(x, y)).x <= shadow_d - shadow_bias ? 0.2 : 1.0;
+            weight += 1.0;
+        }
+    }
+    shadow_factor /= weight;
+    shadow_factor = max(0.2, shadow_factor);
+
+    fs_output.xyz *= shadow_factor;
     fs_diffuse = vec4(baseColor.xyz, 1.0);
     fs_normal = vec4(normalVector, 1.0);
 }

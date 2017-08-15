@@ -8,7 +8,7 @@ layout(std140, binding=0) uniform sceneConstants
     mat4 inv_view_origin;
     mat4 perspective;
     mat4 inv_perspective;
-    vec4 cameraPosition;
+    vec4 camera_position;
     vec4 near_far;
 };
 
@@ -21,4 +21,4 @@ layout(std140, binding=1) uniform lightConstants
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 72;
-const float shadow_bias = 0.00001;
+const float shadow_bias = -0.0001;

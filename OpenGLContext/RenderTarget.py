@@ -13,6 +13,7 @@ class RenderTargets(AutoEnum):
     DIFFUSE = ()
     WORLD_NORMAL = ()
     SHADOWMAP = ()
+    LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
     COUNT = ()
 
@@ -78,11 +79,23 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE)
 
+        # attach to depth render target
         self.create_rendertarget(RenderTargets.SHADOWMAP,
-                                 width=2048,
-                                 height=2048,
+                                 width=1024,
+                                 height=1024,
                                  internal_format=GL_DEPTH_COMPONENT32,
                                  texture_format=GL_DEPTH_COMPONENT,
+                                 data_type=GL_FLOAT,
+                                 min_filter=GL_NEAREST,
+                                 mag_filter=GL_NEAREST,
+                                 enable_mipmap=False)
+
+        # attach to color render target
+        self.create_rendertarget(RenderTargets.LINEAR_DEPTH,
+                                 width=fullsize_x,
+                                 height=fullsize_x,
+                                 internal_format=GL_R32F,
+                                 texture_format=GL_RED,
                                  data_type=GL_FLOAT,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,

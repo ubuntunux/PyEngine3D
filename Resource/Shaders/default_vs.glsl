@@ -80,7 +80,7 @@ void main() {
     vs_output.tangentToWorld = model * mat4(vec4(vertexTangent, 0.0), vec4(vertexNormal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     vs_output.texCoord = vs_input.texcoord;
 
-    vs_output.cameraVector = cameraPosition.xyz - vs_output.worldPosition;
+    vs_output.cameraVector = camera_position.xyz - vs_output.worldPosition;
     vs_output.cameraDistance = length(vs_output.cameraVector);
     vs_output.cameraVector /= vs_output.cameraDistance;
 

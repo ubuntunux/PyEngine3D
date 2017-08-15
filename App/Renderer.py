@@ -207,7 +207,14 @@ class Renderer(Singleton):
 
         self.render_objects_begin()
 
+        # render object
+        colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
+        normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
+        depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+
+        # prepare shadow map
         self.framebuffer.set_color_texture(None)
         self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
@@ -238,19 +245,15 @@ class Renderer(Singleton):
         shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
         shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
+        glFrontFace(GL_CW)
         self.render_objects(shadow_projection, True)
-
-        # render object
-        colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
-        diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
-        normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
-        depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
         self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture], (0.0, 0.0, 0.0, 1.0))
         self.framebuffer.set_depth_texture(depthtexture, (1.0, 1.0, 1.0, 0.0))
         self.framebuffer.bind_framebuffer()
 
         view_projection = camera.view_projection
+        glFrontFace(GL_CCW)
         self.render_objects(view_projection, False, True, shadow_projection, shadowmap)
 
         # self.render_bones()
@@ -422,7 +425,6 @@ class Renderer(Singleton):
         # self.tonemapping.set_uniform_data("texture_diffuse", texture_diffuse)
         # self.tonemapping.bind_material_instance()
         # mesh.draw_elements()
-
 
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
         self.framebuffer.set_color_texture(texture_ssr, [0.0, 0.0, 0.0, 0.0])

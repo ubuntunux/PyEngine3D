@@ -33,7 +33,7 @@ class FrameBuffer:
         self.height = height
         glViewport(x, y, width, height)
 
-    def set_color_texture(self, texture, clear_color=None):
+    def set_color_texture(self, texture, clear_color=False):
         for i in range(len(self.color_textures)):
             if self.color_textures[i]:
                 self.color_textures[i].set_attachment(False)
@@ -46,7 +46,7 @@ class FrameBuffer:
                 self.color_textures[i] = None
         self.clear_color = clear_color
 
-    def set_color_textures(self, textures, clear_color=None):
+    def set_color_textures(self, textures, clear_color=False):
         """
         :param textures: [Texture2D, ]
         :param clear_color: None or 4 Color Tuple
@@ -64,7 +64,7 @@ class FrameBuffer:
                 self.color_textures[i] = None
         self.clear_color = clear_color
 
-    def set_depth_texture(self, texture, clear_color=None):
+    def set_depth_texture(self, texture, clear_depth=False):
         """
         :param texture: Texture2D
         :param clear_color: None or 4 Color Tuple
@@ -75,10 +75,11 @@ class FrameBuffer:
         if texture:
             texture.set_attachment(True)
         self.depth_texture = texture
-        self.clear_depth = clear_color
+        self.clear_depth = clear_depth
 
     def bind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
+
         # bind color textures
         attach_count = 0
         for i, color_texture in enumerate(self.color_textures):
@@ -93,15 +94,10 @@ class FrameBuffer:
             else:
                 self.attachments[i] = 0
                 glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
-        # Specifies a list of color buffers to be drawn into
-        glDrawBuffers(attach_count, self.attachments)
 
-        if self.color_textures[0]:
-            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height)
-
-            if self.clear_color:
-                glClearColor(*self.clear_color)
-                glClear(GL_COLOR_BUFFER_BIT)
+        if attach_count > 0:
+            # Specifies a list of color buffers to be drawn into
+            glDrawBuffers(attach_count, self.attachments)
         else:
             # Important - We need to explicitly tell OpenGL we're not going to render any color data.
             glDrawBuffer(GL_NONE)
@@ -113,18 +109,24 @@ class FrameBuffer:
                 attachment = GL_DEPTH_STENCIL_ATTACHMENT
             else:
                 attachment = GL_DEPTH_ATTACHMENT
-
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, self.depth_texture.buffer, 0)
-
-            # Set viewport if there isn't any color texture.
-            if not self.color_textures[0]:
-                self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height)
-
-            if self.clear_depth:
-                glClearColor(*self.clear_depth)
-                glClear(GL_DEPTH_BUFFER_BIT)
         else:
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
+
+        # set viewport
+        if attach_count > 0:
+            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height)
+        elif self.depth_texture:
+            # Set viewport if there isn't any color texture.
+            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height)
+
+        # Note : must call glClear after glFramebufferTexture2D
+        if self.clear_color:
+            glClearColor(0.0, 0.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+
+        if self.clear_depth:
+            glClear(GL_DEPTH_BUFFER_BIT)
 
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
