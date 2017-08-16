@@ -11,9 +11,7 @@ class FrameBuffer:
         self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
         self.color_textures = [None, ] * self.max_draw_buffers
         self.attachments = [0, ] * self.max_draw_buffers
-        self.clear_color = None
         self.depth_texture = None
-        self.clear_depth = None
         self.x = 0
         self.y = 0
         self.width = 0
@@ -33,20 +31,10 @@ class FrameBuffer:
         self.height = height
         glViewport(x, y, width, height)
 
-    def set_color_texture(self, texture, clear_color=False):
-        for i in range(len(self.color_textures)):
-            if self.color_textures[i]:
-                self.color_textures[i].set_attachment(False)
+    def set_color_texture(self, texture):
+        self.set_color_textures([texture, ])
 
-            if i == 0:
-                if texture:
-                    texture.set_attachment(True)
-                self.color_textures[i] = texture
-            else:
-                self.color_textures[i] = None
-        self.clear_color = clear_color
-
-    def set_color_textures(self, textures, clear_color=False):
+    def set_color_textures(self, textures):
         """
         :param textures: [Texture2D, ]
         :param clear_color: None or 4 Color Tuple
@@ -62,9 +50,8 @@ class FrameBuffer:
                 self.color_textures[i] = textures[i]
             else:
                 self.color_textures[i] = None
-        self.clear_color = clear_color
 
-    def set_depth_texture(self, texture, clear_depth=False):
+    def set_depth_texture(self, texture):
         """
         :param texture: Texture2D
         :param clear_color: None or 4 Color Tuple
@@ -75,7 +62,6 @@ class FrameBuffer:
         if texture:
             texture.set_attachment(True)
         self.depth_texture = texture
-        self.clear_depth = clear_depth
 
     def bind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
@@ -120,24 +106,14 @@ class FrameBuffer:
             # Set viewport if there isn't any color texture.
             self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height)
 
-        # Note : must call glClear after glFramebufferTexture2D
-        if self.clear_color:
-            glClearColor(0.0, 0.0, 0.0, 1.0)
-            glClear(GL_COLOR_BUFFER_BIT)
-
-        if self.clear_depth:
-            glClear(GL_DEPTH_BUFFER_BIT)
-
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
             logger.error("glCheckFramebufferStatus error %d." % gl_error)
 
     def unbind_framebuffer(self):
-        self.clear()
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def blit_framebuffer(self, framebuffer_width, framebuffer_height):
-        self.clear()
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)

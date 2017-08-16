@@ -216,8 +216,10 @@ class Renderer(Singleton):
 
         # prepare shadow map
         self.framebuffer.set_color_texture(None)
-        self.framebuffer.set_depth_texture(shadowmap, (1.0, 1.0, 1.0, 0.0))
+        self.framebuffer.set_depth_texture(shadowmap)
         self.framebuffer.bind_framebuffer()
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.uniformSceneConstants.bind_uniform_block(camera.view,
                                                       np.linalg.inv(camera.view),
@@ -248,9 +250,11 @@ class Renderer(Singleton):
         glFrontFace(GL_CW)
         self.render_objects(shadow_projection, True)
 
-        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture], (0.0, 0.0, 0.0, 1.0))
-        self.framebuffer.set_depth_texture(depthtexture, (1.0, 1.0, 1.0, 0.0))
+        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture])
+        self.framebuffer.set_depth_texture(depthtexture)
         self.framebuffer.bind_framebuffer()
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         view_projection = camera.view_projection
         glFrontFace(GL_CCW)
@@ -427,8 +431,10 @@ class Renderer(Singleton):
         # mesh.draw_elements()
 
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
-        self.framebuffer.set_color_texture(texture_ssr, [0.0, 0.0, 0.0, 0.0])
+        self.framebuffer.set_color_texture(texture_ssr)
         self.framebuffer.bind_framebuffer()
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
 
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
