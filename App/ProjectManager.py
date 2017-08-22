@@ -40,7 +40,7 @@ class ProjectManager(Singleton):
             self.config.setDefaultValue("Screen", "size", [1024, 768])
             meter_per_unit = 1.0  # 1 unit = 1 m
             self.config.setDefaultValue("Camera", "meter_per_unit", meter_per_unit)
-            self.config.setDefaultValue("Camera", "near", 0.01 / meter_per_unit)  # 1 cm
+            self.config.setDefaultValue("Camera", "near", 0.1 / meter_per_unit)  # 10 cm
             self.config.setDefaultValue("Camera", "far", 2000.0 / meter_per_unit)  # 2 km
             self.config.setDefaultValue("Camera", "fov", 60)
             self.config.setDefaultValue("Camera", "move_speed", meter_per_unit)

@@ -63,6 +63,7 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_UNSIGNED_INT_24_8,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
+                                 wrap=GL_CLAMP,
                                  enable_mipmap=False)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
@@ -88,6 +89,7 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_FLOAT,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
+                                 wrap=GL_CLAMP,
                                  enable_mipmap=False)
 
         # attach to color render target
