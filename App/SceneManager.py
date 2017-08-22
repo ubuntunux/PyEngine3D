@@ -73,8 +73,14 @@ class SceneManager(Singleton):
         self.clear_scene()
         self.set_current_scene_name(scene_name)
 
-        self.mainCamera = self.addCamera(scene_data.get('camera'))
-        self.addLight(scene_data.get('light'))
+        camera_datas = scene_data.get('cameras', [])
+        for camera_data in camera_datas:
+            self.addCamera(**camera_data)
+        self.mainCamera = self.get_camera(0)
+
+        light_datas = scene_data.get('lights', [])
+        for light_data in light_datas:
+            self.addLight(**light_data)
 
         for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)
@@ -88,11 +94,10 @@ class SceneManager(Singleton):
         self.resource_manager.sceneLoader.save_resource(self.__current_scene_name)
 
     def get_save_data(self):
-        static_actors = [static_actor.get_save_data() for static_actor in self.static_actors]
         scene_data = dict(
-            camera=self.mainCamera.name,
-            light=self.lights[0].name,
-            static_actors=static_actors
+            cameras=[camera.get_save_data() for camera in self.cameras],
+            lights=[light.get_save_data() for light in self.lights],
+            static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
         )
         return scene_data
 
@@ -131,36 +136,32 @@ class SceneManager(Singleton):
     def getMainCamera(self):
         return self.mainCamera
 
-    def addCamera(self, name=''):
-        camera_name = self.generateObjectName(name or "camera")
-        logger.info("add Camera : %s" % camera_name)
-        camera = Camera(camera_name,
-                        scene_manager=self,
-                        pos=(0, 0, 0),
-                        model=self.resource_manager.getModel('Quad'))
+    def addCamera(self, **camera_data):
+        camera_data['name'] = self.generateObjectName(camera_data.get('name', 'camera'))
+        camera_data['model'] = self.resource_manager.getModel('Cube')
+        logger.info("add Camera : %s" % camera_data['name'])
+        camera = Camera(scene_manager=self, **camera_data)
         camera.initialize()
         self.regist_object(camera)
         return camera
 
-    def addLight(self, name=''):
-        light_name = self.generateObjectName(name or "light")
-        logger.info("add Light : %s" % light_name)
-        light = Light(light_name,
-                      pos=(0, 0, 0),
-                      model=self.resource_manager.getModel('Quad'),
-                      lightColor=(1.0, 1.0, 1.0, 1.0))
+    def addLight(self, **light_data):
+        light_data['name'] = self.generateObjectName(light_data.get('name', 'light'))
+        light_data['model'] = self.resource_manager.getModel('Cube')
+        logger.info("add Light : %s" % light_data['name'])
+        light = Light(**light_data)
         self.regist_object(light)
         return light
 
     def addObject(self, **object_data):
         model = object_data.get('model')
         if model:
-            objName = self.generateObjectName(model.name)
+            object_data['name'] = self.generateObjectName(object_data.get('name', model.name))
             objType = GetClassName(model)
-            logger.info("add %s : %s" % (objType, objName))
+            logger.info("add %s : %s" % (objType, object_data['name']))
 
             if 'Model' == objType:
-                obj_instance = StaticActor(objName, **object_data)
+                obj_instance = StaticActor(**object_data)
             else:
                 obj_instance = None
             # regist
@@ -205,6 +206,18 @@ class SceneManager(Singleton):
 
     def getObjects(self):
         return self.objectMap.values()
+
+    def get_camera(self, index):
+        return self.cameras[index] if index < len(self.cameras) else None
+
+    def get_light(self, index):
+        return self.lights[index] if index < len(self.lights) else None
+
+    def get_static_actor(self, index):
+        return self.static_actors[index] if index < len(self.static_actors) else None
+
+    def get_static_actors(self):
+        return self.static_actors
 
     def get_static_actors(self):
         return self.static_actors

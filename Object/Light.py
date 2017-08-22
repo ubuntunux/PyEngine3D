@@ -11,3 +11,8 @@ class Light(StaticActor):
         StaticActor.__init__(self, name, **object_data)
         lightColor = object_data.get('lightColor', (1.0, 1.0, 1.0, 1.0))
         self.lightColor = np.array(lightColor, dtype=np.float32)
+
+    def get_save_data(self):
+        save_data = StaticActor.get_save_data(self)
+        save_data['lightColor'] = self.lightColor.tolist()
+        return save_data

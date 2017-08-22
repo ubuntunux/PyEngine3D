@@ -13,15 +13,16 @@ class Camera(StaticActor):
     def __init__(self, name, scene_manager, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
-        self.meter_per_unit = 1.0
-        self.aspect = 0.0
-        self.fov = 0.0
-        self.near = 0.0
-        self.far = 0.0
         self.scene_manager = scene_manager
-        self.move_speed = 0.0
-        self.pan_speed = 0.0
-        self.rotation_speed = 0.0
+
+        self.meter_per_unit = object_data.get('meter_per_unit', 1.0)
+        self.aspect = object_data.get('aspect', 0.0)
+        self.fov = object_data.get('fov', 0.0)
+        self.near = object_data.get('near', 0.0)
+        self.far = object_data.get('far', 0.0)
+        self.move_speed = object_data.get('move_speed', 0.0)
+        self.pan_speed = object_data.get('pan_speed', 0.0)
+        self.rotation_speed = object_data.get('rotation_speed', 0.0)
 
         self.front = Float4()
 
@@ -46,6 +47,18 @@ class Camera(StaticActor):
         self.move_speed = config.Camera.move_speed
         self.pan_speed = config.Camera.pan_speed
         self.rotation_speed = config.Camera.rotation_speed
+
+    def get_save_data(self):
+        save_data = StaticActor.get_save_data(self)
+        save_data['meter_per_unit'] = 1.0
+        save_data['aspect'] = 0.0
+        save_data['fov'] = 0.0
+        save_data['near'] = 0.0
+        save_data['far'] = 0.0
+        save_data['move_speed'] = 0.0
+        save_data['pan_speed'] = 0.0
+        save_data['rotation_speed'] = 0.0
+        return save_data
 
     def write_to_config(self, config):
         config.setValue("Camera", "meter_per_unit", self.meter_per_unit)

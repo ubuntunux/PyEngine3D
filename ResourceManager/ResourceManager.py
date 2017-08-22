@@ -789,8 +789,6 @@ class SceneLoader(ResourceLoader):
                 scene_datas = self.load_resource_data(meta_data.resource_filepath)
                 for object_data in scene_datas.get('static_actors', []):
                     object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
-                    for i, material_instance in enumerate(object_data['material_instances']):
-                        object_data['material_instances'][i] = self.resource_manager.getMaterialInstance(material_instance)
 
                 self.scene_manager.open_scene(resource_name, scene_datas)
                 # resource.set_data(scene_datas)

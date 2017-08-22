@@ -20,8 +20,8 @@ class Model:
         self.attributes = Attributes()
 
     def set_mesh(self, mesh):
-        if mesh:
-            self.mesh = mesh
+        self.mesh = mesh
+        if self.mesh:
             geometry_count = mesh.get_geometry_count()
             material_instance_count = len(self.material_instances)
             if geometry_count < material_instance_count:

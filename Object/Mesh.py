@@ -13,32 +13,30 @@ from App import CoreManager
 class Geometry:
     def __init__(self, **geometry_data):
         self.name = geometry_data.get('name', '')
-        self.parent_actor = geometry_data.get('parent_actor')
-        self.parent_mesh = geometry_data.get('parent_mesh')
-        self.parent_geometry = geometry_data.get('parent_geometry')
+        self.index = geometry_data.get('index', 0)
         self.vertex_buffer = geometry_data.get('vertex_buffer')
-        self.material_instance = geometry_data.get('material_instance')
         self.skeleton = geometry_data.get('skeleton')
-
-        if self.parent_geometry is not None:
-            self.parent_mesh = self.parent_geometry.parent_mesh
-            self.vertex_buffer = self.parent_geometry.vertex_buffer
-            self.skeleton = self.parent_geometry.skeleton
-
-    def get_material_instance(self):
-        return self.material_instance
-
-    def get_material_instance_name(self):
-        return self.material_instance.name if self.material_instance else ''
-
-    def set_material_instance(self, material_instance):
-        self.material_instance = material_instance
 
     def bind_vertex_buffer(self):
         self.vertex_buffer.bind_vertex_buffer()
 
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
+
+
+class GeometryInstance(Geometry):
+    def __init__(self, parent_geometry, parent_actor, material_instance):
+        Geometry.__init__(self, **parent_geometry.__dict__)
+
+        self.parent_actor = parent_actor
+        self.parent_geometry = parent_geometry
+        self.material_instance = material_instance
+
+    def get_material_instance(self):
+        return self.material_instance
+
+    def set_material_instance(self, material_instance):
+        self.material_instance = material_instance
 
 
 class Mesh:
@@ -63,7 +61,7 @@ class Mesh:
                 self.animations.append(None)
 
         self.geometries = []
-        for geometry_data in mesh_data.get('geometry_datas', []):
+        for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer:
                 # find skeleton of geometry
@@ -74,18 +72,30 @@ class Mesh:
                 # create geometry
                 geometry = Geometry(
                     name=vertex_buffer.name,
-                    parent_mesh=self,
+                    index=i,
                     vertex_buffer=vertex_buffer,
                     skeleton=skeleton
                 )
                 self.geometries.append(geometry)
         self.attributes = Attributes()
 
+    def get_geometry(self, index):
+        return self.geometries[index] if index < len(self.geometries) else None
+
     def get_geometry_count(self):
         return len(self.geometries)
 
+    def get_skeleton(self, index):
+        return self.skeletons[index] if index < len(self.skeletons) else None
+
+    def get_skeleton_index(self, skeleton):
+        return self.skeletons.index(skeleton)
+
     def get_skeleton_count(self):
         return len(self.skeletons)
+
+    def get_animation(self, index):
+        return self.animations[index] if index < len(self.animations) else None
 
     def get_animation_count(self):
         return len(self.animations)

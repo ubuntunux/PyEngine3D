@@ -47,11 +47,11 @@ def CreateVertexArrayBuffer(geometry_data):
 
     if 0 < len(bone_indicies) and 0 < len(bone_weights):
         vertex_array_buffer = VertexArrayBuffer(geometry_name,
-                                     [positions, colors, normals, tangents, texcoords, bone_indicies,
-                                      bone_weights], indices)
+                                                [positions, colors, normals, tangents, texcoords, bone_indicies,
+                                                 bone_weights], indices)
     else:
         vertex_array_buffer = VertexArrayBuffer(geometry_name, [positions, colors, normals, tangents, texcoords],
-                                     indices)
+                                                indices)
     return vertex_array_buffer
 
 

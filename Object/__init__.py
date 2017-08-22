@@ -1,6 +1,6 @@
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
-from .Mesh import Geometry, Mesh, Triangle, Quad, Cube
+from .Mesh import Geometry, GeometryInstance, Mesh, Triangle, Quad, Cube
 from .Model import Model
 from .TransformObject import TransformObject
 from .StaticActor import Model, StaticActor
