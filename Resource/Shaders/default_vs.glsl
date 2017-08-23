@@ -8,10 +8,12 @@
 
 #if 1 == SKELETAL
 uniform mat4 bone_matrices[MAX_BONES];
+uniform mat4 prev_bone_matrices[MAX_BONES];
 #endif
 
 uniform mat4 model;
-uniform mat4 mvp;
+uniform mat4 view_projection;
+uniform mat4 prev_view_projection;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
 
@@ -43,6 +45,7 @@ struct VERTEX_OUTPUT
     float cameraDistance;
     vec3 lightVector;
     float lightDistance;
+    vec2 velocity;
 };
 
 //----------- VERTEX_SHADER ---------------//
@@ -52,28 +55,32 @@ in VERTEX_INPUT vs_input;
 out VERTEX_OUTPUT vs_output;
 
 void main() {
-    vec4 localPosition = vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 position = vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 prev_position = vec4(0.0, 0.0, 0.0, 0.0);
     vec3 vertexNormal = vec3(0.0, 0.0, 0.0);
     vec3 vertexTangent = vec3(0.0, 0.0, 0.0);
 
 #if 1 == SKELETAL
     for(int i=0; i<MAX_BONES_PER_VERTEX; ++i)
     {
-        localPosition += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
+        prev_position += (prev_bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
+        position += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
         vertexNormal += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.normal, 0.0)).xyz * vs_input.bone_weights[i];
         vertexTangent += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.tangent, 0.0)).xyz * vs_input.bone_weights[i];
     }
-    localPosition /= localPosition.w;
+    position /= position.w;
+    prev_position /= prev_position.w;
 #else
-    localPosition = vec4(vs_input.position, 1.0);
+    position = vec4(vs_input.position, 1.0);
     vertexNormal = vs_input.normal;
     vertexTangent = vs_input.tangent;
+    prev_position = position;
 #endif
     vertexNormal = normalize(vertexNormal);
     vertexTangent = normalize(vertexTangent);
 
     vs_output.vertexColor = vs_input.color;
-    vs_output.worldPosition = (model * localPosition).xyz;
+    vs_output.worldPosition = (model * position).xyz;
 
     vs_output.normalVector = (model * vec4(vertexNormal, 0.0)).xyz;
     vec3 bitangent = cross(vertexTangent, vertexNormal);
@@ -88,6 +95,12 @@ void main() {
     vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
     vs_output.lightDistance = length(vs_output.lightVector);
     vs_output.lightVector = lightDir.xyz;
-    gl_Position = mvp * localPosition;
+
+    position = view_projection * model * position;
+    prev_position = prev_view_projection * model * prev_position;
+    vs_output.velocity = (position.xy / position.w) - (prev_position.xy / prev_position.w);
+    vs_output.velocity *= 0.5;
+
+    gl_Position = position;
 }
 #endif

@@ -49,7 +49,6 @@ class Texture2D:
         self.texture_format = texture_data.get('texture_format', GL_BGRA)
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         data = texture_data.get('data', c_void_p(0))
-        enable_mipmap = texture_data.get('enable_mipmap', True)
         min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         mag_filter = texture_data.get('mag_filter', GL_LINEAR)
         wrap = texture_data.get('wrap', GL_REPEAT)
@@ -65,9 +64,7 @@ class Texture2D:
                      self.texture_format,
                      self.data_type,
                      data)
-
-        if enable_mipmap:
-            glGenerateMipmap(GL_TEXTURE_2D)
+        glGenerateMipmap(GL_TEXTURE_2D)
 
         # create indivisual mipmapThis creates a texture with a single mipmap level.
         # You will also need separate glTexSubImage2D calls to upload each mipmap

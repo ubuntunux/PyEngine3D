@@ -19,6 +19,7 @@ in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 layout (location = 1) out vec4 fs_diffuse;
 layout (location = 2) out vec4 fs_normal;
+layout (location = 3) out vec2 fs_velocity;
 
 void main() {
     vec4 baseColor = get_base_color(vs_output.texCoord.xy);
@@ -47,13 +48,16 @@ void main() {
 
     float shadow_factor = texture(shadow_texture, shadow_uv.xy).x <= shadow_d - shadow_bias ? 0.0 : 1.0;
     float weight = 1.0;
-    const int kernel = 4;
+    const int kernel = 2;
     const vec2 inv_shadow_map_size = 1.0 / textureSize(shadow_texture, 0);
-    for(int y=0;y<kernel;++y)
+    for(int y=-kernel;y<=kernel;++y)
     {
-        for(int x=0;x<kernel;++x)
+        for(int x=-kernel;x<=kernel;++x)
         {
-            shadow_factor += texture(shadow_texture, shadow_uv.xy + inv_shadow_map_size * vec2(x, y)).x <= shadow_d - shadow_bias ? 0.2 : 1.0;
+            vec2 uv = shadow_uv.xy + vec2(x, y) * inv_shadow_map_size;
+            uv += vec2(rand(uv)) * inv_shadow_map_size;
+
+            shadow_factor += texture(shadow_texture, uv).x <= shadow_d - shadow_bias ? 0.2 : 1.0;
             weight += 1.0;
         }
     }
@@ -63,5 +67,6 @@ void main() {
     fs_output.xyz *= shadow_factor;
     fs_diffuse = vec4(baseColor.xyz, 1.0);
     fs_normal = vec4(normalVector, 1.0);
+    fs_velocity = vs_output.velocity;
 }
 #endif

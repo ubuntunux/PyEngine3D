@@ -5,7 +5,7 @@
 #include "scene_constants.glsl"
 
 uniform mat4 model;
-uniform mat4 mvp;
+uniform mat4 view_projection;
 uniform vec4 diffuseColor;
 
 //----------- INPUT and OUTPUT ---------------//

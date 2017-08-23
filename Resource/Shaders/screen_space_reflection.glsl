@@ -19,7 +19,7 @@ void main() {
     fs_output = vec4(1.0);
 
     vec2 texcoord = vs_output.texcoord.xy;
-    float depth = textureLod(texture_depth, vs_output.texcoord.xy, 0.0).x;
+    float depth = texture(texture_depth, vs_output.texcoord.xy).x;
 
     vec4 clip_coord = vec4(vs_output.texcoord.xy * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 relative_pos = inv_view_origin * inv_perspective * clip_coord;
@@ -39,7 +39,7 @@ void main() {
 
         texcoord = clip_coord.xy * 0.5 + 0.5;
         float sample_depth = clip_coord.z * 0.5 + 0.5;
-        float curr_depth = textureLod(texture_depth, texcoord, 0.0).x;
+        float curr_depth = texture(texture_depth, texcoord).x;
         if(depth < curr_depth && sample_depth > curr_depth && texcoord.x > 0.0 && texcoord.x < 1.0 && texcoord.y > 0.0 && texcoord.y < 1.0)
          {
             fs_output = texture(texture_diffuse, texcoord.xy);

@@ -15,6 +15,7 @@ class RenderTargets(AutoEnum):
     SHADOWMAP = ()
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
+    VELOCITY = ()
     COUNT = ()
 
 
@@ -63,8 +64,7 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_UNSIGNED_INT_24_8,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
-                                 wrap=GL_CLAMP,
-                                 enable_mipmap=False)
+                                 wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
                                  width=fullsize_x,
@@ -89,8 +89,7 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_FLOAT,
                                  min_filter=GL_NEAREST,
                                  mag_filter=GL_NEAREST,
-                                 wrap=GL_CLAMP,
-                                 enable_mipmap=False)
+                                 wrap=GL_CLAMP)
 
         # attach to color render target
         self.create_rendertarget(RenderTargets.LINEAR_DEPTH,
@@ -100,8 +99,7 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_RED,
                                  data_type=GL_FLOAT,
                                  min_filter=GL_NEAREST,
-                                 mag_filter=GL_NEAREST,
-                                 enable_mipmap=False)
+                                 mag_filter=GL_NEAREST)
 
         self.create_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION,
                                  width=fullsize_x,
@@ -109,3 +107,10 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE)
+
+        self.create_rendertarget(RenderTargets.VELOCITY,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RG16F,
+                                 texture_format=GL_RG,
+                                 data_type=GL_FLOAT)

@@ -19,7 +19,7 @@ void main() {
     {
         float distance = distance_to_depth(near_far.x, near_far.y, fs_output.x);
         fs_output.xyz = vec3(distance);
-        fs_output.a = 1.0;
     }
+    fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER

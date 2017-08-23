@@ -16,7 +16,7 @@ out vec4 fs_output;
 
 void main() {
     vec2 texcoord = vs_output.texcoord.xy;
-    vec4 color = textureLod(texture_diffuse, vs_output.texcoord.xy, 0.0);
+    vec4 color = texture(texture_diffuse, vs_output.texcoord.xy);
     fs_output.xyz = pow(color.xyz, vec3(1.0 / 2.2));
     fs_output.a = 1.0;
 }

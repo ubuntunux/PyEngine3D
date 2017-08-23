@@ -33,3 +33,7 @@ float distance_to_depth(float zNear, float zFar, float distance)
     // NDC Z [-1, 1] to depth [0, 1]
     return depth * 0.5 + 0.5;
 }
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}

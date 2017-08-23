@@ -21,6 +21,7 @@ class StaticActor:
         # animation
         self.animation_frame = 0.0
         self.animation_buffers = []
+        self.prev_animation_buffers = []
 
         self.attributes = Attributes()
 
@@ -37,6 +38,7 @@ class StaticActor:
         self.mesh = self.model.mesh if self.model else None
 
         self.animation_buffers = []
+        self.prev_animation_buffers = []
         self.geometries = []
 
         if self.model and self.mesh:
@@ -49,6 +51,10 @@ class StaticActor:
                 if self.mesh.animations[i]:
                     animation_buffer = self.mesh.get_animation_transforms(i, self.animation_frame)
                     self.animation_buffers.append(animation_buffer.copy())
+                    self.prev_animation_buffers.append(animation_buffer.copy())
+
+    def get_prev_animation_buffer(self, index):
+        return self.prev_animation_buffers[index]
 
     def get_animation_buffer(self, index):
         return self.animation_buffers[index]
@@ -100,4 +106,5 @@ class StaticActor:
                         self.animation_frame = math.fmod(self.animation_frame + dt * 30.0, self.mesh.get_animation_frame_count(i))
                     else:
                         self.animation_frame = 0.0
+                    self.prev_animation_buffers[i][...] = self.animation_buffers[i]
                     self.animation_buffers[i][...] = self.mesh.get_animation_transforms(i, self.animation_frame)

@@ -88,6 +88,7 @@ class Renderer(Singleton):
         # postprocess
         self.tonemapping = None
         self.screeen_space_reflection = None
+        self.motion_blur = None
         self.copy_rendertarget = None
 
         # Test Code : scene constants uniform buffer
@@ -118,6 +119,7 @@ class Renderer(Singleton):
 
         # postprocess
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
+        self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
         self.copy_rendertarget = self.resource_manager.getMaterialInstance("copy_rendertarget")
 
@@ -213,6 +215,7 @@ class Renderer(Singleton):
         normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        velocity_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
 
         # prepare shadow map
         self.framebuffer.set_color_texture(None)
@@ -238,27 +241,28 @@ class Renderer(Singleton):
                                                       light.lightColor)
 
         # render shadow
-        shadow_distance = 10.0 / camera.meter_per_unit
+        shadow_distance = 50.0 / camera.meter_per_unit
         width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, camera.near, camera.far * 0.1)
+        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
 
         lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
         shadow_projection = light.transform.inverse_matrix.copy()
-        shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
+        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
         shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
 
         glFrontFace(GL_CW)
-        self.render_objects(shadow_projection, True)
+        self.render_objects(shadow_projection, shadow_projection, True)
 
-        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture])
+        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture, velocity_texture])
         self.framebuffer.set_depth_texture(depthtexture)
         self.framebuffer.bind_framebuffer()
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         view_projection = camera.view_projection
+        prev_view_projection = camera.prev_view_projection
         glFrontFace(GL_CCW)
-        self.render_objects(view_projection, False, True, shadow_projection, shadowmap)
+        self.render_objects(view_projection, prev_view_projection, False, True, shadow_projection, shadowmap)
 
         # self.render_bones()
         self.render_postprocess()
@@ -302,7 +306,7 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-    def render_objects(self, view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
+    def render_objects(self, view_projection, prev_view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
         static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
@@ -339,14 +343,18 @@ class Renderer(Singleton):
                 geometry.bind_vertex_buffer()
 
             if last_actor != actor and material_instance:
-                material_instance.bind_uniform_data('mvp', np.dot(actor.transform.matrix, view_projection))
+                material_instance.bind_uniform_data('view_projection', view_projection)
+                material_instance.bind_uniform_data('prev_view_projection', prev_view_projection)
                 if render_shadow:
                     material_instance.bind_uniform_data('model', actor.transform.matrix)
                     material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if actor_has_bone:
                     animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
+                    prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
+                    material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
+                                                        len(prev_animation_buffer))
 
             # draw
             if geometry and material_instance:
@@ -419,9 +427,20 @@ class Renderer(Singleton):
         mesh.bind_vertex_buffer()
 
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
+        texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
+        texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
+        texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
+
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
+
+        self.motion_blur.use_program()
+        self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
+        self.motion_blur.bind_material_instance()
+        mesh.draw_elements()
 
         # tonemapping
         # self.tonemapping.use_program()
@@ -435,10 +454,6 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
-
-        texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
-        texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
-        texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
 
         self.screeen_space_reflection.use_program()
         # self.screeen_space_reflection.bind_uniform_data("viewOriginProj", camera.view_origin_projection)
