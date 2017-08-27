@@ -6,6 +6,7 @@
 
 uniform mat4 shadow_matrix;
 uniform sampler2D shadow_texture;
+uniform samplerCube texture_cube;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
 
@@ -64,9 +65,10 @@ void main() {
     shadow_factor /= weight;
     shadow_factor = max(0.2, shadow_factor);
 
-    fs_output.xyz *= shadow_factor;
-    fs_diffuse = vec4(baseColor.xyz, 1.0);
+    fs_diffuse = vec4(texture(texture_cube, reflect(-cameraVector, normalVector)).xyz, 1.0);
     fs_normal = vec4(normalVector, 1.0);
     fs_velocity = vs_output.velocity;
+
+    fs_output.xyz *= shadow_factor;
 }
 #endif

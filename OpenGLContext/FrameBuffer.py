@@ -20,9 +20,9 @@ class FrameBuffer:
     def delete(self):
         glDeleteFramebuffers(self.buffer)
 
-    def clear(self):
-        self.set_color_texture(None)
-        self.set_depth_texture(None)
+    def clear(self, clear_flag=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, clear_color=(0.0, 0.0, 0.0, 1.0)):
+        glClearColor(*clear_color)
+        glClear(clear_flag)
 
     def set_viewport(self, x, y, width, height):
         self.x = x
@@ -37,7 +37,6 @@ class FrameBuffer:
     def set_color_textures(self, textures):
         """
         :param textures: [Texture2D, ]
-        :param clear_color: None or 4 Color Tuple
         """
         texture_count = len(textures)
         for i in range(len(self.color_textures)):
@@ -54,7 +53,6 @@ class FrameBuffer:
     def set_depth_texture(self, texture):
         """
         :param texture: Texture2D
-        :param clear_color: None or 4 Color Tuple
         """
         if self.depth_texture:
             self.depth_texture.set_attachment(False)

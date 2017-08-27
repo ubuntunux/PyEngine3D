@@ -82,9 +82,9 @@ class CoreManager(Singleton):
 
         from ResourceManager import ResourceManager
         from OpenGLContext import RenderTargetManager
+        from OpenGLContext import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
-        from .Renderer import Renderer
 
         self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()

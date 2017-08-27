@@ -10,7 +10,7 @@ from App import CoreManager
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
     uniform_classes = [UniformBool, UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4,
-                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D]
+                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D, UniformTextureCube]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
@@ -53,7 +53,7 @@ def CreateUniformDataFromString(data_type, strValue=None):
                     raise ValueError
             else:
                 return np.eye(componentCount, dtype=np.float32)
-        elif data_type == 'sampler2D':
+        elif data_type in ('sampler2D', 'samplerCube'):
             texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
             return texture
     except ValueError:
@@ -145,8 +145,8 @@ class UniformMatrix4(UniformVariable):
         glUniformMatrix4fv(self.location, num, GL_FALSE, value)
 
 
-class UniformTexture2D(UniformVariable):
-    uniform_type = "sampler2D"
+class UniformTextureBase(UniformVariable):
+    uniform_type = "UniformTextureBase"
 
     def __init__(self, program, variable_name):
         UniformVariable.__init__(self, program, variable_name)
@@ -159,5 +159,14 @@ class UniformTexture2D(UniformVariable):
 
     def bind_uniform(self, texture, num=1):
         glActiveTexture(self.activateTextureIndex)
+        # glEnable(GL_TEXTURE_CUBE_MAP)
         texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind)
         glUniform1i(self.location, self.textureIndex)
+
+
+class UniformTexture2D(UniformTextureBase):
+    uniform_type = "sampler2D"
+
+
+class UniformTextureCube(UniformTextureBase):
+    uniform_type = "samplerCube"

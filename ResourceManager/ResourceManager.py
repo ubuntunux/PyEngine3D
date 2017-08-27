@@ -18,7 +18,7 @@ from numpy import array, float32
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
-from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D
+from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ
@@ -642,8 +642,14 @@ class TextureLoader(ResourceLoader):
         try:
             logger.info("Convert Resource : %s" % source_filepath)
             texture_name = self.getResourceName(self.resource_path, source_filepath)
-            # create texture
-            texture_type = 'Tex2D'
+
+            # TEST CODE
+            if 'cube_test' in texture_name:
+                texture_type = TextureCube
+                print("cube_test")
+            else:
+                texture_type = Texture2D
+
             image = Image.open(source_filepath)
             image_mode = image.mode
             width, height = image.size

@@ -10,8 +10,7 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from Object import Camera, Light
-from OpenGLContext import RenderTargets, FrameBuffer, GLFont, UniformMatrix4, UniformBlock
+from OpenGLContext import RenderTargets, FrameBuffer, GLFont, UniformMatrix4, UniformBlock, PostProcess
 
 
 class Console:
@@ -77,6 +76,7 @@ class Renderer(Singleton):
         self.resource_manager = None
         self.sceneManager = None
         self.rendertarget_manager = None
+        self.postprocess = None
         # console font
         self.console = None
         # components
@@ -84,12 +84,6 @@ class Renderer(Singleton):
         self.screen = None
         self.framebuffer = None
         self.debug_rendertarget = None  # Texture2D
-
-        # postprocess
-        self.tonemapping = None
-        self.screeen_space_reflection = None
-        self.motion_blur = None
-        self.copy_rendertarget = None
 
         # Test Code : scene constants uniform buffer
         self.uniformSceneConstants = None
@@ -110,18 +104,14 @@ class Renderer(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = core_manager.rendertarget_manager
+        self.postprocess = PostProcess()
+        self.postprocess.initialize()
 
         self.framebuffer = FrameBuffer()
 
         # console font
         self.console = Console()
         self.console.initialize(self)
-
-        # postprocess
-        self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
-        self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
-        self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
-        self.copy_rendertarget = self.resource_manager.getMaterialInstance("copy_rendertarget")
 
         # Test Code : scene constants uniform buffer
         material_instance = self.resource_manager.getMaterialInstance('scene_constants')
@@ -202,9 +192,9 @@ class Renderer(Singleton):
 
         # bind scene constants
         camera = self.sceneManager.getMainCamera()
-        lights = self.sceneManager.get_object_list(Light)
+        light = self.sceneManager.get_light(0)
 
-        if not camera or len(lights) < 1:
+        if not camera or not light:
             return
 
         self.render_objects_begin()
@@ -221,8 +211,7 @@ class Renderer(Singleton):
         self.framebuffer.set_color_texture(None)
         self.framebuffer.set_depth_texture(shadowmap)
         self.framebuffer.bind_framebuffer()
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self.uniformSceneConstants.bind_uniform_block(camera.view,
                                                       np.linalg.inv(camera.view),
@@ -233,7 +222,6 @@ class Renderer(Singleton):
                                                       camera.transform.getPos(), FLOAT_ZERO,
                                                       Float4(camera.near, camera.far, 0.0, 0.0))
 
-        light = lights[0]
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         light.transform.updateInverseTransform()  # update view matrix
         self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
@@ -256,8 +244,7 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture, velocity_texture])
         self.framebuffer.set_depth_texture(depthtexture)
         self.framebuffer.bind_framebuffer()
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         view_projection = camera.view_projection
         prev_view_projection = camera.prev_view_projection
@@ -314,6 +301,9 @@ class Renderer(Singleton):
             geometries += static_actor.geometries
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
+        # TEST_CODE
+        texture_cube_test = self.resource_manager.getTexture('cube_test')
+
         # draw static meshes
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()
         last_vertex_buffer = None
@@ -343,6 +333,9 @@ class Renderer(Singleton):
                 geometry.bind_vertex_buffer()
 
             if last_actor != actor and material_instance:
+                # TEST_CODE
+                material_instance.bind_uniform_data('texture_cube', texture_cube_test)
+
                 material_instance.bind_uniform_data('view_projection', view_projection)
                 material_instance.bind_uniform_data('prev_view_projection', prev_view_projection)
                 if render_shadow:
@@ -415,16 +408,8 @@ class Renderer(Singleton):
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):
-        glEnable(GL_BLEND)
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        glDisable(GL_LIGHTING)
-        glBlendEquation(GL_FUNC_ADD)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        camera = self.sceneManager.getMainCamera()
-        mesh = self.resource_manager.getMesh("Quad")
-        mesh.bind_vertex_buffer()
+        self.postprocess.set_render_state()
+        self.postprocess.bind_quad()
 
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
@@ -436,38 +421,17 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
-        self.motion_blur.use_program()
-        self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
-        self.motion_blur.bind_material_instance()
-        mesh.draw_elements()
-
-        # tonemapping
-        # self.tonemapping.use_program()
-        # texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
-        # self.tonemapping.set_uniform_data("texture_diffuse", texture_diffuse)
-        # self.tonemapping.bind_material_instance()
-        # mesh.draw_elements()
+        # self.postprocess.render_motion_blur(texture_diffuse, texture_velocity)
+        # self.postprocess.render_tone_map(texture_diffuse)
 
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
         self.framebuffer.set_color_texture(texture_ssr)
         self.framebuffer.bind_framebuffer()
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT)
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
 
-        self.screeen_space_reflection.use_program()
-        # self.screeen_space_reflection.bind_uniform_data("viewOriginProj", camera.view_origin_projection)
-        # self.screeen_space_reflection.bind_uniform_data("invViewOriginProj", np.linalg.inv(camera.view_origin_projection))
-        self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
-        self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
-        self.screeen_space_reflection.bind_material_instance()
-        mesh.draw_elements()
+        self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
             self.framebuffer.set_color_texture(backbuffer)
             self.framebuffer.bind_framebuffer()
-            self.copy_rendertarget.use_program()
-            self.copy_rendertarget.bind_uniform_data("is_depth_texture", self.debug_rendertarget.is_depth_texture())
-            self.copy_rendertarget.bind_uniform_data("texture_diffuse", self.debug_rendertarget)
-            mesh.draw_elements()
+            self.postprocess.render_show_rendertarget(self.debug_rendertarget)

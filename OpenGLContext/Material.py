@@ -11,7 +11,7 @@ import numpy as np
 
 from Common import logger
 from Utilities import GetClassName, Attributes, Logger
-from .UniformBuffer import CreateUniformBuffer, UniformTexture2D
+from .UniformBuffer import CreateUniformBuffer, UniformTextureBase
 from App import CoreManager
 
 
@@ -28,7 +28,6 @@ class Material:
 
         self.name = material_name
         self.shader_name = material_datas.get('shader_name', '')
-        self.lastTextureIndex = 0
         self.program = -1
         self.uniform_buffers = dict()  # OrderedDict()  # Declaration order is important.
         self.Attributes = Attributes()
@@ -56,18 +55,6 @@ class Material:
 
     def use_program(self):
         glUseProgram(self.program)
-
-    def create_uniform_buffer(self, uniform_type, uniform_name):
-        uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
-        if uniform_buffer is not None:
-            # Important : set texture binding index
-            if uniform_buffer.__class__ == UniformTexture2D:
-                uniform_buffer.set_texture_index(self.lastTextureIndex)
-                self.lastTextureIndex += 1
-            self.uniform_buffers[uniform_name] = uniform_buffer
-        else:
-            logger.warn("%s material has no %s uniform variable. (or maybe optimized by compiler.)" % (
-                self.name, uniform_name))
 
     def create_program(self, vertexShaderCode, fragmentShaderCode, uniforms):
         """
@@ -103,8 +90,19 @@ class Material:
             return False
 
         # create uniform buffers from source code
+        active_texture_index = 0
         for uniform_type, uniform_name in uniforms:
-            self.create_uniform_buffer(uniform_type, uniform_name)
+            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
+            if uniform_buffer is not None:
+                # Important : set texture binding index
+                if issubclass(uniform_buffer.__class__, UniformTextureBase):
+                    uniform_buffer.set_texture_index(active_texture_index)
+                    active_texture_index += 1
+                self.uniform_buffers[uniform_name] = uniform_buffer
+            else:
+                logger.warn("%s material has no %s uniform variable. (or maybe optimized by compiler.)" % (
+                    self.name, uniform_name))
+
         return True
 
     def compile(self, shaderType, shader_code):

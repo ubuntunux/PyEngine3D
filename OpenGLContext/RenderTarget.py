@@ -111,6 +111,6 @@ class RenderTargetManager(Singleton):
         self.create_rendertarget(RenderTargets.VELOCITY,
                                  width=fullsize_x,
                                  height=fullsize_y,
-                                 internal_format=GL_RG16F,
-                                 texture_format=GL_RG,
+                                 internal_format=GL_RGBA16F,
+                                 texture_format=GL_BGRA,
                                  data_type=GL_FLOAT)
