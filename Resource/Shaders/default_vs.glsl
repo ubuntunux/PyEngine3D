@@ -37,15 +37,14 @@ struct VERTEX_INPUT
 struct VERTEX_OUTPUT
 {
     vec3 worldPosition;
+    vec3 cameraRelativePosition;
+    vec3 lightRelativePosition;
     vec4 vertexColor;
-    vec3 normalVector;
     mat4 tangentToWorld;
+    vec3 normalVector;
     vec2 texCoord;
-    vec3 cameraVector;
-    float cameraDistance;
-    vec3 lightVector;
-    float lightDistance;
-    vec2 velocity;
+    vec4 projectionPos;
+    vec4 prevProjectionPos;
 };
 
 //----------- VERTEX_SHADER ---------------//
@@ -87,19 +86,13 @@ void main() {
     vs_output.tangentToWorld = model * mat4(vec4(vertexTangent, 0.0), vec4(vertexNormal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     vs_output.texCoord = vs_input.texcoord;
 
-    vs_output.cameraVector = camera_position.xyz - vs_output.worldPosition;
-    vs_output.cameraDistance = length(vs_output.cameraVector);
-    vs_output.cameraVector /= vs_output.cameraDistance;
-
-    // point light dir
-    vs_output.lightVector = lightPosition.xyz - vs_output.worldPosition;
-    vs_output.lightDistance = length(vs_output.lightVector);
-    vs_output.lightVector = lightDir.xyz;
+    vs_output.cameraRelativePosition = camera_position.xyz - vs_output.worldPosition;
+    vs_output.lightRelativePosition = lightPosition.xyz - vs_output.worldPosition;
 
     position = view_projection * model * position;
     prev_position = prev_view_projection * model * prev_position;
-    vs_output.velocity = (position.xy / position.w) - (prev_position.xy / prev_position.w);
-    vs_output.velocity *= 0.5;
+    vs_output.projectionPos = position;
+    vs_output.prevProjectionPos = prev_position;
 
     gl_Position = position;
 }

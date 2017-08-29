@@ -336,10 +336,10 @@ class Renderer(Singleton):
                 # TEST_CODE
                 material_instance.bind_uniform_data('texture_cube', texture_cube_test)
 
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('view_projection', view_projection)
                 material_instance.bind_uniform_data('prev_view_projection', prev_view_projection)
                 if render_shadow:
-                    material_instance.bind_uniform_data('model', actor.transform.matrix)
                     material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
                 if actor_has_bone:
@@ -412,16 +412,24 @@ class Renderer(Singleton):
         self.postprocess.bind_quad()
 
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        backbuffer_copy = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER_COPY)
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
 
-        self.framebuffer.set_color_texture(backbuffer)
+        # self.postprocess.render_gaussian_blur(self.framebuffer, backbuffer, backbuffer_copy)
+
+        self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
-        # self.postprocess.render_motion_blur(texture_diffuse, texture_velocity)
+        self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)
+
+        self.framebuffer.set_color_texture(backbuffer)
+        self.framebuffer.bind_framebuffer()
+        self.postprocess.render_show_rendertarget(backbuffer_copy)
+
         # self.postprocess.render_tone_map(texture_diffuse)
 
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
@@ -432,6 +440,6 @@ class Renderer(Singleton):
         self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
-            self.framebuffer.set_color_texture(backbuffer)
+            self.framebuffer.set_color_texture(backbuffer_copy)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_show_rendertarget(self.debug_rendertarget)

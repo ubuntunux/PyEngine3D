@@ -9,6 +9,7 @@ from .Texture import Texture2D
 
 class RenderTargets(AutoEnum):
     BACKBUFFER = ()
+    BACKBUFFER_COPY = ()
     DEPTHSTENCIL = ()
     DIFFUSE = ()
     WORLD_NORMAL = ()
@@ -16,6 +17,7 @@ class RenderTargets(AutoEnum):
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
     VELOCITY = ()
+    VELOCITY_COPY = ()
     COUNT = ()
 
 
@@ -54,7 +56,16 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.BACKBUFFER_COPY,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
                                  width=fullsize_x,
@@ -111,6 +122,6 @@ class RenderTargetManager(Singleton):
         self.create_rendertarget(RenderTargets.VELOCITY,
                                  width=fullsize_x,
                                  height=fullsize_y,
-                                 internal_format=GL_RGBA16F,
-                                 texture_format=GL_BGRA,
+                                 internal_format=GL_RG32F,
+                                 texture_format=GL_RG,
                                  data_type=GL_FLOAT)
