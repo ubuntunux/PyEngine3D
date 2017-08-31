@@ -20,6 +20,7 @@
  - numpy 1.10.4
  - numba 0.23.1
  - pillow 3.1.1
+ - Wand 0.4.4
  - pyqt4
  - pybullet 1.2.1
  - kivy 1.9.1
