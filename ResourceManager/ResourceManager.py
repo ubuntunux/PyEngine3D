@@ -1,3 +1,4 @@
+import math
 import copy
 import os
 import glob
@@ -217,7 +218,7 @@ class ResourceLoader(object):
                     meta_data = MetaData(self.resource_version, filepath)
                     self.regist_resource(resource, meta_data)
 
-        # If you use external files, convert the resources.
+        # If you use external files, will convert the resources.
         if self.externalFileExt:
             # gather external source files
             for dirname, dirnames, filenames in os.walk(self.external_path):
@@ -651,12 +652,19 @@ class TextureLoader(ResourceLoader):
                 texture_type = Texture2D
 
             image = Image.open(source_filepath)
-            image_mode = image.mode
             width, height = image.size
+
+            # check size is power of two.
+            # width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
+            # height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
+            # if width != width2 or height != height2:
+            #     width, height = width2, height2
+            #     image = image.resize(image.mode, (width, height))
+
             data = image.tobytes("raw", image.mode, 0, -1)
             texture_datas = dict(
                 texture_type=texture_type,
-                image_mode=image_mode,
+                image_mode=image.mode,
                 width=width,
                 height=height,
                 data=data
