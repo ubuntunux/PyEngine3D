@@ -6,7 +6,7 @@ from Utilities import Singleton, GetClassName, Attributes
 from Common import logger
 
 
-def get_texture_format(str_image_mode):
+def get_internal_format(str_image_mode):
     if str_image_mode == "RGB":
         return GL_RGB
     elif str_image_mode == "RGBA":
@@ -14,31 +14,29 @@ def get_texture_format(str_image_mode):
     return GL_RGBA
 
 
-def CreateTextureFromFile(texture_name, texture_datas: dict):
-    texture_type = texture_datas.get('texture_type', Texture2D)
-    image_mode = texture_datas.get('image_mode', 'RGBA')  # image_mode: "RGBA", "RGB"
-    width = texture_datas.get('width', 0)
-    height = texture_datas.get('height', 0)
-    data = texture_datas.get('data')
+def get_texture_format(str_image_mode):
+    # R,G,B,A order. GL_BGRA is faster than GL_RGBA
+    if str_image_mode == "RGB":
+        return GL_BGR
+    elif str_image_mode == "RGBA":
+        return GL_BGRA
+    return GL_BGRA
 
-    internal_format = get_texture_format(image_mode)
-    texture_format = internal_format
+
+def get_image_mode(texture_internal_format):
+    if texture_internal_format == GL_RGB:
+        return "RGB"
+    elif texture_internal_format == GL_RGBA:
+        return "RGBA"
+    return "RGBA"
+
+
+def CreateTextureFromFile(**texture_datas):
+    texture_type = texture_datas.get('texture_type', Texture2D)
     if texture_type == Texture2D:
-        return Texture2D(name=texture_name,
-                         internal_format=internal_format,
-                         texture_format=texture_format,
-                         width=width,
-                         height=height,
-                         data_type=GL_UNSIGNED_BYTE,
-                         data=data)
+        return Texture2D(**texture_datas)
     elif texture_type == TextureCube:
-        return TextureCube(name=texture_name,
-                           internal_format=internal_format,
-                           texture_format=texture_format,
-                           width=width,
-                           height=height,
-                           data_type=GL_UNSIGNED_BYTE,
-                           data=data)
+        return TextureCube(**texture_datas)
     return None
 
 
@@ -50,13 +48,20 @@ class Texture:
         logger.info("Load " + GetClassName(self) + " : " + self.name)
 
         self.attachment = False
+        self.image_mode = texture_data.get('image_mode')
+        self.internal_format = texture_data.get('internal_format')
+        self.texture_format = texture_data.get('texture_format')
+
+        if self.image_mode:
+            if self.internal_format is None:
+                self.internal_format = get_internal_format(self.image_mode)
+            if self.texture_format is None:
+                self.texture_format = get_texture_format(self.image_mode)
+        elif self.internal_format:
+            self.image_mode = get_image_mode(self.internal_format)
 
         self.width = texture_data.get('width', 1024)
         self.height = texture_data.get('height', 1024)
-        # The number of channels and the data type
-        self.internal_format = texture_data.get('internal_format', GL_RGBA)
-        # R,G,B,A order. GL_BGRA is faster than GL_RGBA
-        self.texture_format = texture_data.get('texture_format', GL_BGRA)
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR, GL_NEAREST
@@ -68,6 +73,12 @@ class Texture:
 
     def delete(self):
         glDeleteTextures(1, self.buffer)
+
+    def get_image_data(self):
+        glBindTexture(self.target, self.buffer)
+        data = glGetTexImage(self.target, 0, self.texture_format, GL_UNSIGNED_BYTE)
+        glBindTexture(self.target, 0)
+        return data
 
     def bind_texture(self):
         glBindTexture(self.target, self.buffer)
@@ -81,6 +92,9 @@ class Texture:
 
     def is_depth_texture(self):
         return self.texture_format == GL_DEPTH_COMPONENT or self.texture_format == GL_DEPTH_STENCIL
+
+    def is_attached(self):
+        return self.attachment
 
     def set_attachment(self, attachment):
         self.attachment = attachment
@@ -133,15 +147,12 @@ class TextureCube(Texture):
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)
 
-        # TEST_CODE
-        data_test = texture_data.get('data', c_void_p(0))
-
-        data_positive_x = texture_data.get('data_positive_x', c_void_p(0))
-        data_negative_x = texture_data.get('data_negative_x', c_void_p(0))
-        data_positive_y = texture_data.get('data_positive_y', c_void_p(0))
-        data_negative_y = texture_data.get('data_negative_y', c_void_p(0))
-        data_positive_z = texture_data.get('data_positive_z', c_void_p(0))
-        data_negative_z = texture_data.get('data_negative_z', c_void_p(0))
+        texture_positive_x = texture_data.get('texture_positive_x')
+        texture_negative_x = texture_data.get('texture_negative_x')
+        texture_positive_y = texture_data.get('texture_positive_y')
+        texture_negative_y = texture_data.get('texture_negative_y')
+        texture_positive_z = texture_data.get('texture_positive_z')
+        texture_negative_z = texture_data.get('texture_negative_z')
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_CUBE_MAP, self.buffer)
@@ -157,12 +168,18 @@ class TextureCube(Texture):
                          self.data_type,
                          data)
 
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, data_test)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, data_test)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, data_test)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, data_test)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, data_test)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, data_test)
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                         texture_positive_x.get_image_data() if texture_positive_x else c_void_p(0))
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                         texture_negative_x.get_image_data() if texture_negative_x else c_void_p(0))
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                         texture_positive_y.get_image_data() if texture_positive_y else c_void_p(0))
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                         texture_negative_y.get_image_data() if texture_negative_y else c_void_p(0))
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                         texture_positive_z.get_image_data() if texture_positive_z else c_void_p(0))
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+                         texture_negative_z.get_image_data() if texture_negative_z else c_void_p(0))
 
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
 

@@ -302,7 +302,7 @@ class Renderer(Singleton):
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         # TEST_CODE
-        texture_cube_test = self.resource_manager.getTexture('cube_test')
+        texture_cube_test = self.resource_manager.getTexture('cube')
 
         # draw static meshes
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()

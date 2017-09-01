@@ -214,9 +214,7 @@ class ResourceLoader(object):
                 if ".*" == self.fileExt or fileExt == self.fileExt:
                     filepath = os.path.join(dirname, filename)
                     resource_name = self.getResourceName(self.resource_path, filepath)
-                    resource = Resource(resource_name, self.resource_type_name)
-                    meta_data = MetaData(self.resource_version, filepath)
-                    self.regist_resource(resource, meta_data)
+                    self.create_resource(resource_name=resource_name, resource_data=None, resource_filepath=filepath)
 
         # If you use external files, will convert the resources.
         if self.externalFileExt:
@@ -321,15 +319,16 @@ class ResourceLoader(object):
             logger.error("Not found meta data of %s." % resource_name)
         return None
 
-    def create_resource(self, resource_name, resource_data=None):
+    def create_resource(self, resource_name, resource_data=None, resource_filepath=None):
         if resource_name in self.resources:
             # logger.warn('Resource name is duplicated. %s' % resource_name)
             resource_name = self.get_new_resource_name(resource_name)
         resource = Resource(resource_name, self.resource_type_name)
         if resource_data:
             resource.set_data(resource_data)
-        filepath = os.path.join(self.resource_path, resource_name) + self.fileExt
-        meta_data = MetaData(self.resource_version, filepath)
+        if resource_filepath is None:
+            resource_filepath = os.path.join(self.resource_path, resource_name) + self.fileExt
+        meta_data = MetaData(self.resource_version, resource_filepath)
         self.regist_resource(resource, meta_data)
         return resource
 
@@ -624,33 +623,96 @@ class TextureLoader(ResourceLoader):
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx")
 
+    def __init__(self, core_manager, root_path):
+        ResourceLoader.__init__(self, core_manager, root_path)
+        self.new_texture_list = []
+
+    def initialize(self):
+        ResourceLoader.initialize(self)
+        self.generate_cube_textures()
+
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
             meta_data = resource.meta_data
             texture_datas = self.load_resource_data(meta_data.resource_filepath)
             if texture_datas:
-                texture = CreateTextureFromFile(resource.name, texture_datas)
+                if texture_datas.get('texture_type') == TextureCube:
+                    texture_datas['texture_positive_x'] = self.getResourceData(texture_datas['texture_positive_x'])
+                    texture_datas['texture_negative_x'] = self.getResourceData(texture_datas['texture_negative_x'])
+                    texture_datas['texture_positive_y'] = self.getResourceData(texture_datas['texture_positive_y'])
+                    texture_datas['texture_negative_y'] = self.getResourceData(texture_datas['texture_negative_y'])
+                    texture_datas['texture_positive_z'] = self.getResourceData(texture_datas['texture_positive_z'])
+                    texture_datas['texture_negative_z'] = self.getResourceData(texture_datas['texture_negative_z'])
+
+                texture = CreateTextureFromFile(name=resource.name, **texture_datas)
                 resource.set_data(texture)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
+    def generate_cube_textures(self):
+        cube_faces = ('right', 'left', 'top', 'bottom', 'front', 'back')
+        cube_texutre_map = dict()  # { cube_name : { face : source_filepath } }
+
+        # gather cube texture names
+        for resource_name in self.resources:
+            if '_' in resource_name:
+                texture_name, texutre_face = resource_name.split('_', 1)
+                if texutre_face in cube_faces:
+                    if texture_name not in cube_texutre_map:
+                        cube_texutre_map[texture_name] = dict()
+                    cube_texutre_map[texture_name][texutre_face] = self.resources[resource_name]
+
+        for cube_texture_name in cube_texutre_map:
+            cube_faces = cube_texutre_map[cube_texture_name]
+            if len(cube_faces) == 6:
+                isCreateCube = any([cube_face in self.new_texture_list for cube_face in cube_faces])
+                cube_resource = self.getResource(cube_texture_name, noWarn=True)
+                if cube_resource is None:
+                    cube_resource = self.create_resource(cube_texture_name)
+                    isCreateCube = True
+
+                if isCreateCube:
+                    texture_left = cube_faces['left'].get_data()
+                    texture_right = cube_faces['right'].get_data()
+                    texture_top = cube_faces['top'].get_data()
+                    texture_bottom = cube_faces['bottom'].get_data()
+                    texture_front = cube_faces['front'].get_data()
+                    texture_back = cube_faces['back'].get_data()
+
+                    width, height = texture_front.width, texture_front.height
+                    image_mode = texture_front.image_mode
+                    cube_texture_datas = dict(
+                        texture_type=TextureCube,
+                        image_mode=image_mode,
+                        width=width,
+                        height=height,
+                        texture_positive_x=texture_left,
+                        texture_negative_x=texture_right,
+                        texture_positive_y=texture_top,
+                        texture_negative_y=texture_bottom,
+                        texture_positive_z=texture_front,
+                        texture_negative_z=texture_back
+                    )
+
+                    cube_texture = CreateTextureFromFile(name=cube_texture_name, **cube_texture_datas)
+                    cube_resource.set_data(cube_texture)
+                    cube_texture_datas['texture_positive_x'] = texture_left.name
+                    cube_texture_datas['texture_negative_x'] = texture_right.name
+                    cube_texture_datas['texture_positive_y'] = texture_top.name
+                    cube_texture_datas['texture_negative_y'] = texture_bottom.name
+                    cube_texture_datas['texture_positive_z'] = texture_front.name
+                    cube_texture_datas['texture_negative_z'] = texture_back.name
+                    self.save_resource_data(cube_resource, cube_texture_datas, '')
+        self.new_texture_list = []
+
     def convert_resource(self, resource, source_filepath):
-        file_ext = os.path.splitext(source_filepath)[1]
-        if file_ext not in self.externalFileExt.values():
-            return
         try:
             logger.info("Convert Resource : %s" % source_filepath)
-            texture_name = self.getResourceName(self.resource_path, source_filepath)
+            self.new_texture_list.append(resource)
 
-            # TEST CODE
-            if 'cube_test' in texture_name:
-                texture_type = TextureCube
-                print("cube_test")
-            else:
-                texture_type = Texture2D
-
+            texture_name = resource.name
             image = Image.open(source_filepath)
             width, height = image.size
 
@@ -663,13 +725,13 @@ class TextureLoader(ResourceLoader):
 
             data = image.tobytes("raw", image.mode, 0, -1)
             texture_datas = dict(
-                texture_type=texture_type,
+                texture_type=Texture2D,
                 image_mode=image.mode,
                 width=width,
                 height=height,
                 data=data
             )
-            texture = CreateTextureFromFile(texture_name, texture_datas)
+            texture = CreateTextureFromFile(name=texture_name, **texture_datas)
             resource.set_data(texture)
             self.save_resource_data(resource, texture_datas, source_filepath)
         except:
