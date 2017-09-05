@@ -24,7 +24,7 @@ class Camera(StaticActor):
         self.pan_speed = object_data.get('pan_speed', 0.0)
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
 
-        self.front = Float4()
+        self.front = Float3()
 
         self.projection = Matrix4()
 
@@ -98,7 +98,7 @@ class Camera(StaticActor):
         if updated or force_update:
             self.transform.updateInverseTransform()  # update view matrix
             # negative front
-            self.front = -self.transform.front
+            self.front[...] = -self.transform.front
 
             self.prev_view = self.transform.prev_inverse_matrix
             self.prev_view_origin[...] = self.view_origin

@@ -6,7 +6,6 @@
 
 uniform mat4 shadow_matrix;
 uniform sampler2D shadow_texture;
-uniform samplerCube texture_cube;
 
 //-------------- MATERIAL_COMPONENTS ---------------//
 
@@ -40,7 +39,7 @@ void main() {
 
     float diffuseLighting = clamp(dot(lightVector, normalVector), 0.0, 1.0);
 
-    vec3 reflectionColor = texture(texture_cube, normalize(reflect(-cameraVector, normalVector))).xyz;
+    vec3 reflectionColor = texture(texture_cube, invert_y(reflect(-cameraVector, normalVector))).xyz;
     reflectionColor = pow(reflectionColor, vec3(2.2));
 
     vec3 diffuseColor = (reflectionColor) * diffuseLighting;
@@ -61,6 +60,11 @@ void main() {
     {
         for(int x=-kernel;x<=kernel;++x)
         {
+            if(x==0 && y==0)
+            {
+                continue;
+            }
+
             vec2 uv = shadow_uv.xy + vec2(x, y) * inv_shadow_map_size;
             uv += vec2(rand(uv)) * inv_shadow_map_size;
 

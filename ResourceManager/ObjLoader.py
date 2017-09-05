@@ -103,18 +103,19 @@ class OBJ:
         normals = []
         texcoords = []
         indices = []
-        indexMap = []
+        indexMap = {}
 
         for n, face in enumerate(self.faces):
             # exclude material
             postionIndicies, normalIndicies, texcoordIndicies, material = face
+            total = len(postionIndicies)
             for i in range(len(postionIndicies)):
                 vertIndex = (postionIndicies[i], normalIndicies[i], texcoordIndicies[i])
                 if vertIndex in indexMap:
-                    indices.append(indexMap.index(vertIndex))
+                    indices.append(indexMap[vertIndex])
                 else:
                     indices.append(len(indexMap))
-                    indexMap.append(vertIndex)
+                    indexMap[vertIndex] = len(indexMap)
                     positions.append(self.positions[postionIndicies[i]])
                     normals.append(self.normals[normalIndicies[i]])
 

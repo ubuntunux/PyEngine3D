@@ -295,14 +295,14 @@ class Renderer(Singleton):
 
     def render_objects(self, view_projection, prev_view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
+        camera = self.sceneManager.getMainCamera()
+        camera_pos = camera.transform.getPos()
+        camera_front = camera.front
         static_actors = self.sceneManager.get_static_actors()[:]
         geometries = []
         for static_actor in static_actors:
             geometries += static_actor.geometries
         geometries.sort(key=lambda x: id(x.vertex_buffer))
-
-        # TEST_CODE
-        texture_cube_test = self.resource_manager.getTexture('cube')
 
         # draw static meshes
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()
@@ -333,9 +333,6 @@ class Renderer(Singleton):
                 geometry.bind_vertex_buffer()
 
             if last_actor != actor and material_instance:
-                # TEST_CODE
-                material_instance.bind_uniform_data('texture_cube', texture_cube_test)
-
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 material_instance.bind_uniform_data('view_projection', view_projection)
                 material_instance.bind_uniform_data('prev_view_projection', prev_view_projection)

@@ -396,14 +396,14 @@ class ColladaGeometry:
                     "Different count. vertex_count : %d, bone_weight_count : %d" % (vertex_count, bone_weight_count))
                 return
 
-        indexMap = []
+        indexMap = {}
         for i in range(int(len(vertex_index_list) / semantic_stride)):
             vertIndices = tuple(vertex_index_list[i * semantic_stride: i * semantic_stride + semantic_stride])
             if vertIndices in indexMap:
-                self.indices.append(indexMap.index(vertIndices))
+                self.indices.append(indexMap[vertIndices])
             else:
                 self.indices.append(len(indexMap))
-                indexMap.append(vertIndices)
+                indexMap[vertIndices] = len(indexMap)
 
                 if 'VERTEX' in semantics:
                     source_id = position_source_id

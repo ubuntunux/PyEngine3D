@@ -10,12 +10,14 @@ import pprint
 import re
 import pickle
 import gzip
+from ctypes import c_void_p
 from collections import OrderedDict
 from distutils.dir_util import copy_tree
 import shutil
 
 from PIL import Image
 from numpy import array, float32
+from OpenGL.GL import *
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
@@ -618,6 +620,8 @@ class TextureLoader(ResourceLoader):
     name = "TextureLoader"
     resource_dir_name = 'Textures'
     resource_type_name = 'Texture'
+    resource_version = 2
+    USE_FILE_COMPRESS_TO_SAVE = True
     external_dir_name = os.path.join('Externals', 'Textures')
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
@@ -638,12 +642,19 @@ class TextureLoader(ResourceLoader):
             texture_datas = self.load_resource_data(meta_data.resource_filepath)
             if texture_datas:
                 if texture_datas.get('texture_type') == TextureCube:
-                    texture_datas['texture_positive_x'] = self.getResourceData(texture_datas['texture_positive_x'])
-                    texture_datas['texture_negative_x'] = self.getResourceData(texture_datas['texture_negative_x'])
-                    texture_datas['texture_positive_y'] = self.getResourceData(texture_datas['texture_positive_y'])
-                    texture_datas['texture_negative_y'] = self.getResourceData(texture_datas['texture_negative_y'])
-                    texture_datas['texture_positive_z'] = self.getResourceData(texture_datas['texture_positive_z'])
-                    texture_datas['texture_negative_z'] = self.getResourceData(texture_datas['texture_negative_z'])
+                    empty_texture = self.getResourceData('empty')
+                    texture_datas['texture_positive_x'] = self.getResourceData(
+                        texture_datas['texture_positive_x']) or empty_texture
+                    texture_datas['texture_negative_x'] = self.getResourceData(
+                        texture_datas['texture_negative_x']) or empty_texture
+                    texture_datas['texture_positive_y'] = self.getResourceData(
+                        texture_datas['texture_positive_y']) or empty_texture
+                    texture_datas['texture_negative_y'] = self.getResourceData(
+                        texture_datas['texture_negative_y']) or empty_texture
+                    texture_datas['texture_positive_z'] = self.getResourceData(
+                        texture_datas['texture_positive_z']) or empty_texture
+                    texture_datas['texture_negative_z'] = self.getResourceData(
+                        texture_datas['texture_negative_z']) or empty_texture
 
                 texture = CreateTextureFromFile(name=resource.name, **texture_datas)
                 resource.set_data(texture)
@@ -652,7 +663,7 @@ class TextureLoader(ResourceLoader):
         return False
 
     def generate_cube_textures(self):
-        cube_faces = ('right', 'left', 'top', 'bottom', 'front', 'back')
+        cube_faces = ('right', 'left', 'top', 'bottom', 'back', 'front')
         cube_texutre_map = dict()  # { cube_name : { face : source_filepath } }
 
         # gather cube texture names
@@ -674,12 +685,13 @@ class TextureLoader(ResourceLoader):
                     isCreateCube = True
 
                 if isCreateCube:
-                    texture_left = cube_faces['left'].get_data()
-                    texture_right = cube_faces['right'].get_data()
-                    texture_top = cube_faces['top'].get_data()
-                    texture_bottom = cube_faces['bottom'].get_data()
-                    texture_front = cube_faces['front'].get_data()
-                    texture_back = cube_faces['back'].get_data()
+                    empty_texture = self.getResourceData('empty')
+                    texture_right = cube_faces['right'].get_data() or empty_texture
+                    texture_left = cube_faces['left'].get_data() or empty_texture
+                    texture_top = cube_faces['top'].get_data() or empty_texture
+                    texture_bottom = cube_faces['bottom'].get_data() or empty_texture
+                    texture_back = cube_faces['back'].get_data() or empty_texture
+                    texture_front = cube_faces['front'].get_data() or empty_texture
 
                     width, height = texture_front.width, texture_front.height
                     image_mode = texture_front.image_mode
@@ -688,8 +700,8 @@ class TextureLoader(ResourceLoader):
                         image_mode=image_mode,
                         width=width,
                         height=height,
-                        texture_positive_x=texture_left,
-                        texture_negative_x=texture_right,
+                        texture_positive_x=texture_right,
+                        texture_negative_x=texture_left,
                         texture_positive_y=texture_top,
                         texture_negative_y=texture_bottom,
                         texture_positive_z=texture_front,
@@ -698,12 +710,7 @@ class TextureLoader(ResourceLoader):
 
                     cube_texture = CreateTextureFromFile(name=cube_texture_name, **cube_texture_datas)
                     cube_resource.set_data(cube_texture)
-                    cube_texture_datas['texture_positive_x'] = texture_left.name
-                    cube_texture_datas['texture_negative_x'] = texture_right.name
-                    cube_texture_datas['texture_positive_y'] = texture_top.name
-                    cube_texture_datas['texture_negative_y'] = texture_bottom.name
-                    cube_texture_datas['texture_positive_z'] = texture_front.name
-                    cube_texture_datas['texture_negative_z'] = texture_back.name
+                    cube_texture_datas = cube_texture.get_save_data()
                     self.save_resource_data(cube_resource, cube_texture_datas, '')
         self.new_texture_list = []
 
@@ -733,6 +740,7 @@ class TextureLoader(ResourceLoader):
             )
             texture = CreateTextureFromFile(name=texture_name, **texture_datas)
             resource.set_data(texture)
+            texture_datas = texture.get_save_data()
             self.save_resource_data(resource, texture_datas, source_filepath)
         except:
             logger.error(traceback.format_exc())
@@ -772,6 +780,7 @@ class MeshLoader(ResourceLoader):
         return False
 
     def convert_resource(self, resoure, source_filepath):
+        logger.info("Convert Resource : %s" % source_filepath)
         file_ext = os.path.splitext(source_filepath)[1]
         if file_ext == self.externalFileExt.get('WaveFront'):
             mesh = OBJ(source_filepath, 1, True)
@@ -782,7 +791,6 @@ class MeshLoader(ResourceLoader):
         else:
             return
 
-        logger.info("Convert Resource : %s" % source_filepath)
         if mesh_data:
             # create mesh
             mesh = Mesh(resoure.name, **mesh_data)

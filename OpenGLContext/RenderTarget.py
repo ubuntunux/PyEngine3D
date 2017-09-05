@@ -93,8 +93,8 @@ class RenderTargetManager(Singleton):
 
         # attach to depth render target
         self.create_rendertarget(RenderTargets.SHADOWMAP,
-                                 width=1024,
-                                 height=1024,
+                                 width=4096,
+                                 height=4096,
                                  internal_format=GL_DEPTH_COMPONENT32,
                                  texture_format=GL_DEPTH_COMPONENT,
                                  data_type=GL_FLOAT,
