@@ -25,18 +25,17 @@ class Geometry:
 
 
 class GeometryInstance(Geometry):
-    def __init__(self, parent_geometry, parent_actor, material_instance):
+    def __init__(self, parent_actor, parent_model, parent_geometry):
         Geometry.__init__(self, **parent_geometry.__dict__)
-
         self.parent_actor = parent_actor
+        self.parent_model = parent_model
         self.parent_geometry = parent_geometry
-        self.material_instance = material_instance
+
+    def get_index(self):
+        return self.parent_geometry.index
 
     def get_material_instance(self):
-        return self.material_instance
-
-    def set_material_instance(self, material_instance):
-        self.material_instance = material_instance
+        return self.parent_model.get_material_instance(self.get_index()) if self.parent_model else None
 
 
 class Mesh:

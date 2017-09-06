@@ -67,9 +67,10 @@ class Console:
 
 class Renderer(Singleton):
     def __init__(self):
-        self.width = 1024
-        self.height = 768
-        self.aspect = float(self.width) / float(self.height)
+        self.width = 0
+        self.height = 0
+        self.aspect = 0.0
+        self.full_screen = False
         self.viewMode = GL_FILL
         # managers
         self.coreManager = None
@@ -144,7 +145,14 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
-    def resizeScene(self, width=0, height=0):
+    @staticmethod
+    def change_resolution(width=0, height=0, full_screen=False):
+        option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE
+        if full_screen:
+            option |= FULLSCREEN
+        return pygame.display.set_mode((width, height), option)
+
+    def resizeScene(self, width=0, height=0, full_screen=False):
         # You have to do pygame.display.set_mode again on Linux.
         if width <= 0 or height <= 0:
             width = self.width
@@ -157,6 +165,7 @@ class Renderer(Singleton):
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
+        self.full_screen = full_screen
 
         # update perspective and ortho
         camera = self.sceneManager.getMainCamera()
@@ -167,8 +176,10 @@ class Renderer(Singleton):
 
         # Run pygame.display.set_mode at last!!! very important.
         if platformModule.system() == 'Linux':
-            self.screen = pygame.display.set_mode((self.width, self.height),
-                                                  OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+            self.screen = self.change_resolution(width, height, full_screen)
+        # send screen info
+        screen_info = (width, height, full_screen)
+        self.coreManager.notifyChangeResolution(screen_info)
 
     def ortho_view(self):
         # Legacy opengl pipeline - set orthographic view
@@ -319,7 +330,7 @@ class Renderer(Singleton):
                 else:
                     material_instance = self.resource_manager.getMaterialInstance("shadowmap")
             else:
-                material_instance = geometry.material_instance or default_material_instance
+                material_instance = geometry.get_material_instance() or default_material_instance
             material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:

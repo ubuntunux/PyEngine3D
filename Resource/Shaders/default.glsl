@@ -4,6 +4,8 @@
 #include "scene_constants.glsl"
 #include "default_vs.glsl"
 
+#define USE_REFLECTION 0
+
 uniform mat4 shadow_matrix;
 uniform sampler2D shadow_texture;
 
@@ -28,24 +30,6 @@ void main() {
     {
         discard;
     }
-
-    vec3 normalVector = vs_output.normalVector;
-    vec3 cameraVector = normalize(vs_output.cameraRelativePosition);
-    vec3 lightVector = normalize(lightDir.xyz);
-    vec4 emissiveColor = get_emissive_color();
-
-    vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
-    normalVector = normalize(mix(normal, normalVector, 0.9));
-
-    float diffuseLighting = clamp(dot(lightVector, normalVector), 0.0, 1.0);
-
-    vec3 reflectionColor = texture(texture_cube, invert_y(reflect(-cameraVector, normalVector))).xyz;
-    reflectionColor = pow(reflectionColor, vec3(2.2));
-
-    vec3 diffuseColor = (reflectionColor) * diffuseLighting;
-    float specularLighting = clamp(dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
-    specularLighting = pow(specularLighting, 60.0);
-    fs_output = vec4(lightColor.xyz * (diffuseColor + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 
     vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
@@ -73,13 +57,33 @@ void main() {
         }
     }
     shadow_factor /= weight;
-    shadow_factor = max(0.2, shadow_factor);
+
+    vec3 normalVector = vs_output.normalVector;
+    vec3 cameraVector = normalize(vs_output.cameraRelativePosition);
+    vec3 lightVector = normalize(lightDir.xyz);
+    vec4 emissiveColor = get_emissive_color();
+
+    vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
+    normalVector = normalize(normal);
+
+    const float ambient_light = 0.3;
+    const float light_intensity = 3.0;
+    float diffuseLighting = clamp(shadow_factor * dot(lightVector, normalVector), ambient_light, 1.0) * light_intensity;
+    vec3 diffuseColor = baseColor.xyz * diffuseLighting;
+
+#if(USE_REFLECTION)
+    vec3 reflectionColor = texture(texture_cube, invert_y(reflect(-cameraVector, normalVector))).xyz;
+    reflectionColor = pow(reflectionColor, vec3(2.2));
+    diffuseColor *= reflectionColor;
+#endif
+
+    float specularLighting = clamp(shadow_factor * dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
+    specularLighting = pow(specularLighting, 60.0) * light_intensity;
+    fs_output = vec4(lightColor.xyz * (diffuseColor + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 
     fs_diffuse = baseColor;
     fs_normal = vec4(normalVector, 1.0);
     fs_velocity = (vs_output.projectionPos.xy / vs_output.projectionPos.w) -
         (vs_output.prevProjectionPos.xy / vs_output.prevProjectionPos.w);
-
-    fs_output.xyz *= shadow_factor;
 }
 #endif

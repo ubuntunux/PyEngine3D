@@ -15,79 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="4">
-     <widget class="QTreeWidget" name="resourceListWidget">
-      <property name="columnCount">
-       <number>2</number>
-      </property>
-      <column>
-       <property name="text">
-        <string>Resource Name</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Resource Type</string>
-       </property>
-      </column>
-     </widget>
-    </item>
-    <item row="5" column="5">
-     <widget class="QPushButton" name="btnRemoveObject">
-      <property name="text">
-       <string>Remove</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="5">
-     <widget class="QTreeWidget" name="objectListWidget">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <column>
-       <property name="text">
-        <string>Object Name</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Object Type</string>
-       </property>
-      </column>
-     </widget>
-    </item>
-    <item row="0" column="6">
-     <widget class="QTreeWidget" name="attributeTree">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="lineWidth">
-       <number>1</number>
-      </property>
-      <property name="autoExpandDelay">
-       <number>0</number>
-      </property>
-      <column>
-       <property name="text">
-        <string>Attribute</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Value</string>
-       </property>
-      </column>
-     </widget>
-    </item>
     <item row="0" column="0" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -140,6 +67,78 @@
          </widget>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QSpinBox" name="spinWidth">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>9999</number>
+            </property>
+            <property name="value">
+             <number>1024</number>
+            </property>
+           </widget>
+          </item>
+          <item alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>X</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinHeight">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximum">
+             <number>9999</number>
+            </property>
+            <property name="value">
+             <number>768</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item alignment="Qt::AlignHCenter">
+         <widget class="QCheckBox" name="checkFullScreen">
+          <property name="text">
+           <string>Full Screen</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnChangeResolution">
+          <property name="text">
+           <string>Change Resolution</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -180,6 +179,79 @@
        </widget>
       </item>
      </layout>
+    </item>
+    <item row="0" column="4">
+     <widget class="QTreeWidget" name="resourceListWidget">
+      <property name="columnCount">
+       <number>2</number>
+      </property>
+      <column>
+       <property name="text">
+        <string>Resource Name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Resource Type</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QTreeWidget" name="objectListWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text">
+        <string>Object Name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Object Type</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="6">
+     <widget class="QTreeWidget" name="attributeTree">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="lineWidth">
+       <number>1</number>
+      </property>
+      <property name="autoExpandDelay">
+       <number>0</number>
+      </property>
+      <column>
+       <property name="text">
+        <string>Attribute</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Value</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="5" column="5">
+     <widget class="QPushButton" name="btnRemoveObject">
+      <property name="text">
+       <string>Remove</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

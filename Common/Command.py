@@ -48,6 +48,10 @@ class COMMAND(AutoEnum):
     VIEWMODE_WIREFRAME = ()
     VIEWMODE_SHADING = ()
 
+    # Screen
+    TRANS_SCREEN_INFO = ()
+    CHANGE_RESOLUTION = ()
+
     # resource
     LOAD_RESOURCE = ()
     OPEN_RESOURCE = ()

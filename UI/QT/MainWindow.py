@@ -157,6 +157,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         btn = self.findChild(QtGui.QPushButton, "btnTest")
         btn.clicked.connect(self.test)
 
+        # screen
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_SCREEN_INFO)),
+                     self.setScreenInfo)
+        self.spinWidth = self.findChild(QtGui.QSpinBox, "spinWidth")
+        self.spinHeight = self.findChild(QtGui.QSpinBox, "spinHeight")
+        self.checkFullScreen = self.findChild(QtGui.QCheckBox, "checkFullScreen")
+
+        btn = self.findChild(QtGui.QPushButton, "btnChangeResolution")
+        btn.clicked.connect(self.changeResolution)
+
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
@@ -234,6 +244,20 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def setViewMode(self, mode):
         self.appCmdQueue.put(mode)
+
+    def setScreenInfo(self, screen_info):
+        width, height, full_screen = screen_info
+        self.spinWidth.setValue(width)
+        self.spinHeight.setValue(height)
+        self.checkFullScreen.setChecked(full_screen)
+
+    def changeResolution(self):
+        width = self.spinWidth.value()
+        height = self.spinHeight.value()
+        full_screen = self.checkFullScreen.isChecked()
+        screen_info = (width, height, full_screen)
+        print(screen_info)
+        self.appCmdQueue.put(COMMAND.CHANGE_RESOLUTION, screen_info)
 
     def openResourceMenu(self, position):
         self.resource_menu.exec_(self.resourceListWidget.viewport().mapToGlobal(position))

@@ -43,8 +43,7 @@ class StaticActor:
 
         if self.model and self.mesh:
             for i in range(self.mesh.get_geometry_count()):
-                material_instance = self.model.get_material_instance(i)
-                geometry_instance = GeometryInstance(self.mesh.get_geometry(i), self, material_instance)
+                geometry_instance = GeometryInstance(self, self.model, self.mesh.get_geometry(i))
                 self.geometries.append(geometry_instance)
 
             for i in range(self.mesh.get_animation_count()):

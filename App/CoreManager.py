@@ -105,7 +105,9 @@ class CoreManager(Singleton):
         pygame.init()
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.projectManager.config.Screen.size
-        screen = pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
+        full_screen = self.projectManager.config.Screen.full_screen
+        Renderer.change_resolution(width, height, full_screen)
+
         pygame.font.init()
         if not pygame.font.get_init():
             self.error('Could not render font.')
@@ -113,12 +115,12 @@ class CoreManager(Singleton):
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize(self)
-        self.renderer.initialize(self, width, height, screen)
+        self.renderer.initialize(self, width, height, full_screen)
         self.sceneManager.initialize(self)
 
         # build a scene - windows not need resize..
         if platformModule.system() == 'Linux':
-            self.renderer.resizeScene()
+            self.renderer.resizeScene(width, height, full_screen)
         return True
 
     @staticmethod
@@ -182,6 +184,9 @@ class CoreManager(Singleton):
             obj = self.sceneManager.getObject(obj_name)
             self.sendObjectInfo(obj)
 
+    def notifyChangeResolution(self, screen_info):
+        self.send(COMMAND.TRANS_SCREEN_INFO, screen_info)
+
     def notifyClearScene(self):
         self.send(COMMAND.CLEAR_OBJECT_LIST)
 
@@ -209,6 +214,12 @@ class CoreManager(Singleton):
             COMMAND.VIEWMODE_WIREFRAME)
         self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.setViewMode(
             COMMAND.VIEWMODE_SHADING)
+
+        # screen
+        def cmd_change_resolution(value):
+            width, height, full_screen = value
+            self.renderer.resizeScene(width, height, full_screen)
+        self.commands[COMMAND.CHANGE_RESOLUTION.value] = cmd_change_resolution
 
         # Resource commands
         def cmd_load_resource(value):
@@ -329,8 +340,8 @@ class CoreManager(Singleton):
             eventType = event.type
             if eventType == QUIT:
                 self.close()
-            elif eventType == VIDEORESIZE:
-                self.renderer.resizeScene(*event.dict['size'])
+            # elif eventType == VIDEORESIZE:
+            #     self.renderer.resizeScene(*event.dict['size'])
             elif eventType == KEYDOWN:
                 subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
@@ -339,7 +350,10 @@ class CoreManager(Singleton):
                 elif self.event_object(keyDown, key_pressed):
                     pass
                 elif keyDown == K_ESCAPE:
-                    self.close()
+                    if self.renderer.full_screen:
+                        self.renderer.resizeScene(0, 0, not self.renderer)
+                    else:
+                        self.close()
                 elif keyDown == K_BACKQUOTE and not subkey_down:
                     self.renderer.console.toggle()
             elif eventType == MOUSEMOTION:

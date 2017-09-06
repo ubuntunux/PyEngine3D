@@ -37,7 +37,8 @@ class ProjectManager(Singleton):
             self.config = Config(project_filename, log_level)
 
             # set default config
-            self.config.setDefaultValue("Screen", "size", [1024, 768])
+            self.config.setDefaultValue("Screen", "size", [1280, 720])
+            self.config.setDefaultValue("Screen", "full_screen", False)
             meter_per_unit = 1.0  # 1 unit = 1 m
             self.config.setDefaultValue("Camera", "meter_per_unit", meter_per_unit)
             self.config.setDefaultValue("Camera", "near", 0.1 / meter_per_unit)  # 10 cm
