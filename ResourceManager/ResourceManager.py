@@ -927,7 +927,7 @@ class ResourceManager(Singleton):
         self.core_manager = core_manager
         self.scene_manager = core_manager.sceneManager
 
-        self.root_path = root_path or PathResources
+        self.root_path = root_path or self.PathResources
         check_directory_and_mkdir(self.root_path)
 
         # Be careful with the initialization order.

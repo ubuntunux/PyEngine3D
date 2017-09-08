@@ -211,6 +211,7 @@ class Renderer(Singleton):
         self.render_objects_begin()
 
         # render object
+        hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
@@ -252,7 +253,7 @@ class Renderer(Singleton):
         glFrontFace(GL_CW)
         self.render_objects(shadow_projection, shadow_projection, True)
 
-        self.framebuffer.set_color_textures([colortexture, diffusetexture, normaltexture, velocity_texture])
+        self.framebuffer.set_color_textures([hdrtexture, diffusetexture, normaltexture, velocity_texture])
         self.framebuffer.set_depth_texture(depthtexture)
         self.framebuffer.bind_framebuffer()
         self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -419,35 +420,33 @@ class Renderer(Singleton):
         self.postprocess.set_render_state()
         self.postprocess.bind_quad()
 
+        hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
-        backbuffer_copy = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER_COPY)
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
+        texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
+
+        self.framebuffer.set_color_texture(texture_ssr)
+        self.framebuffer.set_depth_texture(None)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
+        self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
         # self.postprocess.render_gaussian_blur(self.framebuffer, backbuffer, backbuffer_copy)
 
-        self.framebuffer.set_color_texture(backbuffer_copy)
-        self.framebuffer.set_depth_texture(None)
-        self.framebuffer.bind_framebuffer()
-
-        self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)
-
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
-        self.postprocess.render_show_rendertarget(backbuffer_copy)
+        self.postprocess.render_tone_map(hdrtexture)
 
-        # self.postprocess.render_tone_map(texture_diffuse)
-
-        texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
-        self.framebuffer.set_color_texture(texture_ssr)
+        backbuffer_copy = self.rendertarget_manager.get_temporary(RenderTargets.TEMP01_GL_RGBA8)
+        self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
-
-        self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
+        self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)
+        backbuffer_copy.release()
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
-            self.framebuffer.set_color_texture(backbuffer_copy)
+            self.framebuffer.set_color_texture(backbuffer)
             self.framebuffer.bind_framebuffer()
-            self.postprocess.render_show_rendertarget(self.debug_rendertarget)
+            self.postprocess.render_copy_rendertarget(self.debug_rendertarget)

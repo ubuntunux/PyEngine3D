@@ -48,6 +48,7 @@ class Texture:
         self.name = texture_data.get('name')
         logger.info("Load " + GetClassName(self) + " : " + self.name)
 
+        self.using = False  # texture using flag for temp rendertarget
         self.attachment = False
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
@@ -74,6 +75,9 @@ class Texture:
 
     def delete(self):
         glDeleteTextures(1, self.buffer)
+
+    def release(self):
+        self.using = False
 
     def get_save_data(self):
         save_data = dict(

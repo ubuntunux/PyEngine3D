@@ -2,22 +2,33 @@
 
 #include "quad.glsl"
 
-//-------------- MATERIAL_COMPONENTS ---------------//
-
-#ifdef MATERIAL_COMPONENTS
-    uniform sampler2D texture_diffuse;
-#endif
-
-//----------- FRAGMENT_SHADER ---------------//
+uniform sampler2D texture_diffuse;
+uniform float exposure = 1.0;
 
 #ifdef FRAGMENT_SHADER
 in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
+const float A = 0.15;
+const float B = 0.50;
+const float C = 0.10;
+const float D = 0.20;
+const float E = 0.02;
+const float F = 0.30;
+const float W = 11.2;
+const float ExposureBias = 2.0f;
+
+vec3 Uncharted2Tonemap(vec3 x)
+{
+     return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
 void main() {
-    vec2 texcoord = vs_output.texcoord.xy;
-    vec4 color = texture(texture_diffuse, vs_output.texcoord.xy);
-    fs_output.xyz = pow(color.xyz, vec3(1.0 / 2.2));
+    vec3 texColor = texture(texture_diffuse, vs_output.texcoord.xy).xyz;
+    texColor *= exposure;  // Hardcoded Exposure Adjustment
+    texColor = Uncharted2Tonemap(texColor * ExposureBias);
+    vec3 whiteScale = 1.0f / Uncharted2Tonemap(vec3(W));
+    fs_output.xyz = pow(texColor * whiteScale, vec3(1.0 / 2.2));
     fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER

@@ -46,7 +46,7 @@ class GUIEditor(AutoEnum):
     KIVY = ()
 
 
-def run(editor, project_filename=""):
+def run(editor=GUIEditor.QT, project_filename=""):
     appCmdQueue = None
     uiCmdQueue = None
     pipe1, pipe2 = None, None

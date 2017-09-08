@@ -52,7 +52,7 @@ void main() {
             vec2 uv = shadow_uv.xy + vec2(x, y) * inv_shadow_map_size;
             uv += vec2(rand(uv)) * inv_shadow_map_size;
 
-            shadow_factor += texture(shadow_texture, uv).x <= shadow_d - shadow_bias ? 0.2 : 1.0;
+            shadow_factor += texture(shadow_texture, uv).x <= shadow_d - shadow_bias ? 0.0 : 1.0;
             weight += 1.0;
         }
     }
@@ -66,7 +66,7 @@ void main() {
     vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
     normalVector = normalize(normal);
 
-    const float ambient_light = 0.3;
+    const float ambient_light = 0.05;
     const float light_intensity = 3.0;
     float diffuseLighting = clamp(shadow_factor * dot(lightVector, normalVector), ambient_light, 1.0) * light_intensity;
     vec3 diffuseColor = baseColor.xyz * diffuseLighting;

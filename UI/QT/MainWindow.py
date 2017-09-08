@@ -256,7 +256,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         height = self.spinHeight.value()
         full_screen = self.checkFullScreen.isChecked()
         screen_info = (width, height, full_screen)
-        print(screen_info)
         self.appCmdQueue.put(COMMAND.CHANGE_RESOLUTION, screen_info)
 
     def openResourceMenu(self, position):

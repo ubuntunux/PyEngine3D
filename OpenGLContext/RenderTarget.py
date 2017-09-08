@@ -9,15 +9,15 @@ from .Texture import Texture2D
 
 class RenderTargets(AutoEnum):
     BACKBUFFER = ()
-    BACKBUFFER_COPY = ()
     DEPTHSTENCIL = ()
+    HDR = ()
     DIFFUSE = ()
     WORLD_NORMAL = ()
     SHADOWMAP = ()
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
     VELOCITY = ()
-    VELOCITY_COPY = ()
+    TEMP01_GL_RGBA8 = ()
     COUNT = ()
 
 
@@ -27,6 +27,7 @@ class RenderTargetManager(Singleton):
     def __init__(self):
         self.core_manager = None
         self.rendertargets = []
+        self.temp_rendertargets = {}
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -35,9 +36,18 @@ class RenderTargetManager(Singleton):
 
     def clear(self):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
+        self.temp_rendertargets = {}
 
     def get_rendertarget(self, texture_enum: RenderTargets) -> Texture2D:
-        return self.rendertargets[texture_enum.value] if texture_enum.value < len(self.rendertargets) else None
+        return self.rendertargets[texture_enum.value]
+
+    def get_temporary(self, texture_enum: RenderTargets) -> Texture2D:
+        rendertarget = self.rendertargets[texture_enum.value]
+        if not rendertarget.using:
+            rendertarget.using = True
+            return rendertarget
+        logger.warn("%s are using." % texture_enum)
+        return rendertarget
 
     def create_rendertarget(self, rendertarget_enum, **kwargs):
         rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
@@ -59,23 +69,20 @@ class RenderTargetManager(Singleton):
                                  data_type=GL_UNSIGNED_BYTE,
                                  wrap=GL_CLAMP)
 
-        self.create_rendertarget(RenderTargets.BACKBUFFER_COPY,
-                                 width=fullsize_x,
-                                 height=fullsize_y,
-                                 internal_format=GL_RGBA8,
-                                 texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE,
-                                 wrap=GL_CLAMP)
-
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_DEPTH24_STENCIL8,
                                  texture_format=GL_DEPTH_STENCIL,
                                  data_type=GL_UNSIGNED_INT_24_8,
-                                 min_filter=GL_NEAREST,
-                                 mag_filter=GL_NEAREST,
                                  wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.HDR,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA16F,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_FLOAT)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
                                  width=fullsize_x,
@@ -125,3 +132,11 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RG32F,
                                  texture_format=GL_RG,
                                  data_type=GL_FLOAT)
+
+        self.create_rendertarget(RenderTargets.TEMP01_GL_RGBA8,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 wrap=GL_CLAMP)

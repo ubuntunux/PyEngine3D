@@ -83,7 +83,7 @@ class PostProcess:
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-    def render_show_rendertarget(self, source_texture):
+    def render_copy_rendertarget(self, source_texture):
         self.show_rendertarget.use_program()
         self.show_rendertarget.bind_uniform_data("is_depth_texture", source_texture.is_depth_texture())
         self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
