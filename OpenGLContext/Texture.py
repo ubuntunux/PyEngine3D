@@ -46,7 +46,7 @@ class Texture:
 
     def __init__(self, **texture_data):
         self.name = texture_data.get('name')
-        logger.info("Load " + GetClassName(self) + " : " + self.name)
+        logger.info("Create " + GetClassName(self) + " : " + self.name)
 
         self.using = False  # texture using flag for temp rendertarget
         self.attachment = False

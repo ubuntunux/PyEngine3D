@@ -136,21 +136,18 @@ class Resource:
     def get_resource_info(self):
         return self.name, self.type_name, self.data is not None
 
-    def copy_data(self, data):
-        if data and self.data:
-            if type(self.data) is dict:
-                self.data = copy.deepcopy(data)
-            else:
-                for key in data.__dict__:
-                    self.data.__dict__[key] = data.__dict__[key]
-
     def set_data(self, data):
-        if data:
-            if self.data is None:
+        if self.data is None:
+            self.data = data
+        else:
+            # copy of data
+            if type(data) is dict:
                 self.data = data
-                ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
             else:
-                self.copy_data(data)
+                self.data.__dict__ = data.__dict__
+
+        # Notify that data has been loaded.
+        ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
 
     def clear_data(self):
         self.data = None
@@ -206,6 +203,12 @@ class ResourceLoader(object):
         resourceName = resourceName.replace(os.sep, ".")
         return resourceName if make_lower else resourceName
 
+    def is_new_external_data(self, meta_data, source_filepath):
+        # Refresh the resource from external file.
+        source_modify_time = get_modify_time_of_file(source_filepath)
+        return meta_data.resource_version != self.resource_version or \
+            (meta_data.source_filepath == source_filepath and meta_data.source_modify_time != source_modify_time)
+
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
 
@@ -236,14 +239,9 @@ class ResourceLoader(object):
                     logger.info("Create the new resource from %s." % source_filepath)
                     resource = self.create_resource(resource_name)
                     self.convert_resource(resource, source_filepath)
-                elif meta_data:
-                    # Refresh the resource from external file.
-                    source_modify_time = get_modify_time_of_file(source_filepath)
-                    if meta_data.resource_version != self.resource_version \
-                        or (meta_data.source_filepath == source_filepath \
-                            and meta_data.source_modify_time != source_modify_time):
-                        self.convert_resource(resource, source_filepath)
-                        logger.info("Refresh the new resource from %s." % source_filepath)
+                elif meta_data and self.is_new_external_data(meta_data, source_filepath):
+                    self.convert_resource(resource, source_filepath)
+                    logger.info("Refresh the new resource from %s." % source_filepath)
             # clear list
             self.externalFileList = []
 
@@ -387,24 +385,29 @@ class ResourceLoader(object):
             if hasattr(resource_data, 'get_save_data'):
                 save_data = resource_data.get_save_data()
                 self.save_resource_data(resource, save_data)
-                return
+                return True
         logger.warn("save_resource is not implemented in %s." % self.name)
+        return False
 
-    def load_resource_data(self, filePath):
-        try:
-            if os.path.exists(filePath):
-                # Load data (deserialize)
-                if is_gz_compressed_file(filePath):
-                    with gzip.open(filePath, 'rb') as f:
-                        load_data = pickle.load(f)
-                else:
-                    # human readable data
-                    with open(filePath, 'r') as f:
-                        load_data = eval(f.read())
-                return load_data
-        except:
-            logger.error("file open error : %s" % filePath)
-            logger.error(traceback.format_exc())
+    def load_resource_data(self, resource):
+        filePath = ''
+        if resource:
+            filePath = resource.meta_data.resource_filepath
+            try:
+                if os.path.exists(filePath):
+                    # Load data (deserialize)
+                    if is_gz_compressed_file(filePath):
+                        with gzip.open(filePath, 'rb') as f:
+                            load_data = pickle.load(f)
+                    else:
+                        # human readable data
+                        with open(filePath, 'r') as f:
+                            load_data = eval(f.read())
+                    return load_data
+            except:
+                pass
+        logger.error("file open error : %s" % filePath)
+        logger.error(traceback.format_exc())
         return None
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
@@ -484,10 +487,11 @@ class MaterialLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
-            material_datas = self.load_resource_data(resource.meta_data.resource_filepath)
+            material_datas = self.load_resource_data(resource)
             if material_datas:
+                meta_data = resource.meta_data
                 generate_new_material = False
-                if resource.meta_data.source_modify_time != get_modify_time_of_file(resource.meta_data.source_filepath):
+                if self.is_new_external_data(meta_data, meta_data.source_filepath):
                     generate_new_material = True
                 include_files = material_datas.get('include_files', [])
                 for include_file in include_files:
@@ -581,8 +585,7 @@ class MaterialInstanceLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
-            meta_data = resource.meta_data
-            material_instance_data = self.load_resource_data(meta_data.resource_filepath)
+            material_instance_data = self.load_resource_data(resource)
             if material_instance_data:
                 material_instance = MaterialInstance(resource.name, **material_instance_data)
                 if material_instance.valid:
@@ -639,7 +642,10 @@ class TextureLoader(ResourceLoader):
         resource = self.getResource(resource_name)
         if resource:
             meta_data = resource.meta_data
-            texture_datas = self.load_resource_data(meta_data.resource_filepath)
+            if self.is_new_external_data(meta_data, meta_data.source_filepath):
+                self.convert_resource(resource, meta_data.source_filepath)
+
+            texture_datas = self.load_resource_data(resource)
             if texture_datas:
                 if texture_datas.get('texture_type') == TextureCube:
                     empty_texture = self.getResourceData('empty')
@@ -717,7 +723,8 @@ class TextureLoader(ResourceLoader):
     def convert_resource(self, resource, source_filepath):
         try:
             logger.info("Convert Resource : %s" % source_filepath)
-            self.new_texture_list.append(resource)
+            if resource not in self.new_texture_list:
+                self.new_texture_list.append(resource)
 
             texture_name = resource.name
             image = Image.open(source_filepath)
@@ -771,7 +778,7 @@ class MeshLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
-            mesh_data = self.load_resource_data(resource.meta_data.resource_filepath)
+            mesh_data = self.load_resource_data(resource)
             if mesh_data:
                 mesh = Mesh(resource.name, **mesh_data)
                 resource.set_data(mesh)
@@ -831,7 +838,7 @@ class ModelLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
-            object_data = self.load_resource_data(resource.meta_data.resource_filepath)
+            object_data = self.load_resource_data(resource)
             if object_data:
                 mesh = self.resource_manager.getMesh(object_data.get('mesh'))
                 material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
@@ -863,20 +870,24 @@ class SceneLoader(ResourceLoader):
         if resource and resource_name == self.scene_manager.get_current_scene_name():
             scene_data = self.scene_manager.get_save_data()
             self.save_resource_data(resource, scene_data)
-            # resource.set_data(scene_data)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
             meta_data = self.getMetaData(resource_name)
-            if resource and meta_data and os.path.exists(meta_data.resource_filepath):
-                scene_datas = self.load_resource_data(meta_data.resource_filepath)
-                for object_data in scene_datas.get('static_actors', []):
-                    object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
+            if resource and meta_data:
+                if os.path.exists(meta_data.resource_filepath):
+                    scene_datas = self.load_resource_data(resource)
+                else:
+                    scene_datas = resource.get_data()
 
-                self.scene_manager.open_scene(resource_name, scene_datas)
-                # resource.set_data(scene_datas)
-                return True
+                if scene_datas:
+                    for object_data in scene_datas.get('static_actors', []):
+                        object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
+
+                    self.scene_manager.open_scene(resource_name, scene_datas)
+                    resource.set_data(scene_datas)
+                    return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 

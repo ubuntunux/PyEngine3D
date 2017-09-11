@@ -119,8 +119,9 @@ class CoreManager(Singleton):
         self.sceneManager.initialize(self)
 
         # build a scene - windows not need resize..
-        if platformModule.system() == 'Linux':
-            self.renderer.resizeScene(width, height, full_screen)
+        if not self.renderer.created_scene:
+            if platformModule.system() == 'Linux':
+                self.renderer.resizeScene(width, height, full_screen)
         return True
 
     @staticmethod

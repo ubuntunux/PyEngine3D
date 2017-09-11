@@ -54,9 +54,11 @@ class SceneManager(Singleton):
         self.lights = []
         self.static_actors = []
         self.objectMap = {}
-        resource = self.resource_manager.sceneLoader.getResource(self.__current_scene_name)
-        if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
-            self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
+
+        # delete empty scene
+        # resource = self.resource_manager.sceneLoader.getResource(self.__current_scene_name)
+        # if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
+        #     self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
 
     def new_scene(self):
         self.clear_scene()
@@ -67,11 +69,19 @@ class SceneManager(Singleton):
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
-        self.resource_manager.sceneLoader.create_resource(self.__current_scene_name)
+        logger.info("New scene : %s" % self.__current_scene_name)
+
+        scene_data = self.get_save_data()
+        self.resource_manager.sceneLoader.create_resource(self.__current_scene_name, scene_data)
+
+        # resize scene
+        self.renderer.resizeScene()
 
     def open_scene(self, scene_name, scene_data):
         self.clear_scene()
         self.set_current_scene_name(scene_name)
+
+        logger.info("Open scene : %s" % scene_name)
 
         camera_datas = scene_data.get('cameras', [])
         for camera_data in camera_datas:

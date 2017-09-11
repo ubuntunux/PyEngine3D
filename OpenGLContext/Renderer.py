@@ -72,6 +72,7 @@ class Renderer(Singleton):
         self.aspect = 0.0
         self.full_screen = False
         self.viewMode = GL_FILL
+        self.created_scene = False
         # managers
         self.coreManager = None
         self.resource_manager = None
@@ -167,6 +168,8 @@ class Renderer(Singleton):
         self.aspect = float(width) / float(height)
         self.full_screen = full_screen
 
+        logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
+
         # update perspective and ortho
         camera = self.sceneManager.getMainCamera()
         camera.update_projection(self.aspect)
@@ -180,6 +183,7 @@ class Renderer(Singleton):
         # send screen info
         screen_info = (width, height, full_screen)
         self.coreManager.notifyChangeResolution(screen_info)
+        self.created_scene = True
 
     def ortho_view(self):
         # Legacy opengl pipeline - set orthographic view
