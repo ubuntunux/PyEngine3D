@@ -136,6 +136,9 @@ class Resource:
     def get_resource_info(self):
         return self.name, self.type_name, self.data is not None
 
+    def is_need_to_load(self):
+        return self.data is None or self.meta_data.is_resource_file_changed()
+
     def set_data(self, data):
         if self.data is None:
             self.data = data
@@ -454,9 +457,14 @@ class ShaderLoader(ResourceLoader):
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
-        if resource:
+        if resource and resource.is_need_to_load():
+            # check first time load
+            reload_materials = resource.data is not None
             shader = Shader(resource.name, resource.meta_data.resource_filepath)
             resource.set_data(shader)
+            resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
+            if reload_materials:
+                self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
             return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
@@ -484,6 +492,21 @@ class MaterialLoader(ResourceLoader):
             self.resource_manager.material_instanceLoader.create_material_instance(material.shader_name,
                                                                                    material.macros)
 
+    def reload_materials(self, shader_filepath):
+        for resourceName in self.resources:
+            reload = False
+            meta_data = self.resources[resourceName].meta_data
+            if meta_data:
+                if shader_filepath == meta_data.source_filepath:
+                    reload = True
+                elif meta_data and hasattr(meta_data, 'include_files'):
+                    for include_file in meta_data.include_files:
+                        if shader_filepath == include_file:
+                            reload = True
+                            break
+            if reload:
+                self.load_resource(resourceName)
+
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
@@ -493,9 +516,10 @@ class MaterialLoader(ResourceLoader):
                 generate_new_material = False
                 if self.is_new_external_data(meta_data, meta_data.source_filepath):
                     generate_new_material = True
-                include_files = material_datas.get('include_files', [])
-                for include_file in include_files:
-                    if get_modify_time_of_file(include_file) != include_files[include_file]:
+                # set include files to meta_data
+                meta_data.include_files = material_datas.get('include_files', {})
+                for include_file in meta_data.include_files:
+                    if get_modify_time_of_file(include_file) != meta_data.include_files[include_file]:
                         generate_new_material = True
                         break
                 if generate_new_material:
