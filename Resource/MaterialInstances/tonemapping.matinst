@@ -1,1 +1,1 @@
-{'macros': OrderedDict(), 'material': 'tonemapping', 'shader_name': 'tonemapping', 'uniform_datas': {'texture_diffuse': 'empty'}}
+{'macros': {}, 'material_name': 'tonemapping', 'shader_name': 'tonemapping', 'uniform_datas': {'texture_diffuse': 'empty'}}

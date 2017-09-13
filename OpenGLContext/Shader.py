@@ -142,18 +142,14 @@ class Shader:
                     expression = expression.replace('&&', ' and ')
                     expression = expression.replace('||', ' or ')
                     expression = re.sub('\!?!\=', 'not ', expression)
-                    if eval(expression):
-                        if macro == 'if':
-                            macro_depth += 1
-                            macro_result.append(True)
-                        elif macro == 'elif':
-                            macro_result[macro_depth] = True
-                    else:
-                        if macro == 'if':
-                            macro_depth += 1
-                            macro_result.append(False)
-                        elif macro == 'elif':
-                            macro_result[macro_depth] = False
+                    # Important : To avoid errors, convert the undecalred variables to zero.
+                    expression = re.sub(reVariable, '0', expression)
+                    result = True if eval(expression) else False
+                    if macro == 'if':
+                        macro_depth += 1
+                        macro_result.append(result)
+                    elif macro == 'elif':
+                        macro_result[macro_depth] = result
                 elif macro == 'else':
                     macro_result[macro_depth] = not macro_result[macro_depth]
                 elif macro == 'endif':
@@ -199,7 +195,8 @@ class Shader:
                             unique_id = "UUID_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, include_file)).replace("-", "_")
                             include_files[include_file] = unique_id
 
-                            self.include_files.append(include_file)
+                            if include_file not in self.include_files:
+                                self.include_files.append(include_file)
                         # insert included code
                         final_code_lines.append("//------------ INCLUDE -------------//")
                         final_code_lines.append("// " + code)  # include comment
@@ -216,11 +213,15 @@ class Shader:
         return '\n'.join(final_code_lines)
 
     def parsing_macros(self, vertexShaderCode, fragmentShaderCode):
-        vextex_defines = re.findall(reDefineMacro, vertexShaderCode)
-        fragment_defines = re.findall(reDefineMacro, fragmentShaderCode)
+        vextex_macros = re.findall(reDefineMacro, vertexShaderCode)
+        fragment_macros = re.findall(reDefineMacro, fragmentShaderCode)
         macros = OrderedDict()
 
-        for expression in vextex_defines + fragment_defines:
+        def is_reserved_word(define_name):
+            return define_name in ('MATERIAL_COMPONENTS', 'VERTEX_SHADER', 'FRAGMENT_SHADER') or \
+                   define_name.startswith('UUID_')
+
+        for expression in vextex_macros + fragment_macros:
             define_expression = expression.split('(')[0].strip()
             if ' ' in define_expression:
                 define_name, define_value = define_expression.split(' ', 1)
@@ -229,17 +230,21 @@ class Shader:
 
             define_name = define_name.strip()
             define_value = define_value.strip()
-
-            # ignore
-            if define_name in ('MATERIAL_COMPONENTS', 'VERTEX_SHADER', 'FRAGMENT_SHADER') or \
-                    define_name.startswith('UUID_'):
-                continue
             try:
                 define_value = eval(define_value)
             except:
                 pass
-            macros[define_name] = define_value
-        return macros
+
+            if not is_reserved_word(define_name):
+                macros[define_name] = define_value
+
+        all_variables = re.findall(reVariable, re.sub(reDefineMacro, '', vertexShaderCode))
+        all_variables += re.findall(reVariable, re.sub(reDefineMacro, '', fragmentShaderCode))
+        final_macros = {}
+        for macro in macros:
+            if macro in all_variables:
+                final_macros[macro] = macros[macro]
+        return final_macros
 
     def parsing_uniforms(self, vertexShaderCode, fragmentShaderCode):
         vextex_uniforms = re.findall(reFindUniform, vertexShaderCode)

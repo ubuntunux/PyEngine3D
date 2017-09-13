@@ -361,7 +361,8 @@ class ResourceLoader(object):
                 if resource_data and hasattr(resource_data, 'name'):
                     resource_data.name = resource.name
                 self.save_resource(resource.name)
-                self.delete_resource(resource_name)
+                if resource.name != resource_name:
+                    self.delete_resource(resource_name)
                 logger.info("rename_resource : %s to %s" % (resource_name, new_name))
 
     def load_resource(self, resource_name):
@@ -486,6 +487,10 @@ class MaterialLoader(ResourceLoader):
     resource_version = 0
     USE_FILE_COMPRESS_TO_SAVE = False
 
+    def __init__(self, core_manager, root_path):
+        ResourceLoader.__init__(self, core_manager, root_path)
+        self.linked_material_map = {}
+
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
         if material:
@@ -550,6 +555,14 @@ class MaterialLoader(ResourceLoader):
             uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
             material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
 
+            final_material_name = self.generate_material_name(shader_name, final_macros)
+
+            # Check the material_name with final_material_name.
+            if material_name != final_material_name:
+                logger.warn("Generated material name is changed. : %s" % final_material_name)
+                self.linked_material_map[material_name] = final_material_name
+                self.delete_resource(material_name)
+
             include_files = {}
             for include_file in shader.include_files:
                 include_files[include_file] = get_modify_time_of_file(include_file)
@@ -564,11 +577,11 @@ class MaterialLoader(ResourceLoader):
                 macros=final_macros
             )
             # create material
-            material = Material(material_name, material_datas)
+            material = Material(final_material_name, material_datas)
             if material and material.valid:
-                resource = self.getResource(material_name, noWarn=True)
+                resource = self.getResource(final_material_name, noWarn=True)
                 if resource is None:
-                    resource = self.create_resource(material_name)
+                    resource = self.create_resource(final_material_name)
 
                 # write material to file, and regist to resource manager
                 shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)
@@ -579,9 +592,9 @@ class MaterialLoader(ResourceLoader):
                 self.save_resource_data(resource, material_datas, source_filepath)
                 # convert done
                 resource.set_data(material)
-                return True
+                return material
         logger.error("Failed to generate_new_material %s." % material_name)
-        return False
+        return None
 
     def getMaterial(self, shader_name, macros={}):
         if shader_name == '':
@@ -589,10 +602,13 @@ class MaterialLoader(ResourceLoader):
             return None
 
         material_name = self.generate_material_name(shader_name, macros)
+        # Due to options such as macros, actual material names may differ. That's why we use link maps.
+        if material_name in self.linked_material_map:
+            material_name = self.linked_material_map[material_name]
+
         material = self.getResourceData(material_name)
         if material is None:
-            if self.generate_new_material(material_name, shader_name, macros):
-                material = self.getResourceData(material_name, noWarn=True)
+            material = self.generate_new_material(material_name, shader_name, macros)
         return material
 
 
@@ -614,6 +630,9 @@ class MaterialInstanceLoader(ResourceLoader):
                 material_instance = MaterialInstance(resource.name, **material_instance_data)
                 if material_instance.valid:
                     resource.set_data(material_instance)
+                    if material_instance.isNeedToSave:
+                        self.save_resource(resource_name)
+                        material_instance.isNeedToSave = False
                 return material_instance.valid
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False

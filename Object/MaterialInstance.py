@@ -16,20 +16,16 @@ from Utilities import Attributes
 class MaterialInstance:
     def __init__(self, material_instance_name, **data):
         self.valid = False
+        self.isNeedToSave = False
         logger.info("Load Material Instance : " + material_instance_name)
         self.name = material_instance_name
+        self.shader_name = data.get('shader_name', 'default')
         self.material = None
-        self.shader_name = ''
-        self.macros = OrderedDict()
+        self.material_name = data.get('material_name', 'default')
+        self.macros = copy.copy(data.get('macros', OrderedDict()))
         self.linked_uniform_map = dict()
         self.linked_material_component_map = dict()
         self.Attributes = Attributes()
-
-        self.shader_name = data.get('shader_name', 'default')
-        macros = data.get('macros') or OrderedDict()
-        macro_names = sorted(macros.keys())
-        for macro_name in macro_names:
-            self.macros[macro_name] = macros[macro_name]
 
         material = CoreManager.instance().resource_manager.getMaterial(self.shader_name, self.macros)
 
@@ -64,6 +60,7 @@ class MaterialInstance:
 
         save_data = dict(
             shader_name=self.material.shader_name if self.material else 'default',
+            material_name=self.material.name if self.material else 'default',
             macros=self.macros,
             uniform_datas=uniform_datas,
         )
@@ -71,7 +68,11 @@ class MaterialInstance:
 
     def set_material(self, material):
         if material and self.material != material:
+            self.isNeedToSave = self.material_name != material.name
+
             self.material = material
+            self.material_name = material.name
+            self.macros = copy.copy(material.macros)
 
             # link_uniform_buffers
             old_uniform_names = list(self.linked_uniform_map.keys())
@@ -135,6 +136,7 @@ class MaterialInstance:
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
         self.Attributes.setAttribute('shader_name', self.shader_name)
+        self.Attributes.setAttribute('material_name', self.material_name)
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             self.Attributes.setAttribute(uniform_buffer.name, uniform_data)
         for key in self.macros:
@@ -146,14 +148,16 @@ class MaterialInstance:
             if attributeValue != self.shader_name:
                 material = CoreManager.instance().resource_manager.getMaterial(attributeValue, self.macros)
                 self.set_material(material)
+        elif attributeName in 'material_name':
+            if self.material:
+                material = CoreManager.instance().resource_manager.getMaterial(self.material.shader_name)
+                self.set_material(material)
         elif attributeName in self.linked_material_component_map:
             self.set_uniform_data_from_string(attributeName, attributeValue)
         elif attributeName in self.macros:
             if self.macros[attributeName] != attributeValue:
                 self.macros[attributeName] = attributeValue
-                # if macro was changed then get a new material.
-                if self.material:
-                    material = CoreManager.instance().resource_manager.getMaterial(self.material.shader_name,
-                                                                                   self.macros)
-                    self.set_material(material)
+                material = CoreManager.instance().resource_manager.getMaterial(self.material.shader_name,
+                                                                               self.macros)
+                self.set_material(material)
         return self.Attributes
