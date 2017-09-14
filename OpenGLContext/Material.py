@@ -51,7 +51,9 @@ class Material:
             CoreManager.instance().resource_manager.getMaterial(self.shader_name, new_macros)
 
     def delete(self):
+        glUseProgram(0)
         glDeleteProgram(self.program)
+        logger.info("Deleted %s material." % self.name)
 
     def use_program(self):
         glUseProgram(self.program)

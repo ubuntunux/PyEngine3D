@@ -156,7 +156,7 @@ class Resource:
         self.data = None
 
     def get_data(self):
-        if self.data is None or self.meta_data.is_resource_file_changed():
+        if self.is_need_to_load():
             ResourceManager.instance().load_resource(self.name, self.type_name)
         return self.data
 
@@ -459,13 +459,10 @@ class ShaderLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource and resource.is_need_to_load():
-            # check first time load
-            reload_materials = resource.data is not None
             shader = Shader(resource.name, resource.meta_data.resource_filepath)
             resource.set_data(shader)
             resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
-            if reload_materials:
-                self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
+            self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
             return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
@@ -498,6 +495,7 @@ class MaterialLoader(ResourceLoader):
                                                                                    material.macros)
 
     def reload_materials(self, shader_filepath):
+        reload_shader_names = []
         for resourceName in self.resources:
             reload = False
             meta_data = self.resources[resourceName].meta_data
@@ -511,6 +509,12 @@ class MaterialLoader(ResourceLoader):
                             break
             if reload:
                 self.load_resource(resourceName)
+                material = self.getResourceData(resourceName)
+                if material and material.shader_name not in reload_shader_names:
+                    reload_shader_names.append(material.shader_name)
+
+        for shader_name in reload_shader_names:
+            self.resource_manager.material_instanceLoader.reload_material_instances(shader_name)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -636,6 +640,20 @@ class MaterialInstanceLoader(ResourceLoader):
                 return material_instance.valid
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
+
+    def reload_material_instances(self, shader_name):
+        for resource_name in self.resources:
+            resource = self.resources[resource_name]
+            if resource and resource.data:
+                material_instance = resource.data
+                if material_instance.shader_name == shader_name:
+                    old_program = material_instance.material.program
+                    self.load_resource(resource_name)
+
+        for resource_name in self.resources:
+            resource = self.resources[resource_name]
+            if resource and resource.data:
+                material_instance = resource.data
 
     def create_material_instance(self, shader_name, macros=None):
         if shader_name:
