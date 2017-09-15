@@ -315,15 +315,11 @@ class CoreManager(Singleton):
                     if obj_instance:
                         self.sendObjectInfo(obj_instance)
             done = True
-        elif keyDown == K_HOME:
-            obj = self.sceneManager.static_actors[0]
-            self.sceneManager.setObjectFocus(obj)
-            done = True
         elif keyDown == K_DELETE:
             # Test Code
             obj_names = set(self.sceneManager.getObjectNames())
             # clear static mesh
-            self.sceneManager.clear_static_actors()
+            self.sceneManager.clear_actors()
             current_obj_names = set(self.sceneManager.getObjectNames())
             for obj_name in (obj_names - current_obj_names):
                 self.notifyDeleteObject(obj_name)

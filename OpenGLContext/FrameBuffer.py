@@ -18,7 +18,8 @@ class FrameBuffer:
         self.height = 0
 
     def delete(self):
-        glDeleteFramebuffers(self.buffer)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glDeleteFramebuffers(1, [self.buffer, ])
 
     def clear(self, clear_flag=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, clear_color=(0.0, 0.0, 0.0, 1.0)):
         glClearColor(*clear_color)

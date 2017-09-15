@@ -212,22 +212,14 @@ class Renderer(Singleton):
         if not camera or not light:
             return
 
-        self.render_objects_begin()
-
-        # render object
-        hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
-        colortexture = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
-        diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
-        normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
-        depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
-        shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
-        velocity_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
-
-        # prepare shadow map
-        self.framebuffer.set_color_texture(None)
-        self.framebuffer.set_depth_texture(shadowmap)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CCW)
+        glDisable(GL_BLEND)
+        glEnable(GL_LIGHTING)
+        glShadeModel(GL_SMOOTH)
+        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.uniformSceneConstants.bind_uniform_block(camera.view,
                                                       np.linalg.inv(camera.view),
@@ -239,33 +231,12 @@ class Renderer(Singleton):
                                                       Float4(camera.near, camera.far, 0.0, 0.0))
 
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
-        light.transform.updateInverseTransform()  # update view matrix
         self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
                                                       light.transform.front, FLOAT_ZERO,
                                                       light.lightColor)
 
-        # render shadow
-        shadow_distance = 50.0 / camera.meter_per_unit
-        width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
-
-        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
-        shadow_projection = light.transform.inverse_matrix.copy()
-        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
-        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
-
-        glFrontFace(GL_CW)
-        self.render_objects(shadow_projection, shadow_projection, True)
-
-        self.framebuffer.set_color_textures([hdrtexture, diffusetexture, normaltexture, velocity_texture])
-        self.framebuffer.set_depth_texture(depthtexture)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        view_projection = camera.view_projection
-        prev_view_projection = camera.prev_view_projection
-        glFrontFace(GL_CCW)
-        self.render_objects(view_projection, prev_view_projection, False, True, shadow_projection, shadowmap)
+        self.render_static_actors_shadow()
+        self.render_static_actors_lighting()
 
         # self.render_bones()
         self.render_postprocess()
@@ -299,22 +270,117 @@ class Renderer(Singleton):
         else:
             self.debug_rendertarget = None
 
-    def render_objects_begin(self):
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
-        glEnable(GL_CULL_FACE)
+    def render_static_actors_shadow(self):
+        glFrontFace(GL_CW)
+
+        shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+
+        self.framebuffer.set_color_texture(None)
+        self.framebuffer.set_depth_texture(shadowmap)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer.clear(GL_DEPTH_BUFFER_BIT)
+
+        camera = self.sceneManager.getMainCamera()
+        shadow_distance = 50.0 / camera.meter_per_unit
+        width, height = shadow_distance * 0.5, shadow_distance * 0.5
+        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+
+        light = self.sceneManager.get_light(0)
+        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
+        shadow_projection = light.transform.inverse_matrix.copy()
+        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
+        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
+
+        self.render_static_actors(cast_shadow=True)
+
+    def render_static_actors_lighting(self):
         glFrontFace(GL_CCW)
-        glDisable(GL_BLEND)
-        glEnable(GL_LIGHTING)
-        glShadeModel(GL_SMOOTH)
-        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
+
+        # render object
+        hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
+        diffusetexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
+        normaltexture = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
+        depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
+        velocity_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
+
+        self.framebuffer.set_color_textures([hdrtexture, diffusetexture, normaltexture, velocity_texture])
+        self.framebuffer.set_depth_texture(depthtexture)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.render_static_actors()
+
+    def render_static_actors(self, cast_shadow=False):
+        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+
+        camera = self.sceneManager.getMainCamera()
+        shadow_distance = 50.0 / camera.meter_per_unit
+        width, height = shadow_distance * 0.5, shadow_distance * 0.5
+        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+
+        light = self.sceneManager.get_light(0)
+        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
+        shadow_projection = light.transform.inverse_matrix.copy()
+        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
+        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
+
+        static_actors = self.sceneManager.static_actors[:]
+        geometries = []
+        for static_actor in static_actors:
+            geometries += static_actor.geometries
+        geometries.sort(key=lambda x: id(x.vertex_buffer))
+
+        material = None
+        material_instance = None
+
+        last_vertex_buffer = None
+        last_material = None
+        last_material_instance = None
+        last_actor = None
+
+        if cast_shadow:
+            material_instance = self.resource_manager.getMaterialInstance("shadowmap")
+
+        for geometry in geometries:
+            actor = geometry.parent_actor
+
+            if not cast_shadow:
+                material_instance = geometry.get_material_instance() or default_material_instance
+            material = material_instance.material if material_instance else None
+
+            if last_material != material and material is not None:
+                material.use_program()
+
+            if last_material_instance != material_instance and material_instance is not None:
+                material_instance.bind_material_instance()
+
+            if last_actor != actor and material_instance:
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
+                material_instance.bind_uniform_data('view_projection', camera.view_projection)
+                material_instance.bind_uniform_data('prev_view_projection', camera.prev_view_projection)
+                if not cast_shadow:
+                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
+                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
+
+            # At last, bind buffers
+            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
+                geometry.bind_vertex_buffer()
+
+            # draw
+            if geometry and material_instance:
+                geometry.draw_elements()
+
+            last_actor = actor
+            last_material = material
+            last_vertex_buffer = geometry.vertex_buffer
+            last_material_instance = material_instance
 
     def render_objects(self, view_projection, prev_view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
         camera = self.sceneManager.getMainCamera()
         camera_pos = camera.transform.getPos()
         camera_front = camera.front
-        static_actors = self.sceneManager.get_static_actors()[:]
+        static_actors = self.sceneManager.static_actors[:]
         geometries = []
         for static_actor in static_actors:
             geometries += static_actor.geometries
@@ -376,7 +442,7 @@ class Renderer(Singleton):
         glDisable(GL_CULL_FACE)
         mesh = self.resource_manager.getMesh("Cube")
         material_instance = self.resource_manager.getMaterialInstance("debug_bone")
-        static_actors = self.sceneManager.get_static_actors()[:]
+        static_actors = self.sceneManager.static_actors[:]
 
         if mesh and material_instance:
             material_instance.use_program()

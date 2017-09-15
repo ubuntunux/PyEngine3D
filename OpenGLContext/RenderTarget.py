@@ -50,8 +50,13 @@ class RenderTargetManager(Singleton):
         return rendertarget
 
     def create_rendertarget(self, rendertarget_enum, **kwargs):
+        index = int(rendertarget_enum.value)
         rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
-        self.rendertargets[int(rendertarget_enum.value)] = rendertarget
+        if self.rendertargets[index]:
+            # just copy
+            self.rendertargets[index].__dict__ = rendertarget.__dict__
+        else:
+            self.rendertargets[index] = rendertarget
 
     def create_rendertargets(self, width, height):
         self.clear()
@@ -100,8 +105,8 @@ class RenderTargetManager(Singleton):
 
         # attach to depth render target
         self.create_rendertarget(RenderTargets.SHADOWMAP,
-                                 width=4096,
-                                 height=4096,
+                                 width=1024,
+                                 height=1024,
                                  internal_format=GL_DEPTH_COMPONENT32,
                                  texture_format=GL_DEPTH_COMPONENT,
                                  data_type=GL_FLOAT,

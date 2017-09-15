@@ -16,3 +16,8 @@ class Light(StaticActor):
         save_data = StaticActor.get_save_data(self)
         save_data['lightColor'] = self.lightColor.tolist()
         return save_data
+
+    def update(self, force_update=False):
+        updated = self.transform.updateTransform()
+        if updated or force_update:
+            self.transform.updateInverseTransform()  # update view matrix

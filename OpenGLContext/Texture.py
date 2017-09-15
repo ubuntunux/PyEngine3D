@@ -74,7 +74,8 @@ class Texture:
         self.attribute = Attributes()
 
     def delete(self):
-        glDeleteTextures(1, self.buffer)
+        glBindTexture(self.target, 0)
+        glDeleteTextures(1, [self.buffer, ])
 
     def release(self):
         self.using = False

@@ -18,45 +18,25 @@ class StaticActor:
         self.model = None
         self.geometries = []
 
-        # animation
-        self.animation_frame = 0.0
-        self.animation_buffers = []
-        self.prev_animation_buffers = []
-
-        self.attributes = Attributes()
-
-        self.set_model(object_data.get('model'))
-
         # transform
         self.transform = TransformObject()
         self.transform.setPos(object_data.get('pos', [0, 0, 0]))
         self.transform.setRot(object_data.get('rot', [0, 0, 0]))
         self.transform.setScale(object_data.get('scale', [1, 1, 1]))
 
+        self.attributes = Attributes()
+
+        self.set_model(object_data.get('model'))
+
     def set_model(self, model):
         self.model = model
         self.mesh = self.model.mesh if self.model else None
-
-        self.animation_buffers = []
-        self.prev_animation_buffers = []
         self.geometries = []
 
         if self.model and self.mesh:
             for i in range(self.mesh.get_geometry_count()):
                 geometry_instance = GeometryInstance(self, self.model, self.mesh.get_geometry(i))
                 self.geometries.append(geometry_instance)
-
-            for i in range(self.mesh.get_animation_count()):
-                if self.mesh.animations[i]:
-                    animation_buffer = self.mesh.get_animation_transforms(i, self.animation_frame)
-                    self.animation_buffers.append(animation_buffer.copy())
-                    self.prev_animation_buffers.append(animation_buffer.copy())
-
-    def get_prev_animation_buffer(self, index):
-        return self.prev_animation_buffers[index]
-
-    def get_animation_buffer(self, index):
-        return self.animation_buffers[index]
 
     def get_save_data(self):
         save_data = dict(
@@ -86,6 +66,38 @@ class StaticActor:
 
     def setSelected(self, selected):
         self.selected = selected
+
+    def update(self, dt):
+        self.transform.updateTransform()
+
+
+class SkeletonActor(StaticActor):
+    def __init__(self, name, **object_data):
+        self.animation_frame = 0.0
+        self.animation_buffers = []
+        self.prev_animation_buffers = []
+
+        StaticActor.__init__(self, name, **object_data)
+
+    def set_model(self, model):
+        StaticActor.set_model(self, model)
+
+        self.animation_buffers = []
+        self.prev_animation_buffers = []
+        self.geometries = []
+
+        if self.model and self.mesh:
+            for i in range(self.mesh.get_animation_count()):
+                if self.mesh.animations[i]:
+                    animation_buffer = self.mesh.get_animation_transforms(i, 0.0)
+                    self.animation_buffers.append(animation_buffer.copy())
+                    self.prev_animation_buffers.append(animation_buffer.copy())
+
+    def get_prev_animation_buffer(self, index):
+        return self.prev_animation_buffers[index]
+
+    def get_animation_buffer(self, index):
+        return self.animation_buffers[index]
 
     def update(self, dt):
         # TEST_CODE

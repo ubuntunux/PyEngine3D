@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import StaticActor, Camera, Light
+from Object import SkeletonActor, StaticActor, Camera, Light
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4
 
@@ -28,6 +28,7 @@ class SceneManager(Singleton):
         self.cameras = []
         self.lights = []
         self.static_actors = []
+        self.skeleton_actors = []
         self.objectMap = {}  # All of objects
 
     def initialize(self, core_manager):
@@ -53,6 +54,7 @@ class SceneManager(Singleton):
         self.cameras = []
         self.lights = []
         self.static_actors = []
+        self.skeleton_actors = []
         self.objectMap = {}
 
         # delete empty scene
@@ -108,6 +110,7 @@ class SceneManager(Singleton):
             cameras=[camera.get_save_data() for camera in self.cameras],
             lights=[light.get_save_data() for light in self.lights],
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
+            skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
         )
         return scene_data
 
@@ -128,6 +131,8 @@ class SceneManager(Singleton):
             return self.lights
         elif StaticActor == object_type:
             return self.static_actors
+        elif SkeletonActor == object_type:
+            return self.skeleton_actors
         return None
 
     def regist_object(self, object):
@@ -188,13 +193,19 @@ class SceneManager(Singleton):
         self.cameras = []
         self.lights = []
         self.static_actors = []
+        self.skeleton_actors = []
         self.objectMap = {}
 
-    def clear_static_actors(self):
+    def clear_actors(self):
         for static_actor in self.static_actors:
             if static_actor.name in self.objectMap:
                 self.objectMap.pop(static_actor.name)
         self.static_actors = []
+
+        for skeleton_actor in self.skeleton_actors:
+            if skeleton_actor.name in self.objectMap:
+                self.objectMap.pop(skeleton_actor.name)
+        self.skeleton_actors = []
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
@@ -206,6 +217,8 @@ class SceneManager(Singleton):
                 self.lights.remove(obj)
             if obj in self.static_actors:
                 self.static_actors.remove(obj)
+            if obj in self.skeleton_actors:
+                self.skeleton_actors.remove(obj)
             self.coreManager.notifyDeleteObject(objName)
 
     def getObject(self, objName):
@@ -226,11 +239,8 @@ class SceneManager(Singleton):
     def get_static_actor(self, index):
         return self.static_actors[index] if index < len(self.static_actors) else None
 
-    def get_static_actors(self):
-        return self.static_actors
-
-    def get_static_actors(self):
-        return self.static_actors
+    def get_skeleton_actor(self, index):
+        return self.skeleton_actors[index] if index < len(self.skeleton_actors) else None
 
     def getObjectAttribute(self, objName):
         obj = self.getObject(objName)
