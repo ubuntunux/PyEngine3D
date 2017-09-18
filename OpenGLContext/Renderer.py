@@ -443,68 +443,6 @@ class Renderer(Singleton):
             last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance
 
-    def render_objects(self, view_projection, prev_view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
-        # Test Code : sort list by mesh, material
-        camera = self.sceneManager.mainCamera
-        camera_pos = camera.transform.getPos()
-        camera_front = camera.front
-        static_actors = self.sceneManager.static_actors[:]
-        geometries = []
-        for static_actor in static_actors:
-            geometries += static_actor.geometries
-        geometries.sort(key=lambda x: id(x.vertex_buffer))
-
-        # draw static meshes
-        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
-        last_vertex_buffer = None
-        last_material = None
-        last_material_instance = None
-        last_actor = None
-        for geometry in geometries:
-            actor = geometry.parent_actor
-            actor_has_bone = geometry.skeleton is not None
-            if cast_shadow:
-                if actor_has_bone:
-                    material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
-                else:
-                    material_instance = self.resource_manager.getMaterialInstance("shadowmap")
-            else:
-                material_instance = geometry.get_material_instance() or default_material_instance
-            material = material_instance.material if material_instance else None
-
-            if last_material != material and material is not None:
-                material.use_program()
-
-            if last_material_instance != material_instance and material_instance is not None:
-                material_instance.bind_material_instance()
-
-            # At last, bind buffers
-            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
-                geometry.bind_vertex_buffer()
-
-            if last_actor != actor and material_instance:
-                material_instance.bind_uniform_data('model', actor.transform.matrix)
-                material_instance.bind_uniform_data('view_projection', view_projection)
-                material_instance.bind_uniform_data('prev_view_projection', prev_view_projection)
-                if render_shadow:
-                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
-                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
-                if actor_has_bone:
-                    animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
-                    prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
-                    material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
-                    material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
-                                                        len(prev_animation_buffer))
-
-            # draw
-            if geometry and material_instance:
-                geometry.draw_elements()
-
-            last_actor = actor
-            last_material = material
-            last_vertex_buffer = geometry.vertex_buffer
-            last_material_instance = material_instance
-
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
