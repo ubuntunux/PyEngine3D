@@ -90,6 +90,9 @@ class Mesh:
     def get_skeleton_index(self, skeleton):
         return self.skeletons.index(skeleton)
 
+    def has_bone(self):
+        return len(self.skeletons) > 0
+
     def get_skeleton_count(self):
         return len(self.skeletons)
 

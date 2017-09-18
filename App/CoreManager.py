@@ -365,7 +365,7 @@ class CoreManager(Singleton):
         btnL, btnM, btnR = pygame.mouse.get_pressed()
 
         # get camera
-        camera = self.sceneManager.getMainCamera()
+        camera = self.sceneManager.mainCamera
         cameraTransform = camera.transform
         move_speed = camera.move_speed * self.delta
         pan_speed = camera.pan_speed * self.delta

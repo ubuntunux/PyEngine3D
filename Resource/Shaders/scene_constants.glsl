@@ -1,6 +1,6 @@
 #version 430 core
 
-layout(std140, binding=0) uniform sceneConstants
+layout(std140, binding=0) uniform viewConstants
 {
     mat4 view;
     mat4 inv_view;
@@ -12,11 +12,18 @@ layout(std140, binding=0) uniform sceneConstants
     vec4 near_far;
 };
 
-layout(std140, binding=1) uniform lightConstants
+layout(std140, binding=1) uniform viewProjection
+{
+    mat4 view_projection;
+    mat4 prev_view_projection;
+};
+
+layout(std140, binding=2) uniform lightConstants
 {
     vec4 lightPosition;
     vec4 lightDir;
     vec4 lightColor;
+    mat4 shadow_matrix;
 };
 
 const int MAX_BONES_PER_VERTEX = 4;

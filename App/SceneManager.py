@@ -23,6 +23,7 @@ class SceneManager(Singleton):
 
         # Scene Objects
         self.mainCamera = None
+        self.mainLight = None
         self.selectedObject = None
 
         self.cameras = []
@@ -51,6 +52,7 @@ class SceneManager(Singleton):
     def clear_scene(self):
         self.coreManager.notifyClearScene()
         self.mainCamera = None
+        self.mainLight = None
         self.cameras = []
         self.lights = []
         self.static_actors = []
@@ -67,7 +69,7 @@ class SceneManager(Singleton):
 
         # add scene objects
         self.mainCamera = self.addCamera()
-        self.addLight()
+        self.mainLight = self.addLight()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
@@ -93,8 +95,12 @@ class SceneManager(Singleton):
         light_datas = scene_data.get('lights', [])
         for light_data in light_datas:
             self.addLight(**light_data)
+        self.mainLight = self.get_light(0)
 
         for object_data in scene_data.get('static_actors', []):
+            self.addObject(**object_data)
+
+        for object_data in scene_data.get('skeleton_actors', []):
             self.addObject(**object_data)
 
         # resize scene
@@ -141,15 +147,16 @@ class SceneManager(Singleton):
             object_list.append(object)
             self.objectMap[object.name] = object
             self.coreManager.sendObjectInfo(object)
+        else:
+            logger.error("SceneManager::regist_object error. %s" % object.name if object else 'None')
 
     def unregist_resource(self, object):
         if object and object.name in self.objectMap:
             object_list = self.get_object_list(type(object))
             object_list.remove(object)
             self.objectMap.pop(object.name)
-
-    def getMainCamera(self):
-        return self.mainCamera
+        else:
+            logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
 
     def addCamera(self, **camera_data):
         camera_data['name'] = self.generateObjectName(camera_data.get('name', 'camera'))
@@ -175,18 +182,17 @@ class SceneManager(Singleton):
             objType = GetClassName(model)
             logger.info("add %s : %s" % (objType, object_data['name']))
 
-            if 'Model' == objType:
-                obj_instance = StaticActor(**object_data)
+            if model.mesh and model.mesh.has_bone():
+                obj_instance = SkeletonActor(**object_data)
             else:
-                obj_instance = None
+                obj_instance = StaticActor(**object_data)
             # regist
             self.regist_object(obj_instance)
             return obj_instance
         return None
 
     def addObjectHere(self, model):
-        camera = self.getMainCamera()
-        pos = camera.transform.pos + camera.front * 10.0
+        pos = self.mainCamera.transform.pos + self.mainCamera.front * 10.0
         return self.addObject(model=model, pos=pos)
 
     def clearObjects(self):
@@ -209,7 +215,7 @@ class SceneManager(Singleton):
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
-        if obj and obj != self.mainCamera:
+        if obj and obj != self.mainCamera and obj != self.mainLight:
             self.objectMap.pop(obj.name)
             if obj in self.cameras:
                 self.cameras.remove(obj)
@@ -267,12 +273,19 @@ class SceneManager(Singleton):
         if obj and obj != self.mainCamera:
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
+    def update_camera_projection_matrix(self, aspect):
+        for camera in self.cameras:
+            camera.update_projection(aspect)
+
     def update_scene(self, dt):
         for camera in self.cameras:
             camera.update()
 
         for light in self.lights:
-            light.update(dt)
+            light.update(self.mainCamera)
 
         for obj in self.static_actors:
+            obj.update(dt)
+
+        for obj in self.skeleton_actors:
             obj.update(dt)

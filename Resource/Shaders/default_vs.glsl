@@ -3,8 +3,7 @@
 #define SKELETAL 0
 
 #include "scene_constants.glsl"
-
-//----------- UNIFORM_BLOCK ---------------//
+#include "default_material.glsl"
 
 #if 1 == SKELETAL
 uniform mat4 bone_matrices[MAX_BONES];
@@ -12,14 +11,7 @@ uniform mat4 prev_bone_matrices[MAX_BONES];
 #endif
 
 uniform mat4 model;
-uniform mat4 view_projection;
-uniform mat4 prev_view_projection;
 
-//-------------- MATERIAL_COMPONENTS ---------------//
-
-#include "default_material.glsl"
-
-//----------- INPUT and OUTPUT ---------------//
 
 struct VERTEX_INPUT
 {

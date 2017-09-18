@@ -1,17 +1,13 @@
 #version 430 core
 
-#include "utility.glsl"
-#include "scene_constants.glsl"
-#include "default_vs.glsl"
-
 #define USE_REFLECTION 0
 
-uniform mat4 shadow_matrix;
-uniform sampler2D shadow_texture;
-
-//-------------- MATERIAL_COMPONENTS ---------------//
-
+#include "utility.glsl"
+#include "scene_constants.glsl"
 #include "default_material.glsl"
+#include "default_vs.glsl"
+
+uniform sampler2D shadow_texture;
 
 //----------- FRAGMENT_SHADER ---------------//
 

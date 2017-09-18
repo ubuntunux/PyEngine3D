@@ -84,7 +84,6 @@ class SkeletonActor(StaticActor):
 
         self.animation_buffers = []
         self.prev_animation_buffers = []
-        self.geometries = []
 
         if self.model and self.mesh:
             for i in range(self.mesh.get_animation_count()):

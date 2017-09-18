@@ -13,6 +13,14 @@ from Utilities import *
 from OpenGLContext import RenderTargets, FrameBuffer, GLFont, UniformMatrix4, UniformBlock, PostProcess
 
 
+class RenderMode(AutoEnum):
+    LIGHTING = ()
+    SHADOW = ()
+    SCREEN_SPACE_REFLECTION = ()
+    VELOCITY = ()
+    COUNT = ()
+
+
 class Console:
     def __init__(self):
         self.infos = []
@@ -88,7 +96,8 @@ class Renderer(Singleton):
         self.debug_rendertarget = None  # Texture2D
 
         # Test Code : scene constants uniform buffer
-        self.uniformSceneConstants = None
+        self.uniformViewConstants = None
+        self.uniformViewProjection = None
         self.uniformLightConstants = None
 
     @staticmethod
@@ -118,7 +127,11 @@ class Renderer(Singleton):
         # Test Code : scene constants uniform buffer
         material_instance = self.resource_manager.getMaterialInstance('scene_constants')
         program = material_instance.get_program()
-        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
+        self.uniformViewConstants = None
+        self.uniformViewProjection = None
+        self.uniformLightConstants = None
+
+        self.uniformViewConstants = UniformBlock("viewConstants", program, 0,
                                                   [MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
@@ -127,10 +140,16 @@ class Renderer(Singleton):
                                                    MATRIX4_IDENTITY,
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO])
-        self.uniformLightConstants = UniformBlock("lightConstants", program, 1,
+
+        self.uniformViewProjection = UniformBlock("viewProjection", program, 1,
+                                                  [MATRIX4_IDENTITY,
+                                                   MATRIX4_IDENTITY])
+
+        self.uniformLightConstants = UniformBlock("lightConstants", program, 2,
                                                   [FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
-                                                   FLOAT4_ZERO])
+                                                   FLOAT4_ZERO,
+                                                   MATRIX4_IDENTITY])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -171,8 +190,7 @@ class Renderer(Singleton):
         logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
 
         # update perspective and ortho
-        camera = self.sceneManager.getMainCamera()
-        camera.update_projection(self.aspect)
+        self.sceneManager.update_camera_projection_matrix(self.aspect)
 
         # resize render targets
         self.rendertarget_manager.create_rendertargets(self.width, self.height)
@@ -195,7 +213,7 @@ class Renderer(Singleton):
 
     def projection_view(self):
         # Legacy opengl pipeline - set perspective view
-        camera = self.sceneManager.getMainCamera()
+        camera = self.sceneManager.mainCamera
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
@@ -206,8 +224,8 @@ class Renderer(Singleton):
         startTime = timeModule.perf_counter()
 
         # bind scene constants
-        camera = self.sceneManager.getMainCamera()
-        light = self.sceneManager.get_light(0)
+        camera = self.sceneManager.mainCamera
+        light = self.sceneManager.mainLight
 
         if not camera or not light:
             return
@@ -221,22 +239,23 @@ class Renderer(Singleton):
         glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        self.uniformSceneConstants.bind_uniform_block(camera.view,
-                                                      np.linalg.inv(camera.view),
-                                                      camera.view_origin,
-                                                      np.linalg.inv(camera.view_origin),
-                                                      camera.projection,
-                                                      np.linalg.inv(camera.projection),
-                                                      camera.transform.getPos(), FLOAT_ZERO,
-                                                      Float4(camera.near, camera.far, 0.0, 0.0))
+        self.uniformViewConstants.bind_uniform_block(camera.view,
+                                                     np.linalg.inv(camera.view),
+                                                     camera.view_origin,
+                                                     np.linalg.inv(camera.view_origin),
+                                                     camera.projection,
+                                                     np.linalg.inv(camera.projection),
+                                                     camera.transform.getPos(), FLOAT_ZERO,
+                                                     Float4(camera.near, camera.far, 0.0, 0.0))
 
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
                                                       light.transform.front, FLOAT_ZERO,
-                                                      light.lightColor)
+                                                      light.lightColor,
+                                                      light.shadow_view_projection)
 
-        self.render_static_actors_shadow()
-        self.render_static_actors_lighting()
+        self.render_shadow()
+        self.render_lighting()
 
         # self.render_bones()
         self.render_postprocess()
@@ -270,7 +289,7 @@ class Renderer(Singleton):
         else:
             self.debug_rendertarget = None
 
-    def render_static_actors_shadow(self):
+    def render_shadow(self):
         glFrontFace(GL_CW)
 
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
@@ -280,20 +299,14 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.framebuffer.clear(GL_DEPTH_BUFFER_BIT)
 
-        camera = self.sceneManager.getMainCamera()
-        shadow_distance = 50.0 / camera.meter_per_unit
-        width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+        light = self.sceneManager.mainLight
+        self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection,
+                                                      light.shadow_view_projection,)
 
-        light = self.sceneManager.get_light(0)
-        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
-        shadow_projection = light.transform.inverse_matrix.copy()
-        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
-        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
+        self.render_static_actors(render_mode=RenderMode.SHADOW)
+        self.render_skeleton_actors(render_mode=RenderMode.SHADOW)
 
-        self.render_static_actors(cast_shadow=True)
-
-    def render_static_actors_lighting(self):
+    def render_lighting(self):
         glFrontFace(GL_CCW)
 
         # render object
@@ -308,59 +321,114 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        self.render_static_actors()
+        camera = self.sceneManager.mainCamera
+        self.uniformViewProjection.bind_uniform_block(camera.view_projection,
+                                                      camera.prev_view_projection, )
 
-    def render_static_actors(self, cast_shadow=False):
-        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        self.render_static_actors(render_mode=RenderMode.LIGHTING)
+        self.render_skeleton_actors(render_mode=RenderMode.LIGHTING)
 
-        camera = self.sceneManager.getMainCamera()
-        shadow_distance = 50.0 / camera.meter_per_unit
-        width, height = shadow_distance * 0.5, shadow_distance * 0.5
-        projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+    def render_static_actors(self, render_mode: RenderMode):
+        if len(self.sceneManager.static_actors) < 1:
+            return
 
-        light = self.sceneManager.get_light(0)
-        lightPosMatrix = getTranslateMatrix(*(-camera.transform.getPos()))
-        shadow_projection = light.transform.inverse_matrix.copy()
-        # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
-        shadow_projection[...] = np.dot(np.dot(lightPosMatrix, shadow_projection), projection)
-
-        static_actors = self.sceneManager.static_actors[:]
         geometries = []
-        for static_actor in static_actors:
+        for static_actor in self.sceneManager.static_actors:
             geometries += static_actor.geometries
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         material = None
         material_instance = None
+        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
 
         last_vertex_buffer = None
+        last_actor = None
         last_material = None
         last_material_instance = None
-        last_actor = None
 
-        if cast_shadow:
+        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+
+        if render_mode == RenderMode.SHADOW:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap")
+            material = material_instance.material if material_instance else None
 
         for geometry in geometries:
             actor = geometry.parent_actor
 
-            if not cast_shadow:
+            if render_mode == RenderMode.LIGHTING:
                 material_instance = geometry.get_material_instance() or default_material_instance
-            material = material_instance.material if material_instance else None
+                material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
                 material.use_program()
 
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind_material_instance()
+                if render_mode == RenderMode.LIGHTING:
+                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
-                material_instance.bind_uniform_data('view_projection', camera.view_projection)
-                material_instance.bind_uniform_data('prev_view_projection', camera.prev_view_projection)
-                if not cast_shadow:
-                    material_instance.bind_uniform_data('shadow_matrix', shadow_projection)
+
+            # At last, bind buffers
+            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
+                geometry.bind_vertex_buffer()
+
+            # draw
+            if geometry and material_instance:
+                geometry.draw_elements()
+
+            last_actor = actor
+            last_material = material
+            last_vertex_buffer = geometry.vertex_buffer
+            last_material_instance = material_instance
+
+    def render_skeleton_actors(self, render_mode: RenderMode):
+        if len(self.sceneManager.skeleton_actors) < 1:
+            return
+
+        geometries = []
+        for skeleton_actor in self.sceneManager.skeleton_actors:
+            geometries += skeleton_actor.geometries
+        geometries.sort(key=lambda x: id(x.vertex_buffer))
+
+        material = None
+        material_instance = None
+        default_material_instance = self.resource_manager.getDefaultMaterialInstance()
+
+        last_vertex_buffer = None
+        last_actor = None
+        last_material = None
+        last_material_instance = None
+
+        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+
+        if render_mode == RenderMode.SHADOW:
+            material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
+            material = material_instance.material if material_instance else None
+
+        for geometry in geometries:
+            actor = geometry.parent_actor
+
+            if render_mode == RenderMode.LIGHTING:
+                material_instance = geometry.get_material_instance() or default_material_instance
+                material = material_instance.material if material_instance else None
+
+            if last_material != material and material is not None:
+                material.use_program()
+
+            if last_material_instance != material_instance and material_instance is not None:
+                material_instance.bind_material_instance()
+                if render_mode == RenderMode.LIGHTING:
                     material_instance.bind_uniform_data('shadow_texture', shadow_texture)
+
+            if last_actor != actor and material_instance:
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
+                animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
+                prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
+                material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
+                material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
+                                                    len(prev_animation_buffer))
 
             # At last, bind buffers
             if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
@@ -377,7 +445,7 @@ class Renderer(Singleton):
 
     def render_objects(self, view_projection, prev_view_projection, cast_shadow=False, render_shadow=False, shadow_projection=None, shadow_texture=None):
         # Test Code : sort list by mesh, material
-        camera = self.sceneManager.getMainCamera()
+        camera = self.sceneManager.mainCamera
         camera_pos = camera.transform.getPos()
         camera_front = camera.front
         static_actors = self.sceneManager.static_actors[:]

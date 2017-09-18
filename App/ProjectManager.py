@@ -86,7 +86,7 @@ class ProjectManager(Singleton):
     def save_project(self):
         try:
             if self.config and self.project_filename != self.resource_manager.DefaultProjectFile:
-                main_camera = self.coreManager.sceneManager.getMainCamera()
+                main_camera = self.coreManager.sceneManager.mainCamera
                 if main_camera:
                     main_camera.write_to_config(self.config)
                 self.config.save()

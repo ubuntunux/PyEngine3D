@@ -946,6 +946,9 @@ class SceneLoader(ResourceLoader):
                     for object_data in scene_datas.get('static_actors', []):
                         object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
 
+                    for object_data in scene_datas.get('skeleton_actors', []):
+                        object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
+
                     self.scene_manager.open_scene(resource_name, scene_datas)
                     resource.set_data(scene_datas)
                     return True
