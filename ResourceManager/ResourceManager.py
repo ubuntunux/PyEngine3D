@@ -24,7 +24,7 @@ from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
 from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
-from . import Collada, OBJ
+from . import Collada, OBJ, loadDDS
 
 
 # -----------------------#
