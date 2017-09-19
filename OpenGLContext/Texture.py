@@ -11,16 +11,20 @@ def get_internal_format(str_image_mode):
         return GL_RGB
     elif str_image_mode == "RGBA":
         return GL_RGBA
+    else:
+        logger.error("get_internal_format::unknown image mode ( %s )" % str_image_mode)
     return GL_RGBA
 
 
 def get_texture_format(str_image_mode):
-    # R,G,B,A order. GL_BGRA is faster than GL_RGBA
     if str_image_mode == "RGB":
         return GL_RGB
     elif str_image_mode == "RGBA":
-        return GL_BGRA
-    return GL_BGRA
+        # R,G,B,A order. GL_BGRA is faster than GL_RGBA
+        return GL_RGBA  # GL_BGRA
+    else:
+        logger.error("get_texture_format::unknown image mode ( %s )" % str_image_mode)
+    return GL_RGBA
 
 
 def get_image_mode(texture_internal_format):
@@ -28,6 +32,12 @@ def get_image_mode(texture_internal_format):
         return "RGB"
     elif texture_internal_format in (GL_RGBA, GL_BGRA):
         return "RGBA"
+    elif texture_internal_format in (GL_RED, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT):
+        return "R"
+    elif texture_internal_format == GL_RG:
+        return "RG"
+    else:
+        logger.error("get_image_mode::unknown image format ( %s )" % texture_internal_format)
     return "RGBA"
 
 
@@ -54,13 +64,12 @@ class Texture:
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
 
-        if self.image_mode:
-            if self.internal_format is None:
-                self.internal_format = get_internal_format(self.image_mode)
-            if self.texture_format is None:
-                self.texture_format = get_texture_format(self.image_mode)
-        elif self.internal_format:
-            self.image_mode = get_image_mode(self.internal_format)
+        if self.internal_format is None and self.image_mode:
+            self.internal_format = get_internal_format(self.image_mode)
+        if self.texture_format is None and self.image_mode:
+            self.texture_format = get_texture_format(self.image_mode)
+        if self.image_mode is None and self.texture_format:
+            self.image_mode = get_image_mode(self.texture_format)
 
         self.width = texture_data.get('width', 0)
         self.height = texture_data.get('height', 0)

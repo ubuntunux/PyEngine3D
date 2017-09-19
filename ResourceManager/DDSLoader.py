@@ -6,6 +6,7 @@ import numpy
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GL.shaders import *
+from OpenGL.arrays.arraydatatype import *
 from OpenGL.raw.GL.EXT.texture_compression_s3tc import *
 
 from Common import logger
@@ -60,8 +61,10 @@ def loadDDS(imagepath):
         for level in range(mipMapCount):
             if width > 0 and height > 0:
                 size = int((width + 3)/4) * int((height + 3)/4) * blockSize
+
                 # TODO : implement glCompressedTexImage2D
-                glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, size, buffer.ctypes.data_as(ctypes.c_void_p))
+                # glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, size, buffer.ctypes.data)
+                glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height, 0, buffer)
                 offset += size
                 width /= 2
                 height /= 2
@@ -72,4 +75,4 @@ def loadDDS(imagepath):
 
 
 if __name__ == "__main__":
-    loadDDS("Textures/dds_test.dds")
+    loadDDS("Externals/Textures/dds_test.dds")

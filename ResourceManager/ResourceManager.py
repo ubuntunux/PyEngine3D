@@ -798,7 +798,14 @@ class TextureLoader(ResourceLoader):
             #     width, height = width2, height2
             #     image = image.resize(image.mode, (width, height))
 
+            if image.mode == 'L':
+                rgbimg = Image.new("RGBA", image.size)
+                rgbimg.paste(image)
+                image = rgbimg
+                logger.info('Convert Grayscale image to RGB : %s' % source_filepath)
+
             data = image.tobytes("raw", image.mode, 0, -1)
+
             texture_datas = dict(
                 texture_type=Texture2D,
                 image_mode=image.mode,
@@ -806,6 +813,7 @@ class TextureLoader(ResourceLoader):
                 height=height,
                 data=data
             )
+
             texture = CreateTextureFromFile(name=texture_name, **texture_datas)
             resource.set_data(texture)
             texture_datas = texture.get_save_data()
