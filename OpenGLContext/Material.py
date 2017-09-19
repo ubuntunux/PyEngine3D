@@ -1,3 +1,4 @@
+import pickle
 import copy
 import traceback
 from collections import OrderedDict
@@ -22,6 +23,8 @@ class Material:
 
         vertex_shader_code = material_datas.get('vertex_shader_code', "")
         fragment_shader_code = material_datas.get('fragment_shader_code', "")
+        binary_format = material_datas.get('binary_format')
+        binary_data = material_datas.get('binary_data')
         uniforms = material_datas.get('uniforms', [])
         self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
         self.macros = material_datas.get('macros', OrderedDict())
@@ -31,10 +34,21 @@ class Material:
         self.program = -1
         self.uniform_buffers = dict()  # OrderedDict()  # Declaration order is important.
         self.Attributes = Attributes()
-        self.valid = self.create_program(vertex_shader_code, fragment_shader_code, uniforms)
 
+        if binary_format is not None and binary_data is not None:
+            binary_data = np.array(binary_data, dtype=np.ubyte)
+            self.compile_from_binary(binary_format, binary_data)
+            self.valid = self.check_validate() and self.check_linked()
+            if not self.valid:
+                logger.error("%s material has been failed to compile from binary" % self.name)
+            
         if not self.valid:
-            logger.error("Failed create %s material." % self.name)
+            self.compile_from_source(vertex_shader_code, fragment_shader_code)
+            self.valid = self.check_validate() and self.check_linked()
+            if not self.valid:
+                logger.error("%s material has been failed to compile from source" % self.name)
+
+        self.create_uniform_buffers(uniforms)
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)
@@ -58,19 +72,30 @@ class Material:
     def use_program(self):
         glUseProgram(self.program)
 
-    def create_program(self, vertexShaderCode, fragmentShaderCode, uniforms):
-        """
-        :param vertexShaderCode: string
-        :param fragmentShaderCode: sring
-        :param uniforms: [ (uniform_type, uniform_name), ... ]
-        """
+    def save_to_binary(self):
+        size = GLint()
+        glGetProgramiv(self.program, GL_PROGRAM_BINARY_LENGTH, size)
+        # very important - check data dtype np.ubyte
+        binary_data = np.zeros(size.value, dtype=np.ubyte)
+        binary_size = GLint()
+        binary_format = GLenum()
+        glGetProgramBinary(self.program, size.value, binary_size, binary_format, binary_data)
+        binary_data = pickle.dumps(binary_data)
+        return binary_format, binary_data
+
+    def compile_from_binary(self, binary_format, binary_data):
+        binary_data = pickle.loads(binary_data)
+        self.program = glCreateProgram()
+        glProgramParameteri(self.program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE)
+        glProgramBinary(self.program, binary_format.value, binary_data, len(binary_data))
+
+    def compile_from_source(self, vertexShaderCode, fragmentShaderCode):
         vertexShader = self.compile(GL_VERTEX_SHADER, vertexShaderCode)
         fragmentShader = self.compile(GL_FRAGMENT_SHADER, fragmentShaderCode)
 
         if vertexShader is None or fragmentShader is None:
             return False
 
-        # create program
         self.program = glCreateProgram()
         # glProgramParameteri(self.program, GL_PROGRAM_SEPARABLE, GL_TRUE)
         glProgramParameteri(self.program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE)
@@ -85,12 +110,7 @@ class Material:
         glDeleteShader(vertexShader)
         glDeleteShader(fragmentShader)
 
-        if not self.check_validate():
-            return False
-
-        if not self.check_linked():
-            return False
-
+    def create_uniform_buffers(self, uniforms):
         # create uniform buffers from source code
         active_texture_index = 0
         for uniform_type, uniform_name in uniforms:
@@ -104,7 +124,6 @@ class Material:
             else:
                 logger.warn("%s material has no %s uniform variable. (or maybe optimized by compiler.)" % (
                     self.name, uniform_name))
-
         return True
 
     def compile(self, shaderType, shader_code):
@@ -130,20 +149,6 @@ class Material:
         except:
             logger.error(traceback.format_exc())
         return None
-
-    def save_to_binary(self):
-        size = GLint()
-        glGetProgramiv(self.program, GL_PROGRAM_BINARY_LENGTH, size)
-        result = np.zeros(size.value)
-        size2 = GLint()
-        format = GLenum()
-        glGetProgramBinary(self.program, size.value, size2, format, result)
-        return format, result
-
-    def load_from_binary(self, format:GLenum, binary:np.array):
-        glProgramBinary(self.program, format.value, binary, len(binary))
-        self.check_validate()
-        self.check_linked()
 
     def check_validate(self):
         glValidateProgram(self.program)

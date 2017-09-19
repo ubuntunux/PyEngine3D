@@ -578,6 +578,8 @@ class MaterialLoader(ResourceLoader):
                 include_files=include_files,
                 uniforms=uniforms,
                 material_components=material_components,
+                binary_data=None,
+                binary_format=None,
                 macros=final_macros
             )
             # create material
@@ -593,8 +595,15 @@ class MaterialLoader(ResourceLoader):
                     source_filepath = shader_meta_data.resource_filepath
                 else:
                     source_filepath = ""
+
+                # save binary data of shader.
+                binary_format, binary_data = material.save_to_binary()
+                if binary_format is not None and binary_data is not None:
+                    material_datas['binary_format'] = binary_format
+                    material_datas['binary_data'] = binary_data
+
+                # Done : save material data
                 self.save_resource_data(resource, material_datas, source_filepath)
-                # convert done
                 resource.set_data(material)
                 return material
         logger.error("Failed to generate_new_material %s." % material_name)
