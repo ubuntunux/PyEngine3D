@@ -792,11 +792,14 @@ class TextureLoader(ResourceLoader):
             width, height = image.size
 
             # check size is power of two.
-            # width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
-            # height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
-            # if width != width2 or height != height2:
-            #     width, height = width2, height2
-            #     image = image.resize(image.mode, (width, height))
+            use_power_of_2 = False
+            if use_power_of_2:
+                width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
+                height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
+                if width != width2 or height != height2:
+                    logger.info('Image Resized (%s) -> (%s) : %s' % ((width, height), (width2, height2), source_filepath))
+                    image = image.resize((width2, height2), Image.ANTIALIAS)
+                    width, height = width2, height2
 
             if image.mode == 'L':
                 rgbimg = Image.new("RGBA", image.size)
