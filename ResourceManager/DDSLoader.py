@@ -2,7 +2,7 @@ import ctypes
 import os
 import struct
 
-import numpy
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GL.shaders import *
@@ -36,7 +36,8 @@ def loadDDS(imagepath):
         # read buffer
         bufsize = (linearSize * 2) if mipMapCount > 1 else linearSize
         buffer = fp.read(bufsize)
-        buffer = numpy.asarray(buffer)
+        # buffer = np.asarray(buffer)
+        buffer = np.fromstring(buffer, dtype=np.ubyte)
 
         # texture desc
         components = 4

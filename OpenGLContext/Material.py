@@ -36,7 +36,6 @@ class Material:
         self.Attributes = Attributes()
 
         if binary_format is not None and binary_data is not None:
-            binary_data = np.array(binary_data, dtype=np.ubyte)
             self.compile_from_binary(binary_format, binary_data)
             self.valid = self.check_validate() and self.check_linked()
             if not self.valid:

@@ -10,7 +10,7 @@ import pprint
 import re
 import pickle
 import gzip
-from ctypes import c_void_p
+from ctypes import *
 from collections import OrderedDict
 from distutils.dir_util import copy_tree
 import shutil
@@ -409,9 +409,8 @@ class ResourceLoader(object):
                             load_data = eval(f.read())
                     return load_data
             except:
-                pass
+                logger.error(traceback.format_exc())
         logger.error("file open error : %s" % filePath)
-        logger.error(traceback.format_exc())
         return None
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
@@ -425,7 +424,7 @@ class ResourceLoader(object):
             else:
                 # human readable data
                 with open(save_filepath, 'w') as f:
-                    pprint.pprint(save_data, f, width=256)
+                    pprint.pprint(save_data, f, width=128)
             # refresh meta data because resource file saved.
             resource.meta_data.set_resource_meta_data(save_filepath, save=False)
             resource.meta_data.set_source_meta_data(source_filepath, save=False)
