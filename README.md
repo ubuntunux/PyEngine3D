@@ -30,87 +30,79 @@
  - pygame 1.9.2
 
 ## TODO
-* Blender3D plugin
-    - transfer geometry, animation, scene datas
-    - edit animation, scene, sequence, particles in blender
-* Resource Manager
-    - Load / Unload / Reload system
-    - Duplicate resource
-* Import
-    - FBX
-    - Blender
-    - Compressed Texture (ETC, DDS)
-    - Done : Collada, Obj
-* GUI Editor
-    - Small Tab based panel
-* Rendering
-    - blend mode
-        - Additive, Multiply, Blending
-    - Multisample texture - glTexImage2DMultisample
-        - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
-* Light
-    - Dominant Directional Light, Spot, point, area light
-    - SkyLight, AmbientLight, Spherical Harmonic Light
 * Actors
-    - Static actor
-    - Skeleton actor
     - Tree, Foliage actor
     - Landscape
     - SkyBox
     - Wind
     - Ocean, River
     - Envirment Cube map
-* Object
-    - instancing
-    
-* Rendering
-    - OpenGL Context
-    - View Mode
-        - Wire, Solid, Lighting, Color
-    - TODO : Culling
-        - view frustum culling 
-        - occlusion culling
-        - distance culling
-    - RenderBuffer object
-    - Texture2D attach to framebuffer    
-    - TODO : Multi render target
-    - TODO : Copy Texture Interface
-    - TODO : RenderTargets Resize when change resolution
-    - Forward Renderer
-    - TODO : Deferred Renderer
-    - TODO : LightPrepass Renderer
-    - TODO : PBR
-    - TODO : Shadow
-    - TODO : Fog
-    - TODO : Volumtric Scattering
-    - TODO : Atmospheric Scattering
-* Particle System
-* PostProcess
-    - TODO : PostProcess Chain
-    - TODO : SSAA, TAA, MSAA, SMAA
-    - TODO : Motion Blur
-    - TODO : HDR Tonemapping
-    - TODO : SSAO, Temporal SSAO
-    - TODO : Screen Space Reflection
-    - TODO : Screen Space SSS
-    - TODO : God Ray
-    - TODO : Glare
-    - TODO : Depth Of Field
-    - TODO : Film Grain
-    - TODO : Color Correction
-    - TODO : Color Grading
-    - TODO : Vignetting
-* Font
-    - TODO : Console input/output
-    - TODO : Shader based rendering
-* InGame GUI
-    - TODO : input / output
-    - TODO : progress bar
-    - TODO : button
-* GUI Edit Tool
-    - QT backend
-    - Kivy backend
+* Blender3D plugin
+    - transfer geometry, animation, scene datas
+    - edit animation, scene, sequence, particles in blender
 * Debug
     - performance profiler
     - debug info print
-    - TODO : render target viewer
+    - render target viewer
+* Editor
+    - Tab based panel
+    - Snap to window rect
+* Import
+    - FBX
+    - Blender
+    - Compressed Texture (ETC, DDS)
+* InGame GUI
+    - input / output
+    - progress bar
+    - button
+* Light
+    - Dominant Directional Light, Spot, point, area light
+    - SkyLight, AmbientLight, Spherical Harmonic Light
+* Object
+    - instancing
+    - select, move, modify
+    - gizmo
+* Particle System
+    - runtime particles
+* PostProcess
+    - AntiAliasing
+        - SSAA, TAA, MSAA, SMAA
+    - Motion Blur
+    - HDR Tonemapping
+    - SSAO, Temporal SSAO
+    - Screen Space Reflection
+    - Screen Space SSS
+    - God Ray
+    - Glare
+    - Depth Of Field
+    - Film Grain
+    - Color Correction
+    - Color Grading
+    - Vignetting
+* Rendering
+    - Blend mode
+        - Additive, Multiply, Blending
+    - Multisample texture - glTexImage2DMultisample
+        - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
+    - View Mode
+        - Wire, Solid, Lighting, Color
+    - Culling
+        - view frustum culling
+        - occlusion culling
+        - distance culling
+    - Forward Renderer
+    - Deferred Renderer
+    - LightPrepass Renderer
+    - PBR
+    - Fog
+    - Volumtric Scattering
+    - Atmospheric Scattering
+    - Font Rendering
+        - Console input/output
+        - Shader based rendering
+* Resource Manager
+    - Load / Unload / Reload system
+    - Duplicate resource
+* Sound
+    - Loader
+    - Player
