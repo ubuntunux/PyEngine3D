@@ -68,8 +68,7 @@ void main() {
     vec3 diffuseColor = baseColor.xyz * diffuseLighting;
 
 #if(USE_REFLECTION)
-    vec3 reflectionColor = texture(texture_cube, invert_y(reflect(-cameraVector, normalVector))).xyz;
-    reflectionColor = pow(reflectionColor, vec3(2.2));
+    vec3 reflectionColor = get_reflection_color(reflect(-cameraVector, normalVector)).xyz;
     diffuseColor *= reflectionColor;
 #endif
 

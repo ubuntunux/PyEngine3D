@@ -53,8 +53,8 @@ class RenderTargetManager(Singleton):
         index = int(rendertarget_enum.value)
         rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
         if self.rendertargets[index]:
-            # just copy
-            self.rendertargets[index].__dict__ = rendertarget.__dict__
+            # value copy
+            object_copy(rendertarget, self.rendertargets[index])
         else:
             self.rendertargets[index] = rendertarget
 

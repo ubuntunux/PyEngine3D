@@ -220,6 +220,14 @@ class Renderer(Singleton):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
+    def set_debug_rendertarget(self, rendertarget_index):
+        rendertarget_enum = RenderTargets.convert_index_to_enum(rendertarget_index)
+        logger.info("Current render target : %s" % str(rendertarget_enum))
+        if rendertarget_enum:
+            self.debug_rendertarget = self.rendertarget_manager.get_rendertarget(rendertarget_enum)
+        else:
+            self.debug_rendertarget = None
+
     def renderScene(self):
         startTime = timeModule.perf_counter()
 
@@ -229,15 +237,6 @@ class Renderer(Singleton):
 
         if not camera or not light:
             return
-
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
-        glEnable(GL_CULL_FACE)
-        glFrontFace(GL_CCW)
-        glDisable(GL_BLEND)
-        glEnable(GL_LIGHTING)
-        glShadeModel(GL_SMOOTH)
-        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
                                                      np.linalg.inv(camera.view),
@@ -254,7 +253,17 @@ class Renderer(Singleton):
                                                       light.lightColor,
                                                       light.shadow_view_projection)
 
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glFrontFace(GL_CCW)
+        glEnable(GL_CULL_FACE)
+        glDisable(GL_BLEND)
+        glEnable(GL_LIGHTING)
+        glShadeModel(GL_SMOOTH)
+        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
+
         self.render_shadow()
+
         self.render_lighting()
 
         # self.render_bones()
@@ -281,17 +290,8 @@ class Renderer(Singleton):
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
-    def set_debug_rendertarget(self, rendertarget_index):
-        rendertarget_enum = RenderTargets.convert_index_to_enum(rendertarget_index)
-        logger.info("Current render target : %s" % str(rendertarget_enum))
-        if rendertarget_enum:
-            self.debug_rendertarget = self.rendertarget_manager.get_rendertarget(rendertarget_enum)
-        else:
-            self.debug_rendertarget = None
-
     def render_shadow(self):
         glFrontFace(GL_CW)
-
         shadowmap = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
 
         self.framebuffer.set_color_texture(None)
@@ -325,6 +325,12 @@ class Renderer(Singleton):
         self.uniformViewProjection.bind_uniform_block(camera.view_projection,
                                                       camera.prev_view_projection, )
 
+        # render sky
+        glDisable(GL_DEPTH_TEST)
+        self.sceneManager.sky.render_sky()
+        glEnable(GL_DEPTH_TEST)
+
+        # render character lighting
         self.render_static_actors(render_mode=RenderMode.LIGHTING)
         self.render_skeleton_actors(render_mode=RenderMode.LIGHTING)
 
@@ -493,7 +499,13 @@ class Renderer(Singleton):
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):
-        self.postprocess.set_render_state()
+        glEnable(GL_BLEND)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_LIGHTING)
+        glBlendEquation(GL_FUNC_ADD)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         self.postprocess.bind_quad()
 
         hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)

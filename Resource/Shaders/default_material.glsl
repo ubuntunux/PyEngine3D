@@ -29,6 +29,14 @@ float get_reflection()
     return 1.0;
 }
 
+vec4 get_reflection_color(vec3 reflection_vector)
+{
+    // Note : use inverted Y-Axis
+    vec4 reflectionColor = texture(texture_cube, reflection_vector * vec3(1.0, -1.0, 1.0));
+    reflectionColor.xyz = pow(reflectionColor.xyz, vec3(2.2));
+    return reflectionColor;
+}
+
 vec3 get_edge_tint_color()
 {
     return vec3(1.0, 1.0, 1.0);

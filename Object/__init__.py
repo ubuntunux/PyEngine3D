@@ -1,3 +1,4 @@
+from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
 from .Mesh import Geometry, GeometryInstance, Mesh, Triangle, Quad, Cube
@@ -6,4 +7,4 @@ from .TransformObject import TransformObject
 from .Actor import SkeletonActor, StaticActor
 from .Camera import Camera
 from .Light import Light
-from .MaterialInstance import MaterialInstance
+from .Sky import Sky

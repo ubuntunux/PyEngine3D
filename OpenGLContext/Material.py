@@ -47,7 +47,8 @@ class Material:
             if not self.valid:
                 logger.error("%s material has been failed to compile from source" % self.name)
 
-        self.create_uniform_buffers(uniforms)
+        if self.valid:
+            self.create_uniform_buffers(uniforms)
 
     def getAttribute(self):
         self.Attributes.setAttribute('name', self.name)

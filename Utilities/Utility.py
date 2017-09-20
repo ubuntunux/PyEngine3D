@@ -36,3 +36,7 @@ def delete_from_referrer(obj):
             for key, value in referrer.items():
                 if value is obj:
                     referrer[key] = None
+
+
+def object_copy(src, dst):
+    dst.__dict__ = src.__dict__

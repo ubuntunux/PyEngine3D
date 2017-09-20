@@ -32,14 +32,6 @@ class PostProcess:
         self.screeen_space_reflection = resource_manager.getMaterialInstance("screen_space_reflection")
         self.show_rendertarget = resource_manager.getMaterialInstance("show_rendertarget")
 
-    def set_render_state(self):
-        glEnable(GL_BLEND)
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        glDisable(GL_LIGHTING)
-        glBlendEquation(GL_FUNC_ADD)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
     def bind_quad(self):
         self.quad.bind_vertex_buffer()
 

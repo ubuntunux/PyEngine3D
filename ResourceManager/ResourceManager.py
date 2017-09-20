@@ -675,7 +675,7 @@ class MaterialInstanceLoader(ResourceLoader):
         logger.error('Failed to %s material instance.' % shader_name)
         return False
 
-    def getMaterialInstance(self, material_instance_name, macros=None):
+    def getMaterialInstance(self, material_instance_name, macros={}):
         material_instance = self.getResourceData(material_instance_name)
         if material_instance is None:
             if self.create_material_instance(shader_name=material_instance_name, macros=macros):
