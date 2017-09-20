@@ -327,7 +327,7 @@ class Renderer(Singleton):
 
         # render sky
         glDisable(GL_DEPTH_TEST)
-        self.sceneManager.sky.render_sky()
+        self.sceneManager.sky.render()
         glEnable(GL_DEPTH_TEST)
 
         # render character lighting
@@ -506,8 +506,6 @@ class Renderer(Singleton):
         glBlendEquation(GL_FUNC_ADD)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.postprocess.bind_quad()
-
         hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
@@ -516,12 +514,21 @@ class Renderer(Singleton):
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
 
+        # render fog
+        self.framebuffer.set_color_texture(hdrtexture)
+        self.framebuffer.set_depth_texture(None)
+        self.framebuffer.bind_framebuffer()
+        self.sceneManager.fog.render()
+
+        # bind quad mesh
+        self.postprocess.bind_quad()
+
         self.framebuffer.set_color_texture(texture_ssr)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
         self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
+        self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
         # self.postprocess.render_gaussian_blur(self.framebuffer, backbuffer, backbuffer_copy)
 
         self.framebuffer.set_color_texture(backbuffer)

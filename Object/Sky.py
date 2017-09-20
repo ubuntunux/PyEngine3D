@@ -14,7 +14,7 @@ class Sky:
         self.quad = resource_manager.getMesh("Quad")
         self.material_instance = resource_manager.getMaterialInstance("sky")
 
-    def render_sky(self):
+    def render(self):
         self.quad.bind_vertex_buffer()
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()

@@ -8,3 +8,4 @@ from .Actor import SkeletonActor, StaticActor
 from .Camera import Camera
 from .Light import Light
 from .Sky import Sky
+from .Fog import Fog
