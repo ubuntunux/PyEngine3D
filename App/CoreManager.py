@@ -446,7 +446,7 @@ class CoreManager(Singleton):
             self.presentTime = presentTime * 1000.0  # millisecond
 
             # debug info
-            print(self.fps, self.updateTime)
+            # print(self.fps, self.updateTime)
             self.renderer.console.info("%.2f fps" % self.fps)
             self.renderer.console.info("%.2f ms" % self.updateTime)
             self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
