@@ -29,69 +29,40 @@
  - libpng 1.6.17
  - pygame 1.9.2
 
-## Features
-* TODO : Blender3D plugin
+## TODO
+* Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
-* Project System
-    - Load/Save project
-    - Resource tree
-* Scene Manager
-    - Object managing
-    - Scene Save/Load
 * Resource Manager
-    - Create/Remove/Regist/Release resources
-    - TODO : resource reload system
+    - Load / Unload / Reload system
+    - Duplicate resource
 * Import
-    - OBJ
-    - TODO : FBX
-    - TODO : Blender
-    - Collada
-    - Textures ( dds, png, jpg, gif, bmp, tga, ... )
-* Shader
-    - Material Template
-    - Material Instance
-    - Shader Parser
-        - #include
-        - insert macro
-    - TODO : Precompiled shader load / save
-* MaterialInstance
-    - Create Editor
-    - Color Picker
-    - Resource Picker
-    - Float, Vector4, Matrix, Macro, Int
-* Transparent Rendering
-    - TODO : blend mode
+    - FBX
+    - Blender
+    - Compressed Texture (ETC, DDS)
+    - Done : Collada, Obj
+* GUI Editor
+    - Small Tab based panel
+* Rendering
+    - blend mode
         - Additive, Multiply, Blending
-* Light
-    - TODO : Dominant Directional Light, Spot, point, area light
-    - TODO : SkyLight, AmbientLight, Spherical Harmonic Light
-    - TODO : Shadow
-* Camera
-    - nothing...
-* Components
-    - StaticMesh
-    - TODO : SkeletalMesh
-    - TODO : Tree, Foliage
-    - TODO : Landscape
-    - TODO : SkyBox
-    - TODO : Wind
-    - TODO : Ocean, River
-    - TODO : Envirment Cube map
-* Object
-    - Multiple Geometry Mesh
-    - TODO : instancing
-    - TODO : skinning
-* Texture Object
-    - TODO : MipMap Filter
-    - TODO : Multisample texture - glTexImage2DMultisample
+    - Multisample texture - glTexImage2DMultisample
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
-    - TODO : Wrap, Mirror, Clamp mode
-    - TODO : sRGB, NormalMap, Linear Color type
-    - TODO : source file path and data
-* Render Target Manager
-    - 2D
-    - TODO : 3D, Cube, Array
+* Light
+    - Dominant Directional Light, Spot, point, area light
+    - SkyLight, AmbientLight, Spherical Harmonic Light
+* Actors
+    - Static actor
+    - Skeleton actor
+    - Tree, Foliage actor
+    - Landscape
+    - SkyBox
+    - Wind
+    - Ocean, River
+    - Envirment Cube map
+* Object
+    - instancing
+    
 * Rendering
     - OpenGL Context
     - View Mode
@@ -114,7 +85,6 @@
     - TODO : Volumtric Scattering
     - TODO : Atmospheric Scattering
 * Particle System
-    - TODO
 * PostProcess
     - TODO : PostProcess Chain
     - TODO : SSAA, TAA, MSAA, SMAA
