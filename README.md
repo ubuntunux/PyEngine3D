@@ -2,32 +2,25 @@
 
 ### What is PyEngine3D
 * An open source OpenGL 3D engine written in Python.
-* Wiki : https://github.com/ubuntunux/PyEngine3D/wiki/main
 * Reference
     - http://learnopengl.com/
     - http://www.opengl-tutorial.org/
     - https://github.com/neutralord/pyopengl-experiments
     - https://github.com/asylum2010/Asylum_Tutorials
-* Check similar project
+* Similar projects
     - http://glumpy.github.io/
     - https://github.com/JoshuaSenouf/GLEngine
     - https://github.com/bartwronski/CSharpRenderer
 
 ## Dependency modules
- - python 3.5.1
- - Anaconda3-2.4.1 ( https://www.continuum.io/downloads )
- - accelerate 2.0 ( anaconda accelerate library )
- - numpy 1.10.4
- - numba 0.23.1
- - pillow 3.1.1
- - Wand 0.4.4
+ - python 3
+ - numpy
+ - pillow
  - pyqt4
- - pybullet 1.2.1
- - kivy 1.9.1
- - pyopengl 3.1
- - pyopengl_accelerate 3.1
- - libpng 1.6.17
- - pygame 1.9.2
+ - pybullet
+ - pyopengl
+ - pyopengl_accelerate
+ - pygame
 
 ## TODO
 * Actors
