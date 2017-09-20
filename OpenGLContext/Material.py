@@ -151,16 +151,24 @@ class Material:
         return None
 
     def check_validate(self):
-        glValidateProgram(self.program)
-        validation = glGetProgramiv(self.program, GL_VALIDATE_STATUS)
-        if validation == GL_FALSE:
-            logger.error("Validation failure (%s): %s" % (validation, glGetProgramInfoLog(self.program)))
-            return False
-        return True
+        if self.program >= 0:
+            glValidateProgram(self.program)
+            validation = glGetProgramiv(self.program, GL_VALIDATE_STATUS)
+            if validation == GL_TRUE:
+                return True
+            else:
+                logger.error("Validation failure (%s): %s" % (validation, glGetProgramInfoLog(self.program)))
+        else:
+            logger.error("Validation failure : %s" % self.name)
+        return False
 
     def check_linked(self):
-        link_status = glGetProgramiv(self.program, GL_LINK_STATUS)
-        if link_status == GL_FALSE:
-            logger.error("Link failure (%s): %s" % (link_status, glGetProgramInfoLog(self.program)))
-            return False
-        return True
+        if self.program >= 0:
+            link_status = glGetProgramiv(self.program, GL_LINK_STATUS)
+            if link_status == GL_TRUE:
+                return True
+            else:
+                logger.error("Link failure (%s): %s" % (link_status, glGetProgramInfoLog(self.program)))
+        else:
+            logger.error("Link failure : %s" % self.name)
+        return False
