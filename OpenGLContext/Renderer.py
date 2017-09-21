@@ -258,8 +258,8 @@ class Renderer(Singleton):
         glFrontFace(GL_CCW)
         glEnable(GL_CULL_FACE)
         glDisable(GL_BLEND)
-        glEnable(GL_LIGHTING)
-        glShadeModel(GL_SMOOTH)
+        # glEnable(GL_LIGHTING)
+        # glShadeModel(GL_SMOOTH)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.render_shadow()
