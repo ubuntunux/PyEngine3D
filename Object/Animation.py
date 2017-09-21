@@ -1,6 +1,8 @@
 from Common import logger
 from Utilities import *
 
+import numba
+
 
 class Animation:
     def __init__(self, name, index, skeleton, animation_data):
@@ -65,10 +67,10 @@ class AnimationNode:
                 # rotation = normalize(lerp(self.rotations[frame], self.rotations[next_frame], rate))
                 location = lerp(self.locations[frame], self.locations[next_frame], rate)
                 scale = lerp(self.scales[frame], self.scales[next_frame], rate)
-
                 quaternion_to_matrix(rotation, self.transform)
                 matrix_scale(self.transform, *scale)
                 self.transform[3, 0:3] = location
             self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
+            Profiler.end(self.name)
             return self.transform
 

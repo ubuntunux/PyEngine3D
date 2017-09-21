@@ -1,0 +1,208 @@
+Index: App/CoreManager.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- App/CoreManager.py	(date 1505931765000)
++++ App/CoreManager.py	(date 1506014211000)
+@@ -10,7 +10,7 @@
+ from pygame.locals import *
+ 
+ from Common import logger, log_level, COMMAND
+-from Utilities import Singleton, GetClassName, Config
++from Utilities import Singleton, GetClassName, Config, Profiler
+ 
+ # Function : IsExtensionSupported
+ # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
+@@ -284,7 +284,6 @@
+         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
+         self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
+ 
+-    # Recieve message
+     def updateCommand(self):
+         if self.uiCmdQueue is None:
+             return
+Index: App/SceneManager.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- App/SceneManager.py	(date 1505931765000)
++++ App/SceneManager.py	(date 1506014211000)
+@@ -9,7 +9,7 @@
+ from Common import logger
+ from Object import SkeletonActor, StaticActor, Camera, Light, Fog, Sky
+ from OpenGLContext import UniformBlock
+-from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4
++from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
+ 
+ 
+ class SceneManager(Singleton):
+Index: Object/Actor.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Object/Actor.py	(date 1505931765000)
++++ Object/Actor.py	(date 1506014211000)
+@@ -2,6 +2,7 @@
+ import math
+ 
+ import numpy as np
++from numba import jit
+ 
+ from Common import logger
+ from Object import TransformObject, GeometryInstance, Model
+@@ -98,13 +99,14 @@
+     def get_animation_buffer(self, index):
+         return self.animation_buffers[index]
+ 
++    @jit
+     def update(self, dt):
+         # TEST_CODE
+         # self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
+         # self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
+         # self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
+ 
+-        # update transform
++        # update
+         self.transform.updateTransform()
+ 
+         # update animation
+Index: Object/Animation.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Object/Animation.py	(date 1505931765000)
++++ Object/Animation.py	(date 1506014211000)
+@@ -1,7 +1,9 @@
+ from Common import logger
+ from Utilities import *
+ 
++import numba
+ 
++
+ class Animation:
+     def __init__(self, name, index, skeleton, animation_data):
+         self.name = name
+@@ -65,10 +67,10 @@
+                 # rotation = normalize(lerp(self.rotations[frame], self.rotations[next_frame], rate))
+                 location = lerp(self.locations[frame], self.locations[next_frame], rate)
+                 scale = lerp(self.scales[frame], self.scales[next_frame], rate)
+-
+                 quaternion_to_matrix(rotation, self.transform)
+                 matrix_scale(self.transform, *scale)
+                 self.transform[3, 0:3] = location
+             self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
++            Profiler.end(self.name)
+             return self.transform
+ 
+Index: ResourceManager/ResourceManager.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ResourceManager/ResourceManager.py	(date 1505931765000)
++++ ResourceManager/ResourceManager.py	(date 1506014211000)
+@@ -415,6 +415,12 @@
+ 
+     def save_resource_data(self, resource, save_data, source_filepath=""):
+         save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
++        # save_filepath = resource.name.replace('.', os.sep)
++        # save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
++        # save_dir = os.path.dirname(save_filepath)
++        # if not os.path.exists(save_dir):
++        #     os.makedirs(save_dir)
++
+         logger.info("Save : %s" % save_filepath)
+         try:
+             # store data, serialize
+@@ -809,7 +815,7 @@
+                     image = image.resize((width2, height2), Image.ANTIALIAS)
+                     width, height = width2, height2
+ 
+-            if image.mode == 'L':
++            if image.mode == 'L' or image.mode == 'LA':
+                 rgbimg = Image.new("RGBA", image.size)
+                 rgbimg.paste(image)
+                 image = rgbimg
+Index: Utilities/__init__.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Utilities/__init__.py	(date 1505931765000)
++++ Utilities/__init__.py	(date 1506014211000)
+@@ -7,4 +7,4 @@
+ from .Config import Config
+ from .XML import load_xml, get_xml_attrib, get_xml_tag, get_xml_text
+ from .Utility import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file, \
+-    delete_from_referrer, object_copy
++    delete_from_referrer, object_copy, Profiler
+Index: Utilities/Utility.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- Utilities/Utility.py	(date 1505931765000)
++++ Utilities/Utility.py	(date 1506014211000)
+@@ -1,9 +1,50 @@
++import time
+ import sys
+ import gc
+ import os
+ import datetime
+ 
+ 
++class Profiler:
++    profile_map = {}
++    start_time = 0.0
++    section_start_time = 0.0
++
++    @staticmethod
++    def start(profile_name=''):
++        if profile_name not in Profiler.profile_map:
++            Profiler.profile_map[profile_name] = time.perf_counter()
++        else:
++            print('%s is already exists.' % profile_name)
++
++    @staticmethod
++    def end(profile_name=''):
++        if profile_name in Profiler.profile_map:
++            start_time = Profiler.profile_map.pop(profile_name)
++            print('%s : %.2fms' % (profile_name, (time.perf_counter() - start_time) * 1000.0))
++
++    @staticmethod
++    def set_stop_watch():
++        Profiler.start_time = time.perf_counter()
++        Profiler.section_start_time = Profiler.start_time
++
++    @staticmethod
++    def get_stop_watch(profile_name=''):
++        current_time = time.perf_counter()
++        print('%s : %.2fms ( elapsed %.2fms )' % (profile_name,
++                                                       (current_time - Profiler.section_start_time) * 1000.0,
++                                                       (current_time - Profiler.start_time) * 1000.0))
++        Profiler.section_start_time = current_time
++
++    @staticmethod
++    def check(func):
++        def decoration(*args, **kargs):
++            start_time = time.perf_counter()
++            func(*args, **kargs)
++            print('%s : %.2fms' % (func.__name__, (time.perf_counter() - start_time) * 1000.0))
++        return decoration
++
++
+ def GetClassName(cls):
+     return cls.__class__.__name__
+ 
+@@ -39,4 +80,5 @@
+ 
+ 
+ def object_copy(src, dst):
+-    dst.__dict__ = src.__dict__
+\ No newline at end of file
++    dst.__dict__ = src.__dict__
++

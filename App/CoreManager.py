@@ -10,7 +10,7 @@ import pygame
 from pygame.locals import *
 
 from Common import logger, log_level, COMMAND
-from Utilities import Singleton, GetClassName, Config
+from Utilities import Singleton, GetClassName, Config, Profiler
 
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
@@ -284,7 +284,6 @@ class CoreManager(Singleton):
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
         self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
 
-    # Recieve message
     def updateCommand(self):
         if self.uiCmdQueue is None:
             return

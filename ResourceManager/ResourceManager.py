@@ -415,6 +415,12 @@ class ResourceLoader(object):
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
         save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
+        # save_filepath = resource.name.replace('.', os.sep)
+        # save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
+        # save_dir = os.path.dirname(save_filepath)
+        # if not os.path.exists(save_dir):
+        #     os.makedirs(save_dir)
+
         logger.info("Save : %s" % save_filepath)
         try:
             # store data, serialize
@@ -809,7 +815,7 @@ class TextureLoader(ResourceLoader):
                     image = image.resize((width2, height2), Image.ANTIALIAS)
                     width, height = width2, height2
 
-            if image.mode == 'L':
+            if image.mode == 'L' or image.mode == 'LA':
                 rgbimg = Image.new("RGBA", image.size)
                 rgbimg.paste(image)
                 image = rgbimg

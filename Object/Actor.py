@@ -2,6 +2,7 @@ import time
 import math
 
 import numpy as np
+from numba import jit
 
 from Common import logger
 from Object import TransformObject, GeometryInstance, Model
@@ -98,13 +99,14 @@ class SkeletonActor(StaticActor):
     def get_animation_buffer(self, index):
         return self.animation_buffers[index]
 
+    @jit
     def update(self, dt):
         # TEST_CODE
         # self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
         # self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
         # self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
 
-        # update transform
+        # update
         self.transform.updateTransform()
 
         # update animation
