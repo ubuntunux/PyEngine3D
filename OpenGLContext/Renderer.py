@@ -260,6 +260,7 @@ class Renderer(Singleton):
         glDisable(GL_BLEND)
         # glEnable(GL_LIGHTING)
         # glShadeModel(GL_SMOOTH)
+        # glEanble(GL_MULTISAMPLE);
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.render_shadow()
@@ -535,7 +536,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_tone_map(hdrtexture)
 
-        backbuffer_copy = self.rendertarget_manager.get_temporary(RenderTargets.TEMP01_GL_RGBA8)
+        backbuffer_copy = self.rendertarget_manager.get_temporary(RenderTargets.TEMP_RGBA8)
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)

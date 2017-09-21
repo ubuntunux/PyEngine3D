@@ -4,7 +4,7 @@ from OpenGL.GL.EXT.framebuffer_object import *
 
 from Utilities import Singleton, GetClassName, Attributes, AutoEnum
 from Common import logger
-from .Texture import Texture2D
+from .Texture import Texture2D, Texture2DMultiSample, TextureCube
 
 
 class RenderTargets(AutoEnum):
@@ -17,7 +17,8 @@ class RenderTargets(AutoEnum):
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
     VELOCITY = ()
-    TEMP01_GL_RGBA8 = ()
+    TEMP_RGBA8 = ()
+    TEMP_MULTISAMPLE_X4 = ()
     COUNT = ()
 
 
@@ -49,9 +50,13 @@ class RenderTargetManager(Singleton):
         logger.warn("%s are using." % texture_enum)
         return rendertarget
 
-    def create_rendertarget(self, rendertarget_enum, **kwargs):
+    def create_rendertarget(self, rendertarget_enum, multisamples=0, **kwargs):
         index = int(rendertarget_enum.value)
-        rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
+        if multisamples > 0:
+            rendertarget = Texture2DMultiSample(name=str(rendertarget_enum), **kwargs)
+        else:
+            rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
+
         if self.rendertargets[index]:
             # value copy
             object_copy(rendertarget, self.rendertargets[index])
@@ -138,10 +143,18 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_RG,
                                  data_type=GL_FLOAT)
 
-        self.create_rendertarget(RenderTargets.TEMP01_GL_RGBA8,
+        self.create_rendertarget(RenderTargets.TEMP_RGBA8,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE,
                                  wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.TEMP_MULTISAMPLE_X4,
+                                 multisamples=4,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE)

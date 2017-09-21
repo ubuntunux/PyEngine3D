@@ -5,7 +5,7 @@ from .RenderBuffer import RenderBuffer
 from .RenderTarget import RenderTargets, RenderTargetManager
 from .Shader import Shader
 from .Material import Material
-from .Texture import CreateTextureFromFile, Texture2D, TextureCube
+from .Texture import CreateTextureFromFile, Texture2D, Texture2DMultiSample, TextureCube
 from .UniformBlock import UniformBlock
 from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformArray, UniformInt, UniformFloat, \

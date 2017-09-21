@@ -153,7 +153,6 @@ class Texture2D(Texture):
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.buffer)
-
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      self.internal_format,
@@ -181,6 +180,28 @@ class Texture2D(Texture):
         save_data = Texture.get_save_data(self)
         save_data['data'] = self.get_image_data()
         return save_data
+
+
+class Texture2DMultiSample(Texture):
+    target = GL_TEXTURE_2D_MULTISAMPLE
+
+    def __init__(self, **texture_data):
+        Texture.__init__(self, **texture_data)
+
+        self.multisamples = texture_data.get('multisamples', 4)
+        self.buffer = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.buffer)
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                self.multisamples,
+                                self.internal_format,
+                                self.width,
+                                self.height,
+                                GL_TRUE)
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0)
+
+    def getAttribute(self):
+        Texture.getAttribute(self)
+        self.attribute.setAttribute("multisamples", self.multisamples)
 
 
 class TextureCube(Texture):
