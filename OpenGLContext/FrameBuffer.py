@@ -3,6 +3,7 @@ from OpenGL.GL import *
 from Utilities import GetClassName
 from Common import logger
 
+from .RenderBuffer import RenderBuffer
 
 class FrameBuffer:
     def __init__(self):
@@ -72,7 +73,10 @@ class FrameBuffer:
             if color_texture:
                 attach_count += 1
                 self.attachments[i] = attachment
-                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, color_texture.target, color_texture.buffer, 0)
+                if type(color_texture) == RenderBuffer:
+                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, color_texture.buffer)
+                else:
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, color_texture.target, color_texture.buffer, 0)
                 # just for single render target.
                 # glDrawBuffer(attachment)
                 glReadBuffer(attachment)
@@ -94,7 +98,10 @@ class FrameBuffer:
                 attachment = GL_DEPTH_STENCIL_ATTACHMENT
             else:
                 attachment = GL_DEPTH_ATTACHMENT
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.depth_texture.target, self.depth_texture.buffer, 0)
+            if type(self.depth_texture) == RenderBuffer:
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.depth_texture.buffer)
+            else:
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.depth_texture.target, self.depth_texture.buffer, 0)
         else:
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
 
@@ -112,11 +119,15 @@ class FrameBuffer:
     def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def blit_framebuffer(self, framebuffer_width, framebuffer_height):
+    def blit_framebuffer(self, rendertarget, framebuffer_width, framebuffer_height):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
+        # glBindFramebuffer(GL_READ_FRAMEBUFFER, rendertarget.buffer)
+        # glDrawBuffer(GL_BACK)
+        # glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST)
+
         # glViewport(0, 0, self.width, self.height)
         # glClearColor(0.0, 0.0, 0.0, 1.0)
         # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glBlitFramebuffer(self.x, self.y, self.width, self.height,
+        glBlitFramebuffer(0, 0, rendertarget.width, rendertarget.height,
                           0, 0, framebuffer_width, framebuffer_height,
                           GL_COLOR_BUFFER_BIT, GL_NEAREST)

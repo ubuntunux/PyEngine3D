@@ -77,7 +77,7 @@ class PostProcess:
 
     def render_copy_rendertarget(self, source_texture):
         self.show_rendertarget.use_program()
-        self.show_rendertarget.bind_uniform_data("is_depth_texture", source_texture.is_depth_texture())
+        self.show_rendertarget.bind_uniform_data("is_depth_texture", False)
         self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
         self.quad.draw_elements()
 

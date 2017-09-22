@@ -124,9 +124,6 @@ class Texture:
     def gen_mipmap(self):
         glGenerateMipmap(self.target)
 
-    def is_depth_texture(self):
-        return self.texture_format == GL_DEPTH_COMPONENT or self.texture_format == GL_DEPTH_STENCIL
-
     def is_attached(self):
         return self.attachment
 

@@ -253,6 +253,7 @@ class Renderer(Singleton):
                                                       light.lightColor,
                                                       light.shadow_view_projection)
 
+        glEnable(GL_MULTISAMPLE)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glFrontFace(GL_CCW)
@@ -260,7 +261,6 @@ class Renderer(Singleton):
         glDisable(GL_BLEND)
         # glEnable(GL_LIGHTING)
         # glShadeModel(GL_SMOOTH)
-        # glEanble(GL_MULTISAMPLE);
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.render_shadow()
@@ -280,7 +280,7 @@ class Renderer(Singleton):
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
-        self.framebuffer.blit_framebuffer(self.width, self.height)
+        self.framebuffer.blit_framebuffer(backbuffer, self.width, self.height)
 
         endTime = timeModule.perf_counter()
         renderTime = endTime - startTime
@@ -530,6 +530,7 @@ class Renderer(Singleton):
         self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
 
         self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
+
         # self.postprocess.render_gaussian_blur(self.framebuffer, backbuffer, backbuffer_copy)
 
         self.framebuffer.set_color_texture(backbuffer)
