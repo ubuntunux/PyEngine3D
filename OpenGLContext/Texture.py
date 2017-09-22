@@ -110,6 +110,10 @@ class Texture:
         glBindTexture(self.target, 0)
         return data
 
+    def generate_mipmap(self):
+        glBindTexture(self.target, self.buffer)
+        glGenerateMipmap(self.target)
+
     def bind_texture(self):
         glBindTexture(self.target, self.buffer)
         if self.attachment:

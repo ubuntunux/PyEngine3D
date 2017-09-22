@@ -72,7 +72,7 @@ class FrameBuffer:
             if color_texture:
                 attach_count += 1
                 self.attachments[i] = attachment
-                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, color_texture.buffer, 0)
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, color_texture.target, color_texture.buffer, 0)
                 # just for single render target.
                 # glDrawBuffer(attachment)
                 glReadBuffer(attachment)
@@ -94,7 +94,7 @@ class FrameBuffer:
                 attachment = GL_DEPTH_STENCIL_ATTACHMENT
             else:
                 attachment = GL_DEPTH_ATTACHMENT
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, self.depth_texture.buffer, 0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.depth_texture.target, self.depth_texture.buffer, 0)
         else:
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
 

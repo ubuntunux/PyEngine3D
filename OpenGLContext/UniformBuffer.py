@@ -10,7 +10,8 @@ from App import CoreManager
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
     uniform_classes = [UniformBool, UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4,
-                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D, UniformTextureCube]
+                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D, UniformTexture2DMultiSample,
+                       UniformTextureCube]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
@@ -56,6 +57,9 @@ def CreateUniformDataFromString(data_type, strValue=None):
         elif data_type in ('sampler2D', 'samplerCube'):
             texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
             return texture
+        elif data_type == 'sampler2DMS':
+            logger.warn('sampler2DMS need multisample texture.')
+            return CoreManager.instance().resource_manager.getTexture('empty')
     except ValueError:
         logger.error(traceback.format_exc())
     return None
@@ -166,6 +170,10 @@ class UniformTextureBase(UniformVariable):
 
 class UniformTexture2D(UniformTextureBase):
     uniform_type = "sampler2D"
+
+
+class UniformTexture2DMultiSample(UniformTextureBase):
+    uniform_type = "sampler2DMS"
 
 
 class UniformTextureCube(UniformTextureBase):

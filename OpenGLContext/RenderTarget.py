@@ -18,6 +18,7 @@ class RenderTargets(AutoEnum):
     SCREEN_SPACE_REFLECTION = ()
     VELOCITY = ()
     TEMP_RGBA8 = ()
+    TEMP_HDR = ()
     TEMP_MULTISAMPLE_X4 = ()
     COUNT = ()
 
@@ -39,10 +40,10 @@ class RenderTargetManager(Singleton):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
         self.temp_rendertargets = {}
 
-    def get_rendertarget(self, texture_enum: RenderTargets) -> Texture2D:
+    def get_rendertarget(self, texture_enum: RenderTargets):
         return self.rendertargets[texture_enum.value]
 
-    def get_temporary(self, texture_enum: RenderTargets) -> Texture2D:
+    def get_temporary(self, texture_enum: RenderTargets):
         rendertarget = self.rendertargets[texture_enum.value]
         if not rendertarget.using:
             rendertarget.using = True
@@ -50,10 +51,13 @@ class RenderTargetManager(Singleton):
         logger.warn("%s are using." % texture_enum)
         return rendertarget
 
+    def get_ms(self):
+        return self.rendertargets[RenderTargets.TEMP_MULTISAMPLE_X4.value]
+
     def create_rendertarget(self, rendertarget_enum, multisamples=0, **kwargs):
         index = int(rendertarget_enum.value)
         if multisamples > 0:
-            rendertarget = Texture2DMultiSample(name=str(rendertarget_enum), **kwargs)
+            rendertarget = Texture2DMultiSample(name=str(rendertarget_enum), multisamples=multisamples, **kwargs)
         else:
             rendertarget = Texture2D(name=str(rendertarget_enum), **kwargs)
 
@@ -150,6 +154,14 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE,
                                  wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.TEMP_HDR,
+                                 multisamples=4,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA16F,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_FLOAT)
 
         self.create_rendertarget(RenderTargets.TEMP_MULTISAMPLE_X4,
                                  multisamples=4,

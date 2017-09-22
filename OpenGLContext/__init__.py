@@ -11,7 +11,7 @@ from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformArray, UniformInt, UniformFloat, \
                             UniformVector2, UniformVector3, UniformVector4, \
                             UniformMatrix2, UniformMatrix3, UniformMatrix4, \
-                            UniformTextureBase, UniformTexture2D, UniformTextureCube
+                            UniformTextureBase, UniformTexture2D, UniformTexture2DMultiSample, UniformTextureCube
 from .VertexArrayBuffer import VertexArrayBuffer, CreateVertexArrayBuffer
 from .PostProcess import PostProcess
 from .Renderer import Renderer
