@@ -61,6 +61,12 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()
 
+    def render_bloom(self, texture_diffuse):
+        self.tonemapping.use_program()
+        self.tonemapping.bind_material_instance()
+        self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.quad.draw_elements()
+
     def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
@@ -80,4 +86,3 @@ class PostProcess:
         self.show_rendertarget.bind_uniform_data("is_depth_texture", False)
         self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
         self.quad.draw_elements()
-

@@ -537,7 +537,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_tone_map(hdrtexture)
 
-        backbuffer_copy = self.rendertarget_manager.get_temporary(RenderTargets.TEMP_RGBA8)
+        backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', backbuffer)
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)

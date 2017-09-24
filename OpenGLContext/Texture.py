@@ -121,9 +121,6 @@ class Texture:
             logger.error(error_msg)
             raise BaseException(error_msg)
 
-    def gen_mipmap(self):
-        glGenerateMipmap(self.target)
-
     def is_attached(self):
         return self.attachment
 

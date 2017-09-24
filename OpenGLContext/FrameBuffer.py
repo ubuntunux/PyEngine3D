@@ -5,6 +5,7 @@ from Common import logger
 
 from .RenderBuffer import RenderBuffer
 
+
 class FrameBuffer:
     def __init__(self):
         logger.info("Create " + GetClassName(self))
@@ -79,6 +80,7 @@ class FrameBuffer:
                     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, color_texture.target, color_texture.buffer, 0)
                 # just for single render target.
                 # glDrawBuffer(attachment)
+                # important
                 glReadBuffer(attachment)
             else:
                 self.attachments[i] = 0

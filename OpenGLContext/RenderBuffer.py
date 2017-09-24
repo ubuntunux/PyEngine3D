@@ -6,15 +6,12 @@ from Common import logger
 from Utilities import GetClassName
 
 
-# Use Texture2D intead of RenderBuffer.
 class RenderBuffer:
-    """
-    RenderBuffer is fater than Texture2D, but it's read-only.
-    """
+    target = GL_RENDERBUFFER
+
     def __init__(self, name, **datas):
         logger.info("Create " + GetClassName(self) + " : " + name)
         self.name = name
-        self.target = GL_RENDERBUFFER
         self.width = datas.get('width', 1024)
         self.height = datas.get('height', 1024)
         # GL_RGBA, GL_DEPTH_COMPONENT32, GL_DEPTH24_STENCIL8

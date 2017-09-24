@@ -31,7 +31,7 @@ class RenderTargetManager(Singleton):
     def __init__(self):
         self.core_manager = None
         self.rendertargets = []
-        self.test = False
+        self.temp_rendertargets = dict()
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -44,13 +44,22 @@ class RenderTargetManager(Singleton):
     def get_rendertarget(self, texture_enum: RenderTargets):
         return self.rendertargets[texture_enum.value]
 
-    def get_temporary(self, texture_enum: RenderTargets):
-        rendertarget = self.rendertargets[texture_enum.value]
-        if not rendertarget.using:
-            rendertarget.using = True
-            return rendertarget
-        logger.warn("%s are using." % texture_enum)
-        return rendertarget
+    def get_temporary(self, rendertarget_name, reference_rendertarget, scale=1.0):
+        if rendertarget_name in self.temp_rendertargets:
+            temp_rendertarget = self.temp_rendertargets[rendertarget_name]
+        else:
+            rendertarget_datas = reference_rendertarget.get_save_data()
+            rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
+            rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
+            rendertarget_type = rendertarget_datas['texture_type']
+            temp_rendertarget = rendertarget_type(name=rendertarget_name, **rendertarget_datas)
+            self.temp_rendertargets[rendertarget_name] = temp_rendertarget
+
+        if temp_rendertarget and not temp_rendertarget.using:
+            temp_rendertarget.using = True
+        else:
+            logger.warn("%s is using." % name)
+        return temp_rendertarget
 
     def copy_rendertarget(self, src, dst, filter_type=GL_NEAREST):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
@@ -70,9 +79,6 @@ class RenderTargetManager(Singleton):
     def create_rendertargets(self, width, height):
         self.clear()
 
-        count = 16 if self.test else 1
-        self.test = not self.test
-
         fullsize_x = width
         fullsize_y = height
         halfsize_x = int(width / 2)
@@ -89,7 +95,6 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
                                  rendertarget_type=Texture2D,
-                                 multisamples=count,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_DEPTH24_STENCIL8,
@@ -189,7 +194,7 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.TEMP_RENDER_BUFFER_MULTISAMPLE,
                                  rendertarget_type=RenderBuffer,
-                                 multisamples=count,
+                                 multisamples=4,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8)
