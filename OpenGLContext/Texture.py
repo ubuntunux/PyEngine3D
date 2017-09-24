@@ -56,8 +56,6 @@ class Texture:
 
     def __init__(self, **texture_data):
         self.name = texture_data.get('name')
-        logger.info("Create " + GetClassName(self) + " : " + self.name)
-
         self.using = False  # texture using flag for temp rendertarget
         self.attachment = False
         self.image_mode = texture_data.get('image_mode')
@@ -76,9 +74,17 @@ class Texture:
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_NEAREST
+        mipmap_filters = (GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
+                          GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST)
+        self.enable_mipmap = self.min_filter in mipmap_filters or self.mag_filter in mipmap_filters
+        if self.target == GL_TEXTURE_2D_MULTISAMPLE:
+            self.enable_mipmap = False
         self.wrap = texture_data.get('wrap', self.default_wrap)  # GL_REPEAT, GL_CLAMP
-
         self.buffer = None
+
+        logger.info("Create %s : %s %dx%d %s mipmap(%s)." % (
+            GetClassName(self), self.name, self.width, self.height, self.internal_format,
+            'Enable' if self.enable_mipmap else 'Disable'))
 
         self.attribute = Attributes()
 
@@ -111,8 +117,11 @@ class Texture:
         return data
 
     def generate_mipmap(self):
-        glBindTexture(self.target, self.buffer)
-        glGenerateMipmap(self.target)
+        if self.enable_mipmap:
+            glBindTexture(self.target, self.buffer)
+            glGenerateMipmap(self.target)
+        else:
+            logger.warn('%s disable to generate mipmap.' % self.name)
 
     def bind_texture(self):
         glBindTexture(self.target, self.buffer)
@@ -161,12 +170,12 @@ class Texture2D(Texture):
                      self.data_type,
                      data)
 
-        glGenerateMipmap(GL_TEXTURE_2D)
-
-        # create indivisual mipmapThis creates a texture with a single mipmap level.
-        # You will also need separate glTexSubImage2D calls to upload each mipmap
-        # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
-        # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
+        if self.enable_mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D)
+            # create indivisual mipmapThis creates a texture with a single mipmap level.
+            # You will also need separate glTexSubImage2D calls to upload each mipmap
+            # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
+            # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, self.wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, self.wrap)

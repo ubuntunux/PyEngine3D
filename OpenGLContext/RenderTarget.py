@@ -44,21 +44,22 @@ class RenderTargetManager(Singleton):
     def get_rendertarget(self, texture_enum: RenderTargets):
         return self.rendertargets[texture_enum.value]
 
-    def get_temporary(self, rendertarget_name, reference_rendertarget, scale=1.0):
+    def get_temporary(self, rendertarget_name, reference_rendertarget=None, scale=1.0):
+        temp_rendertarget = None
         if rendertarget_name in self.temp_rendertargets:
             temp_rendertarget = self.temp_rendertargets[rendertarget_name]
-        else:
+        elif reference_rendertarget:
             rendertarget_datas = reference_rendertarget.get_save_data()
             rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
             rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
+            if 'data' in rendertarget_datas:
+                rendertarget_datas.pop('data')
             rendertarget_type = rendertarget_datas['texture_type']
             temp_rendertarget = rendertarget_type(name=rendertarget_name, **rendertarget_datas)
             self.temp_rendertargets[rendertarget_name] = temp_rendertarget
 
-        if temp_rendertarget and not temp_rendertarget.using:
-            temp_rendertarget.using = True
-        else:
-            logger.warn("%s is using." % name)
+        if temp_rendertarget is None:
+            logger.warn("Failed to get temporary %s render target." % rendertarget_name)
         return temp_rendertarget
 
     def copy_rendertarget(self, src, dst, filter_type=GL_NEAREST):
@@ -91,6 +92,8 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
@@ -100,6 +103,8 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_DEPTH24_STENCIL8,
                                  texture_format=GL_DEPTH_STENCIL,
                                  data_type=GL_UNSIGNED_INT_24_8,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.HDR,
@@ -108,6 +113,8 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA16F,
                                  texture_format=GL_BGRA,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  data_type=GL_FLOAT)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
@@ -116,7 +123,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         self.create_rendertarget(RenderTargets.WORLD_NORMAL,
                                  rendertarget_type=Texture2D,
@@ -124,7 +133,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         # attach to depth render target
         self.create_rendertarget(RenderTargets.SHADOWMAP,
@@ -155,7 +166,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         self.create_rendertarget(RenderTargets.VELOCITY,
                                  rendertarget_type=Texture2D,
@@ -163,7 +176,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RG32F,
                                  texture_format=GL_RG,
-                                 data_type=GL_FLOAT)
+                                 data_type=GL_FLOAT,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         self.create_rendertarget(RenderTargets.TEMP_RGBA8,
                                  rendertarget_type=Texture2D,
@@ -172,6 +187,8 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.TEMP_HDR,
@@ -181,7 +198,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA16F,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_FLOAT)
+                                 data_type=GL_FLOAT,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         self.create_rendertarget(RenderTargets.TEMP_MULTISAMPLE_X4,
                                  rendertarget_type=Texture2DMultiSample,
@@ -190,7 +209,9 @@ class RenderTargetManager(Singleton):
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
-                                 data_type=GL_UNSIGNED_BYTE)
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR)
 
         self.create_rendertarget(RenderTargets.TEMP_RENDER_BUFFER_MULTISAMPLE,
                                  rendertarget_type=RenderBuffer,

@@ -1,5 +1,11 @@
 #include "scene_constants.glsl"
 
+
+float get_luminance(vec3 color)
+{
+    return dot(vec3(0.2126, 0.7152, 0.0722), color);
+}
+
 vec4 depth_to_relative_world_pos(vec2 tex_coord, float depth)
 {
     vec4 clip_coord = vec4(tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);

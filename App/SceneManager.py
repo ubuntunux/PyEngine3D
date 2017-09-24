@@ -25,6 +25,7 @@ class SceneManager(Singleton):
         self.mainCamera = None
         self.mainLight = None
         self.selectedObject = None
+        self.postprocess = None
 
         # envirment object
         self.sky = None
@@ -84,8 +85,8 @@ class SceneManager(Singleton):
         scene_data = self.get_save_data()
         self.resource_manager.sceneLoader.create_resource(self.__current_scene_name, scene_data)
 
-        # resize scene
-        self.renderer.resizeScene()
+        # new scene - resize scene, regist etc...
+        self.renderer.new_scene()
 
     def open_scene(self, scene_name, scene_data):
         self.clear_scene()
@@ -112,8 +113,8 @@ class SceneManager(Singleton):
         for object_data in scene_data.get('skeleton_actors', []):
             self.addObject(**object_data)
 
-        # resize scene
-        self.renderer.resizeScene()
+        # new scene - resize scene, regist etc...
+        self.renderer.new_scene()
 
     def save_scene(self):
         if self.__current_scene_name == "":
@@ -166,6 +167,12 @@ class SceneManager(Singleton):
             self.objectMap.pop(object.name)
         else:
             logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
+
+    def set_postprocess(self, postprocess):
+        self.postprocess = postprocess
+        postprocess.name = self.generateObjectName(postprocess.name)
+        self.objectMap[postprocess.name] = postprocess
+        self.coreManager.sendObjectInfo(self.postprocess)
 
     def addCamera(self, **camera_data):
         camera_data['name'] = self.generateObjectName(camera_data.get('name', 'camera'))
@@ -257,7 +264,7 @@ class SceneManager(Singleton):
     def get_skeleton_actor(self, index):
         return self.skeleton_actors[index] if index < len(self.skeleton_actors) else None
 
-    def getObjectAttribute(self, objName):
+    def getObjectAttribute(self, objName, objTypeName):
         obj = self.getObject(objName)
         return obj.getAttribute() if obj else None
 
@@ -270,16 +277,17 @@ class SceneManager(Singleton):
 
     def setSelectedObject(self, objName):
         selectedObject = self.getObject(objName)
-        if self.selectedObject is not selectedObject:
-            if self.selectedObject:
-                self.selectedObject.setSelected(False)
-            self.selectedObject = selectedObject
-            if selectedObject:
-                selectedObject.setSelected(True)
+        if selectedObject not in (self.postprocess, ):
+            if self.selectedObject is not selectedObject:
+                if self.selectedObject:
+                    self.selectedObject.setSelected(False)
+                self.selectedObject = selectedObject
+                if selectedObject:
+                    selectedObject.setSelected(True)
 
     def setObjectFocus(self, objName):
         obj = self.getObject(objName)
-        if obj and obj != self.mainCamera:
+        if obj and obj not in (self.postprocess, self.mainCamera):
             self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
 
     def update_camera_projection_matrix(self, aspect):

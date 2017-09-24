@@ -271,7 +271,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.sceneManager.deleteObject(value)
 
         def cmd_request_object_attribute(value):
-            attribute = self.sceneManager.getObjectAttribute(value)
+            objName, objTypeName = value
+            attribute = self.sceneManager.getObjectAttribute(objName, objTypeName)
             if attribute:
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute

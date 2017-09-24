@@ -480,9 +480,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         if selectedItems:
             item = selectedItems[0]
             selectedObjectName = item.text(0)
+            selectedObjectTypeName = item.text(1)
             # request selected object infomation to fill attribute widget
             self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selectedObjectName)
-            self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, selectedObjectName)
+            self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, (selectedObjectName, selectedObjectTypeName))
 
     def focusObject(self, item=None):
         if item:

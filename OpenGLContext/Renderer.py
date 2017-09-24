@@ -57,9 +57,8 @@ class Console:
         self.renderer.ortho_view()
 
         # set render state
-        glEnable(GL_BLEND)
-        glBlendEquation(GL_FUNC_ADD)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         glEnable(GL_TEXTURE_2D)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
@@ -94,6 +93,16 @@ class Renderer(Singleton):
         self.screen = None
         self.framebuffer = None
         self.debug_rendertarget = None  # Texture2D
+
+        self.blend_enable = False
+        self.blend_equation = GL_FUNC_ADD
+        self.blend_func_src = GL_SRC_ALPHA
+        self.blend_func_dst = GL_ONE_MINUS_SRC_ALPHA
+
+        self.blend_enable_prev = self.blend_enable
+        self.blend_equation_prev = self.blend_equation
+        self.blend_func_src_prev = self.blend_func_src
+        self.blend_func_dst_prev = self.blend_func_dst
 
         # Test Code : scene constants uniform buffer
         self.uniformViewConstants = None
@@ -159,6 +168,28 @@ class Renderer(Singleton):
         if self.console:
             self.console.close()
 
+    def set_blend_state(self, enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA,
+                        func_dst=GL_ONE_MINUS_SRC_ALPHA):
+        self.blend_enable_prev = self.blend_enable
+        self.blend_equation_prev = self.blend_equation
+        self.blend_func_src_prev = self.blend_func_src
+        self.blend_func_dst_prev = self.blend_func_dst
+
+        self.blend_enable = enable
+        if enable:
+            self.blend_equation = equation
+            self.blend_func_src = func_src
+            self.blend_func_dst = func_dst
+            glEnable(GL_BLEND)
+            glBlendEquation(equation)
+            glBlendFunc(func_src, func_dst)
+        else:
+            glDisable(GL_BLEND)
+
+    def restore_blend_state_prev(self):
+        self.set_blend_state(self.blend_enable_prev, self.blend_equation_prev, self.blend_func_src_prev,
+                             self.blend_func_dst_prev)
+
     def setViewMode(self, viewMode):
         if viewMode == COMMAND.VIEWMODE_WIREFRAME:
             self.viewMode = GL_LINE
@@ -171,6 +202,12 @@ class Renderer(Singleton):
         if full_screen:
             option |= FULLSCREEN
         return pygame.display.set_mode((width, height), option)
+
+    # call by scene_manager
+    def new_scene(self):
+        self.resizeScene()
+        if self.postprocess:
+            self.sceneManager.set_postprocess(self.postprocess)
 
     def resizeScene(self, width=0, height=0, full_screen=False):
         # You have to do pygame.display.set_mode again on Linux.
@@ -258,9 +295,7 @@ class Renderer(Singleton):
         glDepthFunc(GL_LEQUAL)
         glFrontFace(GL_CCW)
         glEnable(GL_CULL_FACE)
-        glDisable(GL_BLEND)
-        # glEnable(GL_LIGHTING)
-        # glShadeModel(GL_SMOOTH)
+        self.set_blend_state(False)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
         self.render_shadow()
@@ -500,12 +535,8 @@ class Renderer(Singleton):
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):
-        glEnable(GL_BLEND)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
-        glDisable(GL_LIGHTING)
-        glBlendEquation(GL_FUNC_ADD)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
@@ -514,6 +545,8 @@ class Renderer(Singleton):
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
+
+        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         # render fog
         self.framebuffer.set_color_texture(hdrtexture)
@@ -524,6 +557,10 @@ class Renderer(Singleton):
         # bind quad mesh
         self.postprocess.bind_quad()
 
+        self.set_blend_state(False)
+
+        self.postprocess.render_bloom(self.framebuffer, hdrtexture)
+
         self.framebuffer.set_color_texture(texture_ssr)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
@@ -531,7 +568,8 @@ class Renderer(Singleton):
 
         self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
-        # self.postprocess.render_gaussian_blur(self.framebuffer, backbuffer, backbuffer_copy)
+        # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', hdrtexture)
+        # self.postprocess.render_gaussian_blur(self.framebuffer, hdrtexture, hdr_copy)
 
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
