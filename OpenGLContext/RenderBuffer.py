@@ -3,7 +3,7 @@ from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
 from Common import logger
-from Utilities import GetClassName
+from Utilities import GetClassName, Attributes
 
 
 class RenderBuffer:
@@ -19,6 +19,7 @@ class RenderBuffer:
         self.mutlisamples = datas.get('multisamples', 0)
         self.attachment = False
         self.using = False
+        self.attribute = Attributes()
 
         self.buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
@@ -28,6 +29,15 @@ class RenderBuffer:
             glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.mutlisamples, self.internal_format, self.width,
                                              self.height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    def getAttribute(self):
+        self.attribute.setAttribute("name", self.name)
+        self.attribute.setAttribute("target", self.target)
+        self.attribute.setAttribute("width", self.width)
+        self.attribute.setAttribute("height", self.height)
+        self.attribute.setAttribute("internal_format", self.internal_format)
+        self.attribute.setAttribute("mutlisamples", self.mutlisamples)
+        return self.attribute
 
     def bind_render_buffer(self):
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)

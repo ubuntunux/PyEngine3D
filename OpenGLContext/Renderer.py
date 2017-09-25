@@ -10,7 +10,7 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import RenderTargets, FrameBuffer, GLFont, UniformMatrix4, UniformBlock, PostProcess
+from OpenGLContext import RenderTargets, FrameBuffer, RenderBuffer, GLFont, UniformMatrix4, UniformBlock, PostProcess
 
 
 class RenderMode(AutoEnum):
@@ -203,12 +203,6 @@ class Renderer(Singleton):
             option |= FULLSCREEN
         return pygame.display.set_mode((width, height), option)
 
-    # call by scene_manager
-    def new_scene(self):
-        self.resizeScene()
-        if self.postprocess:
-            self.sceneManager.set_postprocess(self.postprocess)
-
     def resizeScene(self, width=0, height=0, full_screen=False):
         # You have to do pygame.display.set_mode again on Linux.
         if width <= 0 or height <= 0:
@@ -257,13 +251,9 @@ class Renderer(Singleton):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-    def set_debug_rendertarget(self, rendertarget_index):
-        rendertarget_enum = RenderTargets.convert_index_to_enum(rendertarget_index)
-        logger.info("Current render target : %s" % str(rendertarget_enum))
-        if rendertarget_enum:
-            self.debug_rendertarget = self.rendertarget_manager.get_rendertarget(rendertarget_enum)
-        else:
-            self.debug_rendertarget = None
+    def set_debug_rendertarget(self, rendertarget_index, rendertarget_name):
+        self.debug_rendertarget = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
+        logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
     def renderScene(self):
         startTime = timeModule.perf_counter()

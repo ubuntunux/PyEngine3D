@@ -15,6 +15,29 @@ from .Widgets import InputDialogDemo
 UI_FILENAME = os.path.join(os.path.split(__file__)[0], "MainWindow.ui")
 
 
+class SpinBoxDelegate(QtGui.QItemDelegate):
+    def createEditor(self, parent, option, index):
+        editor = QtGui.QSpinBox(parent)
+        editor.setMinimum(0)
+        editor.setMaximum(100)
+
+        return editor
+
+    def setEditorData(self, spinBox, index):
+        value = index.model().data(index, QtCore.Qt.EditRole)
+
+        spinBox.setValue(value)
+
+    def setModelData(self, spinBox, model, index):
+        spinBox.interpretText()
+        value = spinBox.value()
+
+        model.setData(index, value, QtCore.Qt.EditRole)
+
+    def updateEditorGeometry(self, editor, option, index):
+        editor.setGeometry(option.rect)
+
+
 def addDirtyMark(text):
     if not text.startswith('*'):
         return '*' + text
@@ -167,6 +190,13 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         btn = self.findChild(QtGui.QPushButton, "btnChangeResolution")
         btn.clicked.connect(self.changeResolution)
 
+        self.comboRenderTargets = self.findChild(QtGui.QComboBox, "comboRenderTargets")
+        self.comboRenderTargets.currentIndexChanged.connect(self.view_rendertarget)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST)),
+                     self.clearRenderTargetList)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO)),
+                     self.addRenderTarget)
+
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
@@ -250,6 +280,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.spinWidth.setValue(width)
         self.spinHeight.setValue(height)
         self.checkFullScreen.setChecked(full_screen)
+
+    def clearRenderTargetList(self):
+        self.comboRenderTargets.clear()
+
+    def addRenderTarget(self, rendertarget_name):
+        self.comboRenderTargets.addItem(rendertarget_name)
+
+    def view_rendertarget(self, rendertarget_index):
+        rendertarget_name = self.comboRenderTargets.itemText(rendertarget_index)
+        self.appCmdQueue.put(COMMAND.VIEW_RENDERTARGET, (rendertarget_index, rendertarget_name))
 
     def changeResolution(self):
         width = self.spinWidth.value()

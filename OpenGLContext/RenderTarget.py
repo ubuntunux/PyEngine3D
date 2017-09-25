@@ -40,6 +40,14 @@ class RenderTargetManager(Singleton):
 
     def clear(self):
         self.rendertargets = [None, ] * RenderTargets.COUNT.value
+        self.temp_rendertargets = {}
+
+    def find_rendertarget(self, rendertarget_index, rendertarget_name):
+        if rendertarget_index < len(self.rendertargets):
+            return self.rendertargets[rendertarget_index]
+        elif rendertarget_name in self.temp_rendertargets:
+            return self.temp_rendertargets[rendertarget_name]
+        return None
 
     def get_rendertarget(self, texture_enum: RenderTargets):
         return self.rendertargets[texture_enum.value]
@@ -56,7 +64,9 @@ class RenderTargetManager(Singleton):
                 rendertarget_datas.pop('data')
             rendertarget_type = rendertarget_datas['texture_type']
             temp_rendertarget = rendertarget_type(name=rendertarget_name, **rendertarget_datas)
-            self.temp_rendertargets[rendertarget_name] = temp_rendertarget
+            if temp_rendertarget:
+                self.temp_rendertargets[rendertarget_name] = temp_rendertarget
+                self.core_manager.sendRenderTargetInfo(temp_rendertarget.name)
 
         if temp_rendertarget is None:
             logger.warn("Failed to get temporary %s render target." % rendertarget_name)
@@ -71,11 +81,12 @@ class RenderTargetManager(Singleton):
         index = int(rendertarget_enum.value)
         rendertarget = rendertarget_type(name=str(rendertarget_enum), **kwargs)
 
-        if self.rendertargets[index]:
-            # value copy
-            object_copy(rendertarget, self.rendertargets[index])
-        else:
-            self.rendertargets[index] = rendertarget
+        if rendertarget:
+            if self.rendertargets[index]:
+                # value copy
+                object_copy(rendertarget, self.rendertargets[index])
+            else:
+                self.rendertargets[index] = rendertarget
 
     def create_rendertargets(self, width, height):
         self.clear()
@@ -219,3 +230,7 @@ class RenderTargetManager(Singleton):
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8)
+
+        self.core_manager.clearRenderTargetList()
+        for i in range(RenderTargets.COUNT.value):
+            self.core_manager.sendRenderTargetInfo(self.rendertargets[i].name)

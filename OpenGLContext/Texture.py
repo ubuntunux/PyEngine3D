@@ -138,6 +138,7 @@ class Texture:
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
+        self.attribute.setAttribute("target", self.target)
         self.attribute.setAttribute("width", self.width)
         self.attribute.setAttribute("height", self.height)
         self.attribute.setAttribute("image_mode", self.image_mode)
@@ -209,6 +210,7 @@ class Texture2DMultiSample(Texture):
     def getAttribute(self):
         Texture.getAttribute(self)
         self.attribute.setAttribute("multisamples", self.multisamples)
+        return self.attribute
 
 
 class TextureCube(Texture):

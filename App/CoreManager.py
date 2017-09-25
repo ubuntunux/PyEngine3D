@@ -194,6 +194,15 @@ class CoreManager(Singleton):
     def notifyDeleteObject(self, obj_name):
         self.send(COMMAND.DELETE_OBJECT_INFO, obj_name)
 
+    def clearRenderTargetList(self):
+        self.send(COMMAND.CLEAR_RENDERTARGET_LIST)
+
+    def sendRenderTargetInfo(self, rendertarget_info):
+        self.send(COMMAND.TRANS_RENDERTARGET_INFO, rendertarget_info)
+
+    def sendAntiAliasingList(self, antialiasing_list):
+        self.send(COMMAND.TRANS_ANTIALIASING_LIST, antialiasing_list)
+
     def registCommand(self):
         def nothing(value):
             logger.warn("Nothing to do.")
@@ -285,6 +294,15 @@ class CoreManager(Singleton):
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
         self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
 
+        def cmd_view_rendertarget(value):
+            rendertarget_index, rendertarget_name = value
+            self.renderer.set_debug_rendertarget(rendertarget_index, rendertarget_name)
+            if self.renderer.debug_rendertarget:
+                attribute = self.renderer.debug_rendertarget.getAttribute()
+                if attribute:
+                    self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+        self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget
+
     def updateCommand(self):
         if self.uiCmdQueue is None:
             return
@@ -293,14 +311,6 @@ class CoreManager(Singleton):
             # receive value must be tuple type
             cmd, value = self.cmdQueue.get()
             self.commands[cmd.value](value)
-
-    def event_rendertarget(self, keyDown, key_pressed):
-        done = False
-        if key_pressed[K_LCTRL] and key_pressed[K_LSHIFT] and key_pressed[K_LALT]:
-            if keyDown == K_BACKQUOTE or (K_0 <= keyDown <= K_9):
-                self.renderer.set_debug_rendertarget(keyDown - K_0)
-                done = True
-        return done
 
     def event_object(self, keyDown, key_pressed):
         done = False
@@ -342,9 +352,7 @@ class CoreManager(Singleton):
             elif eventType == KEYDOWN:
                 subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
-                if self.event_rendertarget(keyDown, key_pressed):
-                    pass
-                elif self.event_object(keyDown, key_pressed):
+                if self.event_object(keyDown, key_pressed):
                     pass
                 elif keyDown == K_ESCAPE:
                     if self.renderer.full_screen:
