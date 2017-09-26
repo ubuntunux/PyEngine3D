@@ -1,8 +1,6 @@
 from Common import logger
 from Utilities import *
 
-import numba
-
 
 class Animation:
     def __init__(self, name, index, skeleton, animation_data):

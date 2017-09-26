@@ -4,6 +4,7 @@ import sys
 import time
 import re
 import traceback
+from functools import partial
 
 import numpy as np
 import pygame
@@ -81,8 +82,7 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from ResourceManager import ResourceManager
-        from OpenGLContext import RenderTargetManager
-        from OpenGLContext import Renderer
+        from Object import RenderTargetManager, Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
@@ -168,6 +168,10 @@ class CoreManager(Singleton):
         if self.uiCmdQueue:
             self.uiCmdQueue.put(*args)
 
+    def request(self, *args):
+        if self.cmdQueue:
+            self.cmdQueue.put(*args)
+
     def sendResourceInfo(self, resource_info):
         self.send(COMMAND.TRANS_RESOURCE_INFO, resource_info)
 
@@ -204,11 +208,12 @@ class CoreManager(Singleton):
         self.send(COMMAND.TRANS_ANTIALIASING_LIST, antialiasing_list)
 
     def registCommand(self):
-        def nothing(value):
-            logger.warn("Nothing to do.")
-            pass
+        def nothing(cmd_enum, value):
+            logger.warn("Nothing to do for %s(%d)" % (str(cmd_enum), cmd_enum.value))
 
-        self.commands = [nothing, ] * COMMAND.COUNT.value
+        self.commands = []
+        for i in range(COMMAND.COUNT.value):
+            self.commands.append(partial(nothing, COMMAND.convert_index_to_enum(i)))
 
         # exit
         self.commands[COMMAND.CLOSE_APP.value] = lambda value: self.close()
@@ -294,6 +299,10 @@ class CoreManager(Singleton):
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
         self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
 
+        def cmd_set_anti_aliasing(anti_aliasing_index):
+            self.renderer.postprocess.set_anti_aliasing(anti_aliasing_index)
+        self.commands[COMMAND.SET_ANTIALIASING.value] = cmd_set_anti_aliasing
+
         def cmd_view_rendertarget(value):
             rendertarget_index, rendertarget_name = value
             self.renderer.set_debug_rendertarget(rendertarget_index, rendertarget_name)
@@ -302,6 +311,10 @@ class CoreManager(Singleton):
                 if attribute:
                     self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget
+
+        def cmd_recreate_render_targets(value):
+            self.renderer.rendertarget_manager.create_rendertargets()
+        self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
 
     def updateCommand(self):
         if self.uiCmdQueue is None:

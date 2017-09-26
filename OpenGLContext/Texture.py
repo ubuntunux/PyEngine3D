@@ -74,11 +74,13 @@ class Texture:
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_NEAREST
+
         mipmap_filters = (GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
                           GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST)
-        self.enable_mipmap = self.min_filter in mipmap_filters or self.mag_filter in mipmap_filters
+        self.enable_mipmap = self.min_filter in mipmap_filters
         if self.target == GL_TEXTURE_2D_MULTISAMPLE:
             self.enable_mipmap = False
+
         self.wrap = texture_data.get('wrap', self.default_wrap)  # GL_REPEAT, GL_CLAMP
         self.buffer = None
 

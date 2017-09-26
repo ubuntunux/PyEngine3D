@@ -7,8 +7,8 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, Fog, Sky
-from OpenGLContext import UniformBlock, PostProcess
+from Object import SkeletonActor, StaticActor, Camera, Light, Fog, Sky, PostProcess
+from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
 
@@ -69,7 +69,6 @@ class SceneManager(Singleton):
 
     def post_open_scene(self):
         self.coreManager.sendObjectInfo(self.renderer.postprocess)
-        # self.coreManager.sendAntiAliasingList()
         self.renderer.resizeScene()
 
     def new_scene(self):

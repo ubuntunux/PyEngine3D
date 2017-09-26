@@ -1,5 +1,5 @@
 from App import CoreManager
-from OpenGLContext import RenderTargets
+from .RenderTarget import RenderTargets
 
 
 class Fog:

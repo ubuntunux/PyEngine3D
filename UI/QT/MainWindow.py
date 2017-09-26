@@ -190,12 +190,19 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         btn = self.findChild(QtGui.QPushButton, "btnChangeResolution")
         btn.clicked.connect(self.changeResolution)
 
+        # render targets
         self.comboRenderTargets = self.findChild(QtGui.QComboBox, "comboRenderTargets")
         self.comboRenderTargets.currentIndexChanged.connect(self.view_rendertarget)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST)),
                      self.clearRenderTargetList)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO)),
                      self.addRenderTarget)
+
+        # anti aliasing
+        self.comboAntiAliasing = self.findChild(QtGui.QComboBox, "comboAntiAliasing")
+        self.comboAntiAliasing.currentIndexChanged.connect(self.set_anti_aliasing)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_ANTIALIASING_LIST)),
+                     self.add_anti_aliasing)
 
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
@@ -284,6 +291,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def clearRenderTargetList(self):
         self.comboRenderTargets.clear()
 
+    # Anti Aliasing
+    def add_anti_aliasing(self, anti_aliasing_list):
+        for anti_aliasing_name in anti_aliasing_list:
+            self.comboAntiAliasing.addItem(anti_aliasing_name)
+
+    def set_anti_aliasing(self, rendertarget_index):
+        self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, rendertarget_index)
+
+    # Render Target
     def addRenderTarget(self, rendertarget_name):
         self.comboRenderTargets.addItem(rendertarget_name)
 

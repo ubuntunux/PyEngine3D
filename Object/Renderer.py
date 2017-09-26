@@ -10,7 +10,9 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import RenderTargets, FrameBuffer, RenderBuffer, GLFont, UniformMatrix4, UniformBlock, PostProcess
+from OpenGLContext import FrameBuffer, RenderBuffer, GLFont, UniformMatrix4, UniformBlock
+from .PostProcess import PostProcess
+from .RenderTarget import RenderTargets
 
 
 class RenderMode(AutoEnum):
@@ -224,7 +226,7 @@ class Renderer(Singleton):
         self.sceneManager.update_camera_projection_matrix(self.aspect)
 
         # resize render targets
-        self.rendertarget_manager.create_rendertargets(self.width, self.height)
+        self.rendertarget_manager.create_rendertargets()
 
         # Run pygame.display.set_mode at last!!! very important.
         if platformModule.system() == 'Linux':
@@ -571,7 +573,8 @@ class Renderer(Singleton):
         self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)
         backbuffer_copy.release()
 
-        if self.debug_rendertarget and self.debug_rendertarget is not backbuffer:
+        if self.debug_rendertarget and self.debug_rendertarget is not backbuffer and \
+                type(self.debug_rendertarget) != RenderBuffer:
             self.framebuffer.set_color_texture(backbuffer)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_copy_rendertarget(self.debug_rendertarget)

@@ -14,7 +14,8 @@
 
 ## Dependency modules
  - python 3
- - numpy
+ - numpy 1.11
+ - numba 0.35
  - pillow
  - pyqt4
  - pybullet

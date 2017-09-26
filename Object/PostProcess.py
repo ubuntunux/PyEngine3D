@@ -5,14 +5,22 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from App import CoreManager
-from Common import logger, log_level
+from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import RenderTargets
+from .RenderTarget import RenderTargets
+
+
+class AntiAliasing(AutoEnum):
+    NONE_AA = ()
+    MSAA = ()
+    COUNT = ()
 
 
 class PostProcess:
     def __init__(self):
         self.name = 'PostProcess'
+        self.core_manager = None
+        self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
         self.quad = None
@@ -23,6 +31,9 @@ class PostProcess:
         self.bloom_threshold = 0.75
         self.bloom_scale = 1.0
 
+        self.antialiasing = AntiAliasing.NONE_AA
+        self.msaa_multisamples = 4
+
         self.tonemapping = None
         self.gaussian_blur = None
         self.motion_blur = None
@@ -32,29 +43,52 @@ class PostProcess:
         self.Attributes = Attributes()
 
     def initialize(self):
-        core_manager = CoreManager.instance()
-        resource_manager = core_manager.resource_manager
-        self.renderer = core_manager.renderer
-        self.rendertarget_manager = core_manager.rendertarget_manager
+        self.core_manager = CoreManager.instance()
+        self.resource_manager = self.core_manager.resource_manager
+        self.renderer = self.core_manager.renderer
+        self.rendertarget_manager = self.core_manager.rendertarget_manager
 
-        self.quad = resource_manager.getMesh("Quad")
+        self.quad = self.resource_manager.getMesh("Quad")
 
-        self.bloom = resource_manager.getMaterialInstance("bloom")
-        self.bloom_highlight = resource_manager.getMaterialInstance("bloom_highlight")
-        self.tonemapping = resource_manager.getMaterialInstance("tonemapping")
-        self.gaussian_blur = resource_manager.getMaterialInstance("blur")
-        self.motion_blur = resource_manager.getMaterialInstance("motion_blur")
-        self.screeen_space_reflection = resource_manager.getMaterialInstance("screen_space_reflection")
-        self.show_rendertarget = resource_manager.getMaterialInstance("show_rendertarget")
+        self.bloom = self.resource_manager.getMaterialInstance("bloom")
+        self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
+        self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
+        self.gaussian_blur = self.resource_manager.getMaterialInstance("blur")
+        self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
+        self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
+        self.show_rendertarget = self.resource_manager.getMaterialInstance("show_rendertarget")
+
+        def get_anti_aliasing_name(anti_aliasing):
+            anti_aliasing = str(anti_aliasing)
+            return anti_aliasing.split('.')[-1] if '.' in anti_aliasing else anti_aliasing
+
+        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in
+                              range(AntiAliasing.COUNT.value)]
+        self.core_manager.sendAntiAliasingList(anti_aliasing_list)
+
+    def set_anti_aliasing(self, index, force=False):
+        if index != self.antialiasing.value or force:
+            self.antialiasing = AntiAliasing.convert_index_to_enum(index)
+            self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
+
+    def get_msaa_multisamples(self):
+        if self.antialiasing == AntiAliasing.MSAA:
+            return self.msaa_multisamples
+        else:
+            return 0
 
     def getAttribute(self):
         self.Attributes.setAttribute('bloom_intensity', self.bloom_intensity)
         self.Attributes.setAttribute('bloom_threshold', self.bloom_threshold)
         self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
+        self.Attributes.setAttribute('msaa_multisamples', self.msaa_multisamples)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if hasattr(self, attributeName):
+        if attributeName == 'msaa_multisamples':
+            self.msaa_multisamples = attributeValue
+            self.set_anti_aliasing(self.antialiasing.value, force=True)
+        elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
     def bind_quad(self):

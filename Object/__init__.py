@@ -9,3 +9,6 @@ from .Camera import Camera
 from .Light import Light
 from .Sky import Sky
 from .Fog import Fog
+from .PostProcess import PostProcess
+from .RenderTarget import RenderTargets, RenderTargetManager
+from .Renderer import Renderer
