@@ -73,11 +73,6 @@ class RenderTargetManager(Singleton):
             logger.warn("Failed to get temporary %s render target." % rendertarget_name)
         return temp_rendertarget
 
-    def copy_rendertarget(self, src, dst, filter_type=GL_NEAREST):
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst.buffer)
-        glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dst.width, dst.height, GL_COLOR_BUFFER_BIT, filter_type)
-
     def create_rendertarget(self, rendertarget_enum, rendertarget_type, **kwargs):
         index = int(rendertarget_enum.value)
         rendertarget_name = str(rendertarget_enum)

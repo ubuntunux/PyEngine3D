@@ -94,6 +94,7 @@ class Renderer(Singleton):
         self.lastShader = None
         self.screen = None
         self.framebuffer = None
+        self.framebuffer_msaa = None
         self.debug_rendertarget = None  # Texture2D
 
         self.blend_enable = False
@@ -130,6 +131,7 @@ class Renderer(Singleton):
         self.postprocess.initialize()
 
         self.framebuffer = FrameBuffer()
+        self.framebuffer_msaa = FrameBuffer()
 
         # console font
         self.console = Console()
@@ -170,15 +172,15 @@ class Renderer(Singleton):
         if self.console:
             self.console.close()
 
-    def set_blend_state(self, enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA,
+    def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA,
                         func_dst=GL_ONE_MINUS_SRC_ALPHA):
         self.blend_enable_prev = self.blend_enable
         self.blend_equation_prev = self.blend_equation
         self.blend_func_src_prev = self.blend_func_src
         self.blend_func_dst_prev = self.blend_func_dst
 
-        self.blend_enable = enable
-        if enable:
+        self.blend_enable = blend_enable
+        if blend_enable:
             self.blend_equation = equation
             self.blend_func_src = func_src
             self.blend_func_dst = func_dst

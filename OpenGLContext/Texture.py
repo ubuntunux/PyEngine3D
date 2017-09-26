@@ -61,6 +61,7 @@ class Texture:
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
+        self.multisamples = 0
 
         if self.internal_format is None and self.image_mode:
             self.internal_format = get_internal_format(self.image_mode)
@@ -149,6 +150,7 @@ class Texture:
         self.attribute.setAttribute("data_type", self.data_type)
         self.attribute.setAttribute("min_filter", self.min_filter)
         self.attribute.setAttribute("mag_filter", self.mag_filter)
+        self.attribute.setAttribute("multisamples", self.multisamples)
         self.attribute.setAttribute("wrap", self.wrap)
         return self.attribute
 
@@ -208,11 +210,6 @@ class Texture2DMultiSample(Texture):
                                 self.height,
                                 GL_TRUE)
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0)
-
-    def getAttribute(self):
-        Texture.getAttribute(self)
-        self.attribute.setAttribute("multisamples", self.multisamples)
-        return self.attribute
 
 
 class TextureCube(Texture):

@@ -13,14 +13,14 @@ class RenderBuffer(Texture):
     def __init__(self, name, **datas):
         Texture.__init__(self, name=name, **datas)
 
-        self.mutlisamples = datas.get('mutlisamples', 0)
+        self.multisamples = datas.get('multisamples', 0)
 
         self.buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
-        if self.mutlisamples == 0:
+        if self.multisamples == 0:
             glRenderbufferStorage(GL_RENDERBUFFER, self.internal_format, self.width, self.height)
         else:
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.mutlisamples, self.internal_format, self.width,
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.multisamples, self.internal_format, self.width,
                                              self.height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
