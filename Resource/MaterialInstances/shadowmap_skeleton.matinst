@@ -1,0 +1,7 @@
+{'macros': {'SKELETAL': 1},
+ 'material_name': 'shadowmap_SKELETAL_1',
+ 'shader_name': 'shadowmap',
+ 'uniform_datas': {'bone_matrices': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'enable_blend': 0,
+                   'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'texture_diffuse': 'empty'}}

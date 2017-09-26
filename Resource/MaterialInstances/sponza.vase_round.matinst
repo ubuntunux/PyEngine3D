@@ -1,0 +1,11 @@
+{'macros': {'SKELETAL': 0, 'USE_REFLECTION': 0},
+ 'material_name': 'default_SKELETAL_0_USE_REFLECTION_0',
+ 'shader_name': 'default',
+ 'uniform_datas': {'brightness': 1.0,
+                   'diffuse_color': [1.0, 1.0, 1.0, 1.0],
+                   'emissive_color': [1.0, 1.0, 1.0, 0.0],
+                   'enable_blend': 0,
+                   'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                   'shadow_texture': 'empty',
+                   'texture_diffuse': 'sponza.vase_round',
+                   'texture_normal': 'sponza.vase_round_bump'}}

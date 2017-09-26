@@ -13,9 +13,3 @@ logs/
 
 # resources
 *.meta
-*.mesh
-*.texture
-*.mat
-*.matinst
-*.model
-*.scene

@@ -1,0 +1,1 @@
+{'macros': {}, 'material_name': 'motion_blur', 'shader_name': 'motion_blur', 'uniform_datas': {'motionblur_scale': 0.0, 'texture_diffuse': 'empty', 'texture_velocity': 'empty'}}

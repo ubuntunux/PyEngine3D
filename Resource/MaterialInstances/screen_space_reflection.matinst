@@ -1,0 +1,1 @@
+{'macros': {}, 'material_name': 'screen_space_reflection', 'shader_name': 'screen_space_reflection', 'uniform_datas': {'texture_depth': 'empty', 'texture_diffuse': 'empty', 'texture_normal': 'empty'}}

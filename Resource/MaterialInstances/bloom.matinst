@@ -1,0 +1,4 @@
+{'macros': {},
+ 'material_name': 'bloom',
+ 'shader_name': 'bloom',
+ 'uniform_datas': {'texture_bloom0': 'empty', 'texture_bloom1': 'empty', 'texture_bloom2': 'empty', 'texture_bloom3': 'empty'}}
