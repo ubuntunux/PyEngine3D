@@ -118,23 +118,18 @@ class FrameBuffer:
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
             logger.error("glCheckFramebufferStatus error %d." % gl_error)
 
-    def unbind_framebuffer(self):
+    @staticmethod
+    def unbind_framebuffer():
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def copy_frame_buffer(self, src, dst, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+    @staticmethod
+    def copy_framebuffer(src, dst, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst.buffer)
         glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dst.width, dst.height, target, filter_type)
 
-    def blit_framebuffer(self, rendertarget, framebuffer_width, framebuffer_height):
+    def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
-        # glBindFramebuffer(GL_READ_FRAMEBUFFER, rendertarget.buffer)
-        # glDrawBuffer(GL_BACK)
-        # glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST)
-
-        # glViewport(0, 0, self.width, self.height)
-        # glClearColor(0.0, 0.0, 0.0, 1.0)
-        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glBlitFramebuffer(0, 0, rendertarget.width, rendertarget.height,
-                          0, 0, framebuffer_width, framebuffer_height,
-                          GL_COLOR_BUFFER_BIT, GL_NEAREST)
+        glBlitFramebuffer(0, 0, self.width, self.height,
+                          0, 0, window_width, window_height,
+                          GL_COLOR_BUFFER_BIT, filter_type)

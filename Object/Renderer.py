@@ -11,8 +11,9 @@ from OpenGL.GLU import *
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from OpenGLContext import FrameBuffer, RenderBuffer, GLFont, UniformMatrix4, UniformBlock
-from .PostProcess import PostProcess
+from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
+
 
 
 class RenderMode(AutoEnum):
@@ -309,7 +310,7 @@ class Renderer(Singleton):
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
-        self.framebuffer.blit_framebuffer(backbuffer, self.width, self.height)
+        self.framebuffer.blit_framebuffer(self.width, self.height)
 
         endTime = timeModule.perf_counter()
         renderTime = endTime - startTime
@@ -562,12 +563,21 @@ class Renderer(Singleton):
 
         self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
 
+        # Blur Test
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', hdrtexture)
         # self.postprocess.render_gaussian_blur(self.framebuffer, hdrtexture, hdr_copy)
 
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_tone_map(hdrtexture)
+
+        # MSAA Test
+        if AntiAliasing.MSAA == self.postprocess.antialiasing:
+            self.framebuffer.set_color_texture(backbuffer)
+            self.framebuffer.bind_framebuffer()
+            self.framebuffer_msaa.set_color_texture(hdrtexture)
+            self.framebuffer_msaa.bind_framebuffer()
+            FrameBuffer.copy_framebuffer(self.framebuffer_msaa, self.framebuffer)
 
         backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', backbuffer)
         self.framebuffer.set_color_texture(backbuffer_copy)
