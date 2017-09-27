@@ -2,9 +2,15 @@ from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from Utilities import Singleton, GetClassName, Attributes, AutoEnum
+from Utilities import Singleton, GetClassName, Attributes, AutoEnum, Data
 from Common import logger
-from OpenGLContext import Texture2D, Texture2DMultiSample, TextureCube, RenderBuffer
+from OpenGLContext import Texture2D, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
+
+
+class Option:
+    NONE = 0
+    MSAA = 1 << 1
+    SSAA = 1 << 2
 
 
 class RenderTargets(AutoEnum):
@@ -74,15 +80,30 @@ class RenderTargetManager(Singleton):
         return temp_rendertarget
 
     def create_rendertarget(self, rendertarget_enum, rendertarget_type, **kwargs):
-        index = int(rendertarget_enum.value)
         rendertarget_name = str(rendertarget_enum)
         if '.' in rendertarget_name:
             rendertarget_name = rendertarget_name.split('.')[-1]
-        rendertarget = rendertarget_type(name=rendertarget_name, **kwargs)
+
+        datas = Data(**kwargs)
+        option = datas.option or Option.NONE
+
+        if (Option.MSAA & option) and self.renderer.postprocess.enable_MSAA():
+            if rendertarget_type == Texture2D:
+                rendertarget_type = Texture2DMultiSample
+            datas.multisample_count = self.renderer.postprocess.get_msaa_multisample_count()
+        elif (Option.SSAA & option) and self.renderer.postprocess.is_SSAA():
+            datas.width *= 2
+            datas.height *= 2
+
+        # Create RenderTarget
+        if rendertarget_type == RenderBuffer:
+            rendertarget = RenderBuffer(rendertarget_name, datas=datas)
+        else:
+            rendertarget = CreateTexture(name=rendertarget_name, texture_type=rendertarget_type, **datas.get_dict())
 
         if rendertarget:
+            index = int(rendertarget_enum.value)
             if self.rendertargets[index]:
-                # value copy
                 object_copy(rendertarget, self.rendertargets[index])
             else:
                 self.rendertargets[index] = rendertarget
@@ -93,16 +114,13 @@ class RenderTargetManager(Singleton):
         width = self.renderer.width
         height = self.renderer.height
 
-        msaa_multisamples = self.renderer.postprocess.get_msaa_multisamples()
-        msaa_rendertarget = Texture2D if msaa_multisamples < 4 else Texture2DMultiSample
-
         fullsize_x = width
         fullsize_y = height
         halfsize_x = int(width / 2)
         halfsize_y = int(height / 2)
 
         self.create_rendertarget(RenderTargets.BACKBUFFER,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -113,8 +131,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
-                                 rendertarget_type=msaa_rendertarget,
-                                 multisamples=msaa_multisamples,
+                                 Texture2D,
+                                 option=Option.MSAA | Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_DEPTH24_STENCIL8,
@@ -125,8 +143,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.HDR,
-                                 rendertarget_type=msaa_rendertarget,
-                                 multisamples=msaa_multisamples,
+                                 Texture2D,
+                                 option=Option.MSAA | Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA16F,
@@ -137,7 +155,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
+                                 option=Option.MSAA | Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -148,7 +167,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.WORLD_NORMAL,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
+                                 option=Option.MSAA | Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -160,7 +180,7 @@ class RenderTargetManager(Singleton):
 
         # attach to depth render target
         self.create_rendertarget(RenderTargets.SHADOWMAP,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=1024,
                                  height=1024,
                                  internal_format=GL_DEPTH_COMPONENT32,
@@ -172,7 +192,7 @@ class RenderTargetManager(Singleton):
 
         # attach to color render target
         self.create_rendertarget(RenderTargets.LINEAR_DEPTH,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_x,
                                  internal_format=GL_R32F,
@@ -182,7 +202,7 @@ class RenderTargetManager(Singleton):
                                  mag_filter=GL_NEAREST)
 
         self.create_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -193,7 +213,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.VELOCITY,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
+                                 option=Option.MSAA | Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RG32F,
@@ -204,7 +225,7 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.TEMP_RGBA8,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -215,7 +236,7 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.TEMP_HDR,
-                                 rendertarget_type=Texture2D,
+                                 Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA16F,
@@ -226,8 +247,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.TEMP_MULTISAMPLE_X4,
-                                 rendertarget_type=Texture2DMultiSample,
-                                 multisamples=4,
+                                 Texture2DMultiSample,
+                                 multisample_count=4,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -238,8 +259,8 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.TEMP_RENDER_BUFFER_MULTISAMPLE,
-                                 rendertarget_type=RenderBuffer,
-                                 multisamples=4,
+                                 RenderBuffer,
+                                 multisample_count=4,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,

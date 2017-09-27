@@ -21,7 +21,7 @@ from OpenGL.GL import *
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
-from OpenGLContext import CreateTextureFromFile, Shader, Material, Texture2D, TextureCube
+from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS
@@ -737,7 +737,7 @@ class TextureLoader(ResourceLoader):
                     texture_datas['texture_negative_z'] = self.getResourceData(
                         texture_datas['texture_negative_z']) or empty_texture
 
-                texture = CreateTextureFromFile(name=resource.name, **texture_datas)
+                texture = CreateTexture(name=resource.name, **texture_datas)
                 resource.set_data(texture)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
@@ -789,7 +789,7 @@ class TextureLoader(ResourceLoader):
                         texture_negative_z=texture_back
                     )
 
-                    cube_texture = CreateTextureFromFile(name=cube_texture_name, **cube_texture_datas)
+                    cube_texture = CreateTexture(name=cube_texture_name, **cube_texture_datas)
                     cube_resource.set_data(cube_texture)
                     cube_texture_datas = cube_texture.get_save_data()
                     self.save_resource_data(cube_resource, cube_texture_datas, '')
@@ -831,7 +831,7 @@ class TextureLoader(ResourceLoader):
                 data=data
             )
 
-            texture = CreateTextureFromFile(name=texture_name, **texture_datas)
+            texture = CreateTexture(name=texture_name, **texture_datas)
             resource.set_data(texture)
             texture_datas = texture.get_save_data()
             self.save_resource_data(resource, texture_datas, source_filepath)

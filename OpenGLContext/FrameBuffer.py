@@ -10,7 +10,7 @@ class FrameBuffer:
     def __init__(self):
         logger.info("Create " + GetClassName(self))
         self.buffer = glGenFramebuffers(1)
-        self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
+        self.max_draw_buffers = min(4, glGetInteger(GL_MAX_DRAW_BUFFERS))
         self.color_textures = [None, ] * self.max_draw_buffers
         self.attachments = [0, ] * self.max_draw_buffers
         self.depth_texture = None
@@ -19,9 +19,11 @@ class FrameBuffer:
         self.width = 0
         self.height = 0
 
-    def delete(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glDeleteFramebuffers(1, [self.buffer, ])
+    def __del__(self):
+        self.set_color_texture(None)
+        self.set_depth_texture(None)
+        # glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        # glDeleteFramebuffers(1, [self.buffer, ])
 
     def clear(self, clear_flag=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, clear_color=(0.0, 0.0, 0.0, 1.0)):
         glClearColor(*clear_color)
@@ -42,9 +44,9 @@ class FrameBuffer:
         :param textures: [Texture2D, ]
         """
         texture_count = len(textures)
-        for i in range(len(self.color_textures)):
-            if self.color_textures[i]:
-                self.color_textures[i].set_attachment(False)
+        for i, color_texture in enumerate(self.color_textures):
+            if color_texture:
+                color_texture.set_attachment(False)
 
             if i < texture_count:
                 if textures[i]:

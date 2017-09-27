@@ -41,10 +41,12 @@ def get_image_mode(texture_internal_format):
     return "RGBA"
 
 
-def CreateTextureFromFile(**texture_datas):
+def CreateTexture(**texture_datas):
     texture_type = texture_datas.get('texture_type', Texture2D)
     if texture_type == Texture2D:
         return Texture2D(**texture_datas)
+    elif texture_type == Texture2DMultiSample:
+        return Texture2DMultiSample(**texture_datas)
     elif texture_type == TextureCube:
         return TextureCube(**texture_datas)
     return None
@@ -61,7 +63,7 @@ class Texture:
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
-        self.multisamples = 0
+        self.multisample_count = 0
 
         if self.internal_format is None and self.image_mode:
             self.internal_format = get_internal_format(self.image_mode)
@@ -150,7 +152,7 @@ class Texture:
         self.attribute.setAttribute("data_type", self.data_type)
         self.attribute.setAttribute("min_filter", self.min_filter)
         self.attribute.setAttribute("mag_filter", self.mag_filter)
-        self.attribute.setAttribute("multisamples", self.multisamples)
+        self.attribute.setAttribute("multisample_count", self.multisample_count)
         self.attribute.setAttribute("wrap", self.wrap)
         return self.attribute
 
@@ -188,6 +190,9 @@ class Texture2D(Texture):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
 
+    def __del__(self):
+        glDeleteTextures(1, [self.buffer, ])
+
     def get_save_data(self):
         save_data = Texture.get_save_data(self)
         save_data['data'] = self.get_image_data()
@@ -200,11 +205,13 @@ class Texture2DMultiSample(Texture):
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)
 
-        self.multisamples = texture_data.get('multisamples', 4)
+        multisample_count = texture_data.get('multisample_count', 4)
+        self.multisample_count = multisample_count - (multisample_count % 4)
+
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.buffer)
         glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
-                                self.multisamples,
+                                self.multisample_count,
                                 self.internal_format,
                                 self.width,
                                 self.height,

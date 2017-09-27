@@ -1,3 +1,4 @@
+from .Data import Data
 from .Logger import *
 from .Transform import *
 from .Vector import Vector

@@ -13,6 +13,7 @@ from .RenderTarget import RenderTargets
 class AntiAliasing(AutoEnum):
     NONE_AA = ()
     MSAA = ()
+    SSAA = ()
     COUNT = ()
 
 
@@ -32,7 +33,7 @@ class PostProcess:
         self.bloom_scale = 1.0
 
         self.antialiasing = AntiAliasing.NONE_AA
-        self.msaa_multisamples = 4
+        self.msaa_multisample_count = 4
 
         self.tonemapping = None
         self.gaussian_blur = None
@@ -71,22 +72,31 @@ class PostProcess:
             self.antialiasing = AntiAliasing.convert_index_to_enum(index)
             self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
 
-    def get_msaa_multisamples(self):
+    def get_msaa_multisample_count(self):
         if self.antialiasing == AntiAliasing.MSAA:
-            return self.msaa_multisamples
+            return self.msaa_multisample_count
         else:
             return 0
+
+    def is_MSAA(self):
+        return self.antialiasing == AntiAliasing.MSAA
+
+    def enable_MSAA(self):
+        return self.antialiasing == AntiAliasing.MSAA and 4 <= self.msaa_multisample_count
+
+    def is_SSAA(self):
+        return self.antialiasing == AntiAliasing.SSAA
 
     def getAttribute(self):
         self.Attributes.setAttribute('bloom_intensity', self.bloom_intensity)
         self.Attributes.setAttribute('bloom_threshold', self.bloom_threshold)
         self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
-        self.Attributes.setAttribute('msaa_multisamples', self.msaa_multisamples)
+        self.Attributes.setAttribute('msaa_multisample_count', self.msaa_multisample_count)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if attributeName == 'msaa_multisamples':
-            self.msaa_multisamples = attributeValue
+        if attributeName == 'msaa_multisample_count':
+            self.msaa_multisample_count = attributeValue
             self.set_anti_aliasing(self.antialiasing.value, force=True)
         elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
