@@ -53,14 +53,15 @@
     - Dominant Directional Light, Spot, point, area light
     - SkyLight, AmbientLight, Spherical Harmonic Light
 * Object
-    - instancing
-    - select, move, modify
-    - gizmo
+    - Instancing
+    - Select, Move, Modify
+    - Gizmo
+    - Culling
 * Particle System
     - runtime particles
 * PostProcess
     - AntiAliasing
-        - SSAA, TAA, MSAA, SMAA
+        - TAA, FXAA
     - Motion Blur
     - HDR Tonemapping
     - SSAO, Temporal SSAO
