@@ -18,6 +18,8 @@ from functools import reduce
 HALF_PI = math.pi * 0.5
 PI = math.pi
 TWO_PI = math.pi * 2.0
+FLOAT32_MIN = np.finfo(np.float32).min
+FLOAT32_MAX = np.finfo(np.float32).max
 FLOAT_ZERO = np.float32(0.0)
 FLOAT2_ZERO = np.array([0.0, 0.0], dtype=np.float32)
 FLOAT3_ZERO = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -58,7 +60,7 @@ def transform(m, v):
 
 
 def magnitude(v):
-    return math.sqrt(np.sum(v ** 2))
+    return math.sqrt(np.sum(v * v))
 
 
 def normalize(v):
@@ -108,22 +110,16 @@ def get_quaternion(axis, radian):
 
 
 def muliply_quaternion(quaternion1, quaternion2):
-    x = quaternion1[1]
-    y = quaternion1[2]
-    z = quaternion1[3]
-    w = quaternion1[0]
-    num4 = quaternion2[1]
-    num3 = quaternion2[2]
-    num2 = quaternion2[3]
-    num = quaternion2[0]
-    num12 = (y * num2) - (z * num3)
-    num11 = (z * num4) - (x * num2)
-    num10 = (x * num3) - (y * num4)
-    num9 = ((x * num4) + (y * num3)) + (z * num2)
-    qX = ((x * num) + (num4 * w)) + num12
-    qY = ((y * num) + (num3 * w)) + num11
-    qZ = ((z * num) + (num2 * w)) + num10
-    qW = (w * num) - num9
+    w1, x1, y1, z1 = quaternion1
+    w2, x2, y2, z2 = quaternion2
+    qX = (y1 * z2) - (z1 * y2)
+    qY = (z1 * x2) - (x1 * z2)
+    qZ = (x1 * y2) - (y1 * x2)
+    qW = (x1 * x2) + (y1 * y2) + (z1 * z2)
+    qX = (x1 * w2) + (x2 * w1) + qX
+    qY = (y1 * w2) + (y2 * w1) + qY
+    qZ = (z1 * w2) + (z2 * w1) + qZ
+    qW = (w1 * w2) - qW
     return Float4(qW, qX, qY, qZ)
 
 
@@ -514,9 +510,15 @@ def compute_tangent(positions, texcoords, normals, indices):
         # binormal = (deltaPos3 * deltaUV2[0]   - deltaPos2 * deltaUV3[0]) * r
         # binormal = normalize(binormal)
 
+        # invalid tangent
+        if all(x == 0.0 for x in tangent):
+            avg_normal = normalize(normals[i1] + normals[i2] + normals[i3])
+            tangent = np.cross(avg_normal, WORLD_UP)
+
         tangents[indices[i]] = tangent
         tangents[indices[i + 1]] = tangent
         tangents[indices[i + 2]] = tangent
+
         # binormals[indices[i]] = binormal
         # binormals[indices[i+1]] = binormal
         # binormals[indices[i+2]] = binormal
