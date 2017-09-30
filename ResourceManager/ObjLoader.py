@@ -17,10 +17,7 @@ class MeshObject:
         self.name = default_name
         self.group_name = ''
         self.mtl_name = ''
-        self.positions = []
-        self.normals = []
-        self.texcoords = []
-        self.faces = []
+        self.indices = []
 
 
 class OBJ:
@@ -29,6 +26,9 @@ class OBJ:
         Loads a wavefront OBJ file.
         """
         self.meshes = []
+        self.positions = []
+        self.normals = []
+        self.texcoords = []
         self.glList = None
         self.filename = filename
 
@@ -69,13 +69,13 @@ class OBJ:
                 # vertex position
                 elif preFix == 'v' and len(values) >= 3:
                     # apply scale
-                    mesh_object.positions.append(list(map(lambda x: float(x) * scale, values[:3])))
+                    self.positions.append(list(map(lambda x: float(x) * scale, values[:3])))
                 # vertex normal
                 elif preFix == 'vn' and len(values) >= 3:
-                    mesh_object.normals.append(list(map(float, values[:3])))
+                    self.normals.append(list(map(float, values[:3])))
                 # texture coordinate
                 elif preFix == 'vt' and len(values) >= 2:
-                    mesh_object.texcoords.append(list(map(float, values[:2])))
+                    self.texcoords.append(list(map(float, values[:2])))
                 # material name
                 elif preFix in ('usemtl', 'usemat'):
                     mesh_object.material = ' '.join(values)
@@ -88,11 +88,11 @@ class OBJ:
                     tex_indices = []
 
                     # If texcoord is empty, add the default texcoord.
-                    if len(mesh_object.texcoords) < 1:
-                        mesh_object.texcoords.append(copy.copy(defaultTexCoord))
+                    if len(self.texcoords) < 1:
+                        self.texcoords.append(copy.copy(defaultTexCoord))
                     # If normal is empty, add the default normal.
-                    if len(mesh_object.normals) < 1:
-                        mesh_object.normals.append(copy.copy(defaultNormal))
+                    if len(self.normals) < 1:
+                        self.normals.append(copy.copy(defaultNormal))
 
                     # parsing index data
                     for indices in values:
@@ -105,20 +105,17 @@ class OBJ:
 
                     # append face list
                     if len(pos_indices) == 3:
-                        mesh_object.faces.append((pos_indices, normal_indices, tex_indices))
+                        mesh_object.indices.append((pos_indices, normal_indices, tex_indices))
                     # Quad to Two Triangles.
                     elif len(pos_indices) == 4:
-                        mesh_object.faces.append((pos_indices[:3], normal_indices[:3], tex_indices[:3]))
-                        mesh_object.faces.append(([pos_indices[2], pos_indices[3], pos_indices[0]],
-                                                  [normal_indices[2], normal_indices[3], normal_indices[0]],
-                                                  [tex_indices[2], tex_indices[3], tex_indices[0]]))
+                        mesh_object.indices.append((pos_indices[:3], normal_indices[:3], tex_indices[:3]))
+                        mesh_object.indices.append(([pos_indices[2], pos_indices[3], pos_indices[0]],
+                                                    [normal_indices[2], normal_indices[3], normal_indices[0]],
+                                                    [tex_indices[2], tex_indices[3], tex_indices[0]]))
 
     def get_geometry_data(self):
         geometry_datas = []
         for mesh in self.meshes:
-            if len(mesh.positions) == 0:
-                logger.info('%s has a empty mesh. %s' % (self.filename, mesh.name))
-                continue
             positions = []
             normals = []
             texcoords = []
@@ -128,9 +125,9 @@ class OBJ:
 
             boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
             boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
-            for n, face in enumerate(mesh.faces):
+            for n, mesh_indices in enumerate(mesh.indices):
                 # exclude material
-                postionIndicies, normalIndicies, texcoordIndicies = face
+                postionIndicies, normalIndicies, texcoordIndicies = mesh_indices
                 for i in range(len(postionIndicies)):
                     index_key = (postionIndicies[i], normalIndicies[i], texcoordIndicies[i])
                     if index_key in indexMap:
@@ -138,9 +135,9 @@ class OBJ:
                     else:
                         indices.append(len(indexMap))
                         indexMap[index_key] = len(indexMap)
-                        positions.append(mesh.positions[postionIndicies[i]])
-                        normals.append(mesh.normals[normalIndicies[i]])
-                        texcoords.append(mesh.texcoords[texcoordIndicies[i]])
+                        positions.append(self.positions[postionIndicies[i]])
+                        normals.append(self.normals[normalIndicies[i]])
+                        texcoords.append(self.texcoords[texcoordIndicies[i]])
                         # bounding box
                         position = positions[-1]
                         for j in range(3):
@@ -148,6 +145,10 @@ class OBJ:
                                 boundMin[j] = position[j]
                             if boundMax[j] < position[j]:
                                 boundMax[j] = position[j]
+
+            if len(positions) == 0:
+                logger.info('%s has a empty mesh. %s' % (self.filename, mesh.name))
+                continue
 
             geometry_data = dict(name=mesh.name,
                                  positions=copy.deepcopy(positions),
