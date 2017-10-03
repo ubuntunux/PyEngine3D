@@ -15,7 +15,6 @@ from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
 
 
-
 class RenderMode(AutoEnum):
     LIGHTING = ()
     SHADOW = ()
@@ -95,6 +94,7 @@ class Renderer(Singleton):
         self.lastShader = None
         self.screen = None
         self.framebuffer = None
+        self.framebuffer_copy = None
         self.framebuffer_msaa = None
         self.debug_rendertarget = None  # Texture2D
 
@@ -132,6 +132,7 @@ class Renderer(Singleton):
         self.postprocess.initialize()
 
         self.framebuffer = FrameBuffer()
+        self.framebuffer_copy = FrameBuffer()
         self.framebuffer_msaa = FrameBuffer()
 
         # console font
@@ -424,9 +425,15 @@ class Renderer(Singleton):
         if len(self.sceneManager.skeleton_actors) < 1:
             return
 
+        camera = self.sceneManager.mainCamera
+        camera_pos = camera.transform.getPos()
+        camera_front = camera.front
+
         geometries = []
         for skeleton_actor in self.sceneManager.skeleton_actors:
-            geometries += skeleton_actor.geometries
+            actor_dir = normalize(skeleton_actor.transform.getPos() - camera_pos)
+            if np.dot(actor_dir, camera_front) > 0.3:
+                geometries += skeleton_actor.geometries
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         material = None
@@ -554,7 +561,8 @@ class Renderer(Singleton):
 
         self.set_blend_state(False)
 
-        # self.postprocess.render_bloom(self.framebuffer, hdrtexture)
+        if self.postprocess.is_render_bloom:
+            self.postprocess.render_bloom(self.framebuffer, hdrtexture)
 
         # self.framebuffer.set_color_texture(texture_ssr)
         # self.framebuffer.set_depth_texture(None)
@@ -567,6 +575,7 @@ class Renderer(Singleton):
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', hdrtexture)
         # self.postprocess.render_gaussian_blur(self.framebuffer, hdrtexture, hdr_copy)
 
+        # Tone Map
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_tone_map(hdrtexture)
@@ -577,13 +586,21 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             self.framebuffer_msaa.set_color_texture(hdrtexture)
             self.framebuffer_msaa.bind_framebuffer()
-            FrameBuffer.copy_framebuffer(self.framebuffer_msaa, self.framebuffer)
+            # resolve
+            self.framebuffer.copy_framebuffer(self.framebuffer_msaa)
 
+        # Motion Blur
         backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', backbuffer)
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
-        self.postprocess.render_motion_blur(texture_velocity, backbuffer, 0.5)
-        backbuffer_copy.release()
+        self.postprocess.render_motion_blur(texture_velocity, backbuffer)
+
+        # copy to backbuffer
+        self.framebuffer.set_color_texture(backbuffer_copy)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer_copy.set_color_texture(backbuffer)
+        self.framebuffer_copy.bind_framebuffer()
+        self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer and \
                 type(self.debug_rendertarget) != RenderBuffer:

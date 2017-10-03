@@ -26,18 +26,21 @@ class PostProcess:
         self.rendertarget_manager = None
         self.quad = None
 
+        self.antialiasing = AntiAliasing.NONE_AA
+        self.msaa_multisample_count = 4
+
+        self.is_render_bloom = True
         self.bloom = None
         self.bloom_highlight = None
         self.bloom_intensity = 1.0
         self.bloom_threshold = 0.75
         self.bloom_scale = 1.0
 
-        self.antialiasing = AntiAliasing.NONE_AA
-        self.msaa_multisample_count = 4
+        self.motion_blur = None
+        self.motion_blur_scale = 1.0
 
         self.tonemapping = None
         self.gaussian_blur = None
-        self.motion_blur = None
         self.screeen_space_reflection = None
         self.show_rendertarget = None
 
@@ -88,10 +91,12 @@ class PostProcess:
         return self.antialiasing == AntiAliasing.SSAA
 
     def getAttribute(self):
+        self.Attributes.setAttribute('is_render_bloom', self.is_render_bloom)
         self.Attributes.setAttribute('bloom_intensity', self.bloom_intensity)
         self.Attributes.setAttribute('bloom_threshold', self.bloom_threshold)
         self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
         self.Attributes.setAttribute('msaa_multisample_count', self.msaa_multisample_count)
+        self.Attributes.setAttribute('motion_blur_scale', self.motion_blur_scale)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -122,10 +127,10 @@ class PostProcess:
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_temp)
         self.quad.draw_elements()
 
-    def render_motion_blur(self, texture_velocity, texture_diffuse, motionblur_scale=1.0):
+    def render_motion_blur(self, texture_velocity, texture_diffuse):
         self.motion_blur.use_program()
         self.motion_blur.bind_material_instance()
-        self.gaussian_blur.bind_uniform_data("motionblur_scale", motionblur_scale)
+        self.motion_blur.bind_uniform_data("motion_blur_scale", self.motion_blur_scale)
         self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()

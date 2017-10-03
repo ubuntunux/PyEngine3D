@@ -2,6 +2,7 @@ from ctypes import c_void_p
 
 from OpenGL.GL import *
 
+from App import CoreManager
 from Utilities import Singleton, GetClassName, Attributes
 from Common import logger
 
@@ -58,7 +59,6 @@ class Texture:
 
     def __init__(self, **texture_data):
         self.name = texture_data.get('name')
-        self.using = False  # texture using flag for temp rendertarget
         self.attachment = False
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
@@ -96,9 +96,6 @@ class Texture:
     def delete(self):
         glBindTexture(self.target, 0)
         glDeleteTextures(1, [self.buffer, ])
-
-    def release(self):
-        self.using = False
 
     def get_save_data(self):
         save_data = dict(
@@ -191,7 +188,8 @@ class Texture2D(Texture):
         glBindTexture(GL_TEXTURE_2D, 0)
 
     def __del__(self):
-        glDeleteTextures(1, [self.buffer, ])
+        pass
+        # glDeleteTextures(1, [self.buffer, ])
 
     def get_save_data(self):
         save_data = Texture.get_save_data(self)

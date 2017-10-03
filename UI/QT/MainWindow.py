@@ -331,6 +331,8 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # e.g. to allow editing only of column and have not child item:
         if column == 1 and item.childCount() == 0 and not self.isFillAttributeTree:
+            if item.dataType == bool:
+                item.setText(1, "True" if item.checkState(1) == QtCore.Qt.Checked else "False")
             self.attributeTree.editItem(item, column)
 
     def attributeChanged(self, item):
@@ -357,7 +359,10 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                         value = parent.dataType(value)
                 else:
                     attributeName = item.text(0)
-                    value = item.dataType(item.text(1))
+                    if item.dataType == bool:
+                        value = item.dataType(item.text(1) == "True")
+                    else:
+                        value = item.dataType(item.text(1))
 
                 selected_item_name = self.selected_item.text(0)
                 selected_item_type = self.selected_item.text(1)
@@ -388,6 +393,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # set value
         if item.dataType == bool:  # bool type
             item.setCheckState(1, QtCore.Qt.Checked if value else QtCore.Qt.Unchecked)
+            item.setText(1, "True" if item.checkState(1) == QtCore.Qt.Checked else "False")
         elif item.dataType in (tuple, list, numpy.ndarray):  # set list type
             item.setText(1, "")  # set value to None
             for i, itemValue in enumerate(value):  # add child component
