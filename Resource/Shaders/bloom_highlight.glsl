@@ -16,10 +16,7 @@ void main() {
     vec3 result = vec3(0.0, 0.0, 0.0);
     result = texture(texture_diffuse, texcoord).xyz;
     float luminance = get_luminance(result);
-    if(luminance <= bloom_threshold)
-    {
-        result = vec3(0.0);
-    }
+    result = vec3(smoothstep(bloom_threshold, 1.5, luminance));
     fs_output = vec4(result, 1.0);
 }
 #endif // FRAGMENT_SHADER
