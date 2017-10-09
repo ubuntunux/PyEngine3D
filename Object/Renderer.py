@@ -546,6 +546,7 @@ class Renderer(Singleton):
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
+        texture_linear_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.LINEAR_DEPTH)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
 
@@ -561,6 +562,11 @@ class Renderer(Singleton):
         self.postprocess.bind_quad()
 
         self.set_blend_state(False)
+
+        # Linear depth
+        self.framebuffer.set_color_texture(texture_linear_depth)
+        self.framebuffer.bind_framebuffer()
+        self.postprocess.render_linear_depth(texture_depth)
 
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, hdrtexture)

@@ -40,6 +40,7 @@ class PostProcess:
         self.motion_blur_scale = 1.0
 
         self.tonemapping = None
+        self.linear_depth = None
         self.gaussian_blur = None
         self.screeen_space_reflection = None
         self.show_rendertarget = None
@@ -60,6 +61,7 @@ class PostProcess:
         self.gaussian_blur = self.resource_manager.getMaterialInstance("blur")
         self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
+        self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
         self.show_rendertarget = self.resource_manager.getMaterialInstance("show_rendertarget")
 
         def get_anti_aliasing_name(anti_aliasing):
@@ -207,6 +209,12 @@ class PostProcess:
 
         # restore blend state
         self.renderer.restore_blend_state_prev()
+
+    def render_linear_depth(self, texture_depth):
+        self.linear_depth.use_program()
+        self.linear_depth.bind_material_instance()
+        self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
+        self.quad.draw_elements()
 
     def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
