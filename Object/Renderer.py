@@ -348,10 +348,9 @@ class Renderer(Singleton):
         depthtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         velocity_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
 
-        self.framebuffer.set_color_textures([hdrtexture, diffusetexture, normaltexture, velocity_texture])
+        self.framebuffer.set_color_texture(hdrtexture)
         self.framebuffer.set_depth_texture(depthtexture)
         self.framebuffer.bind_framebuffer()
-        glClearBufferfv(GL_COLOR, 0, (1.0, 1.0, 1.0, 1.0))
         glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
 
         camera = self.sceneManager.mainCamera
@@ -362,6 +361,14 @@ class Renderer(Singleton):
         glDisable(GL_DEPTH_TEST)
         self.sceneManager.sky.render()
         glEnable(GL_DEPTH_TEST)
+
+        self.framebuffer.set_color_textures([hdrtexture, diffusetexture, normaltexture, velocity_texture])
+        self.framebuffer.bind_framebuffer()
+        glClearBufferfv(GL_COLOR, 3, (0.0, 0.0, 0.0, 0.0))
+
+        camera = self.sceneManager.mainCamera
+        self.uniformViewProjection.bind_uniform_block(camera.view_projection,
+                                                      camera.prev_view_projection, )
 
         # render character lighting
         self.render_static_actors(render_mode=RenderMode.LIGHTING)

@@ -132,7 +132,8 @@ class PostProcess:
     def render_motion_blur(self, texture_velocity, texture_diffuse):
         self.motion_blur.use_program()
         self.motion_blur.bind_material_instance()
-        self.motion_blur.bind_uniform_data("motion_blur_scale", self.motion_blur_scale)
+        motion_blur_scale = self.motion_blur_scale * self.core_manager.delta
+        self.motion_blur.bind_uniform_data("motion_blur_scale", motion_blur_scale)
         self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()

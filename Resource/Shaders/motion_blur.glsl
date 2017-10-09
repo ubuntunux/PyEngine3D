@@ -25,10 +25,16 @@ void main() {
     vec2 texcoord = vs_output.texcoord.xy;
     vec2 velocity = texture(texture_velocity, texcoord).xy * motion_blur_scale;
 
+    float weights = 0.0;
+
     for( int i = 0; i < 7; i++ )
 	{
 	    vec2 uv = vec2(texcoord.x + gaussFilter[i].x * velocity.x, texcoord.y + gaussFilter[i].x * velocity.y);
 		fs_output += texture(texture_diffuse, uv) * gaussFilter[i].yyyy;
+		weights += gaussFilter[i].y;
 	}
+
+	fs_output /= weights;
+	fs_output.w = 1.0;
 }
 #endif // FRAGMENT_SHADER
