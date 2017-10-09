@@ -3,7 +3,8 @@
 #include "utility.glsl"
 #include "quad.glsl"
 
-uniform float bloom_threshold;
+uniform float bloom_threshold_min;
+uniform float bloom_threshold_max;
 
 uniform sampler2D texture_diffuse;
 
@@ -16,7 +17,7 @@ void main() {
     vec3 result = vec3(0.0, 0.0, 0.0);
     result = texture(texture_diffuse, texcoord).xyz;
     float luminance = get_luminance(result);
-    result = vec3(smoothstep(bloom_threshold, 1.5, luminance));
+    result = vec3(smoothstep(bloom_threshold_min, bloom_threshold_max, luminance));
     fs_output = vec4(result, 1.0);
 }
 #endif // FRAGMENT_SHADER

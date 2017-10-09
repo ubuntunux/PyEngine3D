@@ -33,7 +33,8 @@ class PostProcess:
         self.bloom = None
         self.bloom_highlight = None
         self.bloom_intensity = 1.0
-        self.bloom_threshold = 0.75
+        self.bloom_threshold_min = 0.75
+        self.bloom_threshold_max = 1.5
         self.bloom_scale = 1.0
 
         self.motion_blur = None
@@ -95,7 +96,8 @@ class PostProcess:
     def getAttribute(self):
         self.Attributes.setAttribute('is_render_bloom', self.is_render_bloom)
         self.Attributes.setAttribute('bloom_intensity', self.bloom_intensity)
-        self.Attributes.setAttribute('bloom_threshold', self.bloom_threshold)
+        self.Attributes.setAttribute('bloom_threshold_min', self.bloom_threshold_min)
+        self.Attributes.setAttribute('bloom_threshold_max', self.bloom_threshold_max)
         self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
         self.Attributes.setAttribute('msaa_multisample_count', self.msaa_multisample_count)
         self.Attributes.setAttribute('motion_blur_scale', self.motion_blur_scale)
@@ -144,7 +146,8 @@ class PostProcess:
         frame_buffer.bind_framebuffer()
         self.bloom_highlight.use_program()
         self.bloom_highlight.bind_material_instance()
-        self.bloom_highlight.bind_uniform_data('bloom_threshold', self.bloom_threshold)
+        self.bloom_highlight.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
+        self.bloom_highlight.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
         self.quad.draw_elements()
 
