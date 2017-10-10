@@ -22,6 +22,7 @@ class RenderTargets(AutoEnum):
     SHADOWMAP = ()
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
+    SSAO = ()
     VELOCITY = ()
     TEMP_RENDER_BUFFER_MULTISAMPLE = ()
     TEMP_RGBA8 = ()
@@ -208,6 +209,17 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RGBA8,
                                  texture_format=GL_BGRA,
                                  data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
+                                 wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.SSAO,
+                                 Texture2D,
+                                 width=fullsize_x,
+                                 height=fullsize_x,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_RED,
+                                 data_type=GL_FLOAT,
                                  min_filter=GL_LINEAR,
                                  mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)

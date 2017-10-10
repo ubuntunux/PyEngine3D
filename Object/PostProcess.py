@@ -40,6 +40,8 @@ class PostProcess:
         self.motion_blur = None
         self.motion_blur_scale = 1.0
 
+        self.ssao = None
+
         self.tonemapping = None
         self.linear_depth = None
         self.gaussian_blur = None
@@ -58,6 +60,8 @@ class PostProcess:
 
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
+
+        self.ssao = self.resource_manager.getMaterialInstance("ssao")
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.gaussian_blur = self.resource_manager.getMaterialInstance("blur")
         self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
@@ -224,6 +228,14 @@ class PostProcess:
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.quad.draw_elements()
+
+    def render_ssao(self, texture_normal, texture_depth, texture_linear_depth):
+        self.ssao.use_program()
+        self.ssao.bind_material_instance()
+        self.ssao.bind_uniform_data("texture_normal", texture_normal)
+        self.ssao.bind_uniform_data("texture_depth", texture_depth)
+        self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad.draw_elements()
 
     def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_depth):

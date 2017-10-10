@@ -555,6 +555,7 @@ class Renderer(Singleton):
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
         texture_linear_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.LINEAR_DEPTH)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
+        texture_ssao = self.rendertarget_manager.get_rendertarget(RenderTargets.SSAO)
         texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
 
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -575,6 +576,15 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_linear_depth(texture_depth)
 
+        # SSAO
+        self.framebuffer.set_color_texture(texture_ssao)
+        self.framebuffer.bind_framebuffer()
+        self.postprocess.render_ssao(texture_normal, texture_depth, texture_linear_depth)
+
+        ssao_temp = self.rendertarget_manager.get_temporary('ssao_temp', texture_ssao)
+        self.postprocess.render_gaussian_blur(self.framebuffer, texture_ssao, ssao_temp, blur_scale=1.0)
+
+        # Bloom
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, hdrtexture)
 
