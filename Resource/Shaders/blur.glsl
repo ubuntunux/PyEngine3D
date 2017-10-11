@@ -2,7 +2,7 @@
 
 #include "quad.glsl"
 
-uniform float blur_radius;
+uniform float blur_kernel_radius;
 uniform sampler2D texture_diffuse;
 
 #ifdef FRAGMENT_SHADER
@@ -16,9 +16,9 @@ void main() {
 
     float weight = 0.0;
 
-    for( float y = -blur_radius; y <= blur_radius; y++ )
+    for( float y = -blur_kernel_radius; y <= blur_kernel_radius; y++ )
     {
-        for( float x = -blur_radius; x <= blur_radius; x++ )
+        for( float x = -blur_kernel_radius; x <= blur_kernel_radius; x++ )
         {
             fs_output += texture(texture_diffuse, texcoord + vec2(x, y) * scale);
             weight += 1.0;

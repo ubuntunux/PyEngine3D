@@ -128,10 +128,10 @@ class PostProcess:
     def bind_quad(self):
         self.quad.bind_vertex_buffer()
 
-    def render_blur(self, texture_diffuse, blur_radius=1.0):
+    def render_blur(self, texture_diffuse, blur_kernel_radius=1.0):
         self.blur.use_program()
         self.blur.bind_material_instance()
-        self.blur.bind_uniform_data("blur_radius", blur_radius)
+        self.blur.bind_uniform_data("blur_kernel_radius", blur_kernel_radius)
         self.blur.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.quad.draw_elements()
 
@@ -260,7 +260,7 @@ class PostProcess:
 
         framebuffer.set_color_texture(texture_ssao)
         framebuffer.bind_framebuffer()
-        self.render_blur(ssao_temp, blur_radius=self.ssao_blur_radius)
+        self.render_blur(ssao_temp, blur_kernel_radius=self.ssao_blur_radius)
 
     def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_depth):
         self.screeen_space_reflection.use_program()

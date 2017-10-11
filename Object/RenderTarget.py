@@ -65,11 +65,12 @@ class RenderTargetManager(Singleton):
         if rendertarget_name in self.temp_rendertargets:
             temp_rendertarget = self.temp_rendertargets[rendertarget_name]
         elif reference_rendertarget:
-            rendertarget_datas = reference_rendertarget.get_save_data()
-            rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
-            rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
+            rendertarget_datas = reference_rendertarget.get_save_data(get_image_data=False)
+            # don't copy image data
             if 'data' in rendertarget_datas:
                 rendertarget_datas.pop('data')
+            rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
+            rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
             rendertarget_type = rendertarget_datas['texture_type']
             temp_rendertarget = rendertarget_type(name=rendertarget_name, **rendertarget_datas)
             if temp_rendertarget:

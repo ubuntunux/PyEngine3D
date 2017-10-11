@@ -97,7 +97,7 @@ class Texture:
         glBindTexture(self.target, 0)
         glDeleteTextures(1, [self.buffer, ])
 
-    def get_save_data(self):
+    def get_save_data(self, get_image_data=True):
         save_data = dict(
             texture_type=self.__class__,
             width=self.width,
@@ -114,7 +114,7 @@ class Texture:
 
     def get_image_data(self):
         glBindTexture(self.target, self.buffer)
-        data = glGetTexImage(self.target, 0, self.texture_format, GL_UNSIGNED_BYTE)
+        data = glGetTexImage(self.target, 0, self.texture_format, self.data_type)
         glBindTexture(self.target, 0)
         return data
 
@@ -191,9 +191,10 @@ class Texture2D(Texture):
         pass
         # glDeleteTextures(1, [self.buffer, ])
 
-    def get_save_data(self):
+    def get_save_data(self, get_image_data=True):
         save_data = Texture.get_save_data(self)
-        save_data['data'] = self.get_image_data()
+        if get_image_data:
+            save_data['data'] = self.get_image_data()
         return save_data
 
 
@@ -271,7 +272,7 @@ class TextureCube(Texture):
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0)
 
-    def get_save_data(self):
+    def get_save_data(self, get_image_data=True):
         save_data = Texture.get_save_data(self)
         save_data['texture_positive_x'] = self.texture_positive_x.name
         save_data['texture_negative_x'] = self.texture_negative_x.name

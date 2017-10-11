@@ -555,6 +555,7 @@ class Renderer(Singleton):
 
         hdrtexture = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', backbuffer)
         texture_diffuse = self.rendertarget_manager.get_rendertarget(RenderTargets.DIFFUSE)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
@@ -620,7 +621,6 @@ class Renderer(Singleton):
             self.framebuffer.copy_framebuffer(self.framebuffer_msaa)
 
         # Motion Blur
-        backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', backbuffer)
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_motion_blur(texture_velocity, backbuffer)
