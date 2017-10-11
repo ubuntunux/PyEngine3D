@@ -19,7 +19,7 @@ void main() {
     vec2 random_coord = texcoord.xy * 10.001;
     float depth = texture(texture_linear_depth, texcoord).x;
 
-    if(depth == near_far.y)
+    if(depth >= near_far.y)
     {
         fs_output = vec4(1.0);
         return;

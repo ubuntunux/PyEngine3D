@@ -206,14 +206,12 @@ class PostProcess:
 
             frame_buffer.set_color_texture(temp_bloom_target)
             frame_buffer.bind_framebuffer()
-            self.gaussian_blur.bind_uniform_data("lod", 0)
             self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
             self.quad.draw_elements()
 
             frame_buffer.set_color_texture(bloom_target)
             frame_buffer.bind_framebuffer()
-            self.gaussian_blur.bind_uniform_data("lod", 0)
             self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
             self.quad.draw_elements()
