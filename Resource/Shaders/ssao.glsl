@@ -28,7 +28,7 @@ void main() {
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
-    mat3 tbn = mat3(tangent, bitangent, normal);
+    mat3 tbn = mat3(tangent, normal, bitangent);
 
 
     float occlusion = 0.0;
