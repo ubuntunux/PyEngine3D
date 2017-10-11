@@ -40,10 +40,17 @@ class PostProcess:
         self.motion_blur = None
         self.motion_blur_scale = 1.0
 
+        self.is_render_ssao = True
         self.ssao = None
+        self.ssao_blur_radius = 3.0
+        self.ssao_kernel_size = 32
+        self.ssao_radius = 1.0
+        self.ssao_rotation_noise_size_length = 4
+        self.ssao_rotation_noise_size = self.ssao_rotation_noise_size_length * self.ssao_rotation_noise_size_length
 
         self.tonemapping = None
         self.linear_depth = None
+        self.blur = None
         self.gaussian_blur = None
         self.screeen_space_reflection = None
         self.show_rendertarget = None
@@ -63,7 +70,8 @@ class PostProcess:
 
         self.ssao = self.resource_manager.getMaterialInstance("ssao")
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
-        self.gaussian_blur = self.resource_manager.getMaterialInstance("blur")
+        self.blur = self.resource_manager.getMaterialInstance("blur")
+        self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
         self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
@@ -105,6 +113,9 @@ class PostProcess:
         self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
         self.Attributes.setAttribute('msaa_multisample_count', self.msaa_multisample_count)
         self.Attributes.setAttribute('motion_blur_scale', self.motion_blur_scale)
+
+        self.Attributes.setAttribute('is_render_ssao', self.is_render_ssao)
+        self.Attributes.setAttribute('ssao_blur_radius', self.ssao_blur_radius)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -117,13 +128,19 @@ class PostProcess:
     def bind_quad(self):
         self.quad.bind_vertex_buffer()
 
+    def render_blur(self, texture_diffuse, blur_radius=1.0):
+        self.blur.use_program()
+        self.blur.bind_material_instance()
+        self.blur.bind_uniform_data("blur_radius", blur_radius)
+        self.blur.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.quad.draw_elements()
+
     def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):
         frame_buffer.set_color_texture(texture_temp)
         frame_buffer.bind_framebuffer()
 
         self.gaussian_blur.use_program()
         self.gaussian_blur.bind_material_instance()
-
         self.gaussian_blur.bind_uniform_data("blur_scale", (blur_scale, 0.0))
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_target)
         self.quad.draw_elements()
@@ -224,19 +241,28 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-    def render_tone_map(self, texture_diffuse):
+    def render_tone_map(self, texture_diffuse, texture_ssao):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.tonemapping.bind_uniform_data("is_render_ssao", self.is_render_ssao)
+        self.tonemapping.bind_uniform_data("texture_ssao", texture_ssao)
         self.quad.draw_elements()
 
-    def render_ssao(self, texture_normal, texture_depth, texture_linear_depth):
+    def render_ssao(self, framebuffer, texture_ssao, ssao_temp, texture_normal, texture_depth,
+                    texture_linear_depth):
+        framebuffer.set_color_texture(ssao_temp)
+        framebuffer.bind_framebuffer()
         self.ssao.use_program()
         self.ssao.bind_material_instance()
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_depth", texture_depth)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad.draw_elements()
+
+        framebuffer.set_color_texture(texture_ssao)
+        framebuffer.bind_framebuffer()
+        self.render_blur(ssao_temp, blur_radius=self.ssao_blur_radius)
 
     def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_depth):
         self.screeen_space_reflection.use_program()

@@ -3,7 +3,9 @@
 #include "quad.glsl"
 
 uniform sampler2D texture_diffuse;
+uniform sampler2D texture_ssao;
 uniform float exposure = 1.0;
+uniform bool is_render_ssao;
 
 #ifdef FRAGMENT_SHADER
 in VERTEX_OUTPUT vs_output;
@@ -25,6 +27,11 @@ vec3 Uncharted2Tonemap(vec3 x)
 
 void main() {
     vec3 texColor = texture(texture_diffuse, vs_output.texcoord.xy).xyz;
+    if(is_render_ssao)
+    {
+        texColor *= texture(texture_ssao, vs_output.texcoord.xy).xxx;
+    }
+
     texColor *= exposure;  // Hardcoded Exposure Adjustment
     texColor = Uncharted2Tonemap(texColor * ExposureBias);
     vec3 whiteScale = 1.0f / Uncharted2Tonemap(vec3(W));

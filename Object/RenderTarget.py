@@ -200,7 +200,8 @@ class RenderTargetManager(Singleton):
                                  texture_format=GL_RED,
                                  data_type=GL_FLOAT,
                                  min_filter=GL_NEAREST,
-                                 mag_filter=GL_NEAREST)
+                                 mag_filter=GL_NEAREST,
+                                 wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION,
                                  Texture2D,

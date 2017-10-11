@@ -108,7 +108,9 @@ class Renderer(Singleton):
         self.blend_func_src_prev = self.blend_func_src
         self.blend_func_dst_prev = self.blend_func_dst
 
-        # Test Code : scene constants uniform buffer
+        # scene constants uniform buffer
+        self.uniformSceneConstants = None
+        self.sceneConstants_Time = Float4(0.0, 0.0, 0.0, 0.0)
         self.uniformViewConstants = None
         self.uniformViewProjection = None
         self.uniformLightConstants = None
@@ -142,11 +144,11 @@ class Renderer(Singleton):
         # Test Code : scene constants uniform buffer
         material_instance = self.resource_manager.getMaterialInstance('scene_constants')
         program = material_instance.get_program()
-        self.uniformViewConstants = None
-        self.uniformViewProjection = None
-        self.uniformLightConstants = None
 
-        self.uniformViewConstants = UniformBlock("viewConstants", program, 0,
+        self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
+                                                  [FLOAT4_ZERO, ])
+
+        self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
                                                   [MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
@@ -156,11 +158,11 @@ class Renderer(Singleton):
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO])
 
-        self.uniformViewProjection = UniformBlock("viewProjection", program, 1,
+        self.uniformViewProjection = UniformBlock("viewProjection", program, 2,
                                                   [MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY])
 
-        self.uniformLightConstants = UniformBlock("lightConstants", program, 2,
+        self.uniformLightConstants = UniformBlock("lightConstants", program, 3,
                                                   [FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
@@ -270,6 +272,9 @@ class Renderer(Singleton):
 
         if not camera or not light:
             return
+
+        self.sceneConstants_Time[0] = self.coreManager.currentTime
+        self.uniformSceneConstants.bind_uniform_block(self.sceneConstants_Time)
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
                                                      np.linalg.inv(camera.view),
@@ -577,13 +582,14 @@ class Renderer(Singleton):
         self.postprocess.render_linear_depth(texture_depth)
 
         # SSAO
-        self.framebuffer.set_color_texture(texture_ssao)
-        self.framebuffer.bind_framebuffer()
-        self.postprocess.render_ssao(texture_normal, texture_depth, texture_linear_depth)
-
-        ssao_temp = self.rendertarget_manager.get_temporary('ssao_temp', texture_ssao)
-        self.postprocess.render_gaussian_blur(self.framebuffer, texture_ssao, ssao_temp, blur_scale=1.0)
-
+        if self.postprocess.is_render_ssao:
+            ssao_temp = self.rendertarget_manager.get_temporary('ssao_temp', texture_ssao)
+            self.postprocess.render_ssao(framebuffer=self.framebuffer,
+                                         texture_ssao=texture_ssao,
+                                         ssao_temp=ssao_temp,
+                                         texture_normal=texture_normal,
+                                         texture_depth=texture_depth,
+                                         texture_linear_depth=texture_linear_depth)
         # Bloom
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, hdrtexture)
@@ -602,7 +608,7 @@ class Renderer(Singleton):
         # Tone Map
         self.framebuffer.set_color_texture(backbuffer)
         self.framebuffer.bind_framebuffer()
-        self.postprocess.render_tone_map(hdrtexture)
+        self.postprocess.render_tone_map(hdrtexture, texture_ssao)
 
         # MSAA Test
         if AntiAliasing.MSAA == self.postprocess.antialiasing:

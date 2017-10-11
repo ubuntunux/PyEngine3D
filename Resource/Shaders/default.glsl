@@ -77,7 +77,8 @@ void main() {
     fs_output = vec4(lightColor.xyz * (diffuseColor + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 
     fs_diffuse = baseColor;
-    fs_normal = vec4(normalVector, 1.0);
+    // because, rendertarget is UNSIGNED_BYTE
+    fs_normal = vec4(normalVector, 1.0) * 0.5 + 0.5;
     fs_velocity = (vs_output.projectionPos.xy / vs_output.projectionPos.w) -
         (vs_output.prevProjectionPos.xy / vs_output.prevProjectionPos.w);
 }

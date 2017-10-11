@@ -1,6 +1,11 @@
 #version 430 core
 
-layout(std140, binding=0) uniform viewConstants
+layout(std140, binding=0) uniform sceneConstants
+{
+    float time;
+};
+
+layout(std140, binding=1) uniform viewConstants
 {
     mat4 view;
     mat4 inv_view;
@@ -12,13 +17,13 @@ layout(std140, binding=0) uniform viewConstants
     vec4 near_far;
 };
 
-layout(std140, binding=1) uniform viewProjection
+layout(std140, binding=2) uniform viewProjection
 {
     mat4 view_projection;
     mat4 prev_view_projection;
 };
 
-layout(std140, binding=2) uniform lightConstants
+layout(std140, binding=3) uniform lightConstants
 {
     vec4 lightPosition;
     vec4 lightDir;

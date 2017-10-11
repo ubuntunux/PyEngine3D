@@ -1,4 +1,4 @@
 {'macros': {},
  'material_name': 'bloom_highlight',
  'shader_name': 'bloom_highlight',
- 'uniform_datas': {'texture_diffuse': 'empty'}}
+ 'uniform_datas': {'bloom_threshold_max': 0.0, 'bloom_threshold_min': 0.0, 'texture_diffuse': 'empty'}}
