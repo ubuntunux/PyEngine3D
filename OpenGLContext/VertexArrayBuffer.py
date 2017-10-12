@@ -63,7 +63,7 @@ class VertexArrayBuffer:
         :param dtype: example, numpy.float32,
         """
         self.name = name
-        self.vertex_unitSize = 0
+        self.vertex_buffer_size = 0
         self.vertex_strides = []
         self.vertex_stride_points = []
         accStridePoint = 0
@@ -72,22 +72,20 @@ class VertexArrayBuffer:
             self.vertex_strides.append(stride)
             self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
             accStridePoint += stride * np.nbytes[dtype]
-        self.vertex_unitSize = accStridePoint
+        self.vertex_buffer_size = accStridePoint
         self.vertex_stride_range = range(len(self.vertex_strides))
 
         self.vertex_array = glGenVertexArrays(1)
         glBindVertexArray(self.vertex_array)
 
+        vertex_datas = np.hstack(datas).astype(dtype)
         self.vertex_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-
-        vertex_datas = np.hstack(datas).astype(dtype)
         glBufferData(GL_ARRAY_BUFFER, vertex_datas, GL_STATIC_DRAW)
 
+        self.index_buffer_size = index_data.nbytes
         self.index_buffer = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
-
-        self.index_buffer_size = index_data.nbytes
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
     def delete(self):
@@ -96,12 +94,13 @@ class VertexArrayBuffer:
         glDeleteBuffers(1, self.index_buffer)
 
     def bind_vertex_buffer(self):
+        # glBindVertexArray(self.vertex_array)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
         for i in self.vertex_stride_range:
-            glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_unitSize,
-                                  self.vertex_stride_points[i])
             glEnableVertexAttribArray(i)
+            glVertexAttribPointer(i, self.vertex_strides[i], GL_FLOAT, GL_FALSE, self.vertex_buffer_size,
+                                  self.vertex_stride_points[i])
 
         # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
@@ -112,3 +111,6 @@ class VertexArrayBuffer:
 
     def draw_elements(self):
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
+
+    def draw_elements_instanced(self, count):
+        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)

@@ -9,9 +9,18 @@ from Object import StaticActor
 class Light(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
-        lightColor = object_data.get('lightColor', (1.0, 1.0, 1.0, 1.0))
-        self.lightColor = np.array(lightColor, dtype=np.float32)
+        self.lightColor = Float4(*object_data.get('lightColor', (1.0, 1.0, 1.0, 1.0)))
         self.shadow_view_projection = MATRIX4_IDENTITY.copy()
+
+    def getAttribute(self):
+        super().getAttribute()
+        self.attributes.setAttribute('lightColor', self.lightColor)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        super().setAttribute(attributeName, attributeValue, attribute_index)
+        if attributeName == 'lightColor':
+            self.lightColor[:] = attributeValue[:]
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)

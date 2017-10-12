@@ -121,10 +121,18 @@ class Renderer(Singleton):
         pygame.display.quit()
 
     def initialize(self, core_manager, width, height, screen):
+        logger.info("=" * 30)
         logger.info("Initialize Renderer")
         self.width = width
         self.height = height
         self.screen = screen
+
+        logger.info("GL_MAX_VERTEX_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS))
+        logger.info("GL_MAX_GEOMETRY_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS))
+        logger.info("GL_MAX_FRAGMENT_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS))
+        logger.info("GL_MAX_UNIFORM_BLOCK_SIZE : %d" % glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE))
+        logger.info("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT : %d" % glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT))
+        logger.info("=" * 30)
 
         self.coreManager = core_manager
         self.resource_manager = core_manager.resource_manager
@@ -291,6 +299,7 @@ class Renderer(Singleton):
                                                       light.lightColor,
                                                       light.shadow_view_projection)
 
+        # glEnable(GL_FRAMEBUFFER_SRGB)
         glEnable(GL_MULTISAMPLE)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)

@@ -63,6 +63,7 @@ class Texture:
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
+        self.sRGB = texture_data.get('sRGB', None)
         self.multisample_count = 0
 
         if self.internal_format is None and self.image_mode:
@@ -71,6 +72,13 @@ class Texture:
             self.texture_format = get_texture_format(self.image_mode)
         if self.image_mode is None and self.texture_format:
             self.image_mode = get_image_mode(self.texture_format)
+
+        # Convert to sRGB
+        if self.sRGB:
+            if self.internal_format == GL_RGB:
+                self.internal_format = GL_SRGB
+            elif self.internal_format == GL_RGBA:
+                self.internal_format = GL_SRGB_ALPHA
 
         self.width = texture_data.get('width', 0)
         self.height = texture_data.get('height', 0)

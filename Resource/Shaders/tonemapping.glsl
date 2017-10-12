@@ -20,9 +20,31 @@ const float F = 0.30;
 const float W = 11.2;
 const float ExposureBias = 2.0f;
 
-vec3 Uncharted2Tonemap(vec3 x)
+
+vec3 Uncharted2TonemapFunction(vec3 x)
 {
      return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec3 Uncharted2Tonemap(vec3 hdrColor)
+{
+    hdrColor *= exposure;  // Hardcoded Exposure Adjustment
+    hdrColor = Uncharted2TonemapFunction(hdrColor * ExposureBias);
+    vec3 whiteScale = 1.0f / Uncharted2TonemapFunction(vec3(W));
+    return pow(hdrColor * whiteScale, vec3(1.0 / 2.2));
+}
+
+vec3 ReinhardTonemap(vec3 hdrColor)
+{
+    vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
+    return pow(mapped, vec3(1.0 / 2.2));
+}
+
+vec3 SimpleTonemap(vec3 hdrColor)
+{
+    // Exposure tone mapping
+    vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+    return pow(mapped, vec3(1.0 / 2.2));
 }
 
 void main() {
@@ -32,10 +54,7 @@ void main() {
         texColor *= texture(texture_ssao, vs_output.texcoord.xy).xxx;
     }
 
-    texColor *= exposure;  // Hardcoded Exposure Adjustment
-    texColor = Uncharted2Tonemap(texColor * ExposureBias);
-    vec3 whiteScale = 1.0f / Uncharted2Tonemap(vec3(W));
-    fs_output.xyz = pow(texColor * whiteScale, vec3(1.0 / 2.2));
+    fs_output.xyz = Uncharted2Tonemap(texColor);
     fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER
