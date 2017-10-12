@@ -24,6 +24,8 @@ struct VERTEX_INPUT
     layout(location=5) vec4 bone_indicies;
     layout(location=6) vec4 bone_weights;
 #endif
+    // Test - Instance Data
+    layout(location=7) vec4 offset;
 };
 
 struct VERTEX_OUTPUT
@@ -81,8 +83,17 @@ void main() {
     vs_output.cameraRelativePosition = camera_position.xyz - vs_output.worldPosition;
     vs_output.lightRelativePosition = lightPosition.xyz - vs_output.worldPosition;
 
+    if(gl_InstanceID == 0)
+    {
     position = view_projection * model * position;
     prev_position = prev_view_projection * model * prev_position;
+    }
+    else
+    {
+position = view_projection * model * (position + vec4(vs_input.offset.xyz, 0.0));
+    prev_position = prev_view_projection * model * (prev_position + vec4(vs_input.offset.xyz, 0.0));
+    }
+
     vs_output.projectionPos = position;
     vs_output.prevProjectionPos = prev_position;
 
