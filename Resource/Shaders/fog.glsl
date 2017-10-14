@@ -4,10 +4,10 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
-uniform sampler2D texture_depth;
+uniform sampler2D texture_linear_depth;
 
 #ifdef MATERIAL_COMPONENTS
-    uniform vec3 fog_color = vec3(1.0, 1.0, 1.0);
+    uniform vec3 fog_color;
 #endif
 
 
@@ -18,8 +18,7 @@ out vec4 fs_output;
 void main() {
     vec2 texcoord = vs_output.texcoord.xy;
 
-    float depth = texture(texture_depth, texcoord).x;
-    float linear_depth = depth_to_distance(near_far.x, near_far.y, depth);
+    float linear_depth = texture(texture_linear_depth, texcoord).x;
     fs_output.xyz = fog_color;
     fs_output.a = linear_depth < near_far.y ? pow(clamp(linear_depth * 0.01, 0.0, 1.0), 2.0) : 0.0;
 }

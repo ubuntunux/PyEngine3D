@@ -15,7 +15,7 @@ void main() {
     fs_output = texture(texture_source, vs_output.texcoord.xy);
     if(is_depth_texture)
     {
-        float distance = distance_to_depth(near_far.x, near_far.y, fs_output.x);
+        float distance = linear_depth_to_depth(fs_output.x);
         fs_output.xyz = vec3(distance);
     }
     fs_output.a = 1.0;

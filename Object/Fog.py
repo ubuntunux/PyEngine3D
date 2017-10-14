@@ -20,6 +20,6 @@ class Fog:
     def render(self):
         self.quad.bind_vertex_buffer()
         self.material_instance.use_program()
-        texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
-        self.material_instance.bind_uniform_data('texture_depth', texture_depth)
+        texture_linear_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.LINEAR_DEPTH)
+        self.material_instance.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.quad.draw_elements()

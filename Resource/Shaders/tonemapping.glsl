@@ -4,7 +4,7 @@
 
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_ssao;
-uniform float exposure = 1.0;
+uniform float exposure;
 uniform bool is_render_ssao;
 
 #ifdef FRAGMENT_SHADER

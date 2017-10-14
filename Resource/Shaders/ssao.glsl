@@ -5,7 +5,6 @@
 #include "quad.glsl"
 
 uniform sampler2D texture_normal;
-uniform sampler2D texture_depth;
 uniform sampler2D texture_linear_depth;
 
 #ifdef FRAGMENT_SHADER
@@ -17,18 +16,18 @@ const int uSampleKernelSize = 64;
 void main() {
     vec2 texcoord = vs_output.texcoord.xy;
     vec2 random_coord = texcoord.xy * 10.001;
-    float depth = texture(texture_linear_depth, texcoord).x;
+    float linear_depth = texture(texture_linear_depth, texcoord).x;
 
-    if(depth >= near_far.y)
+    if(linear_depth >= near_far.y)
     {
         fs_output = vec4(1.0);
         return;
     }
 
-    vec4 clip_coord = vec4(texcoord * 2.0 - 1.0, 0.0, 1.0);
-    vec4 view_ray = inv_view_origin * inv_perspective * clip_coord;
-    view_ray.xyz = normalize(view_ray.xyz);
-    vec3 world_pos = view_ray.xyz * depth;
+    vec4 clip_coord = vec4(texcoord * 2.0 - 1.0, linear_depth_to_depth(linear_depth) * 2.0 - 1.0, 1.0);
+    vec4 world_pos = inv_view_origin * inv_perspective * clip_coord;
+    world_pos.xyz /= world_pos.w;
+
     vec3 normal = texture(texture_normal, texcoord).xyz * 2.0 - 1.0;
 
     vec3 randomVec = normalize(vec3(rand(random_coord.xy * 0.5) * 2.0 - 1.0, rand(random_coord.xy * 3.14515) * 2.0 - 1.0, rand(random_coord.yx * 1.14) * 2.0 - 1.0));
@@ -42,7 +41,7 @@ void main() {
     for (int i = 0; i < uSampleKernelSize; ++i) {
         // get sample position:
         vec3 pos = tbn * normalize(vec3(rand(random_coord.xy * 0.75 + vec2(float(uSampleKernelSize) * 0.1)) * 2.0 - 1.0, rand(random_coord.yx * 5.7 + vec2(float(uSampleKernelSize) * 0.2)), rand(random_coord.yx * 0.9 + vec2(float(uSampleKernelSize) * 0.3)) * 2.0 - 1.0));
-        pos = pos * uRadius * rand(random_coord.xy * 0.31 + vec2(float(uSampleKernelSize) * 0.3)) + world_pos;
+        pos = pos * uRadius * rand(random_coord.xy * 0.31 + vec2(float(uSampleKernelSize) * 0.3)) + world_pos.xyz;
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);
@@ -54,8 +53,8 @@ void main() {
         float sampleDepth = texture(texture_linear_depth, offset.xy).r;
 
         // range check & accumulate:
-        float rangeCheck = abs(depth - sampleDepth) < uRadius ? 1.0 : 0.0;
-        occlusion += (sampleDepth <= depth ? 1.0 : 0.0) * rangeCheck;
+        float rangeCheck = abs(linear_depth - sampleDepth) < uRadius ? 1.0 : 0.0;
+        occlusion += (sampleDepth <= linear_depth ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion = 1.0 - occlusion / (float(uSampleKernelSize) - 1.0);

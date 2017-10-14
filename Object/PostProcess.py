@@ -243,6 +243,7 @@ class PostProcess:
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.tonemapping.bind_uniform_data("exposure", 1.0)
         self.tonemapping.bind_uniform_data("is_render_ssao", self.is_render_ssao)
         self.tonemapping.bind_uniform_data("texture_ssao", texture_ssao)
         self.quad.draw_elements()
@@ -254,7 +255,6 @@ class PostProcess:
         self.ssao.use_program()
         self.ssao.bind_material_instance()
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
-        self.ssao.bind_uniform_data("texture_depth", texture_depth)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad.draw_elements()
 

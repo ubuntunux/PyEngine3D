@@ -1,1 +1,4 @@
-{'macros': {}, 'material_name': 'tonemapping', 'shader_name': 'tonemapping', 'uniform_datas': {'texture_diffuse': 'empty'}}
+{'macros': {},
+ 'material_name': 'tonemapping',
+ 'shader_name': 'tonemapping',
+ 'uniform_datas': {'exposure': 0.0, 'is_render_ssao': False, 'texture_diffuse': 'empty', 'texture_ssao': 'empty'}}

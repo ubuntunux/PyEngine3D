@@ -1,1 +1,1 @@
-{'macros': {}, 'material_name': 'fog', 'shader_name': 'fog', 'uniform_datas': {'texture_depth': 'empty'}}
+{'macros': {}, 'material_name': 'fog', 'shader_name': 'fog', 'uniform_datas': {'texture_linear_depth': 'empty'}}

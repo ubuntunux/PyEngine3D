@@ -1,3 +1,4 @@
+import re
 import pickle
 import copy
 import traceback
@@ -137,11 +138,25 @@ class Material:
             glShaderSource(shader, shader_code)
             glCompileShader(shader)
             if glGetShaderiv(shader, GL_COMPILE_STATUS) != 1 or True:
-                infoLog = glGetShaderInfoLog(shader)
-                if infoLog:
-                    if type(infoLog) == bytes:
-                        infoLog = infoLog.decode("utf-8")
-                    logger.error("%s %s shader compile error.\n%s" % (self.name, shaderType.name, infoLog))
+                infoLogs = glGetShaderInfoLog(shader)
+                if infoLogs:
+                    shader_code_lines = shader_code.split('\n')
+                    if type(infoLogs) == bytes:
+                        infoLogs = infoLogs.decode("utf-8")
+
+                    infoLogs = infoLogs.split('\n')
+                    for i, infoLog in enumerate(infoLogs):
+                        error_line = re.match('\d\((\d+)\) : error', infoLog)
+                        if error_line is not None:
+                            # show prev 3 lines
+                            error_line = int(error_line.groups()[0]) - 1
+                            for num in range(max(0, error_line - 3), error_line):
+                                infoLogs[i] += "\n\t    %s" % (shader_code_lines[num])
+                            # show last line
+                            infoLogs[i] += "\n\t--> %s" % (shader_code_lines[error_line])
+
+                    infoLogs = "\n".join(infoLogs)
+                    logger.error("%s %s shader compile error.\n%s" % (self.name, shaderType.name, infoLogs))
                 else:
                     # complete
                     logger.log(Logger.MINOR_INFO, "Complete %s %s compile." % (self.name, shaderType.name))
