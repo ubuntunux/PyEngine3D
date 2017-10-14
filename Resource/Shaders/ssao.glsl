@@ -24,9 +24,7 @@ void main() {
         return;
     }
 
-    vec4 clip_coord = vec4(texcoord * 2.0 - 1.0, linear_depth_to_depth(linear_depth) * 2.0 - 1.0, 1.0);
-    vec4 world_pos = inv_view_origin * inv_perspective * clip_coord;
-    world_pos.xyz /= world_pos.w;
+    vec4 relative_pos = linear_depth_to_relative_world(texcoord, linear_depth);
 
     vec3 normal = texture(texture_normal, texcoord).xyz * 2.0 - 1.0;
 
@@ -41,7 +39,7 @@ void main() {
     for (int i = 0; i < uSampleKernelSize; ++i) {
         // get sample position:
         vec3 pos = tbn * normalize(vec3(rand(random_coord.xy * 0.75 + vec2(float(uSampleKernelSize) * 0.1)) * 2.0 - 1.0, rand(random_coord.yx * 5.7 + vec2(float(uSampleKernelSize) * 0.2)), rand(random_coord.yx * 0.9 + vec2(float(uSampleKernelSize) * 0.3)) * 2.0 - 1.0));
-        pos = pos * uRadius * rand(random_coord.xy * 0.31 + vec2(float(uSampleKernelSize) * 0.3)) + world_pos.xyz;
+        pos = pos * uRadius * rand(random_coord.xy * 0.31 + vec2(float(uSampleKernelSize) * 0.3)) + relative_pos.xyz;
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);

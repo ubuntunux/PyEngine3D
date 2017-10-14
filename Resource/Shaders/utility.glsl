@@ -43,7 +43,7 @@ vec4 linear_depth_to_relative_world(vec2 tex_coord, float linear_depth)
 
     // way 2
     //vec4 ndc = perspective * vec4(0.0, 0.0, -linear_depth, 1.0);
-    //vec4 clip_coord = vec4(texcoord * 2.0 - 1.0, ndc.z / ndc.w, 1.0);
+    //float depth = ndc.z / ndc.w;
 
     return depth_to_relative_world(tex_coord, depth);
 }
