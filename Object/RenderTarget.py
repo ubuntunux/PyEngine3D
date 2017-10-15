@@ -1,8 +1,12 @@
+import random
+
+import numpy as np
+
 from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from Utilities import Singleton, GetClassName, Attributes, AutoEnum, Data
+from Utilities import Singleton, GetClassName, Attributes, AutoEnum, Data, normalize
 from Common import logger
 from OpenGLContext import Texture2D, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
 
@@ -23,6 +27,7 @@ class RenderTargets(AutoEnum):
     LINEAR_DEPTH = ()
     SCREEN_SPACE_REFLECTION = ()
     SSAO = ()
+    SSAO_ROTATION_NOISE = ()
     VELOCITY = ()
     TEMP_RENDER_BUFFER_MULTISAMPLE = ()
     TEMP_RGBA8 = ()
@@ -219,12 +224,32 @@ class RenderTargetManager(Singleton):
                                  Texture2D,
                                  width=fullsize_x,
                                  height=fullsize_x,
-                                 internal_format=GL_RGBA8,
+                                 internal_format=GL_R16F,
                                  texture_format=GL_RED,
                                  data_type=GL_FLOAT,
                                  min_filter=GL_LINEAR,
                                  mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)
+
+        texture_size = 4
+        texture_data = np.zeros((texture_size * texture_size, 3), dtype=np.float16)
+        for i in range(texture_size * texture_size):
+            texture_data[i][0] = random.uniform(-1.0, 1.0)
+            texture_data[i][1] = 0.0
+            texture_data[i][2] = random.uniform(-1.0, 1.0)
+            texture_data[i][:] = normalize(texture_data[i])
+
+        self.create_rendertarget(RenderTargets.SSAO_ROTATION_NOISE,
+                                 Texture2D,
+                                 width=texture_size,
+                                 height=texture_size,
+                                 internal_format=GL_RGB16F,
+                                 texture_format=GL_RGB,
+                                 data_type=GL_FLOAT,
+                                 min_filter=GL_NEAREST,
+                                 mag_filter=GL_NEAREST,
+                                 wrap=GL_REPEAT,
+                                 data=texture_data)
 
         self.create_rendertarget(RenderTargets.VELOCITY,
                                  Texture2D,

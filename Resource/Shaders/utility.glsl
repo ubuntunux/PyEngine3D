@@ -41,7 +41,7 @@ vec4 linear_depth_to_relative_world(vec2 tex_coord, float linear_depth)
     // way 1
     float depth = linear_depth_to_depth(linear_depth);
 
-    // way 2
+    // way 2 - Note : The camera at the origin is looking along -Z axis in eye space. Therefore, we should use -linear_depth for Z.
     //vec4 ndc = perspective * vec4(0.0, 0.0, -linear_depth, 1.0);
     //float depth = ndc.z / ndc.w;
 

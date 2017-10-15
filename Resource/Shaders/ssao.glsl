@@ -4,6 +4,13 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
+uniform vec2 screen_size;
+uniform vec2 radius_min_max;
+
+const int kernel_size = 32;
+uniform vec3 kernel[kernel_size];
+
+uniform sampler2D texture_noise;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_linear_depth;
 
@@ -11,35 +18,30 @@ uniform sampler2D texture_linear_depth;
 in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
-const int uSampleKernelSize = 64;
-
 void main() {
     vec2 texcoord = vs_output.texcoord.xy;
-    vec2 random_coord = texcoord.xy * 10.001;
     float linear_depth = texture(texture_linear_depth, texcoord).x;
 
-    if(linear_depth >= near_far.y)
+    /*if(linear_depth >= near_far.y)
     {
         fs_output = vec4(1.0);
         return;
-    }
+    }*/
 
     vec4 relative_pos = linear_depth_to_relative_world(texcoord, linear_depth);
-
     vec3 normal = texture(texture_normal, texcoord).xyz * 2.0 - 1.0;
-
-    vec3 randomVec = normalize(vec3(rand(random_coord.xy * 0.5) * 2.0 - 1.0, rand(random_coord.xy * 3.14515) * 2.0 - 1.0, rand(random_coord.yx * 1.14) * 2.0 - 1.0));
+    vec2 noise_size = textureSize(texture_noise, 0);
+    vec3 randomVec = texture(texture_noise, texcoord * screen_size / noise_size).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
     mat3 tbn = mat3(tangent, normal, bitangent);
 
     float occlusion = 0.0;
-    float uRadius = 0.2;
-    for (int i = 0; i < uSampleKernelSize; ++i) {
+    for (int i = 0; i < kernel_size; ++i) {
         // get sample position:
-        vec3 pos = tbn * normalize(vec3(rand(random_coord.xy * 0.75 + vec2(float(uSampleKernelSize) * 0.1)) * 2.0 - 1.0, rand(random_coord.yx * 5.7 + vec2(float(uSampleKernelSize) * 0.2)), rand(random_coord.yx * 0.9 + vec2(float(uSampleKernelSize) * 0.3)) * 2.0 - 1.0));
-        pos = pos * uRadius * rand(random_coord.xy * 0.31 + vec2(float(uSampleKernelSize) * 0.3)) + relative_pos.xyz;
+        vec3 pos = tbn * kernel[i];
+        pos = pos * radius_min_max.y + relative_pos.xyz;
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);
@@ -47,15 +49,24 @@ void main() {
         offset.xy /= offset.w;
         offset.xy = offset.xy * 0.5 + 0.5;
 
+        # check out point of screen.
+        if(offset.x < 0.0 || offset.x > 1.0 || offset.y < 0.0 || offset.y > 1.0)
+        {
+            continue;
+        }
+
         // get sample depth:
         float sampleDepth = texture(texture_linear_depth, offset.xy).r;
 
         // range check & accumulate:
-        float rangeCheck = abs(linear_depth - sampleDepth) < uRadius ? 1.0 : 0.0;
-        occlusion += (sampleDepth <= linear_depth ? 1.0 : 0.0) * rangeCheck;
+        float delta = linear_depth - sampleDepth;
+        if(delta > radius_min_max.x && abs(delta) < radius_min_max.y )
+        {
+            occlusion += 1.0;
+        }
     }
 
-    occlusion = 1.0 - occlusion / (float(uSampleKernelSize) - 1.0);
+    occlusion = 1.0 - occlusion / (float(kernel_size) - 1.0);
     fs_output.xyz = vec3(occlusion);
     fs_output.w = 1.0;
 

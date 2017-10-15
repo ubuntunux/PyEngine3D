@@ -598,7 +598,6 @@ class Renderer(Singleton):
                                          texture_ssao=texture_ssao,
                                          ssao_temp=ssao_temp,
                                          texture_normal=texture_normal,
-                                         texture_depth=texture_depth,
                                          texture_linear_depth=texture_linear_depth)
         # Bloom
         if self.postprocess.is_render_bloom:

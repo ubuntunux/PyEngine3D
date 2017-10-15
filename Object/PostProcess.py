@@ -1,3 +1,4 @@
+import random
 import time
 from ctypes import c_void_p
 
@@ -42,11 +43,10 @@ class PostProcess:
 
         self.is_render_ssao = True
         self.ssao = None
-        self.ssao_blur_radius = 3.0
-        self.ssao_kernel_size = 32
-        self.ssao_radius = 1.0
-        self.ssao_rotation_noise_size_length = 4
-        self.ssao_rotation_noise_size = self.ssao_rotation_noise_size_length * self.ssao_rotation_noise_size_length
+        self.ssao_blur_radius = 2.0
+        self.ssao_radius_min_max = np.array([0.01, 1.0], dtype=np.float32)
+        self.ssao_kernel_size = 32  # Note : ssao.glsl
+        self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
 
         self.tonemapping = None
         self.linear_depth = None
@@ -68,7 +68,16 @@ class PostProcess:
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
 
+        # SSAO
         self.ssao = self.resource_manager.getMaterialInstance("ssao")
+        for i in range(self.ssao_kernel_size):
+            scale = float(i) / float(self.ssao_kernel_size)
+            scale = min(max(0.1, scale * scale), 1.0)
+            self.ssao_kernel[i][0] = random.uniform(-1.0, 1.0)
+            self.ssao_kernel[i][1] = random.uniform(0.0, 1.0)
+            self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
+            self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
+
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.blur = self.resource_manager.getMaterialInstance("blur")
         self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
@@ -115,6 +124,7 @@ class PostProcess:
         self.Attributes.setAttribute('motion_blur_scale', self.motion_blur_scale)
 
         self.Attributes.setAttribute('is_render_ssao', self.is_render_ssao)
+        self.Attributes.setAttribute('ssao_radius_min_max', self.ssao_radius_min_max)
         self.Attributes.setAttribute('ssao_blur_radius', self.ssao_blur_radius)
         return self.Attributes
 
@@ -248,12 +258,16 @@ class PostProcess:
         self.tonemapping.bind_uniform_data("texture_ssao", texture_ssao)
         self.quad.draw_elements()
 
-    def render_ssao(self, framebuffer, texture_ssao, ssao_temp, texture_normal, texture_depth,
-                    texture_linear_depth):
+    def render_ssao(self, framebuffer, texture_ssao, ssao_temp, texture_normal, texture_linear_depth):
+        texture_noise = self.rendertarget_manager.get_rendertarget(RenderTargets.SSAO_ROTATION_NOISE)
         framebuffer.set_color_texture(ssao_temp)
         framebuffer.bind_framebuffer()
         self.ssao.use_program()
         self.ssao.bind_material_instance()
+        self.ssao.bind_uniform_data("screen_size", [ssao_temp.width, ssao_temp.height])
+        self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
+        self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
+        self.ssao.bind_uniform_data("texture_noise", texture_noise)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad.draw_elements()
