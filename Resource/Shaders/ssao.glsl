@@ -67,6 +67,7 @@ void main() {
     }
 
     occlusion = 1.0 - occlusion / (float(kernel_size) - 1.0);
+    occlusion *= occlusion;
     fs_output.xyz = vec3(occlusion);
     fs_output.w = 1.0;
 

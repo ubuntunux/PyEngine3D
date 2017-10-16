@@ -2,6 +2,7 @@
 
 #define USE_REFLECTION 0
 
+#include "PCFKernels.glsl"
 #include "utility.glsl"
 #include "scene_constants.glsl"
 #include "default_material.glsl"
@@ -30,29 +31,17 @@ void main() {
     vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-    float shadow_d = shadow_uv.z;
+    float shadow_depth = shadow_uv.z;
 
-    float shadow_factor = texture(shadow_texture, shadow_uv.xy).x <= shadow_d - shadow_bias ? 0.0 : 1.0;
-    float weight = 1.0;
-    const int kernel = 2;
-    const vec2 inv_shadow_map_size = 1.0 / textureSize(shadow_texture, 0);
-    for(int y=-kernel;y<=kernel;++y)
+    float shadow_factor = 0.0;
+    const float shadow_radius = 1.0;
+    const vec2 sample_scale = shadow_radius / textureSize(shadow_texture, 0);
+    for(int i=0; i<PoissonSampleCount; ++i)
     {
-        for(int x=-kernel;x<=kernel;++x)
-        {
-            if(x==0 && y==0)
-            {
-                continue;
-            }
-
-            vec2 uv = shadow_uv.xy + vec2(x, y) * inv_shadow_map_size;
-            uv += vec2(rand(uv)) * inv_shadow_map_size;
-
-            shadow_factor += texture(shadow_texture, uv).x <= shadow_d - shadow_bias ? 0.0 : 1.0;
-            weight += 1.0;
-        }
+        vec2 uv = shadow_uv.xy + PoissonSamples[i] * sample_scale;
+        shadow_factor += texture(shadow_texture, uv).x <= shadow_depth - shadow_bias ? 0.0 : 1.0;
     }
-    shadow_factor /= weight;
+    shadow_factor /= (float(PoissonSampleCount));
 
     vec3 normalVector = vs_output.normalVector;
     vec3 cameraVector = normalize(vs_output.cameraRelativePosition);
