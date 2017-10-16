@@ -246,8 +246,8 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_RGB16F,
                                  texture_format=GL_RGB,
                                  data_type=GL_FLOAT,
-                                 min_filter=GL_NEAREST,
-                                 mag_filter=GL_NEAREST,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  wrap=GL_REPEAT,
                                  data=texture_data)
 
