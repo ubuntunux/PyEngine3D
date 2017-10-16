@@ -453,9 +453,11 @@ class Renderer(Singleton):
 
         geometries = []
         for skeleton_actor in self.sceneManager.skeleton_actors:
-            actor_dir = normalize(skeleton_actor.transform.getPos() - camera_pos)
-            if np.dot(actor_dir, camera_front) > 0.3:
-                geometries += skeleton_actor.geometries
+            geometries += skeleton_actor.geometries
+            # actor_dir = normalize(skeleton_actor.transform.getPos() - camera_pos)
+            # if np.dot(actor_dir, camera_front) > 0.3:
+            #     geometries += skeleton_actor.geometries
+
         geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         material = None
