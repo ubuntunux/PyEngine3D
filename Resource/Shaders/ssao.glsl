@@ -49,7 +49,7 @@ void main() {
         offset.xy /= offset.w;
         offset.xy = offset.xy * 0.5 + 0.5;
 
-        # check out point of screen.
+        // check out point of screen.
         if(offset.x < 0.0 || offset.x > 1.0 || offset.y < 0.0 || offset.y > 1.0)
         {
             continue;
