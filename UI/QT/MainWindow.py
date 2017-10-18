@@ -364,16 +364,22 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     else:
                         value = item.dataType(item.text(1))
 
-                selected_item_name = self.selected_item.text(0)
-                selected_item_type = self.selected_item.text(1)
+                selectedItems = []
+                command = None
+                if self.selected_item_categoty == 'Object':
+                    command = COMMAND.SET_OBJECT_ATTRIBUTE
+                    selectedItems = self.objectList.selectedItems()
 
-                # send changed data
-                if self.selected_item_categoty == 'Resource':
-                    self.appCmdQueue.put(COMMAND.SET_RESOURCE_ATTRIBUTE,
-                                         (selected_item_name, selected_item_type, attributeName, value, index))
-                elif self.selected_item_categoty == 'Object':
-                    self.appCmdQueue.put(COMMAND.SET_OBJECT_ATTRIBUTE,
-                                         (selected_item_name, selected_item_type, attributeName, value, index))
+                elif self.selected_item_categoty == 'Resource':
+                    command = COMMAND.SET_RESOURCE_ATTRIBUTE
+                    selectedItems = self.resourceListWidget.selectedItems()
+
+                for selectedItem in selectedItems:
+                    selected_item_name = selectedItem.text(0)
+                    selected_item_type = selectedItem.text(1)
+                    # send changed data
+                    self.appCmdQueue.put(command, (selected_item_name, selected_item_type, attributeName, value, index))
+
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
