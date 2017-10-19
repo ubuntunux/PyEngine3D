@@ -22,7 +22,7 @@ void main() {
     float depth = texture(texture_depth, vs_output.texcoord.xy).x;
 
     vec4 clip_coord = vec4(vs_output.texcoord.xy * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 relative_pos = inv_view_origin * inv_perspective * clip_coord;
+    vec4 relative_pos = INV_VIEW_ORIGIN * INV_PERSPECTIVE * clip_coord;
     relative_pos /= relative_pos.w;
 
     vec3 V = normalize(-relative_pos.xyz);
@@ -34,7 +34,7 @@ void main() {
     for(int i=0; i<step; ++i)
     {
         relative_pos.xyz += R * marchDist;
-        clip_coord = perspective * view_origin * vec4(relative_pos.xyz, 1.0);
+        clip_coord = PERSPECTIVE * VIEW_ORIGIN * vec4(relative_pos.xyz, 1.0);
         clip_coord.xyz /= clip_coord.w;
 
         texcoord = clip_coord.xy * 0.5 + 0.5;

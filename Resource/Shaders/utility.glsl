@@ -9,8 +9,8 @@ float get_luminance(vec3 color)
 /* non-linear depth to linear depth */
 float depth_to_linear_depth(float depth)
 {
-    const float zNear = near_far.x;
-    const float zFar = near_far.y;
+    const float zNear = NEAR_FAR.x;
+    const float zFar = NEAR_FAR.y;
     /* depth [0, 1] to NDC Z [-1, 1] */
     depth = depth * 2.0 - 1.0;
     /* NDC Z to distance[near, far] */
@@ -20,8 +20,8 @@ float depth_to_linear_depth(float depth)
 /* linear depth to non-linear depth */
 float linear_depth_to_depth(float linear_depth)
 {
-    const float zNear = near_far.x;
-    const float zFar = near_far.y;
+    const float zNear = NEAR_FAR.x;
+    const float zFar = NEAR_FAR.y;
     /* linear_depth to NDC Z [-1, 1] */
     float depth = (zFar + zNear - 2.0 * zNear * zFar / linear_depth) / (zFar - zNear);
     /* NDC Z [-1, 1] to depth [0, 1] */
@@ -31,7 +31,7 @@ float linear_depth_to_depth(float linear_depth)
 vec4 depth_to_relative_world(vec2 tex_coord, float depth)
 {
     vec4 clip_coord = vec4(tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 relative_pos = inv_view_origin * inv_perspective * clip_coord;
+    vec4 relative_pos = INV_VIEW_ORIGIN * INV_PERSPECTIVE * clip_coord;
     relative_pos /= relative_pos.w;
     return relative_pos;
 }
@@ -42,7 +42,7 @@ vec4 linear_depth_to_relative_world(vec2 tex_coord, float linear_depth)
     float depth = linear_depth_to_depth(linear_depth);
 
     // way 2 - Note : The camera at the origin is looking along -Z axis in eye space. Therefore, we should use -linear_depth for Z.
-    //vec4 ndc = perspective * vec4(0.0, 0.0, -linear_depth, 1.0);
+    //vec4 ndc = PERSPECTIVE * vec4(0.0, 0.0, -linear_depth, 1.0);
     //float depth = ndc.z / ndc.w;
 
     return depth_to_relative_world(tex_coord, depth);

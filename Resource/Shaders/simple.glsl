@@ -25,7 +25,7 @@ struct VERTEX_INPUT
 in VERTEX_INPUT vs_input;
 
 void main() {
-    gl_Position = perspective * view * model * vec4(vs_input.position, 1.0);
+    gl_Position = PERSPECTIVE * VIEW * model * vec4(vs_input.position, 1.0);
 }
 #endif // VERTEX_SHADER
 

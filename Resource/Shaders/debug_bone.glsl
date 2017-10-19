@@ -56,7 +56,7 @@ void main() {
     vs_output.bone_weights = vs_input.bone_weights;
 #endif
 
-    gl_Position = perspective * view * vec4(vs_output.worldPosition, 1.0);
+    gl_Position = PERSPECTIVE * VIEW * vec4(vs_output.worldPosition, 1.0);
 }
 #endif
 

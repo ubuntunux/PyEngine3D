@@ -20,6 +20,6 @@ void main() {
 
     float linear_depth = texture(texture_linear_depth, texcoord).x;
     fs_output.xyz = fog_color;
-    fs_output.a = linear_depth < near_far.y ? pow(clamp(linear_depth * 0.01, 0.0, 1.0), 2.0) : 0.0;
+    fs_output.a = linear_depth < NEAR_FAR.y ? pow(clamp(linear_depth * 0.01, 0.0, 1.0), 2.0) : 0.0;
 }
 #endif // FRAGMENT_SHADER

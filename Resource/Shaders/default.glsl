@@ -28,7 +28,7 @@ void main() {
         discard;
     }
 
-    vec4 shadow_uv = shadow_matrix * vec4(vs_output.worldPosition, 1.0);
+    vec4 shadow_uv = SHADOW_MATRIX * vec4(vs_output.worldPosition, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
     float shadow_depth = shadow_uv.z;
@@ -39,13 +39,13 @@ void main() {
     for(int i=0; i<PoissonSampleCount; ++i)
     {
         vec2 uv = shadow_uv.xy + PoissonSamples[i] * sample_scale;
-        shadow_factor += texture(shadow_texture, uv).x <= shadow_depth - shadow_bias ? 0.0 : 1.0;
+        shadow_factor += texture(shadow_texture, uv).x <= shadow_depth - SHADOW_BIAS ? 0.0 : 1.0;
     }
     shadow_factor /= (float(PoissonSampleCount));
 
     vec3 normalVector = vs_output.normalVector;
     vec3 cameraVector = normalize(vs_output.cameraRelativePosition);
-    vec3 lightVector = normalize(lightDir.xyz);
+    vec3 lightVector = normalize(LIGHT_DIRECTION.xyz);
     vec4 emissiveColor = get_emissive_color();
 
     vec3 normal = (vs_output.tangentToWorld * vec4(get_normal(vs_output.texCoord.xy), 0.0)).xyz;
@@ -63,7 +63,7 @@ void main() {
 
     float specularLighting = clamp(shadow_factor * dot(reflect(-lightVector, normalVector), cameraVector), 0.0, 1.0);
     specularLighting = pow(specularLighting, 60.0) * light_intensity;
-    fs_output = vec4(lightColor.xyz * (diffuseColor + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
+    fs_output = vec4(LIGHT_COLOR.xyz * (diffuseColor + specularLighting) + emissiveColor.xyz * emissiveColor.w, 1.0);
 
     fs_diffuse = baseColor;
     // because, rendertarget is UNSIGNED_BYTE

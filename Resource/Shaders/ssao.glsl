@@ -22,7 +22,7 @@ void main() {
     vec2 texcoord = vs_output.texcoord.xy;
     float linear_depth = texture(texture_linear_depth, texcoord).x;
 
-    /*if(linear_depth >= near_far.y)
+    /*if(linear_depth >= NEAR_FAR.y)
     {
         fs_output = vec4(1.0);
         return;
@@ -45,7 +45,7 @@ void main() {
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);
-        offset = perspective * view_origin * offset;
+        offset = PERSPECTIVE * VIEW_ORIGIN * offset;
         offset.xy /= offset.w;
         offset.xy = offset.xy * 0.5 + 0.5;
 

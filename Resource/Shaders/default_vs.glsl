@@ -80,18 +80,18 @@ void main() {
     vs_output.tangentToWorld = model * mat4(vec4(vertexTangent, 0.0), vec4(vertexNormal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
     vs_output.texCoord = vs_input.texcoord;
 
-    vs_output.cameraRelativePosition = camera_position.xyz - vs_output.worldPosition;
-    vs_output.lightRelativePosition = lightPosition.xyz - vs_output.worldPosition;
+    vs_output.cameraRelativePosition = CAMERA_POSITION.xyz - vs_output.worldPosition;
+    vs_output.lightRelativePosition = LIGHT_POSITION.xyz - vs_output.worldPosition;
 
     if(gl_InstanceID == 0)
     {
-    position = view_projection * model * position;
-    prev_position = prev_view_projection * model * prev_position;
+        position = VIEW_PROJECTION * model * position;
+        prev_position = PREV_VIEW_PROJECTION * model * prev_position;
     }
     else
     {
-position = view_projection * model * (position + vec4(vs_input.offset.xyz, 0.0));
-    prev_position = prev_view_projection * model * (prev_position + vec4(vs_input.offset.xyz, 0.0));
+        position = VIEW_PROJECTION * model * (position + vec4(vs_input.offset.xyz, 0.0));
+        prev_position = PREV_VIEW_PROJECTION * model * (prev_position + vec4(vs_input.offset.xyz, 0.0));
     }
 
     vs_output.projectionPos = position;

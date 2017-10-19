@@ -2,35 +2,35 @@
 
 layout(std140, binding=0) uniform sceneConstants
 {
-    float time;
+    float TIME;
 };
 
 layout(std140, binding=1) uniform viewConstants
 {
-    mat4 view;
-    mat4 inv_view;
-    mat4 view_origin;
-    mat4 inv_view_origin;
-    mat4 perspective;
-    mat4 inv_perspective;
-    vec4 camera_position;
-    vec4 near_far;
+    mat4 VIEW;
+    mat4 INV_VIEW;
+    mat4 VIEW_ORIGIN;
+    mat4 INV_VIEW_ORIGIN;
+    mat4 PERSPECTIVE;
+    mat4 INV_PERSPECTIVE;
+    vec4 CAMERA_POSITION;
+    vec4 NEAR_FAR;
 };
 
 layout(std140, binding=2) uniform viewProjection
 {
-    mat4 view_projection;
-    mat4 prev_view_projection;
+    mat4 VIEW_PROJECTION;
+    mat4 PREV_VIEW_PROJECTION;
 };
 
 layout(std140, binding=3) uniform lightConstants
 {
-    vec4 lightPosition;
-    vec4 lightDir;
-    vec4 lightColor;
-    mat4 shadow_matrix;
+    vec4 LIGHT_POSITION;
+    vec4 LIGHT_DIRECTION;
+    vec4 LIGHT_COLOR;
+    mat4 SHADOW_MATRIX;
 };
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
-const float shadow_bias = -0.0001;
+const float SHADOW_BIAS = -0.0001;
