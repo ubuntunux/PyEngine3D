@@ -19,8 +19,8 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    vec2 texcoord = vs_output.texcoord.xy;
-    float linear_depth = texture(texture_linear_depth, texcoord).x;
+    vec2 tex_coord = vs_output.tex_coord.xy;
+    float linear_depth = texture(texture_linear_depth, tex_coord).x;
 
     /*if(linear_depth >= NEAR_FAR.y)
     {
@@ -28,10 +28,10 @@ void main() {
         return;
     }*/
 
-    vec4 relative_pos = linear_depth_to_relative_world(texcoord, linear_depth);
-    vec3 normal = texture(texture_normal, texcoord).xyz * 2.0 - 1.0;
+    vec4 relative_pos = linear_depth_to_relative_world(tex_coord, linear_depth);
+    vec3 normal = texture(texture_normal, tex_coord).xyz * 2.0 - 1.0;
     vec2 noise_size = textureSize(texture_noise, 0);
-    vec3 randomVec = texture(texture_noise, texcoord * screen_size / noise_size).xyz;
+    vec3 randomVec = texture(texture_noise, tex_coord * screen_size / noise_size).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);

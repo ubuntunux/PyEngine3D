@@ -15,9 +15,9 @@ vec4 get_emissive_color()
     return emissive_color;
 }
 
-vec4 get_base_color(vec2 texcoord)
+vec4 get_base_color(vec2 tex_coord)
 {
-    vec4 color = texture(texture_diffuse, texcoord);
+    vec4 color = texture(texture_diffuse, tex_coord);
     // gamma correction
     color.xyz = pow(color.xyz, vec3(2.2));
     color.xyz = color.xyz * brightness * diffuse_color.xyz * diffuse_color.a;
@@ -32,9 +32,9 @@ float get_reflection()
 vec4 get_reflection_color(vec3 reflection_vector)
 {
     // Note : use inverted Y-Axis
-    vec4 reflectionColor = texture(texture_cube, reflection_vector * vec3(1.0, -1.0, 1.0));
-    reflectionColor.xyz = pow(reflectionColor.xyz, vec3(2.2));
-    return reflectionColor;
+    vec4 reflection_color = texture(texture_cube, reflection_vector * vec3(1.0, -1.0, 1.0));
+    reflection_color.xyz = pow(reflection_color.xyz, vec3(2.2));
+    return reflection_color;
 }
 
 vec3 get_edge_tint_color()
@@ -52,10 +52,10 @@ float get_sss_scale()
     return 1.0;
 }
 
-vec3 get_normal(vec2 texcoord)
+vec3 get_normal(vec2 tex_coord)
 {
     // Y-Up
-    vec3 normal = texture(texture_normal, texcoord).xzy * 2.0 - 1.0;
+    vec3 normal = texture(texture_normal, tex_coord).xzy * 2.0 - 1.0;
     return normalize(normal);
 }
 

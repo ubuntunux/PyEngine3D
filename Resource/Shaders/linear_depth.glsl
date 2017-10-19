@@ -10,7 +10,7 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    float depth = texture(texture_depth, vs_output.texcoord.xy).x;
+    float depth = texture(texture_depth, vs_output.tex_coord.xy).x;
     fs_output = vec4(depth_to_linear_depth(depth));
 }
 #endif // FRAGMENT_SHADER

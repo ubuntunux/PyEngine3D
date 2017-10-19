@@ -48,10 +48,10 @@ vec3 SimpleTonemap(vec3 hdrColor)
 }
 
 void main() {
-    vec3 texColor = texture(texture_diffuse, vs_output.texcoord.xy).xyz;
+    vec3 texColor = texture(texture_diffuse, vs_output.tex_coord.xy).xyz;
     if(is_render_ssao)
     {
-        texColor *= texture(texture_ssao, vs_output.texcoord.xy).xxx;
+        texColor *= texture(texture_ssao, vs_output.tex_coord.xy).xxx;
     }
 
     fs_output.xyz = Uncharted2Tonemap(texColor);

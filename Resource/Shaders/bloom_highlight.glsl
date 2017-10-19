@@ -13,9 +13,9 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    vec2 texcoord = vs_output.texcoord.xy;
+    vec2 tex_coord = vs_output.tex_coord.xy;
     vec3 result = vec3(0.0, 0.0, 0.0);
-    result = texture(texture_diffuse, texcoord).xyz;
+    result = texture(texture_diffuse, tex_coord).xyz;
     float luminance = get_luminance(result);
     result = vec3(smoothstep(bloom_threshold_min, bloom_threshold_max, luminance));
     fs_output = vec4(result, 1.0);

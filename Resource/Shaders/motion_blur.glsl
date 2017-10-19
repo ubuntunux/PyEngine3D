@@ -22,14 +22,14 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    vec2 texcoord = vs_output.texcoord.xy;
-    vec2 velocity = texture(texture_velocity, texcoord).xy * motion_blur_scale;
+    vec2 tex_coord = vs_output.tex_coord.xy;
+    vec2 velocity = texture(texture_velocity, tex_coord).xy * motion_blur_scale;
 
     float weights = 0.0;
 
     for( int i = 0; i < 7; i++ )
 	{
-	    vec2 uv = vec2(texcoord.x + gaussFilter[i].x * velocity.x, texcoord.y + gaussFilter[i].x * velocity.y);
+	    vec2 uv = vec2(tex_coord.x + gaussFilter[i].x * velocity.x, tex_coord.y + gaussFilter[i].x * velocity.y);
 		fs_output += texture(texture_diffuse, uv) * gaussFilter[i].yyyy;
 		weights += gaussFilter[i].y;
 	}

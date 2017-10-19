@@ -6,7 +6,7 @@
 
 uniform mat4 model;
 uniform mat4 view_projection;
-uniform vec4 diffuseColor;
+uniform vec4 diffuse_color;
 
 //----------- INPUT and OUTPUT ---------------//
 
@@ -16,7 +16,7 @@ struct VERTEX_INPUT
     layout(location=1) vec4 color;
     layout(location=2) vec3 normal;
     layout(location=3) vec3 tangent;
-    layout(location=4) vec2 texcoord;
+    layout(location=4) vec2 tex_coord;
 };
 
 //----------- VERTEX_SHADER ---------------//
