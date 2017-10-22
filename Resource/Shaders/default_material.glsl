@@ -3,6 +3,7 @@
 #ifdef MATERIAL_COMPONENTS
     uniform int enable_blend;
     uniform float brightness;
+    uniform float roughness;
     uniform vec4 emissive_color;
     uniform vec4 diffuse_color;
     uniform sampler2D texture_diffuse;
@@ -66,7 +67,7 @@ float get_ior()
 
 float get_roughness()
 {
-    return 1.0;
+    return roughness;
 }
 
 float get_metalicness()

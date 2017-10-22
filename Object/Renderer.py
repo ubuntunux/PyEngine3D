@@ -406,7 +406,7 @@ class Renderer(Singleton):
         last_material = None
         last_material_instance = None
 
-        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
 
         if render_mode == RenderMode.SHADOW:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap")
@@ -425,7 +425,7 @@ class Renderer(Singleton):
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind_material_instance()
                 if render_mode == RenderMode.LIGHTING:
-                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
+                    material_instance.bind_uniform_data('texture_shadow', texture_shadow)
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
@@ -469,7 +469,7 @@ class Renderer(Singleton):
         last_material = None
         last_material_instance = None
 
-        shadow_texture = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
+        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
 
         if render_mode == RenderMode.SHADOW:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
@@ -488,7 +488,7 @@ class Renderer(Singleton):
             if last_material_instance != material_instance and material_instance is not None:
                 material_instance.bind_material_instance()
                 if render_mode == RenderMode.LIGHTING:
-                    material_instance.bind_uniform_data('shadow_texture', shadow_texture)
+                    material_instance.bind_uniform_data('texture_shadow', texture_shadow)
 
             if last_actor != actor and material_instance:
                 material_instance.bind_uniform_data('model', actor.transform.matrix)

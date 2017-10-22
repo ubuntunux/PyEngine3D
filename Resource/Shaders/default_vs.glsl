@@ -25,7 +25,7 @@ struct VERTEX_INPUT
     layout(location=6) vec4 bone_weights;
 #endif
     // Test - Instance Data
-    layout(location=7) vec4 offset;
+    // layout(location=7) vec4 offset;
 };
 
 struct VERTEX_OUTPUT
