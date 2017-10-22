@@ -43,9 +43,9 @@ void main() {
     }
     shadow_factor /= (float(PoissonSampleCount));
 
-    vec3 normal_vector = vs_output.vertex_normal;
-    vec3 normal = (vs_output.tangent_to_world * vec4(get_normal(vs_output.tex_coord.xy), 0.0)).xyz;
-    normal_vector = normalize(normal);
+    vec3 normal_vector = get_normal(vs_output.tex_coord.xy);
+    // Note : Normalization is very important because tangent_to_world may have been scaled..
+    normal_vector = normalize((vs_output.tangent_to_world * vec4(normal_vector, 0.0)).xyz);
 
     vec3 camera_vector = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 light_vector = normalize(LIGHT_DIRECTION.xyz);
