@@ -90,8 +90,8 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        #self.game_backend = PyGlet(self)
-        self.game_backend = PyGame(self)
+        self.game_backend = PyGlet(self)
+        # self.game_backend = PyGame(self)
 
         if not self.game_backend.valid:
             self.error('game_backend initializing failed')

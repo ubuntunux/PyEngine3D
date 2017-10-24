@@ -42,7 +42,7 @@ class GameBackend:
         raise BaseException('You muse implement.')
 
 
-class PyGlet(pyglet.window.Window, GameBackend):
+class PyGlet(GameBackend):
     enable_font = False
     enable_keyboard = False
     enable_mouse = False
@@ -53,49 +53,63 @@ class PyGlet(pyglet.window.Window, GameBackend):
         os.environ['PYGLET_DEBUG_GL'] = '1'
         config = Config(double_buffer=True, )
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
-        pyglet.window.Window.__init__(self, width=512, height=512, config=config, resizable=True, vsync=False)
+        self.window = pyglet.window.Window(width=512, height=512, config=config, resizable=True, vsync=False)
 
         # for debbug
-        # self.push_handlers(pyglet.window.event.WindowEventLogger())
+        # self.window.push_handlers(pyglet.window.event.WindowEventLogger())
 
         # show system info
         # pyglet.info.dump()
 
+        # listen for draw and resize events
+        self.window.push_handlers(
+            on_draw=self.on_draw,
+            on_resize=self.on_resize,
+            # on_key_press=self.on_key_press,
+            # on_key_release=self.on_key_release
+        )
+
         self.valid = True
 
     def set_window_title(self, title):
-        self.set_caption(title)
+        self.window.set_caption(title)
 
     def change_resolution(self, width=0, height=0, full_screen=False):
-        self.set_size(width, height)
+        self.window.set_size(width, height)
         # x, y = window.get_location()
         # selfset_location(x + 20, y + 20)
-        self.set_fullscreen(full_screen)
+        self.window.set_fullscreen(full_screen)
 
     def on_resize(self, width, height):
         return pyglet.event.EVENT_HANDLED
 
     def on_draw(self):
         pass
-        #self.clear()
-        #self.label.draw()
-        #self.core_manager.on_draw()
+        # self.window.clear()
+        # self.window.label.draw()
+        # self.core_manager.on_draw()
 
     def flip(self):
+        # auto flip by pyglet
         pass
 
     def run(self):
         self.running = True
-        pyglet.clock.schedule(self.core_manager.update)
-        # main loop
-        pyglet.app.run()
+        while self.running:
+            pyglet.clock.tick()
+
+            for self.window in pyglet.app.windows:
+                self.window.switch_to()
+                self.window.dispatch_events()
+                self.window.dispatch_event('on_draw')
+                self.core_manager.update()
+                self.window.flip()
 
     def close(self):
         self.running = False
-        pyglet.clock.unschedule(self.core_manager.update)
 
     def quit(self):
-        pass
+        self.window.close()
 
 
 class PyGame(GameBackend):
