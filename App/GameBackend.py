@@ -43,9 +43,9 @@ class GameBackend:
 
 
 class PyGlet(pyglet.window.Window, GameBackend):
-    enable_font = True
-    enable_keyboard = True
-    enable_mouse = True
+    enable_font = False
+    enable_keyboard = False
+    enable_mouse = False
 
     def __init__(self, core_manager):
         GameBackend.__init__(self, core_manager)
