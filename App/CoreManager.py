@@ -7,11 +7,14 @@ import traceback
 from functools import partial
 
 import numpy as np
+
+# Must be move to GameBackend.py
 import pygame
 from pygame.locals import *
 
+from .GameBackend import PyGlet, PyGame
 from Common import logger, log_level, COMMAND
-from Utilities import Singleton, GetClassName, Config, Profiler
+from Utilities import Singleton, GetClassName, Profiler, Config
 
 # Function : IsExtensionSupported
 # NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
@@ -28,7 +31,6 @@ class CoreManager(Singleton):
     """
 
     def __init__(self):
-        self.running = False
         self.valid = True
 
         # command
@@ -38,7 +40,8 @@ class CoreManager(Singleton):
 
         # timer
         self.fps = 0.0
-        self.minDelta = 1.0 / 60.0  # 60fps
+        self.vsync = False
+        self.minDelta = 1.0 / 60.0
         self.delta = 0.0
         self.updateTime = 0.0
         self.logicTime = 0.0
@@ -55,6 +58,7 @@ class CoreManager(Singleton):
         self.wheelDown = False
 
         # managers
+        self.game_backend = None
         self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
@@ -86,6 +90,12 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
+        #self.game_backend = PyGlet(self)
+        self.game_backend = PyGame(self)
+
+        if not self.game_backend.valid:
+            self.error('game_backend initializing failed')
+
         self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.renderer = Renderer.instance()
@@ -98,19 +108,11 @@ class CoreManager(Singleton):
             self.exit()
             return False
 
-        # centered window
-        os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-        # pygame init
-        pygame.init()
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.projectManager.config.Screen.size
         full_screen = self.projectManager.config.Screen.full_screen
-        Renderer.change_resolution(width, height, full_screen)
 
-        pygame.font.init()
-        if not pygame.font.get_init():
-            self.error('Could not render font.')
+        self.game_backend.change_resolution(width, height, full_screen)
 
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
@@ -124,16 +126,15 @@ class CoreManager(Singleton):
                 self.renderer.resizeScene(width, height, full_screen)
         return True
 
-    @staticmethod
-    def set_window_title(title):
-        pygame.display.set_caption(title)
+    def set_window_title(self, title):
+        self.game_backend.set_window_title(title)
 
     def get_next_open_project_filename(self):
         return self.projectManager.next_open_project_filename
 
     def run(self):
-        self.update()  # main loop
-        self.exit()  # exit
+        self.game_backend.run()
+        self.exit()
 
     def exit(self):
         # send a message to close ui
@@ -152,7 +153,7 @@ class CoreManager(Singleton):
         self.resource_manager.close()
         self.renderer.destroyScreen()
 
-        pygame.quit()
+        self.game_backend.quit()
 
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
@@ -161,7 +162,7 @@ class CoreManager(Singleton):
         self.close()
 
     def close(self):
-        self.running = False
+        self.game_backend.close()
 
     # Send messages
     def send(self, *args):
@@ -432,52 +433,51 @@ class CoreManager(Singleton):
         if keydown[K_SPACE]:
             cameraTransform.resetTransform()
 
-    def update(self):
-        self.currentTime = 0.0
-        self.running = True
-        while self.running:
-            currentTime = time.perf_counter()
-            delta = currentTime - self.currentTime
+    def update(self, *args):
+        currentTime = time.perf_counter()
+        delta = currentTime - self.currentTime
 
-            if delta < self.minDelta:
-                continue
+        if self.vsync and delta < self.minDelta:
+            return
 
-            # set timer
-            self.currentTime = currentTime
-            self.delta = delta
+        # set timer
+        self.currentTime = currentTime
+        self.delta = delta
+        if delta != 0.0:
             self.fps = 1.0 / delta
 
-            self.updateTime = delta * 1000.0  # millisecond
+        self.updateTime = delta * 1000.0  # millisecond
 
-            # update logic
-            startTime = time.perf_counter()
-            self.updateCommand()  # update command queue
+        # update logic
+        startTime = time.perf_counter()
+        self.updateCommand()  # update command queue
+        if self.game_backend.enable_keyboard and self.game_backend.enable_mouse:
             self.updateEvent()  # update keyboard and mouse events
             self.updateCamera()  # update camera
-            self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+        self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
-            # update actors
-            self.sceneManager.update_scene(delta)
+        # update actors
+        self.sceneManager.update_scene(delta)
 
-            # render scene
-            startTime = time.perf_counter()
-            renderTime, presentTime = self.renderer.renderScene()
+        # render scene
+        startTime = time.perf_counter()
+        renderTime, presentTime = self.renderer.renderScene()
 
-            self.renderTime = renderTime * 1000.0  # millisecond
-            self.presentTime = presentTime * 1000.0  # millisecond
+        self.renderTime = renderTime * 1000.0  # millisecond
+        self.presentTime = presentTime * 1000.0  # millisecond
 
-            # debug info
-            # print(self.fps, self.updateTime)
-            self.renderer.console.info("%.2f fps" % self.fps)
-            self.renderer.console.info("%.2f ms" % self.updateTime)
-            self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
-            self.renderer.console.info("GPU : %.2f ms" % self.gpuTime)
-            self.renderer.console.info("Render : %.2f ms" % self.renderTime)
-            self.renderer.console.info("Present : %.2f ms" % self.presentTime)
+        # debug info
+        print(self.fps, self.updateTime)
+        self.renderer.console.info("%.2f fps" % self.fps)
+        self.renderer.console.info("%.2f ms" % self.updateTime)
+        self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
+        self.renderer.console.info("GPU : %.2f ms" % self.gpuTime)
+        self.renderer.console.info("Render : %.2f ms" % self.renderTime)
+        self.renderer.console.info("Present : %.2f ms" % self.presentTime)
 
-            # selected object transform info
-            selectedObject = self.sceneManager.getSelectedObject()
-            if selectedObject:
-                self.renderer.console.info("Selected Object : %s" % selectedObject.name)
-                self.renderer.console.info(selectedObject.transform.getTransformInfos())
-            self.gpuTime = (time.perf_counter() - startTime) * 1000.0
+        # selected object transform info
+        selectedObject = self.sceneManager.getSelectedObject()
+        if selectedObject:
+            self.renderer.console.info("Selected Object : %s" % selectedObject.name)
+            self.renderer.console.info(selectedObject.transform.getTransformInfos())
+        self.gpuTime = (time.perf_counter() - startTime) * 1000.0
