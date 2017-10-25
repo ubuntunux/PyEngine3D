@@ -22,7 +22,6 @@
  - pyopengl
  - pyopengl_accelerate
  - pygame
- - pyglet
 
 ## TODO
 * Actors
