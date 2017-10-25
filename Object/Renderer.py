@@ -2,6 +2,8 @@ import os, math
 import platform as platformModule
 import time as timeModule
 
+import pygame
+from pygame.locals import *
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -32,10 +34,7 @@ class Console:
 
     def initialize(self, renderer):
         self.renderer = renderer
-        if self.renderer.coreManager.game_backend.enable_font:
-            self.font = GLFont(self.renderer.coreManager.resource_manager.DefaultFontFile, 12, margin=(10, 0))
-        else:
-            self.enable = False
+        self.font = GLFont(self.renderer.coreManager.resource_manager.DefaultFontFile, 12, margin=(10, 0))
 
     def close(self):
         pass
@@ -57,9 +56,6 @@ class Console:
             self.debugs.append(text)
 
     def render(self):
-        if not self.enable:
-            return
-
         self.renderer.ortho_view()
 
         # set render state
@@ -119,8 +115,10 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
-    def destroyScreen(self):
-        pass
+    @staticmethod
+    def destroyScreen():
+        # destroy
+        pygame.display.quit()
 
     def initialize(self, core_manager, width, height, screen):
         logger.info("=" * 30)
@@ -214,6 +212,13 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
+    @staticmethod
+    def change_resolution(width=0, height=0, full_screen=False):
+        option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE
+        if full_screen:
+            option |= FULLSCREEN
+        return pygame.display.set_mode((width, height), option)
+
     def resizeScene(self, width=0, height=0, full_screen=False):
         # You have to do pygame.display.set_mode again on Linux.
         if width <= 0 or height <= 0:
@@ -238,9 +243,8 @@ class Renderer(Singleton):
         self.rendertarget_manager.create_rendertargets()
 
         # Run pygame.display.set_mode at last!!! very important.
-        # if platformModule.system() == 'Linux':
-        self.coreManager.game_backend.change_resolution(width, height, full_screen)
-
+        if platformModule.system() == 'Linux':
+            self.screen = self.change_resolution(width, height, full_screen)
         # send screen info
         screen_info = (width, height, full_screen)
         self.coreManager.notifyChangeResolution(screen_info)
@@ -328,8 +332,7 @@ class Renderer(Singleton):
         startTime = endTime
 
         # swap buffer
-        self.coreManager.game_backend.flip()
-
+        pygame.display.flip()
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
