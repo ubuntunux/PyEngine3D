@@ -1,3 +1,4 @@
+from .SDFFont import SDFFont
 from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone

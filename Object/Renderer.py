@@ -34,7 +34,7 @@ class Console:
 
     def initialize(self, renderer):
         self.renderer = renderer
-        self.font = GLFont(self.renderer.coreManager.resource_manager.DefaultFontFile, 12, margin=(10, 0))
+        self.font = GLFont(self.renderer.coreManager.resource_manager.get_default_font_file(), 12, margin=(10, 0))
 
     def close(self):
         pass

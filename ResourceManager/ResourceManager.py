@@ -15,12 +15,12 @@ from collections import OrderedDict
 from distutils.dir_util import copy_tree
 import shutil
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from numpy import array, float32
 from OpenGL.GL import *
 
 from Common import logger, log_level
-from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model
+from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, SDFFont
 from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -179,7 +179,7 @@ class ResourceLoader(object):
     resource_version = 0
     resource_type_name = 'None'
     fileExt = '.*'
-    external_dir_name = ''  # example : Fonts, Shaders, Meshes
+    external_dir_names = []  # example : Externals/Fonts, Externals/Meshes
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_FILE_COMPRESS_TO_SAVE = True
 
@@ -190,11 +190,12 @@ class ResourceLoader(object):
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
         check_directory_and_mkdir(self.resource_path)
 
-        if self.external_dir_name == '':
-            self.external_path = self.resource_path
-        else:
-            self.external_path = os.path.join(root_path, self.external_dir_name)
-            check_directory_and_mkdir(self.external_path)
+        self.external_paths = [self.resource_path, ]
+
+        for external_dir_name in self.external_dir_names:
+            external_dir_name = os.path.join(root_path, external_dir_name)
+            self.external_paths.append(external_dir_name)
+            check_directory_and_mkdir(external_dir_name)
 
         self.externalFileList = []
         self.resources = {}
@@ -227,24 +228,25 @@ class ResourceLoader(object):
         # If you use external files, will convert the resources.
         if self.externalFileExt:
             # gather external source files
-            for dirname, dirnames, filenames in os.walk(self.external_path):
-                for filename in filenames:
-                    source_filepath = os.path.join(dirname, filename)
-                    self.add_convert_source_file(source_filepath)
+            for external_path in self.external_paths:
+                for dirname, dirnames, filenames in os.walk(external_path):
+                    for filename in filenames:
+                        source_filepath = os.path.join(dirname, filename)
+                        self.add_convert_source_file(source_filepath)
 
-            # convert external file to rsource file.
-            for source_filepath in self.externalFileList:
-                resource_name = self.getResourceName(self.external_path, source_filepath)
-                resource = self.getResource(resource_name, noWarn=True)
-                meta_data = self.getMetaData(resource_name, noWarn=True)
-                # Create the new resource from exterial file.
-                if resource is None:
-                    logger.info("Create the new resource from %s." % source_filepath)
-                    resource = self.create_resource(resource_name)
-                    self.convert_resource(resource, source_filepath)
-                elif meta_data and self.is_new_external_data(meta_data, source_filepath):
-                    self.convert_resource(resource, source_filepath)
-                    logger.info("Refresh the new resource from %s." % source_filepath)
+                # convert external file to rsource file.
+                for source_filepath in self.externalFileList:
+                    resource_name = self.getResourceName(external_path, source_filepath)
+                    resource = self.getResource(resource_name, noWarn=True)
+                    meta_data = self.getMetaData(resource_name, noWarn=True)
+                    # Create the new resource from exterial file.
+                    if resource is None:
+                        logger.info("Create the new resource from %s." % source_filepath)
+                        resource = self.create_resource(resource_name)
+                        self.convert_resource(resource, source_filepath)
+                    elif meta_data and self.is_new_external_data(meta_data, source_filepath):
+                        self.convert_resource(resource, source_filepath)
+                        logger.info("Refresh the new resource from %s." % source_filepath)
             # clear list
             self.externalFileList = []
 
@@ -700,7 +702,7 @@ class TextureLoader(ResourceLoader):
     resource_type_name = 'Texture'
     resource_version = 2
     USE_FILE_COMPRESS_TO_SAVE = True
-    external_dir_name = os.path.join('Externals', 'Textures')
+    external_dir_names = [os.path.join('Externals', 'Textures'), ]
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx")
@@ -795,43 +797,45 @@ class TextureLoader(ResourceLoader):
                     self.save_resource_data(cube_resource, cube_texture_datas, '')
         self.new_texture_list = []
 
+    @staticmethod
+    def craete_texture_from_file(texture_name, source_filepath):
+        image = Image.open(source_filepath)
+        width, height = image.size
+
+        # check size is power of two.
+        use_power_of_2 = False
+        if use_power_of_2:
+            width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
+            height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
+            if width != width2 or height != height2:
+                logger.info('Image Resized (%s) -> (%s) : %s' % ((width, height), (width2, height2), source_filepath))
+                image = image.resize((width2, height2), Image.ANTIALIAS)
+                width, height = width2, height2
+
+        if image.mode == 'L' or image.mode == 'LA':
+            rgbimg = Image.new("RGBA", image.size)
+            rgbimg.paste(image)
+            image = rgbimg
+            logger.info('Convert Grayscale image to RGB : %s' % source_filepath)
+
+        data = image.tobytes("raw", image.mode, 0, -1)
+
+        texture_datas = dict(
+            texture_type=Texture2D,
+            image_mode=image.mode,
+            width=width,
+            height=height,
+            data=data
+        )
+        return CreateTexture(name=texture_name, **texture_datas)
+
     def convert_resource(self, resource, source_filepath):
         try:
             logger.info("Convert Resource : %s" % source_filepath)
             if resource not in self.new_texture_list:
                 self.new_texture_list.append(resource)
 
-            texture_name = resource.name
-            image = Image.open(source_filepath)
-            width, height = image.size
-
-            # check size is power of two.
-            use_power_of_2 = False
-            if use_power_of_2:
-                width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
-                height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
-                if width != width2 or height != height2:
-                    logger.info('Image Resized (%s) -> (%s) : %s' % ((width, height), (width2, height2), source_filepath))
-                    image = image.resize((width2, height2), Image.ANTIALIAS)
-                    width, height = width2, height2
-
-            if image.mode == 'L' or image.mode == 'LA':
-                rgbimg = Image.new("RGBA", image.size)
-                rgbimg.paste(image)
-                image = rgbimg
-                logger.info('Convert Grayscale image to RGB : %s' % source_filepath)
-
-            data = image.tobytes("raw", image.mode, 0, -1)
-
-            texture_datas = dict(
-                texture_type=Texture2D,
-                image_mode=image.mode,
-                width=width,
-                height=height,
-                data=data
-            )
-
-            texture = CreateTexture(name=texture_name, **texture_datas)
+            texture = self.craete_texture_from_file(resource.name, source_filepath)
             resource.set_data(texture)
             texture_datas = texture.get_save_data()
             self.save_resource_data(resource, texture_datas, source_filepath)
@@ -849,7 +853,7 @@ class MeshLoader(ResourceLoader):
     resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
-    external_dir_name = os.path.join('Externals', 'Meshes')
+    external_dir_names = [os.path.join('Externals', 'Meshes'), ]
     USE_FILE_COMPRESS_TO_SAVE = True
 
     def initialize(self):
@@ -987,6 +991,127 @@ class SceneLoader(ResourceLoader):
 
 
 # -----------------------#
+# CLASS : FontLoader
+# -----------------------#
+class FontLoader(ResourceLoader):
+    """
+    http://jrgraphix.net/research/unicode.php
+    """
+    name = "FontLoader"
+    resource_dir_name = 'Fonts'
+    resource_type_name = 'Font'
+    fileExt = '.font'
+    external_dir_names = [os.path.join('Externals', 'Fonts'), ]
+    externalFileExt = dict(TTF='.ttf', OTF='.otf')
+
+    language_infos = dict(
+        ascii=('Basic Latin', 0x20, 0x7F),  # 32 ~ 127
+        korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
+    )
+
+    def generate_font_data(self, resource, language, source_filepath):
+        unicode_name, range_min, range_max = self.language_infos[language]
+        logger.info("Convert Font %s %s : %s" % (resource.name, unicode_name, source_filepath))
+
+        back_ground_color = (0, 0, 0)
+        font_color = (255, 255, 255)
+        font_size = 36
+        count = abs(range_max - range_min) + 1
+        count_horizontal = int(math.ceil(math.sqrt(count)))
+        texture_size = font_size * count_horizontal
+        # texture_size = (2 ** math.ceil(math.log2(texture_size))) if 4 < texture_size else 4
+
+        if texture_size > 8096:
+            logger.error("%s texture size is too large. %d" % (language, texture_size))
+            return None
+
+        try:
+            unicode_font = ImageFont.truetype(source_filepath, font_size)
+        except:
+            logger.error(traceback.format_exc())
+            return None
+
+        image = Image.new("RGB", (texture_size, texture_size), back_ground_color)
+        draw = ImageDraw.Draw(image)
+        # draw.fontmode = "1"  # "1":aliasing, "L":anti aliasing
+
+        unicode_index = range_min
+        for y in range(count_horizontal):
+            for x in range(count_horizontal):
+                unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
+                draw.text((x * font_size, y * font_size), unicode_text, font=unicode_font, fill=font_color)
+                unicode_index += 1
+                if unicode_index >= range_max:
+                    break
+            else:
+                continue
+            break
+
+        texture_name = "_".join([resource.name, unicode_name])
+
+        # save for preview
+        preview = True
+        if preview:
+            image.save(os.path.join(self.resource_path, texture_name + ".png"))
+
+        data = image.tobytes("raw", image.mode, 0, -1)
+        texture_datas = dict(
+            texture_type=Texture2D,
+            image_mode=image.mode,
+            width=texture_size,
+            height=texture_size,
+            data=data
+        )
+
+        font_data = dict(
+            unicode_name=unicode_name,
+            unicode_range=(range_min, range_max),
+            text_count=count,
+            font_size=font_size,
+            texture=texture_datas
+        )
+        return font_data
+
+    def check_font_data(self, font_datas, resoure, source_filepath):
+        for language in self.language_infos:
+            if language not in font_datas:
+                font_data = self.generate_font_data(resoure, language, source_filepath)
+                font_datas[language] = font_data
+
+        if font_datas:
+            self.save_resource_data(resoure, font_datas, source_filepath)
+        return font_datas
+
+    def convert_resource(self, resoure, source_filepath):
+        logger.info("Convert Resource : %s" % source_filepath)
+        font_datas = {}
+        self.check_font_data(font_datas, resoure, source_filepath)
+
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            meta_data = resource.meta_data
+            font_datas = self.load_resource_data(resource)
+            if font_datas:
+                font_datas = self.check_font_data(font_datas, resource, meta_data.source_filepath)
+
+                for language in font_datas:
+                    font_data = font_datas[language]
+                    texture = None
+                    if font_data:
+                        texture_datas = font_data.get('texture')
+                        texture_name = "_".join([resource_name, font_data.get('unicode_name')])
+                        if texture_datas:
+                            texture = CreateTexture(name=texture_name, **texture_datas)
+                    font_datas[language]['texture'] = texture
+                font = SDFFont(resource.name, **font_datas)
+                resource.set_data(font)
+                return True
+        logger.error('%s failed to load %s' % (self.name, resource_name))
+        return False
+
+
+# -----------------------#
 # CLASS : ScriptLoader
 # -----------------------#
 class ScriptLoader(ResourceLoader):
@@ -1001,7 +1126,6 @@ class ScriptLoader(ResourceLoader):
 class ResourceManager(Singleton):
     name = "ResourceManager"
     PathResources = 'Resource'
-    DefaultFontFile = os.path.join(PathResources, 'Fonts', 'UbuntuFont.ttf')
     DefaultProjectFile = os.path.join(PathResources, "default.project")
 
     def __init__(self):
@@ -1009,6 +1133,7 @@ class ResourceManager(Singleton):
         self.resource_loaders = []
         self.core_manager = None
         self.scene_manager = None
+        self.fontLoader = None
         self.textureLoader = None
         self.shaderLoader = None
         self.materialLoader = None
@@ -1031,6 +1156,7 @@ class ResourceManager(Singleton):
         check_directory_and_mkdir(self.root_path)
 
         # Be careful with the initialization order.
+        self.fontLoader = self.regist_loader(FontLoader)
         self.textureLoader = self.regist_loader(TextureLoader)
         self.shaderLoader = self.regist_loader(ShaderLoader)
         self.materialLoader = self.regist_loader(MaterialLoader)
@@ -1052,9 +1178,6 @@ class ResourceManager(Singleton):
     def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)
         copy_tree(self.PathResources, new_project_dir)
-
-    def get_default_font_file(self):
-        return os.path.join(self.root_path, 'Fonts', 'UbuntuFont.ttf')
 
     def getResourceNameAndTypeList(self):
         """
@@ -1126,6 +1249,17 @@ class ResourceManager(Singleton):
                 return resource_loader
         logger.error("%s is a unknown resource type." % resource_type_name)
         return None
+
+    # FUNCTIONS : Font
+
+    def getFont(self, fontName):
+        return self.fontLoader.getResourceData(fontName)
+
+    def getFontNameList(self):
+        return self.fontLoader.getResourceNameList()
+
+    def get_default_font_file(self):
+        return os.path.join(self.root_path, 'Externals', 'Fonts', 'NanumGothic_Coding.ttf')
 
     # FUNCTIONS : Shader
 

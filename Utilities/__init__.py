@@ -1,4 +1,5 @@
 from .Data import Data
+from .ImageProcessing import *
 from .Logger import *
 from .Transform import *
 from .Vector import Vector

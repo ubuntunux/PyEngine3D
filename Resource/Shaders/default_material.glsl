@@ -7,6 +7,7 @@
     uniform vec4 emissive_color;
     uniform vec4 diffuse_color;
     uniform sampler2D texture_diffuse;
+    uniform sampler2D texture_surface;
     uniform sampler2D texture_normal;
     uniform samplerCube texture_cube;
 #endif
