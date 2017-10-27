@@ -5,7 +5,7 @@ import traceback
 
 from .KivyUtility import *
 
-from Core.Command import *
+from Common.Command import *
 from Utilities import Singleton
 
 
