@@ -24,7 +24,7 @@ from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, SDFFont
 from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
-from . import Collada, OBJ, loadDDS
+from . import Collada, OBJ, loadDDS, generate_font_data
 
 
 # -----------------------#
@@ -1009,73 +1009,18 @@ class FontLoader(ResourceLoader):
         korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
     )
 
-    def generate_font_data(self, resource, language, source_filepath):
-        unicode_name, range_min, range_max = self.language_infos[language]
-        logger.info("Convert Font %s %s : %s" % (resource.name, unicode_name, source_filepath))
-
-        back_ground_color = (0, 0, 0)
-        font_color = (255, 255, 255)
-        font_size = 36
-        count = abs(range_max - range_min) + 1
-        count_horizontal = int(math.ceil(math.sqrt(count)))
-        texture_size = font_size * count_horizontal
-        # texture_size = (2 ** math.ceil(math.log2(texture_size))) if 4 < texture_size else 4
-
-        if texture_size > 8096:
-            logger.error("%s texture size is too large. %d" % (language, texture_size))
-            return None
-
-        try:
-            unicode_font = ImageFont.truetype(source_filepath, font_size)
-        except:
-            logger.error(traceback.format_exc())
-            return None
-
-        image = Image.new("RGB", (texture_size, texture_size), back_ground_color)
-        draw = ImageDraw.Draw(image)
-        # draw.fontmode = "1"  # "1":aliasing, "L":anti aliasing
-
-        unicode_index = range_min
-        for y in range(count_horizontal):
-            for x in range(count_horizontal):
-                unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
-                draw.text((x * font_size, y * font_size), unicode_text, font=unicode_font, fill=font_color)
-                unicode_index += 1
-                if unicode_index >= range_max:
-                    break
-            else:
-                continue
-            break
-
-        texture_name = "_".join([resource.name, unicode_name])
-
-        # save for preview
-        preview = True
-        if preview:
-            image.save(os.path.join(self.resource_path, texture_name + ".png"))
-
-        data = image.tobytes("raw", image.mode, 0, -1)
-        texture_datas = dict(
-            texture_type=Texture2D,
-            image_mode=image.mode,
-            width=texture_size,
-            height=texture_size,
-            data=data
-        )
-
-        font_data = dict(
-            unicode_name=unicode_name,
-            unicode_range=(range_min, range_max),
-            text_count=count,
-            font_size=font_size,
-            texture=texture_datas
-        )
-        return font_data
-
     def check_font_data(self, font_datas, resoure, source_filepath):
         for language in self.language_infos:
             if language not in font_datas:
-                font_data = self.generate_font_data(resoure, language, source_filepath)
+                unicode_name, range_min, range_max = self.language_infos[language]
+                font_data = generate_font_data(
+                    resoure.name,
+                    unicode_name,
+                    range_min,
+                    range_max,
+                    source_filepath,
+                    self.resource_path
+                )
                 font_datas[language] = font_data
 
         if font_datas:
