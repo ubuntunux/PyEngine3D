@@ -1015,6 +1015,7 @@ class FontLoader(ResourceLoader):
                 unicode_name, range_min, range_max = self.language_infos[language]
                 font_data = generate_font_data(
                     resoure.name,
+                    True,
                     unicode_name,
                     range_min,
                     range_max,

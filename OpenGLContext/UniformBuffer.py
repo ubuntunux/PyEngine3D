@@ -154,18 +154,16 @@ class UniformTextureBase(UniformVariable):
 
     def __init__(self, program, variable_name):
         UniformVariable.__init__(self, program, variable_name)
-        self.activateTextureIndex = GL_TEXTURE0
         self.textureIndex = 0
 
     def set_texture_index(self, textureIndex):
-        self.activateTextureIndex = eval("GL_TEXTURE%d" % textureIndex)
         self.textureIndex = textureIndex
 
     def bind_uniform(self, texture, num=1):
-        glActiveTexture(self.activateTextureIndex)
+        glUniform1i(self.location, self.textureIndex)
+        glActiveTexture(GL_TEXTURE0 + self.textureIndex)
         # glEnable(GL_TEXTURE_CUBE_MAP)
         texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind)
-        glUniform1i(self.location, self.textureIndex)
 
 
 class UniformTexture2D(UniformTextureBase):

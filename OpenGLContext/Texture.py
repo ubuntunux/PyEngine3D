@@ -2,9 +2,9 @@ from ctypes import c_void_p
 
 from OpenGL.GL import *
 
-from App import CoreManager
-from Utilities import Singleton, GetClassName, Attributes
 from Common import logger
+from Utilities import Singleton, GetClassName, Attributes
+
 
 
 def get_internal_format(str_image_mode):
