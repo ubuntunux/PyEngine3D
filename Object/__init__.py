@@ -1,4 +1,4 @@
-from .SDFFont import SDFFont
+from .DistanceFieldFont import DistanceFieldFont
 from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone

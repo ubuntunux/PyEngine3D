@@ -635,6 +635,13 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_motion_blur(texture_velocity, backbuffer)
 
+        # Font Test
+        sdfont = self.resource_manager.getFont('NanumBarunGothic')
+        sdfont_texture = sdfont.get_font_texture()
+        self.framebuffer.set_color_texture(backbuffer_copy)
+        self.framebuffer.bind_framebuffer()
+        self.postprocess.render_copy_rendertarget(sdfont_texture)
+
         # copy to backbuffer
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()

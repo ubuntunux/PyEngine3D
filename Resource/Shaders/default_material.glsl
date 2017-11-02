@@ -33,8 +33,10 @@ float get_reflection()
 
 vec4 get_reflection_color(vec3 reflection_vector)
 {
-    // Note : use inverted Y-Axis
-    vec4 reflection_color = texture(texture_cube, reflection_vector * vec3(1.0, -1.0, 1.0));
+    // Invert Y axis
+    reflection_vector.y = 1.0 - reflection_vector.y;
+
+    vec4 reflection_color = texture(texture_cube, reflection_vector);
     reflection_color.xyz = pow(reflection_color.xyz, vec3(2.2));
     return reflection_color;
 }

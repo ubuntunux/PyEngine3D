@@ -26,7 +26,7 @@ FLOAT3_ZERO = np.array([0.0, 0.0, 0.0], dtype=np.float32)
 FLOAT4_ZERO = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
 MATRIX3_IDENTITY = np.eye(3, dtype=np.float32)
 MATRIX4_IDENTITY = np.eye(4, dtype=np.float32)
-WORLD_RIGHT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
+WORLD_LEFT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
 WORLD_UP = np.array([0.0, 1.0, 0.0], dtype=np.float32)
 WORLD_FRONT = np.array([0.0, 0.0, 1.0], dtype=np.float32)
 

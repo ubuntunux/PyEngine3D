@@ -20,7 +20,7 @@ from numpy import array, float32
 from OpenGL.GL import *
 
 from Common import logger, log_level
-from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, SDFFont
+from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, DistanceFieldFont
 from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -1020,7 +1020,7 @@ class FontLoader(ResourceLoader):
                     range_min,
                     range_max,
                     source_filepath,
-                    self.resource_path
+                    # preview_path=self.resource_path
                 )
                 font_datas[language] = font_data
 
@@ -1045,12 +1045,18 @@ class FontLoader(ResourceLoader):
                     font_data = font_datas[language]
                     texture = None
                     if font_data:
-                        texture_datas = font_data.get('texture')
+                        texture_datas = dict(
+                            texture_type=Texture2D,
+                            image_mode=font_data.get('image_mode'),
+                            width=font_data.get('image_width'),
+                            height=font_data.get('image_height'),
+                            data=font_data.get('image_data')
+                        )
                         texture_name = "_".join([resource_name, font_data.get('unicode_name')])
-                        if texture_datas:
+                        if None not in list(texture_datas.values()):
                             texture = CreateTexture(name=texture_name, **texture_datas)
                     font_datas[language]['texture'] = texture
-                font = SDFFont(resource.name, **font_datas)
+                font = DistanceFieldFont(resource.name, font_datas)
                 resource.set_data(font)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))

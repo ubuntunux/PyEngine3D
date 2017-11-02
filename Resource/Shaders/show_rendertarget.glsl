@@ -18,6 +18,10 @@ void main() {
         float distance = linear_depth_to_depth(fs_output.x);
         fs_output.xyz = vec3(distance);
     }
+
+    // Test
+    // float font_alpha = pow(clamp(smoothstep(0.97, 1.0, pow(1.0 - fs_output.x, 0.5)), 0.0, 1.0), 1.0);
+
     fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER

@@ -399,7 +399,7 @@ class CoreManager(Singleton):
 
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.moveToRight(-self.mouseDelta[0] * pan_speed)
+            cameraTransform.moveToLeft(-self.mouseDelta[0] * pan_speed)
             cameraTransform.moveToUp(self.mouseDelta[1] * pan_speed)
 
         # camera rotation
@@ -418,11 +418,11 @@ class CoreManager(Singleton):
         elif keydown[K_s] or self.wheelDown:
             cameraTransform.moveToFront(move_speed)
 
-        # move to right
+        # move to side
         if keydown[K_a]:
-            cameraTransform.moveToRight(-move_speed)
+            cameraTransform.moveToLeft(-move_speed)
         elif keydown[K_d]:
-            cameraTransform.moveToRight(move_speed)
+            cameraTransform.moveToLeft(move_speed)
 
         # move to up
         if keydown[K_q]:

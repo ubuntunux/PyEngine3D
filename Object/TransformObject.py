@@ -15,7 +15,7 @@ class TransformObject:
         self.updated = True
         self.force_update = True
 
-        self.right = WORLD_RIGHT.copy()
+        self.left = WORLD_LEFT.copy()
         self.up = WORLD_UP.copy()
         self.front = WORLD_FRONT.copy()
 
@@ -78,9 +78,9 @@ class TransformObject:
         self.moved = True
         self.pos[...] = self.pos + self.front * delta
 
-    def moveToRight(self, delta):
+    def moveToLeft(self, delta):
         self.moved = True
-        self.pos[...] = self.pos + self.right * delta
+        self.pos[...] = self.pos + self.left * delta
 
     def moveToUp(self, delta):
         self.moved = True
@@ -180,7 +180,7 @@ class TransformObject:
 
             # Matrix Rotation - faster
             matrix_rotation(*self.rot, self.rotationMatrix)
-            matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
+            matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
 
             # Euler Rotation - slow
             # p = getRotationMatrixX(self.rot[0])
@@ -215,7 +215,7 @@ class TransformObject:
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])
         text += "\n\tRotation : " + " ".join(["%2.2f" % i for i in self.rot])
         text += "\n\tFront : " + " ".join(["%2.2f" % i for i in self.front])
-        text += "\n\tRight : " + " ".join(["%2.2f" % i for i in self.right])
+        text += "\n\tLeft : " + " ".join(["%2.2f" % i for i in self.left])
         text += "\n\tUp : " + " ".join(["%2.2f" % i for i in self.up])
         text += "\n\tMatrix"
         text += "\n\t" + " ".join(["%2.2f" % i for i in self.matrix[0, :]])

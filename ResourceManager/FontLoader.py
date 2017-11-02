@@ -275,7 +275,7 @@ def generate_font_data(resource_name, anti_aliasing, unicode_name, range_min, ra
 
     back_ground_color = (0, 0, 0)
     font_color = (255, 255, 255)
-    font_size = 36
+    font_size = 32
     padding = 2
     count = abs(range_max - range_min) + 1
     count_horizontal = int(math.ceil(math.sqrt(count)))
@@ -335,7 +335,8 @@ def generate_font_data(resource_name, anti_aliasing, unicode_name, range_min, ra
         image_mode=image.mode,
         image_width=image.size[0],
         image_height=image.size[1],
-        image_data=image_data
+        image_data=image_data,
+        texture=None
     )
 
     return font_data
