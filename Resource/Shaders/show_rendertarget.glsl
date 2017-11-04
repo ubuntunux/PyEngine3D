@@ -12,15 +12,16 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    fs_output = texture(texture_source, vs_output.tex_coord.xy);
+    fs_output = texture(texture_source, vs_output.tex_coord.xy * 5.3);
     if(is_depth_texture)
     {
         float distance = linear_depth_to_depth(fs_output.x);
         fs_output.xyz = vec3(distance);
     }
 
-    // Test
-    // float font_alpha = pow(clamp(smoothstep(0.97, 1.0, pow(1.0 - fs_output.x, 0.5)), 0.0, 1.0), 1.0);
+    // Test Distance Field Font
+    // float font_alpha = smoothstep(0.95, 1.0, fs_output.x);
+    // fs_output.xyz = vec3(font_alpha);
 
     fs_output.a = 1.0;
 }

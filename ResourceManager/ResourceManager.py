@@ -1014,12 +1014,15 @@ class FontLoader(ResourceLoader):
             if language not in font_datas:
                 unicode_name, range_min, range_max = self.language_infos[language]
                 font_data = generate_font_data(
-                    resoure.name,
-                    True,
-                    unicode_name,
-                    range_min,
-                    range_max,
-                    source_filepath,
+                    resource_name=resoure.name,
+                    distance_field_font=False,
+                    anti_aliasing=True,
+                    font_size=20,
+                    padding=2,
+                    unicode_name=unicode_name,
+                    range_min=range_min,
+                    range_max=range_max,
+                    source_filepath=source_filepath,
                     # preview_path=self.resource_path
                 )
                 font_datas[language] = font_data
@@ -1050,7 +1053,9 @@ class FontLoader(ResourceLoader):
                             image_mode=font_data.get('image_mode'),
                             width=font_data.get('image_width'),
                             height=font_data.get('image_height'),
-                            data=font_data.get('image_data')
+                            data=font_data.get('image_data'),
+                            min_filter=GL_LINEAR,
+                            mag_filter=GL_LINEAR,
                         )
                         texture_name = "_".join([resource_name, font_data.get('unicode_name')])
                         if None not in list(texture_datas.values()):

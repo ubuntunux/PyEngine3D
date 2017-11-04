@@ -64,11 +64,10 @@ void main(void)
     vec2 font_count = ceil(texture_font_size / font_size);
     vec2 start_tex_coord = floor(vs_output.tex_coord.xy * font_count) / font_count;
 
-    const float diff = 0.5;
+    const float diff = 0.9;
     float value = texture(texture_font, vs_output.tex_coord.xy).x;
-    value = value > diff ? 1.0 : 0.0;
 
-    if(value != 1.0)
+    if(value < diff)
     {
         for(float y=0.0; y<font_size; y+=1.0)
         {
@@ -76,9 +75,8 @@ void main(void)
             {
                 vec2 other_tex_coord = start_tex_coord + vec2(x, y) / texture_font_size;
                 float other_value = texture(texture_font, other_tex_coord).x;
-                other_value = other_value > diff ? 1.0 : 0.0;
 
-                if(value != other_value)
+                if((other_value - value) > (1.0 - diff))
                 {
                     float dist = length(other_tex_coord - vs_output.tex_coord.xy);
                     if(dist < min_dist)
@@ -94,7 +92,7 @@ void main(void)
         min_dist = 0.0;
     }
 
-    fs_output.xyz = vec3(min_dist * max(font_count.x, font_count.y));
+    fs_output.xyz = vec3(1.0 - min_dist * max(font_count.x, font_count.y));
     fs_output.w = 1.0;
 }
 '''
@@ -270,13 +268,23 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     return save_image_data
 
 
-def generate_font_data(resource_name, anti_aliasing, unicode_name, range_min, range_max, source_filepath, preview_path=''):
+def generate_font_data(
+        resource_name,
+        distance_field_font,
+        anti_aliasing,
+        font_size,
+        padding,
+        unicode_name,
+        range_min,
+        range_max,
+        source_filepath,
+        preview_path=''):
     logger.info("Convert Font %s %s : %s" % (resource_name, unicode_name, source_filepath))
 
     back_ground_color = (0, 0, 0)
     font_color = (255, 255, 255)
-    font_size = 32
-    padding = 2
+    font_size = font_size
+    padding = padding
     count = abs(range_max - range_min) + 1
     count_horizontal = int(math.ceil(math.sqrt(count)))
     texture_size = font_size * count_horizontal
@@ -318,14 +326,16 @@ def generate_font_data(resource_name, anti_aliasing, unicode_name, range_min, ra
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
     image_data = image.tobytes("raw", image.mode, 0, -1)
-    image_data = DistanceField(font_size, image.size[0], image.size[1], image.mode, image_data)
+
+    if distance_field_font:
+        image_data = DistanceField(font_size, image.size[0], image.size[1], image.mode, image_data)
 
     # save for preview
     if preview_path:
         texture_name = "_".join([resource_name, unicode_name])
         image = Image.frombytes(image.mode, image.size, image_data)
         image.save(os.path.join(preview_path, texture_name + ".png"))
-        image.show()
+        # image.show()
 
     font_data = dict(
         unicode_name=unicode_name,
