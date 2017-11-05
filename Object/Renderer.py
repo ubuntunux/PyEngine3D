@@ -320,9 +320,6 @@ class Renderer(Singleton):
         # reset shader program
         glUseProgram(0)
 
-        # render text
-        self.console.render()
-
         # blit frame buffer
         backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
         self.framebuffer.set_color_texture(backbuffer)
@@ -645,11 +642,11 @@ class Renderer(Singleton):
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         # Font Test
-        # self.font_manager.clear()
-        # self.font_manager.log("X", 0, 0, self.width, self.height)
-        # self.framebuffer.set_color_texture(backbuffer)
-        # self.framebuffer.bind_framebuffer()
-        # self.font_manager.render_font(self.width, self.height)
+        self.framebuffer.set_color_texture(backbuffer)
+        self.framebuffer.bind_framebuffer()
+        self.font_manager.clear()
+        self.font_manager.log("X qwdqw", 0, 10)
+        self.font_manager.render_font(self.width, self.height)
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer and \
                 type(self.debug_rendertarget) != RenderBuffer:

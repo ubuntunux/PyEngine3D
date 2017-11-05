@@ -12,7 +12,7 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    fs_output = texture(texture_source, vs_output.tex_coord.xy * 5.3);
+    fs_output = texture(texture_source, vs_output.tex_coord.xy);
     if(is_depth_texture)
     {
         float distance = linear_depth_to_depth(fs_output.x);

@@ -355,7 +355,7 @@ def generate_font_data(
 if __name__ == '__main__':
     language_infos = dict(
         ascii=('Basic Latin', 0x20, 0x7F),  # 32 ~ 127
-        # korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
+        korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
     )
 
     resource_name = 'NanumBarunGothic'

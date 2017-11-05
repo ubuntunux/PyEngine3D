@@ -1,9 +1,11 @@
 #version 430 core
 
 uniform sampler2D texture_font;
-uniform vec2 vertex_scale;
-uniform float texcoord_scale;
+uniform float font_size;
+uniform vec2 screen_size;
+uniform float count_horizontal;
 uniform vec4 font_offset;
+
 
 struct VERTEX_INPUT
 {
@@ -25,10 +27,14 @@ in VERTEX_INPUT vs_input;
 out VERTEX_OUTPUT vs_output;
 
 void main() {
-    vs_output.tex_coord = vs_input.tex_coord * texcoord_scale;
-    vs_output.position = vs_input.position;
-    vs_output.position.xy = (font_offset.xy * 2.0 - 1.0) + vs_output.position.xy * vertex_scale;
     gl_Position = vec4(vs_input.position, 1.0);
+    vs_output.tex_coord = vs_input.tex_coord;
+
+    /*vs_output.tex_coord = vs_input.tex_coord / count_horizontal;
+    vec2 ratio = vec2(font_size) / screen_size;
+    vec2 position = (vs_input.position.xy * 0.5 + 0.5) * ratio + font_offset.xy * ratio;
+    gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
+    vs_output.position = gl_Position.xyz;*/
 }
 #endif
 
@@ -38,7 +44,8 @@ in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
 void main() {
-    fs_output.xyz = vec3(texture(texture_font, vs_output.tex_coord).x);
+fs_output.xyz = vec3(texture(texture_font, vs_output.tex_coord).x);
+    //fs_output.xyz = vec3(texture(texture_font, font_offset.zw + vs_output.tex_coord).x);
     fs_output.a = 1.0;
 }
 #endif
