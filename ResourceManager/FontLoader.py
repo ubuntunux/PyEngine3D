@@ -336,10 +336,10 @@ def generate_font_data(
         image = Image.frombytes(image.mode, image.size, image_data)
         image.save(os.path.join(preview_path, texture_name + ".png"))
         # image.show()
-
     font_data = dict(
         unicode_name=unicode_name,
-        unicode_range=(range_min, range_max),
+        range_min=range_min,
+        range_max=range_max,
         text_count=count,
         font_size=font_size,
         image_mode=image.mode,

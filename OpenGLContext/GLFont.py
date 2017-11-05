@@ -135,7 +135,7 @@ if __name__ == '__main__':
     pygame.font.init()
 
     # test font
-    test_font = GLFont('UbuntuFont.ttf', 64)
+    test_font = GLFont(os.path.join('..', 'Resource', 'Externals', 'Fonts', 'NanumGothic.ttf'), 32)
 
     glEnable(GL_TEXTURE_2D)
     glClearColor(0.0, 0.0, 0.0, 0.0)

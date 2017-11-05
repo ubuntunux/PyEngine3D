@@ -92,6 +92,7 @@ class PostProcess:
 
         anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in
                               range(AntiAliasing.COUNT.value)]
+        # Send to GUI
         self.core_manager.sendAntiAliasingList(anti_aliasing_list)
 
     def set_anti_aliasing(self, index, force=False):

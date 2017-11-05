@@ -59,6 +59,7 @@ class CoreManager(Singleton):
         self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
+        self.font_manager = None
         self.sceneManager = None
         self.projectManager = None
         self.config = None
@@ -83,26 +84,13 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from ResourceManager import ResourceManager
-        from Object import RenderTargetManager, Renderer
+        from Object import RenderTargetManager, Renderer, FontManager
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        # centered window
-        os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-        # pygame init
-        pygame.init()
-        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
-        width, height = 640, 480  # self.projectManager.config.Screen.size
-        full_screen = False  # self.projectManager.config.Screen.full_screen
-        Renderer.change_resolution(width, height, full_screen)
-
-        pygame.font.init()
-        if not pygame.font.get_init():
-            self.error('Could not render font.')
-
         self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
+        self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
         self.sceneManager = SceneManager.instance()
         self.projectManager = ProjectManager.instance()
@@ -113,9 +101,24 @@ class CoreManager(Singleton):
             self.exit()
             return False
 
+        # centered window
+        os.environ['SDL_VIDEO_CENTERED'] = '1'
+
+        # pygame init
+        pygame.init()
+        # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
+        width, height = self.projectManager.config.Screen.size
+        full_screen = self.projectManager.config.Screen.full_screen
+        Renderer.change_resolution(width, height, full_screen)
+
+        pygame.font.init()
+        if not pygame.font.get_init():
+            self.error('Could not render font.')
+
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize(self)
+        self.font_manager.initialize(self)
         self.renderer.initialize(self, width, height, full_screen)
         self.sceneManager.initialize(self)
 

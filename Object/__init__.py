@@ -1,4 +1,3 @@
-from .DistanceFieldFont import DistanceFieldFont
 from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
@@ -12,4 +11,5 @@ from .Sky import Sky
 from .Fog import Fog
 from .PostProcess import PostProcess
 from .RenderTarget import RenderTargets, RenderTargetManager
+from .Font import FontData, FontManager
 from .Renderer import Renderer

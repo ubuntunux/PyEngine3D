@@ -85,6 +85,7 @@ class Renderer(Singleton):
         # managers
         self.coreManager = None
         self.resource_manager = None
+        self.font_manager = None
         self.sceneManager = None
         self.rendertarget_manager = None
         self.postprocess = None
@@ -136,6 +137,7 @@ class Renderer(Singleton):
 
         self.coreManager = core_manager
         self.resource_manager = core_manager.resource_manager
+        self.font_manager = core_manager.font_manager
         self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = core_manager.rendertarget_manager
         self.postprocess = PostProcess()
@@ -635,19 +637,19 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.postprocess.render_motion_blur(texture_velocity, backbuffer)
 
-        # Font Test
-        sdfont = self.resource_manager.getFont('NanumBarunGothic')
-        sdfont_texture = sdfont.get_font_texture()
-        self.framebuffer.set_color_texture(backbuffer_copy)
-        self.framebuffer.bind_framebuffer()
-        self.postprocess.render_copy_rendertarget(sdfont_texture)
-
         # copy to backbuffer
         self.framebuffer.set_color_texture(backbuffer_copy)
         self.framebuffer.bind_framebuffer()
         self.framebuffer_copy.set_color_texture(backbuffer)
         self.framebuffer_copy.bind_framebuffer()
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+
+        # Font Test
+        # self.font_manager.clear()
+        # self.font_manager.log("X", 0, 0, self.width, self.height)
+        # self.framebuffer.set_color_texture(backbuffer)
+        # self.framebuffer.bind_framebuffer()
+        # self.font_manager.render_font(self.width, self.height)
 
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer and \
                 type(self.debug_rendertarget) != RenderBuffer:

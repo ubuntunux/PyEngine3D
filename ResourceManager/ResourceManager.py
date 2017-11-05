@@ -20,7 +20,7 @@ from numpy import array, float32
 from OpenGL.GL import *
 
 from Common import logger, log_level
-from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, DistanceFieldFont
+from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, Font
 from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -1061,8 +1061,7 @@ class FontLoader(ResourceLoader):
                         if None not in list(texture_datas.values()):
                             texture = CreateTexture(name=texture_name, **texture_datas)
                     font_datas[language]['texture'] = texture
-                font = DistanceFieldFont(resource.name, font_datas)
-                resource.set_data(font)
+                resource.set_data(font_datas)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
