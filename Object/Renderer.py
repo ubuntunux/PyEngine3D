@@ -82,6 +82,7 @@ class Renderer(Singleton):
         self.full_screen = False
         self.viewMode = GL_FILL
         self.created_scene = False
+
         # managers
         self.coreManager = None
         self.resource_manager = None
@@ -641,15 +642,21 @@ class Renderer(Singleton):
         self.framebuffer_copy.bind_framebuffer()
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
-        # Font Test
-        self.framebuffer.set_color_texture(backbuffer)
-        self.framebuffer.bind_framebuffer()
-        self.font_manager.clear()
-        self.font_manager.log("X qwdqw", 0, 10)
-        self.font_manager.render_font(self.width, self.height)
-
         if self.debug_rendertarget and self.debug_rendertarget is not backbuffer and \
                 type(self.debug_rendertarget) != RenderBuffer:
             self.framebuffer.set_color_texture(backbuffer)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_copy_rendertarget(self.debug_rendertarget)
+
+    def render_font(self):
+        # Font Test
+        self.set_blend_state(
+            blend_enable=True,
+            equation=GL_FUNC_ADD,
+            func_src=GL_SRC_ALPHA,
+            func_dst=GL_ONE_MINUS_SRC_ALPHA
+        )
+        backbuffer = self.rendertarget_manager.get_rendertarget(RenderTargets.BACKBUFFER)
+        self.framebuffer.set_color_texture(backbuffer)
+        self.framebuffer.bind_framebuffer()
+        self.font_manager.render_font(self.width, self.height)

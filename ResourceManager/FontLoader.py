@@ -92,7 +92,8 @@ void main(void)
         min_dist = 0.0;
     }
 
-    fs_output.xyz = vec3(1.0 - min_dist * max(font_count.x, font_count.y));
+    //fs_output.xyz = vec3(1.0 - min_dist * max(font_count.x, font_count.y));
+    fs_output.xyz = vec3(1.0 - min_dist);
     fs_output.w = 1.0;
 }
 '''
@@ -323,7 +324,7 @@ def generate_font_data(
         break
 
     # Flip Vertical
-    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    # image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
     image_data = image.tobytes("raw", image.mode, 0, -1)
 

@@ -1018,12 +1018,12 @@ class FontLoader(ResourceLoader):
                     distance_field_font=False,
                     anti_aliasing=True,
                     font_size=20,
-                    padding=2,
+                    padding=1,
                     unicode_name=unicode_name,
                     range_min=range_min,
                     range_max=range_max,
                     source_filepath=source_filepath,
-                    # preview_path=self.resource_path
+                    preview_path=self.resource_path
                 )
                 font_datas[language] = font_data
 
