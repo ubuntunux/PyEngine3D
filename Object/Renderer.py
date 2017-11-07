@@ -318,6 +318,8 @@ class Renderer(Singleton):
         # self.render_bones()
         self.render_postprocess()
 
+        self.render_font()
+
         # reset shader program
         glUseProgram(0)
 

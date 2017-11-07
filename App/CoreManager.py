@@ -472,16 +472,16 @@ class CoreManager(Singleton):
 
             # debug info
             # print(self.fps, self.updateTime)
-            self.renderer.console.info("%.2f fps" % self.fps)
-            self.renderer.console.info("%.2f ms" % self.updateTime)
-            self.renderer.console.info("CPU : %.2f ms" % self.logicTime)
-            self.renderer.console.info("GPU : %.2f ms" % self.gpuTime)
-            self.renderer.console.info("Render : %.2f ms" % self.renderTime)
-            self.renderer.console.info("Present : %.2f ms" % self.presentTime)
+            self.font_manager.log("%.2f fps" % self.fps)
+            self.font_manager.log("%.2f ms" % self.updateTime)
+            self.font_manager.log("CPU : %.2f ms" % self.logicTime)
+            self.font_manager.log("GPU : %.2f ms" % self.gpuTime)
+            self.font_manager.log("Render : %.2f ms" % self.renderTime)
+            self.font_manager.log("Present : %.2f ms" % self.presentTime)
 
             # selected object transform info
             selectedObject = self.sceneManager.getSelectedObject()
             if selectedObject:
-                self.renderer.console.info("Selected Object : %s" % selectedObject.name)
-                self.renderer.console.info(selectedObject.transform.getTransformInfos())
+                self.font_manager.log("Selected Object : %s" % selectedObject.name)
+                self.font_manager.log(selectedObject.transform.getTransformInfos())
             self.gpuTime = (time.perf_counter() - startTime) * 1000.0

@@ -57,7 +57,7 @@ def CreateVertexArrayBuffer(geometry_data):
 
 
 class VertexArrayBuffer:
-    def __init__(self, name, datas, index_data, dtype=np.float32):
+    def __init__(self, name, datas, index_data, instance_data=None, dtype=np.float32):
         """
         :param datas: example [positions, colors, normals, tangents, texcoords]
         :param index_data: indicies
@@ -91,28 +91,46 @@ class VertexArrayBuffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
-        # Instance Test
-        # self.instance_count = 10
-        # self.instance_data = np.array([random.uniform(-10.0, 10.0) for i in range(4 * self.instance_count)],
-        #                               dtype=np.float32)
-        # self.instance_array = glGenVertexArrays(1)
-        # glBindVertexArray(self.instance_array)
-        # self.instance_buffer = glGenBuffers(1)
-        # glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-        # glBufferData(GL_ARRAY_BUFFER, self.instance_data, GL_STATIC_DRAW)
+        self.instance_array = None
+        self.instance_buffer = None
+
+        if instance_data:
+            self.instance_array = glGenVertexArrays(1)
+            glBindVertexArray(self.instance_array)
+
+            self.instance_buffer = glGenBuffers(1)
+            glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
+            glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
+        if self.instance_array:
+            glDeleteVertexArrays(1, self.vertex_array)
+        if self.instance_buffer:
+            glDeleteBuffers(1, self.vertex_buffer)
 
-    def bind_vertex_buffer(self):
-        # Test - Bind Instance Datas
-        # glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-        # instance_layout_location = 7
-        # glEnableVertexAttribArray(instance_layout_location)
-        # glVertexAttribPointer(instance_layout_location, 4, GL_FLOAT, GL_FALSE, 4 * 4, c_void_p(0))
-        # glVertexAttribDivisor(instance_layout_location, 1)
+    def bind_vertex_buffer(self, instance_layout_location=-1, instance_data=None):
+        if type(instance_data) != type(None):
+            if self.instance_buffer == None:
+                self.instance_array = glGenVertexArrays(1)
+                glBindVertexArray(self.instance_array)
+
+                self.instance_buffer = glGenBuffers(1)
+                glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
+                glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+            else:
+                # glBindVertexArray(self.instance_array)
+                glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
+                glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+
+            head = instance_data[0]
+            components = len(head)
+            glEnableVertexAttribArray(instance_layout_location)
+            glVertexAttribPointer(instance_layout_location, components, GL_FLOAT, GL_FALSE, head.nbytes, c_void_p(0))
+            glVertexAttribDivisor(instance_layout_location, 1)
+            glBindVertexArray(0)
 
         # Bind Vertex Datas
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)

@@ -4,7 +4,7 @@ import traceback
 import numpy as np
 
 from Common import logger
-from OpenGLContext import CreateVertexArrayBuffer, VertexArrayBuffer, UniformMatrix4
+from OpenGLContext import CreateVertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize, Matrix4, MATRIX4_IDENTITY
 from Object import Skeleton, Animation
 from App import CoreManager
@@ -17,11 +17,14 @@ class Geometry:
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
 
-    def bind_vertex_buffer(self):
-        self.vertex_buffer.bind_vertex_buffer()
+    def bind_vertex_buffer(self, instance_layout_location=-1, instance_data=None):
+        self.vertex_buffer.bind_vertex_buffer(instance_layout_location, instance_data)
 
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
+
+    def draw_elements_instanced(self, count):
+        self.vertex_buffer.draw_elements_instanced(count)
 
 
 class GeometryInstance(Geometry):
@@ -119,13 +122,17 @@ class Mesh:
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         pass
 
-    def bind_vertex_buffer(self, index=0):
+    def bind_vertex_buffer(self, index=0, instance_layout_location=-1, instance_data=None):
         if index < len(self.geometries):
-            self.geometries[index].bind_vertex_buffer()
+            self.geometries[index].bind_vertex_buffer(instance_layout_location, instance_data)
 
     def draw_elements(self, index=0):
         if index < len(self.geometries):
             self.geometries[index].draw_elements()
+
+    def draw_elements_instanced(self, index, count):
+        if index < len(self.geometries):
+            self.geometries[index].draw_elements_instanced(count)
 
 
 class Triangle(Mesh):
