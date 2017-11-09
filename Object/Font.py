@@ -1,6 +1,9 @@
 import math
 
+import numpy as np
+
 from App import CoreManager
+from OpenGLContext import VertexArrayBuffer
 from Common import logger, log_level, COMMAND
 from Utilities import *
 
@@ -34,12 +37,22 @@ class FontManager(Singleton):
     def initialize(self, core_manager):
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
-        self.quad = self.resource_manager.getMesh("Quad")
         self.font_shader = self.resource_manager.getMaterialInstance("font")
 
         font_datas = self.resource_manager.getFont('NanumBarunGothic')
         ascii_data = font_datas['ascii']
         self.ascii = FontData(ascii_data)
+
+        positions = np.array([(-1, 1, 0), (-1, -1, 0), (1, -1, 0), (1, 1, 0)], dtype=np.float32)
+        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+
+        self.quad = VertexArrayBuffer(
+            name='font quad',
+            datas=[positions, ],
+            index_data=indices,
+            dtype=np.float32
+        )
+        self.quad.create_instance_buffer(layout_location=1)
 
     def clear_logs(self, screen_width, screen_height):
         self.pos_x = 0
@@ -89,12 +102,13 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.quad.bind_vertex_buffer(0, 5, render_queue)
+            self.quad.bind_instance_buffer(layout_location=1, instance_data=render_queue, divisor=1)
+            self.quad.bind_vertex_buffer()
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
             self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
             self.font_shader.bind_uniform_data("font_size", self.font_size)
             self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
             self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
-            self.quad.draw_elements_instanced(0, len(self.render_queues))
+            self.quad.draw_elements_instanced(count=len(self.render_queues))
         self.clear_logs(screen_width, screen_height)

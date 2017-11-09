@@ -57,30 +57,25 @@ def CreateVertexArrayBuffer(geometry_data):
 
 
 class VertexArrayBuffer:
-    def __init__(self, name, datas, index_data, instance_data=None, dtype=np.float32):
-        """
-        :param datas: example [positions, colors, normals, tangents, texcoords]
-        :param index_data: indicies
-        :param dtype: example, numpy.float32,
-        """
+    def __init__(self, name, datas, index_data, dtype=np.float32):
         self.name = name
+        self.vertex_component_count = []
+        self.vertex_buffer_offset = []
         self.vertex_buffer_size = 0
-        self.vertex_strides = []
-        self.vertex_stride_points = []
-        accStridePoint = 0
 
         for data in datas:
             stride = len(data[0]) if len(data) > 0 else 0
-            self.vertex_strides.append(stride)
-            self.vertex_stride_points.append(ctypes.c_void_p(accStridePoint))
-            accStridePoint += stride * np.nbytes[dtype]
-        self.vertex_buffer_size = accStridePoint
-        self.vertex_stride_range = range(len(self.vertex_strides))
+            if stride == 0:
+                continue
+            self.vertex_component_count.append(stride)
+            self.vertex_buffer_offset.append(ctypes.c_void_p(self.vertex_buffer_size))
+            self.vertex_buffer_size += stride * np.nbytes[dtype]
+        self.layout_location_count = range(len(self.vertex_component_count))
 
         self.vertex_array = glGenVertexArrays(1)
         glBindVertexArray(self.vertex_array)
 
-        # Important - check np.hstack
+        # The important thing is np.hstack. It is to serialize the data.
         vertex_datas = np.hstack(datas).astype(dtype)
         self.vertex_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
@@ -91,64 +86,56 @@ class VertexArrayBuffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
-        self.instance_array = None
-        self.instance_buffer = None
-
-        if instance_data:
-            self.instance_array = glGenVertexArrays(1)
-            glBindVertexArray(self.instance_array)
-
-            self.instance_buffer = glGenBuffers(1)
-            glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-            glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+        self.instance_buffer_map = {}  # { layout_location : (instance_array, instance_buffer) }
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
-        if self.instance_array:
-            glDeleteVertexArrays(1, self.vertex_array)
-        if self.instance_buffer:
-            glDeleteBuffers(1, self.vertex_buffer)
 
-    def bind_vertex_buffer(self, instance_layout_location=-1, instance_data=None):
-        if type(instance_data) != type(None):
-            if self.instance_buffer == None:
-                self.instance_array = glGenVertexArrays(1)
-                glBindVertexArray(self.instance_array)
+        for instance_array, instance_buffer in self.instance_buffer_map.values():
+            glDeleteVertexArrays(1, instance_array)
+            glDeleteBuffers(1, instance_buffer)
 
-                self.instance_buffer = glGenBuffers(1)
-                glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-                glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
-            else:
-                # glBindVertexArray(self.instance_array)
-                glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-                glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+    def create_instance_buffer(self, layout_location):
+        instance_array = glGenVertexArrays(1)
+        glBindVertexArray(instance_array)
 
-            head = instance_data[0]
-            components = len(head)
-            glEnableVertexAttribArray(instance_layout_location)
-            glVertexAttribPointer(instance_layout_location, components, GL_FLOAT, GL_FALSE, head.nbytes, c_void_p(0))
-            glVertexAttribDivisor(instance_layout_location, 1)
-            glBindVertexArray(0)
+        instance_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, instance_buffer)
 
-        # Bind Vertex Datas
+        self.instance_buffer_map[layout_location] = (instance_array, instance_buffer)
+
+    def bind_instance_buffer(self, layout_location, instance_data, divisor=1):
+        instance_array, instance_buffer = self.instance_buffer_map[layout_location]
+        glBindVertexArray(instance_array)
+        glBindBuffer(GL_ARRAY_BUFFER, instance_buffer)
+        glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+
+        component_count = len(instance_data[0])
+        size_of_data = instance_data[0].nbytes
+        glEnableVertexAttribArray(layout_location)
+        glVertexAttribPointer(layout_location, component_count, GL_FLOAT, GL_FALSE, size_of_data, c_void_p(0))
+        # divisor == 0, not instancing.
+        # divisor > 0, the attribute advances once per divisor instances of the set(s) of vertices being rendered.
+        glVertexAttribDivisor(layout_location, divisor)
+
+    def bind_vertex_buffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
-        for layout_location in self.vertex_stride_range:
+        for layout_location in self.layout_location_count:
             glEnableVertexAttribArray(layout_location)
-            glVertexAttribPointer(layout_location, self.vertex_strides[layout_location], GL_FLOAT, GL_FALSE,
-                                  self.vertex_buffer_size, self.vertex_stride_points[layout_location])
+            glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location], GL_FLOAT, GL_FALSE,
+                                  self.vertex_buffer_size, self.vertex_buffer_offset[layout_location])
 
-        # bind index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
-
-    def unbind_vertex_buffer(self):
-        for i in self.vertex_stride_range:
-            glDisableVertexAttribArray(i)
 
     def draw_elements(self):
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
     def draw_elements_instanced(self, count):
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
+
+        # important : After the object is drawn You need to execute glDisableVertexAttribArray.
+        for location in self.instance_buffer_map:
+            glVertexAttribDivisor(location, 0)

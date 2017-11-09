@@ -17,8 +17,14 @@ class Geometry:
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
 
-    def bind_vertex_buffer(self, instance_layout_location=-1, instance_data=None):
-        self.vertex_buffer.bind_vertex_buffer(instance_layout_location, instance_data)
+    def create_instance_buffer(self, layout_location=-1):
+        self.vertex_buffer.create_instance_buffer(layout_location)
+
+    def bind_instance_buffer(self, layout_location, instance_data, divisor):
+        self.vertex_buffer.bind_instance_buffer(layout_location, instance_data, divisor)
+
+    def bind_vertex_buffer(self):
+        self.vertex_buffer.bind_vertex_buffer()
 
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
@@ -122,15 +128,23 @@ class Mesh:
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         pass
 
-    def bind_vertex_buffer(self, index=0, instance_layout_location=-1, instance_data=None):
+    def create_instance_buffer(self, index=0, layout_location=-1):
         if index < len(self.geometries):
-            self.geometries[index].bind_vertex_buffer(instance_layout_location, instance_data)
+            self.geometries[index].create_instance_buffer(layout_location)
+
+    def bind_instance_buffer(self, index=0, layout_location=-1, instance_data=None, divisor=1):
+        if index < len(self.geometries):
+            self.geometries[index].bind_instance_buffer(layout_location, instance_data, divisor)
+
+    def bind_vertex_buffer(self, index=0):
+        if index < len(self.geometries):
+            self.geometries[index].bind_vertex_buffer()
 
     def draw_elements(self, index=0):
         if index < len(self.geometries):
             self.geometries[index].draw_elements()
 
-    def draw_elements_instanced(self, index, count):
+    def draw_elements_instanced(self, index=0, count=0):
         if index < len(self.geometries):
             self.geometries[index].draw_elements_instanced(count)
 
