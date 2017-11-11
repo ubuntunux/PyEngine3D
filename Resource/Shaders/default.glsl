@@ -30,8 +30,6 @@ void main() {
 
     const float ambient_light = 0.05;
     const float light_intensity = 3.0;
-    float roughness = get_roughness();
-    float roughness2 = roughness * roughness;
     vec4 emissive_color = get_emissive_color();
 
     float shadow_factor = get_shadow_factor(vs_output.world_position, texture_shadow);
@@ -39,27 +37,22 @@ void main() {
     vec3 N = get_normal(vs_output.tex_coord.xy);
     // Note : Normalization is very important because tangent_to_world may have been scaled..
     N = normalize((vs_output.tangent_to_world * vec4(N, 0.0)).xyz);
-
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
-    vec3 H = normalize(L + V);
-    vec3 R = reflect(-V, N);
-    float NdotL = clamp(dot(N, L), 0.0, 1.0);
-    float NdotV = clamp(dot(N, V), 0.0, 1.0);
-    float LdotV = clamp(dot(L, V), 0.0, 1.0);
 
-    float diffuse_lighting = oren_nayar(roughness2, NdotL, NdotV, N, V, L);
-    diffuse_lighting = clamp(shadow_factor * diffuse_lighting, ambient_light, 1.0) * light_intensity;
-    vec3 diffuse_color = base_color.xyz * diffuse_lighting;
+    fs_output = surface_shading(base_color,
+                    metalicness,
+                    roughness,
+                    reflectance,
+                    texture_cube,
+                    LIGHT_COLOR.xyz,
+                    N,
+                    V,
+                    L,
+                    max(ambient_light, shadow_factor));
 
-#if(USE_REFLECTION)
-    vec3 reflection_color = get_reflection_color(R).xyz;
-    diffuse_color *= reflection_color;
-#endif
-
-    float specular_lighting = clamp(shadow_factor * dot(R, L), 0.0, 1.0);
-    specular_lighting = pow(specular_lighting, 60.0) * light_intensity;
-    fs_output = vec4(LIGHT_COLOR.xyz * (diffuse_color + specular_lighting) + emissive_color.xyz * emissive_color.w, 1.0);
+    fs_output.xyz += emissive_color.xyz * emissive_color.w;
+    fs_output = vec4(fs_output.xyz , 1.0);
 
     fs_diffuse = base_color;
 

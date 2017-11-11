@@ -1,11 +1,14 @@
-{'macros': {'SKELETAL': 0, 'USE_REFLECTION': 0},
- 'material_name': 'default_SKELETAL_0_USE_REFLECTION_0',
+{'macros': {'SKELETAL': 0},
+ 'material_name': 'default_SKELETAL_0',
  'shader_name': 'default',
  'uniform_datas': {'brightness': 1.0,
                    'diffuse_color': [1.0, 1.0, 1.0, 1.0],
                    'emissive_color': [1.0, 1.0, 1.0, 0.0],
                    'enable_blend': 0,
+                   'metalicness': 0.0,
                    'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
-                   'shadow_texture': 'empty',
+                   'roughness': 0.0,
+                   'texture_cube': 'empty',
                    'texture_diffuse': 'sponza.fabric_diff',
-                   'texture_normal': 'flat_normal'}}
+                   'texture_normal': 'flat_normal',
+                   'texture_shadow': 'empty'}}

@@ -193,8 +193,8 @@ class RenderTargetManager(Singleton):
                                  internal_format=GL_DEPTH_COMPONENT32,
                                  texture_format=GL_DEPTH_COMPONENT,
                                  data_type=GL_FLOAT,
-                                 min_filter=GL_NEAREST,
-                                 mag_filter=GL_NEAREST,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
                                  wrap=GL_CLAMP)
 
         # attach to color render target
