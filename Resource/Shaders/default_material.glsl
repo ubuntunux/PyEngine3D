@@ -36,7 +36,7 @@ float get_reflection()
 vec4 get_reflection_color(vec3 reflection_vector)
 {
     // Invert Y axis
-    reflection_vector.y = 1.0 - reflection_vector.y;
+    reflection_vector.y = -reflection_vector.y;
 
     vec4 reflection_color = texture(texture_cube, reflection_vector);
     reflection_color.xyz = pow(reflection_color.xyz, vec3(2.2));
@@ -72,7 +72,7 @@ float get_ior()
 
 float get_roughness()
 {
-    return roughness;
+    return max(0.01, roughness);
 }
 
 float get_metalicness()

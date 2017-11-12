@@ -163,8 +163,8 @@ vec4 surface_shading(vec4 base_color,
 
     // Image based lighting
     const float mipCount = 11.0;
-    vec3 ibl_diffuse_color = textureLod(texture_cube, vec3(V.x, 1.0 - V.y, V.z), mipCount - 1.0).xyz;
-    vec3 ibl_specular_color = textureLod(texture_cube, vec3(R.x, 1.0 - R.y, R.z), mipCount * roughness).xyz;
+    vec3 ibl_diffuse_color = textureLod(texture_cube, invert_y(N), mipCount - 1.0).xyz;
+    vec3 ibl_specular_color = textureLod(texture_cube, invert_y(R), mipCount * roughness).xyz;
     ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
     ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
 

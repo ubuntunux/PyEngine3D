@@ -28,10 +28,7 @@ void main() {
         discard;
     }
 
-    const float ambient_light = 0.05;
-    const float light_intensity = 3.0;
     vec4 emissive_color = get_emissive_color();
-
     float shadow_factor = get_shadow_factor(vs_output.world_position, texture_shadow);
 
     vec3 N = get_normal(vs_output.tex_coord.xy);
@@ -42,14 +39,14 @@ void main() {
 
     fs_output = surface_shading(base_color,
                     metalicness,
-                    roughness,
+                    get_roughness(),
                     reflectance,
                     texture_cube,
                     LIGHT_COLOR.xyz,
                     N,
                     V,
                     L,
-                    max(ambient_light, shadow_factor));
+                    shadow_factor);
 
     fs_output.xyz += emissive_color.xyz * emissive_color.w;
     fs_output = vec4(fs_output.xyz , 1.0);
