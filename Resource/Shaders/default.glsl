@@ -37,9 +37,14 @@ void main() {
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
 
-    fs_output = surface_shading(base_color,
+    fs_output = surface_shading2(base_color,
                     metalicness,
                     get_roughness(),
+                    clear_coat,
+                    get_clear_coat_roughness(),
+                    clear_coat_color,
+                    clear_coat_thickness,
+                    clear_coat_IOR,
                     reflectance,
                     texture_cube,
                     LIGHT_COLOR.xyz,
