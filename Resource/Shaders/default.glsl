@@ -23,7 +23,7 @@ layout (location = 3) out vec2 fs_velocity;
 void main() {
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
 
-    if(base_color.a < 0.333f && enable_blend != 1)
+    if(base_color.a < 0.333f)
     {
         discard;
     }
@@ -37,14 +37,9 @@ void main() {
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
 
-    fs_output = surface_shading2(base_color,
+    fs_output = surface_shading(base_color,
                     metalicness,
                     get_roughness(),
-                    clear_coat,
-                    get_clear_coat_roughness(),
-                    clear_coat_color,
-                    clear_coat_thickness,
-                    clear_coat_IOR,
                     reflectance,
                     texture_cube,
                     LIGHT_COLOR.xyz,
@@ -54,7 +49,6 @@ void main() {
                     shadow_factor);
 
     fs_output.xyz += emissive_color.xyz * emissive_color.w;
-    fs_output = vec4(fs_output.xyz , 1.0);
 
     fs_diffuse = base_color;
 

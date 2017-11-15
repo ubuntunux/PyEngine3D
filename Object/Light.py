@@ -28,11 +28,9 @@ class Light(StaticActor):
         return save_data
 
     def update(self, current_camera):
-        updated = self.transform.updateTransform()
-        if updated:
-            self.transform.updateInverseTransform()  # update view matrix
+        updated = self.transform.updateTransform(update_view_transform=True)
 
-        if current_camera:
+        if updated and current_camera:
             shadow_distance = 50.0 / current_camera.meter_per_unit
             width, height = shadow_distance * 0.5, shadow_distance * 0.5
             projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)

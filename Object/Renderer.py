@@ -206,7 +206,9 @@ class Renderer(Singleton):
             glDisable(GL_BLEND)
 
     def restore_blend_state_prev(self):
-        self.set_blend_state(self.blend_enable_prev, self.blend_equation_prev, self.blend_func_src_prev,
+        self.set_blend_state(self.blend_enable_prev,
+                             self.blend_equation_prev,
+                             self.blend_func_src_prev,
                              self.blend_func_dst_prev)
 
     def setViewMode(self, viewMode):

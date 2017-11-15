@@ -1,16 +1,9 @@
 //----------- MATERIAL_COMPONENTS ------------//
 
 #ifdef MATERIAL_COMPONENTS
-    uniform int enable_blend;
     uniform float brightness;
     uniform float reflectance;
     uniform float roughness;
-    uniform float clear_coat;
-    uniform float clear_coat_roughness;
-    uniform vec3 clear_coat_color;
-    uniform float clear_coat_thickness;
-    uniform float clear_coat_IOR;
-
     uniform float metalicness;
     uniform vec4 emissive_color;
     uniform vec4 diffuse_color;
@@ -79,11 +72,6 @@ float get_ior()
 float get_roughness()
 {
     return clamp(roughness, 0.05, 1.0);
-}
-
-float get_clear_coat_roughness()
-{
-    return mix(0.089, 0.6, clamp(clear_coat_roughness, 0.05, 1.0));
 }
 
 float get_metalicness()

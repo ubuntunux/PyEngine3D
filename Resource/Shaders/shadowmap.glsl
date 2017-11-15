@@ -18,7 +18,7 @@ out vec4 fs_output;
 void main() {
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
 
-    if(base_color.a < 0.333f && enable_blend != 1)
+    if(base_color.a < 0.333f)
     {
         discard;
     }
