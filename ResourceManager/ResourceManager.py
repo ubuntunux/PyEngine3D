@@ -494,6 +494,7 @@ class MaterialLoader(ResourceLoader):
     def __init__(self, core_manager, root_path):
         ResourceLoader.__init__(self, core_manager, root_path)
         self.linked_material_map = {}
+        self.shader_map = {}
 
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
@@ -532,12 +533,14 @@ class MaterialLoader(ResourceLoader):
                 generate_new_material = False
                 if self.is_new_external_data(meta_data, meta_data.source_filepath):
                     generate_new_material = True
-                # set include files to meta_data
+
+                # set include files meta datas
                 meta_data.include_files = material_datas.get('include_files', {})
                 for include_file in meta_data.include_files:
                     if get_modify_time_of_file(include_file) != meta_data.include_files[include_file]:
                         generate_new_material = True
                         break
+
                 if generate_new_material:
                     shader_name = material_datas.get('shader_name')
                     macros = material_datas.get('macros', {})
@@ -591,10 +594,14 @@ class MaterialLoader(ResourceLoader):
             )
             # create material
             material = Material(final_material_name, material_datas)
+
             if material and material.valid:
                 resource = self.getResource(final_material_name, noWarn=True)
                 if resource is None:
                     resource = self.create_resource(final_material_name)
+
+                # set include files meta datas
+                resource.meta_data.include_files = material_datas.get('include_files', {})
 
                 # write material to file, and regist to resource manager
                 shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)

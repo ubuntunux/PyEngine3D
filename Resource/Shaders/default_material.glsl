@@ -1,5 +1,7 @@
 //----------- MATERIAL_COMPONENTS ------------//
 
+#define TRANSPARENT_MATERIAL 0
+
 #ifdef MATERIAL_COMPONENTS
     uniform float brightness;
     uniform float reflectance;
