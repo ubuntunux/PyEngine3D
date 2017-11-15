@@ -76,8 +76,8 @@ class Console:
 
 class Renderer(Singleton):
     def __init__(self):
-        self.width = 0
-        self.height = 0
+        self.width = -1
+        self.height = -1
         self.aspect = 0.0
         self.full_screen = False
         self.viewMode = GL_FILL
@@ -122,12 +122,9 @@ class Renderer(Singleton):
         # destroy
         pygame.display.quit()
 
-    def initialize(self, core_manager, width, height, screen):
+    def initialize(self, core_manager):
         logger.info("=" * 30)
         logger.info("Initialize Renderer")
-        self.width = width
-        self.height = height
-        self.screen = screen
 
         logger.info("GL_MAX_VERTEX_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS))
         logger.info("GL_MAX_GEOMETRY_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS))
@@ -234,25 +231,32 @@ class Renderer(Singleton):
             if height <= 0:
                 height = 768
 
+        changed = False
+
+        if not self.created_scene or self.width != width or self.height != height or self.full_screen != full_screen:
+            changed = True
+
         self.width = width
         self.height = height
         self.aspect = float(width) / float(height)
         self.full_screen = full_screen
 
-        logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
-
         # update perspective and ortho
         self.sceneManager.update_camera_projection_matrix(self.aspect)
 
-        # resize render targets
-        self.rendertarget_manager.create_rendertargets()
+        if changed:
+            logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
 
-        # Run pygame.display.set_mode at last!!! very important.
-        if platformModule.system() == 'Linux':
+            # resize render targets
+            self.rendertarget_manager.create_rendertargets()
+
+            # Run pygame.display.set_mode at last!!! very important.
+            # if platformModule.system() == 'Linux':
             self.screen = self.change_resolution(width, height, full_screen)
-        # send screen info
-        screen_info = (width, height, full_screen)
-        self.coreManager.notifyChangeResolution(screen_info)
+
+            # send screen info
+            screen_info = (width, height, full_screen)
+            self.coreManager.notifyChangeResolution(screen_info)
         self.created_scene = True
 
     def ortho_view(self):

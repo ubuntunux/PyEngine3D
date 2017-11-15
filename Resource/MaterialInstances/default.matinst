@@ -7,8 +7,9 @@
                    'enable_blend': 0,
                    'metalicness': 0.0,
                    'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
-                   'roughness': 0.0,
-                   'texture_cube': 'empty',
+                   'reflectance': 0.0,
+                   'roughness': 0.800000011920929,
+                   'texture_cube': 'field',
                    'texture_diffuse': 'Wool_D',
                    'texture_normal': 'flat_normal',
                    'texture_shadow': 'empty'}}

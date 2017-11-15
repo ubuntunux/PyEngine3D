@@ -119,7 +119,7 @@ class CoreManager(Singleton):
         self.resource_manager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
-        self.renderer.initialize(self, width, height, full_screen)
+        self.renderer.initialize(self)
         self.sceneManager.initialize(self)
 
         # build a scene - windows not need resize..

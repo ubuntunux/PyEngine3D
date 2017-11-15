@@ -12,8 +12,9 @@
                                           [0.0, 1.0, 0.0, 0.0],
                                           [0.0, 0.0, 1.0, 0.0],
                                           [0.0, 0.0, 0.0, 1.0]],
-                   'roughness': 0.0,
-                   'texture_cube': 'empty',
+                   'reflectance': 0.0,
+                   'roughness': 0.5,
+                   'texture_cube': 'field',
                    'texture_diffuse': 'Wool_D',
                    'texture_normal': 'Wool_N',
                    'texture_shadow': 'empty'}}
