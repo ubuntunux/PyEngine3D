@@ -10,7 +10,7 @@ from OpenGL.GLU import *
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import FrameBuffer, RenderBuffer, GLFont, UniformMatrix4, UniformBlock
+from OpenGLContext import FrameBuffer, RenderBuffer, UniformMatrix4, UniformBlock
 from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
 
@@ -21,57 +21,6 @@ class RenderMode(AutoEnum):
     SCREEN_SPACE_REFLECTION = ()
     VELOCITY = ()
     COUNT = ()
-
-
-class Console:
-    def __init__(self):
-        self.infos = []
-        self.debugs = []
-        self.renderer = None
-        self.texture = None
-        self.font = None
-        self.enable = True
-
-    def initialize(self, renderer):
-        self.renderer = renderer
-        self.font = GLFont(self.renderer.coreManager.resource_manager.get_default_font_file(), 12, margin=(10, 0))
-
-    def close(self):
-        pass
-
-    def clear(self):
-        self.infos = []
-
-    def toggle(self):
-        self.enable = not self.enable
-
-    # just print info
-    def info(self, text):
-        if self.enable:
-            self.infos.append(text)
-
-    # debug text - print every frame
-    def debug(self, text):
-        if self.enable:
-            self.debugs.append(text)
-
-    def render(self):
-        self.renderer.ortho_view()
-
-        # set render state
-        self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        glEnable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        glDisable(GL_LIGHTING)
-
-        if self.enable and self.infos:
-            text = '\n'.join(self.infos) if len(self.infos) > 1 else self.infos[0]
-            if text:
-                # render
-                self.font.render(text, 0, self.renderer.height - self.font.height)
-            self.infos = []
 
 
 class Renderer(Singleton):
@@ -90,8 +39,7 @@ class Renderer(Singleton):
         self.sceneManager = None
         self.rendertarget_manager = None
         self.postprocess = None
-        # console font
-        self.console = None
+
         # components
         self.lastShader = None
         self.screen = None
@@ -145,10 +93,6 @@ class Renderer(Singleton):
         self.framebuffer_copy = FrameBuffer()
         self.framebuffer_msaa = FrameBuffer()
 
-        # console font
-        self.console = Console()
-        self.console.initialize(self)
-
         # Test Code : scene constants uniform buffer
         material_instance = self.resource_manager.getMaterialInstance('scene_constants')
         program = material_instance.get_program()
@@ -180,9 +124,7 @@ class Renderer(Singleton):
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
     def close(self):
-        # destroy console
-        if self.console:
-            self.console.close()
+        pass
 
     def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA,
                         func_dst=GL_ONE_MINUS_SRC_ALPHA):

@@ -1,5 +1,4 @@
 from .FrameBuffer import FrameBuffer
-from .GLFont import GLFont
 from .GLUtil import IsExtensionSupported
 from .RenderBuffer import RenderBuffer
 from .Shader import Shader

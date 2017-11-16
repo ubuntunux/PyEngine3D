@@ -14,6 +14,7 @@ from ctypes import *
 from collections import OrderedDict
 from distutils.dir_util import copy_tree
 import shutil
+import uuid
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from numpy import array, float32
@@ -494,7 +495,6 @@ class MaterialLoader(ResourceLoader):
     def __init__(self, core_manager, root_path):
         ResourceLoader.__init__(self, core_manager, root_path)
         self.linked_material_map = {}
-        self.shader_map = {}
 
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
@@ -556,7 +556,7 @@ class MaterialLoader(ResourceLoader):
         if macros:
             keys = sorted(macros.keys())
             add_name = [key + "_" + str(macros[key]) for key in keys]
-            return shader_name + "_" + "_".join(add_name)
+            shader_name = shader_name + "_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, "_".join(add_name))).replace("-", "_")
         return shader_name
 
     def generate_new_material(self, material_name, shader_name, macros={}):

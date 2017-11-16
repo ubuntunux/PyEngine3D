@@ -111,10 +111,6 @@ class CoreManager(Singleton):
         full_screen = self.projectManager.config.Screen.full_screen
         Renderer.change_resolution(width, height, full_screen)
 
-        pygame.font.init()
-        if not pygame.font.get_init():
-            self.error('Could not render font.')
-
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
         self.rendertarget_manager.initialize(self)
@@ -377,7 +373,7 @@ class CoreManager(Singleton):
                     else:
                         self.close()
                 elif keyDown == K_BACKQUOTE and not subkey_down:
-                    self.renderer.console.toggle()
+                    pass
             elif eventType == MOUSEMOTION:
                 self.mousePos[...] = pygame.mouse.get_pos()
             elif eventType == MOUSEBUTTONDOWN:
