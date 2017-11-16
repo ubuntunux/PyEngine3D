@@ -251,8 +251,8 @@ class Renderer(Singleton):
             self.rendertarget_manager.create_rendertargets()
 
             # Run pygame.display.set_mode at last!!! very important.
-            # if platformModule.system() == 'Linux':
-            self.screen = self.change_resolution(width, height, full_screen)
+            if platformModule.system() == 'Linux':
+                self.screen = self.change_resolution(width, height, full_screen)
 
             # send screen info
             screen_info = (width, height, full_screen)
