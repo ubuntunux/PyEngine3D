@@ -555,12 +555,12 @@ class Renderer(Singleton):
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, hdrtexture)
 
-        # self.framebuffer.set_color_texture(texture_ssr)
-        # self.framebuffer.set_depth_texture(None)
-        # self.framebuffer.bind_framebuffer()
-        # self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
-
-        # self.postprocess.render_screen_space_reflection(texture_diffuse, texture_normal, texture_depth)
+        # screen space reflection
+        self.framebuffer.set_color_texture(texture_ssr)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
+        self.postprocess.render_screen_space_reflection(
+            hdrtexture, texture_normal, texture_velocity, texture_depth)
 
         # Blur Test
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', hdrtexture)

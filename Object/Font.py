@@ -52,6 +52,8 @@ class FontManager(Singleton):
             index_data=indices,
             dtype=np.float32
         )
+
+        # layout(location=1) vec4 font_offset;
         self.quad.create_instance_buffer(layout_location=1)
 
     def clear_logs(self, screen_width, screen_height):

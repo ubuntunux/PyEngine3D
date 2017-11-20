@@ -277,11 +277,12 @@ class PostProcess:
         framebuffer.bind_framebuffer()
         self.render_blur(ssao_temp, blur_kernel_radius=self.ssao_blur_radius)
 
-    def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_depth):
+    def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_velocity, texture_depth):
         self.screeen_space_reflection.use_program()
         self.screeen_space_reflection.bind_material_instance()
         self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
+        self.screeen_space_reflection.bind_uniform_data("texture_velocity", texture_velocity)
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 

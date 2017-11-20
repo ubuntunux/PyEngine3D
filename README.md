@@ -85,10 +85,10 @@
         - view frustum culling
         - occlusion culling
         - distance culling
+    - Depth pre pass
     - Forward Renderer
     - Deferred Renderer
     - LightPrepass Renderer
-    - PBR
     - Fog
     - Volumtric Scattering
     - Atmospheric Scattering

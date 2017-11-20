@@ -8,7 +8,7 @@ uniform float count_horizontal;
 struct VERTEX_INPUT
 {
     layout(location=0) vec3 position;
-    layout(location=1) vec4 font_offset;
+    layout(location=1) vec4 font_offset;    // instancing data
 };
 
 struct VERTEX_OUTPUT
