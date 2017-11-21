@@ -158,8 +158,7 @@ vec4 surface_shading(vec4 base_color,
     float opacity = base_color.w;
 #if TRANSPARENT_MATERIAL == 1
     float reflectivity = max(max(f0.r, f0.g), f0.b);
-    opacity = reflectivity + base_color.w * (1.0 - reflectivity);
-    base_color.xyz *= base_color.w;
+    opacity = clamp(base_color.w + base_color.w * reflectivity, 0.0, 1.0);
 #endif
 
     // specular : mix between metal and non-metal material, for non-metal constant base specular factor of 0.04 grey is used

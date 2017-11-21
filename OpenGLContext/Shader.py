@@ -141,7 +141,7 @@ class Shader:
                             expression = re.sub(reVariable, str(final_value), expression, 1)
                     expression = expression.replace('&&', ' and ')
                     expression = expression.replace('||', ' or ')
-                    expression = re.sub('\!?!\=', 'not ', expression)
+                    # expression = re.sub('\!?!\=', 'not ', expression)
                     # Important : To avoid errors, convert the undecalred variables to zero.
                     expression = re.sub(reVariable, '0', expression)
                     result = True if eval(expression) else False

@@ -88,9 +88,6 @@ class Mesh:
     def get_geometry(self, index=0):
         return self.geometries[index] if index < len(self.geometries) else None
 
-    def get_geometry_instance(self, index=0):
-        return self.geometries[index] if index < len(self.geometries) else None
-
     def get_geometry_count(self):
         return len(self.geometries)
 

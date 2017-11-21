@@ -306,16 +306,30 @@ class SceneManager(Singleton):
         for light in self.lights:
             light.update(self.mainCamera)
 
+        # clear render groups
         self.static_solid_geometries = []
+        self.static_translucent_geometries = []
+        self.skeleton_solid_geometries = []
+        self.skeleton_translucent_geometries = []
+
+        # flush render groups
         for static_actor in self.static_actors:
             static_actor.update(dt)
-            self.static_solid_geometries += static_actor.geometries
+            for geometry in static_actor.geometries:
+                if geometry.material_instance.is_translucent():
+                    self.static_translucent_geometries.append(geometry)
+                else:
+                    self.static_solid_geometries.append(geometry)
 
-        self.skeleton_solid_geometries = []
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
-            self.skeleton_solid_geometries += skeleton_actor.geometries
+            for geometry in skeleton_actor.geometries:
+                if geometry.material_instance.is_translucent():
+                    self.skeleton_translucent_geometries.append(geometry)
+                else:
+                    self.skeleton_solid_geometries.append(geometry)
 
+        # sort render gorups
         self.static_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))
         self.static_translucent_geometries.sort(key=lambda x: id(x.vertex_buffer))
         self.skeleton_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))

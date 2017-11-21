@@ -1,5 +1,5 @@
-{'macros': {'SKELETAL': 1},
- 'material_name': 'shadowmap_1fc71906_d52a_3520_84d7_2d8f85673411',
+{'macros': {'SKELETAL': 1, 'TRANSPARENT_MATERIAL': 0},
+ 'material_name': 'shadowmap_706f56c0_c864_31d3_ae73_7fcf75030def',
  'shader_name': 'shadowmap',
  'uniform_datas': {'bone_matrices': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
                    'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],

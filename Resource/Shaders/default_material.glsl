@@ -13,6 +13,9 @@
     uniform sampler2D texture_surface;
     uniform sampler2D texture_normal;
     uniform samplerCube texture_cube;
+#if TRANSPARENT_MATERIAL == 1
+    uniform float opacity;
+#endif
 #endif
 
 vec4 get_emissive_color()

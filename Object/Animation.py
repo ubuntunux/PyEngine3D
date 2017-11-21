@@ -25,8 +25,7 @@ class Animation:
         if self.last_frame == frame:
             return self.animation_transforms
         else:
-            self.animation_transforms[...] = np.array([node.get_transform(frame) for node in self.nodes],
-                                                      dtype=np.float32)
+            self.animation_transforms[...] = [node.get_transform(frame) for node in self.nodes]
             return self.animation_transforms
 
 

@@ -1,7 +1,5 @@
 #version 430 core
 
-#define USE_REFLECTION 0
-
 #include "scene_constants.glsl"
 #include "utility.glsl"
 #include "shading.glsl"
@@ -23,10 +21,16 @@ layout (location = 3) out vec2 fs_velocity;
 void main() {
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
 
+#if TRANSPARENT_MATERIAL == 1
+    base_color.a *= opacity;
+#endif
+
+#if TRANSPARENT_MATERIAL != 1
     if(base_color.a < 0.333f)
     {
         discard;
     }
+#endif
 
     vec4 emissive_color = get_emissive_color();
     float shadow_factor = get_shadow_factor(vs_output.world_position, texture_shadow);
