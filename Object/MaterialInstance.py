@@ -47,6 +47,9 @@ class MaterialInstance:
         self.linked_uniform_map = OrderedDict({})
         self.Attributes.clear()
 
+    def is_translucent(self):
+        return self.material.is_translucent
+
     def get_save_data(self):
         uniform_datas = {}
         for uniform_name in self.linked_uniform_map:

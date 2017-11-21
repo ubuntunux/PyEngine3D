@@ -26,6 +26,7 @@ class PostProcess:
         self.renderer = None
         self.rendertarget_manager = None
         self.quad = None
+        self.quad_geometry = None
 
         self.antialiasing = AntiAliasing.NONE_AA
         self.msaa_multisample_count = 4
@@ -64,6 +65,7 @@ class PostProcess:
         self.rendertarget_manager = self.core_manager.rendertarget_manager
 
         self.quad = self.resource_manager.getMesh("Quad")
+        self.quad_geometry = self.quad.get_geometry()
 
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
@@ -137,14 +139,14 @@ class PostProcess:
             setattr(self, attributeName, attributeValue)
 
     def bind_quad(self):
-        self.quad.bind_vertex_buffer()
+        self.quad_geometry.bind_vertex_buffer()
 
     def render_blur(self, texture_diffuse, blur_kernel_radius=1.0):
         self.blur.use_program()
         self.blur.bind_material_instance()
         self.blur.bind_uniform_data("blur_kernel_radius", blur_kernel_radius)
         self.blur.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):
         frame_buffer.set_color_texture(texture_temp)
@@ -154,14 +156,14 @@ class PostProcess:
         self.gaussian_blur.bind_material_instance()
         self.gaussian_blur.bind_uniform_data("blur_scale", (blur_scale, 0.0))
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_target)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
         frame_buffer.set_color_texture(texture_target)
         frame_buffer.bind_framebuffer()
 
         self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, blur_scale))
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_temp)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_motion_blur(self, texture_velocity, texture_diffuse):
         self.motion_blur.use_program()
@@ -170,7 +172,7 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("motion_blur_scale", motion_blur_scale)
         self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_bloom(self, frame_buffer, texture_target):
         texture_highlight = self.rendertarget_manager.get_temporary('highlight', texture_target)
@@ -181,7 +183,7 @@ class PostProcess:
         self.bloom_highlight.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
         self.bloom_highlight.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
         texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
         texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
@@ -199,7 +201,7 @@ class PostProcess:
             frame_buffer.set_color_texture(dst)
             frame_buffer.bind_framebuffer()
             self.show_rendertarget.bind_uniform_data("texture_source", src)
-            self.quad.draw_elements()
+            self.quad_geometry.draw_elements()
 
         self.show_rendertarget.use_program()
         self.show_rendertarget.bind_material_instance()
@@ -219,13 +221,13 @@ class PostProcess:
             frame_buffer.bind_framebuffer()
             self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
-            self.quad.draw_elements()
+            self.quad_geometry.draw_elements()
 
             frame_buffer.set_color_texture(bloom_target)
             frame_buffer.bind_framebuffer()
             self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
-            self.quad.draw_elements()
+            self.quad_geometry.draw_elements()
 
         # set additive
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
@@ -239,7 +241,7 @@ class PostProcess:
         self.bloom.bind_uniform_data("texture_bloom1", texture_bloom1)
         self.bloom.bind_uniform_data("texture_bloom2", texture_bloom2)
         self.bloom.bind_uniform_data("texture_bloom3", texture_bloom3)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
         # restore blend state
         self.renderer.restore_blend_state_prev()
@@ -248,7 +250,7 @@ class PostProcess:
         self.linear_depth.use_program()
         self.linear_depth.bind_material_instance()
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_tone_map(self, texture_diffuse, texture_ssao):
         self.tonemapping.use_program()
@@ -257,7 +259,7 @@ class PostProcess:
         self.tonemapping.bind_uniform_data("exposure", 1.0)
         self.tonemapping.bind_uniform_data("is_render_ssao", self.is_render_ssao)
         self.tonemapping.bind_uniform_data("texture_ssao", texture_ssao)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_ssao(self, framebuffer, texture_ssao, ssao_temp, texture_normal, texture_linear_depth):
         texture_noise = self.rendertarget_manager.get_rendertarget(RenderTargets.SSAO_ROTATION_NOISE)
@@ -271,7 +273,7 @@ class PostProcess:
         self.ssao.bind_uniform_data("texture_noise", texture_noise)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
         framebuffer.set_color_texture(texture_ssao)
         framebuffer.bind_framebuffer()
@@ -284,10 +286,10 @@ class PostProcess:
         self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
         self.screeen_space_reflection.bind_uniform_data("texture_velocity", texture_velocity)
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()
 
     def render_copy_rendertarget(self, source_texture):
         self.show_rendertarget.use_program()
         self.show_rendertarget.bind_uniform_data("is_depth_texture", False)
         self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
-        self.quad.draw_elements()
+        self.quad_geometry.draw_elements()

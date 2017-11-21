@@ -428,7 +428,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.clearAttribute()
 
         # fill properties of selected object
-        for attribute in attributes.getAttributes():
+        attribute_values = list(attributes.getAttributes())
+        attribute_values.sort(key=lambda x: x.name)
+        for attribute in attribute_values:
             self.addAttribute(self.attributeTree, attribute.name, attribute.value)
 
         # self.showProperties()

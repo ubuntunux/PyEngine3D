@@ -34,17 +34,12 @@ class Geometry:
 
 
 class GeometryInstance(Geometry):
-    def __init__(self, parent_actor, parent_model, parent_geometry):
-        Geometry.__init__(self, **parent_geometry.__dict__)
+    def __init__(self, geometry, parent_actor=None, parent_model=None, material_instance=None):
+        Geometry.__init__(self, **geometry.__dict__)
+        self.geometry = geometry
+        self.material_instance = material_instance
         self.parent_actor = parent_actor
         self.parent_model = parent_model
-        self.parent_geometry = parent_geometry
-
-    def get_index(self):
-        return self.parent_geometry.index
-
-    def get_material_instance(self):
-        return self.parent_model.get_material_instance(self.get_index()) if self.parent_model else None
 
 
 class Mesh:
@@ -87,38 +82,23 @@ class Mesh:
                 self.geometries.append(geometry)
         self.attributes = Attributes()
 
-    def get_geometry(self, index):
+    def has_bone(self):
+        return len(self.skeletons) > 0
+
+    def get_geometry(self, index=0):
+        return self.geometries[index] if index < len(self.geometries) else None
+
+    def get_geometry_instance(self, index=0):
         return self.geometries[index] if index < len(self.geometries) else None
 
     def get_geometry_count(self):
         return len(self.geometries)
 
-    def get_skeleton(self, index):
-        return self.skeletons[index] if index < len(self.skeletons) else None
-
-    def get_skeleton_index(self, skeleton):
-        return self.skeletons.index(skeleton)
-
-    def has_bone(self):
-        return len(self.skeletons) > 0
-
-    def get_skeleton_count(self):
-        return len(self.skeletons)
-
-    def get_animation(self, index):
+    def get_animation(self, index=0):
         return self.animations[index] if index < len(self.animations) else None
 
     def get_animation_count(self):
         return len(self.animations)
-
-    def get_animation_frame_count(self, skeleton_index=0):
-        return self.animations[skeleton_index].frame_count if self.animations[skeleton_index] else 0
-
-    def get_animation_transforms(self, skeleton_index=0, frame=0.0):
-        return self.animations[skeleton_index].get_animation_transforms(frame)
-
-    def get_animation_node_transform(self, skeleton_index=0, bone_index=0, frame=0.0):
-        return self.animations[skeleton_index].get_animation_node_transform(bone_index, frame)
 
     def getAttribute(self):
         self.attributes.setAttribute("name", self.name)
@@ -127,26 +107,6 @@ class Mesh:
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         pass
-
-    def create_instance_buffer(self, index=0, layout_location=-1):
-        if index < len(self.geometries):
-            self.geometries[index].create_instance_buffer(layout_location)
-
-    def bind_instance_buffer(self, index=0, layout_location=-1, instance_data=None, divisor=1):
-        if index < len(self.geometries):
-            self.geometries[index].bind_instance_buffer(layout_location, instance_data, divisor)
-
-    def bind_vertex_buffer(self, index=0):
-        if index < len(self.geometries):
-            self.geometries[index].bind_vertex_buffer()
-
-    def draw_elements(self, index=0):
-        if index < len(self.geometries):
-            self.geometries[index].draw_elements()
-
-    def draw_elements_instanced(self, index=0, count=0):
-        if index < len(self.geometries):
-            self.geometries[index].draw_elements_instanced(count)
 
 
 class Triangle(Mesh):

@@ -1,6 +1,5 @@
 {'macros': {'SKELETAL': 0},
- 'material_name': 'shadowmap_SKELETAL_0',
+ 'material_name': 'shadowmap_e1baf60e_d378_3a24_aa9a_ec941bcf1a5b',
  'shader_name': 'shadowmap',
- 'uniform_datas': {'enable_blend': 0,
-                   'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+ 'uniform_datas': {'model': [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
                    'texture_diffuse': 'empty'}}

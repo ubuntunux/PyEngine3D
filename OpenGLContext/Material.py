@@ -30,6 +30,8 @@ class Material:
         self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
         self.macros = material_datas.get('macros', OrderedDict())
 
+        self.is_translucent = True if 0 < self.macros.get('TRANSPARENT_MATERIAL', 0) else False
+
         self.name = material_name
         self.shader_name = material_datas.get('shader_name', '')
         self.program = -1

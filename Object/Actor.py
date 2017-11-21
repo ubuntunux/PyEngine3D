@@ -34,8 +34,10 @@ class StaticActor:
         self.geometries = []
 
         if self.model and self.mesh:
-            for i in range(self.mesh.get_geometry_count()):
-                geometry_instance = GeometryInstance(self, self.model, self.mesh.get_geometry(i))
+            for geometry in self.mesh.geometries:
+                material_instance = self.model.get_material_instance(geometry.index)
+                geometry_instance = GeometryInstance(
+                    geometry=geometry, parent_actor=self, parent_model=self.model, material_instance=material_instance)
                 self.geometries.append(geometry_instance)
 
     def get_save_data(self):
@@ -86,9 +88,9 @@ class SkeletonActor(StaticActor):
         self.prev_animation_buffers = []
 
         if self.model and self.mesh:
-            for i in range(self.mesh.get_animation_count()):
-                if self.mesh.animations[i]:
-                    animation_buffer = self.mesh.get_animation_transforms(i, 0.0)
+            for animation in self.mesh.animations:
+                if animation:
+                    animation_buffer = animation.get_animation_transforms(0.0)
                     self.animation_buffers.append(animation_buffer.copy())
                     self.prev_animation_buffers.append(animation_buffer.copy())
 
@@ -109,12 +111,12 @@ class SkeletonActor(StaticActor):
 
         # update animation
         if self.mesh:
-            for i in range(self.mesh.get_animation_count()):
-                if self.mesh.animations[i]:
-                    count = self.mesh.get_animation_frame_count(i)
-                    if count > 0:
-                        self.animation_frame = math.fmod(self.animation_frame + dt * 30.0, self.mesh.get_animation_frame_count(i))
+            for i, animation in enumerate(self.mesh.animations):
+                if animation:
+                    frame_count = animation.frame_count
+                    if frame_count > 0:
+                        self.animation_frame = math.fmod(self.animation_frame + dt * 30.0, frame_count)
                     else:
                         self.animation_frame = 0.0
                     self.prev_animation_buffers[i][...] = self.animation_buffers[i]
-                    self.animation_buffers[i][...] = self.mesh.get_animation_transforms(i, self.animation_frame)
+                    self.animation_buffers[i][...] = animation.get_animation_transforms(self.animation_frame)

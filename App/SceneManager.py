@@ -35,6 +35,12 @@ class SceneManager(Singleton):
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
 
+        # render group
+        self.static_solid_geometries = []
+        self.static_translucent_geometries = []
+        self.skeleton_solid_geometries = []
+        self.skeleton_translucent_geometries = []
+
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
         self.coreManager = core_manager
@@ -300,8 +306,17 @@ class SceneManager(Singleton):
         for light in self.lights:
             light.update(self.mainCamera)
 
-        for obj in self.static_actors:
-            obj.update(dt)
+        self.static_solid_geometries = []
+        for static_actor in self.static_actors:
+            static_actor.update(dt)
+            self.static_solid_geometries += static_actor.geometries
 
-        for obj in self.skeleton_actors:
-            obj.update(dt)
+        self.skeleton_solid_geometries = []
+        for skeleton_actor in self.skeleton_actors:
+            skeleton_actor.update(dt)
+            self.skeleton_solid_geometries += skeleton_actor.geometries
+
+        self.static_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))
+        self.static_translucent_geometries.sort(key=lambda x: id(x.vertex_buffer))
+        self.skeleton_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))
+        self.skeleton_translucent_geometries.sort(key=lambda x: id(x.vertex_buffer))

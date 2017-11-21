@@ -296,11 +296,10 @@ class Renderer(Singleton):
         glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
 
         light = self.sceneManager.mainLight
-        self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection,
-                                                      light.shadow_view_projection,)
+        self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection, light.shadow_view_projection)
 
-        self.render_static_actors(render_mode=RenderMode.SHADOW)
-        self.render_skeleton_actors(render_mode=RenderMode.SHADOW)
+        self.render_static_actors(RenderMode.SHADOW, self.sceneManager.static_solid_geometries)
+        self.render_skeleton_actors(RenderMode.SHADOW, self.sceneManager.skeleton_solid_geometries)
 
     def render_lighting(self):
         glFrontFace(GL_CCW)
@@ -318,8 +317,7 @@ class Renderer(Singleton):
         glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
 
         camera = self.sceneManager.mainCamera
-        self.uniformViewProjection.bind_uniform_block(camera.view_projection,
-                                                      camera.prev_view_projection, )
+        self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection)
 
         # render sky
         glDisable(GL_DEPTH_TEST)
@@ -331,42 +329,35 @@ class Renderer(Singleton):
         glClearBufferfv(GL_COLOR, 3, (0.0, 0.0, 0.0, 0.0))
 
         camera = self.sceneManager.mainCamera
-        self.uniformViewProjection.bind_uniform_block(camera.view_projection,
-                                                      camera.prev_view_projection, )
+        self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
         # render character lighting
-        self.render_static_actors(render_mode=RenderMode.LIGHTING)
-        self.render_skeleton_actors(render_mode=RenderMode.LIGHTING)
+        self.render_static_actors(RenderMode.LIGHTING, self.sceneManager.static_solid_geometries)
+        self.render_skeleton_actors(RenderMode.LIGHTING, self.sceneManager.skeleton_solid_geometries)
 
-    def render_static_actors(self, render_mode: RenderMode):
-        if len(self.sceneManager.static_actors) < 1:
+    def render_static_actors(self, render_mode, geometry_list):
+        if len(geometry_list) < 1:
             return
-
-        geometries = []
-        for static_actor in self.sceneManager.static_actors:
-            geometries += static_actor.geometries
-        geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         material = None
         material_instance = None
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()
+        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
 
         last_vertex_buffer = None
         last_actor = None
         last_material = None
         last_material_instance = None
 
-        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
-
         if render_mode == RenderMode.SHADOW:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap")
             material = material_instance.material if material_instance else None
 
-        for geometry in geometries:
+        for geometry in geometry_list:
             actor = geometry.parent_actor
 
             if render_mode == RenderMode.LIGHTING:
-                material_instance = geometry.get_material_instance() or default_material_instance
+                material_instance = geometry.material_instance or default_material_instance
                 material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:
@@ -393,43 +384,29 @@ class Renderer(Singleton):
             last_vertex_buffer = geometry.vertex_buffer
             last_material_instance = material_instance
 
-    def render_skeleton_actors(self, render_mode: RenderMode):
-        if len(self.sceneManager.skeleton_actors) < 1:
+    def render_skeleton_actors(self, render_mode, geometry_list):
+        if len(geometry_list) < 1:
             return
-
-        camera = self.sceneManager.mainCamera
-        camera_pos = camera.transform.getPos()
-        camera_front = camera.front
-
-        geometries = []
-        for skeleton_actor in self.sceneManager.skeleton_actors:
-            geometries += skeleton_actor.geometries
-            # actor_dir = normalize(skeleton_actor.transform.getPos() - camera_pos)
-            # if np.dot(actor_dir, camera_front) > 0.3:
-            #     geometries += skeleton_actor.geometries
-
-        geometries.sort(key=lambda x: id(x.vertex_buffer))
 
         material = None
         material_instance = None
         default_material_instance = self.resource_manager.getDefaultMaterialInstance()
+        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
 
         last_vertex_buffer = None
         last_actor = None
         last_material = None
         last_material_instance = None
 
-        texture_shadow = self.rendertarget_manager.get_rendertarget(RenderTargets.SHADOWMAP)
-
         if render_mode == RenderMode.SHADOW:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
             material = material_instance.material if material_instance else None
 
-        for geometry in geometries:
+        for geometry in geometry_list:
             actor = geometry.parent_actor
 
             if render_mode == RenderMode.LIGHTING:
-                material_instance = geometry.get_material_instance() or default_material_instance
+                material_instance = geometry.material_instance or default_material_instance
                 material = material_instance.material if material_instance else None
 
             if last_material != material and material is not None:

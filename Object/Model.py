@@ -22,14 +22,14 @@ class Model:
     def set_mesh(self, mesh):
         self.mesh = mesh
         if self.mesh:
-            geometry_count = mesh.get_geometry_count()
-            material_instance_count = len(self.material_instances)
-            if geometry_count < material_instance_count:
-                self.material_instances = self.material_instances[:geometry_count]
-            else:
-                default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
-                self.material_instances.extend(
-                    [default_material_instance, ] * (geometry_count - material_instance_count))
+            default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
+            material_instances = []
+            for i, geometry in enumerate(self.mesh.geometries):
+                if i < len(self.material_instances):
+                    material_instances.append(self.material_instances[i] or default_material_instance)
+                else:
+                    material_instances.append(default_material_instance)
+            self.material_instances = material_instances
 
     def get_save_data(self):
         save_data = dict(
