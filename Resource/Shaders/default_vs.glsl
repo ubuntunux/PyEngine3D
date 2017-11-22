@@ -15,14 +15,14 @@ uniform mat4 model;
 
 struct VERTEX_INPUT
 {
-    layout(location=0) vec3 position;
-    layout(location=1) vec4 color;
-    layout(location=2) vec3 normal;
-    layout(location=3) vec3 tangent;
-    layout(location=4) vec2 tex_coord;
+    vec3 position;
+    vec4 color;
+    vec3 normal;
+    vec3 tangent;
+    vec2 tex_coord;
 #if 1 == SKELETAL
-    layout(location=5) vec4 bone_indicies;
-    layout(location=6) vec4 bone_weights;
+    vec4 bone_indicies;
+    vec4 bone_weights;
 #endif
 };
 
@@ -40,8 +40,8 @@ struct VERTEX_OUTPUT
 //----------- VERTEX_SHADER ---------------//
 
 #ifdef VERTEX_SHADER
-in VERTEX_INPUT vs_input;
-out VERTEX_OUTPUT vs_output;
+layout (location = 0) in VERTEX_INPUT vs_input;
+layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
     vec4 position = vec4(0.0, 0.0, 0.0, 0.0);

@@ -38,7 +38,7 @@ void main() {
     vec3 V = normalize(-relative_pos.xyz);
     vec3 N = normalize(texture(texture_normal, vs_output.tex_coord.xy).xyz * 2.0 - 1.0);
 
-    float Roughness = 0.0;
+    float Roughness = 0.1;
     float RoughnessFade = 1.0;
 
     //const bool use_temporal_filter = false;
@@ -56,14 +56,11 @@ void main() {
 
     if( NumRays > 1 )
     {
-        ivec2 Random = ivec2(PseudoRandom(vec2(PixelPos.xy) + StateFrameIndexMod8 * vec2(97, 71)));
-        Random *= ivec2(0x3127352, 0x11229256);
-
         for (int i = 0; i < NumRays; i++)
         {
-            float StepOffset = rand(tex_coord + PoissonSamples[i]);
+            float StepOffset = rand(tex_coord + PoissonSamples[i]) - 0.5;
 
-            vec2 E = Hammersley(i, NumRays, Random);
+            vec2 E = Hammersley(i, NumRays, uvec2(PoissonSamples[i]) * uvec2(97, 71));
             vec3 H = TangentToWorld(ImportanceSampleBlinn(E, Roughness).xyz, N);
             vec3 R = 2 * dot(V, H) * H - V;
 

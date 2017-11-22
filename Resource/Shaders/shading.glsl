@@ -13,18 +13,20 @@ float get_shadow_factor(vec3 world_position, sampler2D texture_shadow)
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
     float shadow_depth = shadow_uv.z;
 
-    const float shadow_radius = 1.0;
-    const vec2 sample_scale = shadow_radius / textureSize(texture_shadow, 0);
-    const int sample_count = PoissonSampleCount / 4;
-    float weights = 0.0;
+    const float shadow_radius = 2.0;
+    const vec2 texture_size = textureSize(texture_shadow, 0);
+    const vec2 sample_scale = shadow_radius / texture_size;
+    const int sample_count = min(8, PoissonSampleCount);
     for(int i=0; i<sample_count; ++i)
     {
-        float weight = length(PoissonSamples[i]);
-        weights += weight;
-        vec2 uv = shadow_uv.xy + PoissonSamples[i] * sample_scale * 3.0;
-        shadow_factor += texture(texture_shadow, uv).x <= shadow_depth ? 0.0 : weight;
+        vec2 uv = shadow_uv.xy + PoissonSamples[i] * sample_scale;
+        vec4 s = textureGather(texture_shadow, uv, 0);
+        shadow_factor += s[0] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[1] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[2] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[3] <= shadow_depth ? 0.0 : 1.0;
     }
-    shadow_factor /= weights;
+    shadow_factor /= sample_count * 4.0;
     return shadow_factor;
 }
 
@@ -132,6 +134,8 @@ vec4 surface_shading(vec4 base_color,
                     float roughness,
                     float reflectance,
                     samplerCube texture_cube,
+                    sampler2D texture_scene_reflect,
+                    vec2 screen_tex_coord,
                     vec3 light_color,
                     vec3 N,
                     vec3 V,
@@ -173,10 +177,16 @@ vec4 surface_shading(vec4 base_color,
     // Image based lighting
     const vec2 env_size = textureSize(texture_cube, 0);
     const float env_mipmap_count = log2(min(env_size.x, env_size.y));
+
     vec3 ibl_diffuse_color = textureLod(texture_cube, invert_y(N), env_mipmap_count - 1.0).xyz;
     vec3 ibl_specular_color = textureLod(texture_cube, invert_y(R), env_mipmap_count * roughness).xyz;
+
     ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
     ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
+
+    // mix scene reflection
+    vec4 scene_reflect_color = texture(texture_scene_reflect, screen_tex_coord);
+    ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
 
     diffuse_light += base_color.xyz * ibl_diffuse_color;
     vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);

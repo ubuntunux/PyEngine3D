@@ -7,11 +7,12 @@
 #include "default_vs.glsl"
 
 uniform sampler2D texture_shadow;
+uniform sampler2D texture_scene_reflect;
 
 //----------- FRAGMENT_SHADER ---------------//
 
 #ifdef FRAGMENT_SHADER
-in VERTEX_OUTPUT vs_output;
+layout (location = 0) in VERTEX_OUTPUT vs_output;
 
 layout (location = 0) out vec4 fs_output;
 layout (location = 1) out vec4 fs_diffuse;
@@ -20,6 +21,7 @@ layout (location = 3) out vec2 fs_velocity;
 
 void main() {
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
+    vec2 screen_tex_coord = vs_output.projection_pos.xy / vs_output.projection_pos.w * 0.5 + 0.5;
 
 #if TRANSPARENT_MATERIAL == 1
     base_color.a *= opacity;
@@ -46,6 +48,8 @@ void main() {
                     get_roughness(),
                     reflectance,
                     texture_cube,
+                    texture_scene_reflect,
+                    screen_tex_coord,
                     LIGHT_COLOR.xyz,
                     N,
                     V,

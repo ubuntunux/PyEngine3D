@@ -38,7 +38,8 @@ void main() {
     mat3 tbn = mat3(tangent, normal, bitangent);
 
     float occlusion = 0.0;
-    for (int i = 0; i < kernel_size; ++i) {
+    int sample_count = kernel_size;
+    for (int i = 0; i < sample_count; ++i) {
         // get sample position:
         vec3 pos = tbn * kernel[i];
         pos = pos * radius_min_max.y + relative_pos.xyz;
@@ -49,24 +50,26 @@ void main() {
         offset.xy /= offset.w;
         offset.xy = offset.xy * 0.5 + 0.5;
 
-        // check out point of screen.
         if(offset.x < 0.0 || offset.x > 1.0 || offset.y < 0.0 || offset.y > 1.0)
         {
             continue;
         }
 
-        // get sample depth:
-        float sampleDepth = texture(texture_linear_depth, offset.xy).r;
+        vec4 sampleDepth = textureGather(texture_linear_depth, offset.xy, 0);
 
-        // range check & accumulate:
-        float delta = linear_depth - sampleDepth;
-        if(delta > radius_min_max.x && abs(delta) < radius_min_max.y )
+        const float amount = 0.25;
+        for(int j=0; j<4; ++j)
         {
-            occlusion += 1.0;
+            sampleDepth[j] = linear_depth - sampleDepth[j];
+            if(sampleDepth[j] > radius_min_max.x && abs(sampleDepth[j]) < radius_min_max.y )
+            {
+                occlusion += clamp(amount * (0.5 + sampleDepth[j]), 0.0, amount);
+                //occlusion += amount;
+            }
         }
     }
 
-    occlusion = 1.0 - occlusion / (float(kernel_size) - 1.0);
+    occlusion = clamp(1.0 - occlusion / (float(sample_count) - 1.0), 0.0, 1.0);
     occlusion *= occlusion;
     fs_output.xyz = vec3(occlusion);
     fs_output.w = 1.0;

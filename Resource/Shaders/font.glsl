@@ -7,8 +7,8 @@ uniform float count_horizontal;
 
 struct VERTEX_INPUT
 {
-    layout(location=0) vec3 position;
-    layout(location=1) vec4 font_offset;    // instancing data
+    vec3 position;
+    vec4 font_offset;    // instancing data
 };
 
 struct VERTEX_OUTPUT
@@ -18,8 +18,8 @@ struct VERTEX_OUTPUT
 };
 
 #ifdef VERTEX_SHADER
-in VERTEX_INPUT vs_input;
-out VERTEX_OUTPUT vs_output;
+layout (location = 0) in VERTEX_INPUT vs_input;
+layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
     vec2 ratio = vec2(font_size) / screen_size;
@@ -33,8 +33,8 @@ void main() {
 
 
 #ifdef FRAGMENT_SHADER
-in VERTEX_OUTPUT vs_output;
-out vec4 fs_output;
+layout (location = 0) in VERTEX_OUTPUT vs_output;
+layout (location = 0) out vec4 fs_output;
 
 void main() {
     fs_output.xyz = vec3(1.0);

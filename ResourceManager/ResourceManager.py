@@ -462,6 +462,7 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
+    resource_version = 0.1
     fileExt = '.glsl'
 
     def load_resource(self, resource_name):
@@ -489,7 +490,7 @@ class MaterialLoader(ResourceLoader):
     resource_dir_name = 'Materials'
     resource_type_name = 'Material'
     fileExt = '.mat'
-    resource_version = 0
+    resource_version = 0.1
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def __init__(self, core_manager, root_path):
