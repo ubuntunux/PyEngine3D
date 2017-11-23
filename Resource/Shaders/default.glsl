@@ -9,8 +9,6 @@
 uniform sampler2D texture_shadow;
 uniform sampler2D texture_scene_reflect;
 
-//----------- FRAGMENT_SHADER ---------------//
-
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 
@@ -35,7 +33,7 @@ void main() {
 #endif
 
     vec4 emissive_color = get_emissive_color();
-    float shadow_factor = get_shadow_factor(vs_output.world_position, texture_shadow);
+    float shadow_factor = get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow);
 
     vec3 N = get_normal(vs_output.tex_coord.xy);
     // Note : Normalization is very important because tangent_to_world may have been scaled..

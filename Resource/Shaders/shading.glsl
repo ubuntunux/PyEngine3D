@@ -5,7 +5,7 @@
 const float PI = 3.141592;
 
 
-float get_shadow_factor(vec3 world_position, sampler2D texture_shadow)
+float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
 {
     float shadow_factor = 0.0;
     vec4 shadow_uv = SHADOW_MATRIX * vec4(world_position, 1.0);
@@ -16,10 +16,17 @@ float get_shadow_factor(vec3 world_position, sampler2D texture_shadow)
     const float shadow_radius = 2.0;
     const vec2 texture_size = textureSize(texture_shadow, 0);
     const vec2 sample_scale = shadow_radius / texture_size;
-    const int sample_count = min(8, PoissonSampleCount);
+
+    float angle = rand(screen_tex_coord);
+
+    const int sample_count = min(4, PoissonSampleCount);
+
     for(int i=0; i<sample_count; ++i)
     {
-        vec2 uv = shadow_uv.xy + PoissonSamples[i] * sample_scale;
+        // random poisson
+        vec2 uv = PoissonSamples[ int(mod(i + angle * PoissonSampleCount, PoissonSampleCount)) ];
+
+        uv = shadow_uv.xy + uv * sample_scale;
         vec4 s = textureGather(texture_shadow, uv, 0);
         shadow_factor += s[0] <= shadow_depth ? 0.0 : 1.0;
         shadow_factor += s[1] <= shadow_depth ? 0.0 : 1.0;
