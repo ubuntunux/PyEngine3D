@@ -18,8 +18,8 @@ const vec2 gaussFilter[7] =
 };
 
 #ifdef FRAGMENT_SHADER
-in VERTEX_OUTPUT vs_output;
-out vec4 fs_output;
+layout (location = 0) in VERTEX_OUTPUT vs_output;
+layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;

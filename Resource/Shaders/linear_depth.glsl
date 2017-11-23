@@ -6,8 +6,8 @@
 uniform sampler2D texture_depth;
 
 #ifdef FRAGMENT_SHADER
-in VERTEX_OUTPUT vs_output;
-out vec4 fs_output;
+layout (location = 0) in VERTEX_OUTPUT vs_output;
+layout (location = 0) out vec4 fs_output;
 
 void main() {
     float depth = texture(texture_depth, vs_output.tex_coord.xy).x;
