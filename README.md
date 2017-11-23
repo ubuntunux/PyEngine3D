@@ -62,10 +62,7 @@
 * PostProcess
     - AntiAliasing
         - TAA, FXAA
-    - Motion Blur
-    - HDR Tonemapping
-    - SSAO, Temporal SSAO
-    - Screen Space Reflection
+    - Temporal SSAO
     - Screen Space SSS
     - God Ray
     - Glare
@@ -85,16 +82,14 @@
         - view frustum culling
         - occlusion culling
         - distance culling
-    - Depth pre pass
+    - Realtime environment cube map
+    - Paraboloid environment map
     - Forward Renderer
     - Deferred Renderer
     - LightPrepass Renderer
     - Fog
     - Volumtric Scattering
     - Atmospheric Scattering
-    - Font Rendering
-        - Console input/output
-        - Shader based rendering
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource
