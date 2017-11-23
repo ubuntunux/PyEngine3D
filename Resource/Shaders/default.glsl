@@ -6,20 +6,26 @@
 #include "default_material.glsl"
 #include "default_vs.glsl"
 
+uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
 uniform sampler2D texture_scene_reflect;
 
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
-
 layout (location = 0) out vec4 fs_output;
-layout (location = 1) out vec4 fs_diffuse;
-layout (location = 2) out vec4 fs_normal;
-layout (location = 3) out vec2 fs_velocity;
 
 void main() {
-    vec4 base_color = get_base_color(vs_output.tex_coord.xy);
     vec2 screen_tex_coord = vs_output.projection_pos.xy / vs_output.projection_pos.w * 0.5 + 0.5;
+    float depth = texture(texture_depth, screen_tex_coord).x;
+
+    // discard for early-z.
+    const float Epsilon = 0.00001;
+    if(depth < gl_FragCoord.z - Epsilon)
+    {
+        discard;
+    }
+
+    vec4 base_color = get_base_color(vs_output.tex_coord.xy);
 
 #if TRANSPARENT_MATERIAL == 1
     base_color.a *= opacity;
@@ -55,12 +61,5 @@ void main() {
                     shadow_factor);
 
     fs_output.xyz += emissive_color.xyz * emissive_color.w;
-
-    fs_diffuse = base_color;
-
-    // because, rendertarget is UNSIGNED_BYTE
-    fs_normal = vec4(N, 1.0) * 0.5 + 0.5;
-    fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) -
-        (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
 }
 #endif

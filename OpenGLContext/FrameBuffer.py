@@ -120,8 +120,9 @@ class FrameBuffer:
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
             logger.error("glCheckFramebufferStatus error %d." % gl_error)
 
-    @staticmethod
-    def unbind_framebuffer():
+    def unbind_framebuffer(self):
+        self.set_color_texture(None)
+        self.set_depth_texture(None)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):

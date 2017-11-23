@@ -14,6 +14,8 @@
                    'reflectance': 0.0,
                    'roughness': 0.5,
                    'texture_cube': 'field',
+                   'texture_depth': 'empty',
                    'texture_diffuse': 'Wool_D',
                    'texture_normal': 'flat_normal',
+                   'texture_scene_reflect': 'empty',
                    'texture_shadow': 'empty'}}

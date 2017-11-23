@@ -139,7 +139,7 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.DEPTHSTENCIL,
                                  Texture2D,
-                                 option=Option.MSAA | Option.SSAA,
+                                 option=Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_DEPTH24_STENCIL8,
@@ -163,7 +163,7 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
                                  Texture2D,
-                                 option=Option.MSAA | Option.SSAA,
+                                 option=Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -175,7 +175,7 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.WORLD_NORMAL,
                                  Texture2D,
-                                 option=Option.MSAA | Option.SSAA,
+                                 option=Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RGBA8,
@@ -253,7 +253,7 @@ class RenderTargetManager(Singleton):
 
         self.create_rendertarget(RenderTargets.VELOCITY,
                                  Texture2D,
-                                 option=Option.MSAA | Option.SSAA,
+                                 option=Option.SSAA,
                                  width=fullsize_x,
                                  height=fullsize_y,
                                  internal_format=GL_RG32F,
