@@ -273,7 +273,7 @@ class Renderer(Singleton):
 
         self.render_shadow()
 
-        self.render_lighting()
+        self.render_object()
 
         # self.render_bones()
         self.render_postprocess()
@@ -301,6 +301,7 @@ class Renderer(Singleton):
     def render_pre_pass(self):
         glFrontFace(GL_CCW)
 
+        texture_hdr = self.rendertarget_manager.get_rendertarget(RenderTargets.HDR)
         texture_normal = self.rendertarget_manager.get_rendertarget(RenderTargets.WORLD_NORMAL)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
         texture_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.DEPTHSTENCIL)
@@ -320,6 +321,17 @@ class Renderer(Singleton):
         material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
                            self.sceneManager.skeleton_solid_geometries, material_instance)
+
+        # screen space reflection
+        glDisable(GL_DEPTH_TEST)
+        texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
+        self.postprocess.bind_quad()
+        self.framebuffer.set_color_texture(texture_ssr)
+        self.framebuffer.set_depth_texture(None)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
+        self.postprocess.render_screen_space_reflection(texture_hdr, texture_normal, texture_velocity, texture_depth)
+        glEnable(GL_DEPTH_TEST)
 
     def render_shadow(self):
         glFrontFace(GL_CW)
@@ -341,7 +353,7 @@ class Renderer(Singleton):
                            self.sceneManager.skeleton_solid_geometries, material_instance)
         self.framebuffer_shadow.unbind_framebuffer()
 
-    def render_lighting(self):
+    def render_object(self):
         glFrontFace(GL_CCW)
 
         # render object
@@ -501,7 +513,6 @@ class Renderer(Singleton):
         texture_linear_depth = self.rendertarget_manager.get_rendertarget(RenderTargets.LINEAR_DEPTH)
         texture_velocity = self.rendertarget_manager.get_rendertarget(RenderTargets.VELOCITY)
         texture_ssao = self.rendertarget_manager.get_rendertarget(RenderTargets.SSAO)
-        texture_ssr = self.rendertarget_manager.get_rendertarget(RenderTargets.SCREEN_SPACE_REFLECTION)
 
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -532,13 +543,6 @@ class Renderer(Singleton):
         # Bloom
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, hdrtexture)
-
-        # screen space reflection
-        self.framebuffer.set_color_texture(texture_ssr)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_screen_space_reflection(
-            hdrtexture, texture_normal, texture_velocity, texture_depth)
 
         # Blur Test
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', hdrtexture)

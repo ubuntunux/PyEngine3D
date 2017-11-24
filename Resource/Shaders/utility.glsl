@@ -48,6 +48,22 @@ vec4 linear_depth_to_relative_world(vec2 tex_coord, float linear_depth)
     return depth_to_relative_world(tex_coord, depth);
 }
 
+float Luminance(vec3 LinearColor)
+{
+    return dot(LinearColor, vec3(0.3, 0.59, 0.11));
+}
+
+// @param xy should be a integer position (e.g. pixel position on the screen), repeats each 128x128 pixels
+// similar to a texture lookup but is only ALU
+// ~13 ALU operations (3 frac, 6 *, 4 mad)
+float PseudoRandom(vec2 xy)
+{
+    vec2 pos = fract(xy / 128.0f) * 128.0f + vec2(-64.340622f, -72.465622f);
+
+    // found by experimentation
+    return fract(dot(pos.xyx * pos.xyy, vec3(20.390625f, 60.703125f, 2.4281209f)));
+}
+
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }

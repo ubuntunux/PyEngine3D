@@ -35,5 +35,7 @@ void main() {
 
     fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) -
         (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
+    // NDC coord -> Screen Coord
+    fs_velocity *= 0.5;
 }
 #endif
