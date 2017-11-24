@@ -40,8 +40,9 @@ class Profiler:
     def check(func):
         def decoration(*args, **kargs):
             start_time = time.perf_counter()
-            func(*args, **kargs)
+            result = func(*args, **kargs)
             print('%s : %.2fms' % (func.__name__, (time.perf_counter() - start_time) * 1000.0))
+            return result
         return decoration
 
 
