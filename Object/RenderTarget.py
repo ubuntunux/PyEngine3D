@@ -22,6 +22,7 @@ class RenderTargets(AutoEnum):
     DEPTHSTENCIL = ()
     HDR = ()
     DIFFUSE = ()
+    MATERIAL = ()
     WORLD_NORMAL = ()
     SHADOWMAP = ()
     LINEAR_DEPTH = ()
@@ -162,6 +163,18 @@ class RenderTargetManager(Singleton):
                                  wrap=GL_CLAMP)
 
         self.create_rendertarget(RenderTargets.DIFFUSE,
+                                 Texture2D,
+                                 option=Option.SSAA,
+                                 width=fullsize_x,
+                                 height=fullsize_y,
+                                 internal_format=GL_RGBA8,
+                                 texture_format=GL_BGRA,
+                                 data_type=GL_UNSIGNED_BYTE,
+                                 min_filter=GL_LINEAR,
+                                 mag_filter=GL_LINEAR,
+                                 wrap=GL_CLAMP)
+
+        self.create_rendertarget(RenderTargets.MATERIAL,
                                  Texture2D,
                                  option=Option.SSAA,
                                  width=fullsize_x,

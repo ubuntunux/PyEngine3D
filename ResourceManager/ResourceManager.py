@@ -505,7 +505,8 @@ class MaterialLoader(ResourceLoader):
 
     def reload_materials(self, shader_filepath):
         reload_shader_names = []
-        for resourceName in self.resources:
+        resource_names = list(self.resources.keys())
+        for resourceName in resource_names:
             reload = False
             meta_data = self.resources[resourceName].meta_data
             if meta_data:
