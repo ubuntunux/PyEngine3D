@@ -1,5 +1,3 @@
-
-
 #include "scene_constants.glsl"
 #include "utility.glsl"
 #include "shading.glsl"

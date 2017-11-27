@@ -444,12 +444,37 @@ class CoreManager(Singleton):
     def update(self):
         self.currentTime = 0.0
         self.running = True
+
+        min_delta = sys.float_info.max
+        max_delta = sys.float_info.min
+        curr_min_delta = sys.float_info.max
+        curr_max_delta = sys.float_info.min
+        avg_fps = 0.0
+        avg_ms = 0.0
+        frame_count = 0
+        acc_time = 0.0
+
+        avg_logicTime = 0.0
+        avg_gpuTime = 0.0
+        avg_renderTime = 0.0
+        avg_presentTime = 0.0
+
+        acc_logicTime = 0.0
+        acc_gpuTime = 0.0
+        acc_renderTime = 0.0
+        acc_presentTime = 0.0
+
         while self.running:
             currentTime = time.perf_counter()
             delta = currentTime - self.currentTime
 
             if self.vsync and delta < self.minDelta or delta == 0.0:
                 continue
+
+            acc_time += delta
+            frame_count += 1
+            curr_min_delta = min(delta, curr_min_delta)
+            curr_max_delta = max(delta, curr_max_delta)
 
             # set timer
             self.currentTime = currentTime
@@ -475,14 +500,39 @@ class CoreManager(Singleton):
             self.renderTime = renderTime * 1000.0  # millisecond
             self.presentTime = presentTime * 1000.0  # millisecond
 
+            acc_logicTime += self.logicTime
+            acc_gpuTime += self.gpuTime
+            acc_renderTime += self.renderTime
+            acc_presentTime += self.presentTime
+
+            if 1.0 < acc_time:
+                avg_logicTime = acc_logicTime / frame_count
+                avg_gpuTime = acc_gpuTime / frame_count
+                avg_renderTime = acc_renderTime / frame_count
+                avg_presentTime = acc_presentTime / frame_count
+
+                acc_logicTime = 0.0
+                acc_gpuTime = 0.0
+                acc_renderTime = 0.0
+                acc_presentTime = 0.0
+
+                min_delta = curr_min_delta * 1000.0
+                max_delta = curr_max_delta * 1000.0
+                curr_min_delta = sys.float_info.max
+                curr_max_delta = sys.float_info.min
+                avg_ms = acc_time / frame_count * 1000.0
+                avg_fps = 1000.0 / avg_ms
+                frame_count = 0
+                acc_time = 0.0
+
             # debug info
             # print(self.fps, self.updateTime)
-            self.font_manager.log("%.2f fps" % self.fps)
-            self.font_manager.log("%.2f ms" % self.updateTime)
-            self.font_manager.log("CPU : %.2f ms" % self.logicTime)
-            self.font_manager.log("GPU : %.2f ms" % self.gpuTime)
-            self.font_manager.log("Render : %.2f ms" % self.renderTime)
-            self.font_manager.log("Present : %.2f ms" % self.presentTime)
+            self.font_manager.log("%.2f fps" % avg_fps)
+            self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (avg_ms, min_delta, max_delta))
+            self.font_manager.log("CPU : %.2f ms" % avg_logicTime)
+            self.font_manager.log("GPU : %.2f ms" % avg_gpuTime)
+            self.font_manager.log("Render : %.2f ms" % avg_renderTime)
+            self.font_manager.log("Present : %.2f ms" % avg_presentTime)
 
             # selected object transform info
             selectedObject = self.sceneManager.getSelectedObject()

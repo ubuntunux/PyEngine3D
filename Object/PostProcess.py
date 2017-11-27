@@ -289,14 +289,13 @@ class PostProcess:
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
-    def render_deferred_shading(self, texture_diffuse, texture_material, texture_normal, texture_velocity,
+    def render_deferred_shading(self, texture_diffuse, texture_material, texture_normal,
                                 texture_depth, texture_shadow, texture_scene_reflect, texture_cube):
         self.deferred_shading.use_program()
         self.deferred_shading.bind_material_instance()
         self.deferred_shading.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.deferred_shading.bind_uniform_data("texture_material", texture_material)
         self.deferred_shading.bind_uniform_data("texture_normal", texture_normal)
-        self.deferred_shading.bind_uniform_data("texture_velocity", texture_velocity)
         self.deferred_shading.bind_uniform_data("texture_depth", texture_depth)
         self.deferred_shading.bind_uniform_data("texture_shadow", texture_shadow)
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", texture_scene_reflect)

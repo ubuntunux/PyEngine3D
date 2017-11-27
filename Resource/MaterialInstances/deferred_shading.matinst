@@ -1,0 +1,10 @@
+{'macros': {},
+ 'material_name': 'deferred_shading',
+ 'shader_name': 'deferred_shading',
+ 'uniform_datas': {'texture_cube': 'empty',
+                   'texture_depth': 'empty',
+                   'texture_diffuse': 'empty',
+                   'texture_material': 'empty',
+                   'texture_normal': 'empty',
+                   'texture_scene_reflect': 'empty',
+                   'texture_shadow': 'empty'}}

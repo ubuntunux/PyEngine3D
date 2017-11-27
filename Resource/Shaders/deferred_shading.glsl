@@ -8,7 +8,6 @@
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_material;
 uniform sampler2D texture_normal;
-uniform sampler2D texture_velocity;
 
 uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
@@ -32,7 +31,6 @@ void main() {
     vec4 base_color = texture(texture_diffuse, screen_tex_coord);
     vec4 material = texture(texture_material, screen_tex_coord);
     vec3 N = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
-    vec4 velocity = texture(texture_velocity, screen_tex_coord);
 
     vec4 world_position = vec4(screen_tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     world_position = INV_VIEW * INV_PERSPECTIVE * world_position;

@@ -1,0 +1,4 @@
+{'macros': {},
+ 'material_name': 'gaussian_blur',
+ 'shader_name': 'gaussian_blur',
+ 'uniform_datas': {'blur_scale': array([ 1.,  1.], dtype=float32), 'texture_diffuse': 'empty'}}

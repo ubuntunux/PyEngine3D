@@ -30,6 +30,7 @@ class RenderGroup(AutoEnum):
 
 class RenderMode(AutoEnum):
     PRE_PASS = ()
+    GBUFFER = ()
     SHADING = ()
     SHADOW = ()
     SCREEN_SPACE_REFLECTION = ()
@@ -360,9 +361,9 @@ class Renderer(Singleton):
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
-        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING,
+        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
                            self.sceneManager.static_solid_geometries)
-        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
+        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
                            self.sceneManager.skeleton_solid_geometries)
 
     def render_shadow(self):
@@ -417,7 +418,6 @@ class Renderer(Singleton):
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
                                                      RenderTargets.MATERIAL,
                                                      RenderTargets.WORLD_NORMAL,
-                                                     RenderTargets.VELOCITY,
                                                      RenderTargets.DEPTHSTENCIL,
                                                      RenderTargets.SHADOWMAP,
                                                      RenderTargets.SCREEN_SPACE_REFLECTION,
@@ -460,7 +460,7 @@ class Renderer(Singleton):
         for geometry in geometry_list:
             actor = geometry.parent_actor
 
-            if render_mode == RenderMode.SHADING:
+            if RenderMode.SHADING == render_mode or RenderMode.GBUFFER == render_mode:
                 material_instance = geometry.material_instance or default_material_instance
                 material = material_instance.material if material_instance else None
 
@@ -468,11 +468,10 @@ class Renderer(Singleton):
                     material.use_program()
 
                 if last_material_instance != material_instance and material_instance is not None:
-                    is_deferred_rendering = (self.rendering_type == RENDERING_TYPE.DEFERRED)
                     material_instance.bind_material_instance()
+                    is_deferred_rendering = (RenderMode.GBUFFER == render_mode)
                     material_instance.bind_uniform_data('is_deferred_shading', is_deferred_rendering)
-                    if not is_deferred_rendering:
-                        material_instance.bind_uniform_data('texture_depth', RenderTargets.DEPTHSTENCIL)
+                    if RenderMode.SHADING == render_mode:
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_scene_reflect',
                                                             RenderTargets.SCREEN_SPACE_REFLECTION)
@@ -480,9 +479,10 @@ class Renderer(Singleton):
                 actor_material_instance = geometry.material_instance
                 if actor_material_instance and actor_material_instance != last_actor_material_instance:
                     data_diffuse = actor_material_instance.get_uniform_data('texture_diffuse')
-                    data_normal = actor_material_instance.get_uniform_data('texture_normal')
                     material_instance.bind_uniform_data('texture_diffuse', data_diffuse)
-                    material_instance.bind_uniform_data('texture_normal', data_normal)
+                    if RenderMode.PRE_PASS == render_mode:
+                        data_normal = actor_material_instance.get_uniform_data('texture_normal')
+                        material_instance.bind_uniform_data('texture_normal', data_normal)
                 last_actor_material_instance = actor_material_instance
 
             if last_actor != actor and material_instance:

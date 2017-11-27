@@ -1,0 +1,1 @@
+{'macros': {}, 'material_name': 'linear_depth', 'shader_name': 'linear_depth', 'uniform_datas': {'texture_depth': 'empty'}}
