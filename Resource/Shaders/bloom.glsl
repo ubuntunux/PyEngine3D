@@ -1,5 +1,3 @@
-#version 430 core
-
 #include "quad.glsl"
 
 uniform float bloom_intensity;

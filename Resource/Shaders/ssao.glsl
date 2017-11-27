@@ -1,5 +1,3 @@
-#version 430 core
-
 #include "utility.glsl"
 #include "scene_constants.glsl"
 #include "quad.glsl"

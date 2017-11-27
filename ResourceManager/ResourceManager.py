@@ -462,8 +462,12 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
-    resource_version = 0.1
+    resource_version = 0.2
     fileExt = '.glsl'
+    shader_version = "#version 430 core"
+
+    def get_shader_version(self):
+        return self.shader_version
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -564,9 +568,10 @@ class MaterialLoader(ResourceLoader):
     def generate_new_material(self, material_name, shader_name, macros={}):
         logger.info("Generate new material : %s" % material_name)
         shader = self.resource_manager.getShader(shader_name)
+        shader_version = self.resource_manager.get_shader_version()
         if shader:
-            vertex_shader_code = shader.get_vertex_shader_code(macros)
-            fragment_shader_code = shader.get_fragment_shader_code(macros)
+            vertex_shader_code = shader.get_vertex_shader_code(shader_version, macros)
+            fragment_shader_code = shader.get_fragment_shader_code(shader_version, macros)
             final_macros = shader.parsing_macros(vertex_shader_code, fragment_shader_code)
             uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
             material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
@@ -698,7 +703,7 @@ class MaterialInstanceLoader(ResourceLoader):
             if self.create_material_instance(shader_name=material_instance_name, macros=macros):
                 material_instance = self.getResourceData(material_instance_name)
             else:
-                material_instance = self.getResourceData('default')
+                material_instance = self.getResourceData('empty')
         return material_instance
 
 
@@ -1227,6 +1232,8 @@ class ResourceManager(Singleton):
         return os.path.join(self.root_path, 'Externals', 'Fonts', 'NanumGothic_Coding.ttf')
 
     # FUNCTIONS : Shader
+    def get_shader_version(self):
+        return self.shaderLoader.get_shader_version()
 
     def getShader(self, shaderName):
         return self.shaderLoader.getResourceData(shaderName)
@@ -1251,7 +1258,7 @@ class ResourceManager(Singleton):
         return self.material_instanceLoader.getMaterialInstance(name)
 
     def getDefaultMaterialInstance(self):
-        return self.material_instanceLoader.getMaterialInstance('default')
+        return self.material_instanceLoader.getMaterialInstance('empty')
 
     # FUNCTIONS : Mesh
 

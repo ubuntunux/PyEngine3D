@@ -1,4 +1,4 @@
-#version 430 core
+
 
 #include "quad.glsl"
 

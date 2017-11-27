@@ -1,4 +1,4 @@
-#version 430 core
+
 
 uniform sampler2D texture_font;
 uniform float font_size;

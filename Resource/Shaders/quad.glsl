@@ -1,4 +1,4 @@
-#version 430 core
+
 
 struct VERTEX_INPUT
 {

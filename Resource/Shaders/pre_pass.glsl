@@ -1,4 +1,4 @@
-#version 430 core
+
 
 #include "scene_constants.glsl"
 #include "utility.glsl"

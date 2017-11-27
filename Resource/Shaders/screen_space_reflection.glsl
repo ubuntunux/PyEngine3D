@@ -1,4 +1,4 @@
-#version 430 core
+
 
 #include "screen_space_raycast.glsl"
 #include "PCFKernels.glsl"

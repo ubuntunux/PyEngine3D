@@ -6,6 +6,7 @@ import traceback
 import copy
 
 import numpy as np
+from numpy import array, float32
 
 from Common import logger
 from App import CoreManager
@@ -19,9 +20,9 @@ class MaterialInstance:
         self.isNeedToSave = False
         logger.info("Load Material Instance : " + material_instance_name)
         self.name = material_instance_name
-        self.shader_name = data.get('shader_name', 'default')
+        self.shader_name = data.get('shader_name', 'empty')
         self.material = None
-        self.material_name = data.get('material_name', 'default')
+        self.material_name = data.get('material_name', 'empty')
         self.macros = copy.copy(data.get('macros', OrderedDict()))
         self.linked_uniform_map = dict()
         self.linked_material_component_map = dict()
@@ -54,16 +55,14 @@ class MaterialInstance:
         uniform_datas = {}
         for uniform_name in self.linked_uniform_map:
             uniform_buffer, uniform_data = self.linked_uniform_map[uniform_name]
-            if hasattr(uniform_data, 'tolist'):
-                uniform_datas[uniform_name] = uniform_data.tolist()
-            elif hasattr(uniform_data, 'name'):
+            if hasattr(uniform_data, 'name'):
                 uniform_datas[uniform_name] = uniform_data.name
             else:
                 uniform_datas[uniform_name] = uniform_data
 
         save_data = dict(
-            shader_name=self.material.shader_name if self.material else 'default',
-            material_name=self.material.name if self.material else 'default',
+            shader_name=self.material.shader_name if self.material else 'empty',
+            material_name=self.material.name if self.material else 'empty',
             macros=self.macros,
             uniform_datas=uniform_datas,
         )
@@ -111,8 +110,8 @@ class MaterialInstance:
         uniform = self.linked_uniform_map.get(uniform_name)
         if uniform:
             uniform[0].bind_uniform(uniform_data, num)
-        # else:
-        #     logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
+        else:
+            logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 
     def get_uniform_data(self, uniform_name):
         uniform = self.linked_uniform_map.get(uniform_name)
@@ -131,8 +130,9 @@ class MaterialInstance:
                 uniform_data = CreateUniformDataFromString(uniform_buffer.uniform_type, str_uniform_data)
                 if uniform_data is not None:
                     uniform[1] = uniform_data
-        else:
-            logger.error('%s material instance has no %s uniform variable %s.' % (self.name, uniform_name, str_uniform_data))
+                    return True
+        logger.error('%s material instance set data error : %s uniform variable %s.' % (
+            self.name, uniform_name, str_uniform_data))
 
     def get_program(self):
         return self.material.program

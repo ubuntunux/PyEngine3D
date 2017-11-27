@@ -45,13 +45,13 @@ class Shader:
         self.attribute.setAttribute("name", self.name)
         return self.attribute
 
-    def get_vertex_shader_code(self, external_macros={}):
-        return self.__parsing_final_code__('VERTEX_SHADER', external_macros)
+    def get_vertex_shader_code(self, shader_version, external_macros={}):
+        return self.__parsing_final_code__('VERTEX_SHADER', shader_version, external_macros)
 
-    def get_fragment_shader_code(self, external_macros={}):
-        return self.__parsing_final_code__('FRAGMENT_SHADER', external_macros)
+    def get_fragment_shader_code(self, shader_version, external_macros={}):
+        return self.__parsing_final_code__('FRAGMENT_SHADER', shader_version, external_macros)
 
-    def __parsing_final_code__(self, shaderType, external_macros):
+    def __parsing_final_code__(self, shaderType, shader_version, external_macros):
         if self.shader_code == "" or self.shader_code is None:
             return
 
@@ -74,8 +74,10 @@ class Shader:
             else:
                 combined_macros[macro] = external_macros[macro]
 
+        # insert shader version - ex) #version 430 core
+        final_code_lines = [shader_version, ]
+
         # insert defines to final code
-        final_code_lines = ["", ]  # for version define
         for macro in combined_macros:
             final_code_lines.append("#define %s %s" % (macro, str(combined_macros[macro])))
 
