@@ -7,10 +7,20 @@ from .RenderBuffer import RenderBuffer
 
 
 class FrameBuffer:
+    errors = (
+        GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
+        GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER,
+        GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
+        GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE,
+        GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER,
+        GL_FRAMEBUFFER_UNDEFINED,
+        GL_FRAMEBUFFER_UNSUPPORTED
+    )
+
     def __init__(self):
         logger.info("Create " + GetClassName(self))
         self.buffer = glGenFramebuffers(1)
-        self.max_draw_buffers = min(4, glGetInteger(GL_MAX_DRAW_BUFFERS))
+        self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
         self.color_textures = [None, ] * self.max_draw_buffers
         self.attachments = [0, ] * self.max_draw_buffers
         self.depth_texture = None
@@ -118,7 +128,14 @@ class FrameBuffer:
 
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
-            logger.error("glCheckFramebufferStatus error %d." % gl_error)
+            error_message = "glCheckFramebufferStatus error %s." % self.get_error(gl_error)
+            logger.error(error_message)
+            raise BaseException(error_message)
+
+    def get_error(self, error_code):
+        for error in self.errors:
+            if error == error_code:
+                return str(error)
 
     def unbind_framebuffer(self):
         self.set_color_texture(None)

@@ -231,7 +231,8 @@ class Renderer(Singleton):
 
     def set_debug_rendertarget(self, rendertarget_index, rendertarget_name):
         self.debug_rendertarget = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
-        logger.info("Current render target : %s" % self.debug_rendertarget.name)
+        if self.debug_rendertarget:
+            logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
     def renderScene(self):
         startTime = timeModule.perf_counter()

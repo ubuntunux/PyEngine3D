@@ -135,10 +135,10 @@ class Texture:
 
     def bind_texture(self):
         glBindTexture(self.target, self.buffer)
-        if self.attachment:
-            error_msg = "%s can not bind to a texture because it is attached to a frame buffer.." % self.name
-            logger.error(error_msg)
-            raise BaseException(error_msg)
+        # if self.attachment:
+        #     error_msg = "%s can not bind to a texture because it is attached to a frame buffer.." % self.name
+        #     logger.error(error_msg)
+        #     raise BaseException(error_msg)
 
     def is_attached(self):
         return self.attachment
