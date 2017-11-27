@@ -122,6 +122,8 @@ class CoreManager(Singleton):
         if not self.renderer.created_scene:
             if platformModule.system() == 'Linux':
                 self.renderer.resizeScene(width, height, full_screen)
+
+        self.send(COMMAND.SORT_UI_ITEMS)
         return True
 
     @staticmethod

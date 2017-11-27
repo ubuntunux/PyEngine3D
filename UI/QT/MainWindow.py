@@ -143,6 +143,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"),
                                lambda: self.setViewMode(COMMAND.VIEWMODE_SHADING))
 
+        # sort ui items
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.SORT_UI_ITEMS)), self.sort_items)
+
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resource_menu = QMenu()
@@ -266,6 +269,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.appCmdQueue.put(COMMAND.CLOSE_APP)
         self.close()
         sys.exit()
+
+    def sort_items(self):
+        self.resourceListWidget.sortItems(0, 0)
+        self.resourceListWidget.sortItems(1, 0)
+        self.objectList.sortItems(0, 0)
+        self.objectList.sortItems(1, 0)
 
     def new_project(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, 'New Project', os.path.join(".", "Projects"))

@@ -36,6 +36,8 @@ class COMMAND(AutoEnum):
     REQUEST_PIPE = ()
     PIPE_DONE = ()
 
+    SORT_UI_ITEMS = ()
+
     # menu
     NEW_PROJECT = ()
     OPEN_PROJECT = ()
