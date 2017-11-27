@@ -207,6 +207,9 @@ class CoreManager(Singleton):
     def sendAntiAliasingList(self, antialiasing_list):
         self.send(COMMAND.TRANS_ANTIALIASING_LIST, antialiasing_list)
 
+    def sendRenderingTypeList(self, rendering_type_list):
+        self.send(COMMAND.TRANS_RENDERING_TYPE_LIST, rendering_type_list)
+
     def registCommand(self):
         def nothing(cmd_enum, value):
             logger.warn("Nothing to do for %s(%d)" % (str(cmd_enum), cmd_enum.value))
@@ -302,6 +305,10 @@ class CoreManager(Singleton):
         def cmd_set_anti_aliasing(anti_aliasing_index):
             self.renderer.postprocess.set_anti_aliasing(anti_aliasing_index)
         self.commands[COMMAND.SET_ANTIALIASING.value] = cmd_set_anti_aliasing
+
+        def cmd_set_rendering_type(renderering_type):
+            self.renderer.set_rendering_type(renderering_type)
+        self.commands[COMMAND.SET_RENDERING_TYPE.value] = cmd_set_rendering_type
 
         def cmd_view_rendertarget(value):
             rendertarget_index, rendertarget_name = value

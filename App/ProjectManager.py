@@ -8,7 +8,7 @@ from Utilities import Singleton, GetClassName, Config
 
 class ProjectManager(Singleton):
     def __init__(self):
-        self.coreManager = None
+        self.core_manager = None
         self.sceneManager = None
         self.resource_manager = None
         self.project_name = ""
@@ -18,7 +18,7 @@ class ProjectManager(Singleton):
         self.next_open_project_filename = ""
 
     def initialize(self, core_manager, project_filename=""):
-        self.coreManager = core_manager
+        self.core_manager = core_manager
         self.sceneManager = core_manager.sceneManager
         self.resource_manager = core_manager.resource_manager
 
@@ -76,7 +76,7 @@ class ProjectManager(Singleton):
             if os.path.exists(project_filename):
                 # will be open
                 self.next_open_project_filename = project_filename
-                self.coreManager.close()
+                self.core_manager.close()
                 return
         except:
             logger.error(traceback.format_exc())
@@ -86,7 +86,7 @@ class ProjectManager(Singleton):
     def save_project(self):
         try:
             if self.config and self.project_filename != self.resource_manager.DefaultProjectFile:
-                main_camera = self.coreManager.sceneManager.mainCamera
+                main_camera = self.core_manager.sceneManager.mainCamera
                 if main_camera:
                     main_camera.write_to_config(self.config)
                 self.config.save()

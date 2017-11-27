@@ -87,6 +87,9 @@ class COMMAND(AutoEnum):
     TRANS_ANTIALIASING_LIST = ()
     SET_ANTIALIASING = ()
 
+    TRANS_RENDERING_TYPE_LIST = ()
+    SET_RENDERING_TYPE = ()
+
     COUNT = ()
 
 

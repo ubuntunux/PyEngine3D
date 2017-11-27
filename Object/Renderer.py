@@ -15,6 +15,13 @@ from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
 
 
+class RENDERING_TYPE(AutoEnum):
+    FORWARD = ()
+    DEFERRED = ()
+    LIGHT_PRE_PASS = ()
+    COUNT = ()
+
+
 class RenderGroup(AutoEnum):
     STATIC_ACTOR = ()
     SKELETON_ACTOR = ()
@@ -40,7 +47,7 @@ class Renderer(Singleton):
         self.created_scene = False
 
         # managers
-        self.coreManager = None
+        self.core_manager = None
         self.resource_manager = None
         self.font_manager = None
         self.sceneManager = None
@@ -73,7 +80,7 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
-        self.is_deferred_rendering = False
+        self.rendering_type = RENDERING_TYPE.FORWARD
 
     @staticmethod
     def destroyScreen():
@@ -91,7 +98,7 @@ class Renderer(Singleton):
         logger.info("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT : %d" % glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT))
         logger.info("=" * 30)
 
-        self.coreManager = core_manager
+        self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
         self.font_manager = core_manager.font_manager
         self.sceneManager = core_manager.sceneManager
@@ -133,6 +140,15 @@ class Renderer(Singleton):
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+
+        def get_rendering_type_name(rendering_type):
+            rendering_type = str(rendering_type)
+            return rendering_type.split('.')[-1] if '.' in rendering_type else rendering_type
+
+        rendering_type_list = [get_rendering_type_name(RENDERING_TYPE.convert_index_to_enum(x)) for x in
+                               range(RENDERING_TYPE.COUNT.value)]
+        # Send to GUI
+        self.core_manager.sendRenderingTypeList(rendering_type_list)
 
     def close(self):
         pass
@@ -209,7 +225,7 @@ class Renderer(Singleton):
 
             # send screen info
             screen_info = (width, height, full_screen)
-            self.coreManager.notifyChangeResolution(screen_info)
+            self.core_manager.notifyChangeResolution(screen_info)
         self.created_scene = True
 
     def ortho_view(self):
@@ -234,6 +250,9 @@ class Renderer(Singleton):
         if self.debug_rendertarget:
             logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
+    def set_rendering_type(self, rendering_type):
+        self.rendering_type = RENDERING_TYPE.convert_index_to_enum(rendering_type)
+
     def renderScene(self):
         startTime = timeModule.perf_counter()
 
@@ -244,7 +263,7 @@ class Renderer(Singleton):
         if not camera or not light:
             return
 
-        self.sceneConstants_Time[0] = self.coreManager.currentTime
+        self.sceneConstants_Time[0] = self.core_manager.currentTime
         self.uniformSceneConstants.bind_uniform_block(self.sceneConstants_Time)
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
@@ -272,7 +291,7 @@ class Renderer(Singleton):
         self.set_blend_state(False)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        if self.is_deferred_rendering:
+        if self.rendering_type == RENDERING_TYPE.DEFERRED:
             self.render_deferred()
         else:
             self.render_pre_pass()
@@ -392,7 +411,7 @@ class Renderer(Singleton):
         self.sceneManager.sky.render()
         glEnable(GL_DEPTH_TEST)
 
-        if self.is_deferred_rendering:
+        if self.rendering_type == RENDERING_TYPE.DEFERRED:
             texture_cube = self.resource_manager.getTexture('field')
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
@@ -449,9 +468,10 @@ class Renderer(Singleton):
                     material.use_program()
 
                 if last_material_instance != material_instance and material_instance is not None:
+                    is_deferred_rendering = (self.rendering_type == RENDERING_TYPE.DEFERRED)
                     material_instance.bind_material_instance()
-                    material_instance.bind_uniform_data('is_deferred_shading', self.is_deferred_rendering)
-                    if not self.is_deferred_rendering:
+                    material_instance.bind_uniform_data('is_deferred_shading', is_deferred_rendering)
+                    if not is_deferred_rendering:
                         material_instance.bind_uniform_data('texture_depth', RenderTargets.DEPTHSTENCIL)
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_scene_reflect',
@@ -529,7 +549,7 @@ class Renderer(Singleton):
                     skeletons = static_actor.model.mesh.skeletons
                     skeleton_mesh = static_actor.model.mesh
                     frame_count = skeleton_mesh.get_animation_frame_count()
-                    frame = math.fmod(self.coreManager.currentTime * 30.0, frame_count) if frame_count > 0.0 else 0.0
+                    frame = math.fmod(self.core_manager.currentTime * 30.0, frame_count) if frame_count > 0.0 else 0.0
                     isAnimation = frame_count > 0.0
                     for skeleton in skeletons:
                         matrix = static_actor.transform.matrix

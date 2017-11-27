@@ -155,6 +155,9 @@
          </spacer>
         </item>
         <item>
+         <widget class="QComboBox" name="comboRenderingType"/>
+        </item>
+        <item>
          <widget class="QComboBox" name="comboAntiAliasing"/>
         </item>
         <item>
@@ -283,7 +286,7 @@
      <x>0</x>
      <y>0</y>
      <width>1079</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMainMenu">

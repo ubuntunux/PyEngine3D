@@ -198,6 +198,12 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO)),
                      self.addRenderTarget)
 
+        # rendering type
+        self.comboRenderingType = self.findChild(QtGui.QComboBox, "comboRenderingType")
+        self.comboRenderingType.currentIndexChanged.connect(self.set_rendering_type)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERING_TYPE_LIST)),
+                     self.add_rendering_type)
+
         # anti aliasing
         self.comboAntiAliasing = self.findChild(QtGui.QComboBox, "comboAntiAliasing")
         self.comboAntiAliasing.currentIndexChanged.connect(self.set_anti_aliasing)
@@ -291,13 +297,21 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def clearRenderTargetList(self):
         self.comboRenderTargets.clear()
 
+    # Rendering Type
+    def add_rendering_type(self, rendering_type_list):
+        for rendering_type_name in rendering_type_list:
+            self.comboRenderingType.addItem(rendering_type_name)
+
+    def set_rendering_type(self, rendering_type_index):
+        self.appCmdQueue.put(COMMAND.SET_RENDERING_TYPE, rendering_type_index)
+
     # Anti Aliasing
     def add_anti_aliasing(self, anti_aliasing_list):
         for anti_aliasing_name in anti_aliasing_list:
             self.comboAntiAliasing.addItem(anti_aliasing_name)
 
-    def set_anti_aliasing(self, rendertarget_index):
-        self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, rendertarget_index)
+    def set_anti_aliasing(self, anti_aliasing_index):
+        self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, anti_aliasing_index)
 
     # Render Target
     def addRenderTarget(self, rendertarget_name):

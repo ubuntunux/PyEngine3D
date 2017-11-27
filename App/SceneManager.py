@@ -14,7 +14,7 @@ from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZE
 
 class SceneManager(Singleton):
     def __init__(self):
-        self.coreManager = None
+        self.core_manager = None
         self.resource_manager = None
         self.sceneLoader = None
         self.renderer = None
@@ -43,7 +43,7 @@ class SceneManager(Singleton):
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
-        self.coreManager = core_manager
+        self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
         self.sceneLoader = self.resource_manager.sceneLoader
         self.renderer = core_manager.renderer
@@ -56,10 +56,10 @@ class SceneManager(Singleton):
 
     def set_current_scene_name(self, scene_name):
         self.__current_scene_name = scene_name
-        self.coreManager.set_window_title(scene_name)
+        self.core_manager.set_window_title(scene_name)
 
     def clear_scene(self):
-        self.coreManager.notifyClearScene()
+        self.core_manager.notifyClearScene()
         self.mainCamera = None
         self.mainLight = None
         self.cameras = []
@@ -74,7 +74,7 @@ class SceneManager(Singleton):
         #     self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
 
     def post_open_scene(self):
-        self.coreManager.sendObjectInfo(self.renderer.postprocess)
+        self.core_manager.sendObjectInfo(self.renderer.postprocess)
         self.renderer.resizeScene()
 
     def new_scene(self):
@@ -162,7 +162,7 @@ class SceneManager(Singleton):
             object_list = self.get_object_list(type(object))
             object_list.append(object)
             self.objectMap[object.name] = object
-            self.coreManager.sendObjectInfo(object)
+            self.core_manager.sendObjectInfo(object)
         else:
             logger.error("SceneManager::regist_object error. %s" % object.name if object else 'None')
 
@@ -241,7 +241,7 @@ class SceneManager(Singleton):
                 self.static_actors.remove(obj)
             if obj in self.skeleton_actors:
                 self.skeleton_actors.remove(obj)
-            self.coreManager.notifyDeleteObject(objName)
+            self.core_manager.notifyDeleteObject(objName)
 
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
