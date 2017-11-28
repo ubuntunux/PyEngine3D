@@ -282,31 +282,40 @@ class Renderer(Singleton):
                                                       light.lightColor,
                                                       light.shadow_view_projection)
 
-        # glEnable(GL_FRAMEBUFFER_SRGB)
-        glEnable(GL_MULTISAMPLE)
-        glDepthMask(True)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
-        glFrontFace(GL_CCW)
-        glEnable(GL_CULL_FACE)
         self.set_blend_state(False)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
+        # glEnable(GL_FRAMEBUFFER_SRGB)
+        glEnable(GL_MULTISAMPLE)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_CULL_FACE)
 
+        glFrontFace(GL_CCW)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(True)
         if self.rendering_type == RenderingType.DEFERRED_RENDERING:
             self.render_deferred()
         else:
             self.render_pre_pass()
 
+        glDisable(GL_DEPTH_TEST)
         self.render_preprocess()
 
+        glFrontFace(GL_CW)
         self.render_shadow()
 
+        glFrontFace(GL_CCW)
+        glDepthMask(False)  # cause depth prepass and gbuffer
         self.render_solid()
 
+        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.render_translucent()
 
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE)
+        self.set_blend_state(False)
         self.render_postprocess()
 
+        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.render_font()
 
         # reset shader program
@@ -327,8 +336,6 @@ class Renderer(Singleton):
         return renderTime, presentTime
 
     def render_pre_pass(self):
-        glFrontFace(GL_CCW)
-
         self.framebuffer.set_color_textures([RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY])
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
@@ -346,10 +353,6 @@ class Renderer(Singleton):
                            self.sceneManager.skeleton_solid_geometries, material_instance)
 
     def render_deferred(self):
-        glFrontFace(GL_CCW)
-        glEnable(GL_DEPTH_TEST)
-        glDepthMask(True)
-
         self.framebuffer.set_color_textures(
             [RenderTargets.DIFFUSE, RenderTargets.MATERIAL, RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY])
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
@@ -365,8 +368,6 @@ class Renderer(Singleton):
                            self.sceneManager.skeleton_solid_geometries)
 
     def render_shadow(self):
-        glFrontFace(GL_CW)
-
         self.framebuffer_shadow.set_color_texture(None)
         self.framebuffer_shadow.set_depth_texture(RenderTargets.SHADOWMAP)
         self.framebuffer_shadow.bind_framebuffer()
@@ -384,14 +385,16 @@ class Renderer(Singleton):
         self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
-        glDisable(GL_DEPTH_TEST)
         self.postprocess.bind_quad()
         self.framebuffer.set_color_texture(RenderTargets.SCREEN_SPACE_REFLECTION)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
-                                                        RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
+
+        if self.postprocess.is_render_ssr:
+            self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
+                                                            RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
+        else:
+            self.framebuffer.clear(GL_COLOR_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
 
         # Linear depth
         self.framebuffer.set_color_texture(RenderTargets.LINEAR_DEPTH)
@@ -399,9 +402,6 @@ class Renderer(Singleton):
         self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
 
     def render_solid(self):
-        glFrontFace(GL_CCW)
-        glDepthMask(False)  # cause depth prepass and gbuffer
-
         self.framebuffer.set_color_texture(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
@@ -428,8 +428,6 @@ class Renderer(Singleton):
                                self.sceneManager.skeleton_solid_geometries)
 
     def render_translucent(self):
-        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
         # atmospherer
         glDisable(GL_DEPTH_TEST)
         self.postprocess.bind_quad()
@@ -441,9 +439,6 @@ class Renderer(Singleton):
                            self.sceneManager.static_translucent_geometries)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
                            self.sceneManager.skeleton_translucent_geometries)
-
-        # enable depth write
-        glDepthMask(True)
 
     def render_actors(self, render_group, render_mode, geometry_list, material_instance=None):
         if len(geometry_list) < 1:
@@ -559,11 +554,6 @@ class Renderer(Singleton):
                             draw_bone(mesh, skeleton_mesh, Matrix4().copy(), material_instance, bone, matrix, isAnimation)
 
     def render_postprocess(self):
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-
-        self.set_blend_state(False)
-
         # bind frame buffer
         self.framebuffer.set_color_texture(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(None)
@@ -603,18 +593,20 @@ class Renderer(Singleton):
             self.framebuffer.copy_framebuffer(self.framebuffer_msaa)
 
         # Motion Blur
-        backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', RenderTargets.BACKBUFFER)
-        self.framebuffer.set_color_texture(backbuffer_copy)
-        self.framebuffer.bind_framebuffer()
-        self.postprocess.render_motion_blur(RenderTargets.VELOCITY, RenderTargets.BACKBUFFER)
+        if self.postprocess.is_render_motion_blur:
+            backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', RenderTargets.BACKBUFFER)
+            self.framebuffer.set_color_texture(backbuffer_copy)
+            self.framebuffer.bind_framebuffer()
+            self.postprocess.render_motion_blur(RenderTargets.VELOCITY, RenderTargets.BACKBUFFER)
 
-        # copy to backbuffer
-        self.framebuffer.set_color_texture(backbuffer_copy)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer_copy.set_color_texture(RenderTargets.BACKBUFFER)
-        self.framebuffer_copy.bind_framebuffer()
-        self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+            # copy to backbuffer
+            self.framebuffer.set_color_texture(backbuffer_copy)
+            self.framebuffer.bind_framebuffer()
+            self.framebuffer_copy.set_color_texture(RenderTargets.BACKBUFFER)
+            self.framebuffer_copy.bind_framebuffer()
+            self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
+        # debug render target
         if self.debug_rendertarget and self.debug_rendertarget is not RenderTargets.BACKBUFFER and \
                 type(self.debug_rendertarget) != RenderBuffer:
             self.framebuffer.set_color_texture(RenderTargets.BACKBUFFER)
@@ -622,14 +614,6 @@ class Renderer(Singleton):
             self.postprocess.render_copy_rendertarget(self.debug_rendertarget)
 
     def render_font(self):
-        # Font Test
-        self.set_blend_state(
-            blend_enable=True,
-            equation=GL_FUNC_ADD,
-            func_src=GL_SRC_ALPHA,
-            func_dst=GL_ONE_MINUS_SRC_ALPHA
-        )
-
         self.framebuffer.set_color_texture(RenderTargets.BACKBUFFER)
         self.framebuffer.bind_framebuffer()
         self.font_manager.render_font(self.width, self.height)

@@ -39,6 +39,7 @@ class PostProcess:
         self.bloom_threshold_max = 1.5
         self.bloom_scale = 1.0
 
+        self.is_render_motion_blur = True
         self.motion_blur = None
         self.motion_blur_scale = 1.0
 
@@ -49,12 +50,14 @@ class PostProcess:
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
 
+        self.is_render_ssr = True
+        self.screeen_space_reflection = None
+
         self.atmosphere = None
         self.tonemapping = None
         self.linear_depth = None
         self.blur = None
         self.gaussian_blur = None
-        self.screeen_space_reflection = None
         self.deferred_shading = None
         self.show_rendertarget = None
 
@@ -133,6 +136,9 @@ class PostProcess:
         self.Attributes.setAttribute('is_render_ssao', self.is_render_ssao)
         self.Attributes.setAttribute('ssao_radius_min_max', self.ssao_radius_min_max)
         self.Attributes.setAttribute('ssao_blur_radius', self.ssao_blur_radius)
+
+        self.Attributes.setAttribute('is_render_ssr', self.is_render_ssr)
+        self.Attributes.setAttribute('is_render_motion_blur', self.is_render_motion_blur)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
