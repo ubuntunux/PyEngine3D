@@ -369,8 +369,9 @@ class CoreManager(Singleton):
             eventType = event.type
             if eventType == QUIT:
                 self.close()
-            # elif eventType == VIDEORESIZE:
-            #     self.renderer.resizeScene(*event.dict['size'])
+            elif eventType == VIDEORESIZE:
+                pass
+                # self.renderer.resizeScene(*event.dict['size'], self.renderer.full_screen)
             elif eventType == KEYDOWN:
                 subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
@@ -378,7 +379,7 @@ class CoreManager(Singleton):
                     pass
                 elif keyDown == K_ESCAPE:
                     if self.renderer.full_screen:
-                        self.renderer.resizeScene(0, 0, not self.renderer)
+                        self.renderer.resizeScene(0, 0, not self.renderer.full_screen)
                     else:
                         self.close()
                 elif keyDown == K_BACKQUOTE and not subkey_down:

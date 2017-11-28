@@ -186,7 +186,7 @@ class Renderer(Singleton):
 
     @staticmethod
     def change_resolution(width=0, height=0, full_screen=False):
-        option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE
+        option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE
         if full_screen:
             option |= FULLSCREEN
         return pygame.display.set_mode((width, height), option)
