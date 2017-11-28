@@ -354,11 +354,7 @@ class Renderer(Singleton):
             [RenderTargets.DIFFUSE, RenderTargets.MATERIAL, RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY])
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
-        glClearBufferfv(GL_COLOR, 0, (0.0, 0.0, 0.0, 0.0))
-        glClearBufferfv(GL_COLOR, 1, (0.0, 0.0, 0.0, 0.0))
-        glClearBufferfv(GL_COLOR, 2, (0.0, 0.0, 0.0, 0.0))
-        glClearBufferfv(GL_COLOR, 3, (0.0, 0.0, 0.0, 0.0))
-        glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
+        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
 
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
@@ -374,7 +370,7 @@ class Renderer(Singleton):
         self.framebuffer_shadow.set_color_texture(None)
         self.framebuffer_shadow.set_depth_texture(RenderTargets.SHADOWMAP)
         self.framebuffer_shadow.bind_framebuffer()
-        glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
+        self.framebuffer.clear(GL_DEPTH_BUFFER_BIT)
 
         light = self.sceneManager.mainLight
         self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection, light.shadow_view_projection)
