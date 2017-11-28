@@ -8,7 +8,6 @@ from .Actor import SkeletonActor, StaticActor
 from .Camera import Camera
 from .Light import Light
 from .Sky import Sky
-from .Fog import Fog
 from .PostProcess import PostProcess
 from .RenderTarget import RenderTargets, RenderTargetManager
 from .Font import FontData, FontManager

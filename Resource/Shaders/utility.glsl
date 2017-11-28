@@ -6,6 +6,11 @@ float get_luminance(vec3 color)
     return dot(vec3(0.2126, 0.7152, 0.0722), color);
 }
 
+float get_linear_luminance(vec3 LinearColor)
+{
+    return dot(LinearColor, vec3(0.3, 0.59, 0.11));
+}
+
 /* non-linear depth to linear depth */
 float depth_to_linear_depth(float depth)
 {
@@ -46,11 +51,6 @@ vec4 linear_depth_to_relative_world(vec2 tex_coord, float linear_depth)
     //float depth = ndc.z / ndc.w;
 
     return depth_to_relative_world(tex_coord, depth);
-}
-
-float Luminance(vec3 LinearColor)
-{
-    return dot(LinearColor, vec3(0.3, 0.59, 0.11));
 }
 
 // @param xy should be a integer position (e.g. pixel position on the screen), repeats each 128x128 pixels

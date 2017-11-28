@@ -703,7 +703,7 @@ class MaterialInstanceLoader(ResourceLoader):
             if self.create_material_instance(shader_name=material_instance_name, macros=macros):
                 material_instance = self.getResourceData(material_instance_name)
             else:
-                material_instance = self.getResourceData('empty')
+                material_instance = self.getResourceData('default')
         return material_instance
 
 
@@ -1258,7 +1258,7 @@ class ResourceManager(Singleton):
         return self.material_instanceLoader.getMaterialInstance(name)
 
     def getDefaultMaterialInstance(self):
-        return self.material_instanceLoader.getMaterialInstance('empty')
+        return self.material_instanceLoader.getMaterialInstance('default')
 
     # FUNCTIONS : Mesh
 

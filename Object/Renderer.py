@@ -15,9 +15,9 @@ from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
 
 
-class RENDERING_TYPE(AutoEnum):
-    FORWARD = ()
-    DEFERRED = ()
+class RenderingType(AutoEnum):
+    FORWARD_RENDERING = ()
+    DEFERRED_RENDERING = ()
     LIGHT_PRE_PASS = ()
     COUNT = ()
 
@@ -81,7 +81,7 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
-        self.rendering_type = RENDERING_TYPE.FORWARD
+        self.rendering_type = RenderingType.FORWARD_RENDERING
 
     @staticmethod
     def destroyScreen():
@@ -146,8 +146,8 @@ class Renderer(Singleton):
             rendering_type = str(rendering_type)
             return rendering_type.split('.')[-1] if '.' in rendering_type else rendering_type
 
-        rendering_type_list = [get_rendering_type_name(RENDERING_TYPE.convert_index_to_enum(x)) for x in
-                               range(RENDERING_TYPE.COUNT.value)]
+        rendering_type_list = [get_rendering_type_name(RenderingType.convert_index_to_enum(x)) for x in
+                               range(RenderingType.COUNT.value)]
         # Send to GUI
         self.core_manager.sendRenderingTypeList(rendering_type_list)
 
@@ -252,7 +252,7 @@ class Renderer(Singleton):
             logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
     def set_rendering_type(self, rendering_type):
-        self.rendering_type = RENDERING_TYPE.convert_index_to_enum(rendering_type)
+        self.rendering_type = RenderingType.convert_index_to_enum(rendering_type)
 
     def renderScene(self):
         startTime = timeModule.perf_counter()
@@ -292,16 +292,18 @@ class Renderer(Singleton):
         self.set_blend_state(False)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
 
-        if self.rendering_type == RENDERING_TYPE.DEFERRED:
+        if self.rendering_type == RenderingType.DEFERRED_RENDERING:
             self.render_deferred()
         else:
             self.render_pre_pass()
 
-        self.render_screen_space_reflection()
+        self.render_preprocess()
 
         self.render_shadow()
 
-        self.render_object()
+        self.render_solid()
+
+        self.render_translucent()
 
         self.render_postprocess()
 
@@ -385,7 +387,7 @@ class Renderer(Singleton):
                            self.sceneManager.skeleton_solid_geometries, material_instance)
         self.framebuffer_shadow.unbind_framebuffer()
 
-    def render_screen_space_reflection(self):
+    def render_preprocess(self):
         glDisable(GL_DEPTH_TEST)
         self.postprocess.bind_quad()
         self.framebuffer.set_color_texture(RenderTargets.SCREEN_SPACE_REFLECTION)
@@ -394,25 +396,26 @@ class Renderer(Singleton):
         self.framebuffer.clear(GL_COLOR_BUFFER_BIT)
         self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
                                                         RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
-        glEnable(GL_DEPTH_TEST)
 
-    def render_object(self):
+        # Linear depth
+        self.framebuffer.set_color_texture(RenderTargets.LINEAR_DEPTH)
+        self.framebuffer.bind_framebuffer()
+        self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
+
+    def render_solid(self):
         glFrontFace(GL_CCW)
+        glDepthMask(False)  # cause depth prepass and gbuffer
 
         self.framebuffer.set_color_texture(RenderTargets.HDR)
-        self.framebuffer.set_depth_texture(None)
+        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
 
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection)
 
-        # render sky
-        glDisable(GL_DEPTH_TEST)
-        glDepthMask(False)
-        self.sceneManager.sky.render()
-        glEnable(GL_DEPTH_TEST)
-
-        if self.rendering_type == RENDERING_TYPE.DEFERRED:
+        # render solid
+        if self.rendering_type == RenderingType.DEFERRED_RENDERING:
+            glDisable(GL_DEPTH_TEST)
             texture_cube = self.resource_manager.getTexture('field')
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
@@ -422,19 +425,22 @@ class Renderer(Singleton):
                                                      RenderTargets.SHADOWMAP,
                                                      RenderTargets.SCREEN_SPACE_REFLECTION,
                                                      texture_cube)
-            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-            self.framebuffer.bind_framebuffer()
-        else:
-            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-            self.framebuffer.bind_framebuffer()
-
-            # render solid
+        elif self.rendering_type == RenderingType.FORWARD_RENDERING:
+            glEnable(GL_DEPTH_TEST)
             self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING, self.sceneManager.static_solid_geometries)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
                                self.sceneManager.skeleton_solid_geometries)
 
-        # render translucent
+    def render_translucent(self):
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        # atmospherer
+        glDisable(GL_DEPTH_TEST)
+        self.postprocess.bind_quad()
+        self.postprocess.render_atmosphere()
+
+        # render translucent
+        glEnable(GL_DEPTH_TEST)
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING,
                            self.sceneManager.static_translucent_geometries)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
@@ -469,8 +475,8 @@ class Renderer(Singleton):
 
                 if last_material_instance != material_instance and material_instance is not None:
                     material_instance.bind_material_instance()
-                    is_deferred_rendering = (RenderMode.GBUFFER == render_mode)
-                    material_instance.bind_uniform_data('is_deferred_shading', is_deferred_rendering)
+                    is_render_gbuffer = (RenderMode.GBUFFER == render_mode)
+                    material_instance.bind_uniform_data('is_render_gbuffer', is_render_gbuffer)
                     if RenderMode.SHADING == render_mode:
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_scene_reflect',
@@ -560,23 +566,15 @@ class Renderer(Singleton):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
 
-        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.set_blend_state(False)
 
-        # render fog
+        # bind frame buffer
         self.framebuffer.set_color_texture(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
-        self.sceneManager.fog.render()
 
         # bind quad mesh
         self.postprocess.bind_quad()
-
-        self.set_blend_state(False)
-
-        # Linear depth
-        self.framebuffer.set_color_texture(RenderTargets.LINEAR_DEPTH)
-        self.framebuffer.bind_framebuffer()
-        self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
 
         # SSAO
         if self.postprocess.is_render_ssao:

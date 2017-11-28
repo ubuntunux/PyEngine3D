@@ -1,5 +1,3 @@
-
-
 struct VERTEX_INPUT
 {
     vec3 position;

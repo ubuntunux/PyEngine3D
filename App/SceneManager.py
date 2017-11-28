@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, Fog, Sky, PostProcess
+from Object import SkeletonActor, StaticActor, Camera, Light, Sky, PostProcess
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
@@ -27,7 +27,7 @@ class SceneManager(Singleton):
 
         # envirment object
         self.sky = None
-        self.fog = None
+        self.atmosphere = None
 
         self.cameras = []
         self.lights = []
@@ -84,7 +84,6 @@ class SceneManager(Singleton):
         self.mainCamera = self.addCamera()
         self.mainLight = self.addLight()
         self.sky = Sky()
-        self.fog = Fog()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
@@ -112,7 +111,6 @@ class SceneManager(Singleton):
         self.mainLight = self.get_light(0)
 
         self.sky = Sky()
-        self.fog = Fog()
 
         for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)

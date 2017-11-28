@@ -29,6 +29,9 @@ void main() {
     }
 
     vec4 base_color = texture(texture_diffuse, screen_tex_coord);
+    // decoding
+    base_color.w *= 10.0;
+
     vec4 material = texture(texture_material, screen_tex_coord);
     vec3 N = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
@@ -58,6 +61,7 @@ void main() {
                     L,
                     shadow_factor);
 
+    fs_output.xyz += base_color.xyz * base_color.w;
     fs_output.w = 1.0;
 }
 #endif

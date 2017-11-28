@@ -49,6 +49,7 @@ class PostProcess:
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
 
+        self.atmosphere = None
         self.tonemapping = None
         self.linear_depth = None
         self.blur = None
@@ -81,6 +82,7 @@ class PostProcess:
             self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
 
+        self.atmosphere = self.resource_manager.getMaterialInstance("atmosphere")
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.blur = self.resource_manager.getMaterialInstance("blur")
         self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
@@ -142,6 +144,12 @@ class PostProcess:
 
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()
+
+    def render_atmosphere(self):
+        self.atmosphere.use_program()
+        self.atmosphere.bind_material_instance()
+        self.atmosphere.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
+        self.quad_geometry.draw_elements()
 
     def render_blur(self, texture_diffuse, blur_kernel_radius=1.0):
         self.blur.use_program()

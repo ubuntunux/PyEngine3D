@@ -4,7 +4,7 @@
 #include "default_material.glsl"
 #include "default_vs.glsl"
 
-uniform bool is_deferred_shading;
+uniform bool is_render_gbuffer;
 
 uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
@@ -41,9 +41,11 @@ void main() {
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
 
-    if(is_deferred_shading)
+    if(is_render_gbuffer)
     {
-        fs_diffuse = base_color;
+        fs_diffuse.xyz = base_color.xyz + emissive_color.xyz * clamp(emissive_color.w, 0.0, 1.0);
+        // encoding
+        fs_diffuse.w = (get_linear_luminance(emissive_color.xyz) * emissive_color.w) * 0.1;
 
         fs_material = vec4(get_roughness(), metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);

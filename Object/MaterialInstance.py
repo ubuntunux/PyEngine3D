@@ -20,9 +20,9 @@ class MaterialInstance:
         self.isNeedToSave = False
         logger.info("Load Material Instance : " + material_instance_name)
         self.name = material_instance_name
-        self.shader_name = data.get('shader_name', 'empty')
+        self.shader_name = data.get('shader_name', 'default')
         self.material = None
-        self.material_name = data.get('material_name', 'empty')
+        self.material_name = data.get('material_name', 'default')
         self.macros = copy.copy(data.get('macros', OrderedDict()))
         self.linked_uniform_map = dict()
         self.linked_material_component_map = dict()
@@ -61,8 +61,8 @@ class MaterialInstance:
                 uniform_datas[uniform_name] = uniform_data
 
         save_data = dict(
-            shader_name=self.material.shader_name if self.material else 'empty',
-            material_name=self.material.name if self.material else 'empty',
+            shader_name=self.material.shader_name if self.material else 'default',
+            material_name=self.material.name if self.material else 'default',
             macros=self.macros,
             uniform_datas=uniform_datas,
         )

@@ -135,13 +135,13 @@ void main() {
         {
             HitSampleUV = HitUVzTime.xy - texture(texture_velocity, HitUVzTime.xy).xy;
             vec4 SampleColor = SampleScreenColor(texture_diffuse, HitSampleUV);
-            SampleColor.rgb /= 1 + Luminance(SampleColor.rgb);
+            SampleColor.rgb /= 1 + get_linear_luminance(SampleColor.rgb);
             fs_output += SampleColor;
         }
     }
 
     fs_output /= NumRays;
-    fs_output.rgb /= 1 - Luminance(fs_output.rgb);
+    fs_output.rgb /= 1 - get_linear_luminance(fs_output.rgb);
 
     fs_output.w *= RoughnessFade;
 }
