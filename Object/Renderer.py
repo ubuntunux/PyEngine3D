@@ -2,8 +2,6 @@ import os, math
 import platform as platformModule
 import time as timeModule
 
-import pygame
-from pygame.locals import *
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -83,10 +81,8 @@ class Renderer(Singleton):
 
         self.rendering_type = RenderingType.FORWARD_RENDERING
 
-    @staticmethod
-    def destroyScreen():
-        # destroy
-        pygame.display.quit()
+    def destroyScreen(self):
+        self.core_manager.game_backend.quit()
 
     def initialize(self, core_manager):
         logger.info("=" * 30)
@@ -184,13 +180,6 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
-    @staticmethod
-    def change_resolution(width=0, height=0, full_screen=False):
-        option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE
-        if full_screen:
-            option |= FULLSCREEN
-        return pygame.display.set_mode((width, height), option)
-
     def resizeScene(self, width=0, height=0, full_screen=False):
         # You have to do pygame.display.set_mode again on Linux.
         if width <= 0 or height <= 0:
@@ -217,12 +206,12 @@ class Renderer(Singleton):
         if changed:
             logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
 
+            # Run pygame.display.set_mode at last!!! very important.
+            # if platformModule.system() == 'Linux':
+            self.core_manager.game_backend.change_resolution(width, height, full_screen)
+
             # resize render targets
             self.rendertarget_manager.create_rendertargets()
-
-            # Run pygame.display.set_mode at last!!! very important.
-            if platformModule.system() == 'Linux':
-                self.screen = self.change_resolution(width, height, full_screen)
 
             # send screen info
             screen_info = (width, height, full_screen)
@@ -331,7 +320,8 @@ class Renderer(Singleton):
         startTime = endTime
 
         # swap buffer
-        pygame.display.flip()
+        self.core_manager.game_backend.flip()
+
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 

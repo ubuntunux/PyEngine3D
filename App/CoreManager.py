@@ -7,9 +7,8 @@ import traceback
 from functools import partial
 
 import numpy as np
-import pygame
-from pygame.locals import *
 
+from .GameBackend import PyGlet, PyGame
 from Common import logger, log_level, COMMAND
 from Utilities import Singleton, GetClassName, Config, Profiler
 
@@ -48,6 +47,25 @@ class CoreManager(Singleton):
         self.presentTime = 0.0
         self.currentTime = 0.0
 
+        self.min_delta = sys.float_info.max
+        self.max_delta = sys.float_info.min
+        self.curr_min_delta = sys.float_info.max
+        self.curr_max_delta = sys.float_info.min
+        self.avg_fps = 0.0
+        self.avg_ms = 0.0
+        self.frame_count = 0
+        self.acc_time = 0.0
+
+        self.avg_logicTime = 0.0
+        self.avg_gpuTime = 0.0
+        self.avg_renderTime = 0.0
+        self.avg_presentTime = 0.0
+
+        self.acc_logicTime = 0.0
+        self.acc_gpuTime = 0.0
+        self.acc_renderTime = 0.0
+        self.acc_presentTime = 0.0
+
         # mouse
         self.mousePos = np.zeros(2)
         self.mouseOldPos = np.zeros(2)
@@ -56,6 +74,7 @@ class CoreManager(Singleton):
         self.wheelDown = False
 
         # managers
+        self.game_backend = None
         self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
@@ -88,6 +107,12 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
+        #self.game_backend = PyGlet(self)
+        self.game_backend = PyGame(self)
+
+        if not self.game_backend.valid:
+            self.error('game_backend initializing failed')
+
         self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.font_manager = FontManager.instance()
@@ -101,15 +126,11 @@ class CoreManager(Singleton):
             self.exit()
             return False
 
-        # centered window
-        os.environ['SDL_VIDEO_CENTERED'] = '1'
-
-        # pygame init
-        pygame.init()
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.projectManager.config.Screen.size
         full_screen = self.projectManager.config.Screen.full_screen
-        Renderer.change_resolution(width, height, full_screen)
+
+        self.game_backend.change_resolution(width, height, full_screen)
 
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
@@ -126,16 +147,15 @@ class CoreManager(Singleton):
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
 
-    @staticmethod
-    def set_window_title(title):
-        pygame.display.set_caption(title)
+    def set_window_title(self, title):
+        self.game_backend.set_window_title(title)
 
     def get_next_open_project_filename(self):
         return self.projectManager.next_open_project_filename
 
     def run(self):
-        self.update()  # main loop
-        self.exit()  # exit
+        self.game_backend.run()
+        self.exit()
 
     def exit(self):
         # send a message to close ui
@@ -154,7 +174,7 @@ class CoreManager(Singleton):
         self.resource_manager.close()
         self.renderer.destroyScreen()
 
-        pygame.quit()
+        self.game_backend.quit()
 
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
@@ -163,7 +183,7 @@ class CoreManager(Singleton):
         self.close()
 
     def close(self):
-        self.running = False
+        self.game_backend.close()
 
     # Send messages
     def send(self, *args):
@@ -362,16 +382,15 @@ class CoreManager(Singleton):
         self.mouseDelta[...] = self.mousePos - self.mouseOldPos
         self.mouseOldPos[...] = self.mousePos
         self.wheelUp, self.wheelDown = False, False
-        key_pressed = pygame.key.get_pressed()
+        key_pressed = self.game_backend.get_keyboard_pressed()
 
         # Keyboard & Mouse Events
         for event in pygame.event.get():
             eventType = event.type
             if eventType == QUIT:
                 self.close()
-            elif eventType == VIDEORESIZE:
-                pass
-                # self.renderer.resizeScene(*event.dict['size'], self.renderer.full_screen)
+            # elif eventType == VIDEORESIZE:
+            #     self.renderer.resizeScene(*event.dict['size'])
             elif eventType == KEYDOWN:
                 subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
                 keyDown = event.key
@@ -392,8 +411,9 @@ class CoreManager(Singleton):
 
     def updateCamera(self):
         # get pressed key and mouse buttons
-        keydown = pygame.key.get_pressed()
-        btnL, btnM, btnR = pygame.mouse.get_pressed()
+        KEY = self.game_backend.key
+        keydown = self.game_backend.get_keyboard_pressed()
+        btnL, btnM, btnR = self.game_backend.get_mouse_pressed()
 
         # get camera
         camera = self.sceneManager.mainCamera
@@ -402,7 +422,7 @@ class CoreManager(Singleton):
         pan_speed = camera.pan_speed * self.delta
         rotation_speed = camera.rotation_speed * self.delta
 
-        if keydown[K_LSHIFT]:
+        if keydown[KEY.LSHIFT]:
             move_speed *= 4.0
             pan_speed *= 4.0
 
@@ -416,128 +436,105 @@ class CoreManager(Singleton):
             cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
             cameraTransform.rotationYaw(-self.mouseDelta[0] * rotation_speed)
 
-        if keydown[K_z]:
+        if keydown[KEY.Z]:
             cameraTransform.rotationRoll(-rotation_speed * 10.0)
-        elif keydown[K_c]:
+        elif keydown[KEY.C]:
             cameraTransform.rotationRoll(rotation_speed * 10.0)
 
         # move to view direction ( inverse front of camera matrix )
-        if keydown[K_w] or self.wheelUp:
+        if keydown[KEY.W] or self.wheelUp:
             cameraTransform.moveToFront(-move_speed)
-        elif keydown[K_s] or self.wheelDown:
+        elif keydown[KEY.S] or self.wheelDown:
             cameraTransform.moveToFront(move_speed)
 
         # move to side
-        if keydown[K_a]:
+        if keydown[KEY.A]:
             cameraTransform.moveToLeft(-move_speed)
-        elif keydown[K_d]:
+        elif keydown[KEY.D]:
             cameraTransform.moveToLeft(move_speed)
 
         # move to up
-        if keydown[K_q]:
+        if keydown[KEY.Q]:
             cameraTransform.moveToUp(move_speed)
-        elif keydown[K_e]:
+        elif keydown[KEY.E]:
             cameraTransform.moveToUp(-move_speed)
 
-        if keydown[K_SPACE]:
+        if keydown[KEY.SPACE]:
             cameraTransform.resetTransform()
 
     def update(self):
-        self.currentTime = 0.0
-        self.running = True
+        currentTime = time.perf_counter()
+        delta = currentTime - self.currentTime
 
-        min_delta = sys.float_info.max
-        max_delta = sys.float_info.min
-        curr_min_delta = sys.float_info.max
-        curr_max_delta = sys.float_info.min
-        avg_fps = 0.0
-        avg_ms = 0.0
-        frame_count = 0
-        acc_time = 0.0
+        if self.vsync and delta < self.minDelta or delta == 0.0:
+            return
 
-        avg_logicTime = 0.0
-        avg_gpuTime = 0.0
-        avg_renderTime = 0.0
-        avg_presentTime = 0.0
+        self.acc_time += delta
+        self.frame_count += 1
+        self.curr_min_delta = min(delta, self.curr_min_delta)
+        self.curr_max_delta = max(delta, self.curr_max_delta)
 
-        acc_logicTime = 0.0
-        acc_gpuTime = 0.0
-        acc_renderTime = 0.0
-        acc_presentTime = 0.0
+        # set timer
+        self.currentTime = currentTime
+        self.delta = delta
+        self.fps = 1.0 / delta
 
-        while self.running:
-            currentTime = time.perf_counter()
-            delta = currentTime - self.currentTime
+        self.updateTime = delta * 1000.0  # millisecond
 
-            if self.vsync and delta < self.minDelta or delta == 0.0:
-                continue
+        # update logic
+        startTime = time.perf_counter()
+        self.updateCommand()  # update command queue
+        # self.updateEvent()  # update keyboard and mouse events
+        self.updateCamera()  # update camera
+        self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
-            acc_time += delta
-            frame_count += 1
-            curr_min_delta = min(delta, curr_min_delta)
-            curr_max_delta = max(delta, curr_max_delta)
+        # update actors
+        self.sceneManager.update_scene(delta)
 
-            # set timer
-            self.currentTime = currentTime
-            self.delta = delta
-            self.fps = 1.0 / delta
+        # render scene
+        startTime = time.perf_counter()
+        renderTime, presentTime = self.renderer.renderScene()
 
-            self.updateTime = delta * 1000.0  # millisecond
+        self.renderTime = renderTime * 1000.0  # millisecond
+        self.presentTime = presentTime * 1000.0  # millisecond
 
-            # update logic
-            startTime = time.perf_counter()
-            self.updateCommand()  # update command queue
-            self.updateEvent()  # update keyboard and mouse events
-            self.updateCamera()  # update camera
-            self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+        self.acc_logicTime += self.logicTime
+        self.acc_gpuTime += self.gpuTime
+        self.acc_renderTime += self.renderTime
+        self.acc_presentTime += self.presentTime
 
-            # update actors
-            self.sceneManager.update_scene(delta)
+        if 1.0 < self.acc_time:
+            self.avg_logicTime = self.acc_logicTime / self.frame_count
+            self.avg_gpuTime = self.acc_gpuTime / self.frame_count
+            self.avg_renderTime = self.acc_renderTime / self.frame_count
+            self.avg_presentTime = self.acc_presentTime / self.frame_count
 
-            # render scene
-            startTime = time.perf_counter()
-            renderTime, presentTime = self.renderer.renderScene()
+            self.acc_logicTime = 0.0
+            self.acc_gpuTime = 0.0
+            self.acc_renderTime = 0.0
+            self.acc_presentTime = 0.0
 
-            self.renderTime = renderTime * 1000.0  # millisecond
-            self.presentTime = presentTime * 1000.0  # millisecond
+            self.min_delta = self.curr_min_delta * 1000.0
+            self.max_delta = self.curr_max_delta * 1000.0
+            self.curr_min_delta = sys.float_info.max
+            self.curr_max_delta = sys.float_info.min
+            self.avg_ms = self.acc_time / self.frame_count * 1000.0
+            self.avg_fps = 1000.0 / self.avg_ms
+            self.frame_count = 0
+            self.acc_time = 0.0
 
-            acc_logicTime += self.logicTime
-            acc_gpuTime += self.gpuTime
-            acc_renderTime += self.renderTime
-            acc_presentTime += self.presentTime
+        # debug info
+        # print(self.fps, self.updateTime)
+        self.font_manager.log("%.2f fps" % self.avg_fps)
+        self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (self.avg_ms, self.min_delta, self.max_delta))
+        self.font_manager.log("CPU : %.2f ms" % self.avg_logicTime)
+        self.font_manager.log("GPU : %.2f ms" % self.avg_gpuTime)
+        self.font_manager.log("Render : %.2f ms" % self.avg_renderTime)
+        self.font_manager.log("Present : %.2f ms" % self.avg_presentTime)
 
-            if 1.0 < acc_time:
-                avg_logicTime = acc_logicTime / frame_count
-                avg_gpuTime = acc_gpuTime / frame_count
-                avg_renderTime = acc_renderTime / frame_count
-                avg_presentTime = acc_presentTime / frame_count
-
-                acc_logicTime = 0.0
-                acc_gpuTime = 0.0
-                acc_renderTime = 0.0
-                acc_presentTime = 0.0
-
-                min_delta = curr_min_delta * 1000.0
-                max_delta = curr_max_delta * 1000.0
-                curr_min_delta = sys.float_info.max
-                curr_max_delta = sys.float_info.min
-                avg_ms = acc_time / frame_count * 1000.0
-                avg_fps = 1000.0 / avg_ms
-                frame_count = 0
-                acc_time = 0.0
-
-            # debug info
-            # print(self.fps, self.updateTime)
-            self.font_manager.log("%.2f fps" % avg_fps)
-            self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (avg_ms, min_delta, max_delta))
-            self.font_manager.log("CPU : %.2f ms" % avg_logicTime)
-            self.font_manager.log("GPU : %.2f ms" % avg_gpuTime)
-            self.font_manager.log("Render : %.2f ms" % avg_renderTime)
-            self.font_manager.log("Present : %.2f ms" % avg_presentTime)
-
-            # selected object transform info
-            selectedObject = self.sceneManager.getSelectedObject()
-            if selectedObject:
-                self.font_manager.log("Selected Object : %s" % selectedObject.name)
-                self.font_manager.log(selectedObject.transform.getTransformInfos())
-            self.gpuTime = (time.perf_counter() - startTime) * 1000.0
+        # selected object transform info
+        selectedObject = self.sceneManager.getSelectedObject()
+        if selectedObject:
+            self.font_manager.log("Selected Object : %s" % selectedObject.name)
+            self.font_manager.log(selectedObject.transform.getTransformInfos())
+        self.gpuTime = (time.perf_counter() - startTime) * 1000.0
