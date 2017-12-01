@@ -18,6 +18,9 @@
     <item row="0" column="0" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
+       <widget class="QComboBox" name="comboGameBackend"/>
+      </item>
+      <item>
        <widget class="QLabel" name="labelAddResource">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">

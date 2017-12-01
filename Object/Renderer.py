@@ -41,9 +41,7 @@ class Renderer(Singleton):
         self.width = -1
         self.height = -1
         self.aspect = 0.0
-        self.full_screen = False
         self.viewMode = GL_FILL
-        self.created_scene = False
 
         # managers
         self.core_manager = None
@@ -180,43 +178,25 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
-    def resizeScene(self, width=0, height=0, full_screen=False):
-        # You have to do pygame.display.set_mode again on Linux.
-        if width <= 0 or height <= 0:
-            width = self.width
-            height = self.height
-            if width <= 0:
-                width = 1024
-            if height <= 0:
-                height = 768
-
+    def resizeScene(self, width=0, height=0):
         changed = False
 
-        if not self.created_scene or self.width != width or self.height != height or self.full_screen != full_screen:
+        if 0 < width and width != self.width:
+            self.width = width
             changed = True
 
-        self.width = width
-        self.height = height
-        self.aspect = float(width) / float(height)
-        self.full_screen = full_screen
+        if 0 < height and height != self.height:
+            self.height = height
+            changed = True
+
+        self.aspect = float(self.width) / float(self.height)
 
         # update perspective and ortho
         self.sceneManager.update_camera_projection_matrix(self.aspect)
 
+        # resize render targets
         if changed:
-            logger.info("resizeScene %d x %d : %s" % (width, height, "Full screen" if full_screen else "Windowed"))
-
-            # Run pygame.display.set_mode at last!!! very important.
-            # if platformModule.system() == 'Linux':
-            self.core_manager.game_backend.change_resolution(width, height, full_screen)
-
-            # resize render targets
             self.rendertarget_manager.create_rendertargets()
-
-            # send screen info
-            screen_info = (width, height, full_screen)
-            self.core_manager.notifyChangeResolution(screen_info)
-        self.created_scene = True
 
     def ortho_view(self):
         # Legacy opengl pipeline - set orthographic view

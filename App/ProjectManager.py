@@ -52,6 +52,9 @@ class ProjectManager(Singleton):
             return False
         return True
 
+    def restart(self):
+        self.open_project_next_time(self.project_filename)
+
     def new_project(self, new_project_dir):
         try:
             if new_project_dir:

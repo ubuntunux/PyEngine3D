@@ -213,6 +213,15 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_ANTIALIASING_LIST)),
                      self.add_anti_aliasing)
 
+        # game backend
+        self.comboGameBackend = self.findChild(QtGui.QComboBox, "comboGameBackend")
+        self.comboGameBackend.currentIndexChanged.connect(self.change_game_backend)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_GAME_BACKEND_LIST)),
+                     self.add_game_backend)
+        self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_GAME_BACKEND_INDEX)),
+                     self.set_game_backend_index)
+
+
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
@@ -305,6 +314,17 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
     def clearRenderTargetList(self):
         self.comboRenderTargets.clear()
+
+    # Game Backend
+    def add_game_backend(self, game_backend_list):
+        for game_backend_name in game_backend_list:
+            self.comboGameBackend.addItem(game_backend_name)
+
+    def change_game_backend(self, game_backend_index):
+        self.appCmdQueue.put(COMMAND.CHANGE_GAME_BACKEND, game_backend_index)
+
+    def set_game_backend_index(self, game_backend_index):
+        self.comboGameBackend.setCurrentIndex(game_backend_index)
 
     # Rendering Type
     def add_rendering_type(self, rendering_type_list):

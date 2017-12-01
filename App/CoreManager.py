@@ -8,7 +8,7 @@ from functools import partial
 
 import numpy as np
 
-from .GameBackend import PyGlet, PyGame
+from .GameBackend import PyGlet, PyGame, Keyboard, Event
 from Common import logger, log_level, COMMAND
 from Utilities import Singleton, GetClassName, Config, Profiler
 
@@ -27,7 +27,6 @@ class CoreManager(Singleton):
     """
 
     def __init__(self):
-        self.running = False
         self.valid = True
 
         # command
@@ -66,13 +65,6 @@ class CoreManager(Singleton):
         self.acc_renderTime = 0.0
         self.acc_presentTime = 0.0
 
-        # mouse
-        self.mousePos = np.zeros(2)
-        self.mouseOldPos = np.zeros(2)
-        self.mouseDelta = np.zeros(2)
-        self.wheelUp = False
-        self.wheelDown = False
-
         # managers
         self.game_backend = None
         self.resource_manager = None
@@ -82,6 +74,9 @@ class CoreManager(Singleton):
         self.sceneManager = None
         self.projectManager = None
         self.config = None
+
+        self.last_game_backend = PyGlet.__name__
+        self.game_backend_list = [PyGlet.__name__, PyGame.__name__]
 
         self.commands = []
 
@@ -107,12 +102,6 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        #self.game_backend = PyGlet(self)
-        self.game_backend = PyGame(self)
-
-        if not self.game_backend.valid:
-            self.error('game_backend initializing failed')
-
         self.resource_manager = ResourceManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.font_manager = FontManager.instance()
@@ -130,7 +119,23 @@ class CoreManager(Singleton):
         width, height = self.projectManager.config.Screen.size
         full_screen = self.projectManager.config.Screen.full_screen
 
-        self.game_backend.change_resolution(width, height, full_screen)
+        if self.config.hasValue('Project', 'game_backend'):
+            self.last_game_backend = self.config.getValue('Project', 'game_backend')
+
+        if self.last_game_backend == PyGame.__name__:
+            self.game_backend = PyGame(self)
+        else:
+            self.game_backend = PyGlet(self)
+            self.last_game_backend = PyGlet.__name__
+        self.game_backend.change_resolution(width, height, full_screen, resize_scene=False)
+
+        self.sendGameBackendList(self.game_backend_list)
+        index = self.game_backend_list.index(
+            self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
+        self.sendCurrentGameBackendIndex(index)
+
+        if not self.game_backend.valid:
+            self.error('game_backend initializing failed')
 
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
@@ -139,16 +144,13 @@ class CoreManager(Singleton):
         self.renderer.initialize(self)
         self.sceneManager.initialize(self)
 
-        # build a scene - windows not need resize..
-        if not self.renderer.created_scene:
-            if platformModule.system() == 'Linux':
-                self.renderer.resizeScene(width, height, full_screen)
+        self.renderer.resizeScene(width, height)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
 
     def set_window_title(self, title):
-        self.game_backend.set_window_title(title)
+        self.game_backend.set_window_title(self.last_game_backend + " - " + title)
 
     def get_next_open_project_filename(self):
         return self.projectManager.next_open_project_filename
@@ -165,6 +167,7 @@ class CoreManager(Singleton):
         # write config
         if self.valid:
             self.config.setValue("Project", "recent", self.projectManager.project_filename)
+            self.config.setValue("Project", "game_backend", self.last_game_backend)
             self.config.save()  # save config
 
         # save project
@@ -184,6 +187,10 @@ class CoreManager(Singleton):
 
     def close(self):
         self.game_backend.close()
+
+    def change_game_backend(self, game_backend):
+        self.last_game_backend = self.game_backend_list[game_backend]
+        logger.info("The game backend was chaned to %s. It will be applied at the next run." % self.last_game_backend)
 
     # Send messages
     def send(self, *args):
@@ -232,6 +239,12 @@ class CoreManager(Singleton):
     def sendRenderingTypeList(self, rendering_type_list):
         self.send(COMMAND.TRANS_RENDERING_TYPE_LIST, rendering_type_list)
 
+    def sendCurrentGameBackendIndex(self, game_backend_index):
+        self.send(COMMAND.TRANS_GAME_BACKEND_INDEX, game_backend_index)
+
+    def sendGameBackendList(self, game_backend_list):
+        self.send(COMMAND.TRANS_GAME_BACKEND_LIST, game_backend_list)
+
     def registCommand(self):
         def nothing(cmd_enum, value):
             logger.warn("Nothing to do for %s(%d)" % (str(cmd_enum), cmd_enum.value))
@@ -258,7 +271,7 @@ class CoreManager(Singleton):
         # screen
         def cmd_change_resolution(value):
             width, height, full_screen = value
-            self.renderer.resizeScene(width, height, full_screen)
+            self.game_backend.change_resolution(width, height, full_screen)
         self.commands[COMMAND.CHANGE_RESOLUTION.value] = cmd_change_resolution
 
         # Resource commands
@@ -332,6 +345,9 @@ class CoreManager(Singleton):
             self.renderer.set_rendering_type(renderering_type)
         self.commands[COMMAND.SET_RENDERING_TYPE.value] = cmd_set_rendering_type
 
+        # set game backend
+        self.commands[COMMAND.CHANGE_GAME_BACKEND.value] = self.change_game_backend
+
         def cmd_view_rendertarget(value):
             rendertarget_index, rendertarget_name = value
             self.renderer.set_debug_rendertarget(rendertarget_index, rendertarget_name)
@@ -354,65 +370,41 @@ class CoreManager(Singleton):
             cmd, value = self.cmdQueue.get()
             self.commands[cmd.value](value)
 
-    def event_object(self, keyDown, key_pressed):
-        done = False
-        if keyDown == K_1:
-            object_name_list = self.resource_manager.getModelNameList()
-            if object_name_list:
-                for i in range(20):
-                    pos = [np.random.uniform(-100, 100) for x in range(3)]
-                    objName = np.random.choice(object_name_list)
-                    model = self.resource_manager.getModel(objName)
-                    obj_instance = self.sceneManager.addObject(model=model, pos=pos)
-                    if obj_instance:
-                        self.sendObjectInfo(obj_instance)
-            done = True
-        elif keyDown == K_DELETE:
-            # Test Code
-            obj_names = set(self.sceneManager.getObjectNames())
-            # clear static mesh
-            self.sceneManager.clear_actors()
-            current_obj_names = set(self.sceneManager.getObjectNames())
-            for obj_name in (obj_names - current_obj_names):
-                self.notifyDeleteObject(obj_name)
-            done = True
-        return done
-
-    def updateEvent(self):
-        self.mouseDelta[...] = self.mousePos - self.mouseOldPos
-        self.mouseOldPos[...] = self.mousePos
-        self.wheelUp, self.wheelDown = False, False
-        key_pressed = self.game_backend.get_keyboard_pressed()
-
-        # Keyboard & Mouse Events
-        for event in pygame.event.get():
-            eventType = event.type
-            if eventType == QUIT:
-                self.close()
-            # elif eventType == VIDEORESIZE:
-            #     self.renderer.resizeScene(*event.dict['size'])
-            elif eventType == KEYDOWN:
-                subkey_down = key_pressed[K_LCTRL] or key_pressed[K_LSHIFT] or key_pressed[K_LALT]
-                keyDown = event.key
-                if self.event_object(keyDown, key_pressed):
-                    pass
-                elif keyDown == K_ESCAPE:
-                    if self.renderer.full_screen:
-                        self.renderer.resizeScene(0, 0, not self.renderer.full_screen)
-                    else:
-                        self.close()
-                elif keyDown == K_BACKQUOTE and not subkey_down:
-                    pass
-            elif eventType == MOUSEMOTION:
-                self.mousePos[...] = pygame.mouse.get_pos()
-            elif eventType == MOUSEBUTTONDOWN:
-                self.wheelUp = event.button == 4
-                self.wheelDown = event.button == 5
+    def update_event(self, event_type, event_value=None):
+        if Event.QUIT == event_type:
+            self.close()
+        elif Event.VIDEORESIZE == event_type:
+            self.notifyChangeResolution(event_value)
+        elif Event.KEYDOWN == event_type:
+            key_pressed = self.game_backend.get_keyboard_pressed()
+            subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
+            if Keyboard.ESCAPE == event_value:
+                if self.game_backend.full_screen:
+                    self.game_backend.change_resolution(0, 0, False)
+                else:
+                    self.close()
+            elif Keyboard._1 == event_value:
+                object_name_list = self.resource_manager.getModelNameList()
+                if object_name_list:
+                    for i in range(20):
+                        pos = [np.random.uniform(-100, 100) for x in range(3)]
+                        objName = np.random.choice(object_name_list)
+                        model = self.resource_manager.getModel(objName)
+                        obj_instance = self.sceneManager.addObject(model=model, pos=pos)
+                        if obj_instance:
+                            self.sendObjectInfo(obj_instance)
+            elif Keyboard.DELETE == event_value:
+                # Test Code
+                obj_names = set(self.sceneManager.getObjectNames())
+                # clear static mesh
+                self.sceneManager.clear_actors()
+                current_obj_names = set(self.sceneManager.getObjectNames())
+                for obj_name in (obj_names - current_obj_names):
+                    self.notifyDeleteObject(obj_name)
 
     def updateCamera(self):
-        # get pressed key and mouse buttons
-        KEY = self.game_backend.key
         keydown = self.game_backend.get_keyboard_pressed()
+        mouse_delta = self.game_backend.mouse_delta
         btnL, btnM, btnR = self.game_backend.get_mouse_pressed()
 
         # get camera
@@ -422,44 +414,44 @@ class CoreManager(Singleton):
         pan_speed = camera.pan_speed * self.delta
         rotation_speed = camera.rotation_speed * self.delta
 
-        if keydown[KEY.LSHIFT]:
+        if keydown[Keyboard.LSHIFT]:
             move_speed *= 4.0
             pan_speed *= 4.0
 
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.moveToLeft(-self.mouseDelta[0] * pan_speed)
-            cameraTransform.moveToUp(self.mouseDelta[1] * pan_speed)
+            cameraTransform.moveToLeft(-mouse_delta[0] * pan_speed)
+            cameraTransform.moveToUp(-mouse_delta[1] * pan_speed)
 
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotationPitch(-self.mouseDelta[1] * rotation_speed)
-            cameraTransform.rotationYaw(-self.mouseDelta[0] * rotation_speed)
+            cameraTransform.rotationPitch(mouse_delta[1] * rotation_speed)
+            cameraTransform.rotationYaw(-mouse_delta[0] * rotation_speed)
 
-        if keydown[KEY.Z]:
+        if keydown[Keyboard.Z]:
             cameraTransform.rotationRoll(-rotation_speed * 10.0)
-        elif keydown[KEY.C]:
+        elif keydown[Keyboard.C]:
             cameraTransform.rotationRoll(rotation_speed * 10.0)
 
         # move to view direction ( inverse front of camera matrix )
-        if keydown[KEY.W] or self.wheelUp:
+        if keydown[Keyboard.W] or self.game_backend.wheel_up:
             cameraTransform.moveToFront(-move_speed)
-        elif keydown[KEY.S] or self.wheelDown:
+        elif keydown[Keyboard.S] or self.game_backend.wheel_down:
             cameraTransform.moveToFront(move_speed)
 
         # move to side
-        if keydown[KEY.A]:
+        if keydown[Keyboard.A]:
             cameraTransform.moveToLeft(-move_speed)
-        elif keydown[KEY.D]:
+        elif keydown[Keyboard.D]:
             cameraTransform.moveToLeft(move_speed)
 
         # move to up
-        if keydown[KEY.Q]:
+        if keydown[Keyboard.Q]:
             cameraTransform.moveToUp(move_speed)
-        elif keydown[KEY.E]:
+        elif keydown[Keyboard.E]:
             cameraTransform.moveToUp(-move_speed)
 
-        if keydown[KEY.SPACE]:
+        if keydown[Keyboard.SPACE]:
             cameraTransform.resetTransform()
 
     def update(self):
@@ -484,7 +476,6 @@ class CoreManager(Singleton):
         # update logic
         startTime = time.perf_counter()
         self.updateCommand()  # update command queue
-        # self.updateEvent()  # update keyboard and mouse events
         self.updateCamera()  # update camera
         self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
