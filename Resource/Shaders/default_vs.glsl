@@ -12,20 +12,6 @@ uniform mat4 prev_bone_matrices[MAX_BONES];
 
 uniform mat4 model;
 
-
-struct VERTEX_INPUT
-{
-    vec3 position;
-    vec4 color;
-    vec3 normal;
-    vec3 tangent;
-    vec2 tex_coord;
-#if 1 == SKELETAL
-    vec4 bone_indicies;
-    vec4 bone_weights;
-#endif
-};
-
 struct VERTEX_OUTPUT
 {
     vec3 world_position;
@@ -40,7 +26,16 @@ struct VERTEX_OUTPUT
 //----------- VERTEX_SHADER ---------------//
 
 #ifdef VERTEX_SHADER
-layout (location = 0) in VERTEX_INPUT vs_input;
+layout (location = 0) in vec3 vs_in_position;
+layout (location = 1) in vec4 vs_in_color;
+layout (location = 2) in vec3 vs_in_normal;
+layout (location = 3) in vec3 vs_in_tangent;
+layout (location = 4) in vec2 vs_in_tex_coord;
+#if 1 == SKELETAL
+layout (location = 5) in vec4 vs_in_bone_indicies;
+layout (location = 6) in vec4 vs_in_bone_weights;
+#endif
+
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
@@ -52,17 +47,17 @@ void main() {
 #if 1 == SKELETAL
     for(int i=0; i<MAX_BONES_PER_VERTEX; ++i)
     {
-        prev_position += (prev_bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
-        position += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.position, 1.0)) * vs_input.bone_weights[i];
-        vertex_normal += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.normal, 0.0)).xyz * vs_input.bone_weights[i];
-        vertex_tangent += (bone_matrices[int(vs_input.bone_indicies[i])] * vec4(vs_input.tangent, 0.0)).xyz * vs_input.bone_weights[i];
+        prev_position += (prev_bone_matrices[int(vs_in_bone_indicies[i])] * vec4(vs_in_position, 1.0)) * vs_in_bone_weights[i];
+        position += (bone_matrices[int(vs_in_bone_indicies[i])] * vec4(vs_in_position, 1.0)) * vs_in_bone_weights[i];
+        vertex_normal += (bone_matrices[int(vs_in_bone_indicies[i])] * vec4(vs_in_normal, 0.0)).xyz * vs_in_bone_weights[i];
+        vertex_tangent += (bone_matrices[int(vs_in_bone_indicies[i])] * vec4(vs_in_tangent, 0.0)).xyz * vs_in_bone_weights[i];
     }
     position /= position.w;
     prev_position /= prev_position.w;
 #else
-    position = vec4(vs_input.position, 1.0);
-    vertex_normal = vs_input.normal;
-    vertex_tangent = vs_input.tangent;
+    position = vec4(vs_in_position, 1.0);
+    vertex_normal = vs_in_normal;
+    vertex_tangent = vs_in_tangent;
     prev_position = position;
 #endif
 
@@ -71,8 +66,8 @@ void main() {
 
     vs_output.world_position = (model * position).xyz;
     vs_output.vertex_normal = vertex_normal;
-    vs_output.vertex_color = vs_input.color;
-    vs_output.tex_coord = vs_input.tex_coord;
+    vs_output.vertex_color = vs_in_color;
+    vs_output.tex_coord = vs_in_tex_coord;
 
     vec3 bitangent = cross(vertex_tangent, vertex_normal);
 

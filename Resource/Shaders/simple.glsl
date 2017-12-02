@@ -1,33 +1,22 @@
-
-
-//----------- UNIFORM_BLOCK ---------------//
-
 #include "scene_constants.glsl"
 
 uniform mat4 model;
 uniform mat4 view_projection;
 uniform vec4 diffuse_color;
 
-//----------- INPUT and OUTPUT ---------------//
-
-struct VERTEX_INPUT
-{
-    vec3 position;
-    vec4 color;
-    vec3 normal;
-    vec3 tangent;
-    vec2 tex_coord;
-};
-
 //----------- VERTEX_SHADER ---------------//
 
 #ifdef VERTEX_SHADER
-layout (location = 0) in VERTEX_INPUT vs_input;
+layout (location = 0) in vec3 vs_in_position;
+layout (location = 1) in vec4 vs_in_color;
+layout (location = 2) in vec3 vs_in_normal;
+layout (location = 3) in vec3 vs_in_tangent;
+layout (location = 4) in vec2 vs_in_tex_coord;
 
 void main() {
-    gl_Position = PERSPECTIVE * VIEW * model * vec4(vs_input.position, 1.0);
+    gl_Position = PERSPECTIVE * VIEW * model * vec4(vs_in_position, 1.0);
 }
-#endif // VERTEX_SHADER
+#endif
 
 //----------- FRAGMENT_SHADER ---------------//
 
@@ -37,4 +26,4 @@ layout (location = 0) out vec4 fs_output;
 void main() {
     fs_output = vec4(1.0, 1.0, 0.0, 1.0);
 }
-#endif // FRAGMENT_SHADER
+#endif

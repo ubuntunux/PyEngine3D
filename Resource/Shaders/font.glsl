@@ -1,15 +1,7 @@
-
-
 uniform sampler2D texture_font;
 uniform float font_size;
 uniform vec2 screen_size;
 uniform float count_horizontal;
-
-struct VERTEX_INPUT
-{
-    vec3 position;
-    vec4 font_offset;    // instancing data
-};
 
 struct VERTEX_OUTPUT
 {
@@ -18,15 +10,17 @@ struct VERTEX_OUTPUT
 };
 
 #ifdef VERTEX_SHADER
-layout (location = 0) in VERTEX_INPUT vs_input;
+layout (location = 0) in vec3 vs_in_position;
+layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
+
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
     vec2 ratio = vec2(font_size) / screen_size;
-    vec2 texcoord = vs_input.position.xy * 0.5 + 0.5;
-    vec2 position = texcoord * ratio + vs_input.font_offset.xy / screen_size;
+    vec2 texcoord = vs_in_position.xy * 0.5 + 0.5;
+    vec2 position = texcoord * ratio + vs_in_font_offset.xy / screen_size;
     vs_output.tex_coord = texcoord / count_horizontal;
-    vs_output.font_offset = vs_input.font_offset;
+    vs_output.font_offset = vs_in_font_offset;
     gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
 }
 #endif

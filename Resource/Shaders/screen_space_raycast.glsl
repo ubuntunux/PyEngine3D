@@ -59,7 +59,8 @@ vec4 RayCast(
     vec3 RayStepUVz = vec3(RayStepScreen.xy * 0.5, RayStepScreen.z);
  
     float Step = 1.0 / NumSteps;
-    float CompareTolerance = max(abs(RayStepUVz.z), (RayStartScreen.z - RayDepthScreen.z) * 4.0) * 0.1;
+    const float accuate = 0.1;
+    float CompareTolerance = max(abs(RayStepUVz.z), (RayStartScreen.z - RayDepthScreen.z) * 4.0) * accuate;
  
     float LastDiff = 0;
  
