@@ -1,3 +1,4 @@
+import gc
 import random
 
 import numpy as np
@@ -6,7 +7,7 @@ from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from Utilities import Singleton, GetClassName, Attributes, AutoEnum, Data, normalize
+from Utilities import *
 from Common import logger
 from OpenGLContext import Texture2D, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
 
@@ -52,8 +53,14 @@ class RenderTargetManager(Singleton):
         self.clear()
 
     def clear(self):
+        # for key, rendertarget in self.rendertargets.items():
+        #     delete_from_referrer(rendertarget)
+        #
+        # for key, rendertarget in self.temp_rendertargets.items():
+        #     delete_from_referrer(rendertarget)
         self.rendertargets = dict()
         self.temp_rendertargets = dict()
+        # gc.collect()
 
     def find_rendertarget(self, rendertarget_index, rendertarget_name):
         if rendertarget_index < len(self.rendertargets) and rendertarget_name in self.rendertargets:

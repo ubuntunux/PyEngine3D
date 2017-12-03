@@ -101,9 +101,9 @@ class Texture:
 
         self.attribute = Attributes()
 
-    def delete(self):
-        glBindTexture(self.target, 0)
-        glDeleteTextures(1, [self.buffer, ])
+    def __del__(self):
+        pass
+        # glDeleteTextures([self.buffer, ])
 
     def get_save_data(self, get_image_data=True):
         save_data = dict(
@@ -194,10 +194,6 @@ class Texture2D(Texture):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
-
-    def __del__(self):
-        pass
-        # glDeleteTextures(1, [self.buffer, ])
 
     def get_save_data(self, get_image_data=True):
         save_data = Texture.get_save_data(self)
