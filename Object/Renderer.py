@@ -257,10 +257,10 @@ class Renderer(Singleton):
         glEnable(GL_MULTISAMPLE)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
-
         glFrontFace(GL_CCW)
         glEnable(GL_DEPTH_TEST)
         glDepthMask(True)
+
         if self.rendering_type == RenderingType.DEFERRED_RENDERING:
             self.render_deferred()
         else:
@@ -270,6 +270,7 @@ class Renderer(Singleton):
         self.render_preprocess()
 
         glFrontFace(GL_CW)
+        glEnable(GL_DEPTH_TEST)
         self.render_shadow()
 
         glFrontFace(GL_CCW)
