@@ -122,7 +122,7 @@ class FrameBuffer:
         else:
             self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
 
-    def run_bind_framebuffer_command(self):
+    def run_bind_framebuffer(self):
         for cmd in self.commands:
             cmd()
 
@@ -238,5 +238,5 @@ class FrameBufferManager:
 
     def bind_framebuffer(self, *textures, depth_texture=None):
         self.current_framebuffer = self.get_framebuffer(*textures, depth_texture)
-        self.current_framebuffer.run_bind_framebuffer_command()
+        self.current_framebuffer.run_bind_framebuffer()
         return self.current_framebuffer
