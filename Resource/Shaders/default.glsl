@@ -8,6 +8,7 @@ uniform bool is_render_gbuffer;
 
 uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
+uniform sampler2D texture_ssao;
 uniform sampler2D texture_scene_reflect;
 
 #ifdef FRAGMENT_SHADER
@@ -33,7 +34,6 @@ void main() {
 #endif
 
     vec4 emissive_color = get_emissive_color();
-    float shadow_factor = get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow);
 
     vec3 N = get_normal(vs_output.tex_coord.xy);
     // Note : Normalization is very important because tangent_to_world may have been scaled..
@@ -56,6 +56,8 @@ void main() {
     }
     else
     {
+        float shadow_factor = get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow);
+
         fs_diffuse = surface_shading(base_color,
                         metalicness,
                         get_roughness(),
@@ -69,6 +71,10 @@ void main() {
                         L,
                         shadow_factor);
 
+        // SSAO
+        fs_diffuse.xyz *= texture(texture_ssao, screen_tex_coord).x;
+
+        // Emissive
         fs_diffuse.xyz += emissive_color.xyz * emissive_color.w;
     }
 }

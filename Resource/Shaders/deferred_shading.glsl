@@ -11,8 +11,10 @@ uniform sampler2D texture_normal;
 
 uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
+uniform sampler2D texture_ssao;
 uniform sampler2D texture_scene_reflect;
 uniform samplerCube texture_cube;
+
 
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -61,6 +63,10 @@ void main() {
                     L,
                     shadow_factor);
 
+    // SSAO
+    fs_output.xyz *= texture(texture_ssao, screen_tex_coord).x;
+
+    // emissive
     fs_output.xyz += base_color.xyz * base_color.w;
     fs_output.w = 1.0;
 }

@@ -1,4 +1,4 @@
-from .FrameBuffer import FrameBuffer
+from .FrameBuffer import FrameBuffer, FrameBufferManager
 from .GLUtil import IsExtensionSupported
 from .RenderBuffer import RenderBuffer
 from .Shader import Shader

@@ -3,9 +3,7 @@
 #include "quad.glsl"
 
 uniform sampler2D texture_diffuse;
-uniform sampler2D texture_ssao;
 uniform float exposure;
-uniform bool is_render_ssao;
 
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -49,11 +47,6 @@ vec3 SimpleTonemap(vec3 hdrColor)
 
 void main() {
     vec3 texColor = texture(texture_diffuse, vs_output.tex_coord.xy).xyz;
-    if(is_render_ssao)
-    {
-        texColor *= texture(texture_ssao, vs_output.tex_coord.xy).xxx;
-    }
-
     fs_output.xyz = Uncharted2Tonemap(texColor);
     fs_output.a = 1.0;
 }

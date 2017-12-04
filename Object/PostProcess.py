@@ -165,7 +165,7 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):
-        frame_buffer.set_color_texture(texture_temp)
+        frame_buffer.set_color_textures(texture_temp)
         frame_buffer.bind_framebuffer()
 
         self.gaussian_blur.use_program()
@@ -174,7 +174,7 @@ class PostProcess:
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_target)
         self.quad_geometry.draw_elements()
 
-        frame_buffer.set_color_texture(texture_target)
+        frame_buffer.set_color_textures(texture_target)
         frame_buffer.bind_framebuffer()
 
         self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, blur_scale))
@@ -192,7 +192,7 @@ class PostProcess:
 
     def render_bloom(self, frame_buffer, texture_target):
         texture_highlight = self.rendertarget_manager.get_temporary('highlight', texture_target)
-        frame_buffer.set_color_texture(texture_highlight)
+        frame_buffer.set_color_textures(texture_highlight)
         frame_buffer.bind_framebuffer()
         self.bloom_highlight.use_program()
         self.bloom_highlight.bind_material_instance()
@@ -214,7 +214,7 @@ class PostProcess:
         temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp]
 
         def copy_bloom(src, dst):
-            frame_buffer.set_color_texture(dst)
+            frame_buffer.set_color_textures(dst)
             frame_buffer.bind_framebuffer()
             self.show_rendertarget.bind_uniform_data("texture_source", src)
             self.quad_geometry.draw_elements()
@@ -233,13 +233,13 @@ class PostProcess:
             bloom_target = bloom_targets[i]
             temp_bloom_target = temp_bloom_rendertargets[i]
 
-            frame_buffer.set_color_texture(temp_bloom_target)
+            frame_buffer.set_color_textures(temp_bloom_target)
             frame_buffer.bind_framebuffer()
             self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
             self.quad_geometry.draw_elements()
 
-            frame_buffer.set_color_texture(bloom_target)
+            frame_buffer.set_color_textures(bloom_target)
             frame_buffer.bind_framebuffer()
             self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
@@ -248,7 +248,7 @@ class PostProcess:
         # set additive
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
 
-        frame_buffer.set_color_texture(texture_target)
+        frame_buffer.set_color_textures(texture_target)
         frame_buffer.bind_framebuffer()
         self.bloom.use_program()
         self.bloom.bind_material_instance()
@@ -268,31 +268,23 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
-    def render_tone_map(self, texture_diffuse, texture_ssao):
+    def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.tonemapping.bind_uniform_data("exposure", 1.0)
-        self.tonemapping.bind_uniform_data("is_render_ssao", self.is_render_ssao)
-        self.tonemapping.bind_uniform_data("texture_ssao", texture_ssao)
         self.quad_geometry.draw_elements()
 
-    def render_ssao(self, framebuffer, texture_ssao, ssao_temp, texture_normal, texture_linear_depth):
-        framebuffer.set_color_texture(ssao_temp)
-        framebuffer.bind_framebuffer()
+    def render_ssao(self, screen_size, texture_normal, texture_linear_depth):
         self.ssao.use_program()
         self.ssao.bind_material_instance()
-        self.ssao.bind_uniform_data("screen_size", [ssao_temp.width, ssao_temp.height])
+        self.ssao.bind_uniform_data("screen_size", screen_size)
         self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
         self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
         self.ssao.bind_uniform_data("texture_noise", RenderTargets.SSAO_ROTATION_NOISE)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad_geometry.draw_elements()
-
-        framebuffer.set_color_texture(texture_ssao)
-        framebuffer.bind_framebuffer()
-        self.render_blur(ssao_temp, blur_kernel_radius=self.ssao_blur_radius)
 
     def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_velocity, texture_depth):
         self.screeen_space_reflection.use_program()
@@ -304,7 +296,7 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_deferred_shading(self, texture_diffuse, texture_material, texture_normal,
-                                texture_depth, texture_shadow, texture_scene_reflect, texture_cube):
+                                texture_depth, texture_shadow, texture_ssao, texture_scene_reflect, texture_cube):
         self.deferred_shading.use_program()
         self.deferred_shading.bind_material_instance()
         self.deferred_shading.bind_uniform_data("texture_diffuse", texture_diffuse)
@@ -312,6 +304,7 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_normal", texture_normal)
         self.deferred_shading.bind_uniform_data("texture_depth", texture_depth)
         self.deferred_shading.bind_uniform_data("texture_shadow", texture_shadow)
+        self.deferred_shading.bind_uniform_data("texture_ssao", texture_ssao)
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", texture_scene_reflect)
         self.deferred_shading.bind_uniform_data("texture_cube", texture_cube)
         self.quad_geometry.draw_elements()
