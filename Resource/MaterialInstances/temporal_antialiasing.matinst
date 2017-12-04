@@ -1,0 +1,4 @@
+{'macros': {},
+ 'material_name': 'temporal_antialiasing',
+ 'shader_name': 'temporal_antialiasing',
+ 'uniform_datas': {'texture_depth': 'empty', 'texture_input': 'empty', 'texture_prev': 'empty', 'texture_velocity': 'empty'}}
