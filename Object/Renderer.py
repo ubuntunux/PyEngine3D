@@ -316,34 +316,56 @@ class Renderer(Singleton):
         return renderTime, presentTime
 
     def render_pre_pass(self):
-        self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
+        self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
-        glClearBufferfv(GL_COLOR, 1, (0.0, 0.0, 0.0, 0.0))
         glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
 
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
+        # render background normal, depth
         material_instance = self.resource_manager.getMaterialInstance("pre_pass")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.PRE_PASS,
                            self.sceneManager.static_solid_geometries, material_instance)
+
+        # render velocity
+        self.postprocess.bind_quad()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
+
+        # render character normal, velocity
+        self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
+        self.framebuffer.bind_framebuffer()
         material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
                            self.sceneManager.skeleton_solid_geometries, material_instance)
 
     def render_deferred(self):
-        self.framebuffer.set_color_textures(RenderTargets.DIFFUSE, RenderTargets.MATERIAL, RenderTargets.WORLD_NORMAL,
-                                            RenderTargets.VELOCITY)
-        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
+        framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
+                                                                RenderTargets.MATERIAL,
+                                                                RenderTargets.WORLD_NORMAL,
+                                                                depth_texture=RenderTargets.DEPTHSTENCIL)
+        framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
 
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
+        # render character gbuffer
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
                            self.sceneManager.static_solid_geometries)
+
+        # render velocity
+        self.postprocess.bind_quad()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
+
+        # render character gbuffer
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
+                                                  RenderTargets.MATERIAL,
+                                                  RenderTargets.WORLD_NORMAL,
+                                                  RenderTargets.VELOCITY,
+                                                  depth_texture=RenderTargets.DEPTHSTENCIL)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
                            self.sceneManager.skeleton_solid_geometries)
 
@@ -385,13 +407,13 @@ class Renderer(Singleton):
         # SSAO
         if self.postprocess.is_render_ssao:
             ssao_temp = self.rendertarget_manager.get_temporary('ssao_temp', RenderTargets.SSAO)
-            self.framebuffer_manager.bind_framebuffer(ssao_temp)
+            self.framebuffer_manager.bind_framebuffer(ssao_temp, depth_texture=None)
 
             self.postprocess.render_ssao((ssao_temp.width, ssao_temp.height),
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
 
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
             self.postprocess.render_blur(ssao_temp, blur_kernel_radius=self.postprocess.ssao_blur_radius)
         else:
             self.framebuffer.clear(GL_COLOR_BUFFER_BIT, (1.0, 1.0, 1.0, 1.0))
@@ -564,7 +586,7 @@ class Renderer(Singleton):
         # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
 
         # copy HDR target
-        self.framebuffer.set_color_textures(RenderTargets.HDR)
+        self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
         self.framebuffer.bind_framebuffer()
         self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
         self.framebuffer_copy.bind_framebuffer()
@@ -572,14 +594,14 @@ class Renderer(Singleton):
             
         # Temporal AA
         if AntiAliasing.TAA == self.postprocess.antialiasing:
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
                                                           RenderTargets.TAA_RESOLVE,
                                                           RenderTargets.VELOCITY,
                                                           RenderTargets.LINEAR_DEPTH)
 
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(RenderTargets.TAA_RESOLVE)
             self.framebuffer_copy.bind_framebuffer()

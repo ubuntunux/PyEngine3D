@@ -14,7 +14,7 @@ layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
 
 void main() {
-    gl_Position = PERSPECTIVE * VIEW * model * vec4(vs_in_position, 1.0);
+    gl_Position = PROJECTION * VIEW * model * vec4(vs_in_position, 1.0);
 }
 #endif
 

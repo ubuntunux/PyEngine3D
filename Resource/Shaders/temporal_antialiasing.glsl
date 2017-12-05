@@ -30,12 +30,6 @@ const int ClampModes_RGB_Clamp = 1;
 const int ClampModes_RGB_Clip = 2;
 const int ClampModes_Variance_Clip = 3;
 
-const int JitterModes_None = 0;
-const int JitterModes_Uniform2x = 1;
-const int JitterModes_Hammersley4x = 2;
-const int JitterModes_Hammersley8x = 3;
-const int JitterModes_Hammersley16x = 4;
-
 const int DilationModes_CenterAverage = 0;
 const int DilationModes_DilateNearestDepth = 1;
 const int DilationModes_DilateGreatestVelocity = 2;
@@ -252,41 +246,40 @@ vec3 Reproject(vec2 texCoord)
     vec2 reprojectedUV = texCoord - velocity;
     vec2 reprojectedPos = reprojectedUV * texture_prev_size;
 
-    if(!UseStandardReprojection)
+    if(UseStandardReprojection)
     {
-        vec3 sum = vec3(0.0f);
-        float totalWeight = 0.0f;
-
-        for(int ty = -1; ty <= 2; ++ty)
-        {
-            for(int tx = -1; tx <= 2; ++tx)
-            {
-                vec2 samplePos = floor(reprojectedPos + vec2(tx, ty)) + 0.5f;
-                vec3 reprojectedSample = texture(texture_prev, samplePos / texture_prev_size).xyz;
-
-                vec2 sampleDist = abs(samplePos - reprojectedPos);
-                float filterWeight = Filter(sampleDist.x, ReprojectionFilter, 1.0f, false) *
-                                     Filter(sampleDist.y, ReprojectionFilter, 1.0f, false);
-
-                if(InverseLuminanceFiltering)
-                {
-                    float sampleLum = Luminance(reprojectedSample);
-                    if(UseExposureFiltering)
-                    {
-                        sampleLum *= exp2(ManualExposure - ExposureScale + ExposureFilterOffset);
-                    }
-                    filterWeight /= (1.0f + sampleLum);
-                }
-
-                sum += reprojectedSample * filterWeight;
-                totalWeight += filterWeight;
-            }
-        }
-        return max(sum / totalWeight, 0.0f);
+        return texture(texture_prev, reprojectedUV).xyz;
     }
 
-    // UseStandardReprojection
-    return texture(texture_prev, reprojectedUV).xyz;
+    vec3 sum = vec3(0.0f);
+    float totalWeight = 0.0f;
+
+    for(int ty = -1; ty <= 2; ++ty)
+    {
+        for(int tx = -1; tx <= 2; ++tx)
+        {
+            vec2 samplePos = floor(reprojectedPos + vec2(tx, ty)) + 0.5f;
+            vec3 reprojectedSample = texture(texture_prev, samplePos / texture_prev_size).xyz;
+
+            vec2 sampleDist = abs(samplePos - reprojectedPos);
+            float filterWeight = Filter(sampleDist.x, ReprojectionFilter, 1.0f, false) *
+                                 Filter(sampleDist.y, ReprojectionFilter, 1.0f, false);
+
+            if(InverseLuminanceFiltering)
+            {
+                float sampleLum = Luminance(reprojectedSample);
+                if(UseExposureFiltering)
+                {
+                    sampleLum *= exp2(ManualExposure - ExposureScale + ExposureFilterOffset);
+                }
+                filterWeight /= (1.0f + sampleLum);
+            }
+
+            sum += reprojectedSample * filterWeight;
+            totalWeight += filterWeight;
+        }
+    }
+    return max(sum / totalWeight, 0.0f);
 }
 
 vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)

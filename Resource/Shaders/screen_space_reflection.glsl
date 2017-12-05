@@ -92,7 +92,7 @@ void main() {
     float linear_depth = depth_to_linear_depth(depth) * 0.1;
 
     vec4 ndc_coord = vec4(vs_output.tex_coord.xy * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 relative_pos = INV_VIEW_ORIGIN * INV_PERSPECTIVE * ndc_coord;
+    vec4 relative_pos = INV_VIEW_ORIGIN * INV_PROJECTION * ndc_coord;
     relative_pos.xyz /= relative_pos.w;
 
     vec3 V = normalize(-relative_pos.xyz);
@@ -111,7 +111,7 @@ void main() {
 
     for (int i = 0; i < NumRays; i++)
     {
-        float StepOffset = rand(tex_coord + PoissonSamples[i]) - 0.5;
+        float StepOffset = rand(TIME + tex_coord + PoissonSamples[i]) - 0.5;
 
         vec3 E = ImportanceSampleBlinn(PoissonSamples[i], Roughness).xyz;
         vec3 H = TangentToWorld(E, N);
@@ -120,7 +120,7 @@ void main() {
         vec4 HitUVzTime = RayCast(
             texture_depth,
             VIEW_ORIGIN,
-            PERSPECTIVE,
+            PROJECTION,
             relative_pos.xyz,
             R,
             Roughness,

@@ -27,6 +27,7 @@ class Camera(StaticActor):
         self.front = Float3()
 
         self.projection = Matrix4()
+        self.projection_offset = Float2()
 
         self.view = Matrix4()
         self.view_origin = Matrix4()
@@ -94,20 +95,23 @@ class Camera(StaticActor):
         self.update(True)
 
     def update(self, force_update=False):
-        prev_updated = self.transform.updated
-        updated = self.transform.updateTransform(update_view_transform=True, force_update=force_update)
-        if prev_updated or updated:
-            # negative front
-            self.front[...] = -self.transform.front
+        self.transform.updateTransform(update_view_transform=True, force_update=force_update)
 
-            self.prev_view = self.transform.prev_inverse_matrix
-            self.prev_view_origin[...] = self.view_origin
-            self.prev_view_projection[...] = self.view_projection
-            self.prev_view_origin_projection[...] = self.view_origin_projection
+        # negative front
+        self.front[...] = -self.transform.front
 
-            self.view = self.transform.inverse_matrix
-            self.view_origin[...] = self.view
-            self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
-            self.view_projection[...] = np.dot(self.view, self.projection)
-            self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
+        self.prev_view = self.transform.prev_inverse_matrix
+        self.prev_view_origin[...] = self.view_origin
+        self.prev_view_projection[...] = self.view_projection
+        self.prev_view_origin_projection[...] = self.view_origin_projection
+
+        # jitter offset
+        self.projection[3][0] = self.projection_offset[0]
+        self.projection[3][1] = self.projection_offset[1]
+
+        self.view = self.transform.inverse_matrix
+        self.view_origin[...] = self.view
+        self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
+        self.view_projection[...] = np.dot(self.view, self.projection)
+        self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
 

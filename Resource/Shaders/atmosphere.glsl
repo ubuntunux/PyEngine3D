@@ -16,7 +16,7 @@ layout (location = 0) out vec4 fs_output;
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
 
-    vec4 eye_vector = (INV_VIEW_ORIGIN * INV_PERSPECTIVE * vec4(vs_output.position, 1.0));
+    vec4 eye_vector = (INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_output.position, 1.0));
     eye_vector.xyz /= eye_vector.w;
     eye_vector.xyz = normalize(eye_vector.xyz);
 

@@ -9,8 +9,8 @@ layout(std140, binding=1) uniform viewConstants
     mat4 INV_VIEW;
     mat4 VIEW_ORIGIN;
     mat4 INV_VIEW_ORIGIN;
-    mat4 PERSPECTIVE;
-    mat4 INV_PERSPECTIVE;
+    mat4 PROJECTION;
+    mat4 INV_PROJECTION;
     vec4 CAMERA_POSITION;
     vec4 NEAR_FAR;
 };

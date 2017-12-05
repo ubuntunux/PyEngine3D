@@ -44,7 +44,7 @@ void main() {
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);
-        offset = PERSPECTIVE * VIEW_ORIGIN * offset;
+        offset = PROJECTION * VIEW_ORIGIN * offset;
         offset.xy /= offset.w;
         offset.xy = offset.xy * 0.5 + 0.5;
 

@@ -84,8 +84,8 @@ class FrameBuffer:
 
         # bind color textures
         for i, color_texture in enumerate(self.color_textures):
+            attachment = GL_COLOR_ATTACHMENT0 + i
             if color_texture:
-                attachment = GL_COLOR_ATTACHMENT0 + i
                 if type(color_texture) == RenderBuffer:
                     self.add_command(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER,
                                      color_texture.buffer)
@@ -96,8 +96,8 @@ class FrameBuffer:
                 # self.add_command(glDrawBuffer, attachment)
                 # important
                 self.add_command(glReadBuffer, attachment)
-            else:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
+            # else:
+            #     self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
 
         if self.attach_count > 0:
             # Specifies a list of color buffers to be drawn into
@@ -224,7 +224,7 @@ class FrameBufferManager:
         self.framebuffers = {}
         self.current_framebuffer = None
 
-    def get_framebuffer(self, *textures, depth_texture=None):
+    def get_framebuffer(self, *textures, depth_texture):
         key = (textures, depth_texture)
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
@@ -236,7 +236,7 @@ class FrameBufferManager:
             framebuffer.build_command()
         return framebuffer
 
-    def bind_framebuffer(self, *textures, depth_texture=None):
-        self.current_framebuffer = self.get_framebuffer(*textures, depth_texture)
+    def bind_framebuffer(self, *textures, depth_texture):
+        self.current_framebuffer = self.get_framebuffer(*textures, depth_texture=depth_texture)
         self.current_framebuffer.run_bind_framebuffer()
         return self.current_framebuffer

@@ -2,6 +2,8 @@ import random
 import time
 from ctypes import c_void_p
 
+import numpy as np
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -9,6 +11,13 @@ from App import CoreManager
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from .RenderTarget import RenderTargets
+
+
+class JitterMode:
+    Uniform2x = np.array([[0.25, 0.75], [0.5, 0.5]], dtype=np.float32) * 2.0 - 1.0
+    Hammersley4x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
+    Hammersley8x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
+    Hammersley16x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
 
 
 class AntiAliasing(AutoEnum):
@@ -51,6 +60,8 @@ class PostProcess:
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
 
+        self.velocity = None
+
         self.is_render_ssr = True
         self.screeen_space_reflection = None
 
@@ -61,7 +72,14 @@ class PostProcess:
         self.gaussian_blur = None
         self.deferred_shading = None
         self.show_rendertarget = None
+
         self.temporal_antialiasing = None
+        self.jitter_mode = JitterMode.Hammersley4x
+        self.jitter = Float2()
+        self.jitter_prev = Float2()
+        self.jitter_frame = 0
+        self.jitter_offset = Float2()
+        self.jitter_projection_offset = Float2()
 
         self.Attributes = Attributes()
 
@@ -87,6 +105,8 @@ class PostProcess:
             self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
 
+        self.velocity = self.resource_manager.getMaterialInstance("velocity")
+
         self.atmosphere = self.resource_manager.getMaterialInstance("atmosphere")
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.blur = self.resource_manager.getMaterialInstance("blur")
@@ -96,6 +116,8 @@ class PostProcess:
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
         self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
         self.show_rendertarget = self.resource_manager.getMaterialInstance("show_rendertarget")
+
+        # TAA
         self.temporal_antialiasing = self.resource_manager.getMaterialInstance("temporal_antialiasing")
 
         def get_anti_aliasing_name(anti_aliasing):
@@ -106,27 +128,6 @@ class PostProcess:
                               range(AntiAliasing.COUNT.value)]
         # Send to GUI
         self.core_manager.sendAntiAliasingList(anti_aliasing_list)
-
-    def set_anti_aliasing(self, index, force=False):
-        if index != self.antialiasing.value or force:
-            self.antialiasing = AntiAliasing.convert_index_to_enum(index)
-            if self.antialiasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
-                self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
-
-    def get_msaa_multisample_count(self):
-        if self.antialiasing == AntiAliasing.MSAA:
-            return self.msaa_multisample_count
-        else:
-            return 0
-
-    def is_MSAA(self):
-        return self.antialiasing == AntiAliasing.MSAA
-
-    def enable_MSAA(self):
-        return self.antialiasing == AntiAliasing.MSAA and 4 <= self.msaa_multisample_count
-
-    def is_SSAA(self):
-        return self.antialiasing == AntiAliasing.SSAA
 
     def getAttribute(self):
         self.Attributes.setAttribute('is_render_bloom', self.is_render_bloom)
@@ -151,6 +152,43 @@ class PostProcess:
             self.set_anti_aliasing(self.antialiasing.value, force=True)
         elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
+
+    def set_anti_aliasing(self, index, force=False):
+        if index != self.antialiasing.value or force:
+            self.antialiasing = AntiAliasing.convert_index_to_enum(index)
+            if self.antialiasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
+                self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
+
+    def get_msaa_multisample_count(self):
+        if self.antialiasing == AntiAliasing.MSAA:
+            return self.msaa_multisample_count
+        else:
+            return 0
+
+    def is_MSAA(self):
+        return self.antialiasing == AntiAliasing.MSAA
+
+    def enable_MSAA(self):
+        return self.antialiasing == AntiAliasing.MSAA and 4 <= self.msaa_multisample_count
+
+    def is_SSAA(self):
+        return self.antialiasing == AntiAliasing.SSAA
+
+    def is_TAA(self):
+        return self.antialiasing == AntiAliasing.TAA
+
+    def update_jitter_offset(self):
+        self.jitter_frame = (self.jitter_frame + 1) % len(self.jitter_mode)
+        # NDC Space -1.0 ~ 1.0
+        self.jitter[...] = self.jitter_mode[self.jitter_frame]
+
+        # Multiplies by 0.5 because it is in screen coordinate system. 0.0 ~ 1.0
+        self.jitter_offset[...] = (self.jitter - self.jitter_prev) * 0.5
+        self.jitter_prev[...] = self.jitter
+
+        # offset of camera projection matrix.
+        self.jitter_projection_offset[0] = self.jitter[0] / RenderTargets.TAA_RESOLVE.width
+        self.jitter_projection_offset[1] = self.jitter[1] / RenderTargets.TAA_RESOLVE.height
 
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()
@@ -297,6 +335,12 @@ class PostProcess:
         self.ssao.bind_uniform_data("texture_noise", RenderTargets.SSAO_ROTATION_NOISE)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
+        self.quad_geometry.draw_elements()
+
+    def render_velocity(self, texture_depth):
+        self.velocity.use_program()
+        self.velocity.bind_material_instance()
+        self.velocity.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
     def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_velocity, texture_depth):

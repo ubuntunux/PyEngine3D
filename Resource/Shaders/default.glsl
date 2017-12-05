@@ -17,7 +17,9 @@ layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_diffuse;
 layout (location = 1) out vec4 fs_material;
 layout (location = 2) out vec4 fs_normal;
+#if 1 == SKELETAL
 layout (location = 3) out vec2 fs_velocity;
+#endif
 
 void main() {
     vec2 screen_tex_coord = vs_output.projection_pos.xy / vs_output.projection_pos.w * 0.5 + 0.5;
@@ -50,9 +52,14 @@ void main() {
         fs_material = vec4(get_roughness(), metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);
 
+#if 1 == SKELETAL
         fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) - (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
         // NDC coord -> Screen Coord
         fs_velocity *= 0.5;
+
+        // jitter offset
+        fs_velocity.xy -= vec2(PROJECTION[3][0], PROJECTION[3][1]);
+#endif
     }
     else
     {

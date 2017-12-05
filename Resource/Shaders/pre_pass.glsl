@@ -6,10 +6,12 @@
 
 
 #ifdef FRAGMENT_SHADER
-layout (location = 0) in VERTEX_OUTPUT vs_output;
+    layout (location = 0) in VERTEX_OUTPUT vs_output;
 
-layout (location = 0) out vec4 fs_normal;
-layout (location = 1) out vec2 fs_velocity;
+    layout (location = 0) out vec4 fs_normal;
+#if 1 == SKELETAL
+    layout (location = 1) out vec2 fs_velocity;
+#endif
 
 void main() {
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
@@ -31,9 +33,15 @@ void main() {
     N = normalize((vs_output.tangent_to_world * vec4(N, 0.0)).xyz) * 0.5 + 0.5;
     fs_normal = vec4(N, 1.0);
 
+#if 1 == SKELETAL
+    // only render velocity for skeleton
     fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) -
         (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
     // NDC coord -> Screen Coord
     fs_velocity *= 0.5;
+
+    // jitter offset
+    fs_velocity -= vec2(PROJECTION[3][0], PROJECTION[3][1]);
+#endif
 }
 #endif

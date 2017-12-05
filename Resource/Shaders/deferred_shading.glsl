@@ -38,7 +38,7 @@ void main() {
     vec3 N = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
     vec4 world_position = vec4(screen_tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    world_position = INV_VIEW * INV_PERSPECTIVE * world_position;
+    world_position = INV_VIEW * INV_PROJECTION * world_position;
     world_position /= world_position.w;
 
     float roughness = material.x;
