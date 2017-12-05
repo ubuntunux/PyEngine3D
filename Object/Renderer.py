@@ -563,21 +563,27 @@ class Renderer(Singleton):
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
         # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
 
+        # Temporal AA
+        if AntiAliasing.TAA == self.postprocess.antialiasing:
+            self.framebuffer.set_color_textures(RenderTargets.TAA_RESOLVE)
+            self.framebuffer.bind_framebuffer()
+            self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
+                                                          RenderTargets.HDR,
+                                                          RenderTargets.VELOCITY,
+                                                          RenderTargets.LINEAR_DEPTH)
+
+            self.framebuffer.set_color_textures(RenderTargets.TAA_RESOLVE)
+            self.framebuffer.bind_framebuffer()
+            self.framebuffer_copy.set_color_textures(RenderTargets.HDR)
+            self.framebuffer_copy.bind_framebuffer()
+            self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+
         # copy HDR Target
         self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.bind_framebuffer()
         self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
         self.framebuffer_copy.bind_framebuffer()
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
-
-        # Temporal AA
-        if AntiAliasing.TAA == self.postprocess.antialiasing:
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.bind_framebuffer()
-            self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
-                                                          RenderTargets.TAA_RESOLVE,
-                                                          RenderTargets.VELOCITY,
-                                                          RenderTargets.LINEAR_DEPTH)
 
         # Tone Map
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
