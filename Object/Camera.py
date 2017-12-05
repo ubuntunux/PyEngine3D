@@ -106,6 +106,7 @@ class Camera(StaticActor):
         self.prev_view_origin_projection[...] = self.view_origin_projection
 
         # jitter offset
+        제일 아랫줄이 아니고 3번째 줄에 추가하는 것 같기도하고...
         self.projection[3][0] = self.projection_offset[0]
         self.projection[3][1] = self.projection_offset[1]
 
