@@ -22,6 +22,8 @@ class RenderTargets:
     BACKBUFFER = None
     DEPTHSTENCIL = None
     HDR = None
+    HDR_PREV = None
+    TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
     WORLD_NORMAL = None
@@ -167,6 +169,34 @@ class RenderTargetManager(Singleton):
 
         RenderTargets.HDR = self.create_rendertarget(
             "HDR",
+            Texture2D,
+            option=Option.MSAA | Option.SSAA,
+            width=fullsize_x,
+            height=fullsize_y,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_BGRA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.HDR_PREV = self.create_rendertarget(
+            "HDR_Prev",
+            Texture2D,
+            option=Option.MSAA | Option.SSAA,
+            width=fullsize_x,
+            height=fullsize_y,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_BGRA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.TAA_RESOLVE = self.create_rendertarget(
+            "TAA Resolve",
             Texture2D,
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,

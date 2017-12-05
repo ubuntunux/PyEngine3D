@@ -13,6 +13,7 @@ from .RenderTarget import RenderTargets
 
 class AntiAliasing(AutoEnum):
     NONE_AA = ()
+    TAA = ()
     MSAA = ()
     SSAA = ()
     COUNT = ()
@@ -60,6 +61,7 @@ class PostProcess:
         self.gaussian_blur = None
         self.deferred_shading = None
         self.show_rendertarget = None
+        self.temporal_antialiasing = None
 
         self.Attributes = Attributes()
 
@@ -94,6 +96,7 @@ class PostProcess:
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
         self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
         self.show_rendertarget = self.resource_manager.getMaterialInstance("show_rendertarget")
+        self.temporal_antialiasing = self.resource_manager.getMaterialInstance("temporal_antialiasing")
 
         def get_anti_aliasing_name(anti_aliasing):
             anti_aliasing = str(anti_aliasing)
@@ -107,7 +110,8 @@ class PostProcess:
     def set_anti_aliasing(self, index, force=False):
         if index != self.antialiasing.value or force:
             self.antialiasing = AntiAliasing.convert_index_to_enum(index)
-            self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
+            if self.antialiasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
+                self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
 
     def get_msaa_multisample_count(self):
         if self.antialiasing == AntiAliasing.MSAA:
@@ -150,6 +154,15 @@ class PostProcess:
 
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()
+
+    def render_temporal_antialiasing(self, texture_input, texture_prev, texture_velocity, texture_linear_depth):
+        self.temporal_antialiasing.use_program()
+        self.temporal_antialiasing.bind_material_instance()
+        self.temporal_antialiasing.bind_uniform_data('texture_input', texture_input)
+        self.temporal_antialiasing.bind_uniform_data('texture_prev', texture_prev)
+        self.temporal_antialiasing.bind_uniform_data('texture_velocity', texture_velocity)
+        self.temporal_antialiasing.bind_uniform_data('texture_depth', texture_linear_depth)
+        self.quad_geometry.draw_elements()
 
     def render_atmosphere(self):
         self.atmosphere.use_program()

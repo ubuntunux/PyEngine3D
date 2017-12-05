@@ -281,6 +281,9 @@ class Renderer(Singleton):
 
         glFrontFace(GL_CCW)
         glDepthMask(False)  # cause depth prepass and gbuffer
+        self.framebuffer.set_color_textures(RenderTargets.HDR)
+        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
+        self.framebuffer.bind_framebuffer()
         self.render_solid()
 
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -394,10 +397,6 @@ class Renderer(Singleton):
             self.framebuffer.clear(GL_COLOR_BUFFER_BIT, (1.0, 1.0, 1.0, 1.0))
 
     def render_solid(self):
-        self.framebuffer.set_color_textures(RenderTargets.HDR)
-        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-        self.framebuffer.bind_framebuffer()
-
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection)
 
@@ -563,6 +562,22 @@ class Renderer(Singleton):
         # Blur Test
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
         # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
+
+        # copy HDR Target
+        self.framebuffer.set_color_textures(RenderTargets.HDR)
+        self.framebuffer.bind_framebuffer()
+        self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
+        self.framebuffer_copy.bind_framebuffer()
+        self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+
+        # Temporal AA
+        if AntiAliasing.TAA == self.postprocess.antialiasing:
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.bind_framebuffer()
+            self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
+                                                          RenderTargets.TAA_RESOLVE,
+                                                          RenderTargets.VELOCITY,
+                                                          RenderTargets.LINEAR_DEPTH)
 
         # Tone Map
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
