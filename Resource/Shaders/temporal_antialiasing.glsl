@@ -205,11 +205,11 @@ vec3 Reproject(vec2 texCoord)
 
     if(DilationMode == DilationModes_CenterAverage)
     {
-        velocity += texture(texture_velocity, texCoord).xy;
+        velocity = texture(texture_velocity, texCoord).xy;
     }
     else if(DilationMode == DilationModes_DilateNearestDepth)
     {
-        float closestDepth = 10.0f;
+        float closestDepth = NEAR_FAR.y;
         for(int vy = -1; vy <= 1; ++vy)
         {
             for(int vx = -1; vx <= 1; ++vx)
