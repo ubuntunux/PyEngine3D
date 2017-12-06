@@ -298,12 +298,7 @@ class SceneManager(Singleton):
             camera.update_projection(aspect)
 
     def update_scene(self, dt):
-        if self.renderer.postprocess.is_TAA():
-            self.renderer.postprocess.update_jitter_offset()
-            self.mainCamera.projection_offset[...] = self.renderer.postprocess.jitter_projection_offset
-        else:
-            self.mainCamera.projection_offset[0] = 0.0
-            self.mainCamera.projection_offset[1] = 0.0
+        self.renderer.postprocess.update()
 
         for camera in self.cameras:
             camera.update()

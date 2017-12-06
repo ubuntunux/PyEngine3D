@@ -58,7 +58,7 @@ void main() {
         fs_velocity *= 0.5;
 
         // jitter offset
-        fs_velocity.xy -= vec2(PROJECTION[3][0], PROJECTION[3][1]);
+        fs_velocity.xy -= JITTER_DELTA;
 #endif
     }
     else
@@ -79,7 +79,10 @@ void main() {
                         shadow_factor);
 
         // SSAO
-        fs_diffuse.xyz *= texture(texture_ssao, screen_tex_coord).x;
+        if(RENDER_SSAO == 1.0f)
+        {
+            fs_diffuse.xyz *= texture(texture_ssao, screen_tex_coord).x;
+        }
 
         // Emissive
         fs_diffuse.xyz += emissive_color.xyz * emissive_color.w;

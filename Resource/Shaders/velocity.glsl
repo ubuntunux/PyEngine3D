@@ -24,6 +24,6 @@ void main() {
     fs_output.xy = tex_coord - tex_coord_prev;
 
     // jitter offset
-    fs_output.xy -= vec2(PROJECTION[3][0], PROJECTION[3][1]);
+    fs_output.xy -= JITTER_DELTA;
 }
 #endif

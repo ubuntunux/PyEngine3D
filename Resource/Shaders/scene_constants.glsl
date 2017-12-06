@@ -1,6 +1,8 @@
 layout(std140, binding=0) uniform sceneConstants
 {
     float TIME;
+    float RENDER_SSR;
+    float RENDER_SSAO;
 };
 
 layout(std140, binding=1) uniform viewConstants
@@ -12,7 +14,8 @@ layout(std140, binding=1) uniform viewConstants
     mat4 PROJECTION;
     mat4 INV_PROJECTION;
     vec4 CAMERA_POSITION;
-    vec4 NEAR_FAR;
+    vec2 NEAR_FAR;
+    vec2 JITTER_DELTA;
 };
 
 layout(std140, binding=2) uniform viewProjection

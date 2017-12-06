@@ -41,7 +41,7 @@ void main() {
     fs_velocity *= 0.5;
 
     // jitter offset
-    fs_velocity -= vec2(PROJECTION[3][0], PROJECTION[3][1]);
+    fs_velocity -= JITTER_DELTA;
 #endif
 }
 #endif

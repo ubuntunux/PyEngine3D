@@ -31,8 +31,6 @@ class RenderMode(AutoEnum):
     GBUFFER = ()
     SHADING = ()
     SHADOW = ()
-    SCREEN_SPACE_REFLECTION = ()
-    VELOCITY = ()
     COUNT = ()
 
 
@@ -73,7 +71,6 @@ class Renderer(Singleton):
 
         # scene constants uniform buffer
         self.uniformSceneConstants = None
-        self.sceneConstants_Time = Float4(0.0, 0.0, 0.0, 0.0)
         self.uniformViewConstants = None
         self.uniformViewProjection = None
         self.uniformLightConstants = None
@@ -124,7 +121,8 @@ class Renderer(Singleton):
                                                    MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
                                                    FLOAT4_ZERO,
-                                                   FLOAT4_ZERO])
+                                                   FLOAT2_ZERO,
+                                                   FLOAT2_ZERO])
 
         self.uniformViewProjection = UniformBlock("viewProjection", program, 2,
                                                   [MATRIX4_IDENTITY,
@@ -239,8 +237,9 @@ class Renderer(Singleton):
         if not camera or not light:
             return
 
-        self.sceneConstants_Time[0] = self.core_manager.currentTime
-        self.uniformSceneConstants.bind_uniform_block(self.sceneConstants_Time)
+        self.uniformSceneConstants.bind_uniform_block(
+            Float4(self.core_manager.currentTime, self.postprocess.is_render_ssr, self.postprocess.is_render_ssao, 0.0)
+        )
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
                                                      np.linalg.inv(camera.view),
@@ -249,7 +248,8 @@ class Renderer(Singleton):
                                                      camera.projection,
                                                      np.linalg.inv(camera.projection),
                                                      camera.transform.getPos(), FLOAT_ZERO,
-                                                     Float4(camera.near, camera.far, 0.0, 0.0))
+                                                     Float2(camera.near, camera.far),
+                                                     self.postprocess.jitter_delta)
 
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
@@ -396,8 +396,6 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
                                                             RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
-        else:
-            self.framebuffer.clear(GL_COLOR_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
 
         # Linear depth
         self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
@@ -415,8 +413,6 @@ class Renderer(Singleton):
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
             self.postprocess.render_blur(ssao_temp, blur_kernel_radius=self.postprocess.ssao_blur_radius)
-        else:
-            self.framebuffer.clear(GL_COLOR_BUFFER_BIT, (1.0, 1.0, 1.0, 1.0))
 
     def render_solid(self):
         camera = self.sceneManager.mainCamera
@@ -586,7 +582,7 @@ class Renderer(Singleton):
         # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
 
         # copy HDR target
-        self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
+        self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.bind_framebuffer()
         self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
         self.framebuffer_copy.bind_framebuffer()
@@ -594,14 +590,14 @@ class Renderer(Singleton):
             
         # Temporal AA
         if AntiAliasing.TAA == self.postprocess.antialiasing:
-            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
                                                           RenderTargets.TAA_RESOLVE,
                                                           RenderTargets.VELOCITY,
                                                           RenderTargets.LINEAR_DEPTH)
 
-            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(RenderTargets.TAA_RESOLVE)
             self.framebuffer_copy.bind_framebuffer()

@@ -14,6 +14,7 @@ class Camera(StaticActor):
         StaticActor.__init__(self, name, **object_data)
 
         self.scene_manager = scene_manager
+        self.postprocess = self.scene_manager.renderer.postprocess
 
         self.meter_per_unit = object_data.get('meter_per_unit', 1.0)
         self.aspect = object_data.get('aspect', 0.0)
@@ -105,14 +106,13 @@ class Camera(StaticActor):
         self.prev_view_projection[...] = self.view_projection
         self.prev_view_origin_projection[...] = self.view_origin_projection
 
-        # jitter offset
-        제일 아랫줄이 아니고 3번째 줄에 추가하는 것 같기도하고...
-        self.projection[3][0] = self.projection_offset[0]
-        self.projection[3][1] = self.projection_offset[1]
+        # Update projection jitter.
+        # This part is very important because the w value of the projection matrix 3rd row is ​​-1.0.
+        self.projection[2][0] = -self.postprocess.jitter_projection_offset[0]
+        self.projection[2][1] = -self.postprocess.jitter_projection_offset[1]
 
         self.view = self.transform.inverse_matrix
         self.view_origin[...] = self.view
         self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
         self.view_projection[...] = np.dot(self.view, self.projection)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
-

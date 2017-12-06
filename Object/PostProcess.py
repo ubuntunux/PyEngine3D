@@ -177,20 +177,26 @@ class PostProcess:
     def is_TAA(self):
         return self.antialiasing == AntiAliasing.TAA
 
-    def update_jitter_offset(self):
-        self.jitter_frame = (self.jitter_frame + 1) % len(self.jitter_mode)
-        # NDC Space -1.0 ~ 1.0
-        self.jitter[...] = self.jitter_mode[self.jitter_frame]
+    def update(self):
+        if self.renderer.postprocess.is_TAA():
+            self.jitter_frame = (self.jitter_frame + 1) % len(self.jitter_mode)
+            # NDC Space -1.0 ~ 1.0
+            self.jitter_prev[...] = self.jitter
+            self.jitter[...] = self.jitter_mode[self.jitter_frame]
 
-        # Multiplies by 0.5 because it is in screen coordinate system. 0.0 ~ 1.0
-        self.jitter_delta[...] = (self.jitter - self.jitter_prev) * 0.5
-        self.jitter_delta[0] = self.jitter_delta[0] / RenderTargets.TAA_RESOLVE.width
-        self.jitter_delta[1] = self.jitter_delta[1] / RenderTargets.TAA_RESOLVE.height
-        self.jitter_prev[...] = self.jitter
+            # Multiplies by 0.5 because it is in screen coordinate system. 0.0 ~ 1.0
+            self.jitter_delta[...] = (self.jitter - self.jitter_prev) * 0.5
+            self.jitter_delta[0] = self.jitter_delta[0] / RenderTargets.TAA_RESOLVE.width
+            self.jitter_delta[1] = self.jitter_delta[1] / RenderTargets.TAA_RESOLVE.height
 
-        # offset of camera projection matrix.
-        self.jitter_projection_offset[0] = self.jitter[0] / RenderTargets.TAA_RESOLVE.width
-        self.jitter_projection_offset[1] = self.jitter[1] / RenderTargets.TAA_RESOLVE.height
+            # offset of camera projection matrix.
+            self.jitter_projection_offset[0] = self.jitter[0] / RenderTargets.TAA_RESOLVE.width
+            self.jitter_projection_offset[1] = self.jitter[1] / RenderTargets.TAA_RESOLVE.height
+        else:
+            self.jitter_delta[0] = 0.0
+            self.jitter_delta[1] = 0.0
+            self.jitter_projection_offset[0] = 0.0
+            self.jitter_projection_offset[1] = 0.0
 
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()

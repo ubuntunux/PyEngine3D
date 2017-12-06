@@ -192,8 +192,11 @@ vec4 surface_shading(vec4 base_color,
     ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
 
     // mix scene reflection
-    vec4 scene_reflect_color = texture(texture_scene_reflect, screen_tex_coord);
-    ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
+    if(RENDER_SSR == 1.0f)
+    {
+        vec4 scene_reflect_color = texture(texture_scene_reflect, screen_tex_coord);
+        ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
+    }
 
     diffuse_light += base_color.xyz * ibl_diffuse_color;
     vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
