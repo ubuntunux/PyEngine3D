@@ -78,7 +78,7 @@ class PostProcess:
         self.jitter = Float2()
         self.jitter_prev = Float2()
         self.jitter_frame = 0
-        self.jitter_offset = Float2()
+        self.jitter_delta = Float2()
         self.jitter_projection_offset = Float2()
 
         self.Attributes = Attributes()
@@ -183,7 +183,9 @@ class PostProcess:
         self.jitter[...] = self.jitter_mode[self.jitter_frame]
 
         # Multiplies by 0.5 because it is in screen coordinate system. 0.0 ~ 1.0
-        self.jitter_offset[...] = (self.jitter - self.jitter_prev) * 0.5
+        self.jitter_delta[...] = (self.jitter - self.jitter_prev) * 0.5
+        self.jitter_delta[0] = self.jitter_delta[0] / RenderTargets.TAA_RESOLVE.width
+        self.jitter_delta[1] = self.jitter_delta[1] / RenderTargets.TAA_RESOLVE.height
         self.jitter_prev[...] = self.jitter
 
         # offset of camera projection matrix.
