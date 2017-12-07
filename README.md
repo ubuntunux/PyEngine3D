@@ -57,6 +57,7 @@
     - Select, Move, Modify
     - Gizmo
     - Culling
+    - VTF Skinning
 * Particle System
     - runtime particles
     - GPU particle
@@ -69,7 +70,6 @@
     - Film Grain
     - Color Correction
     - Color Grading
-    - Vignetting
 * Rendering
     - Blend mode
         - Additive, Multiply, Blending
