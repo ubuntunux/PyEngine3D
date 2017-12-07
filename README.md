@@ -59,10 +59,9 @@
     - Culling
 * Particle System
     - runtime particles
+    - GPU particle
 * PostProcess
-    - AntiAliasing
-        - TAA, FXAA
-    - Temporal SSAO
+    - FXAA
     - Screen Space SSS
     - God Ray
     - Glare
@@ -82,6 +81,7 @@
         - view frustum culling
         - occlusion culling
         - distance culling
+    - Coarse Shading, Checkboard rendering
     - Realtime environment cube map
     - Paraboloid environment map
     - Forward Renderer
