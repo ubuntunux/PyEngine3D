@@ -47,7 +47,7 @@ const int NeighborhoodClampMode = ClampModes_Variance_Clip;
 const float VarianceClipGamma = 1.5;    // 0.0 ~ 2.0
 const float LowFreqWeight = 0.25;   // 0.0 ~ 100.0
 const float HiFreqWeight = 0.85;    // 0.0 ~ 100.0
-const int DilationMode = DilationModes_DilateNearestDepth;
+const int DilationMode = DilationModes_DilateGreatestVelocity;
 const int ReprojectionFilter = FilterTypes_CatmullRom;
 const float ExposureScale = 0.0;    // -16.0 ~ 16.0
 const float ManualExposure = -2.5;  // -10.0 ~ 10.0
@@ -55,7 +55,7 @@ const float ManualExposure = -2.5;  // -10.0 ~ 10.0
 const bool UseStandardReprojection = false;
 const bool UseTemporalColorWeighting = false;
 const bool InverseLuminanceFiltering = true;
-const bool UseExposureFiltering = true;
+const bool UseExposureFiltering = false;
 
 uniform sampler2D texture_prev;
 uniform sampler2D texture_input;
@@ -200,7 +200,6 @@ vec3 ClipAABB(vec3 aabbMin, vec3 aabbMax, vec3 prevSample, vec3 avg)
 vec3 Reproject(vec2 texCoord)
 {
     vec2 inv_velocity_tex_size = 1.0 / textureSize(texture_velocity, 0).xy;
-    vec2 inv_depth_tex_size = 1.0 / textureSize(texture_depth, 0).xy;
     vec2 velocity = vec2(0.0, 0.0);
 
     if(DilationMode == DilationModes_CenterAverage)
@@ -209,6 +208,7 @@ vec3 Reproject(vec2 texCoord)
     }
     else if(DilationMode == DilationModes_DilateNearestDepth)
     {
+        vec2 inv_depth_tex_size = 1.0 / textureSize(texture_depth, 0).xy;
         float closestDepth = 10.0f;
         for(int vy = -1; vy <= 1; ++vy)
         {

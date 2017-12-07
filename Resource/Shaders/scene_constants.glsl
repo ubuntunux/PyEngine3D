@@ -1,6 +1,7 @@
 layout(std140, binding=0) uniform sceneConstants
 {
     float TIME;
+    float JITTER_FRAME;
     float RENDER_SSR;
     float RENDER_SSAO;
 };

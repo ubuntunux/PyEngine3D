@@ -24,7 +24,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     for(int i=0; i<sample_count; ++i)
     {
         // random poisson
-        vec2 uv = PoissonSamples[ int(mod(i + angle * PoissonSampleCount, PoissonSampleCount)) ];
+        vec2 uv = PoissonSamples[int(JITTER_FRAME + i + angle * PoissonSampleCount) % PoissonSampleCount];
 
         uv = shadow_uv.xy + uv * sample_scale;
         vec4 s = textureGather(texture_shadow, uv, 0);

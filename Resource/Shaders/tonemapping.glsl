@@ -45,9 +45,16 @@ vec3 SimpleTonemap(vec3 hdrColor)
     return pow(mapped, vec3(1.0 / 2.2));
 }
 
+float vignetting(vec2 uv, float inner_value, float outter_value)
+{
+    float f = smoothstep(0.0, 1.0, length(uv - vec2(0.5)));
+    return mix(inner_value, outter_value, f * f);
+}
+
 void main() {
     vec3 texColor = texture(texture_diffuse, vs_output.tex_coord.xy).xyz;
     fs_output.xyz = Uncharted2Tonemap(texColor);
+    fs_output.xyz *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
     fs_output.a = 1.0;
 }
 #endif // FRAGMENT_SHADER

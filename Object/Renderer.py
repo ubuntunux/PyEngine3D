@@ -14,8 +14,8 @@ from .RenderTarget import RenderTargets
 
 
 class RenderingType(AutoEnum):
-    FORWARD_RENDERING = ()
     DEFERRED_RENDERING = ()
+    FORWARD_RENDERING = ()
     LIGHT_PRE_PASS = ()
     COUNT = ()
 
@@ -75,7 +75,7 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
-        self.rendering_type = RenderingType.FORWARD_RENDERING
+        self.rendering_type = RenderingType.DEFERRED_RENDERING
 
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
@@ -238,7 +238,10 @@ class Renderer(Singleton):
             return
 
         self.uniformSceneConstants.bind_uniform_block(
-            Float4(self.core_manager.currentTime, self.postprocess.is_render_ssr, self.postprocess.is_render_ssao, 0.0)
+            Float4(self.core_manager.currentTime,
+                   self.core_manager.frame_count if self.postprocess.antialiasing else 0.0,
+                   self.postprocess.is_render_ssr,
+                   self.postprocess.is_render_ssao)
         )
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
@@ -404,15 +407,10 @@ class Renderer(Singleton):
 
         # SSAO
         if self.postprocess.is_render_ssao:
-            ssao_temp = self.rendertarget_manager.get_temporary('ssao_temp', RenderTargets.SSAO)
-            self.framebuffer_manager.bind_framebuffer(ssao_temp, depth_texture=None)
-
-            self.postprocess.render_ssao((ssao_temp.width, ssao_temp.height),
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
+            self.postprocess.render_ssao((RenderTargets.SSAO.width, RenderTargets.SSAO.height),
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
-            self.postprocess.render_blur(ssao_temp, blur_kernel_radius=self.postprocess.ssao_blur_radius)
 
     def render_solid(self):
         camera = self.sceneManager.mainCamera

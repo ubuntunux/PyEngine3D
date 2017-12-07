@@ -21,10 +21,10 @@ class JitterMode:
 
 
 class AntiAliasing(AutoEnum):
-    NONE_AA = ()
     TAA = ()
     MSAA = ()
     SSAA = ()
+    NONE_AA = ()
     COUNT = ()
 
 
@@ -38,7 +38,7 @@ class PostProcess:
         self.quad = None
         self.quad_geometry = None
 
-        self.antialiasing = AntiAliasing.NONE_AA
+        self.antialiasing = AntiAliasing.TAA
         self.msaa_multisample_count = 4
 
         self.is_render_bloom = True
@@ -207,7 +207,7 @@ class PostProcess:
         self.temporal_antialiasing.bind_uniform_data('texture_input', texture_input)
         self.temporal_antialiasing.bind_uniform_data('texture_prev', texture_prev)
         self.temporal_antialiasing.bind_uniform_data('texture_velocity', texture_velocity)
-        self.temporal_antialiasing.bind_uniform_data('texture_depth', texture_linear_depth)
+        # self.temporal_antialiasing.bind_uniform_data('texture_depth', texture_linear_depth)
         self.quad_geometry.draw_elements()
 
     def render_atmosphere(self):
