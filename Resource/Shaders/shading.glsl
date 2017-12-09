@@ -17,7 +17,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     const vec2 texture_size = textureSize(texture_shadow, 0);
     const vec2 sample_scale = shadow_radius / texture_size;
 
-    float angle = rand(screen_tex_coord);
+    float angle = rand(screen_tex_coord + vec2(float(JITTER_FRAME) * 73.141592));
 
     const int sample_count = min(4, PoissonSampleCount);
 
