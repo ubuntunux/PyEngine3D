@@ -97,7 +97,7 @@ class TransformObject:
         self.pos[2] += delta
 
     # Rotation
-    def getRotation(self):
+    def getRot(self):
         return self.rot
 
     def setRot(self, rot):

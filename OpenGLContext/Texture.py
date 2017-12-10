@@ -6,7 +6,6 @@ from Common import logger
 from Utilities import Singleton, GetClassName, Attributes
 
 
-
 def get_internal_format(str_image_mode):
     if str_image_mode == "RGB":
         return GL_RGB

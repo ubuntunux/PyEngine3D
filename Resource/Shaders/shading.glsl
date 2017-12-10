@@ -17,7 +17,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     const vec2 texture_size = textureSize(texture_shadow, 0);
     const vec2 sample_scale = shadow_radius / texture_size;
 
-    float angle = rand(screen_tex_coord + vec2(float(JITTER_FRAME) * 73.141592));
+    float angle = rand(screen_tex_coord);
 
     const int sample_count = min(4, PoissonSampleCount);
 
@@ -188,8 +188,9 @@ vec4 surface_shading(vec4 base_color,
     vec3 ibl_diffuse_color = textureLod(texture_cube, invert_y(N), env_mipmap_count - 1.0).xyz;
     vec3 ibl_specular_color = textureLod(texture_cube, invert_y(R), env_mipmap_count * roughness).xyz;
 
-    ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
-    ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
+    // texture_cube is HDR
+    //ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
+    //ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
 
     // mix scene reflection
     if(RENDER_SSR == 1.0f)

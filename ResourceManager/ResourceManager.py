@@ -209,10 +209,13 @@ class ResourceLoader(object):
         return resourceName if make_lower else resourceName
 
     def is_new_external_data(self, meta_data, source_filepath):
-        # Refresh the resource from external file.
-        source_modify_time = get_modify_time_of_file(source_filepath)
-        return meta_data.resource_version != self.resource_version or \
-            (meta_data.source_filepath == source_filepath and meta_data.source_modify_time != source_modify_time)
+        if os.path.exists(source_filepath):
+            # Refresh the resource from external file.
+            source_modify_time = get_modify_time_of_file(source_filepath)
+            return meta_data.resource_version != self.resource_version or \
+                (meta_data.source_filepath == source_filepath and meta_data.source_modify_time != source_modify_time)
+        else:
+            return False
 
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
@@ -424,6 +427,14 @@ class ResourceLoader(object):
         # if not os.path.exists(save_dir):
         #     os.makedirs(save_dir)
 
+        if self.save_data_to_file(save_filepath, save_data):
+            # refresh meta data because resource file saved.
+            resource.meta_data.set_resource_meta_data(save_filepath, save=False)
+            resource.meta_data.set_source_meta_data(source_filepath, save=False)
+            resource.meta_data.set_resource_version(self.resource_version, save=False)
+            resource.meta_data.save_meta_file()
+
+    def save_data_to_file(self, save_filepath, save_data):
         logger.info("Save : %s" % save_filepath)
         try:
             # store data, serialize
@@ -434,13 +445,10 @@ class ResourceLoader(object):
                 # human readable data
                 with open(save_filepath, 'w') as f:
                     pprint.pprint(save_data, f, width=128)
-            # refresh meta data because resource file saved.
-            resource.meta_data.set_resource_meta_data(save_filepath, save=False)
-            resource.meta_data.set_source_meta_data(source_filepath, save=False)
-            resource.meta_data.set_resource_version(self.resource_version, save=False)
-            resource.meta_data.save_meta_file()
+            return True
         except:
             logger.error(traceback.format_exc())
+        return False
 
     def delete_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -812,36 +820,38 @@ class TextureLoader(ResourceLoader):
         self.new_texture_list = []
 
     @staticmethod
-    def craete_texture_from_file(texture_name, source_filepath):
-        image = Image.open(source_filepath)
-        width, height = image.size
+    def create_texture_from_file(texture_name, source_filepath):
+        if os.path.exists(source_filepath):
+            image = Image.open(source_filepath)
+            width, height = image.size
 
-        # check size is power of two.
-        use_power_of_2 = False
-        if use_power_of_2:
-            width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
-            height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
-            if width != width2 or height != height2:
-                logger.info('Image Resized (%s) -> (%s) : %s' % ((width, height), (width2, height2), source_filepath))
-                image = image.resize((width2, height2), Image.ANTIALIAS)
-                width, height = width2, height2
+            # check size is power of two.
+            use_power_of_2 = False
+            if use_power_of_2:
+                width2 = (2 ** math.ceil(math.log2(width))) if 4 < width else 4
+                height2 = (2 ** math.ceil(math.log2(height))) if 4 < width else 4
+                if width != width2 or height != height2:
+                    logger.info('Image Resized (%s) -> (%s) : %s' % ((width, height), (width2, height2), source_filepath))
+                    image = image.resize((width2, height2), Image.ANTIALIAS)
+                    width, height = width2, height2
 
-        if image.mode == 'L' or image.mode == 'LA':
-            rgbimg = Image.new("RGBA", image.size)
-            rgbimg.paste(image)
-            image = rgbimg
-            logger.info('Convert Grayscale image to RGB : %s' % source_filepath)
+            if image.mode == 'L' or image.mode == 'LA':
+                rgbimg = Image.new("RGBA", image.size)
+                rgbimg.paste(image)
+                image = rgbimg
+                logger.info('Convert Grayscale image to RGB : %s' % source_filepath)
 
-        data = image.tobytes("raw", image.mode, 0, -1)
+            data = image.tobytes("raw", image.mode, 0, -1)
 
-        texture_datas = dict(
-            texture_type=Texture2D,
-            image_mode=image.mode,
-            width=width,
-            height=height,
-            data=data
-        )
-        return CreateTexture(name=texture_name, **texture_datas)
+            texture_datas = dict(
+                texture_type=Texture2D,
+                image_mode=image.mode,
+                width=width,
+                height=height,
+                data=data
+            )
+            return CreateTexture(name=texture_name, **texture_datas)
+        return None
 
     def convert_resource(self, resource, source_filepath):
         try:
@@ -849,12 +859,14 @@ class TextureLoader(ResourceLoader):
             if resource not in self.new_texture_list:
                 self.new_texture_list.append(resource)
 
-            texture = self.craete_texture_from_file(resource.name, source_filepath)
-            resource.set_data(texture)
-            texture_datas = texture.get_save_data()
-            self.save_resource_data(resource, texture_datas, source_filepath)
+            texture = self.create_texture_from_file(resource.name, source_filepath)
+            if texture:
+                resource.set_data(texture)
+                texture_datas = texture.get_save_data()
+                self.save_resource_data(resource, texture_datas, source_filepath)
         except:
             logger.error(traceback.format_exc())
+        logger.info("Failed to convert resource : %s" % source_filepath)
 
 
 # -----------------------#

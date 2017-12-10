@@ -89,6 +89,10 @@ class Camera(StaticActor):
             # update viewport
             self.scene_manager.renderer.resizeScene()
 
+    def set_fov(self, fov):
+        self.fov = fov
+        self.update_projection(self.aspect)
+
     def update_projection(self, aspect):
         self.aspect = aspect
         projection = perspective(self.fov, aspect, self.near, self.far)

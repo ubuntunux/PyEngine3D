@@ -393,6 +393,8 @@ class CoreManager(Singleton):
                         obj_instance = self.sceneManager.addObject(model=model, pos=pos)
                         if obj_instance:
                             self.sendObjectInfo(obj_instance)
+            elif Keyboard._2 == event_value:
+                self.renderer.test()
             elif Keyboard.DELETE == event_value:
                 # Test Code
                 obj_names = set(self.sceneManager.getObjectNames())
@@ -401,8 +403,6 @@ class CoreManager(Singleton):
                 current_obj_names = set(self.sceneManager.getObjectNames())
                 for obj_name in (obj_names - current_obj_names):
                     self.notifyDeleteObject(obj_name)
-            elif Keyboard._2 == event_value:
-                self.renderer.render_environment()
 
     def updateCamera(self):
         keydown = self.game_backend.get_keyboard_pressed()

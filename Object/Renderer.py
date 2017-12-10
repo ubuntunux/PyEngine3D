@@ -6,11 +6,18 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from PIL import Image
+
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock
 from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
+
+
+class RenderOption:
+    RENDER_LIGHT_PROBE = False
+    RENDER_FONT = True
 
 
 class RenderingType(AutoEnum):
@@ -224,8 +231,53 @@ class Renderer(Singleton):
     def set_rendering_type(self, rendering_type):
         self.rendering_type = RenderingType.convert_index_to_enum(rendering_type)
 
-    def render_environment(self):
-        self.renderScene()
+    def test(self):
+        camera = self.sceneManager.mainCamera
+        old_width, old_height = self.width, self.height
+        old_rot = camera.transform.getRot().copy()
+        old_fov = camera.fov
+        old_render_motion_blur = self.postprocess.is_render_motion_blur
+        old_antialiasing = self.postprocess.antialiasing
+        old_render_font = RenderOption.RENDER_FONT
+        old_scale_x = camera.transform.getScale()[0]
+
+        # set render light probe
+        RenderOption.RENDER_LIGHT_PROBE = True
+        RenderOption.RENDER_FONT = False
+        self.postprocess.is_render_motion_blur = False
+        self.postprocess.antialiasing = AntiAliasing.NONE_AA
+        self.resizeScene(512, 512)
+        camera.set_fov(90)
+        # for x axis mirror shot
+        camera.transform.setScaleX(-1.0)
+
+        def render(pitch, yaw, roll, cube_dir):
+            camera.transform.setRot([pitch, yaw, roll])
+            camera.update(force_update=True)
+            self.renderScene()
+            save_filepath = RenderTargets.HDR.name + "_" + cube_dir + ".texture"
+            save_filepath = os.path.join(self.resource_manager.root_path,
+                                         self.resource_manager.textureLoader.resource_dir_name, save_filepath)
+            save_data = RenderTargets.HDR.get_save_data()
+            self.resource_manager.textureLoader.save_data_to_file(save_filepath, save_data)
+
+        render(0.0, math.pi, 0.0, "front")
+        render(0.0, math.pi * 1.5, 0.0, "right")
+        render(0.0, 0.0, 0.0, "back")
+        render(0.0, math.pi * 0.5, 0.0, "left")
+        render(math.pi * -0.5, math.pi * 1.0, 0.0, "top")
+        render(math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
+
+        # restore
+        RenderOption.RENDER_LIGHT_PROBE = False
+        RenderOption.RENDER_FONT = old_render_font
+        self.postprocess.is_render_motion_blur = old_render_motion_blur
+        self.postprocess.antialiasing = old_antialiasing
+        self.resizeScene(old_width, old_height)
+        camera.transform.setScaleX(old_scale_x)
+        camera.set_fov(old_fov)
+        camera.transform.setRot(old_rot)
+        camera.update(force_update=True)
 
     def renderScene(self):
         startTime = timeModule.perf_counter()
@@ -292,13 +344,21 @@ class Renderer(Singleton):
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.render_translucent()
 
+        if RenderOption.RENDER_LIGHT_PROBE:
+            glUseProgram(0)
+            endTime = timeModule.perf_counter()
+            renderTime = endTime - startTime
+            presentTime = 0.0
+            return renderTime, presentTime
+
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         self.set_blend_state(False)
         self.render_postprocess()
 
-        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.render_font()
+        if RenderOption.RENDER_FONT:
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            self.render_font()
 
         # reset shader program
         glUseProgram(0)
@@ -419,7 +479,7 @@ class Renderer(Singleton):
         # render solid
         if self.rendering_type == RenderingType.DEFERRED_RENDERING:
             glDisable(GL_DEPTH_TEST)
-            texture_cube = self.resource_manager.getTexture('field')
+            texture_cube = self.resource_manager.getTexture('HDR')
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
                                                      RenderTargets.MATERIAL,

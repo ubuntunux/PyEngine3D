@@ -22,7 +22,8 @@ void main() {
 
     // Note : use inverted Y-Axis
     fs_output.xyz = texture(texture_cube, invert_y(eye_vector.xyz)).xyz;
-    fs_output.xyz = pow(fs_output.xyz, vec3(2.2));
+    // texture_cube is HDR
+    //fs_output.xyz = pow(fs_output.xyz, vec3(2.2));
 
     // Sun
     fs_output.xyz += LIGHT_COLOR.xyz * vec3(pow(clamp(dot(eye_vector.xyz, LIGHT_DIRECTION.xyz) * 100.0 - 99.0, 0.0, 1.0), 100.0));
