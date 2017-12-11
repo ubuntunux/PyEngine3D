@@ -798,22 +798,17 @@ class TextureLoader(ResourceLoader):
                     texture_back = cube_faces['back'].get_data() or empty_texture
                     texture_front = cube_faces['front'].get_data() or empty_texture
 
-                    width, height = texture_front.width, texture_front.height
-                    image_mode = texture_front.image_mode
-                    cube_texture_datas = dict(
-                        texture_type=TextureCube,
-                        image_mode=image_mode,
-                        width=width,
-                        height=height,
-                        texture_positive_x=texture_right,
-                        texture_negative_x=texture_left,
-                        texture_positive_y=texture_top,
-                        texture_negative_y=texture_bottom,
-                        texture_positive_z=texture_front,
-                        texture_negative_z=texture_back
-                    )
+                    cube_texture_datas = copy.copy(texture_front.__dict__)
+                    cube_texture_datas['name'] = cube_texture_name
+                    cube_texture_datas['texture_type'] = TextureCube
+                    cube_texture_datas['texture_positive_x'] = texture_right
+                    cube_texture_datas['texture_negative_x'] = texture_left
+                    cube_texture_datas['texture_positive_y'] = texture_top
+                    cube_texture_datas['texture_negative_y'] = texture_bottom
+                    cube_texture_datas['texture_positive_z'] = texture_front
+                    cube_texture_datas['texture_negative_z'] = texture_back
 
-                    cube_texture = CreateTexture(name=cube_texture_name, **cube_texture_datas)
+                    cube_texture = CreateTexture(**cube_texture_datas)
                     cube_resource.set_data(cube_texture)
                     cube_texture_datas = cube_texture.get_save_data()
                     self.save_resource_data(cube_resource, cube_texture_datas, '')

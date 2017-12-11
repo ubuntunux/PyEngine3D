@@ -239,7 +239,6 @@ class Renderer(Singleton):
         old_render_motion_blur = self.postprocess.is_render_motion_blur
         old_antialiasing = self.postprocess.antialiasing
         old_render_font = RenderOption.RENDER_FONT
-        old_scale_x = camera.transform.getScale()[0]
 
         # set render light probe
         RenderOption.RENDER_LIGHT_PROBE = True
@@ -248,8 +247,6 @@ class Renderer(Singleton):
         self.postprocess.antialiasing = AntiAliasing.NONE_AA
         self.resizeScene(512, 512)
         camera.set_fov(90)
-        # for x axis mirror shot
-        camera.transform.setScaleX(-1.0)
 
         def render(pitch, yaw, roll, cube_dir):
             camera.transform.setRot([pitch, yaw, roll])
@@ -261,10 +258,10 @@ class Renderer(Singleton):
             save_data = RenderTargets.HDR.get_save_data()
             self.resource_manager.textureLoader.save_data_to_file(save_filepath, save_data)
 
-        render(0.0, math.pi, 0.0, "front")
-        render(0.0, math.pi * 1.5, 0.0, "right")
-        render(0.0, 0.0, 0.0, "back")
-        render(0.0, math.pi * 0.5, 0.0, "left")
+        render(0.0, math.pi * 0.0, 0.0, "front")
+        render(0.0, math.pi * 0.5, 0.0, "right")
+        render(0.0, math.pi * 1.0, 0.0, "back")
+        render(0.0, math.pi * 1.5, 0.0, "left")
         render(math.pi * -0.5, math.pi * 1.0, 0.0, "top")
         render(math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
 
@@ -274,7 +271,6 @@ class Renderer(Singleton):
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.antialiasing = old_antialiasing
         self.resizeScene(old_width, old_height)
-        camera.transform.setScaleX(old_scale_x)
         camera.set_fov(old_fov)
         camera.transform.setRot(old_rot)
         camera.update(force_update=True)
