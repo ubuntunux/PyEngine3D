@@ -18,6 +18,8 @@ from .RenderTarget import RenderTargets
 class RenderOption:
     RENDER_LIGHT_PROBE = False
     RENDER_FONT = True
+    RENDER_STATIC_ACTOR = True
+    RENDER_SKELETON_ACTOR = True
 
 
 class RenderingType(AutoEnum):
@@ -231,7 +233,14 @@ class Renderer(Singleton):
     def set_rendering_type(self, rendering_type):
         self.rendering_type = RenderingType.convert_index_to_enum(rendering_type)
 
-    def test(self):
+    def render_light_probe(self, force=False):
+        if not force and self.sceneManager.mainLightProbe.isValid:
+            return
+
+        logger.info("Rendering Cube map")
+
+        self.sceneManager.mainLightProbe.isValid = True
+
         camera = self.sceneManager.mainCamera
         old_width, old_height = self.width, self.height
         old_rot = camera.transform.getRot().copy()
@@ -239,8 +248,10 @@ class Renderer(Singleton):
         old_render_motion_blur = self.postprocess.is_render_motion_blur
         old_antialiasing = self.postprocess.antialiasing
         old_render_font = RenderOption.RENDER_FONT
+        old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
 
         # set render light probe
+        RenderOption.RENDER_SKELETON_ACTOR = False
         RenderOption.RENDER_LIGHT_PROBE = True
         RenderOption.RENDER_FONT = False
         self.postprocess.is_render_motion_blur = False
@@ -255,18 +266,29 @@ class Renderer(Singleton):
             save_filepath = RenderTargets.HDR.name + "_" + cube_dir + ".texture"
             save_filepath = os.path.join(self.resource_manager.root_path,
                                          self.resource_manager.textureLoader.resource_dir_name, save_filepath)
-            save_data = RenderTargets.HDR.get_save_data()
-            self.resource_manager.textureLoader.save_data_to_file(save_filepath, save_data)
+            dst_texture = self.sceneManager.mainLightProbe.get_texture(cube_dir)
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.bind_framebuffer()
+            self.framebuffer_copy.set_color_textures(dst_texture)
+            self.framebuffer_copy.bind_framebuffer()
+            self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
+            # generate mipmaps per face
+            dst_texture.generate_mipmap()
 
-        render(0.0, math.pi * 0.0, 0.0, "front")
-        render(0.0, math.pi * 0.5, 0.0, "right")
-        render(0.0, math.pi * 1.0, 0.0, "back")
-        render(0.0, math.pi * 1.5, 0.0, "left")
+        self.sceneManager.mainLightProbe.generate_texture_faces()
+
+        render(0.0, math.pi * 0.0, 0.0, "back")
+        render(0.0, math.pi * 0.5, 0.0, "left")
+        render(0.0, math.pi * 1.0, 0.0, "front")
+        render(0.0, math.pi * 1.5, 0.0, "right")
         render(math.pi * -0.5, math.pi * 1.0, 0.0, "top")
         render(math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
 
+        self.sceneManager.mainLightProbe.generate_texture_cube()
+
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
+        RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
         RenderOption.RENDER_FONT = old_render_font
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.antialiasing = old_antialiasing
@@ -394,11 +416,12 @@ class Renderer(Singleton):
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
 
         # render character normal, velocity
-        self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
-        self.framebuffer.bind_framebuffer()
-        material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
-        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
-                           self.sceneManager.skeleton_solid_geometries, material_instance)
+        if RenderOption.RENDER_SKELETON_ACTOR:
+            self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
+            self.framebuffer.bind_framebuffer()
+            material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
+            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
+                               self.sceneManager.skeleton_solid_geometries, material_instance)
 
     def render_deferred(self):
         framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
@@ -410,7 +433,7 @@ class Renderer(Singleton):
         camera = self.sceneManager.mainCamera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
-        # render character gbuffer
+        # render static gbuffer
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
                            self.sceneManager.static_solid_geometries)
 
@@ -420,13 +443,14 @@ class Renderer(Singleton):
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
 
         # render character gbuffer
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
-                                                  RenderTargets.MATERIAL,
-                                                  RenderTargets.WORLD_NORMAL,
-                                                  RenderTargets.VELOCITY,
-                                                  depth_texture=RenderTargets.DEPTHSTENCIL)
-        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
-                           self.sceneManager.skeleton_solid_geometries)
+        if RenderOption.RENDER_SKELETON_ACTOR:
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
+                                                      RenderTargets.MATERIAL,
+                                                      RenderTargets.WORLD_NORMAL,
+                                                      RenderTargets.VELOCITY,
+                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
+                               self.sceneManager.skeleton_solid_geometries)
 
     def render_shadow(self):
         self.framebuffer_shadow.set_color_textures()
@@ -440,10 +464,12 @@ class Renderer(Singleton):
         material_instance = self.resource_manager.getMaterialInstance("shadowmap")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW,
                            self.sceneManager.static_solid_geometries, material_instance)
-        material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
-        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
-                           self.sceneManager.skeleton_solid_geometries, material_instance)
-        self.framebuffer_shadow.unbind_framebuffer()
+
+        if RenderOption.RENDER_SKELETON_ACTOR:
+            material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
+            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
+                               self.sceneManager.skeleton_solid_geometries, material_instance)
+            self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
         self.postprocess.bind_quad()
@@ -475,7 +501,10 @@ class Renderer(Singleton):
         # render solid
         if self.rendering_type == RenderingType.DEFERRED_RENDERING:
             glDisable(GL_DEPTH_TEST)
-            texture_cube = self.resource_manager.getTexture('HDR')
+            if RenderOption.RENDER_LIGHT_PROBE:
+                texture_cube = self.sceneManager.mainLightProbe.texture_cube_default
+            else:
+                texture_cube = self.sceneManager.mainLightProbe.texture_cube
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
                                                      RenderTargets.MATERIAL,

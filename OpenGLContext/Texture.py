@@ -102,7 +102,9 @@ class Texture:
 
     def __del__(self):
         pass
-        # glDeleteTextures([self.buffer, ])
+
+    def clear(self):
+        glDeleteTextures([self.buffer, ])
 
     def get_save_data(self, get_image_data=True):
         save_data = dict(

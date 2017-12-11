@@ -142,9 +142,8 @@ class CoreManager(Singleton):
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
-        self.sceneManager.initialize(self)
-
         self.renderer.resizeScene(width, height)
+        self.sceneManager.initialize(self)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
@@ -394,7 +393,7 @@ class CoreManager(Singleton):
                         if obj_instance:
                             self.sendObjectInfo(obj_instance)
             elif Keyboard._2 == event_value:
-                self.renderer.test()
+                self.renderer.render_light_probe(force=True)
             elif Keyboard.DELETE == event_value:
                 # Test Code
                 obj_names = set(self.sceneManager.getObjectNames())
@@ -475,17 +474,17 @@ class CoreManager(Singleton):
 
         self.updateTime = delta * 1000.0  # millisecond
 
-        # update logic
         startTime = time.perf_counter()
-        self.updateCommand()  # update command queue
-        self.updateCamera()  # update camera
-        self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+        self.updateCommand()
+        self.updateCamera()
 
         # update actors
         self.sceneManager.update_scene(delta)
+        self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
         # render scene
         startTime = time.perf_counter()
+        self.renderer.render_light_probe()
         renderTime, presentTime = self.renderer.renderScene()
 
         self.renderTime = renderTime * 1000.0  # millisecond

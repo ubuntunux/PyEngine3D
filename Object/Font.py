@@ -6,6 +6,7 @@ from App import CoreManager
 from OpenGLContext import VertexArrayBuffer
 from Common import logger, log_level, COMMAND
 from Utilities import *
+from .Renderer import RenderOption
 
 
 class FontData:
@@ -72,7 +73,7 @@ class FontManager(Singleton):
         self.show = not self.show
 
     def log(self, text, font_size=12):
-        if not self.show:
+        if not self.show or not RenderOption.RENDER_FONT:
             return
         self.font_size = font_size
         count_ratio = 1.0 / self.ascii.count_horizontal
@@ -102,7 +103,7 @@ class FontManager(Singleton):
                 self.pos_x += font_size
 
     def render_font(self, screen_width, screen_height):
-        if self.show and len(self.render_queues) > 0:
+        if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
             self.quad.bind_instance_buffer(layout_location=1, instance_data=render_queue, divisor=1)
             self.quad.bind_vertex_buffer()

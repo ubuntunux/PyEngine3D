@@ -7,7 +7,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, Sky, PostProcess
+from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
@@ -23,6 +23,7 @@ class SceneManager(Singleton):
         # Scene Objects
         self.mainCamera = None
         self.mainLight = None
+        self.mainLightProbe = None
         self.selectedObject = None
 
         # envirment object
@@ -31,6 +32,7 @@ class SceneManager(Singleton):
 
         self.cameras = []
         self.lights = []
+        self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
@@ -62,8 +64,10 @@ class SceneManager(Singleton):
         self.core_manager.notifyClearScene()
         self.mainCamera = None
         self.mainLight = None
+        self.mainLightProbe = None
         self.cameras = []
         self.lights = []
+        self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}
@@ -83,6 +87,7 @@ class SceneManager(Singleton):
         # add scene objects
         self.mainCamera = self.addCamera()
         self.mainLight = self.addLight()
+        self.mainLightProbe = self.addLightProbe()
         self.sky = Sky()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
@@ -109,6 +114,14 @@ class SceneManager(Singleton):
         for light_data in light_datas:
             self.addLight(**light_data)
         self.mainLight = self.get_light(0)
+
+        light_probe_datas = scene_data.get('light_probes', [])
+        if light_probe_datas:
+            for light_probe_data in light_probe_datas:
+                self.addLightProbe(**light_probe_data)
+        else:
+            self.addLightProbe()
+        self.mainLightProbe = self.get_light_probe(0)
 
         self.sky = Sky()
 
@@ -149,6 +162,8 @@ class SceneManager(Singleton):
             return self.cameras
         elif Light == object_type:
             return self.lights
+        elif LightProbe == object_type:
+            return self.light_probes
         elif StaticActor == object_type:
             return self.static_actors
         elif SkeletonActor == object_type:
@@ -188,6 +203,14 @@ class SceneManager(Singleton):
         light = Light(**light_data)
         self.regist_object(light)
         return light
+
+    def addLightProbe(self, **light_probe_data):
+        light_probe_data['name'] = self.generateObjectName(light_probe_data.get('name', 'light_probe'))
+        light_probe_data['model'] = self.resource_manager.getModel('sphere')
+        logger.info("add Light Probe : %s" % light_probe_data['name'])
+        light_probe = LightProbe(**light_probe_data)
+        self.regist_object(light_probe)
+        return light_probe
 
     def addObject(self, **object_data):
         model = object_data.get('model')
@@ -229,15 +252,17 @@ class SceneManager(Singleton):
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
-        if obj and obj != self.mainCamera and obj != self.mainLight:
+        if obj and obj not in (self.mainCamera, self.mainLight, self.mainLightProbe):
             self.objectMap.pop(obj.name)
             if obj in self.cameras:
                 self.cameras.remove(obj)
-            if obj in self.lights:
+            elif obj in self.lights:
                 self.lights.remove(obj)
-            if obj in self.static_actors:
+            elif obj in self.light_probes:
+                self.light_probes.remove(obj)
+            elif obj in self.static_actors:
                 self.static_actors.remove(obj)
-            if obj in self.skeleton_actors:
+            elif obj in self.skeleton_actors:
                 self.skeleton_actors.remove(obj)
             self.core_manager.notifyDeleteObject(objName)
 
@@ -255,6 +280,9 @@ class SceneManager(Singleton):
 
     def get_light(self, index):
         return self.lights[index] if index < len(self.lights) else None
+
+    def get_light_probe(self, index):
+        return self.light_probes[index] if index < len(self.light_probes) else None
 
     def get_static_actor(self, index):
         return self.static_actors[index] if index < len(self.static_actors) else None

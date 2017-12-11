@@ -7,8 +7,9 @@ from .TransformObject import TransformObject
 from .Actor import SkeletonActor, StaticActor
 from .Camera import Camera
 from .Light import Light
+from .LightProbe import LightProbe
 from .Sky import Sky
 from .PostProcess import PostProcess
 from .RenderTarget import RenderTargets, RenderTargetManager
 from .Font import FontData, FontManager
-from .Renderer import Renderer
+from .Renderer import Renderer, RenderOption

@@ -24,6 +24,9 @@
  - pygame
 
 ## TODO
+* Optimize
+    - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
+    - SSR optimize, hierachical z ray marching
 * Actors
     - Tree, Foliage actor
     - Landscape
@@ -71,6 +74,7 @@
     - Color Correction
     - Color Grading
 * Rendering
+    - Hierachical-Z depth
     - Blend mode
         - Additive, Multiply, Blending
     - Multisample texture - glTexImage2DMultisample

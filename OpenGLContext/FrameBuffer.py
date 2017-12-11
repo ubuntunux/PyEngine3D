@@ -206,6 +206,11 @@ class FrameBuffer:
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
         glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, self.width, self.height, target, filter_type)
 
+    def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
+        glBlitFramebuffer(src.width, 0, 0, src.height, 0, 0, self.width, self.height, target, filter_type)
+
     def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
         glBlitFramebuffer(0, 0, self.width, self.height,

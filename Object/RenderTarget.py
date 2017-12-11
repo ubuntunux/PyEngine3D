@@ -109,7 +109,6 @@ class RenderTargetManager(Singleton):
             datas.height *= 2
 
         # Create RenderTarget
-        rendertarget = None
         if rendertarget_type == RenderBuffer:
             rendertarget = RenderBuffer(rendertarget_name, datas=datas)
         else:
@@ -121,6 +120,8 @@ class RenderTargetManager(Singleton):
                 # send rendertarget info to GUI
                 self.core_manager.sendRenderTargetInfo(rendertarget_name)
             else:
+                # overwrite
+                rendertarget.clear()
                 object_copy(rendertarget, self.rendertargets[rendertarget_name])
         else:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
