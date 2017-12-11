@@ -86,7 +86,6 @@
         - occlusion culling
         - distance culling
     - Coarse Shading, Checkboard rendering
-    - Realtime environment cube map
     - Paraboloid environment map
     - Forward Renderer
     - Deferred Renderer
