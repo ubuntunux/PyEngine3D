@@ -56,8 +56,9 @@ class AnimationNode:
             self.last_frame = frame
 
             rate = frame - int(frame)
-            frame = int(frame)
-            next_frame = frame + 1 if frame + 1 < self.frame_count else 0
+            frame = int(frame) % self.frame_count
+            next_frame = (frame + 1) % self.frame_count
+            
             setIdentityMatrix(self.transform)
             if frame < self.frame_count:
                 rotation = slerp(self.rotations[frame], self.rotations[next_frame], rate)
@@ -68,6 +69,5 @@ class AnimationNode:
                 matrix_scale(self.transform, *scale)
                 self.transform[3, 0:3] = location
             self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
-            Profiler.end(self.name)
             return self.transform
 
