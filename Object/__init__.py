@@ -1,3 +1,4 @@
+from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
 from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone

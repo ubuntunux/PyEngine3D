@@ -20,17 +20,18 @@ void main() {
     eye_vector.xyz /= eye_vector.w;
     eye_vector.xyz = normalize(eye_vector.xyz);
 
+    float linear_depth = texture(texture_linear_depth, tex_coord).x;
+    float opacity = pow(clamp(linear_depth * 0.01, 0.0, 1.0), 2.0);
+
     // Note : use inverted Y-Axis
-    fs_output.xyz = texture(texture_cube, invert_y(eye_vector.xyz)).xyz;
-    // texture_cube is HDR
-    //fs_output.xyz = pow(fs_output.xyz, vec3(2.2));
+    vec3 environment = texture(texture_cube, invert_y(eye_vector.xyz)).xyz;
+    environment = pow(environment, vec3(2.2));
+
+    fs_output.xyz = (NEAR_FAR.y - 0.001) <= linear_depth ? environment : fog_color;
 
     // Sun
     fs_output.xyz += LIGHT_COLOR.xyz * vec3(pow(clamp(dot(eye_vector.xyz, LIGHT_DIRECTION.xyz) * 100.0 - 99.0, 0.0, 1.0), 100.0));
 
-    // fog
-    float linear_depth = texture(texture_linear_depth, tex_coord).x;
-    fs_output.xyz = mix(fs_output.xyz, fog_color, linear_depth < NEAR_FAR.y ? 1.0 : 0.0);
-    fs_output.w = linear_depth < NEAR_FAR.y ? pow(clamp(linear_depth * 0.01, 0.0, 1.0), 2.0) : clamp(linear_depth, 0.0, 1.0);
+    fs_output.w = opacity;
 }
 #endif

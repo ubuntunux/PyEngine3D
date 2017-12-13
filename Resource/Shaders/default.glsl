@@ -10,6 +10,7 @@ uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
 uniform sampler2D texture_ssao;
 uniform sampler2D texture_scene_reflect;
+uniform samplerCube texture_probe;
 
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -69,7 +70,7 @@ void main() {
                         metalicness,
                         get_roughness(),
                         reflectance,
-                        texture_cube,
+                        texture_probe,
                         texture_scene_reflect,
                         screen_tex_coord,
                         LIGHT_COLOR.xyz,

@@ -7,8 +7,9 @@ from OpenGL.GL import *
 from Utilities import *
 from Common import logger
 from App import CoreManager
-from Object import StaticActor
 from OpenGLContext import Texture2D, TextureCube, CreateTexture
+from .Actor import StaticActor
+from .Camera import Camera
 
 
 class LightProbe(StaticActor):
@@ -18,10 +19,10 @@ class LightProbe(StaticActor):
         height=512,
         internal_format=GL_RGBA16F,
         texture_format=GL_RGBA,
-        min_filter=GL_LINEAR_MIPMAP_NEAREST,
+        min_filter=GL_LINEAR_MIPMAP_LINEAR,
         mag_filter=GL_LINEAR,
         data_type=GL_FLOAT,
-        wrap=GL_REPEAT
+        wrap=GL_MIRRORED_REPEAT
     )
 
     def __init__(self, name, **object_data):
@@ -35,14 +36,12 @@ class LightProbe(StaticActor):
         self.texture_bottom = None
         self.texture_front = None
         self.texture_back = None
-        self.texture_cube = None
-        self.texture_cube_default = CoreManager.instance().resource_manager.getTexture('field')
+        self.texture_probe = None
 
     def clear(self):
         self.clear_texture_faces()
-        self.texture_cube.clear()
-        self.texture_cube = None
-        self.texture_cube_default = None
+        self.texture_probe.clear()
+        self.texture_probe = None
 
     def clear_texture_faces(self):
         if self.texture_right:
@@ -72,7 +71,7 @@ class LightProbe(StaticActor):
         self.texture_front = CreateTexture(name=self.name + "_front", **self.texture_datas)
         self.texture_back = CreateTexture(name=self.name + "_back", **self.texture_datas)
 
-    def generate_texture_cube(self):
+    def generate_texture_probe(self):
         cube_texture_datas = copy.copy(self.texture_datas)
         cube_texture_datas['texture_type'] = TextureCube
         cube_texture_datas['texture_positive_x'] = self.texture_right
@@ -81,8 +80,8 @@ class LightProbe(StaticActor):
         cube_texture_datas['texture_negative_y'] = self.texture_bottom
         cube_texture_datas['texture_positive_z'] = self.texture_front
         cube_texture_datas['texture_negative_z'] = self.texture_back
-        self.texture_cube = CreateTexture(name=self.name + "_cube", **cube_texture_datas)
-        self.clear_texture_faces()
+        self.texture_probe = CreateTexture(name=self.name + "_cube", **cube_texture_datas)
+        # self.clear_texture_faces()
 
     def get_texture(self, face):
         return getattr(self, "texture_" + face)

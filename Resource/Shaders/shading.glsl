@@ -140,7 +140,7 @@ vec4 surface_shading(vec4 base_color,
                     float metallic,
                     float roughness,
                     float reflectance,
-                    samplerCube texture_cube,
+                    samplerCube texture_probe,
                     sampler2D texture_scene_reflect,
                     vec2 screen_tex_coord,
                     vec3 light_color,
@@ -182,13 +182,13 @@ vec4 surface_shading(vec4 base_color,
     diffuse_light = diffuse_light * base_color.xyz * (vec3(1.0) - specfresnel) * light_color * shadow_factor;
 
     // Image based lighting
-    const vec2 env_size = textureSize(texture_cube, 0);
+    const vec2 env_size = textureSize(texture_probe, 0);
     const float env_mipmap_count = log2(min(env_size.x, env_size.y));
 
-    vec3 ibl_diffuse_color = textureLod(texture_cube, invert_y(N), env_mipmap_count - 1.0).xyz;
-    vec3 ibl_specular_color = textureLod(texture_cube, invert_y(R), env_mipmap_count * roughness).xyz;
+    vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
+    vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
 
-    // texture_cube is HDR
+    // texture_probe is HDR
     //ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
     //ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
 

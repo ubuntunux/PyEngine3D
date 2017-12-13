@@ -1,4 +1,3 @@
-import gc
 import random
 
 import numpy as np
@@ -55,14 +54,20 @@ class RenderTargetManager(Singleton):
         self.clear()
 
     def clear(self):
-        # for key, rendertarget in self.rendertargets.items():
-        #     delete_from_referrer(rendertarget)
-        #
-        # for key, rendertarget in self.temp_rendertargets.items():
-        #     delete_from_referrer(rendertarget)
+        self.clear_rendertargets()
+        self.clear_temp_rendertargets()
+
+    def clear_rendertargets(self):
+        for key, rendertarget in self.rendertargets.items():
+            rendertarget.delete()
         self.rendertargets = dict()
+        self.core_manager.gc_collect()
+
+    def clear_temp_rendertargets(self):
+        for key, rendertarget in self.temp_rendertargets.items():
+            rendertarget.delete()
         self.temp_rendertargets = dict()
-        # gc.collect()
+        self.core_manager.gc_collect()
 
     def find_rendertarget(self, rendertarget_index, rendertarget_name):
         if rendertarget_index < len(self.rendertargets) and rendertarget_name in self.rendertargets:
@@ -121,7 +126,7 @@ class RenderTargetManager(Singleton):
                 self.core_manager.sendRenderTargetInfo(rendertarget_name)
             else:
                 # overwrite
-                rendertarget.clear()
+                rendertarget.delete()
                 object_copy(rendertarget, self.rendertargets[rendertarget_name])
         else:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
@@ -391,3 +396,5 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RGBA8,
             wrap=GL_CLAMP
         )
+
+        self.core_manager.gc_collect()

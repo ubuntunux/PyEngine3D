@@ -1,3 +1,4 @@
+import gc
 import os
 import platform as platformModule
 import sys
@@ -34,6 +35,8 @@ class CoreManager(Singleton):
         self.uiCmdQueue = None
         self.cmdPipe = None
 
+        self.need_to_gc_collect = False
+
         # timer
         self.fps = 0.0
         self.vsync = False
@@ -68,6 +71,7 @@ class CoreManager(Singleton):
         # managers
         self.game_backend = None
         self.resource_manager = None
+        self.render_option_manager = None
         self.renderer = None
         self.rendertarget_manager = None
         self.font_manager = None
@@ -79,6 +83,9 @@ class CoreManager(Singleton):
         self.game_backend_list = [PyGlet.__name__, PyGame.__name__]
 
         self.commands = []
+
+    def gc_collect(self):
+        self.need_to_gc_collect = True
 
     def initialize(self, cmdQueue, uiCmdQueue, cmdPipe, project_filename=""):
         # process start
@@ -98,11 +105,12 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from ResourceManager import ResourceManager
-        from Object import RenderTargetManager, Renderer, FontManager
+        from Object import RenderTargetManager, Renderer, FontManager, RenderOptionManager
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
         self.resource_manager = ResourceManager.instance()
+        self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
@@ -139,6 +147,7 @@ class CoreManager(Singleton):
 
         # initalize managers
         self.resource_manager.initialize(self, self.projectManager.project_dir)
+        self.render_option_manager.initialize(self)
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
@@ -341,7 +350,7 @@ class CoreManager(Singleton):
         self.commands[COMMAND.SET_ANTIALIASING.value] = cmd_set_anti_aliasing
 
         def cmd_set_rendering_type(renderering_type):
-            self.renderer.set_rendering_type(renderering_type)
+            self.render_option_manager.set_rendering_type(renderering_type)
         self.commands[COMMAND.SET_RENDERING_TYPE.value] = cmd_set_rendering_type
 
         # set game backend
@@ -394,6 +403,8 @@ class CoreManager(Singleton):
                             self.sendObjectInfo(obj_instance)
             elif Keyboard._2 == event_value:
                 self.renderer.render_light_probe(force=True)
+            elif Keyboard._3 == event_value:
+                self.gc_collect()
             elif Keyboard.DELETE == event_value:
                 # Test Code
                 obj_names = set(self.sceneManager.getObjectNames())
@@ -530,3 +541,8 @@ class CoreManager(Singleton):
             self.font_manager.log("Selected Object : %s" % selectedObject.name)
             self.font_manager.log(selectedObject.transform.getTransformInfos())
         self.gpuTime = (time.perf_counter() - startTime) * 1000.0
+
+        if self.need_to_gc_collect:
+            self.need_to_gc_collect = False
+            gc.collect()
+

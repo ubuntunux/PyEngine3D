@@ -24,6 +24,11 @@ class RenderBuffer(Texture):
                                              self.height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
+    def delete(self):
+        logger.info("Delete %s : %s" % (GetClassName(self), self.name))
+        glDeleteRenderbuffers(1, [self.buffer, ])
+        self.buffer = -1
+
     def bind_render_buffer(self):
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
 

@@ -13,34 +13,7 @@ from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock
 from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
-
-
-class RenderOption:
-    RENDER_LIGHT_PROBE = False
-    RENDER_FONT = True
-    RENDER_STATIC_ACTOR = True
-    RENDER_SKELETON_ACTOR = True
-
-
-class RenderingType(AutoEnum):
-    DEFERRED_RENDERING = ()
-    FORWARD_RENDERING = ()
-    LIGHT_PRE_PASS = ()
-    COUNT = ()
-
-
-class RenderGroup(AutoEnum):
-    STATIC_ACTOR = ()
-    SKELETON_ACTOR = ()
-    COUNT = ()
-
-
-class RenderMode(AutoEnum):
-    PRE_PASS = ()
-    GBUFFER = ()
-    SHADING = ()
-    SHADOW = ()
-    COUNT = ()
+from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
 
 
 class Renderer(Singleton):
@@ -55,6 +28,7 @@ class Renderer(Singleton):
         self.resource_manager = None
         self.font_manager = None
         self.sceneManager = None
+        self.render_option_manager = None
         self.rendertarget_manager = None
         self.framebuffer_manager = None
         self.postprocess = None
@@ -84,8 +58,6 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
-        self.rendering_type = RenderingType.DEFERRED_RENDERING
-
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
 
@@ -102,6 +74,7 @@ class Renderer(Singleton):
 
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
+        self.render_option_manager = core_manager.render_option_manager
         self.font_manager = core_manager.font_manager
         self.sceneManager = core_manager.sceneManager
         self.rendertarget_manager = core_manager.rendertarget_manager
@@ -202,11 +175,14 @@ class Renderer(Singleton):
         self.aspect = float(self.width) / float(self.height)
 
         # update perspective and ortho
-        self.sceneManager.update_camera_projection_matrix(self.aspect)
+        self.sceneManager.set_camera_aspect(self.aspect)
+        self.sceneManager.update_camera_projection_matrix()
 
         # resize render targets
         if changed:
             self.rendertarget_manager.create_rendertargets()
+            self.framebuffer_manager.clear()
+        self.core_manager.gc_collect()
 
     def ortho_view(self):
         # Legacy opengl pipeline - set orthographic view
@@ -230,9 +206,6 @@ class Renderer(Singleton):
         if self.debug_rendertarget:
             logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
-    def set_rendering_type(self, rendering_type):
-        self.rendering_type = RenderingType.convert_index_to_enum(rendering_type)
-
     def render_light_probe(self, force=False):
         if not force and self.sceneManager.mainLightProbe.isValid:
             return
@@ -243,10 +216,12 @@ class Renderer(Singleton):
 
         camera = self.sceneManager.mainCamera
         old_width, old_height = self.width, self.height
+        old_pos = camera.transform.getPos().copy()
         old_rot = camera.transform.getRot().copy()
         old_fov = camera.fov
+        old_aspect = camera.aspect
         old_render_motion_blur = self.postprocess.is_render_motion_blur
-        old_antialiasing = self.postprocess.antialiasing
+        old_antialiasing = self.postprocess.anti_aliasing
         old_render_font = RenderOption.RENDER_FONT
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
 
@@ -255,11 +230,13 @@ class Renderer(Singleton):
         RenderOption.RENDER_LIGHT_PROBE = True
         RenderOption.RENDER_FONT = False
         self.postprocess.is_render_motion_blur = False
-        self.postprocess.antialiasing = AntiAliasing.NONE_AA
-        self.resizeScene(512, 512)
-        camera.set_fov(90)
+        self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
 
-        def render(pitch, yaw, roll, cube_dir):
+        camera.set_fov(90)
+        self.resizeScene(512, 512)
+
+        def render(pos, pitch, yaw, roll, cube_dir):
+            camera.transform.setPos(pos)
             camera.transform.setRot([pitch, yaw, roll])
             camera.update(force_update=True)
             self.renderScene()
@@ -267,33 +244,48 @@ class Renderer(Singleton):
             save_filepath = os.path.join(self.resource_manager.root_path,
                                          self.resource_manager.textureLoader.resource_dir_name, save_filepath)
             dst_texture = self.sceneManager.mainLightProbe.get_texture(cube_dir)
+
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(dst_texture)
             self.framebuffer_copy.bind_framebuffer()
             self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
+
+            # self.framebuffer_manager.bind_framebuffer(dst_texture, depth_texture=None)
+            # self.postprocess.bind_quad()
+            # self.postprocess.render_copy_rendertarget(RenderTargets.HDR, copy_alpha=False, mirror_x=True)
+            # self.framebuffer_manager.delete_framebuffer(dst_texture, depth_texture=None)
+
+            # self.framebuffer.set_color_textures(dst_texture)
+            # self.framebuffer.set_depth_texture(None)
+            # self.framebuffer.bind_framebuffer()
+            # self.postprocess.render_copy_rendertarget(RenderTargets.HDR)
+
             # generate mipmaps per face
             dst_texture.generate_mipmap()
 
         self.sceneManager.mainLightProbe.generate_texture_faces()
+        pos = self.sceneManager.mainLightProbe.transform.getPos()
+        render(pos, 0.0, math.pi * 0.0, 0.0, "back")
+        render(pos, 0.0, math.pi * 0.5, 0.0, "left")
+        render(pos, 0.0, math.pi * 1.0, 0.0, "front")
+        render(pos, 0.0, math.pi * 1.5, 0.0, "right")
+        render(pos, math.pi * -0.5, math.pi * 1.0, 0.0, "top")
+        render(pos, math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
 
-        render(0.0, math.pi * 0.0, 0.0, "back")
-        render(0.0, math.pi * 0.5, 0.0, "left")
-        render(0.0, math.pi * 1.0, 0.0, "front")
-        render(0.0, math.pi * 1.5, 0.0, "right")
-        render(math.pi * -0.5, math.pi * 1.0, 0.0, "top")
-        render(math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
-
-        self.sceneManager.mainLightProbe.generate_texture_cube()
+        self.sceneManager.mainLightProbe.generate_texture_probe()
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
         RenderOption.RENDER_FONT = old_render_font
         self.postprocess.is_render_motion_blur = old_render_motion_blur
-        self.postprocess.antialiasing = old_antialiasing
-        self.resizeScene(old_width, old_height)
+        self.postprocess.anti_aliasing = old_antialiasing
+
         camera.set_fov(old_fov)
+        self.resizeScene(old_width, old_height)
+
+        camera.transform.setPos(old_pos)
         camera.transform.setRot(old_rot)
         camera.update(force_update=True)
 
@@ -309,7 +301,7 @@ class Renderer(Singleton):
 
         self.uniformSceneConstants.bind_uniform_block(
             Float4(self.core_manager.currentTime,
-                   self.core_manager.frame_count if self.postprocess.antialiasing else 0.0,
+                   self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0,
                    self.postprocess.is_render_ssr,
                    self.postprocess.is_render_ssao)
         )
@@ -340,7 +332,7 @@ class Renderer(Singleton):
         glEnable(GL_DEPTH_TEST)
         glDepthMask(True)
 
-        if self.rendering_type == RenderingType.DEFERRED_RENDERING:
+        if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
             self.render_deferred()
         else:
             self.render_pre_pass()
@@ -499,12 +491,12 @@ class Renderer(Singleton):
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection)
 
         # render solid
-        if self.rendering_type == RenderingType.DEFERRED_RENDERING:
+        if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
             glDisable(GL_DEPTH_TEST)
             if RenderOption.RENDER_LIGHT_PROBE:
-                texture_cube = self.sceneManager.mainLightProbe.texture_cube_default
+                texture_probe = self.resource_manager.getTexture('field')
             else:
-                texture_cube = self.sceneManager.mainLightProbe.texture_cube
+                texture_probe = self.sceneManager.mainLightProbe.texture_probe
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
                                                      RenderTargets.MATERIAL,
@@ -513,8 +505,8 @@ class Renderer(Singleton):
                                                      RenderTargets.SHADOWMAP,
                                                      RenderTargets.SSAO,
                                                      RenderTargets.SCREEN_SPACE_REFLECTION,
-                                                     texture_cube)
-        elif self.rendering_type == RenderingType.FORWARD_RENDERING:
+                                                     texture_probe)
+        elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
             self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING, self.sceneManager.static_solid_geometries)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
@@ -543,6 +535,11 @@ class Renderer(Singleton):
         last_material_instance = None
         last_actor_material_instance = None
 
+        if RenderOption.RENDER_LIGHT_PROBE:
+            texture_probe = self.resource_manager.getTexture('field')
+        else:
+            texture_probe = self.sceneManager.mainLightProbe.texture_probe
+
         if material_instance:
             material = material_instance.material if material_instance else None
             material.use_program()
@@ -562,6 +559,7 @@ class Renderer(Singleton):
                     is_render_gbuffer = (RenderMode.GBUFFER == render_mode)
                     material_instance.bind_uniform_data('is_render_gbuffer', is_render_gbuffer)
                     if RenderMode.SHADING == render_mode:
+                        material_instance.bind_uniform_data('texture_probe', texture_probe)
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
                         material_instance.bind_uniform_data('texture_scene_reflect',
@@ -670,9 +668,9 @@ class Renderer(Singleton):
         self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
         self.framebuffer_copy.bind_framebuffer()
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
-            
+
         # Temporal AA
-        if AntiAliasing.TAA == self.postprocess.antialiasing:
+        if AntiAliasing.TAA == self.postprocess.anti_aliasing:
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
@@ -692,7 +690,7 @@ class Renderer(Singleton):
         self.postprocess.render_tone_map(RenderTargets.HDR)
 
         # MSAA Test
-        if AntiAliasing.MSAA == self.postprocess.antialiasing:
+        if AntiAliasing.MSAA == self.postprocess.anti_aliasing:
             self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_msaa.set_color_textures(RenderTargets.HDR)
@@ -719,7 +717,7 @@ class Renderer(Singleton):
                 type(self.debug_rendertarget) != RenderBuffer:
             self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer.bind_framebuffer()
-            self.postprocess.render_copy_rendertarget(self.debug_rendertarget)
+            self.postprocess.render_copy_rendertarget(self.debug_rendertarget, copy_alpha=False)
 
     def render_font(self):
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)

@@ -38,7 +38,7 @@ class PostProcess:
         self.quad = None
         self.quad_geometry = None
 
-        self.antialiasing = AntiAliasing.TAA
+        self.anti_aliasing = AntiAliasing.TAA
         self.msaa_multisample_count = 4
 
         self.is_render_bloom = True
@@ -149,33 +149,35 @@ class PostProcess:
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'msaa_multisample_count':
             self.msaa_multisample_count = attributeValue
-            self.set_anti_aliasing(self.antialiasing.value, force=True)
+            self.set_anti_aliasing(self.anti_aliasing.value, force=True)
         elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
     def set_anti_aliasing(self, index, force=False):
-        if index != self.antialiasing.value or force:
-            self.antialiasing = AntiAliasing.convert_index_to_enum(index)
-            if self.antialiasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
+        if index != self.anti_aliasing.value or force:
+            old_anti_aliasing = self.anti_aliasing
+            self.anti_aliasing = AntiAliasing.convert_index_to_enum(index)
+            if self.anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA) \
+                    or old_anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
                 self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
 
     def get_msaa_multisample_count(self):
-        if self.antialiasing == AntiAliasing.MSAA:
+        if self.anti_aliasing == AntiAliasing.MSAA:
             return self.msaa_multisample_count
         else:
             return 0
 
     def is_MSAA(self):
-        return self.antialiasing == AntiAliasing.MSAA
+        return self.anti_aliasing == AntiAliasing.MSAA
 
     def enable_MSAA(self):
-        return self.antialiasing == AntiAliasing.MSAA and 4 <= self.msaa_multisample_count
+        return self.anti_aliasing == AntiAliasing.MSAA and 4 <= self.msaa_multisample_count
 
     def is_SSAA(self):
-        return self.antialiasing == AntiAliasing.SSAA
+        return self.anti_aliasing == AntiAliasing.SSAA
 
     def is_TAA(self):
-        return self.antialiasing == AntiAliasing.TAA
+        return self.anti_aliasing == AntiAliasing.TAA
 
     def update(self):
         if self.renderer.postprocess.is_TAA():
@@ -275,12 +277,9 @@ class PostProcess:
         def copy_bloom(src, dst):
             frame_buffer.set_color_textures(dst)
             frame_buffer.bind_framebuffer()
-            self.show_rendertarget.bind_uniform_data("texture_source", src)
+            self.render_copy_rendertarget(src, copy_alpha=False)
             self.quad_geometry.draw_elements()
 
-        self.show_rendertarget.use_program()
-        self.show_rendertarget.bind_material_instance()
-        self.show_rendertarget.bind_uniform_data("is_depth_texture", False)
         copy_bloom(texture_highlight, texture_bloom0)
         copy_bloom(texture_bloom0, texture_bloom1)
         copy_bloom(texture_bloom1, texture_bloom2)
@@ -361,7 +360,7 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_deferred_shading(self, texture_diffuse, texture_material, texture_normal,
-                                texture_depth, texture_shadow, texture_ssao, texture_scene_reflect, texture_cube):
+                                texture_depth, texture_shadow, texture_ssao, texture_scene_reflect, texture_probe):
         self.deferred_shading.use_program()
         self.deferred_shading.bind_material_instance()
         self.deferred_shading.bind_uniform_data("texture_diffuse", texture_diffuse)
@@ -371,11 +370,12 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_shadow", texture_shadow)
         self.deferred_shading.bind_uniform_data("texture_ssao", texture_ssao)
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", texture_scene_reflect)
-        self.deferred_shading.bind_uniform_data("texture_cube", texture_cube)
+        self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
         self.quad_geometry.draw_elements()
 
-    def render_copy_rendertarget(self, source_texture):
+    def render_copy_rendertarget(self, source_texture, copy_alpha=True, mirror_x=False):
         self.show_rendertarget.use_program()
-        self.show_rendertarget.bind_uniform_data("is_depth_texture", False)
+        self.show_rendertarget.bind_uniform_data("mirror_x", mirror_x)
+        self.show_rendertarget.bind_uniform_data("copy_alpha", copy_alpha)
         self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()

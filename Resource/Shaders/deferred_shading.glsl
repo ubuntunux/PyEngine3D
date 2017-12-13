@@ -13,7 +13,7 @@ uniform sampler2D texture_depth;
 uniform sampler2D texture_shadow;
 uniform sampler2D texture_ssao;
 uniform sampler2D texture_scene_reflect;
-uniform samplerCube texture_cube;
+uniform samplerCube texture_probe;
 
 
 #ifdef FRAGMENT_SHADER
@@ -54,7 +54,7 @@ void main() {
                     metalicness,
                     roughness,
                     reflectance,
-                    texture_cube,
+                    texture_probe,
                     texture_scene_reflect,
                     screen_tex_coord,
                     LIGHT_COLOR.xyz,

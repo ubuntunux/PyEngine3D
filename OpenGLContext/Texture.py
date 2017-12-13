@@ -1,3 +1,4 @@
+import gc
 from ctypes import c_void_p
 
 from OpenGL.GL import *
@@ -103,8 +104,10 @@ class Texture:
     def __del__(self):
         pass
 
-    def clear(self):
+    def delete(self):
+        logger.info("Delete %s : %s" % (GetClassName(self), self.name))
         glDeleteTextures([self.buffer, ])
+        self.buffer = -1
 
     def get_save_data(self, get_image_data=True):
         save_data = dict(
