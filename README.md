@@ -33,7 +33,8 @@
     - SkyBox
     - Wind
     - Ocean, River
-    - Envirment Cube map
+    - Light Probe
+        - camera of light probe
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
