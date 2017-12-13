@@ -41,5 +41,4 @@ class RenderOptionManager(Singleton):
         self.core_manager = core_manager
 
     def set_rendering_type(self, rendering_type):
-        print(rendering_type)
         self.rendering_type = RenderingType.convert_index_to_enum(rendering_type)
