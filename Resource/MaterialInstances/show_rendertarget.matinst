@@ -1,4 +1,4 @@
 {'macros': {},
  'material_name': 'show_rendertarget',
  'shader_name': 'show_rendertarget',
- 'uniform_datas': {'is_depth_texture': False, 'texture_source': 'empty'}}
+ 'uniform_datas': {'apply_alpha': False, 'mirror_x': False, 'texture_source': 'empty'}}
