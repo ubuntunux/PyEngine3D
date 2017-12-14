@@ -76,7 +76,8 @@
     - Color Grading
 * Rendering
     - Hierachical-Z depth
-    - Blend mode
+    - Animation calculation in gpu
+    - Blend mode
         - Additive, Multiply, Blending
     - Multisample texture - glTexImage2DMultisample
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
