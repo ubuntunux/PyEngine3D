@@ -10,8 +10,6 @@ uniform mat4 bone_matrices[MAX_BONES];
 uniform mat4 prev_bone_matrices[MAX_BONES];
 #endif
 
-uniform mat4 model;
-
 struct VERTEX_OUTPUT
 {
     vec3 world_position;
@@ -34,6 +32,9 @@ layout (location = 4) in vec2 vs_in_tex_coord;
 #if 1 == SKELETAL
 layout (location = 5) in vec4 vs_in_bone_indicies;
 layout (location = 6) in vec4 vs_in_bone_weights;
+layout (location = 7) in mat4 model;
+#else
+layout (location = 5) in mat4 model;
 #endif
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;

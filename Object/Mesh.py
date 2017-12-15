@@ -47,11 +47,19 @@ class Mesh:
         logger.info("Load %s : %s" % (GetClassName(self), mesh_name))
 
         self.name = mesh_name
+        self.instance_location_model = -1
 
         self.skeletons = []
         for i, skeleton_data in enumerate(mesh_data.get('skeleton_datas', [])):
             skeleton = Skeleton(index=i, **skeleton_data)
             self.skeletons.append(skeleton)
+
+        if self.has_bone():
+            # skeletal actor
+            self.instance_location_model = 7
+        else:
+            # static actor
+            self.instance_location_model = 5
 
         self.animations = []
         for i, animation_data in enumerate(mesh_data.get('animation_datas', [])):
@@ -67,6 +75,8 @@ class Mesh:
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer:
+                vertex_buffer.create_instance_buffer(layout_location=self.instance_location_model)
+
                 # find skeleton of geometry
                 skeleton = None
                 for skeleton in self.skeletons:

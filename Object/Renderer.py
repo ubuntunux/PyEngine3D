@@ -508,8 +508,8 @@ class Renderer(Singleton):
                                                      texture_probe)
         elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
-            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING, self.sceneManager.static_solid_geometries)
-            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
+            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.sceneManager.static_solid_geometries)
+            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
                                self.sceneManager.skeleton_solid_geometries)
 
     def render_translucent(self):
@@ -520,9 +520,9 @@ class Renderer(Singleton):
 
         # render translucent
         glEnable(GL_DEPTH_TEST)
-        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADING,
+        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING,
                            self.sceneManager.static_translucent_geometries)
-        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADING,
+        self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
                            self.sceneManager.skeleton_translucent_geometries)
 
     def render_actors(self, render_group, render_mode, geometry_list, material_instance=None):
@@ -530,10 +530,14 @@ class Renderer(Singleton):
             return
 
         last_vertex_buffer = None
+        last_geometry = None
         last_actor = None
         last_material = None
         last_material_instance = None
         last_actor_material_instance = None
+        instance_datas = []
+
+        print("==========================")
 
         if RenderOption.RENDER_LIGHT_PROBE:
             texture_probe = self.resource_manager.getTexture('field')
@@ -547,7 +551,12 @@ class Renderer(Singleton):
         for geometry in geometry_list:
             actor = geometry.parent_actor
 
-            if RenderMode.SHADING == render_mode or RenderMode.GBUFFER == render_mode:
+            if geometry is None:
+                continue
+
+            instance_datas.append(actor.transform.matrix)
+
+            if RenderMode.LIGHTING == render_mode or RenderMode.GBUFFER == render_mode:
                 material_instance = geometry.material_instance or default_material_instance
                 material = material_instance.material if material_instance else None
 
@@ -558,7 +567,7 @@ class Renderer(Singleton):
                     material_instance.bind_material_instance()
                     is_render_gbuffer = (RenderMode.GBUFFER == render_mode)
                     material_instance.bind_uniform_data('is_render_gbuffer', is_render_gbuffer)
-                    if RenderMode.SHADING == render_mode:
+                    if RenderMode.LIGHTING == render_mode:
                         material_instance.bind_uniform_data('texture_probe', texture_probe)
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
@@ -575,7 +584,6 @@ class Renderer(Singleton):
                 last_actor_material_instance = actor_material_instance
 
             if last_actor != actor and material_instance:
-                material_instance.bind_uniform_data('model', actor.transform.matrix)
                 if render_group == RenderGroup.SKELETON_ACTOR:
                     animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
                     prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
@@ -583,18 +591,31 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
                                                         len(prev_animation_buffer))
 
-            # At last, bind buffers
-            if geometry is not None and last_vertex_buffer != geometry.vertex_buffer:
-                geometry.bind_vertex_buffer()
-
-            # draw
-            if geometry and material_instance:
-                geometry.draw_elements()
+            if last_vertex_buffer != geometry.vertex_buffer or last_material_instance != material_instance:
+                if 0 < len(instance_datas) and last_vertex_buffer and last_material_instance:
+                    instance_array = np.array(instance_datas, dtype=np.float32)
+                    layout_location = 7 if render_group == RenderGroup.SKELETON_ACTOR else 5
+                    last_geometry.bind_instance_buffer(layout_location=layout_location, instance_data=instance_array,
+                                                       divisor=1)
+                    last_geometry.bind_vertex_buffer()
+                    last_geometry.draw_elements_instanced(len(instance_datas))
+                    instance_datas.clear()
+                    print(actor.name, len(instance_datas))
 
             last_actor = actor
-            last_material = material
+            last_geometry = geometry
             last_vertex_buffer = geometry.vertex_buffer
+            last_material = material
             last_material_instance = material_instance
+
+        if material_instance and geometry and geometry.vertex_buffer and 0 < len(instance_datas):
+            instance_array = np.array(instance_datas, dtype=np.float32)
+            layout_location = 7 if render_group == RenderGroup.SKELETON_ACTOR else 5
+            geometry.bind_instance_buffer(layout_location=layout_location, instance_data=instance_array,
+                                          divisor=1)
+            geometry.bind_vertex_buffer()
+            geometry.draw_elements_instanced(len(instance_datas))
+            print(actor.name, len(instance_datas))
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
@@ -720,6 +741,7 @@ class Renderer(Singleton):
             self.postprocess.render_copy_rendertarget(self.debug_rendertarget, copy_alpha=False)
 
     def render_font(self):
+        return
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
         self.framebuffer.bind_framebuffer()
         self.font_manager.render_font(self.width, self.height)

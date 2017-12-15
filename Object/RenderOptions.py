@@ -25,7 +25,7 @@ class RenderGroup(AutoEnum):
 class RenderMode(AutoEnum):
     PRE_PASS = ()
     GBUFFER = ()
-    SHADING = ()
+    LIGHTING = ()
     SHADOW = ()
     COUNT = ()
 

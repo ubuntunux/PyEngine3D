@@ -393,12 +393,13 @@ class CoreManager(Singleton):
                     self.close()
             elif Keyboard._1 == event_value:
                 object_name_list = self.resource_manager.getModelNameList()
+                sphere = self.resource_manager.getModel('sphere')
                 if object_name_list:
                     for i in range(20):
-                        pos = [np.random.uniform(-100, 100) for x in range(3)]
+                        pos = [np.random.uniform(-10, 10) for x in range(3)]
                         objName = np.random.choice(object_name_list)
                         model = self.resource_manager.getModel(objName)
-                        obj_instance = self.sceneManager.addObject(model=model, pos=pos)
+                        obj_instance = self.sceneManager.addObject(model=sphere, pos=pos)
                         if obj_instance:
                             self.sendObjectInfo(obj_instance)
             elif Keyboard._2 == event_value:

@@ -114,11 +114,13 @@ class VertexArrayBuffer:
 
         component_count = len(instance_data[0])
         size_of_data = instance_data[0].nbytes
-        glEnableVertexAttribArray(layout_location)
-        glVertexAttribPointer(layout_location, component_count, GL_FLOAT, GL_FALSE, size_of_data, c_void_p(0))
-        # divisor == 0, not instancing.
-        # divisor > 0, the attribute advances once per divisor instances of the set(s) of vertices being rendered.
-        glVertexAttribDivisor(layout_location, divisor)
+
+        for i in range(4):
+            glEnableVertexAttribArray(layout_location + i)
+            glVertexAttribPointer(layout_location + i, component_count, GL_FLOAT, GL_FALSE, size_of_data, c_void_p(4 * component_count * i))
+            # divisor == 0, not instancing.
+            # divisor > 0, the attribute advances once per divisor instances of the set(s) of vertices being rendered.
+            glVertexAttribDivisor(layout_location + i, divisor)
 
     def bind_vertex_buffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
