@@ -1261,8 +1261,8 @@ class ResourceManager(Singleton):
     def getMaterialInstanceNameList(self):
         return self.material_instanceLoader.getResourceNameList()
 
-    def getMaterialInstance(self, name):
-        return self.material_instanceLoader.getMaterialInstance(name)
+    def getMaterialInstance(self, name, macros={}):
+        return self.material_instanceLoader.getMaterialInstance(name, macros=macros)
 
     def getDefaultMaterialInstance(self):
         return self.material_instanceLoader.getMaterialInstance('default')
@@ -1283,7 +1283,7 @@ class ResourceManager(Singleton):
     def getTexture(self, textureName):
         return self.textureLoader.getResourceData(textureName)
 
-    # FUNCTIONS : Object
+    # FUNCTIONS
 
     def getModelNameList(self):
         return self.modelLoader.getResourceNameList()

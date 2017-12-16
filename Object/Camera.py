@@ -103,7 +103,7 @@ class Camera(StaticActor):
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
             self.need_to_update_projection = False
 
-    def update(self, force_update=False):
+    def update(self, force_update = False):
         self.update_projection()
 
         self.transform.updateTransform(update_view_transform=True, force_update=force_update)

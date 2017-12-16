@@ -20,15 +20,12 @@ class Model:
         self.attributes = Attributes()
 
     def set_mesh(self, mesh):
-        self.mesh = mesh
-        if self.mesh:
+        if mesh:
+            self.mesh = mesh
             default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
-            material_instances = []
-            for i, geometry in enumerate(self.mesh.geometries):
-                if i < len(self.material_instances):
-                    material_instances.append(self.material_instances[i] or default_material_instance)
-                else:
-                    material_instances.append(default_material_instance)
+            material_instances = [default_material_instance, ] * len(mesh.geometries)
+            for i in range(min(len(self.material_instances), len(material_instances))):
+                material_instances[i] = self.material_instances[i]
             self.material_instances = material_instances
 
     def get_save_data(self):
@@ -43,7 +40,7 @@ class Model:
         return len(self.material_instances)
 
     def get_material_instance(self, index):
-        return self.material_instances[index] if index < len(self.material_instances) else None
+        return self.material_instances[index]
 
     def get_material_instance_name(self, index):
         material_instance = self.get_material_instance(index)

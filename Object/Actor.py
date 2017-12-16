@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from Common import logger
-from Object import TransformObject, GeometryInstance, Model
+from Object import TransformObject, Model
 from OpenGLContext import UniformBlock
 from Utilities import *
 from App import CoreManager
@@ -14,9 +14,8 @@ class StaticActor:
     def __init__(self, name, **object_data):
         self.name = name
         self.selected = False
-        self.mesh = None
         self.model = None
-        self.geometries = []
+        self.has_mesh = False
 
         # transform
         self.transform = TransformObject()
@@ -24,21 +23,14 @@ class StaticActor:
         self.transform.setRot(object_data.get('rot', [0, 0, 0]))
         self.transform.setScale(object_data.get('scale', [1, 1, 1]))
 
-        self.attributes = Attributes()
-
         self.set_model(object_data.get('model'))
 
-    def set_model(self, model):
-        self.model = model
-        self.mesh = self.model.mesh if self.model else None
-        self.geometries = []
+        self.attributes = Attributes()
 
-        if self.model and self.mesh:
-            for geometry in self.mesh.geometries:
-                material_instance = self.model.get_material_instance(geometry.index)
-                geometry_instance = GeometryInstance(
-                    geometry=geometry, parent_actor=self, parent_model=self.model, material_instance=material_instance)
-                self.geometries.append(geometry_instance)
+    def set_model(self, model):
+        if model:
+            self.model = model
+            self.has_mesh = model.mesh is not None
 
     def get_save_data(self):
         save_data = dict(
@@ -66,6 +58,15 @@ class StaticActor:
         elif attributeName == 'scale':
             self.transform.setScale(attributeValue)
 
+    def get_mesh(self):
+        return self.model.mesh if self.has_mesh else None
+
+    def get_geometries(self):
+        return self.model.mesh.geometries if self.has_mesh else None
+
+    def get_material_instance(self, index):
+        return self.model.material_instances[index] if self.model else None
+
     def setSelected(self, selected):
         self.selected = selected
 
@@ -75,22 +76,17 @@ class StaticActor:
 
 class SkeletonActor(StaticActor):
     def __init__(self, name, **object_data):
+        StaticActor.__init__(self, name, **object_data)
+
         self.animation_frame = 0.0
         self.animation_buffers = []
         self.prev_animation_buffers = []
 
-        StaticActor.__init__(self, name, **object_data)
-
-    def set_model(self, model):
-        StaticActor.set_model(self, model)
-
-        self.animation_buffers = []
-        self.prev_animation_buffers = []
-
-        if self.model and self.mesh:
-            for animation in self.mesh.animations:
+        if self.has_mesh:
+            for animation in self.model.mesh.animations:
                 if animation:
                     animation_buffer = animation.get_animation_transforms(0.0)
+                    # just initialize
                     self.animation_buffers.append(animation_buffer.copy())
                     self.prev_animation_buffers.append(animation_buffer.copy())
 
@@ -110,8 +106,8 @@ class SkeletonActor(StaticActor):
         self.transform.updateTransform()
 
         # update animation
-        if self.mesh:
-            for i, animation in enumerate(self.mesh.animations):
+        if self.has_mesh:
+            for i, animation in enumerate(self.model.mesh.animations):
                 if animation:
                     frame_count = animation.frame_count
                     if frame_count > 0:

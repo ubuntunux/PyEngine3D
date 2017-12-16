@@ -38,10 +38,10 @@ class SceneManager(Singleton):
         self.objectMap = {}  # All of objects
 
         # render group
-        self.static_solid_geometries = []
-        self.static_translucent_geometries = []
-        self.skeleton_solid_geometries = []
-        self.skeleton_translucent_geometries = []
+        self.static_solid_render_infos = []
+        self.static_translucent_render_infos = []
+        self.skeleton_solid_render_infos = []
+        self.skeleton_translucent_render_infos = []
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -338,31 +338,89 @@ class SceneManager(Singleton):
         for light in self.lights:
             light.update(self.mainCamera)
 
-        # clear render groups
-        self.static_solid_geometries = []
-        self.static_translucent_geometries = []
-        self.skeleton_solid_geometries = []
-        self.skeleton_translucent_geometries = []
-
-        # flush render groups
         for static_actor in self.static_actors:
             static_actor.update(dt)
-            for geometry in static_actor.geometries:
-                if geometry.material_instance.is_translucent():
-                    self.static_translucent_geometries.append(geometry)
-                else:
-                    self.static_solid_geometries.append(geometry)
 
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
-            for geometry in skeleton_actor.geometries:
-                if geometry.material_instance.is_translucent():
-                    self.skeleton_translucent_geometries.append(geometry)
-                else:
-                    self.skeleton_solid_geometries.append(geometry)
+
+        # clear render groups
+        self.static_solid_render_infos = []
+        self.static_translucent_render_infos = []
+        self.skeleton_solid_render_infos = []
+        self.skeleton_translucent_render_infos = []
+
+        actor = None
+        material = None
+        actor_material_instance = None
+        last_actor = None
+        last_geometry = None
+        last_material = None
+        last_material_instance = None
+        last_actor_material_instance = None
+        instance_datas = []
+
+        static_model_instance_location = 5
+        skeleton_model_instance_location = 7
+
+        class RenderInfo:
+            def __init__(self):
+                self.actor = None
+                self.geometry = None
+                self.material_instance = None
+                self.model_instance_data = []
+                self.model_instance_location = -1
+
+        # flush render groups
+        flush = False
+        render_info = None
+        geometries = static_actor.get_geometries()
+        count = 0
+        total_count = len(self.static_actors) * len(geometries)
+        for static_actor in self.static_actors:
+            for geometry in static_actor.get_geometries():
+                count += 1
+
+                material_instance = static_actor.get_material_instance(geometry.index)
+
+                if geometry is not None and material_instance is not None:
+                    if render_info is None:
+                        render_info = RenderInfo()
+                        render_info.actor = static_actor
+                        render_info.geometry = geometry
+                        render_info.material_instance = material_instance
+                        render_info.material = material_instance.material
+                        render_info.model_instance_location = static_model_instance_location
+                        render_info.model_instance_data.append(static_actor.transform.matrix)
+                        last_geometry = geometry
+                        last_material_instance = material_instance
+
+                    if last_geometry != geometry:
+                        flush = True
+                    elif last_material_instance != material_instance:
+                        flush = True
+                    else:
+                        render_info.model_instance_data.append(static_actor.transform.matrix)
+
+                if (flush or count == total_count) and render_info is not None:
+                    render_info.model_instance_data = np.array(render_info.model_instance_data, np.float32)
+                    if render_info.material_instance.is_translucent():
+                        self.static_translucent_render_infos.append(render_info)
+                    else:
+                        self.static_solid_render_infos.append(render_info)
+                    render_info = None
+                    flush = False
+
+        # for skeleton_actor in self.skeleton_actors:
+        #     for geometry in skeleton_actor.geometries:
+        #         if geometry.material_instance.is_translucent():
+        #             self.skeleton_translucent_render_infos.append(geometry)
+        #         else:
+        #             self.skeleton_solid_render_infos.append(geometry)
 
         # sort render gorups
-        self.static_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))
-        self.static_translucent_geometries.sort(key=lambda x: id(x.vertex_buffer))
-        self.skeleton_solid_geometries.sort(key=lambda x: id(x.vertex_buffer))
-        self.skeleton_translucent_geometries.sort(key=lambda x: id(x.vertex_buffer))
+        # TODO : If you sort when the object is created, you do not have to do it every time.
+        self.static_solid_render_infos.sort(key=lambda x: (x.geometry, x.material))
+        self.static_translucent_render_infos.sort(key=lambda x: (x.geometry, x.material))
+        self.skeleton_solid_render_infos.sort(key=lambda x: (x.geometry, x.material))
+        self.skeleton_translucent_render_infos.sort(key=lambda x: (x.geometry, x.material))

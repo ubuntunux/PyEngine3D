@@ -189,7 +189,7 @@ class CoreManager(Singleton):
 
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
 
-    def error(self, msg: object) -> object:
+    def error(self, msg):
         logger.error(msg)
         self.close()
 

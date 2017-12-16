@@ -33,15 +33,6 @@ class Geometry:
         self.vertex_buffer.draw_elements_instanced(count)
 
 
-class GeometryInstance(Geometry):
-    def __init__(self, geometry, parent_actor=None, parent_model=None, material_instance=None):
-        Geometry.__init__(self, **geometry.__dict__)
-        self.geometry = geometry
-        self.material_instance = material_instance
-        self.parent_actor = parent_actor
-        self.parent_model = parent_model
-
-
 class Mesh:
     def __init__(self, mesh_name, **mesh_data):
         logger.info("Load %s : %s" % (GetClassName(self), mesh_name))
@@ -82,6 +73,7 @@ class Mesh:
                 for skeleton in self.skeletons:
                     if skeleton.name == geometry_data.get('skeleton_name', ''):
                         break
+
                 # create geometry
                 geometry = Geometry(
                     name=vertex_buffer.name,

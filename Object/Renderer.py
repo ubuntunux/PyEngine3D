@@ -400,7 +400,7 @@ class Renderer(Singleton):
         # render background normal, depth
         material_instance = self.resource_manager.getMaterialInstance("pre_pass")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.PRE_PASS,
-                           self.sceneManager.static_solid_geometries, material_instance)
+                           self.sceneManager.static_solid_render_infos, material_instance)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -413,7 +413,7 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
-                               self.sceneManager.skeleton_solid_geometries, material_instance)
+                               self.sceneManager.skeleton_solid_render_infos, material_instance)
 
     def render_deferred(self):
         framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
@@ -427,7 +427,7 @@ class Renderer(Singleton):
 
         # render static gbuffer
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
-                           self.sceneManager.static_solid_geometries)
+                           self.sceneManager.static_solid_render_infos)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -442,7 +442,7 @@ class Renderer(Singleton):
                                                       RenderTargets.VELOCITY,
                                                       depth_texture=RenderTargets.DEPTHSTENCIL)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
-                               self.sceneManager.skeleton_solid_geometries)
+                               self.sceneManager.skeleton_solid_render_infos)
 
     def render_shadow(self):
         self.framebuffer_shadow.set_color_textures()
@@ -455,12 +455,12 @@ class Renderer(Singleton):
 
         material_instance = self.resource_manager.getMaterialInstance("shadowmap")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW,
-                           self.sceneManager.static_solid_geometries, material_instance)
+                           self.sceneManager.static_solid_render_infos, material_instance)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
-                               self.sceneManager.skeleton_solid_geometries, material_instance)
+                               self.sceneManager.skeleton_solid_render_infos, material_instance)
             self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
@@ -508,9 +508,9 @@ class Renderer(Singleton):
                                                      texture_probe)
         elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
-            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.sceneManager.static_solid_geometries)
+            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.sceneManager.static_solid_render_infos)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
-                               self.sceneManager.skeleton_solid_geometries)
+                               self.sceneManager.skeleton_solid_render_infos)
 
     def render_translucent(self):
         # atmospherer
@@ -521,21 +521,16 @@ class Renderer(Singleton):
         # render translucent
         glEnable(GL_DEPTH_TEST)
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING,
-                           self.sceneManager.static_translucent_geometries)
+                           self.sceneManager.static_translucent_render_infos)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
-                           self.sceneManager.skeleton_translucent_geometries)
+                           self.sceneManager.skeleton_translucent_render_infos)
 
-    def render_actors(self, render_group, render_mode, geometry_list, material_instance=None):
-        if len(geometry_list) < 1:
+    def render_actors(self, render_group, render_mode, render_infos, material_instance=None):
+        if len(render_infos) < 1:
             return
 
-        last_vertex_buffer = None
-        last_geometry = None
-        last_actor = None
-        last_material = None
-        last_material_instance = None
-        last_actor_material_instance = None
-        instance_datas = []
+        if material_instance and material_instance.material:
+            material_instance.material.use_program()
 
         print("==========================")
 
@@ -544,78 +539,67 @@ class Renderer(Singleton):
         else:
             texture_probe = self.sceneManager.mainLightProbe.texture_probe
 
-        if material_instance:
-            material = material_instance.material if material_instance else None
-            material.use_program()
+        actor = None
+        material = None
+        material_instance = None
+        last_actor = None
+        last_geometry = None
+        last_material = None
+        last_material_instance = None
+        last_material_instance = None
 
-        for geometry in geometry_list:
-            actor = geometry.parent_actor
-
-            if geometry is None:
-                continue
-
-            instance_datas.append(actor.transform.matrix)
+        # render
+        for render_info in render_infos:
+            actor = render_info.actor
+            geometry = render_info.geometry
 
             if RenderMode.LIGHTING == render_mode or RenderMode.GBUFFER == render_mode:
-                material_instance = geometry.material_instance or default_material_instance
-                material = material_instance.material if material_instance else None
+                material = render_info.material
+                material_instance = render_info.material_instance
 
-                if last_material != material and material is not None:
+                if last_material != material:
                     material.use_program()
 
-                if last_material_instance != material_instance and material_instance is not None:
+                if last_material_instance != material_instance:
                     material_instance.bind_material_instance()
-                    is_render_gbuffer = (RenderMode.GBUFFER == render_mode)
-                    material_instance.bind_uniform_data('is_render_gbuffer', is_render_gbuffer)
+                    material_instance.bind_uniform_data('is_render_gbuffer', RenderMode.GBUFFER == render_mode)
                     if RenderMode.LIGHTING == render_mode:
                         material_instance.bind_uniform_data('texture_probe', texture_probe)
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
                         material_instance.bind_uniform_data('texture_scene_reflect',
                                                             RenderTargets.SCREEN_SPACE_REFLECTION)
-            else:
-                actor_material_instance = geometry.material_instance
-                if actor_material_instance and actor_material_instance != last_actor_material_instance:
-                    data_diffuse = actor_material_instance.get_uniform_data('texture_diffuse')
+            elif RenderMode.PRE_PASS == render_mode or RenderMode.SHADOW == render_mode:
+                if last_material_instance != material_instance and material_instance:
+                    data_diffuse = material_instance.get_uniform_data('texture_diffuse')
                     material_instance.bind_uniform_data('texture_diffuse', data_diffuse)
                     if RenderMode.PRE_PASS == render_mode:
-                        data_normal = actor_material_instance.get_uniform_data('texture_normal')
+                        data_normal = material_instance.get_uniform_data('texture_normal')
                         material_instance.bind_uniform_data('texture_normal', data_normal)
-                last_actor_material_instance = actor_material_instance
+            else:
+                logger.error("Undefined render mode.")
 
-            if last_actor != actor and material_instance:
-                if render_group == RenderGroup.SKELETON_ACTOR:
+            if render_group == RenderGroup.SKELETON_ACTOR:
+                if last_actor != actor:
                     animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
                     prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
                                                         len(prev_animation_buffer))
 
-            if last_vertex_buffer != geometry.vertex_buffer or last_material_instance != material_instance:
-                if 0 < len(instance_datas) and last_vertex_buffer and last_material_instance:
-                    instance_array = np.array(instance_datas, dtype=np.float32)
-                    layout_location = 7 if render_group == RenderGroup.SKELETON_ACTOR else 5
-                    last_geometry.bind_instance_buffer(layout_location=layout_location, instance_data=instance_array,
-                                                       divisor=1)
-                    last_geometry.bind_vertex_buffer()
-                    last_geometry.draw_elements_instanced(len(instance_datas))
-                    instance_datas.clear()
-                    print(actor.name, len(instance_datas))
-
-            last_actor = actor
-            last_geometry = geometry
-            last_vertex_buffer = geometry.vertex_buffer
-            last_material = material
-            last_material_instance = material_instance
-
-        if material_instance and geometry and geometry.vertex_buffer and 0 < len(instance_datas):
-            instance_array = np.array(instance_datas, dtype=np.float32)
-            layout_location = 7 if render_group == RenderGroup.SKELETON_ACTOR else 5
-            geometry.bind_instance_buffer(layout_location=layout_location, instance_data=instance_array,
+            geometry.bind_instance_buffer(layout_location=render_info.model_instance_location,
+                                          instance_data=render_info.model_instance_data,
                                           divisor=1)
-            geometry.bind_vertex_buffer()
-            geometry.draw_elements_instanced(len(instance_datas))
-            print(actor.name, len(instance_datas))
+
+            if last_geometry != geometry:
+                geometry.bind_vertex_buffer()
+
+            geometry.draw_elements_instanced(len(render_info.model_instance_data))
+            print(0, render_group, render_mode, actor.name, len(render_info.model_instance_data))
+
+            last_geometry = geometry
+            last_actor = actor
+            last_material = material
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
