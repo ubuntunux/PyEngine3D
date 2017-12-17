@@ -532,20 +532,15 @@ class Renderer(Singleton):
         if material_instance and material_instance.material:
             material_instance.material.use_program()
 
-        print("==========================")
-
         if RenderOption.RENDER_LIGHT_PROBE:
             texture_probe = self.resource_manager.getTexture('field')
         else:
             texture_probe = self.sceneManager.mainLightProbe.texture_probe
 
-        actor = None
         material = None
-        material_instance = None
         last_actor = None
         last_geometry = None
         last_material = None
-        last_material_instance = None
         last_material_instance = None
 
         # render
@@ -587,18 +582,18 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
                                                         len(prev_animation_buffer))
 
-            geometry.bind_instance_buffer(layout_location=render_info.model_instance_location,
+            geometry.bind_instance_buffer(instance_name="model",
                                           instance_data=render_info.model_instance_data,
                                           divisor=1)
 
             if last_geometry != geometry:
                 geometry.bind_vertex_buffer()
 
+            # draw
             geometry.draw_elements_instanced(len(render_info.model_instance_data))
-            print(0, render_group, render_mode, actor.name, len(render_info.model_instance_data))
 
-            last_geometry = geometry
             last_actor = actor
+            last_geometry = geometry
             last_material = material
 
     def render_bones(self):
@@ -725,7 +720,6 @@ class Renderer(Singleton):
             self.postprocess.render_copy_rendertarget(self.debug_rendertarget, copy_alpha=False)
 
     def render_font(self):
-        return
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
         self.framebuffer.bind_framebuffer()
         self.font_manager.render_font(self.width, self.height)

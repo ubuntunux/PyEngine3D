@@ -17,11 +17,11 @@ class Geometry:
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
 
-    def create_instance_buffer(self, layout_location=-1):
-        self.vertex_buffer.create_instance_buffer(layout_location)
+    def create_instance_buffer(self, instance_name, layout_location):
+        self.vertex_buffer.create_instance_buffer(instance_name, layout_location)
 
-    def bind_instance_buffer(self, layout_location, instance_data, divisor):
-        self.vertex_buffer.bind_instance_buffer(layout_location, instance_data, divisor)
+    def bind_instance_buffer(self, instance_name, instance_data, divisor):
+        self.vertex_buffer.bind_instance_buffer(instance_name, instance_data, divisor)
 
     def bind_vertex_buffer(self):
         self.vertex_buffer.bind_vertex_buffer()
@@ -66,7 +66,9 @@ class Mesh:
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer:
-                vertex_buffer.create_instance_buffer(layout_location=self.instance_location_model)
+                # create model matrix instance buffer.
+                vertex_buffer.create_instance_buffer(instance_name="model",
+                                                     layout_location=self.instance_location_model)
 
                 # find skeleton of geometry
                 skeleton = None

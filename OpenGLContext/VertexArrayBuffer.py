@@ -8,6 +8,14 @@ from Common import logger
 from Utilities import compute_tangent
 
 
+class InstanceBuffer:
+    def __init__(self, name, instance_array, instance_buffer, layout_location):
+        self.name = name
+        self.instance_array = instance_array
+        self.instance_buffer = instance_buffer
+        self.layout_location = layout_location
+
+
 def CreateVertexArrayBuffer(geometry_data):
     geometry_name = geometry_data.get('name', '')
     logger.info("Load %s geometry." % geometry_name)
@@ -97,19 +105,23 @@ class VertexArrayBuffer:
             glDeleteVertexArrays(1, instance_array)
             glDeleteBuffers(1, instance_buffer)
 
-    def create_instance_buffer(self, layout_location):
+    def create_instance_buffer(self, instance_name, layout_location):
         instance_array = glGenVertexArrays(1)
         glBindVertexArray(instance_array)
 
         instance_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, instance_buffer)
 
-        self.instance_buffer_map[layout_location] = (instance_array, instance_buffer)
+        self.instance_buffer_map[instance_name] = InstanceBuffer(name=instance_name,
+                                                                 instance_array=instance_array,
+                                                                 instance_buffer=instance_buffer,
+                                                                 layout_location=layout_location)
 
-    def bind_instance_buffer(self, layout_location, instance_data, divisor=1):
-        instance_array, instance_buffer = self.instance_buffer_map[layout_location]
-        glBindVertexArray(instance_array)
-        glBindBuffer(GL_ARRAY_BUFFER, instance_buffer)
+    def bind_instance_buffer(self, instance_name, instance_data, divisor=1):
+        instance_buffer = self.instance_buffer_map[instance_name]
+        layout_location = instance_buffer.layout_location
+        glBindVertexArray(instance_buffer.instance_array)
+        glBindBuffer(GL_ARRAY_BUFFER, instance_buffer.instance_buffer)
         glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
 
         component_count = len(instance_data[0])
@@ -139,5 +151,5 @@ class VertexArrayBuffer:
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
 
         # important : After the object is drawn You need to execute glDisableVertexAttribArray.
-        for location in self.instance_buffer_map:
-            glVertexAttribDivisor(location, 0)
+        for instance_buffer in self.instance_buffer_map.values():
+            glVertexAttribDivisor(instance_buffer.layout_location, 0)

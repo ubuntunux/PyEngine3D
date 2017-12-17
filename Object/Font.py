@@ -55,7 +55,7 @@ class FontManager(Singleton):
         )
 
         # layout(location=1) vec4 font_offset;
-        self.quad.create_instance_buffer(layout_location=1)
+        self.quad.create_instance_buffer(instance_name="font_offset", layout_location=1)
 
     def clear_logs(self, screen_width, screen_height):
         self.pos_x = 0
@@ -105,7 +105,7 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.quad.bind_instance_buffer(layout_location=1, instance_data=render_queue, divisor=1)
+            self.quad.bind_instance_buffer(instance_name="font_offset", instance_data=render_queue, divisor=1)
             self.quad.bind_vertex_buffer()
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
