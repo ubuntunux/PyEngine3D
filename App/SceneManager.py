@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 import os
 import glob
@@ -7,66 +8,9 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess
+from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess, RenderInfo
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
-
-
-class RenderInfo:
-    def __init__(self):
-        self.actor = None
-        self.geometry = None
-        self.material_instance = None
-        self.model_instance_data = []
-        self.model_instance_location = -1
-
-    @staticmethod
-    def gather_render_infos(actor_list, check_actor_change, model_instance_location, solid_render_infos,
-                            translucent_render_infos):
-        last_actor = None
-        last_geometry = None
-        last_material_instance = None
-
-        render_info = None
-        new_render_info = True
-        for actor in actor_list:
-            for geometry in actor.get_geometries():
-                material_instance = actor.get_material_instance(geometry.index)
-                if last_geometry != geometry:
-                    new_render_info = True
-                elif last_material_instance != material_instance:
-                    new_render_info = True
-                elif check_actor_change and last_actor != actor:
-                    new_render_info = True
-
-                if new_render_info and geometry  is not None and material_instance is not None:
-                    # convert to numpy array.
-                    if render_info:
-                        render_info.model_instance_data = np.array(render_info.model_instance_data, np.float32)
-
-                    render_info = RenderInfo()
-                    render_info.actor = actor
-                    render_info.geometry = geometry
-                    render_info.material_instance = material_instance
-                    render_info.material = material_instance.material
-                    render_info.model_instance_location = model_instance_location
-                    if render_info.material_instance.is_translucent():
-                        translucent_render_infos.append(render_info)
-                    else:
-                        solid_render_infos.append(render_info)
-                    new_render_info = False
-
-                # append instance data
-                if render_info:
-                    render_info.model_instance_data.append(actor.transform.matrix)
-
-                last_actor = actor
-                last_geometry = geometry
-                last_material_instance = material_instance
-        else:
-            # At the end, you should convert to numpy.array unconditionally.
-            if render_info:
-                render_info.model_instance_data = np.array(render_info.model_instance_data, np.float32)
 
 
 class SceneManager(Singleton):
@@ -229,18 +173,23 @@ class SceneManager(Singleton):
 
     def regist_object(self, object):
         if object and object.name not in self.objectMap:
-            object_list = self.get_object_list(type(object))
+            object_type = type(object)
+            object_list = self.get_object_list(object_type)
             object_list.append(object)
             self.objectMap[object.name] = object
+            self.update_render_info(object_type)
             self.core_manager.sendObjectInfo(object)
         else:
             logger.error("SceneManager::regist_object error. %s" % object.name if object else 'None')
 
     def unregist_resource(self, object):
         if object and object.name in self.objectMap:
-            object_list = self.get_object_list(type(object))
+            object_type = type(object)
+            object_list = self.get_object_list(object_type)
             object_list.remove(object)
             self.objectMap.pop(object.name)
+            self.update_render_info(object_type)
+            self.core_manager.notifyDeleteObject(object.name)
         else:
             logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
 
@@ -297,31 +246,13 @@ class SceneManager(Singleton):
         self.objectMap = {}
 
     def clear_actors(self):
-        for static_actor in self.static_actors:
-            if static_actor.name in self.objectMap:
-                self.objectMap.pop(static_actor.name)
-        self.static_actors = []
-
-        for skeleton_actor in self.skeleton_actors:
-            if skeleton_actor.name in self.objectMap:
-                self.objectMap.pop(skeleton_actor.name)
-        self.skeleton_actors = []
+        for obj_name in list(self.objectMap.keys()):
+            self.deleteObject(obj_name)
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
         if obj and obj not in (self.mainCamera, self.mainLight, self.mainLightProbe):
-            self.objectMap.pop(obj.name)
-            if obj in self.cameras:
-                self.cameras.remove(obj)
-            elif obj in self.lights:
-                self.lights.remove(obj)
-            elif obj in self.light_probes:
-                self.light_probes.remove(obj)
-            elif obj in self.static_actors:
-                self.static_actors.remove(obj)
-            elif obj in self.skeleton_actors:
-                self.skeleton_actors.remove(obj)
-            self.core_manager.notifyDeleteObject(objName)
+            self.unregist_resource(obj)
 
     def getObject(self, objName):
         return self.objectMap[objName] if objName in self.objectMap else None
@@ -401,26 +332,35 @@ class SceneManager(Singleton):
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
 
-        # clear render groups
+        # print(len(self.static_solid_render_infos))
+        # print(len(self.static_translucent_render_infos))
+        # print(len(self.skeleton_solid_render_infos))
+        # print(len(self.skeleton_translucent_render_infos))
+
+    def update_render_info(self, object_type):
+        if StaticActor == object_type:
+            self.update_static_render_info()
+        elif SkeletonActor == object_type:
+            self.update_skeleton_render_info()
+
+    def update_static_render_info(self):
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
-        self.skeleton_solid_render_infos = []
-        self.skeleton_translucent_render_infos = []
 
         RenderInfo.gather_render_infos(actor_list=self.static_actors,
-                                       check_actor_change=False,
-                                       model_instance_location=5,
                                        solid_render_infos=self.static_solid_render_infos,
                                        translucent_render_infos=self.static_translucent_render_infos)
 
-        RenderInfo.gather_render_infos(actor_list=self.skeleton_actors,
-                                       check_actor_change=True,
-                                       model_instance_location=5,
-                                       solid_render_infos=self.skeleton_solid_render_infos,
-                                       translucent_render_infos=self.skeleton_translucent_render_infos)
-
-        # TODO : If you sort when the object is created, you do not have to do it every time.
         self.static_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.static_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
+
+    def update_skeleton_render_info(self):
+        self.skeleton_solid_render_infos = []
+        self.skeleton_translucent_render_infos = []
+
+        RenderInfo.gather_render_infos(actor_list=self.skeleton_actors,
+                                       solid_render_infos=self.skeleton_solid_render_infos,
+                                       translucent_render_infos=self.skeleton_translucent_render_infos)
         self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
+

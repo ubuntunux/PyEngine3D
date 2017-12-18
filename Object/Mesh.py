@@ -67,9 +67,9 @@ class Mesh:
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer:
                 # create model matrix instance buffer.
-                vertex_buffer.create_instance_buffer(instance_name="model",
-                                                     layout_location=self.instance_location_model,
-                                                     element_data=MATRIX4_IDENTITY)
+                # vertex_buffer.create_instance_buffer(instance_name="model",
+                #                                      layout_location=self.instance_location_model,
+                #                                      element_data=MATRIX4_IDENTITY)
 
                 # find skeleton of geometry
                 skeleton = None

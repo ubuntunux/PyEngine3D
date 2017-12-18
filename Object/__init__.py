@@ -1,3 +1,4 @@
+from .RenderInfo import RenderInfo, RenderInstanceInfo
 from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
 from .MaterialInstance import MaterialInstance
 from .Animation import Animation, AnimationNode

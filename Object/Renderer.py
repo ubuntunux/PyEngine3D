@@ -582,15 +582,14 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
                                                         len(prev_animation_buffer))
 
-            geometry.bind_instance_buffer(instance_name="model",
-                                          instance_data=render_info.model_instance_data,
-                                          divisor=1)
+            if material_instance:
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
 
             if last_geometry != geometry:
                 geometry.bind_vertex_buffer()
 
             # draw
-            geometry.draw_elements_instanced(len(render_info.model_instance_data))
+            geometry.draw_elements()
 
             last_actor = actor
             last_geometry = geometry
