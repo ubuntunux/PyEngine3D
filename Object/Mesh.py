@@ -17,8 +17,8 @@ class Geometry:
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
 
-    def create_instance_buffer(self, instance_name, layout_location):
-        self.vertex_buffer.create_instance_buffer(instance_name, layout_location)
+    def create_instance_buffer(self, instance_name, layout_location, element_data):
+        self.vertex_buffer.create_instance_buffer(instance_name, layout_location, element_data)
 
     def bind_instance_buffer(self, instance_name, instance_data, divisor):
         self.vertex_buffer.bind_instance_buffer(instance_name, instance_data, divisor)
@@ -68,7 +68,8 @@ class Mesh:
             if vertex_buffer:
                 # create model matrix instance buffer.
                 vertex_buffer.create_instance_buffer(instance_name="model",
-                                                     layout_location=self.instance_location_model)
+                                                     layout_location=self.instance_location_model,
+                                                     element_data=MATRIX4_IDENTITY)
 
                 # find skeleton of geometry
                 skeleton = None
