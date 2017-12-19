@@ -78,7 +78,7 @@ class SkeletonActor(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
-        self.animation_frame = 0.0
+        self.animation_time = 0.0
         self.animation_buffers = []
         self.prev_animation_buffers = []
 
@@ -111,8 +111,9 @@ class SkeletonActor(StaticActor):
                 if animation:
                     frame_count = animation.frame_count
                     if frame_count > 0:
-                        self.animation_frame = math.fmod(self.animation_frame + dt * 30.0, frame_count)
+                        self.animation_time = math.fmod(self.animation_time + dt, animation.animation_length)
+                        frame = animation.get_time_to_frame(self.animation_time)
                     else:
-                        self.animation_frame = 0.0
+                        frame = 0.0
                     self.prev_animation_buffers[i][...] = self.animation_buffers[i]
-                    self.animation_buffers[i][...] = animation.get_animation_transforms(self.animation_frame)
+                    self.animation_buffers[i][...] = animation.get_animation_transforms(frame)

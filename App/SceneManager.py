@@ -317,21 +317,6 @@ class SceneManager(Singleton):
         for camera in self.cameras:
             camera.update_projection()
 
-    def update_scene(self, dt):
-        self.renderer.postprocess.update()
-
-        for camera in self.cameras:
-            camera.update()
-
-        for light in self.lights:
-            light.update(self.mainCamera)
-
-        for static_actor in self.static_actors:
-            static_actor.update(dt)
-
-        for skeleton_actor in self.skeleton_actors:
-            skeleton_actor.update(dt)
-
     def update_render_info(self, object_type):
         if StaticActor == object_type:
             self.update_static_render_info()
@@ -356,6 +341,21 @@ class SceneManager(Singleton):
         RenderInfo.gather_render_infos(actor_list=self.skeleton_actors,
                                        solid_render_infos=self.skeleton_solid_render_infos,
                                        translucent_render_infos=self.skeleton_translucent_render_infos)
+
         self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
 
+    def update_scene(self, dt):
+        self.renderer.postprocess.update()
+
+        for camera in self.cameras:
+            camera.update()
+
+        for light in self.lights:
+            light.update(self.mainCamera)
+
+        for static_actor in self.static_actors:
+            static_actor.update(dt)
+
+        for skeleton_actor in self.skeleton_actors:
+            skeleton_actor.update(dt)

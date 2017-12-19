@@ -239,10 +239,10 @@ class Renderer(Singleton):
             camera.transform.setPos(pos)
             camera.transform.setRot([pitch, yaw, roll])
             camera.update(force_update=True)
+
+            # render
             self.renderScene()
-            save_filepath = RenderTargets.HDR.name + "_" + cube_dir + ".texture"
-            save_filepath = os.path.join(self.resource_manager.root_path,
-                                         self.resource_manager.textureLoader.resource_dir_name, save_filepath)
+
             dst_texture = self.sceneManager.mainLightProbe.get_texture(cube_dir)
 
             self.framebuffer.set_color_textures(RenderTargets.HDR)
@@ -250,16 +250,6 @@ class Renderer(Singleton):
             self.framebuffer_copy.set_color_textures(dst_texture)
             self.framebuffer_copy.bind_framebuffer()
             self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
-
-            # self.framebuffer_manager.bind_framebuffer(dst_texture, depth_texture=None)
-            # self.postprocess.bind_quad()
-            # self.postprocess.render_copy_rendertarget(RenderTargets.HDR, copy_alpha=False, mirror_x=True)
-            # self.framebuffer_manager.delete_framebuffer(dst_texture, depth_texture=None)
-
-            # self.framebuffer.set_color_textures(dst_texture)
-            # self.framebuffer.set_depth_texture(None)
-            # self.framebuffer.bind_framebuffer()
-            # self.postprocess.render_copy_rendertarget(RenderTargets.HDR)
 
             # generate mipmaps per face
             dst_texture.generate_mipmap()
@@ -574,16 +564,14 @@ class Renderer(Singleton):
             else:
                 logger.error("Undefined render mode.")
 
-            if render_group == RenderGroup.SKELETON_ACTOR:
-                if last_actor != actor:
+            if True or last_actor != actor and material_instance:
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
+                if render_group == RenderGroup.SKELETON_ACTOR:
                     animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
                     prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
                     material_instance.bind_uniform_data('bone_matrices', animation_buffer, len(animation_buffer))
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer,
                                                         len(prev_animation_buffer))
-
-            if material_instance:
-                material_instance.bind_uniform_data('model', actor.transform.matrix)
 
             if last_geometry != geometry:
                 geometry.bind_vertex_buffer()
@@ -594,6 +582,7 @@ class Renderer(Singleton):
             last_actor = actor
             last_geometry = geometry
             last_material = material
+            last_material_instance = material_instance
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)

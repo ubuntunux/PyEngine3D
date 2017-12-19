@@ -1006,9 +1006,7 @@ class SceneLoader(ResourceLoader):
         return False
 
     def open_resource(self, resource_name):
-        scene_data = self.getResourceData(resource_name)
-        if scene_data:
-            self.scene_manager.open_scene(resource_name, scene_data)
+        self.load_resource(resource_name)
 
 
 # -----------------------#
