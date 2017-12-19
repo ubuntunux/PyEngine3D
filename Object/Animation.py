@@ -11,7 +11,7 @@ class Animation:
         self.nodes = []  # order by bone index
         for i, animation_node_data in enumerate(animation_data):
             animation_node = AnimationNode(self.skeleton.bones[i], animation_node_data)
-            self.frame_count = max(self.frame_count, len(animation_node.times))
+            self.frame_count = max(self.frame_count, len(animation_node.frame_times))
             self.nodes.append(animation_node)
         self.last_frame = -1.0
         self.animation_transforms = np.array([Matrix4() for i in range(len(self.nodes))], dtype=np.float32)
@@ -34,7 +34,7 @@ class AnimationNode:
         self.name = animation_node_data.get('name', '')
         self.bone = bone
         self.target = animation_node_data.get('target', '')  # bone name
-        self.times = animation_node_data.get('times', [])
+        self.frame_times = animation_node_data.get('times', [])
         # self.transforms = animation_node_data.get('transforms', [])
         self.locations = animation_node_data.get('locations', [])
         self.rotations = animation_node_data.get('rotations', [])
@@ -43,7 +43,7 @@ class AnimationNode:
         self.in_tangents = animation_node_data.get('in_tangents', [])
         self.out_tangents = animation_node_data.get('out_tangents', [])
 
-        self.frame_count = len(self.times)
+        self.frame_count = len(self.frame_times)
         self.last_frame = -1.0
         self.transform = MATRIX4_IDENTITY.copy()
         # just update transform
