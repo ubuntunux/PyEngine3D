@@ -75,6 +75,8 @@
     - Color Correction
     - Color Grading
 * Rendering
+    - 3D Texture read / write
+    - 2D Texture Mipmap to RenderTarget
     - Hierachical-Z depth
     - Animation calculation in gpu
     - Blend mode
