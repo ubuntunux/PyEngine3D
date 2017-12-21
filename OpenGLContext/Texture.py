@@ -43,13 +43,9 @@ def get_image_mode(texture_internal_format):
 
 
 def CreateTexture(**texture_datas):
-    texture_type = texture_datas.get('texture_type', Texture2D)
-    if texture_type == Texture2D:
-        return Texture2D(**texture_datas)
-    elif texture_type == Texture2DMultiSample:
-        return Texture2DMultiSample(**texture_datas)
-    elif texture_type == TextureCube:
-        return TextureCube(**texture_datas)
+    texture_class = texture_datas.get('texture_type', Texture2D)
+    if texture_class is not None:
+        return texture_class(**texture_datas)
     return None
 
 
@@ -82,6 +78,7 @@ class Texture:
 
         self.width = texture_data.get('width', 0)
         self.height = texture_data.get('height', 0)
+        self.depth = texture_data.get('depth', 0)
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_NEAREST
@@ -114,6 +111,7 @@ class Texture:
             texture_type=self.__class__,
             width=self.width,
             height=self.height,
+            depth=self.depth,
             image_mode=self.image_mode,
             internal_format=self.internal_format,
             texture_format=self.texture_format,
@@ -155,6 +153,7 @@ class Texture:
         self.attribute.setAttribute("target", self.target)
         self.attribute.setAttribute("width", self.width)
         self.attribute.setAttribute("height", self.height)
+        self.attribute.setAttribute("depth", self.depth)
         self.attribute.setAttribute("image_mode", self.image_mode)
         self.attribute.setAttribute("internal_format", self.internal_format)
         self.attribute.setAttribute("texture_format", self.texture_format)
@@ -204,6 +203,42 @@ class Texture2D(Texture):
         if get_image_data:
             save_data['data'] = self.get_image_data()
         return save_data
+
+
+class Texture3D(Texture):
+    target = GL_TEXTURE_3D
+
+    def __init__(self, **texture_data):
+        Texture.__init__(self, **texture_data)
+
+        data = texture_data.get('data', c_void_p(0))
+
+        self.buffer = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_3D, self.buffer)
+        glTexImage3D(GL_TEXTURE_3D,
+                     0,
+                     self.internal_format,
+                     self.width,
+                     self.height,
+                     self.depth,
+                     0,
+                     self.texture_format,
+                     self.data_type,
+                     data)
+
+        if self.enable_mipmap:
+            glGenerateMipmap(GL_TEXTURE_3D)
+            # create indivisual mipmapThis creates a texture with a single mipmap level.
+            # You will also need separate glTexSubImage2D calls to upload each mipmap
+            # glTexStorage2D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height)
+            # glTexSubImage2D(GL_TEXTURE_3D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
+
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, self.min_filter)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
+        glBindTexture(GL_TEXTURE_3D, 0)
 
 
 class Texture2DMultiSample(Texture):

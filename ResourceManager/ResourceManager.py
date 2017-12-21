@@ -22,7 +22,7 @@ from OpenGL.GL import *
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, Font
-from OpenGLContext import CreateTexture, Shader, Material, Texture2D, TextureCube
+from OpenGLContext import CreateTexture, Shader, Material, Texture2D, Texture3D, TextureCube
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS, generate_font_data

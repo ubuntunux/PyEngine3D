@@ -173,6 +173,10 @@ class UniformTexture2D(UniformTextureBase):
     uniform_type = "sampler2D"
 
 
+class UniformTexture3D(UniformTextureBase):
+    uniform_type = "sampler3D"
+
+
 class UniformTexture2DMultiSample(UniformTextureBase):
     uniform_type = "sampler2DMS"
 
