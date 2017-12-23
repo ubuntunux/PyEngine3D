@@ -397,4 +397,48 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
+        """
+        transmittance_texture_ = NewTexture2d(
+      TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+  scattering_texture_ = NewTexture3d(
+      SCATTERING_TEXTURE_WIDTH,
+      SCATTERING_TEXTURE_HEIGHT,
+      SCATTERING_TEXTURE_DEPTH,
+      combine_scattering_textures || !rgb_format_supported_ ? GL_RGBA : GL_RGB,
+      half_precision);
+  if (combine_scattering_textures) {
+    optional_single_mie_scattering_texture_ = 0;
+  } else {
+    optional_single_mie_scattering_texture_ = NewTexture3d(
+        SCATTERING_TEXTURE_WIDTH,
+        SCATTERING_TEXTURE_HEIGHT,
+        SCATTERING_TEXTURE_DEPTH,
+        rgb_format_supported_ ? GL_RGB : GL_RGBA,
+        half_precision);
+  }
+  irradiance_texture_ = NewTexture2d(
+      IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
+      
+        GLuint delta_irradiance_texture = NewTexture2d(
+      IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
+  GLuint delta_rayleigh_scattering_texture = NewTexture3d(
+      SCATTERING_TEXTURE_WIDTH,
+      SCATTERING_TEXTURE_HEIGHT,
+      SCATTERING_TEXTURE_DEPTH,
+      rgb_format_supported_ ? GL_RGB : GL_RGBA,
+      half_precision_);
+  GLuint delta_mie_scattering_texture = NewTexture3d(
+      SCATTERING_TEXTURE_WIDTH,
+      SCATTERING_TEXTURE_HEIGHT,
+      SCATTERING_TEXTURE_DEPTH,
+      rgb_format_supported_ ? GL_RGB : GL_RGBA,
+      half_precision_);
+  GLuint delta_scattering_density_texture = NewTexture3d(
+      SCATTERING_TEXTURE_WIDTH,
+      SCATTERING_TEXTURE_HEIGHT,
+      SCATTERING_TEXTURE_DEPTH,
+      rgb_format_supported_ ? GL_RGB : GL_RGBA,
+      half_precision_);
+        """
+
         self.core_manager.gc_collect()

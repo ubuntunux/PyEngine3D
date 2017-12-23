@@ -1,4 +1,5 @@
 from .constants import *
+from Utilities import *
 
 
 def CieColorMatchingFunctionTableValue(wavelength, column):
@@ -106,6 +107,12 @@ class Model:
         self.combine_scattering_textures = False
         self.half_precision = half_precision
 
+        self.atmosphere_shader_source = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
+        if not precompute_illuminance:
+            self.atmosphere_shader_source +=  "#define RADIANCE_API_ENABLED\n"
+        self.atmosphere_shader_source += kAtmosphereShader
+
+    def glsl_header_factory(self, lambdas):
         def to_string(v, lambdas, scale):
             r = Interpolate(wavelengths, v, lambdas[0]) * scale
             g = Interpolate(wavelengths, v, lambdas[1]) * scale
@@ -133,16 +140,13 @@ class Model:
                     result += "))"
             return result
 
-    precompute_illuminance = num_precomputed_wavelengths > 3
+        precompute_illuminance = self.num_precomputed_wavelengths > 3
+        if precompute_illuminance:
+            sky_k_r = sky_k_g = sky_k_b = MAX_LUMINOUS_EFFICACY
+        else:
+            sky_k_r, sky_k_g, sky_k_b = ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance, -3)
+        sun_k_r, sun_k_g, sun_k_b = ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance, 0)
 
-    if precompute_illuminance:
-        sky_k_r = sky_k_g = sky_k_b = MAX_LUMINOUS_EFFICACY
-    else:
-        sky_k_r, sky_k_g, sky_k_b = ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance, -3)
-
-    sun_k_r, sun_k_g, sun_k_b = ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance, 0)
-
-    def glsl_header_factory(lambdas):
         definitions_glsl = self.resource_manager.getShader('precomputed_scattering.definition').shader_code
         functions_glsl = self.resource_manager.getShader('precomputed_scattering.functions').shader_code
         header = ["#version 330",
@@ -176,63 +180,61 @@ class Model:
                   to_string(absorption_extinction, lambdas, length_unit_in_meters) + ",",
                   to_string(ground_albedo, lambdas, 1.0) + ",",
                   str(cos(max_sun_zenith_angle)) + ");",
-                  "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_B),
-                  "const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_B),
+                  "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
+                  "const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
                   functions_glsl]
         return header
 
-  # Allocate the precomputed textures, but don't precompute them yet.
-  transmittance_texture_ = NewTexture2d(
-      TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
-  scattering_texture_ = NewTexture3d(
-      SCATTERING_TEXTURE_WIDTH,
-      SCATTERING_TEXTURE_HEIGHT,
-      SCATTERING_TEXTURE_DEPTH,
-      combine_scattering_textures || !rgb_format_supported_ ? GL_RGBA : GL_RGB,
-      half_precision);
-  if (combine_scattering_textures) {
-    optional_single_mie_scattering_texture_ = 0;
-  } else {
-    optional_single_mie_scattering_texture_ = NewTexture3d(
-        SCATTERING_TEXTURE_WIDTH,
-        SCATTERING_TEXTURE_HEIGHT,
-        SCATTERING_TEXTURE_DEPTH,
-        rgb_format_supported_ ? GL_RGB : GL_RGBA,
-        half_precision);
-  }
-  irradiance_texture_ = NewTexture2d(
-      IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
+    def Init(self, num_scattering_orders = 4):
+        if num_precomputed_wavelengths_ <= 3:
+            lambdas = [kLambdaR, kLambdaG, kLambdaB]
+            luminance_from_radiance = Matrix3()
+            Precompute(fbo,
+                       delta_irradiance_texture,
+                       delta_rayleigh_scattering_texture,
+                       delta_mie_scattering_texture,
+                       delta_scattering_density_texture,
+                       delta_multiple_scattering_texture,
+                       lambdas,
+                       luminance_from_radiance,
+                       false,
+                       num_scattering_orders)
+        else:
+            num_iterations = (num_precomputed_wavelengths_ + 2) / 3
+            dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations)
 
-  # Create and compile the shader providing our API.
-  std::string shader =
-      glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB}) +
-      (precompute_illuminance ? "" : "#define RADIANCE_API_ENABLED\n") +
-      kAtmosphereShader;
-  const char* source = shader.c_str();
-  atmosphere_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(atmosphere_shader_, 1, &source, NULL);
-  glCompileShader(atmosphere_shader_);
+            def coeff(L, component):
+                x = CieColorMatchingFunctionTableValue(L, 1)
+                y = CieColorMatchingFunctionTableValue(L, 2)
+                z = CieColorMatchingFunctionTableValue(L, 3)
+                return XYZ_TO_SRGB[component * 3] * x + XYZ_TO_SRGB[component * 3 + 1] * y + \
+                       XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda
 
-  # Create a full screen quad vertex array and vertex buffer objects.
-  glGenVertexArrays(1, &full_screen_quad_vao_);
-  glBindVertexArray(full_screen_quad_vao_);
-  glGenBuffers(1, &full_screen_quad_vbo_);
-  glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
-  const GLfloat vertices[] = {
-    -1.0, -1.0,
-    +1.0, -1.0,
-    -1.0, +1.0,
-    +1.0, +1.0,
-  };
-  constexpr int kCoordsPerVertex = 2;
-  glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
-  constexpr GLuint kAttribIndex = 0;
-  glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
-  glEnableVertexAttribArray(kAttribIndex);
-  glBindVertexArray(0);
+            for i in range(num_iterations):
+                lambdas = [kLambdaMin + (3 * i + 0.5) * dlambda,
+                           kLambdaMin + (3 * i + 1.5) * dlambda,
+                           kLambdaMin + (3 * i + 2.5) * dlambda]
 
-    def Init(num_scattering_orders = 4):
-        pass
+                luminance_from_radiance = Matrix3()
+
+                luminance_from_radiance[0] = [coeff(lambdas[0], 0), coeff(lambdas[1], 0), coeff(lambdas[2], 0)]
+                luminance_from_radiance[1] = [coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1)]
+                luminance_from_radiance[2] = [coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)]
+
+                Precompute(fbo,
+                    delta_irradiance_texture,
+                    delta_rayleigh_scattering_texture,
+                    delta_mie_scattering_texture,
+                    delta_scattering_density_texture,
+                    delta_multiple_scattering_texture,
+                    lambdas,
+                    luminance_from_radiance, i > 0,
+                    num_scattering_orders)
+        header = glsl_header_factory_([kLambdaR, kLambdaG, kLambdaB])
+        self.vertex_shader_code = kVertexShader
+        self.fragment_shader_code = header + kComputeTransmittanceShader
+
+        DRAW!!
 
     def GetShader():
         return atmosphere_shader
