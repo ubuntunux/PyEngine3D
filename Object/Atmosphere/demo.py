@@ -105,7 +105,7 @@ class Demo:
         fragment_shader_source = "#version 330\n"
         if self.use_luminance != NONE:
             fragment_shader_source += "#define USE_LUMINANCE\n"
-            fragment_shader_source += demo_glsl
+        fragment_shader_source += demo_glsl
 
         fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
         glShaderSource(fragment_shader, fragment_shader_source)

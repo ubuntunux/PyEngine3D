@@ -1,4 +1,8 @@
+import numpy as np
+
 from .constants import *
+from .shaders import *
+
 from Utilities import *
 
 
