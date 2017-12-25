@@ -1,13 +1,19 @@
-kVertexShader = """
-    #version 330
-    uniform mat4 model_from_view;
-    uniform mat4 view_from_clip;
-    layout(location = 0) in vec4 vertex;
-    out vec3 view_ray;
-    void main() {
-      view_ray = (model_from_view * vec4((view_from_clip * vertex).xyz, 0.0)).xyz;
-      gl_Position = vertex;
-    }"""
+import math
+
+from OpenGL.GL import *
+from OpenGL.GL.shaders import *
+from OpenGL.GL.shaders import glDeleteShader
+
+import numpy as np
+
+from .constants import *
+from .model import *
+
+
+class Luminance:
+    NONE = 0
+    APPROXIMATE = 1
+    PRECOMPUTED = 2
 
 
 class Demo:
@@ -19,7 +25,6 @@ class Demo:
         self.use_luminance = None
         self.do_white_balance = False
         self.show_help = True
-        self.program = 0
         self.view_distance_meters = 9000.0
         self.view_zenith_angle_radians = 1.47
         self.view_azimuth_angle_radians = -0.1
@@ -27,314 +32,177 @@ class Demo:
         self.sun_azimuth_angle_radians = 2.9
         self.exposure = 10.0
 
+        self.model = None
+        self.program = 0
+
         self.InitModel()
 
     def InitModel(self):
         max_sun_zenith_angle = (102.0 if use_half_precision else 120.0) / 180.0 * kPi
 
-  DensityProfileLayer
-      rayleigh_layer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
-  DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
-  # Density profile increasing linearly from 0 to 1 between 10 and 25km, and
-  # decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
-  # profile from http://www.kln.ac.lk/science/Chemistry/Teaching_Resources/
-  # Documents/Introduction%20to%20atmospheric%20chemistry.pdf (page 10).
-  std::vector<DensityProfileLayer> ozone_density
-  ozone_density.push_back(
-      DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0))
-  ozone_density.push_back(
-      DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0))
+        rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
+        mie_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
 
-  std::vector<double> wavelengths
-  std::vector<double> solar_irradiance
-  std::vector<double> rayleigh_scattering
-  std::vector<double> mie_scattering
-  std::vector<double> mie_extinction
-  std::vector<double> absorption_extinction
-  std::vector<double> ground_albedo
-  for (int l = kLambdaMin l <= kLambdaMax l += 10) {
-    double lambda = static_cast<double>(l) * 1e-3  # micro-meters
-    double mie =
-        kMieAngstromBeta / kMieScaleHeight * pow(lambda, -kMieAngstromAlpha)
-    wavelengths.push_back(l)
-    if (use_constant_solar_spectrum_) {
-      solar_irradiance.push_back(kConstantSolarIrradiance)
-    } else {
-      solar_irradiance.push_back(kSolarIrradiance[(l - kLambdaMin) / 10])
-    }
-    rayleigh_scattering.push_back(kRayleigh * pow(lambda, -4))
-    mie_scattering.push_back(mie * kMieSingleScatteringAlbedo)
-    mie_extinction.push_back(mie)
-    absorption_extinction.push_back(use_ozone_ ?
-        kMaxOzoneNumberDensity * kOzoneCrossSection[(l - kLambdaMin) / 10] :
-        0.0)
-    ground_albedo.push_back(kGroundAlbedo)
-  }
+        ozone_density = [DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0),
+                         DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0)]
 
-  model_.reset(new Model(wavelengths, solar_irradiance, kSunAngularRadius,
-      kBottomRadius, kTopRadius, {rayleigh_layer}, rayleigh_scattering,
-      {mie_layer}, mie_scattering, mie_extinction, kMiePhaseFunctionG,
-      ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-      kLengthUnitInMeters, use_luminance_ == PRECOMPUTED ? 15 : 3,
-      use_combined_textures_, use_half_precision_))
-  model_->Init()
+        wavelengths = []
+        solar_irradiance = []
+        rayleigh_scattering = []
+        mie_scattering = []
+        mie_extinction = []
+        absorption_extinction = []
+        ground_albedo = []
 
-/*
-<p>Then, it creates and compiles the vertex and fragment shaders used to render
-our demo scene, and link them with the <code>Model</code>'s atmosphere shader
-to get the final scene rendering program:
-*/
+        for i in range(kLambdaMin, kLambdaMax + 1, 10):
+            L = float(i) * 1e-3  # micro-meters
+            mie = kMieAngstromBeta / kMieScaleHeight * math.pow(L, -kMieAngstromAlpha)
+            wavelengths.append(i)
+            if use_constant_solar_spectrum:
+                solar_irradiance.append(kConstantSolarIrradiance)
+            else:
+                solar_irradiance.append(kSolarIrradiance[int((i - kLambdaMin) / 10)])
+            rayleigh_scattering.append(kRayleigh * math.pow(L, -4))
+            mie_scattering.append(mie * kMieSingleScatteringAlbedo)
+            mie_extinction.append(mie)
+            if use_ozone:
+                absorption_extinction.append(kMaxOzoneNumberDensity * kOzoneCrossSection[int((l - kLambdaMin) / 10)])
+            else:
+                absorption_extinction.append(0.0)
+            ground_albedo.append(kGroundAlbedo)
 
-  GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER)
-  const char* const vertex_shader_source = kVertexShader
-  glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL)
-  glCompileShader(vertex_shader)
+        rayleigh_density = [rayleigh_layer, ]
+        mie_density = [mie_layer, ]
+        num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
 
-  const std::string fragment_shader_str =
-      "#version 330\n" +
-      std::string(use_luminance_ != NONE ? "#define USE_LUMINANCE\n" : "") +
-      demo_glsl
-  const char* fragment_shader_source = fragment_shader_str.c_str()
-  GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
-  glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL)
-  glCompileShader(fragment_shader)
+        self.model = Model(wavelengths,
+                           solar_irradiance,
+                           kSunAngularRadius,
+                           kBottomRadius,
+                           kTopRadius,
+                           rayleigh_density,
+                           rayleigh_scattering,
+                           mie_density,
+                           mie_scattering,
+                           mie_extinction,
+                           kMiePhaseFunctionG,
+                           ozone_density,
+                           absorption_extinction,
+                           ground_albedo,
+                           max_sun_zenith_angle,
+                           kLengthUnitInMeters,
+                           num_precomputed_wavelengths,
+                           self.use_combined_textures,
+                           self.use_half_precision)
+        self.model.reset()
+        self.model.Init()
 
-  if (program_ != 0) {
-    glDeleteProgram(program_)
-  }
-  program_ = glCreateProgram()
-  glAttachShader(program_, vertex_shader)
-  glAttachShader(program_, fragment_shader)
-  glAttachShader(program_, model_->GetShader())
-  glLinkProgram(program_)
-  glDetachShader(program_, vertex_shader)
-  glDetachShader(program_, fragment_shader)
-  glDetachShader(program_, model_->GetShader())
-  glDeleteShader(vertex_shader)
-  glDeleteShader(fragment_shader)
+        vertex_shader = glCreateShader(GL_VERTEX_SHADER)
+        vertex_shader_source = kDemoVertexShader
+        glShaderSource(vertex_shader, vertex_shader_source)
+        glCompileShader(vertex_shader)
 
-/*
-<p>Finally, it sets the uniforms of this program that can be set once and for
-all (in our case this includes the <code>Model</code>'s texture uniforms,
-because our demo app does not have any texture of its own):
-*/
+        fragment_shader_source = "#version 330\n"
+        if self.use_luminance != NONE:
+            fragment_shader_source += "#define USE_LUMINANCE\n"
+            fragment_shader_source += demo_glsl
 
-  glUseProgram(program_)
-  model_->SetProgramUniforms(program_, 0, 1, 2, 3)
-  double white_point_r = 1.0
-  double white_point_g = 1.0
-  double white_point_b = 1.0
-  if (do_white_balance_) {
-    Model::ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance,
-        &white_point_r, &white_point_g, &white_point_b)
-    double white_point = (white_point_r + white_point_g + white_point_b) / 3.0
-    white_point_r /= white_point
-    white_point_g /= white_point
-    white_point_b /= white_point
-  }
-  glUniform3f(glGetUniformLocation(program_, "white_point"),
-      white_point_r, white_point_g, white_point_b)
-  glUniform3f(glGetUniformLocation(program_, "earth_center"),
-      0.0, 0.0, -kBottomRadius / kLengthUnitInMeters)
-  glUniform2f(glGetUniformLocation(program_, "sun_size"),
-      tan(kSunAngularRadius),
-      cos(kSunAngularRadius))
+        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
+        glShaderSource(fragment_shader, fragment_shader_source)
+        glCompileShader(fragment_shader)
 
-  # This sets 'view_from_clip', which only depends on the window size.
-  HandleReshapeEvent(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-}
+        self.program = glCreateProgram()
+        glAttachShader(self.program, vertex_shader)
+        glAttachShader(self.program, fragment_shader)
+        glAttachShader(self.program, model.GetShader())
+        glLinkProgram(self.program)
+        glDetachShader(self.program, vertex_shader)
+        glDetachShader(self.program, fragment_shader)
+        glDetachShader(self.program, model.GetShader())
+        glDeleteShader(vertex_shader)
+        glDeleteShader(fragment_shader)
 
-/*
-<p>The scene rendering method simply sets the uniforms related to the camera
-position and to the Sun direction, and then draws a full screen quad (and
-optionally a help screen).
-*/
+        glUseProgram(self.program)
+        self.model.SetProgramUniforms(self.program, 0, 1, 2, 3)
+        if self.do_white_balance:
+            white_point_r, white_point_g, white_point_b = ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance)
+        white_point = (white_point_r + white_point_g + white_point_b) / 3.0
+        white_point_r /= white_point
+        white_point_g /= white_point
+        white_point_b /= white_point
 
-void Demo::HandleRedisplayEvent() const {
-  # Unit vectors of the camera frame, expressed in world space.
-  float cos_z = cos(view_zenith_angle_radians_)
-  float sin_z = sin(view_zenith_angle_radians_)
-  float cos_a = cos(view_azimuth_angle_radians_)
-  float sin_a = sin(view_azimuth_angle_radians_)
-  float ux[3] = { -sin_a, cos_a, 0.0 }
-  float uy[3] = { -cos_z * cos_a, -cos_z * sin_a, sin_z }
-  float uz[3] = { sin_z * cos_a, sin_z * sin_a, cos_z }
-  float l = view_distance_meters_ / kLengthUnitInMeters
+        location = glGetUniformLocation(self.program, "white_point")
+        glUniform3f(location, [white_point_r, white_point_g, white_point_b])
+        location = glGetUniformLocation(self.program, "earth_center")
+        glUniform3f(location, [0.0, 0.0, -kBottomRadius / kLengthUnitInMeters])
+        location = glGetUniformLocation(self.program, "sun_size")
+        glUniform2f(location, [tan(kSunAngularRadius), cos(kSunAngularRadius)])
 
-  # Transform matrix from camera frame to world space (i.e. the inverse of a
-  # GL_MODELVIEW matrix).
-  float model_from_view[16] = {
-    ux[0], uy[0], uz[0], uz[0] * l,
-    ux[1], uy[1], uz[1], uz[1] * l,
-    ux[2], uy[2], uz[2], uz[2] * l,
-    0.0, 0.0, 0.0, 1.0
-  }
+        # This sets 'view_from_clip', which only depends on the window size.
+        HandleReshapeEvent(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
 
-  glUniform3f(glGetUniformLocation(program_, "camera"),
-      model_from_view[3],
-      model_from_view[7],
-      model_from_view[11])
-  glUniform1f(glGetUniformLocation(program_, "exposure"),
-      use_luminance_ != NONE ? exposure_ * 1e-5 : exposure_)
-  glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"),
-      1, true, model_from_view)
-  glUniform3f(glGetUniformLocation(program_, "sun_direction"),
-      cos(sun_azimuth_angle_radians_) * sin(sun_zenith_angle_radians_),
-      sin(sun_azimuth_angle_radians_) * sin(sun_zenith_angle_radians_),
-      cos(sun_zenith_angle_radians_))
+    def HandleRedisplayEvent(self):
+        cos_z = cos(view_zenith_angle_radians)
+        sin_z = sin(view_zenith_angle_radians)
+        cos_a = cos(view_azimuth_angle_radians)
+        sin_a = sin(view_azimuth_angle_radians)
+        ux = np.array([-sin_a, cos_a, 0.0], np.float32)
+        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], np.float32)
+        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], np.float32)
+        l = self.view_distance_meters / kLengthUnitInMeters
 
-  glBindVertexArray(full_screen_quad_vao_)
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-  glBindVertexArray(0)
+        model_from_view = np.array(
+            [[ux[0], uy[0], uz[0], uz[0] * l],
+             [ux[1], uy[1], uz[1], uz[1] * l],
+             [ux[2], uy[2], uz[2], uz[2] * l],
+             [0.0, 0.0, 0.0, 1.0]], np.float32)
 
-  if (show_help_) {
-    std::stringstream help
-    help << "Mouse:\n"
-         << " drag, CTRL+drag, wheel: view and sun directions\n"
-         << "Keys:\n"
-         << " h: help\n"
-         << " s: solar spectrum (currently: "
-         << (use_constant_solar_spectrum_ ? "constant" : "realistic") << ")\n"
-         << " o: ozone (currently: " << (use_ozone_ ? "on" : "off") << ")\n"
-         << " t: combine textures (currently: "
-         << (use_combined_textures_ ? "on" : "off") << ")\n"
-         << " p: half precision (currently: "
-         << (use_half_precision_ ? "on" : "off") << ")\n"
-         << " l: use luminance (currently: "
-         << (use_luminance_ == PRECOMPUTED ? "precomputed" :
-             (use_luminance_ == APPROXIMATE ? "approximate" : "off")) << ")\n"
-         << " w: white balance (currently: "
-         << (do_white_balance_ ? "on" : "off") << ")\n"
-         << " +/-: increase/decrease exposure (" << exposure_ << ")\n"
-         << " 1-9: predefined views\n"
-    text_renderer_->SetColor(1.0, 0.0, 0.0)
-    text_renderer_->DrawText(help.str(), 5, 4)
-  }
+        location = glGetUniformLocation(self.program, "camera")
+        glUniform3f(location, uz * l)
 
-  glutSwapBuffers()
-  glutPostRedisplay()
-}
+        location = glGetUniformLocation(self.program, "exposure")
+        glUniform1f(location, (self.exposure * 1e-5) if self.use_luminance != Luminance.NONE else self.exposure)
 
-/*
-<p>The other event handling methods are also straightforward, and do not
-interact with the atmosphere model:
-*/
+        location = glGetUniformLocation(self.program_, "model_from_view")
+        glUniformMatrix4fv(location, 1, GL_TRUE, model_from_view)
 
-void Demo::HandleReshapeEvent(int viewport_width, int viewport_height) {
-  glViewport(0, 0, viewport_width, viewport_height)
+        sun_direction = np.array(
+            [cos(sun_azimuth_angle_radians) * sin(sun_zenith_angle_radians),
+             sin(sun_azimuth_angle_radians) * sin(sun_zenith_angle_radians),
+             cos(sun_zenith_angle_radians)], dtype=np.float32)
+        location = glGetUniformLocation(self.program, "sun_direction")
+        glUniform3f(location, sun_direction)
 
-  const float kFovY = 50.0 / 180.0 * kPi
-  const float kTanFovY = tan(kFovY / 2.0)
-  float aspect_ratio = static_cast<float>(viewport_width) / viewport_height
+        glBindVertexArray(full_screen_quad_vao)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+        glBindVertexArray(0)
 
-  # Transform matrix from clip space to camera space (i.e. the inverse of a
-  # GL_PROJECTION matrix).
-  float view_from_clip[16] = {
-    kTanFovY * aspect_ratio, 0.0, 0.0, 0.0,
-    0.0, kTanFovY, 0.0, 0.0,
-    0.0, 0.0, 0.0, -1.0,
-    0.0, 0.0, 1.0, 1.0
-  }
-  glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, true,
-      view_from_clip)
-}
+        glutSwapBuffers()
+        glutPostRedisplay()
 
-void Demo::HandleKeyboardEvent(unsigned char key) {
-  if (key == 27) {
-    glutDestroyWindow(window_id_)
-  } else if (key == 'h') {
-    show_help_ = !show_help_
-  } else if (key == 's') {
-    use_constant_solar_spectrum_ = !use_constant_solar_spectrum_
-  } else if (key == 'o') {
-    use_ozone_ = !use_ozone_
-  } else if (key == 't') {
-    use_combined_textures_ = !use_combined_textures_
-  } else if (key == 'p') {
-    use_half_precision_ = !use_half_precision_
-  } else if (key == 'l') {
-    switch (use_luminance_) {
-      case NONE: use_luminance_ = APPROXIMATE break
-      case APPROXIMATE: use_luminance_ = PRECOMPUTED break
-      case PRECOMPUTED: use_luminance_ = NONE break
-    }
-  } else if (key == 'w') {
-    do_white_balance_ = !do_white_balance_
-  } else if (key == '+') {
-    exposure_ *= 1.1
-  } else if (key == '-') {
-    exposure_ /= 1.1
-  } else if (key == '1') {
-    SetView(9000.0, 1.47, 0.0, 1.3, 3.0, 10.0)
-  } else if (key == '2') {
-    SetView(9000.0, 1.47, 0.0, 1.564, -3.0, 10.0)
-  } else if (key == '3') {
-    SetView(7000.0, 1.57, 0.0, 1.54, -2.96, 10.0)
-  } else if (key == '4') {
-    SetView(7000.0, 1.57, 0.0, 1.328, -3.044, 10.0)
-  } else if (key == '5') {
-    SetView(9000.0, 1.39, 0.0, 1.2, 0.7, 10.0)
-  } else if (key == '6') {
-    SetView(9000.0, 1.5, 0.0, 1.628, 1.05, 200.0)
-  } else if (key == '7') {
-    SetView(7000.0, 1.43, 0.0, 1.57, 1.34, 40.0)
-  } else if (key == '8') {
-    SetView(2.7e6, 0.81, 0.0, 1.57, 2.0, 10.0)
-  } else if (key == '9') {
-    SetView(1.2e7, 0.0, 0.0, 0.93, -2.0, 10.0)
-  }
-  if (key == 's' || key == 'o' || key == 't' || key == 'p' || key == 'l' ||
-      key == 'w') {
-    InitModel()
-  }
-}
+    def HandleReshapeEvent(self, viewport_width, viewport_height):
+        glViewport(0, 0, viewport_width, viewport_height)
 
-void Demo::HandleMouseClickEvent(
-    int button, int state, int mouse_x, int mouse_y) {
-  previous_mouse_x_ = mouse_x
-  previous_mouse_y_ = mouse_y
-  is_ctrl_key_pressed_ = (glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0
+        kFovY = 50.0 / 180.0 * kPi
+        kTanFovY = tan(kFovY / 2.0)
+        aspect_ratio = float(viewport_width) / float(viewport_height)
 
-  if ((button == 3) || (button == 4)) {
-    if (state == GLUT_DOWN) {
-      HandleMouseWheelEvent(button == 3 ? 1 : -1)
-    }
-  }
-}
+        view_from_clip = np.array([[kTanFovY * aspect_ratio, 0.0, 0.0, 0.0],
+                                   [0.0, kTanFovY, 0.0, 0.0],
+                                   [0.0, 0.0, 0.0, -1.0],
+                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
+        glUniformMatrix4fv(glGetUniformLocation(self.program, "view_from_clip"), 1, GL_TRUE, view_from_clip)
 
-void Demo::HandleMouseDragEvent(int mouse_x, int mouse_y) {
-  kScale = 500.0
-  if (is_ctrl_key_pressed_) {
-    sun_zenith_angle_radians_ -= (previous_mouse_y_ - mouse_y) / kScale
-    sun_zenith_angle_radians_ =
-        std::max(0.0, std::min(kPi, sun_zenith_angle_radians_))
-    sun_azimuth_angle_radians_ += (previous_mouse_x_ - mouse_x) / kScale
-  } else {
-    view_zenith_angle_radians_ += (previous_mouse_y_ - mouse_y) / kScale
-    view_zenith_angle_radians_ =
-        std::max(0.0, std::min(kPi / 2.0, view_zenith_angle_radians_))
-    view_azimuth_angle_radians_ += (previous_mouse_x_ - mouse_x) / kScale
-  }
-  previous_mouse_x_ = mouse_x
-  previous_mouse_y_ = mouse_y
-}
-
-void Demo::HandleMouseWheelEvent(int mouse_wheel_direction) {
-  if (mouse_wheel_direction < 0) {
-    view_distance_meters_ *= 1.05
-  } else {
-    view_distance_meters_ /= 1.05
-  }
-}
-
-void Demo::SetView(double view_distance_meters,
-    double view_zenith_angle_radians, double view_azimuth_angle_radians,
-    double sun_zenith_angle_radians, double sun_azimuth_angle_radians,
-    double exposure) {
-  view_distance_meters_ = view_distance_meters
-  view_zenith_angle_radians_ = view_zenith_angle_radians
-  view_azimuth_angle_radians_ = view_azimuth_angle_radians
-  sun_zenith_angle_radians_ = sun_zenith_angle_radians
-  sun_azimuth_angle_radians_ = sun_azimuth_angle_radians
-  exposure_ = exposure
-}
+    def SetView(self,
+                view_distance_meters,
+                view_zenith_angle_radians,
+                view_azimuth_angle_radians,
+                sun_zenith_angle_radians,
+                sun_azimuth_angle_radians,
+                exposure):
+        self.view_distance_meters = view_distance_meters
+        self.view_zenith_angle_radians = view_zenith_angle_radians
+        self.view_azimuth_angle_radians = view_azimuth_angle_radians
+        self.sun_zenith_angle_radians = sun_zenith_angle_radians
+        self.sun_azimuth_angle_radians = sun_azimuth_angle_radians
+        self.exposure = exposure

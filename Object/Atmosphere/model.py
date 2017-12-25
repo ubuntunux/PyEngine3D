@@ -56,6 +56,23 @@ def ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance, lam
     return k_r, k_g, k_b
 
 
+def ConvertSpectrumToLinearSrgb(wavelengths, spectrum):
+    x = 0.0
+    y = 0.0
+    z = 0.0
+    dlambda = 1
+    for L in range(kLambdaMin, kLambdaMax, dlambda):
+        value = Interpolate(wavelengths, spectrum, L)
+        x += CieColorMatchingFunctionTableValue(L, 1) * value
+        y += CieColorMatchingFunctionTableValue(L, 2) * value
+        z += CieColorMatchingFunctionTableValue(L, 3) * value
+
+    r = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[0] * x + XYZ_TO_SRGB[1] * y + XYZ_TO_SRGB[2] * z) * dlambda
+    g = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[3] * x + XYZ_TO_SRGB[4] * y + XYZ_TO_SRGB[5] * z) * dlambda
+    b = MAX_LUMINOUS_EFFICACY * (XYZ_TO_SRGB[6] * x + XYZ_TO_SRGB[7] * y + XYZ_TO_SRGB[8] * z) * dlambda
+    return r, g, b
+
+
 class DensityProfileLayer:
     def __init__(self, width, exp_term, exp_scale, linear_term, constant_term):
         self.width = width
@@ -245,9 +262,6 @@ class Model:
           scattering_texture_unit,
           irradiance_texture_unit,
           optional_single_mie_scattering_texture_unit=0):
-        pass
-
-    def ConvertSpectrumToLinearSrgb(wavelengths, spectrum, r, g, b):
         pass
 
     def Precompute(
