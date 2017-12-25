@@ -139,7 +139,19 @@ class Demo:
         glUniform2f(location, [tan(kSunAngularRadius), cos(kSunAngularRadius)])
 
         # This sets 'view_from_clip', which only depends on the window size.
-        HandleReshapeEvent(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
+        viewport_width, viewport_height = glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)
+        glViewport(0, 0, viewport_width, viewport_height)
+
+        kFovY = 50.0 / 180.0 * kPi
+        kTanFovY = tan(kFovY / 2.0)
+        aspect_ratio = float(viewport_width) / float(viewport_height)
+
+        view_from_clip = np.array([[kTanFovY * aspect_ratio, 0.0, 0.0, 0.0],
+                                   [0.0, kTanFovY, 0.0, 0.0],
+                                   [0.0, 0.0, 0.0, -1.0],
+                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
+
+        glUniformMatrix4fv(glGetUniformLocation(self.program, "view_from_clip"), 1, GL_TRUE, view_from_clip)
 
     def HandleRedisplayEvent(self):
         cos_z = cos(view_zenith_angle_radians)
@@ -179,19 +191,6 @@ class Demo:
 
         glutSwapBuffers()
         glutPostRedisplay()
-
-    def HandleReshapeEvent(self, viewport_width, viewport_height):
-        glViewport(0, 0, viewport_width, viewport_height)
-
-        kFovY = 50.0 / 180.0 * kPi
-        kTanFovY = tan(kFovY / 2.0)
-        aspect_ratio = float(viewport_width) / float(viewport_height)
-
-        view_from_clip = np.array([[kTanFovY * aspect_ratio, 0.0, 0.0, 0.0],
-                                   [0.0, kTanFovY, 0.0, 0.0],
-                                   [0.0, 0.0, 0.0, -1.0],
-                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
-        glUniformMatrix4fv(glGetUniformLocation(self.program, "view_from_clip"), 1, GL_TRUE, view_from_clip)
 
     def SetView(self,
                 view_distance_meters,
