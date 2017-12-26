@@ -48,12 +48,15 @@ class Shader:
     def get_vertex_shader_code(self, shader_version, external_macros={}):
         return self.__parsing_final_code__('VERTEX_SHADER', shader_version, external_macros)
 
+    def get_geometry_shader_code(self, shader_version, external_macros={}):
+        return self.__parsing_final_code__('GEOMETRY_SHADER', shader_version, external_macros)
+
     def get_fragment_shader_code(self, shader_version, external_macros={}):
         return self.__parsing_final_code__('FRAGMENT_SHADER', shader_version, external_macros)
 
     def __parsing_final_code__(self, shaderType, shader_version, external_macros={}):
-        if self.shader_code == "" or self.shader_code is None:
-            return
+        if self.shader_code == "" or self.shader_code is None or shaderType not in self.shader_code:
+            return ""
 
         # remove comment block
         shader_code = re.sub(reComment, "", self.shader_code)

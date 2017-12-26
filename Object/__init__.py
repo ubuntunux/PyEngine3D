@@ -1,3 +1,4 @@
+from .Atmosphere import *
 from .RenderInfo import RenderInfo, RenderInstanceInfo
 from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
 from .MaterialInstance import MaterialInstance

@@ -6,6 +6,9 @@ from OpenGL.GL.shaders import glDeleteShader
 
 import numpy as np
 
+from Common import logger
+from App import CoreManager
+
 from .constants import *
 from .model import *
 
@@ -16,8 +19,8 @@ class Luminance:
     PRECOMPUTED = 2
 
 
-class Demo:
-    def __init__(self, viewport_width, viewport_height):
+class Atmosphere:
+    def __init__(self):
         self.use_constant_solar_spectrum = False
         self.use_ozone = True
         self.use_combined_textures = True
@@ -38,7 +41,7 @@ class Demo:
         self.InitModel()
 
     def InitModel(self):
-        max_sun_zenith_angle = (102.0 if use_half_precision else 120.0) / 180.0 * kPi
+        max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi
 
         rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
         mie_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
@@ -58,15 +61,15 @@ class Demo:
             L = float(i) * 1e-3  # micro-meters
             mie = kMieAngstromBeta / kMieScaleHeight * math.pow(L, -kMieAngstromAlpha)
             wavelengths.append(i)
-            if use_constant_solar_spectrum:
+            if self.use_constant_solar_spectrum:
                 solar_irradiance.append(kConstantSolarIrradiance)
             else:
                 solar_irradiance.append(kSolarIrradiance[int((i - kLambdaMin) / 10)])
             rayleigh_scattering.append(kRayleigh * math.pow(L, -4))
             mie_scattering.append(mie * kMieSingleScatteringAlbedo)
             mie_extinction.append(mie)
-            if use_ozone:
-                absorption_extinction.append(kMaxOzoneNumberDensity * kOzoneCrossSection[int((l - kLambdaMin) / 10)])
+            if self.use_ozone:
+                absorption_extinction.append(kMaxOzoneNumberDensity * kOzoneCrossSection[int((i - kLambdaMin) / 10)])
             else:
                 absorption_extinction.append(0.0)
             ground_albedo.append(kGroundAlbedo)
@@ -74,6 +77,10 @@ class Demo:
         rayleigh_density = [rayleigh_layer, ]
         mie_density = [mie_layer, ]
         num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
+
+        resource_manager = CoreManager.instance().resource_manager
+        definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
+        functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
 
         self.model = Model(wavelengths,
                            solar_irradiance,
@@ -93,8 +100,9 @@ class Demo:
                            kLengthUnitInMeters,
                            num_precomputed_wavelengths,
                            self.use_combined_textures,
-                           self.use_half_precision)
-        self.model.reset()
+                           self.use_half_precision,
+                           definitions_glsl,
+                           functions_glsl)
         self.model.Init()
 
         vertex_shader = glCreateShader(GL_VERTEX_SHADER)
@@ -102,7 +110,7 @@ class Demo:
         glShaderSource(vertex_shader, vertex_shader_source)
         glCompileShader(vertex_shader)
 
-        fragment_shader_source = "#version 330\n"
+        fragment_shader_source = ""
         if self.use_luminance != NONE:
             fragment_shader_source += "#define USE_LUMINANCE\n"
         fragment_shader_source += demo_glsl

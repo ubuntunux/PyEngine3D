@@ -1,6 +1,3 @@
-#include "definitions.glsl"
-
-
 Number ClampCosine(Number mu) {
   return clamp(mu, Number(-1.0), Number(1.0));
 }

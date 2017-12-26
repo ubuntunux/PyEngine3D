@@ -1,4 +1,3 @@
-
 #define Length float
 #define Wavelength float
 #define Angle float

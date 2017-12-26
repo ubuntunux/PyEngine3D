@@ -8,7 +8,7 @@ import time as timeModule
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess, RenderInfo
+from Object import Atmosphere, SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess, RenderInfo
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
@@ -89,6 +89,7 @@ class SceneManager(Singleton):
         self.mainCamera = self.addCamera()
         self.mainLight = self.addLight()
         self.mainLightProbe = self.addLightProbe()
+        self.atmosphere = Atmosphere()
         self.sky = Sky()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
@@ -359,3 +360,5 @@ class SceneManager(Singleton):
 
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
+
+        self.atmosphere.update()

@@ -579,6 +579,9 @@ class MaterialLoader(ResourceLoader):
         shader_version = self.resource_manager.get_shader_version()
         if shader:
             vertex_shader_code = shader.get_vertex_shader_code(shader_version, macros)
+            geometry_shader_code = shader.get_geometry_shader_code(shader_version, macros)
+            if geometry_shader_code:
+                print('There are geometry_shader_code.')
             fragment_shader_code = shader.get_fragment_shader_code(shader_version, macros)
             final_macros = shader.parsing_macros(vertex_shader_code, fragment_shader_code)
             uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
@@ -599,6 +602,7 @@ class MaterialLoader(ResourceLoader):
             material_datas = dict(
                 shader_name=shader_name,
                 vertex_shader_code=vertex_shader_code,
+                geometry_shader_code=geometry_shader_code,
                 fragment_shader_code=fragment_shader_code,
                 include_files=include_files,
                 uniforms=uniforms,
