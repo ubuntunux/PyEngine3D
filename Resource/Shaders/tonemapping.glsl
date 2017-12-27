@@ -5,7 +5,7 @@
 uniform sampler2D texture_diffuse;
 uniform float exposure;
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -57,4 +57,4 @@ void main() {
     fs_output.xyz *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
     fs_output.a = 1.0;
 }
-#endif // FRAGMENT_SHADER
+#endif // GL_FRAGMENT_SHADER

@@ -13,7 +13,7 @@ uniform sampler2D texture_noise;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_linear_depth;
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -75,4 +75,4 @@ void main() {
     fs_output.w = 1.0;
 
 }
-#endif // FRAGMENT_SHADER
+#endif // GL_FRAGMENT_SHADER

@@ -1,3 +1,4 @@
+import codecs
 import math
 import copy
 import os
@@ -22,7 +23,8 @@ from OpenGL.GL import *
 
 from Common import logger, log_level
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, Font
-from OpenGLContext import CreateTexture, Shader, Material, Texture2D, Texture3D, TextureCube
+from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
+from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS, generate_font_data
@@ -470,7 +472,7 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
-    resource_version = 0.2
+    resource_version = 0.6
     fileExt = '.glsl'
     shader_version = "#version 430 core"
 
@@ -480,11 +482,22 @@ class ShaderLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource and resource.is_need_to_load():
-            shader = Shader(resource.name, resource.meta_data.resource_filepath)
-            resource.set_data(shader)
-            resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
-            self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
-            return True
+            file_path = resource.meta_data.resource_filepath
+            if os.path.exists(file_path):
+                shader_code = ""
+                try:
+                    f = codecs.open(file_path, mode='r', encoding='utf-8')
+                    shader_code = f.read()
+                    f.close()
+                except:
+                    logger.error(traceback.format_exc())
+                    logger.error("Failed %s file open" % file_path)
+
+                shader = Shader(resource.name, shader_code)
+                resource.set_data(shader)
+                resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
+                self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
+                return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
@@ -502,7 +515,7 @@ class MaterialLoader(ResourceLoader):
     resource_dir_name = 'Materials'
     resource_type_name = 'Material'
     fileExt = '.mat'
-    resource_version = 0.1
+    resource_version = 0.6
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def __init__(self, core_manager, root_path):
@@ -578,67 +591,63 @@ class MaterialLoader(ResourceLoader):
         shader = self.resource_manager.getShader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
         if shader:
-            vertex_shader_code = shader.get_vertex_shader_code(shader_version, macros)
-            geometry_shader_code = shader.get_geometry_shader_code(shader_version, macros)
-            if geometry_shader_code:
-                print('There are geometry_shader_code.')
-            fragment_shader_code = shader.get_fragment_shader_code(shader_version, macros)
-            final_macros = shader.parsing_macros(vertex_shader_code, fragment_shader_code)
-            uniforms = shader.parsing_uniforms(vertex_shader_code, fragment_shader_code)
-            material_components = shader.parsing_material_components(vertex_shader_code, fragment_shader_code)
+            shader_codes = shader.get_shader_codes(shader_version, macros)
+            if shader_codes is not None:
+                shader_code_list = shader_codes.values()
+                final_macros = parsing_macros(shader_code_list)
+                uniforms = parsing_uniforms(shader_code_list)
+                material_components = parsing_material_components(shader_code_list)
 
-            final_material_name = self.generate_material_name(shader_name, final_macros)
+                final_material_name = self.generate_material_name(shader_name, final_macros)
 
-            # Check the material_name with final_material_name.
-            if material_name != final_material_name:
-                logger.warn("Generated material name is changed. : %s" % final_material_name)
-                self.linked_material_map[material_name] = final_material_name
-                self.delete_resource(material_name)
+                # Check the material_name with final_material_name.
+                if material_name != final_material_name:
+                    logger.warn("Generated material name is changed. : %s" % final_material_name)
+                    self.linked_material_map[material_name] = final_material_name
+                    self.delete_resource(material_name)
 
-            include_files = {}
-            for include_file in shader.include_files:
-                include_files[include_file] = get_modify_time_of_file(include_file)
+                include_files = {}
+                for include_file in shader.include_files:
+                    include_files[include_file] = get_modify_time_of_file(include_file)
 
-            material_datas = dict(
-                shader_name=shader_name,
-                vertex_shader_code=vertex_shader_code,
-                geometry_shader_code=geometry_shader_code,
-                fragment_shader_code=fragment_shader_code,
-                include_files=include_files,
-                uniforms=uniforms,
-                material_components=material_components,
-                binary_data=None,
-                binary_format=None,
-                macros=final_macros
-            )
-            # create material
-            material = Material(final_material_name, material_datas)
+                material_datas = dict(
+                    shader_name=shader_name,
+                    shader_codes=shader_codes,
+                    include_files=include_files,
+                    uniforms=uniforms,
+                    material_components=material_components,
+                    binary_data=None,
+                    binary_format=None,
+                    macros=final_macros
+                )
+                # create material
+                material = Material(final_material_name, material_datas)
 
-            if material and material.valid:
-                resource = self.getResource(final_material_name, noWarn=True)
-                if resource is None:
-                    resource = self.create_resource(final_material_name)
+                if material and material.valid:
+                    resource = self.getResource(final_material_name, noWarn=True)
+                    if resource is None:
+                        resource = self.create_resource(final_material_name)
 
-                # set include files meta datas
-                resource.meta_data.include_files = material_datas.get('include_files', {})
+                    # set include files meta datas
+                    resource.meta_data.include_files = material_datas.get('include_files', {})
 
-                # write material to file, and regist to resource manager
-                shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)
-                if shader_meta_data:
-                    source_filepath = shader_meta_data.resource_filepath
-                else:
-                    source_filepath = ""
+                    # write material to file, and regist to resource manager
+                    shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)
+                    if shader_meta_data:
+                        source_filepath = shader_meta_data.resource_filepath
+                    else:
+                        source_filepath = ""
 
-                # save binary data of shader.
-                binary_format, binary_data = material.save_to_binary()
-                if binary_format is not None and binary_data is not None:
-                    material_datas['binary_format'] = binary_format
-                    material_datas['binary_data'] = binary_data
+                    # save binary data of shader.
+                    binary_format, binary_data = material.save_to_binary()
+                    if binary_format is not None and binary_data is not None:
+                        material_datas['binary_format'] = binary_format
+                        material_datas['binary_data'] = binary_data
 
-                # Done : save material data
-                self.save_resource_data(resource, material_datas, source_filepath)
-                resource.set_data(material)
-                return material
+                    # Done : save material data
+                    self.save_resource_data(resource, material_datas, source_filepath)
+                    resource.set_data(material)
+                    return material
         logger.error("Failed to generate_new_material %s." % material_name)
         return None
 

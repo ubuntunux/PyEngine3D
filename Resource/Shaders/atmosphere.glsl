@@ -9,7 +9,7 @@ uniform sampler2D texture_linear_depth;
     uniform samplerCube texture_cube;
 #endif
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 

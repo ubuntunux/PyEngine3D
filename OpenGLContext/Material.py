@@ -22,9 +22,7 @@ class Material:
         self.valid = False
         logger.info("Load %s material." % material_name)
 
-        vertex_shader_code = material_datas.get('vertex_shader_code', "")
-        geometry_shader_code = material_datas.get('geometry_shader_code', "")
-        fragment_shader_code = material_datas.get('fragment_shader_code', "")
+        shader_codes = material_datas.get('shader_codes')
         binary_format = material_datas.get('binary_format')
         binary_data = material_datas.get('binary_data')
         uniforms = material_datas.get('uniforms', [])
@@ -46,7 +44,7 @@ class Material:
                 logger.error("%s material has been failed to compile from binary" % self.name)
             
         if not self.valid:
-            self.compile_from_source(vertex_shader_code, geometry_shader_code, fragment_shader_code)
+            self.compile_from_source(shader_codes)
             self.valid = self.check_validate() and self.check_linked()
             if not self.valid:
                 logger.error("%s material has been failed to compile from source" % self.name)
@@ -93,32 +91,30 @@ class Material:
         glProgramParameteri(self.program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE)
         glProgramBinary(self.program, binary_format.value, binary_data, len(binary_data))
 
-    def compile_from_source(self, vertexShaderCode, geometry_shader_code, fragmentShaderCode):
-        vertexShader = self.compile(GL_VERTEX_SHADER, vertexShaderCode)
-        geometryShader = self.compile(GL_GEOMETRY_SHADER, geometry_shader_code) if geometry_shader_code else None
-        fragmentShader = self.compile(GL_FRAGMENT_SHADER, fragmentShaderCode)
-
-        if vertexShader is None or fragmentShader is None:
-            return False
+    def compile_from_source(self, shader_codes: dict):
+        """
+        :param shader_codes: {GL_VERTEX_SHADER:code_string, GL_FRAGMENT_SHADER:code_string, }
+        """
+        shaders = []
+        for shader_type in shader_codes:
+            shader = self.compile(shader_type, shader_codes[shader_type])
+            if shader is not None:
+                logger.info("Compile %s %s." % (self.name, shader_type))
+                shaders.append(shader)
 
         self.program = glCreateProgram()
+
         # glProgramParameteri(self.program, GL_PROGRAM_SEPARABLE, GL_TRUE)
         glProgramParameteri(self.program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE)
 
-        glAttachShader(self.program, vertexShader)
-        if geometryShader:
-            glAttachShader(self.program, geometryShader)
-        glAttachShader(self.program, fragmentShader)
+        for shader in shaders:
+            glAttachShader(self.program, shader)
+
         glLinkProgram(self.program)
 
-        # delete shader
-        glDetachShader(self.program, vertexShader)
-        glDeleteShader(vertexShader)
-        glDetachShader(self.program, fragmentShader)
-        glDeleteShader(fragmentShader)
-        if geometryShader:
-            glDetachShader(self.program, geometryShader)
-            glDeleteShader(self.program, geometryShader)
+        for shader in shaders:
+            glDetachShader(self.program, shader)
+            glDeleteShader(shader)
 
     def create_uniform_buffers(self, uniforms):
         # create uniform buffers from source code
@@ -141,6 +137,9 @@ class Material:
         :param shaderType: GL_VERTEX_SHADER, GL_FRAGMENT_SHADER
         :param shader_code: string
         """
+        if shader_code == "" or shader_code is None:
+            return None
+
         try:
             # Compile shaders
             shader = glCreateShader(shaderType)

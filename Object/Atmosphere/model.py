@@ -212,7 +212,7 @@ class Model:
                   self.functions_glsl]
         return "\n".join(header)
 
-    def Init(self, num_scattering_orders = 4):
+    def Init(self, num_scattering_orders=4):
         if self.num_precomputed_wavelengths <= 3:
             lambdas = [kLambdaR, kLambdaG, kLambdaB]
             luminance_from_radiance = Matrix3()

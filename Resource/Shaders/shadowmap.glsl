@@ -8,10 +8,10 @@
 
 #include "default_material.glsl"
 
-//----------- FRAGMENT_SHADER ---------------//
+//----------- GL_FRAGMENT_SHADER ---------------//
 
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 

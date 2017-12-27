@@ -14,9 +14,9 @@ struct VERTEX_OUTPUT
 #endif
 };
 
-//----------- VERTEX_SHADER ---------------//
+//----------- GL_VERTEX_SHADER ---------------//
 
-#ifdef VERTEX_SHADER
+#ifdef GL_VERTEX_SHADER
     layout (location = 0) in vec3 vs_in_position;
     layout (location = 1) in vec4 vs_in_color;
     layout (location = 2) in vec3 vs_in_normal;
@@ -52,7 +52,7 @@ void main() {
 
 // FRAGMENT SHADER
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
     layout (location = 0) in vec3 vs_out_world_position;
 #if SKELETAL
     layout (location = 1) in vec4 vs_out_bone_indicies;

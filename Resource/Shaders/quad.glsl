@@ -4,7 +4,7 @@ struct VERTEX_OUTPUT
     vec3 position;
 };
 
-#ifdef VERTEX_SHADER
+#ifdef GL_VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
 layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;
@@ -18,4 +18,4 @@ void main() {
     vs_output.position = vs_in_position;
     gl_Position = vec4(vs_in_position, 1.0);
 }
-#endif // VERTEX_SHADER
+#endif // GL_VERTEX_SHADER

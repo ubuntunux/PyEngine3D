@@ -36,9 +36,12 @@ class Atmosphere:
         self.exposure = 10.0
 
         self.model = None
-        self.program = 0
+        self.program = -1
 
-        self.InitModel()
+        # self.InitModel()
+
+    def update(self):
+        pass
 
     def InitModel(self):
         max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi

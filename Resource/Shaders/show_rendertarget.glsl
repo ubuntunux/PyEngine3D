@@ -6,7 +6,7 @@ uniform bool copy_alpha;
 uniform bool mirror_x;
 uniform sampler2D texture_source;
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -25,4 +25,4 @@ void main() {
         fs_output.w = 1.0f;
     }
 }
-#endif // FRAGMENT_SHADER
+#endif // GL_FRAGMENT_SHADER

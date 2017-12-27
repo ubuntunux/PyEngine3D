@@ -88,7 +88,7 @@ vec4 SampleScreenColor(sampler2D texPrevSceneColor, vec2 UV)
     return OutColor;
 }
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 in VERTEX_OUTPUT vs_output;
 out vec4 fs_output;
 
@@ -161,4 +161,4 @@ void main() {
     fs_output.w *= RoughnessFade;
 }
 
-#endif // FRAGMENT_SHADER
+#endif // GL_FRAGMENT_SHADER

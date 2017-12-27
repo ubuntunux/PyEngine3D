@@ -4,7 +4,7 @@
 
 uniform sampler2D texture_depth;
 
-#ifdef FRAGMENT_SHADER
+#ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec2 fs_output;
 
