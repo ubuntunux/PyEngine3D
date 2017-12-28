@@ -35,6 +35,9 @@ from . import Collada, OBJ, loadDDS, generate_font_data
 # -----------------------#
 class MetaData:
     def __init__(self, resource_version, resource_filepath):
+        filepath, ext = os.path.splitext(resource_filepath)
+        resource_filepath = filepath.replace(".", os.sep) + ext
+
         self.filepath = os.path.splitext(resource_filepath)[0] + ".meta"
         self.resource_version = resource_version
         self.old_resource_version = -1
@@ -60,6 +63,9 @@ class MetaData:
             self.save_meta_file()
 
     def set_resource_meta_data(self, resource_filepath, save=True):
+        filepath, ext = os.path.splitext(resource_filepath)
+        resource_filepath = filepath.replace(".", os.sep) + ext
+
         resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.changed |= self.resource_filepath != resource_filepath
         self.changed |= self.resource_modify_time != resource_modify_time
@@ -70,6 +76,9 @@ class MetaData:
             self.save_meta_file()
 
     def set_source_meta_data(self, source_filepath, save=True):
+        filepath, ext = os.path.splitext(source_filepath)
+        source_filepath = filepath.replace(".", os.sep) + ext
+
         source_modify_time = get_modify_time_of_file(source_filepath)
         self.changed |= self.source_filepath != source_filepath
         self.changed |= self.source_modify_time != source_modify_time
@@ -189,7 +198,7 @@ class ResourceLoader(object):
     def __init__(self, core_manager, root_path):
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
-        self.scene_manager = core_manager.sceneManager
+        self.scene_manager = core_manager.scene_manager
         self.resource_path = os.path.join(root_path, self.resource_dir_name)
         check_directory_and_mkdir(self.resource_path)
 
@@ -422,12 +431,12 @@ class ResourceLoader(object):
         return None
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
-        save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
-        # save_filepath = resource.name.replace('.', os.sep)
-        # save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
-        # save_dir = os.path.dirname(save_filepath)
-        # if not os.path.exists(save_dir):
-        #     os.makedirs(save_dir)
+        #save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
+        save_filepath = resource.name.replace('.', os.sep)
+        save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
+        save_dir = os.path.dirname(save_filepath)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
         if self.save_data_to_file(save_filepath, save_data):
             # refresh meta data because resource file saved.
@@ -591,7 +600,7 @@ class MaterialLoader(ResourceLoader):
         shader = self.resource_manager.getShader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
         if shader:
-            shader_codes = shader.get_shader_codes(shader_version, macros)
+            shader_codes = shader.generate_shader_codes(shader_version, macros)
             if shader_codes is not None:
                 shader_code_list = shader_codes.values()
                 final_macros = parsing_macros(shader_code_list)
@@ -1138,7 +1147,7 @@ class ResourceManager(Singleton):
 
     def initialize(self, core_manager, root_path=""):
         self.core_manager = core_manager
-        self.scene_manager = core_manager.sceneManager
+        self.scene_manager = core_manager.scene_manager
 
         self.root_path = root_path or self.PathResources
         check_directory_and_mkdir(self.root_path)

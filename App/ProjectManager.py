@@ -9,7 +9,7 @@ from Utilities import Singleton, GetClassName, Config
 class ProjectManager(Singleton):
     def __init__(self):
         self.core_manager = None
-        self.sceneManager = None
+        self.scene_manager = None
         self.resource_manager = None
         self.project_name = ""
         self.project_dir = ""
@@ -19,7 +19,7 @@ class ProjectManager(Singleton):
 
     def initialize(self, core_manager, project_filename=""):
         self.core_manager = core_manager
-        self.sceneManager = core_manager.sceneManager
+        self.scene_manager = core_manager.scene_manager
         self.resource_manager = core_manager.resource_manager
 
         # default project
@@ -89,7 +89,7 @@ class ProjectManager(Singleton):
     def save_project(self):
         try:
             if self.config and self.project_filename != self.resource_manager.DefaultProjectFile:
-                main_camera = self.core_manager.sceneManager.mainCamera
+                main_camera = self.core_manager.scene_manager.main_camera
                 if main_camera:
                     main_camera.write_to_config(self.config)
                 self.config.save()

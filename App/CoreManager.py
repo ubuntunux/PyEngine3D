@@ -75,7 +75,7 @@ class CoreManager(Singleton):
         self.renderer = None
         self.rendertarget_manager = None
         self.font_manager = None
-        self.sceneManager = None
+        self.scene_manager = None
         self.projectManager = None
         self.config = None
 
@@ -114,7 +114,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = RenderTargetManager.instance()
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
-        self.sceneManager = SceneManager.instance()
+        self.scene_manager = SceneManager.instance()
         self.projectManager = ProjectManager.instance()
 
         # check innvalid project
@@ -152,7 +152,7 @@ class CoreManager(Singleton):
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.renderer.resizeScene(width, height)
-        self.sceneManager.initialize(self)
+        self.scene_manager.initialize(self)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
@@ -221,9 +221,9 @@ class CoreManager(Singleton):
         self.send(COMMAND.TRANS_OBJECT_INFO, (object_name, object_class_name))
 
     def sendObjectList(self):
-        obj_names = self.sceneManager.getObjectNames()
+        obj_names = self.scene_manager.getObjectNames()
         for obj_name in obj_names:
-            obj = self.sceneManager.getObject(obj_name)
+            obj = self.scene_manager.getObject(obj_name)
             self.sendObjectInfo(obj)
 
     def notifyChangeResolution(self, screen_info):
@@ -268,8 +268,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.OPEN_PROJECT.value] = lambda value: self.projectManager.open_project_next_time(value)
         self.commands[COMMAND.SAVE_PROJECT.value] = lambda value: self.projectManager.save_project()
         # scene
-        self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.sceneManager.new_scene()
-        self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.sceneManager.save_scene()
+        self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.scene_manager.new_scene()
+        self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.scene_manager.save_scene()
         # view mode
         self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.setViewMode(
             COMMAND.VIEWMODE_WIREFRAME)
@@ -328,22 +328,22 @@ class CoreManager(Singleton):
 
         # Scene object commands
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
-        self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.sceneManager.deleteObject(value)
+        self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.deleteObject(value)
 
         def cmd_request_object_attribute(value):
             objName, objTypeName = value
-            attribute = self.sceneManager.getObjectAttribute(objName, objTypeName)
+            attribute = self.scene_manager.getObjectAttribute(objName, objTypeName)
             if attribute:
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
             objectName, objectType, attributeName, attributeValue, attribute_index = value
-            self.sceneManager.setObjectAttribute(objectName, objectType, attributeName, attributeValue, attribute_index)
+            self.scene_manager.setObjectAttribute(objectName, objectType, attributeName, attributeValue, attribute_index)
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
 
-        self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.sceneManager.setSelectedObject(value)
-        self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.sceneManager.setObjectFocus(value)
+        self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.scene_manager.setSelectedObject(value)
+        self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.scene_manager.setObjectFocus(value)
 
         def cmd_set_anti_aliasing(anti_aliasing_index):
             self.renderer.postprocess.set_anti_aliasing(anti_aliasing_index)
@@ -399,7 +399,7 @@ class CoreManager(Singleton):
                         pos = [np.random.uniform(-10, 10) for x in range(3)]
                         objName = np.random.choice(object_name_list)
                         model = self.resource_manager.getModel(objName)
-                        obj_instance = self.sceneManager.addObject(model=sphere, pos=pos)
+                        obj_instance = self.scene_manager.addObject(model=sphere, pos=pos)
                         if obj_instance:
                             self.sendObjectInfo(obj_instance)
             elif Keyboard._2 == event_value:
@@ -408,10 +408,10 @@ class CoreManager(Singleton):
                 self.gc_collect()
             elif Keyboard.DELETE == event_value:
                 # Test Code
-                obj_names = set(self.sceneManager.getObjectNames())
+                obj_names = set(self.scene_manager.getObjectNames())
                 # clear static mesh
-                self.sceneManager.clear_actors()
-                current_obj_names = set(self.sceneManager.getObjectNames())
+                self.scene_manager.clear_actors()
+                current_obj_names = set(self.scene_manager.getObjectNames())
                 for obj_name in (obj_names - current_obj_names):
                     self.notifyDeleteObject(obj_name)
 
@@ -421,7 +421,7 @@ class CoreManager(Singleton):
         btnL, btnM, btnR = self.game_backend.get_mouse_pressed()
 
         # get camera
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         cameraTransform = camera.transform
         move_speed = camera.move_speed * self.delta
         pan_speed = camera.pan_speed * self.delta
@@ -491,7 +491,7 @@ class CoreManager(Singleton):
         self.updateCamera()
 
         # update actors
-        self.sceneManager.update_scene(delta)
+        self.scene_manager.update_scene(delta)
         self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
 
         # render scene
@@ -537,10 +537,10 @@ class CoreManager(Singleton):
         self.font_manager.log("Present : %.2f ms" % self.avg_presentTime)
 
         # selected object transform info
-        selectedObject = self.sceneManager.getSelectedObject()
-        if selectedObject:
-            self.font_manager.log("Selected Object : %s" % selectedObject.name)
-            self.font_manager.log(selectedObject.transform.getTransformInfos())
+        selected_object = self.scene_manager.getSelectedObject()
+        if selected_object:
+            self.font_manager.log("Selected Object : %s" % selected_object.name)
+            self.font_manager.log(selected_object.transform.getTransformInfos())
         self.gpuTime = (time.perf_counter() - startTime) * 1000.0
 
         if self.need_to_gc_collect:

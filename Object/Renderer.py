@@ -27,7 +27,7 @@ class Renderer(Singleton):
         self.core_manager = None
         self.resource_manager = None
         self.font_manager = None
-        self.sceneManager = None
+        self.scene_manager = None
         self.render_option_manager = None
         self.rendertarget_manager = None
         self.framebuffer_manager = None
@@ -76,7 +76,7 @@ class Renderer(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.render_option_manager = core_manager.render_option_manager
         self.font_manager = core_manager.font_manager
-        self.sceneManager = core_manager.sceneManager
+        self.scene_manager = core_manager.scene_manager
         self.rendertarget_manager = core_manager.rendertarget_manager
         self.postprocess = PostProcess()
         self.postprocess.initialize()
@@ -175,8 +175,8 @@ class Renderer(Singleton):
         self.aspect = float(self.width) / float(self.height)
 
         # update perspective and ortho
-        self.sceneManager.set_camera_aspect(self.aspect)
-        self.sceneManager.update_camera_projection_matrix()
+        self.scene_manager.set_camera_aspect(self.aspect)
+        self.scene_manager.update_camera_projection_matrix()
 
         # resize render targets
         if changed:
@@ -194,7 +194,7 @@ class Renderer(Singleton):
 
     def projection_view(self):
         # Legacy opengl pipeline - set perspective view
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
@@ -207,14 +207,14 @@ class Renderer(Singleton):
             logger.info("Current render target : %s" % self.debug_rendertarget.name)
 
     def render_light_probe(self, force=False):
-        if not force and self.sceneManager.mainLightProbe.isValid:
+        if not force and self.scene_manager.main_light_probe.isValid:
             return
 
         logger.info("Rendering Cube map")
 
-        self.sceneManager.mainLightProbe.isValid = True
+        self.scene_manager.main_light_probe.isValid = True
 
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         old_width, old_height = self.width, self.height
         old_pos = camera.transform.getPos().copy()
         old_rot = camera.transform.getRot().copy()
@@ -243,7 +243,7 @@ class Renderer(Singleton):
             # render
             self.renderScene()
 
-            dst_texture = self.sceneManager.mainLightProbe.get_texture(cube_dir)
+            dst_texture = self.scene_manager.main_light_probe.get_texture(cube_dir)
 
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
@@ -254,8 +254,8 @@ class Renderer(Singleton):
             # generate mipmaps per face
             dst_texture.generate_mipmap()
 
-        self.sceneManager.mainLightProbe.generate_texture_faces()
-        pos = self.sceneManager.mainLightProbe.transform.getPos()
+        self.scene_manager.main_light_probe.generate_texture_faces()
+        pos = self.scene_manager.main_light_probe.transform.getPos()
         render(pos, 0.0, math.pi * 0.0, 0.0, "back")
         render(pos, 0.0, math.pi * 0.5, 0.0, "left")
         render(pos, 0.0, math.pi * 1.0, 0.0, "front")
@@ -263,7 +263,7 @@ class Renderer(Singleton):
         render(pos, math.pi * -0.5, math.pi * 1.0, 0.0, "top")
         render(pos, math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
 
-        self.sceneManager.mainLightProbe.generate_texture_probe()
+        self.scene_manager.main_light_probe.generate_texture_probe()
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
@@ -283,8 +283,8 @@ class Renderer(Singleton):
         startTime = timeModule.perf_counter()
 
         # bind scene constants
-        camera = self.sceneManager.mainCamera
-        light = self.sceneManager.mainLight
+        camera = self.scene_manager.main_camera
+        light = self.scene_manager.main_light
 
         if not camera or not light:
             return
@@ -384,13 +384,13 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
 
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
         # render background normal, depth
         material_instance = self.resource_manager.getMaterialInstance("pre_pass")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.PRE_PASS,
-                           self.sceneManager.static_solid_render_infos, material_instance)
+                           self.scene_manager.static_solid_render_infos, material_instance)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -403,7 +403,7 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
-                               self.sceneManager.skeleton_solid_render_infos, material_instance)
+                               self.scene_manager.skeleton_solid_render_infos, material_instance)
 
     def render_deferred(self):
         framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
@@ -412,12 +412,12 @@ class Renderer(Singleton):
                                                                 depth_texture=RenderTargets.DEPTHSTENCIL)
         framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
 
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
         # render static gbuffer
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
-                           self.sceneManager.static_solid_render_infos)
+                           self.scene_manager.static_solid_render_infos)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -432,7 +432,7 @@ class Renderer(Singleton):
                                                       RenderTargets.VELOCITY,
                                                       depth_texture=RenderTargets.DEPTHSTENCIL)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.GBUFFER,
-                               self.sceneManager.skeleton_solid_render_infos)
+                               self.scene_manager.skeleton_solid_render_infos)
 
     def render_shadow(self):
         self.framebuffer_shadow.set_color_textures()
@@ -440,17 +440,17 @@ class Renderer(Singleton):
         self.framebuffer_shadow.bind_framebuffer()
         self.framebuffer.clear(GL_DEPTH_BUFFER_BIT)
 
-        light = self.sceneManager.mainLight
+        light = self.scene_manager.main_light
         self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection, light.shadow_view_projection)
 
         material_instance = self.resource_manager.getMaterialInstance("shadowmap")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW,
-                           self.sceneManager.static_solid_render_infos, material_instance)
+                           self.scene_manager.static_solid_render_infos, material_instance)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
             material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
-                               self.sceneManager.skeleton_solid_render_infos, material_instance)
+                               self.scene_manager.skeleton_solid_render_infos, material_instance)
             self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
@@ -477,7 +477,7 @@ class Renderer(Singleton):
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
 
     def render_solid(self):
-        camera = self.sceneManager.mainCamera
+        camera = self.scene_manager.main_camera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection)
 
         # render solid
@@ -486,7 +486,7 @@ class Renderer(Singleton):
             if RenderOption.RENDER_LIGHT_PROBE:
                 texture_probe = self.resource_manager.getTexture('field')
             else:
-                texture_probe = self.sceneManager.mainLightProbe.texture_probe
+                texture_probe = self.scene_manager.main_light_probe.texture_probe
             self.postprocess.bind_quad()
             self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
                                                      RenderTargets.MATERIAL,
@@ -498,9 +498,9 @@ class Renderer(Singleton):
                                                      texture_probe)
         elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
-            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.sceneManager.static_solid_render_infos)
+            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.scene_manager.static_solid_render_infos)
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
-                               self.sceneManager.skeleton_solid_render_infos)
+                               self.scene_manager.skeleton_solid_render_infos)
 
     def render_translucent(self):
         # atmospherer
@@ -511,9 +511,9 @@ class Renderer(Singleton):
         # render translucent
         glEnable(GL_DEPTH_TEST)
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING,
-                           self.sceneManager.static_translucent_render_infos)
+                           self.scene_manager.static_translucent_render_infos)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
-                           self.sceneManager.skeleton_translucent_render_infos)
+                           self.scene_manager.skeleton_translucent_render_infos)
 
     def render_actors(self, render_group, render_mode, render_infos, material_instance=None):
         if len(render_infos) < 1:
@@ -525,7 +525,7 @@ class Renderer(Singleton):
         if RenderOption.RENDER_LIGHT_PROBE:
             texture_probe = self.resource_manager.getTexture('field')
         else:
-            texture_probe = self.sceneManager.mainLightProbe.texture_probe
+            texture_probe = self.scene_manager.main_light_probe.texture_probe
 
         material = None
         last_actor = None
@@ -589,7 +589,7 @@ class Renderer(Singleton):
         glDisable(GL_CULL_FACE)
         mesh = self.resource_manager.getMesh("Cube")
         material_instance = self.resource_manager.getMaterialInstance("debug_bone")
-        static_actors = self.sceneManager.static_actors[:]
+        static_actors = self.scene_manager.static_actors[:]
 
         if mesh and material_instance:
             material_instance.use_program()
@@ -699,6 +699,9 @@ class Renderer(Singleton):
             self.framebuffer_copy.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer_copy.bind_framebuffer()
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+
+        # atmosphere
+        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera)
 
         # debug render target
         if self.debug_rendertarget and self.debug_rendertarget is not RenderTargets.BACKBUFFER and \

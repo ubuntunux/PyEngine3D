@@ -8,6 +8,7 @@ import numpy as np
 
 from Common import logger
 from App import CoreManager
+from OpenGLContext import VertexArrayBuffer
 
 from .constants import *
 from .model import *
@@ -38,12 +39,32 @@ class Atmosphere:
         self.model = None
         self.program = -1
 
-        # self.InitModel()
+        self.quad = None
+        self.atmosphere_shader = None
+        self.atmosphere_material_instance = None
+
+        self.InitModel()
 
     def update(self):
         pass
 
     def InitModel(self):
+        resource_manager = CoreManager.instance().resource_manager
+
+        positions = np.array([(-1, -1, 0, 1), (1, -1, 0, 1), (-1, 1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
+        indices = np.array([0, 1, 2, 2, 1, 3], dtype=np.uint32)
+
+        self.quad = VertexArrayBuffer(
+            name='atmosphere quad',
+            datas=[positions, ],
+            index_data=indices,
+            dtype=np.float32
+        )
+
+        self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
+        self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
+                                                                                 macros={'USE_LUMINANCE': 1})
+
         max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi
 
         rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
@@ -81,7 +102,6 @@ class Atmosphere:
         mie_density = [mie_layer, ]
         num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
 
-        resource_manager = CoreManager.instance().resource_manager
         definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
         functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
 
@@ -106,7 +126,9 @@ class Atmosphere:
                            self.use_half_precision,
                            definitions_glsl,
                            functions_glsl)
-        self.model.Init()
+        # self.model.Init()
+
+        return
 
         vertex_shader = glCreateShader(GL_VERTEX_SHADER)
         vertex_shader_source = kDemoVertexShader
@@ -163,6 +185,39 @@ class Atmosphere:
                                    [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
 
         glUniformMatrix4fv(glGetUniformLocation(self.program, "view_from_clip"), 1, GL_TRUE, view_from_clip)
+
+    def render_precomputed_atmosphere(self, main_camera):
+        self.quad.bind_vertex_buffer()
+        self.atmosphere_material_instance.use_program()
+
+        view_zenith_angle_radians = 0.0
+        view_azimuth_angle_radians = 0.0
+
+        cos_z = math.cos(view_zenith_angle_radians)
+        sin_z = math.sin(view_zenith_angle_radians)
+        cos_a = math.cos(view_azimuth_angle_radians)
+        sin_a = math.sin(view_azimuth_angle_radians)
+        ux = np.array([-sin_a, cos_a, 0.0], np.float32)
+        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], np.float32)
+        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], np.float32)
+        l = self.view_distance_meters / kLengthUnitInMeters
+
+        model_from_view = main_camera.view_origin.copy()
+        model_from_view[3][0] = model_from_view[2][0] * l
+        model_from_view[3][1] = model_from_view[2][1] * l
+        model_from_view[3][2] = model_from_view[2][2] * l
+
+        kFovY = 50.0 / 180.0 * kPi
+        kTanFovY = math.tan(kFovY / 2.0)
+        view_from_clip = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
+                                   [0.0, kTanFovY, 0.0, 0.0],
+                                   [0.0, 0.0, 0.0, -1.0],
+                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
+
+        self.atmosphere_material_instance.bind_uniform_data("model_from_view", model_from_view)
+        self.atmosphere_material_instance.bind_uniform_data("view_from_clip", view_from_clip)
+
+        self.quad.draw_elements()
 
     def HandleRedisplayEvent(self):
         cos_z = cos(view_zenith_angle_radians)

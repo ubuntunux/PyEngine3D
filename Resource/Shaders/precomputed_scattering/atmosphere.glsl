@@ -1,11 +1,11 @@
+#include "precomputed_scattering/atmosphere_vs.glsl"
+
 uniform vec3 camera;
 uniform float exposure;
 uniform vec3 white_point;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
-in vec3 view_ray;
-layout(location = 0) out vec3 color;
 
 const float PI = 3.14159265;
 const vec3 kSphereCenter = vec3(0.0, 0.0, 1.0);
@@ -41,8 +41,6 @@ float GetSunVisibility(vec3 point, vec3 sun_direction)
     }
     return 1.0;
 }
-
-
 
 float GetSkyVisibility(vec3 point)
 {
@@ -88,9 +86,15 @@ void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_i
 }
 
 
+#ifdef GL_FRAGMENT_SHADER
+in vec3 view_ray;
+layout(location = 0) out vec4 color;
 
 void main()
 {
+    color = vec4(view_ray, 1.0);
+    return;
+    /*
     vec3 view_direction = normalize(view_ray);
     float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
     float shadow_in;
@@ -164,4 +168,6 @@ void main()
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
     color = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));
+    */
 }
+#endif

@@ -136,7 +136,7 @@ class Shader:
         self.attribute.setAttribute("name", self.name)
         return self.attribute
 
-    def get_shader_codes(self, shader_version, external_macros={}):
+    def generate_shader_codes(self, shader_version, external_macros={}):
         shader_codes = {}
         for shader_type in shader_types:
             shader_code = self.__parsing_final_code__(shader_type.name, shader_version, external_macros)

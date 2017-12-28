@@ -22,10 +22,10 @@ class SceneManager(Singleton):
         self.__current_scene_name = ""
 
         # Scene Objects
-        self.mainCamera = None
-        self.mainLight = None
-        self.mainLightProbe = None
-        self.selectedObject = None
+        self.main_camera = None
+        self.main_light = None
+        self.main_light_probe = None
+        self.selected_object = None
 
         # envirment object
         self.sky = None
@@ -63,9 +63,9 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notifyClearScene()
-        self.mainCamera = None
-        self.mainLight = None
-        self.mainLightProbe = None
+        self.main_camera = None
+        self.main_light = None
+        self.main_light_probe = None
         self.cameras = []
         self.lights = []
         self.light_probes = []
@@ -86,9 +86,9 @@ class SceneManager(Singleton):
         self.clear_scene()
 
         # add scene objects
-        self.mainCamera = self.addCamera()
-        self.mainLight = self.addLight()
-        self.mainLightProbe = self.addLightProbe()
+        self.main_camera = self.addCamera()
+        self.main_light = self.addLight()
+        self.main_light_probe = self.addLightProbe()
         self.atmosphere = Atmosphere()
         self.sky = Sky()
 
@@ -110,12 +110,12 @@ class SceneManager(Singleton):
         camera_datas = scene_data.get('cameras', [])
         for camera_data in camera_datas:
             self.addCamera(**camera_data)
-        self.mainCamera = self.get_camera(0)
+        self.main_camera = self.get_camera(0)
 
         light_datas = scene_data.get('lights', [])
         for light_data in light_datas:
             self.addLight(**light_data)
-        self.mainLight = self.get_light(0)
+        self.main_light = self.get_light(0)
 
         light_probe_datas = scene_data.get('light_probes', [])
         if light_probe_datas:
@@ -123,7 +123,7 @@ class SceneManager(Singleton):
                 self.addLightProbe(**light_probe_data)
         else:
             self.addLightProbe()
-        self.mainLightProbe = self.get_light_probe(0)
+        self.main_light_probe = self.get_light_probe(0)
 
         self.sky = Sky()
 
@@ -236,7 +236,7 @@ class SceneManager(Singleton):
         return None
 
     def addObjectHere(self, model):
-        pos = self.mainCamera.transform.pos + self.mainCamera.front * 10.0
+        pos = self.main_camera.transform.pos + self.main_camera.front * 10.0
         return self.addObject(model=model, pos=pos)
 
     def clearObjects(self):
@@ -252,7 +252,7 @@ class SceneManager(Singleton):
 
     def deleteObject(self, objName):
         obj = self.getObject(objName)
-        if obj and obj not in (self.mainCamera, self.mainLight, self.mainLightProbe):
+        if obj and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
     def getObject(self, objName):
@@ -294,21 +294,21 @@ class SceneManager(Singleton):
         obj and obj.setAttribute(attributeName, attributeValue, attribute_index)
 
     def getSelectedObject(self):
-        return self.selectedObject
+        return self.selected_object
 
     def setSelectedObject(self, objName):
-        selectedObject = self.getObject(objName)
-        if self.selectedObject is not selectedObject:
-            if self.selectedObject:
-                self.selectedObject.setSelected(False)
-            self.selectedObject = selectedObject
-            if selectedObject:
-                selectedObject.setSelected(True)
+        selected_object = self.getObject(objName)
+        if self.selected_object is not selected_object:
+            if self.selected_object:
+                self.selected_object.setSelected(False)
+            self.selected_object = selected_object
+            if selected_object:
+                selected_object.setSelected(True)
 
     def setObjectFocus(self, objName):
         obj = self.getObject(objName)
-        if obj and obj != self.mainCamera:
-            self.mainCamera.transform.setPos(obj.transform.pos - self.mainCamera.transform.front * 2.0)
+        if obj and obj != self.main_camera:
+            self.main_camera.transform.setPos(obj.transform.pos - self.main_camera.transform.front * 2.0)
 
     def set_camera_aspect(self, aspect):
         for camera in self.cameras:
@@ -353,7 +353,7 @@ class SceneManager(Singleton):
             camera.update()
 
         for light in self.lights:
-            light.update(self.mainCamera)
+            light.update(self.main_camera)
 
         for static_actor in self.static_actors:
             static_actor.update(dt)
