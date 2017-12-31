@@ -51,7 +51,8 @@ def parsing_macros(shader_code_list):
         define_name = define_name.strip()
         define_value = define_value.strip()
         try:
-            define_value = eval(define_value)
+            if define_value not in ('float', 'int', 'bool'):
+                define_value = eval(define_value)
         except:
             pass
 

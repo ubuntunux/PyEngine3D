@@ -143,7 +143,7 @@ class Model:
 
         self.atmosphere_shader_source = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
         if not precompute_illuminance:
-            self.atmosphere_shader_source += "#define RADIANCE_API_ENABLED\n"
+            self.atmosphere_shader_source += "\n#define RADIANCE_API_ENABLED\n"
         self.atmosphere_shader_source += kAtmosphereShader
 
     def glsl_header_factory(self, lambdas):
@@ -177,12 +177,7 @@ class Model:
         sky_k_r, sky_k_g, sky_k_b = self.kSky[0], self.kSky[1], self.kSky[2]
         sun_k_r, sun_k_g, sun_k_b = self.kSun[0], self.kSun[1], self.kSun[2]
 
-        header = ["#define IN(x) const in x",
-                  "#define OUT(x) out x",
-                  "#define TEMPLATE(x)",
-                  "#define TEMPLATE_ARGUMENT(x)",
-                  "#define assert(x)",
-                  "const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
+        header = ["const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
                   "const int TRANSMITTANCE_TEXTURE_HEIGHT = %d;" % TRANSMITTANCE_TEXTURE_HEIGHT,
                   "const int SCATTERING_TEXTURE_R_SIZE = %d;" % SCATTERING_TEXTURE_R_SIZE,
                   "const int SCATTERING_TEXTURE_MU_SIZE = %d;" % SCATTERING_TEXTURE_MU_SIZE,
@@ -261,7 +256,6 @@ class Model:
         header = glsl_header_factory_([kLambdaR, kLambdaG, kLambdaB])
         self.vertex_shader_code = kVertexShader
         self.fragment_shader_code = header + kComputeTransmittanceShader
-
 
     def GetShader():
         return atmosphere_shader

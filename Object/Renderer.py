@@ -639,6 +639,9 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
+        # atmosphere
+        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera)
+
         # bind quad mesh
         self.postprocess.bind_quad()
 
@@ -699,9 +702,6 @@ class Renderer(Singleton):
             self.framebuffer_copy.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer_copy.bind_framebuffer()
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
-
-        # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera)
 
         # debug render target
         if self.debug_rendertarget and self.debug_rendertarget is not RenderTargets.BACKBUFFER and \

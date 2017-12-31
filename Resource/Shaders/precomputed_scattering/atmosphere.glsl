@@ -1,4 +1,6 @@
+#include "precomputed_scattering/model.glsl"
 #include "precomputed_scattering/atmosphere_vs.glsl"
+
 
 uniform vec3 camera;
 uniform float exposure;
@@ -7,18 +9,20 @@ uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
 
-const float PI = 3.14159265;
 const vec3 kSphereCenter = vec3(0.0, 0.0, 1.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
 
+/*
+// NOTE!! : redefine error
 #ifdef USE_LUMINANCE
 #define GetSolarRadiance GetSolarLuminance
 #define GetSkyRadiance GetSkyLuminance
 #define GetSkyRadianceToPoint GetSkyLuminanceToPoint
 #define GetSunAndSkyIrradiance GetSunAndSkyIlluminance
 #endif
+*/
 
 vec3 GetSolarRadiance();
 vec3 GetSkyRadiance(vec3 camera, vec3 view_ray, float shadow_length, vec3 sun_direction, out vec3 transmittance);
@@ -92,9 +96,7 @@ layout(location = 0) out vec4 color;
 
 void main()
 {
-    color = vec4(view_ray, 1.0);
-    return;
-    /*
+
     vec3 view_direction = normalize(view_ray);
     float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
     float shadow_in;
@@ -167,7 +169,9 @@ void main()
     }
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
-    color = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));
-    */
+
+    color.xyz = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));
+    color.w = 1.0;
+    color = max(color, 0.0);
 }
 #endif

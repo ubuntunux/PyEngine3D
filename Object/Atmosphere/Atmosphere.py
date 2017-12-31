@@ -26,7 +26,7 @@ class Atmosphere:
         self.use_ozone = True
         self.use_combined_textures = True
         self.use_half_precision = True
-        self.use_luminance = None
+        self.use_luminance = Luminance.NONE
         self.do_white_balance = False
         self.show_help = True
         self.view_distance_meters = 9000.0
@@ -34,7 +34,12 @@ class Atmosphere:
         self.view_azimuth_angle_radians = -0.1
         self.sun_zenith_angle_radians = 1.3
         self.sun_azimuth_angle_radians = 2.9
+        self.sun_direction = Float3()
         self.exposure = 10.0
+
+        self.white_point = Float3()
+        self.earth_center = 0.0
+        self.sun_size = Float2()
 
         self.model = None
         self.program = -1
@@ -62,8 +67,12 @@ class Atmosphere:
         )
 
         self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
+        if self.use_luminance == Luminance.NONE:
+            macros = {}
+        else:
+            macros = {'USE_LUMINANCE': 1}
         self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
-                                                                                 macros={'USE_LUMINANCE': 1})
+                                                                                 macros=macros)
 
         max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi
 
@@ -101,6 +110,17 @@ class Atmosphere:
         rayleigh_density = [rayleigh_layer, ]
         mie_density = [mie_layer, ]
         num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
+
+        if self.do_white_balance:
+            self.white_point[...] = ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance)
+            self.white_point /= (sum(self.white_point) / 3.0)
+        else:
+            self.white_point[...] = 1.0
+
+        self.earth_center = -kBottomRadius / kLengthUnitInMeters
+
+        self.sun_size[0] = math.tan(kSunAngularRadius)
+        self.sun_size[1] = math.cos(kSunAngularRadius)
 
         definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
         functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
@@ -140,123 +160,46 @@ class Atmosphere:
             fragment_shader_source += "#define USE_LUMINANCE\n"
         fragment_shader_source += demo_glsl
 
-        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER)
-        glShaderSource(fragment_shader, fragment_shader_source)
-        glCompileShader(fragment_shader)
-
-        self.program = glCreateProgram()
-        glAttachShader(self.program, vertex_shader)
-        glAttachShader(self.program, fragment_shader)
-        glAttachShader(self.program, model.GetShader())
-        glLinkProgram(self.program)
-        glDetachShader(self.program, vertex_shader)
-        glDetachShader(self.program, fragment_shader)
-        glDetachShader(self.program, model.GetShader())
-        glDeleteShader(vertex_shader)
-        glDeleteShader(fragment_shader)
-
-        glUseProgram(self.program)
-        self.model.SetProgramUniforms(self.program, 0, 1, 2, 3)
-        if self.do_white_balance:
-            white_point_r, white_point_g, white_point_b = ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance)
-        white_point = (white_point_r + white_point_g + white_point_b) / 3.0
-        white_point_r /= white_point
-        white_point_g /= white_point
-        white_point_b /= white_point
-
-        location = glGetUniformLocation(self.program, "white_point")
-        glUniform3f(location, [white_point_r, white_point_g, white_point_b])
-        location = glGetUniformLocation(self.program, "earth_center")
-        glUniform3f(location, [0.0, 0.0, -kBottomRadius / kLengthUnitInMeters])
-        location = glGetUniformLocation(self.program, "sun_size")
-        glUniform2f(location, [tan(kSunAngularRadius), cos(kSunAngularRadius)])
-
-        # This sets 'view_from_clip', which only depends on the window size.
-        viewport_width, viewport_height = glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)
-        glViewport(0, 0, viewport_width, viewport_height)
-
-        kFovY = 50.0 / 180.0 * kPi
-        kTanFovY = tan(kFovY / 2.0)
-        aspect_ratio = float(viewport_width) / float(viewport_height)
-
-        view_from_clip = np.array([[kTanFovY * aspect_ratio, 0.0, 0.0, 0.0],
-                                   [0.0, kTanFovY, 0.0, 0.0],
-                                   [0.0, 0.0, 0.0, -1.0],
-                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
-
-        glUniformMatrix4fv(glGetUniformLocation(self.program, "view_from_clip"), 1, GL_TRUE, view_from_clip)
-
     def render_precomputed_atmosphere(self, main_camera):
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
 
-        view_zenith_angle_radians = 0.0
-        view_azimuth_angle_radians = 0.0
-
-        cos_z = math.cos(view_zenith_angle_radians)
-        sin_z = math.sin(view_zenith_angle_radians)
-        cos_a = math.cos(view_azimuth_angle_radians)
-        sin_a = math.sin(view_azimuth_angle_radians)
-        ux = np.array([-sin_a, cos_a, 0.0], np.float32)
-        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], np.float32)
-        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], np.float32)
+        # model_from_view
         l = self.view_distance_meters / kLengthUnitInMeters
-
-        model_from_view = main_camera.view_origin.copy()
+        model_from_view = main_camera.view_origin.transpose()
         model_from_view[3][0] = model_from_view[2][0] * l
         model_from_view[3][1] = model_from_view[2][1] * l
         model_from_view[3][2] = model_from_view[2][2] * l
 
-        kFovY = 50.0 / 180.0 * kPi
+        # view_from_clip
+        kFovY = main_camera.fov / 180.0 * kPi
         kTanFovY = math.tan(kFovY / 2.0)
         view_from_clip = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
                                    [0.0, kTanFovY, 0.0, 0.0],
-                                   [0.0, 0.0, 0.0, -1.0],
-                                   [0.0, 0.0, 1.0, 1.0]], dtype=np.float32)
+                                   [0.0, 0.0, 0.0, 1.0],
+                                   [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
 
+        # exposure
+        if self.use_luminance == Luminance.NONE:
+            exposure = self.exposure
+        else:
+            exposure = self.exposure * 1e-5
+
+        # sun_direction
+        self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+        self.sun_direction[1] = cos(self.sun_zenith_angle_radians)
+        self.sun_direction[2] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+
+        self.atmosphere_material_instance.bind_uniform_data("camera", model_from_view[3][0:3])
+        self.atmosphere_material_instance.bind_uniform_data("exposure", exposure)
+        self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
+        self.atmosphere_material_instance.bind_uniform_data("white_point", self.white_point)
+        self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
+        self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
         self.atmosphere_material_instance.bind_uniform_data("model_from_view", model_from_view)
         self.atmosphere_material_instance.bind_uniform_data("view_from_clip", view_from_clip)
 
         self.quad.draw_elements()
-
-    def HandleRedisplayEvent(self):
-        cos_z = cos(view_zenith_angle_radians)
-        sin_z = sin(view_zenith_angle_radians)
-        cos_a = cos(view_azimuth_angle_radians)
-        sin_a = sin(view_azimuth_angle_radians)
-        ux = np.array([-sin_a, cos_a, 0.0], np.float32)
-        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], np.float32)
-        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], np.float32)
-        l = self.view_distance_meters / kLengthUnitInMeters
-
-        model_from_view = np.array(
-            [[ux[0], uy[0], uz[0], uz[0] * l],
-             [ux[1], uy[1], uz[1], uz[1] * l],
-             [ux[2], uy[2], uz[2], uz[2] * l],
-             [0.0, 0.0, 0.0, 1.0]], np.float32)
-
-        location = glGetUniformLocation(self.program, "camera")
-        glUniform3f(location, uz * l)
-
-        location = glGetUniformLocation(self.program, "exposure")
-        glUniform1f(location, (self.exposure * 1e-5) if self.use_luminance != Luminance.NONE else self.exposure)
-
-        location = glGetUniformLocation(self.program_, "model_from_view")
-        glUniformMatrix4fv(location, 1, GL_TRUE, model_from_view)
-
-        sun_direction = np.array(
-            [cos(sun_azimuth_angle_radians) * sin(sun_zenith_angle_radians),
-             sin(sun_azimuth_angle_radians) * sin(sun_zenith_angle_radians),
-             cos(sun_zenith_angle_radians)], dtype=np.float32)
-        location = glGetUniformLocation(self.program, "sun_direction")
-        glUniform3f(location, sun_direction)
-
-        glBindVertexArray(full_screen_quad_vao)
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-        glBindVertexArray(0)
-
-        glutSwapBuffers()
-        glutPostRedisplay()
 
     def SetView(self,
                 view_distance_meters,

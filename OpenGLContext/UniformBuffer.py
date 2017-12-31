@@ -9,9 +9,12 @@ from App import CoreManager
 
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
-    uniform_classes = [UniformBool, UniformInt, UniformFloat, UniformVector2, UniformVector3, UniformVector4,
-                       UniformMatrix2, UniformMatrix3, UniformMatrix4, UniformTexture2D, UniformTexture2DMultiSample,
-                       UniformTextureCube]
+    uniform_classes = [
+        UniformBool, UniformInt, UniformFloat,
+        UniformVector2, UniformVector3, UniformVector4,
+        UniformMatrix2, UniformMatrix3, UniformMatrix4,
+        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture3D, UniformTextureCube
+    ]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
@@ -54,12 +57,19 @@ def CreateUniformDataFromString(data_type, strValue=None):
                     raise ValueError
             else:
                 return np.eye(componentCount, dtype=np.float32)
-        elif data_type in ('sampler2D', 'samplerCube'):
+        elif data_type == 'sampler2D':
             texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
             return texture
         elif data_type == 'sampler2DMS':
             logger.warn('sampler2DMS need multisample texture.')
             return CoreManager.instance().resource_manager.getTexture('empty')
+        elif data_type == 'sampler3D':
+            logger.warn('sampler3D need 3D texture.')
+            return CoreManager.instance().resource_manager.getTexture('empty')
+        elif data_type == 'samplerCube':
+            logger.warn('samplerCube need cube texture.')
+            texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
+            return texture
     except ValueError:
         logger.error(traceback.format_exc())
     return None
@@ -173,12 +183,12 @@ class UniformTexture2D(UniformTextureBase):
     uniform_type = "sampler2D"
 
 
-class UniformTexture3D(UniformTextureBase):
-    uniform_type = "sampler3D"
-
-
 class UniformTexture2DMultiSample(UniformTextureBase):
     uniform_type = "sampler2DMS"
+
+
+class UniformTexture3D(UniformTextureBase):
+    uniform_type = "sampler3D"
 
 
 class UniformTextureCube(UniformTextureBase):
