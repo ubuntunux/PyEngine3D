@@ -515,6 +515,17 @@ class ShaderLoader(ResourceLoader):
         if shader:
             self.resource_manager.material_instanceLoader.create_material_instance(resource_name)
 
+    def save_data_to_file(self, save_filepath, save_data):
+        logger.info("Save : %s" % save_filepath)
+        try:
+            # human readable data
+            with open(save_filepath, 'w') as f:
+                f.write(save_data)
+            return True
+        except:
+            logger.error(traceback.format_exc())
+        return False
+
 
 # -----------------------#
 # CLASS : MaterialLoader

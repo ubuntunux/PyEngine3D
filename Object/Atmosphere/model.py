@@ -1,10 +1,14 @@
 from math import cos, sin
 import numpy as np
 
+from OpenGL.GL import *
+
 from .constants import *
 from .shaders import *
 
 from Utilities import *
+from App import CoreManager
+from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer
 
 
 def CieColorMatchingFunctionTableValue(wavelength, column):
@@ -108,9 +112,7 @@ class Model:
                  length_unit_in_meters,
                  num_precomputed_wavelengths,
                  combine_scattering_textures,
-                 half_precision,
-                 definitions_glsl,
-                 functions_glsl):
+                 half_precision):
 
         self.wavelengths = wavelengths
         self.solar_irradiance = solar_irradiance
@@ -131,8 +133,6 @@ class Model:
         self.num_precomputed_wavelengths = num_precomputed_wavelengths
         self.combine_scattering_textures = combine_scattering_textures
         self.half_precision = half_precision
-        self.definitions_glsl = definitions_glsl
-        self.functions_glsl = functions_glsl
 
         precompute_illuminance = num_precomputed_wavelengths > 3
         if precompute_illuminance:
@@ -145,6 +145,132 @@ class Model:
         if not precompute_illuminance:
             self.atmosphere_shader_source += "\n#define RADIANCE_API_ENABLED\n"
         self.atmosphere_shader_source += kAtmosphereShader
+
+        rendertarget_manager = CoreManager.instance().rendertarget_manager
+
+        self.transmittance_texture = rendertarget_manager.create_rendertarget(
+            "transmittance_texture",
+            Texture2D,
+            width=TRANSMITTANCE_TEXTURE_WIDTH,
+            height=TRANSMITTANCE_TEXTURE_HEIGHT,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP_TO_EDGE
+        )
+
+        self.scattering_texture = rendertarget_manager.create_rendertarget(
+            "scattering_texture",
+            Texture3D,
+            width=SCATTERING_TEXTURE_WIDTH,
+            height=SCATTERING_TEXTURE_HEIGHT,
+            depth=SCATTERING_TEXTURE_DEPTH,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP_TO_EDGE
+        )
+
+        if self.combine_scattering_textures:
+            self.optional_single_mie_scattering_texture = rendertarget_manager.create_rendertarget(
+                "optional_single_mie_scattering_texture",
+                Texture3D,
+                width=SCATTERING_TEXTURE_WIDTH,
+                height=SCATTERING_TEXTURE_HEIGHT,
+                depth=SCATTERING_TEXTURE_DEPTH,
+                internal_format=GL_RGBA32F,
+                texture_format=GL_RGBA,
+                min_filter=GL_LINEAR,
+                mag_filter=GL_LINEAR,
+                data_type=GL_FLOAT,
+                wrap=GL_CLAMP
+            )
+        else:
+            self.optional_single_mie_scattering_texture = None
+
+        self.irradiance_texture = rendertarget_manager.create_rendertarget(
+            "irradiance_texture",
+            Texture2D,
+            width=IRRADIANCE_TEXTURE_WIDTH,
+            height=IRRADIANCE_TEXTURE_HEIGHT,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        self.delta_irradiance_texture = rendertarget_manager.create_rendertarget(
+            "delta_irradiance_texture",
+            Texture2D,
+            width=IRRADIANCE_TEXTURE_WIDTH,
+            height=IRRADIANCE_TEXTURE_HEIGHT,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        self.delta_rayleigh_scattering_texture = rendertarget_manager.create_rendertarget(
+            "delta_rayleigh_scattering_texture",
+            Texture3D,
+            width=SCATTERING_TEXTURE_WIDTH,
+            height=SCATTERING_TEXTURE_HEIGHT,
+            depth=SCATTERING_TEXTURE_DEPTH,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        self.delta_mie_scattering_texture = rendertarget_manager.create_rendertarget(
+            "delta_mie_scattering_texture",
+            Texture3D,
+            width=SCATTERING_TEXTURE_WIDTH,
+            height=SCATTERING_TEXTURE_HEIGHT,
+            depth=SCATTERING_TEXTURE_DEPTH,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        self.delta_scattering_density_texture = rendertarget_manager.create_rendertarget(
+            "delta_scattering_density_texture",
+            Texture3D,
+            width=SCATTERING_TEXTURE_WIDTH,
+            height=SCATTERING_TEXTURE_HEIGHT,
+            depth=SCATTERING_TEXTURE_DEPTH,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
+        self.delta_multiple_scattering_texture = self.delta_rayleigh_scattering_texture
+
+        positions = np.array([(-1, -1), (1, -1), (-1, 1), (1, 1)], dtype=np.float32)
+        indices = np.array([0, 1, 2, 2, 1, 3], dtype=np.uint32)
+
+        self.quad = VertexArrayBuffer(
+            name='atmosphere model quad',
+            datas=[positions, ],
+            index_data=indices,
+            dtype=np.float32
+        )
 
     def glsl_header_factory(self, lambdas):
         def to_string(v, lambdas, scale):
@@ -177,6 +303,10 @@ class Model:
         sky_k_r, sky_k_g, sky_k_b = self.kSky[0], self.kSky[1], self.kSky[2]
         sun_k_r, sun_k_g, sun_k_b = self.kSun[0], self.kSun[1], self.kSun[2]
 
+        resource_manager = CoreManager.instance().resource_manager
+        definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
+        functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
+
         header = ["const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
                   "const int TRANSMITTANCE_TEXTURE_HEIGHT = %d;" % TRANSMITTANCE_TEXTURE_HEIGHT,
                   "const int SCATTERING_TEXTURE_R_SIZE = %d;" % SCATTERING_TEXTURE_R_SIZE,
@@ -186,7 +316,7 @@ class Model:
                   "const int IRRADIANCE_TEXTURE_WIDTH = %d;" % IRRADIANCE_TEXTURE_WIDTH,
                   "const int IRRADIANCE_TEXTURE_HEIGHT = %d;" % IRRADIANCE_TEXTURE_HEIGHT,
                   "#define COMBINED_SCATTERING_TEXTURES" if self.combine_scattering_textures else "",
-                  self.definitions_glsl,
+                  definitions_glsl,
                   "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(",
                   to_string(self.solar_irradiance, lambdas, 1.0) + ",",
                   str(self.sun_angular_radius) + ",",
@@ -204,25 +334,26 @@ class Model:
                   str(cos(self.max_sun_zenith_angle)) + ");",
                   "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
                   "const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
-                  self.functions_glsl]
+                  functions_glsl]
         return "\n".join(header)
 
     def Init(self, num_scattering_orders=4):
+        resource_manager = CoreManager.instance().resource_manager
+
         if self.num_precomputed_wavelengths <= 3:
             lambdas = [kLambdaR, kLambdaG, kLambdaB]
             luminance_from_radiance = Matrix3()
-            Precompute(fbo,
-                       delta_irradiance_texture,
-                       delta_rayleigh_scattering_texture,
-                       delta_mie_scattering_texture,
-                       delta_scattering_density_texture,
-                       delta_multiple_scattering_texture,
-                       lambdas,
-                       luminance_from_radiance,
-                       false,
-                       num_scattering_orders)
+            self.Precompute(self.delta_irradiance_texture,
+                            self.delta_rayleigh_scattering_texture,
+                            self.delta_mie_scattering_texture,
+                            self.delta_scattering_density_texture,
+                            self.delta_multiple_scattering_texture,
+                            lambdas,
+                            luminance_from_radiance,
+                            False,
+                            num_scattering_orders)
         else:
-            num_iterations = (num_precomputed_wavelengths_ + 2) / 3
+            num_iterations = (self.num_precomputed_wavelengths + 2) / 3
             dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations)
 
             def coeff(L, component):
@@ -233,7 +364,7 @@ class Model:
                         XYZ_TO_SRGB[component * 3 + 1] * y +
                         XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda
 
-            for i in range(num_iterations):
+            for i in range(int(num_iterations)):
                 lambdas = [kLambdaMin + (3 * i + 0.5) * dlambda,
                            kLambdaMin + (3 * i + 1.5) * dlambda,
                            kLambdaMin + (3 * i + 2.5) * dlambda]
@@ -244,39 +375,184 @@ class Model:
                 luminance_from_radiance[1] = [coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1)]
                 luminance_from_radiance[2] = [coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)]
 
-                Precompute(fbo,
-                    delta_irradiance_texture,
-                    delta_rayleigh_scattering_texture,
-                    delta_mie_scattering_texture,
-                    delta_scattering_density_texture,
-                    delta_multiple_scattering_texture,
-                    lambdas,
-                    luminance_from_radiance, i > 0,
-                    num_scattering_orders)
-        header = glsl_header_factory_([kLambdaR, kLambdaG, kLambdaB])
-        self.vertex_shader_code = kVertexShader
-        self.fragment_shader_code = header + kComputeTransmittanceShader
+                self.Precompute(self.delta_irradiance_texture,
+                                self.delta_rayleigh_scattering_texture,
+                                self.delta_mie_scattering_texture,
+                                self.delta_scattering_density_texture,
+                                self.delta_multiple_scattering_texture,
+                                lambdas,
+                                luminance_from_radiance,
+                                0 < i,
+                                num_scattering_orders)
+        header = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
+        kVertexShader = resource_manager.getShader('precomputed_scattering.precompute_vs').shader_code
+        compute_transmittance2 = resource_manager.getShader('precomputed_scattering.compute_transmittance2')
+        compute_transmittance2.shader_code = ("\n".join([kVertexShader, header, kComputeTransmittanceShader]))
+        resource_manager.save_resource(compute_transmittance2.name, 'Shader')
 
-    def GetShader():
-        return atmosphere_shader
+        compute_transmittance2_mi = resource_manager.getMaterialInstance('precomputed_scattering.precompute_vs')
+        compute_transmittance2_mi.use_program()
 
-    def SetProgramUniforms(
-          program,
-          transmittance_texture_unit,
-          scattering_texture_unit,
-          irradiance_texture_unit,
-          optional_single_mie_scattering_texture_unit=0):
-        pass
+        renderer = CoreManager.instance().renderer
 
-    def Precompute(
-            fbo,
-            delta_irradiance_texture,
-            delta_rayleigh_scattering_texture,
-            delta_mie_scattering_texture,
-            delta_scattering_density_texture,
-            delta_multiple_scattering_texture,
-            lambdas,
-            luminance_from_radiance,
-            blend,
-            num_scattering_orders):
-        pass
+        # compute_multiple_scattering
+        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
+        self.quad.bind_vertex_buffer()
+        self.quad.draw_elements()
+
+    def Precompute(self,
+                   delta_irradiance_texture,
+                   delta_rayleigh_scattering_texture,
+                   delta_mie_scattering_texture,
+                   delta_scattering_density_texture,
+                   delta_multiple_scattering_texture,
+                   lambdas,
+                   luminance_from_radiance,
+                   blend,
+                   num_scattering_orders):
+
+        resource_manager = CoreManager.instance().resource_manager
+        renderer = CoreManager.instance().renderer
+
+        header = self.glsl_header_factory(lambdas)
+        kVertexShader = resource_manager.getShader('precomputed_scattering.precompute_vs').shader_code
+        kGeometryShader = resource_manager.getShader('precomputed_scattering.precompute_gs').shader_code
+        compute_transmittance = resource_manager.getShader('precomputed_scattering.compute_transmittance')
+        compute_direct_irradiance = resource_manager.getShader('precomputed_scattering.compute_direct_irradiance')
+        compute_single_scattering = resource_manager.getShader('precomputed_scattering.compute_single_scattering')
+        compute_scattering_density = resource_manager.getShader('precomputed_scattering.compute_scattering_density')
+        compute_indirect_irradiance = resource_manager.getShader('precomputed_scattering.compute_indirect_irradiance')
+        compute_multiple_scattering = resource_manager.getShader('precomputed_scattering.compute_multiple_scattering')
+
+        compute_transmittance.shader_code = ("\n".join([kVertexShader, header, kComputeTransmittanceShader]))
+        compute_direct_irradiance.shader_code = ("\n".join([kVertexShader, header, kComputeDirectIrradianceShader]))
+        compute_single_scattering.shader_code = (
+            "\n".join([kVertexShader, kGeometryShader, header, kComputeSingleScatteringShader]))
+        compute_scattering_density.shader_code = (
+            "\n".join([kVertexShader, kGeometryShader, header, kComputeScatteringDensityShader]))
+        compute_indirect_irradiance.shader_code = (
+            "\n".join([kVertexShader, header, kComputeIndirectIrradianceShader]))
+        compute_multiple_scattering.shader_code = (
+            "\n".join([kVertexShader, kGeometryShader, header, kComputeMultipleScatteringShader]))
+
+        resource_manager.save_resource(compute_transmittance.name, 'Shader')
+        resource_manager.save_resource(compute_direct_irradiance.name, 'Shader')
+        resource_manager.save_resource(compute_single_scattering.name, 'Shader')
+        resource_manager.save_resource(compute_scattering_density.name, 'Shader')
+        resource_manager.save_resource(compute_indirect_irradiance.name, 'Shader')
+        resource_manager.save_resource(compute_multiple_scattering.name, 'Shader')
+
+        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
+
+        self.quad.bind_vertex_buffer()
+
+        # compute_transmittance
+        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
+        glDisablei(GL_BLEND, 0)
+        compute_transmittance_mi = resource_manager.getMaterialInstance('precomputed_scattering.compute_transmittance')
+        compute_transmittance_mi.use_program()
+        self.quad.draw_elements()
+
+        # compute_direct_irradiance
+        renderer.framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture, self.irradiance_texture,
+                                                      depth_texture=None)
+        if blend:
+            glEnablei(GL_BLEND, 1)
+        compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
+            'precomputed_scattering.compute_direct_irradiance')
+        compute_direct_irradiance_mi.use_program()
+        compute_direct_irradiance_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
+        self.quad.draw_elements()
+        glDisablei(GL_BLEND, 0)
+        glDisablei(GL_BLEND, 1)
+
+        # compute_single_scattering
+        if self.optional_single_mie_scattering_texture is not None:
+            renderer.framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                          self.delta_mie_scattering_texture,
+                                                          self.scattering_texture,
+                                                          depth_texture=None)
+        else:
+            renderer.framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                          self.delta_mie_scattering_texture,
+                                                          self.scattering_texture,
+                                                          self.optional_single_mie_scattering_texture,
+                                                          depth_texture=None)
+        compute_single_scattering_mi = resource_manager.getMaterialInstance(
+            'precomputed_scattering.compute_single_scattering')
+        compute_single_scattering_mi.use_program()
+        compute_single_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
+        compute_single_scattering_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
+
+        if blend:
+            glEnablei(GL_BLEND, 2)
+            glEnablei(GL_BLEND, 3)
+        for layer in range(SCATTERING_TEXTURE_DEPTH):
+            compute_single_scattering_mi.bind_uniform_data("layer", layer)
+            self.quad.draw_elements()
+        glDisablei(GL_BLEND, 0)
+        glDisablei(GL_BLEND, 1)
+        glDisablei(GL_BLEND, 2)
+        glDisablei(GL_BLEND, 3)
+
+        for scattering_order in range(2, num_scattering_orders+1):
+            # compute_scattering_density
+            renderer.framebuffer_manager.bind_framebuffer(self.delta_scattering_density_texture, depth_texture=None)
+            compute_scattering_density_mi = resource_manager.getMaterialInstance(
+                'precomputed_scattering.compute_scattering_density')
+            compute_scattering_density_mi.use_program()
+            compute_scattering_density_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
+            compute_scattering_density_mi.bind_uniform_data('single_rayleigh_scattering_texture',
+                                                            self.delta_rayleigh_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('single_mie_scattering_texture',
+                                                            self.delta_mie_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('multiple_scattering_texture',
+                                                            self.delta_multiple_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('irradiance_texture',
+                                                            self.delta_irradiance_texture)
+            compute_scattering_density_mi.bind_uniform_data('scattering_order', scattering_order)
+
+            for layer in range(SCATTERING_TEXTURE_DEPTH):
+                compute_scattering_density_mi.bind_uniform_data('layer', layer)
+                self.quad.draw_elements()
+
+            # compute_indirect_irradiance
+            renderer.framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture,
+                                                          self.irradiance_texture,
+                                                          depth_texture=None)
+            compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
+                'precomputed_scattering.compute_indirect_irradiance')
+            compute_indirect_irradiance_mi.use_program()
+            compute_indirect_irradiance_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
+                                                             self.delta_rayleigh_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
+                                                             self.delta_mie_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
+                                                             self.delta_multiple_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('scattering_order', scattering_order - 1)
+            if blend:
+                glEnablei(GL_BLEND, 1)
+            self.quad.draw_elements()
+            glDisablei(GL_BLEND, 0)
+            glDisablei(GL_BLEND, 1)
+
+            # compute_multiple_scattering
+            renderer.framebuffer_manager.bind_framebuffer(self.delta_multiple_scattering_texture,
+                                                          self.scattering_texture,
+                                                          depth_texture=None)
+            compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
+                'precomputed_scattering.compute_multiple_scattering')
+            compute_multiple_scattering_mi.use_program()
+            compute_multiple_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
+            compute_multiple_scattering_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
+            compute_multiple_scattering_mi.bind_uniform_data('scattering_density_texture',
+                                                             self.delta_scattering_density_texture)
+            if blend:
+                glEnablei(GL_BLEND, 1)
+            for layer in range(SCATTERING_TEXTURE_DEPTH):
+                compute_multiple_scattering_mi.bind_uniform_data('layer', layer)
+                self.quad.draw_elements()
+            glDisablei(GL_BLEND, 0)
+            glDisablei(GL_BLEND, 1)

@@ -1,3 +1,4 @@
+import time
 import math
 
 from OpenGL.GL import *
@@ -48,12 +49,16 @@ class Atmosphere:
         self.atmosphere_shader = None
         self.atmosphere_material_instance = None
 
-        self.InitModel()
+        self.inited = False
 
     def update(self):
         pass
 
     def InitModel(self):
+        if self.inited:
+            return
+
+        self.inited = True
         resource_manager = CoreManager.instance().resource_manager
 
         positions = np.array([(-1, -1, 0, 1), (1, -1, 0, 1), (-1, 1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
@@ -65,14 +70,6 @@ class Atmosphere:
             index_data=indices,
             dtype=np.float32
         )
-
-        self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
-        if self.use_luminance == Luminance.NONE:
-            macros = {}
-        else:
-            macros = {'USE_LUMINANCE': 1}
-        self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
-                                                                                 macros=macros)
 
         max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi
 
@@ -122,9 +119,6 @@ class Atmosphere:
         self.sun_size[0] = math.tan(kSunAngularRadius)
         self.sun_size[1] = math.cos(kSunAngularRadius)
 
-        definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
-        functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
-
         self.model = Model(wavelengths,
                            solar_irradiance,
                            kSunAngularRadius,
@@ -143,24 +137,23 @@ class Atmosphere:
                            kLengthUnitInMeters,
                            num_precomputed_wavelengths,
                            self.use_combined_textures,
-                           self.use_half_precision,
-                           definitions_glsl,
-                           functions_glsl)
-        # self.model.Init()
+                           self.use_half_precision)
 
-        return
+        atmosphere_predefine_shader = resource_manager.getShader('precomputed_scattering.atmosphere_predefine')
+        atmosphere_predefine_shader.shader_code = self.model.atmosphere_shader_source
+        resource_manager.save_resource('precomputed_scattering.atmosphere_predefine', 'Shader')
 
-        vertex_shader = glCreateShader(GL_VERTEX_SHADER)
-        vertex_shader_source = kDemoVertexShader
-        glShaderSource(vertex_shader, vertex_shader_source)
-        glCompileShader(vertex_shader)
+        self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
+        if self.use_luminance == Luminance.NONE:
+            macros = {}
+        else:
+            macros = {'USE_LUMINANCE': 1}
+        self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
+                                                                                 macros=macros)
 
-        fragment_shader_source = ""
-        if self.use_luminance != NONE:
-            fragment_shader_source += "#define USE_LUMINANCE\n"
-        fragment_shader_source += demo_glsl
+        self.model.Init()
 
-    def render_precomputed_atmosphere(self, main_camera):
+    def render_precomputed_atmosphere(self, main_camera, main_light):
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
 
@@ -189,6 +182,14 @@ class Atmosphere:
         self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
         self.sun_direction[1] = cos(self.sun_zenith_angle_radians)
         self.sun_direction[2] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+        self.sun_direction = main_light.transform.front
+
+        self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.model.transmittance_texture)
+        self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.model.scattering_texture)
+        self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.model.irradiance_texture)
+        if self.model.optional_single_mie_scattering_texture is not None:
+            self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
+                                                                self.model.optional_single_mie_scattering_texture)
 
         self.atmosphere_material_instance.bind_uniform_data("camera", model_from_view[3][0:3])
         self.atmosphere_material_instance.bind_uniform_data("exposure", exposure)

@@ -430,7 +430,7 @@ void ComputeSingleScatteringTexture(const in AtmosphereParameters atmosphere,
 
 AbstractSpectrum GetScattering(
     const in AtmosphereParameters atmosphere,
-    cosnt in AbstractScatteringTexture scattering_texture,
+    const in AbstractScatteringTexture scattering_texture,
     Length r, Number mu, Number mu_s, Number nu,
     bool ray_r_mu_intersects_ground) {
   vec4 uvwz = GetScatteringTextureUvwzFromRMuMuSNu(

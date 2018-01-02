@@ -133,6 +133,9 @@ class Shader:
         self.include_files = []
         self.attribute = Attributes()
 
+    def get_save_data(self):
+        return self.shader_code
+
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
         return self.attribute

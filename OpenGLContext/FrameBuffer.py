@@ -92,14 +92,13 @@ class FrameBuffer:
                     self.add_command(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER,
                                      color_texture.buffer)
                 else:
-                    self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, color_texture.target,
-                                     color_texture.buffer, 0)
+                    self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, attachment, color_texture.buffer, 0)
                 # just for single render target.
                 # self.add_command(glDrawBuffer, attachment)
                 # important
                 self.add_command(glReadBuffer, attachment)
             # else:
-            #     self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
+            #     self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, attachment, 0, 0)
 
         if self.attach_count > 0:
             # Specifies a list of color buffers to be drawn into
@@ -119,10 +118,9 @@ class FrameBuffer:
                 self.add_command(glFramebufferRenderbuffer, GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER,
                                  self.depth_texture.buffer)
             else:
-                self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, attachment, self.depth_texture.target,
-                                 self.depth_texture.buffer, 0)
+                self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, attachment, self.depth_texture.buffer, 0)
         else:
-            self.add_command(glFramebufferTexture2D, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
+            self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
 
     def run_bind_framebuffer(self):
         for cmd in self.commands:
@@ -151,13 +149,13 @@ class FrameBuffer:
                 if type(color_texture) == RenderBuffer:
                     glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, color_texture.buffer)
                 else:
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, color_texture.target, color_texture.buffer, 0)
+                    glFramebufferTexture(GL_FRAMEBUFFER, attachment, color_texture.buffer, 0)
                 # just for single render target.
                 # glDrawBuffer(attachment)
                 # important
                 glReadBuffer(attachment)
             else:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, 0, 0)
+                glFramebufferTexture(GL_FRAMEBUFFER, attachment, 0, 0)
 
         if self.attach_count > 0:
             # Specifies a list of color buffers to be drawn into
@@ -176,9 +174,9 @@ class FrameBuffer:
             if type(self.depth_texture) == RenderBuffer:
                 glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.depth_texture.buffer)
             else:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.depth_texture.target, self.depth_texture.buffer, 0)
+                glFramebufferTexture(GL_FRAMEBUFFER, attachment, self.depth_texture.buffer, 0)
         else:
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0)
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
 
         # set viewport
         if self.attach_count > 0:

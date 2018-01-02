@@ -1,6 +1,7 @@
-#include "precomputed_scattering/model.glsl"
+#include "precomputed_scattering/atmosphere_predefine.glsl"
 #include "precomputed_scattering/atmosphere_vs.glsl"
 
+#define USE_LUMINANCE 1
 
 uniform vec3 camera;
 uniform float exposure;
@@ -13,21 +14,6 @@ const vec3 kSphereCenter = vec3(0.0, 0.0, 1.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
-
-/*
-// NOTE!! : redefine error
-#ifdef USE_LUMINANCE
-#define GetSolarRadiance GetSolarLuminance
-#define GetSkyRadiance GetSkyLuminance
-#define GetSkyRadianceToPoint GetSkyLuminanceToPoint
-#define GetSunAndSkyIrradiance GetSunAndSkyIlluminance
-#endif
-*/
-
-vec3 GetSolarRadiance();
-vec3 GetSkyRadiance(vec3 camera, vec3 view_ray, float shadow_length, vec3 sun_direction, out vec3 transmittance);
-vec3 GetSkyRadianceToPoint(vec3 camera, vec3 point, float shadow_length, vec3 sun_direction, out vec3 transmittance);
-vec3 GetSunAndSkyIrradiance(vec3 p, vec3 normal, vec3 sun_direction, out vec3 sky_irradiance);
 
 float GetSunVisibility(vec3 point, vec3 sun_direction)
 {
@@ -122,13 +108,20 @@ void main()
         vec3 normal = normalize(point - kSphereCenter);
 
         vec3 sky_irradiance;
+#if USE_LUMINANCE == 1
+        vec3 sun_irradiance = GetSunAndSkyIlluminance( point - earth_center, normal, sun_direction, sky_irradiance);
+#else
         vec3 sun_irradiance = GetSunAndSkyIrradiance( point - earth_center, normal, sun_direction, sky_irradiance);
+#endif
         sphere_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
 
         float shadow_length = max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) * lightshaft_fadein_hack;
         vec3 transmittance;
-        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center,
-            point - earth_center, shadow_length, sun_direction, transmittance);
+#if USE_LUMINANCE == 1
+        vec3 in_scatter = GetSkyLuminanceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+#else
+        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+#endif
         sphere_radiance = sphere_radiance * transmittance + in_scatter;
     }
 
@@ -146,26 +139,41 @@ void main()
         vec3 normal = normalize(point - earth_center);
 
         vec3 sky_irradiance;
+#if USE_LUMINANCE == 1
+        vec3 sun_irradiance = GetSunAndSkyIlluminance(point - earth_center, normal, sun_direction, sky_irradiance);
+#else
         vec3 sun_irradiance = GetSunAndSkyIrradiance(point - earth_center, normal, sun_direction, sky_irradiance);
+#endif
         ground_radiance = kGroundAlbedo * (1.0 / PI) * (
             sun_irradiance * GetSunVisibility(point, sun_direction) +
             sky_irradiance * GetSkyVisibility(point));
 
         float shadow_length = max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) * lightshaft_fadein_hack;
         vec3 transmittance;
-        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center,
-            point - earth_center, shadow_length, sun_direction, transmittance);
+#if USE_LUMINANCE == 1
+        vec3 in_scatter = GetSkyLuminanceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+#else
+        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+#endif
         ground_radiance = ground_radiance * transmittance + in_scatter;
         ground_alpha = 1.0;
     }
 
     float shadow_length = max(0.0, shadow_out - shadow_in) * lightshaft_fadein_hack;
     vec3 transmittance;
+#if USE_LUMINANCE == 1
+    vec3 radiance = GetSkyLuminance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+#else
     vec3 radiance = GetSkyRadiance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+#endif
 
     if (dot(view_direction, sun_direction) > sun_size.y)
     {
+#if USE_LUMINANCE == 1
+        radiance = radiance + transmittance * GetSolarLuminance();
+#else
         radiance = radiance + transmittance * GetSolarRadiance();
+#endif
     }
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
