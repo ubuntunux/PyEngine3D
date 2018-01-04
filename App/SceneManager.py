@@ -127,6 +127,8 @@ class SceneManager(Singleton):
 
         self.sky = Sky()
 
+        self.atmosphere = Atmosphere()
+
         for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)
 

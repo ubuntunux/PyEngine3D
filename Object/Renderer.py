@@ -40,7 +40,7 @@ class Renderer(Singleton):
         self.framebuffer_shadow = None
         self.framebuffer_copy = None
         self.framebuffer_msaa = None
-        self.debug_rendertarget = None  # Texture2D
+        self.debug_texture = None
 
         self.blend_enable = False
         self.blend_equation = GL_FUNC_ADD
@@ -103,6 +103,7 @@ class Renderer(Singleton):
                                                    MATRIX4_IDENTITY,
                                                    MATRIX4_IDENTITY,
                                                    FLOAT4_ZERO,
+                                                   FLOAT2_ZERO,
                                                    FLOAT2_ZERO,
                                                    FLOAT2_ZERO])
 
@@ -201,10 +202,10 @@ class Renderer(Singleton):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-    def set_debug_rendertarget(self, rendertarget_index, rendertarget_name):
-        self.debug_rendertarget = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
-        if self.debug_rendertarget:
-            logger.info("Current render target : %s" % self.debug_rendertarget.name)
+    def set_debug_texture(self, texture):
+        self.debug_texture = texture
+        if self.debug_texture:
+            logger.info("Current texture : %s" % self.debug_texture.name)
 
     def render_light_probe(self, force=False):
         if not force and self.scene_manager.main_light_probe.isValid:
@@ -304,7 +305,8 @@ class Renderer(Singleton):
                                                      np.linalg.inv(camera.projection),
                                                      camera.transform.getPos(), FLOAT_ZERO,
                                                      Float2(camera.near, camera.far),
-                                                     self.postprocess.jitter_delta)
+                                                     self.postprocess.jitter_delta,
+                                                     self.postprocess.jitter)
 
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
@@ -639,13 +641,13 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
-        atmosphere = self.scene_manager.atmosphere
-        if not atmosphere.inited:
-            atmosphere.InitModel()
-
-        # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera,
-                                                                    self.scene_manager.main_light)
+        # atmosphere = self.scene_manager.atmosphere
+        # if not atmosphere.inited:
+        #     atmosphere.InitModel()
+        #
+        # # atmosphere
+        # self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera,
+        #                                                             self.scene_manager.main_light)
 
         # bind quad mesh
         self.postprocess.bind_quad()
@@ -709,11 +711,11 @@ class Renderer(Singleton):
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         # debug render target
-        if self.debug_rendertarget and self.debug_rendertarget is not RenderTargets.BACKBUFFER and \
-                type(self.debug_rendertarget) != RenderBuffer:
+        if self.debug_texture and self.debug_texture is not RenderTargets.BACKBUFFER and \
+                type(self.debug_texture) != RenderBuffer:
             self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer.bind_framebuffer()
-            self.postprocess.render_copy_rendertarget(self.debug_rendertarget, copy_alpha=False)
+            self.postprocess.render_texture(self.debug_texture)
 
     def render_font(self):
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)

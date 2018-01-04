@@ -71,7 +71,10 @@ class PostProcess:
         self.blur = None
         self.gaussian_blur = None
         self.deferred_shading = None
-        self.show_rendertarget = None
+        self.copy_texture_mi = None
+        self.render_texture_2d = None
+        self.render_texture_3d = None
+        self.render_texture_cube = None
 
         self.temporal_antialiasing = None
         self.jitter_mode = JitterMode.Hammersley4x
@@ -79,7 +82,6 @@ class PostProcess:
         self.jitter_prev = Float2()
         self.jitter_frame = 0
         self.jitter_delta = Float2()
-        self.jitter_projection_offset = Float2()
 
         self.Attributes = Attributes()
 
@@ -115,7 +117,16 @@ class PostProcess:
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
         self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
-        self.show_rendertarget = self.resource_manager.getMaterialInstance("show_rendertarget")
+        self.copy_texture_mi = self.resource_manager.getMaterialInstance("copy_texture")
+        self.render_texture_2d = self.resource_manager.getMaterialInstance(name="render_texture_2d",
+                                                                           shader_name="render_texture",
+                                                                           macros={'GL_TEXTURE_2D': 1})
+        self.render_texture_3d = self.resource_manager.getMaterialInstance(name="render_texture_3d",
+                                                                           shader_name="render_texture",
+                                                                           macros={'GL_TEXTURE_3D': 1})
+        self.render_texture_cube = self.resource_manager.getMaterialInstance(name="render_texture_cube",
+                                                                             shader_name="render_texture",
+                                                                             macros={'GL_TEXTURE_CUBE_MAP': 1})
 
         # TAA
         self.temporal_antialiasing = self.resource_manager.getMaterialInstance("temporal_antialiasing")
@@ -182,23 +193,20 @@ class PostProcess:
     def update(self):
         if self.renderer.postprocess.is_TAA():
             self.jitter_frame = (self.jitter_frame + 1) % len(self.jitter_mode)
-            # NDC Space -1.0 ~ 1.0
+
+            # offset of camera projection matrix. NDC Space -1.0 ~ 1.0
             self.jitter_prev[...] = self.jitter
             self.jitter[...] = self.jitter_mode[self.jitter_frame]
+            self.jitter[0] /= RenderTargets.TAA_RESOLVE.width
+            self.jitter[1] /= RenderTargets.TAA_RESOLVE.height
 
             # Multiplies by 0.5 because it is in screen coordinate system. 0.0 ~ 1.0
             self.jitter_delta[...] = (self.jitter - self.jitter_prev) * 0.5
-            self.jitter_delta[0] = self.jitter_delta[0] / RenderTargets.TAA_RESOLVE.width
-            self.jitter_delta[1] = self.jitter_delta[1] / RenderTargets.TAA_RESOLVE.height
-
-            # offset of camera projection matrix.
-            self.jitter_projection_offset[0] = self.jitter[0] / RenderTargets.TAA_RESOLVE.width
-            self.jitter_projection_offset[1] = self.jitter[1] / RenderTargets.TAA_RESOLVE.height
         else:
             self.jitter_delta[0] = 0.0
             self.jitter_delta[1] = 0.0
-            self.jitter_projection_offset[0] = 0.0
-            self.jitter_projection_offset[1] = 0.0
+            self.jitter[0] = 0.0
+            self.jitter[1] = 0.0
 
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()
@@ -277,7 +285,7 @@ class PostProcess:
         def copy_bloom(src, dst):
             frame_buffer.set_color_textures(dst)
             frame_buffer.bind_framebuffer()
-            self.render_copy_rendertarget(src, copy_alpha=False)
+            self.copy_texture(src)
             self.quad_geometry.draw_elements()
 
         copy_bloom(texture_highlight, texture_bloom0)
@@ -373,9 +381,18 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
         self.quad_geometry.draw_elements()
 
-    def render_copy_rendertarget(self, source_texture, copy_alpha=True, mirror_x=False):
-        self.show_rendertarget.use_program()
-        self.show_rendertarget.bind_uniform_data("mirror_x", mirror_x)
-        self.show_rendertarget.bind_uniform_data("copy_alpha", copy_alpha)
-        self.show_rendertarget.bind_uniform_data("texture_source", source_texture)
+    def copy_texture(self, source_texture):
+        self.copy_texture_mi.use_program()
+        self.copy_texture_mi.bind_uniform_data("texture_source", source_texture)
+        self.quad_geometry.draw_elements()
+
+    def render_texture(self, source_texture):
+        if source_texture.target == GL_TEXTURE_3D:
+            render_texture_mi = self.render_texture_3d
+        elif source_texture.target == GL_TEXTURE_CUBE_MAP:
+            render_texture_mi = self.render_texture_cube
+        else:
+            render_texture_mi = self.render_texture_2d
+        render_texture_mi.use_program()
+        render_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()

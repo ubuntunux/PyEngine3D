@@ -16,8 +16,8 @@ class UniformBlock:
         self.serializedData = np.hstack([data.flat for data in datas])
         self.blockSize = self.serializedData.nbytes
 
-        if self.blockSize % 16 != 0:
-            raise BaseException("Uniform buffer block must start on a 16-byte padding.")
+        # if self.blockSize % 16 != 0:
+        #     raise BaseException("Uniform buffer block must start on a 16-byte padding.")
 
         self.buffer_bind = binding
         self.buffer_index = glGetUniformBlockIndex(program, buffer_name)

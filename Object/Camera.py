@@ -118,8 +118,8 @@ class Camera(StaticActor):
 
         # Update projection jitter.
         # This part is very important because the w value of the projection matrix 3rd row is ​​-1.0.
-        self.projection[2][0] = -self.postprocess.jitter_projection_offset[0]
-        self.projection[2][1] = -self.postprocess.jitter_projection_offset[1]
+        self.projection[2][0] = -self.postprocess.jitter[0]
+        self.projection[2][1] = -self.postprocess.jitter[1]
 
         self.view = self.transform.inverse_matrix
         self.view_origin[...] = self.view

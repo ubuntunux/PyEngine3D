@@ -27,7 +27,7 @@ class Atmosphere:
         self.use_ozone = True
         self.use_combined_textures = True
         self.use_half_precision = True
-        self.use_luminance = Luminance.NONE
+        self.use_luminance = Luminance.PRECOMPUTED
         self.do_white_balance = False
         self.show_help = True
         self.view_distance_meters = 9000.0
@@ -145,7 +145,7 @@ class Atmosphere:
 
         self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
         if self.use_luminance == Luminance.NONE:
-            macros = {}
+            macros = {'USE_LUMINANCE': 0}
         else:
             macros = {'USE_LUMINANCE': 1}
         self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',

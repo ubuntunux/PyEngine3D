@@ -18,7 +18,7 @@ import shutil
 import uuid
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from numpy import array, float32
+from numpy import array, float32, uint8
 from OpenGL.GL import *
 
 from Common import logger, log_level
@@ -288,6 +288,9 @@ class ResourceLoader(object):
             self.externalFileList.append(source_filepath)
 
     def get_new_resource_name(self, prefix=""):
+        if prefix not in self.resources:
+            return prefix
+
         num = 0
         while True:
             new_name = "%s_%d" % (prefix or self.resource_type_name, num)
@@ -490,22 +493,26 @@ class ShaderLoader(ResourceLoader):
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
-        if resource and resource.is_need_to_load():
-            file_path = resource.meta_data.resource_filepath
-            if os.path.exists(file_path):
-                shader_code = ""
-                try:
-                    f = codecs.open(file_path, mode='r', encoding='utf-8')
-                    shader_code = f.read()
-                    f.close()
-                except:
-                    logger.error(traceback.format_exc())
-                    logger.error("Failed %s file open" % file_path)
+        if resource:
+            if resource.is_need_to_load():
+                file_path = resource.meta_data.resource_filepath
+                if os.path.exists(file_path):
+                    shader_code = ""
+                    try:
+                        f = codecs.open(file_path, mode='r', encoding='utf-8')
+                        shader_code = f.read()
+                        f.close()
 
-                shader = Shader(resource.name, shader_code)
-                resource.set_data(shader)
-                resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
-                self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
+                        shader = Shader(resource.name, shader_code)
+                        resource.set_data(shader)
+                        resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
+                        self.resource_manager.materialLoader.reload_materials(resource.meta_data.resource_filepath)
+                        return True
+                    except:
+                        logger.error(traceback.format_exc())
+                        logger.error("Failed %s file open" % file_path)
+            else:
+                # do not need to load
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
@@ -513,7 +520,9 @@ class ShaderLoader(ResourceLoader):
     def open_resource(self, resource_name):
         shader = self.getResourceData(resource_name)
         if shader:
-            self.resource_manager.material_instanceLoader.create_material_instance(resource_name)
+            self.resource_manager.material_instanceLoader.create_material_instance(resource_name=resource_name,
+                                                                                   shader_name=resource_name,
+                                                                                   macros={})
 
     def save_data_to_file(self, save_filepath, save_data):
         logger.info("Save : %s" % save_filepath)
@@ -545,8 +554,9 @@ class MaterialLoader(ResourceLoader):
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
         if material:
-            self.resource_manager.material_instanceLoader.create_material_instance(material.shader_name,
-                                                                                   material.macros)
+            self.resource_manager.material_instanceLoader.create_material_instance(resource_name=material.shader_name,
+                                                                                   shader_name=material.shader_name,
+                                                                                   macros=material.macros)
 
     def reload_materials(self, shader_filepath):
         reload_shader_names = []
@@ -726,23 +736,28 @@ class MaterialInstanceLoader(ResourceLoader):
             if resource and resource.data:
                 material_instance = resource.data
 
-    def create_material_instance(self, shader_name, macros=None):
+    def create_material_instance(self, resource_name, shader_name, macros={}):
+        if shader_name == '':
+            shader_name = resource_name
+
         if shader_name:
-            resource_name = self.get_new_resource_name(shader_name)
+            resource_name = self.get_new_resource_name(resource_name)
             material_instance = MaterialInstance(resource_name, shader_name=shader_name, macros=macros)
             if material_instance.valid:
-                resource = self.create_resource(shader_name)
+                resource = self.create_resource(resource_name)
                 resource.set_data(material_instance)
-                self.save_resource(resource.name)
+                self.save_resource(resource_name)
                 return True
-        logger.error('Failed to %s material instance.' % shader_name)
+        logger.error('Failed to %s material instance.' % resource_name)
         return False
 
-    def getMaterialInstance(self, material_instance_name, macros={}):
-        material_instance = self.getResourceData(material_instance_name)
+    def getMaterialInstance(self, name, shader_name='', macros={}):
+        material_instance = self.getResourceData(name)
         if material_instance is None:
-            if self.create_material_instance(shader_name=material_instance_name, macros=macros):
-                material_instance = self.getResourceData(material_instance_name)
+            if self.create_material_instance(resource_name=name,
+                                             shader_name=shader_name,
+                                             macros=macros):
+                material_instance = self.getResourceData(name)
             else:
                 material_instance = self.getResourceData('default')
         return material_instance
@@ -769,6 +784,40 @@ class TextureLoader(ResourceLoader):
     def initialize(self):
         ResourceLoader.initialize(self)
         self.generate_cube_textures()
+
+        # gradient 3d texture
+        size = 64
+        value = 255.0 / float(size)
+        data = array([0, 0, 0, 255] * size * size * size, dtype=uint8)
+        for z in range(size):
+            for y in range(size):
+                for x in range(size):
+                    index = (x + y * size + z * size * size) * 4
+                    data[index] = x * value
+                    data[index+1] = y * value
+                    data[index+2] = z * value
+
+        default_3d = CreateTexture(
+            name='default_3d',
+            texture_type=Texture3D,
+            image_mode='RGBA',
+            width=size,
+            height=size,
+            depth=size,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            data_type=GL_UNSIGNED_BYTE,
+            wrap=GL_CLAMP_TO_EDGE,
+            data=data,
+        )
+        self.create_resource("default_3d", default_3d)
+
+    def open_resource(self, resource_name):
+        texture = self.getResourceData(resource_name)
+        if texture:
+            self.core_manager.renderer.set_debug_texture(texture)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -807,7 +856,9 @@ class TextureLoader(ResourceLoader):
         # gather cube texture names
         for resource_name in self.resources:
             if '_' in resource_name:
-                texture_name, texutre_face = resource_name.split('_', 1)
+                index = resource_name.rfind('_')
+                texture_name = resource_name[:index]
+                texutre_face = resource_name[index + 1:]
                 if texutre_face in cube_faces:
                     if texture_name not in cube_texutre_map:
                         cube_texutre_map[texture_name] = dict()
@@ -1292,8 +1343,8 @@ class ResourceManager(Singleton):
     def getMaterialInstanceNameList(self):
         return self.material_instanceLoader.getResourceNameList()
 
-    def getMaterialInstance(self, name, macros={}):
-        return self.material_instanceLoader.getMaterialInstance(name, macros=macros)
+    def getMaterialInstance(self, name, shader_name='', macros={}):
+        return self.material_instanceLoader.getMaterialInstance(name, shader_name=shader_name, macros=macros)
 
     def getDefaultMaterialInstance(self):
         return self.material_instanceLoader.getMaterialInstance('default')

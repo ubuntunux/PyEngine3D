@@ -118,7 +118,7 @@ DensityProfile(DensityProfileLayer[2](DensityProfileLayer(25.000000, 0.000000, 0
 vec3(0.000650, 0.001881, 0.000085),
 vec3(0.100000, 0.100000, 0.100000),
 -0.20791166111381348);
-const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(114974.916437, 71305.954816, 65310.548555);
+const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(683.000000, 683.000000, 683.000000);
 const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(98242.786222, 69954.398112, 66475.012354);
 Number ClampCosine(Number mu) {
   return clamp(mu, Number(-1.0), Number(1.0));
@@ -1075,8 +1075,6 @@ IrradianceSpectrum GetSunAndSkyIrradiance(
           atmosphere, transmittance_texture, r, mu_s) *
       max(dot(normal, sun_direction), 0.0);
 }
-#define RADIANCE_API_ENABLED
-
     uniform sampler2D transmittance_texture;
     uniform sampler3D scattering_texture;
     uniform sampler3D single_mie_scattering_texture;

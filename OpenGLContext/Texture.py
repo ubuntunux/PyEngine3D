@@ -120,6 +120,11 @@ class Texture:
             mag_filter=self.mag_filter,
             wrap=self.wrap
         )
+
+        # only possible for texture 2d.
+        if get_image_data and GL_TEXTURE_2D == self.target:
+            save_data['data'] = self.get_image_data()
+
         return save_data
 
     def get_image_data(self):
@@ -200,8 +205,10 @@ class Texture2D(Texture):
 
     def get_save_data(self, get_image_data=True):
         save_data = Texture.get_save_data(self)
+
         if get_image_data:
             save_data['data'] = self.get_image_data()
+
         return save_data
 
 

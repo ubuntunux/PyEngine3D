@@ -358,9 +358,10 @@ class CoreManager(Singleton):
 
         def cmd_view_rendertarget(value):
             rendertarget_index, rendertarget_name = value
-            self.renderer.set_debug_rendertarget(rendertarget_index, rendertarget_name)
-            if self.renderer.debug_rendertarget:
-                attribute = self.renderer.debug_rendertarget.getAttribute()
+            texture = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
+            self.renderer.set_debug_texture(texture)
+            if self.renderer.debug_texture:
+                attribute = self.renderer.debug_texture.getAttribute()
                 if attribute:
                     self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget

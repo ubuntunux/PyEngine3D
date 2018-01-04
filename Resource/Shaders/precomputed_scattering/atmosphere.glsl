@@ -1,7 +1,7 @@
 #include "precomputed_scattering/atmosphere_predefine.glsl"
 #include "precomputed_scattering/atmosphere_vs.glsl"
 
-#define USE_LUMINANCE 1
+#define USE_LUMINANCE 0
 
 uniform vec3 camera;
 uniform float exposure;
