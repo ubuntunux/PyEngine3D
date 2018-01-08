@@ -403,7 +403,9 @@ class Renderer(Singleton):
         if RenderOption.RENDER_SKELETON_ACTOR:
             self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
             self.framebuffer.bind_framebuffer()
-            material_instance = self.resource_manager.getMaterialInstance("pre_pass_skeleton")
+            material_instance = self.resource_manager.getMaterialInstance(name="pre_pass_skeletal",
+                                                                          shader_name="pre_pass",
+                                                                          macros={"SKELETAL": 1})
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
                                self.scene_manager.skeleton_solid_render_infos, material_instance)
 
@@ -450,7 +452,9 @@ class Renderer(Singleton):
                            self.scene_manager.static_solid_render_infos, material_instance)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
-            material_instance = self.resource_manager.getMaterialInstance("shadowmap_skeleton")
+            material_instance = self.resource_manager.getMaterialInstance(name="shadowmap_skeletal",
+                                                                          shader_name="shadowmap",
+                                                                          macros={"SKELETAL": 1})
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
                                self.scene_manager.skeleton_solid_render_infos, material_instance)
             self.framebuffer_shadow.unbind_framebuffer()

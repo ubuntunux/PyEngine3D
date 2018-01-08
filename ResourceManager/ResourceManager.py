@@ -1346,7 +1346,11 @@ class ResourceManager(Singleton):
     def getMaterialInstance(self, name, shader_name='', macros={}):
         return self.material_instanceLoader.getMaterialInstance(name, shader_name=shader_name, macros=macros)
 
-    def getDefaultMaterialInstance(self):
+    def getDefaultMaterialInstance(self, skeletal=False):
+        if skeletal:
+            return self.material_instanceLoader.getMaterialInstance(name='default_skeletal',
+                                                                    shader_name='default',
+                                                                    macros={'SKELETAL': 1})
         return self.material_instanceLoader.getMaterialInstance('default')
 
     # FUNCTIONS : Mesh

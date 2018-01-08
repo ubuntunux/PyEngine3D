@@ -22,7 +22,8 @@ class Model:
     def set_mesh(self, mesh):
         if mesh:
             self.mesh = mesh
-            default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance()
+            default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance(
+                skeletal=mesh.has_bone())
             material_instances = [default_material_instance, ] * len(mesh.geometries)
             for i in range(min(len(self.material_instances), len(material_instances))):
                 material_instances[i] = self.material_instances[i]

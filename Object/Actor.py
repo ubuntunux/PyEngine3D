@@ -110,7 +110,7 @@ class SkeletonActor(StaticActor):
             for i, animation in enumerate(self.model.mesh.animations):
                 if animation:
                     frame_count = animation.frame_count
-                    if frame_count > 0:
+                    if frame_count > 1:
                         self.animation_time = math.fmod(self.animation_time + dt, animation.animation_length)
                         frame = animation.get_time_to_frame(self.animation_time)
                     else:
