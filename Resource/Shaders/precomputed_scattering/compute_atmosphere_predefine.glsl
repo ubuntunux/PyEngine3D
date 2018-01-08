@@ -1,11 +1,3 @@
-#include "scene_constants.glsl"
-
-#ifdef GL_VERTEX_SHADER
-layout(location = 0) in vec2 vertex;
-void main() {
-    gl_Position = vec4(vertex, 0.0, 1.0);
-}
-#endif
 const int TRANSMITTANCE_TEXTURE_WIDTH = 256;
 const int TRANSMITTANCE_TEXTURE_HEIGHT = 64;
 const int SCATTERING_TEXTURE_R_SIZE = 32;
@@ -14,7 +6,7 @@ const int SCATTERING_TEXTURE_MU_S_SIZE = 32;
 const int SCATTERING_TEXTURE_NU_SIZE = 8;
 const int IRRADIANCE_TEXTURE_WIDTH = 64;
 const int IRRADIANCE_TEXTURE_HEIGHT = 16;
-#define COMBINED_SCATTERING_TEXTURES
+#define COMBINED_SCATTERING_TEXTURES 0
 #define Length float
 #define Wavelength float
 #define Angle float
@@ -112,20 +104,20 @@ struct AtmosphereParameters {
 };
 
 const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(
-vec3(1.474000, 1.850400, 1.911980),
+vec3(1.386469, 1.304176, 1.234185),
 0.004675,
 6360.0,
 6420.0,
 DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000, 0.000000, 0.000000, 0.000000, 0.000000),DensityProfileLayer(0.000000, 1.000000, -0.125000, 0.000000, 0.000000))),
-vec3(0.005802, 0.013558, 0.033100),
+vec3(0.005008, 0.004294, 0.003702),
 DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000, 0.000000, 0.000000, 0.000000, 0.000000),DensityProfileLayer(0.000000, 1.000000, -0.833333, 0.000000, 0.000000))),
 vec3(0.003996, 0.003996, 0.003996),
 vec3(0.004440, 0.004440, 0.004440),
 0.8,
 DensityProfile(DensityProfileLayer[2](DensityProfileLayer(25.000000, 0.000000, 0.000000, 0.066667, -0.666667),DensityProfileLayer(0.000000, 0.000000, 0.000000, -0.066667, 2.666667))),
-vec3(0.000650, 0.001881, 0.000085),
+vec3(0.000374, 0.000224, 0.000133),
 vec3(0.100000, 0.100000, 0.100000),
--0.20791166111381348);
+-0.4999999690599179);
 const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(683.000000, 683.000000, 683.000000);
 const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(98242.786222, 69954.398112, 66475.012354);
 Number ClampCosine(Number mu) {
@@ -889,7 +881,7 @@ IrradianceSpectrum GetIrradiance(
 }
 
 
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
 vec3 GetExtrapolatedSingleMieScattering(
     const in AtmosphereParameters atmosphere, const in vec4 scattering) {
   if (scattering.r == 0.0) {
@@ -917,7 +909,7 @@ IrradianceSpectrum GetCombinedScattering(
       uvwz.z, uvwz.w);
   vec3 uvw1 = vec3((tex_x + 1.0 + uvwz.y) / Number(SCATTERING_TEXTURE_NU_SIZE),
       uvwz.z, uvwz.w);
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
   vec4 combined_scattering =
       texture(scattering_texture, uvw0) * (1.0 - lerp) +
       texture(scattering_texture, uvw1) * lerp;
@@ -936,7 +928,7 @@ IrradianceSpectrum GetCombinedScattering(
 }
 
 
-RadianceSpectrum GetSkyRadiance(
+RadianceSpectrum ComputeSkyRadiance(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in ReducedScatteringTexture scattering_texture,
@@ -998,7 +990,7 @@ RadianceSpectrum GetSkyRadiance(
 }
 
 
-RadianceSpectrum GetSkyRadianceToPoint(
+RadianceSpectrum ComputeSkyRadianceToPoint(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in ReducedScatteringTexture scattering_texture,
@@ -1054,7 +1046,7 @@ RadianceSpectrum GetSkyRadianceToPoint(
   scattering = scattering - shadow_transmittance * scattering_p;
   single_mie_scattering =
       single_mie_scattering - shadow_transmittance * single_mie_scattering_p;
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
   single_mie_scattering = GetExtrapolatedSingleMieScattering(
       atmosphere, vec4(scattering, single_mie_scattering.r));
 #endif
@@ -1066,7 +1058,7 @@ RadianceSpectrum GetSkyRadianceToPoint(
       MiePhaseFunction(atmosphere.mie_phase_function_g, nu);
 }
 
-IrradianceSpectrum GetSunAndSkyIrradiance(
+IrradianceSpectrum ComputeSunAndSkyIrradiance(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in IrradianceTexture irradiance_texture,
@@ -1083,12 +1075,3 @@ IrradianceSpectrum GetSunAndSkyIrradiance(
           atmosphere, transmittance_texture, r, mu_s) *
       max(dot(normal, sun_direction), 0.0);
 }
-
-    #ifdef GL_FRAGMENT_SHADER
-    layout(location = 0) out vec3 transmittance;
-    void main() {
-      transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
-          ATMOSPHERE, gl_FragCoord.xy);
-    }
-    #endif
-    

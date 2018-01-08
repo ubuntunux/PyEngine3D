@@ -759,7 +759,7 @@ IrradianceSpectrum GetIrradiance(
 }
 
 
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
 vec3 GetExtrapolatedSingleMieScattering(
     const in AtmosphereParameters atmosphere, const in vec4 scattering) {
   if (scattering.r == 0.0) {
@@ -787,7 +787,7 @@ IrradianceSpectrum GetCombinedScattering(
       uvwz.z, uvwz.w);
   vec3 uvw1 = vec3((tex_x + 1.0 + uvwz.y) / Number(SCATTERING_TEXTURE_NU_SIZE),
       uvwz.z, uvwz.w);
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
   vec4 combined_scattering =
       texture(scattering_texture, uvw0) * (1.0 - lerp) +
       texture(scattering_texture, uvw1) * lerp;
@@ -806,7 +806,7 @@ IrradianceSpectrum GetCombinedScattering(
 }
 
 
-RadianceSpectrum GetSkyRadiance(
+RadianceSpectrum ComputeSkyRadiance(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in ReducedScatteringTexture scattering_texture,
@@ -868,7 +868,7 @@ RadianceSpectrum GetSkyRadiance(
 }
 
 
-RadianceSpectrum GetSkyRadianceToPoint(
+RadianceSpectrum ComputeSkyRadianceToPoint(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in ReducedScatteringTexture scattering_texture,
@@ -924,7 +924,7 @@ RadianceSpectrum GetSkyRadianceToPoint(
   scattering = scattering - shadow_transmittance * scattering_p;
   single_mie_scattering =
       single_mie_scattering - shadow_transmittance * single_mie_scattering_p;
-#ifdef COMBINED_SCATTERING_TEXTURES
+#if COMBINED_SCATTERING_TEXTURES == 1
   single_mie_scattering = GetExtrapolatedSingleMieScattering(
       atmosphere, vec4(scattering, single_mie_scattering.r));
 #endif
@@ -936,7 +936,7 @@ RadianceSpectrum GetSkyRadianceToPoint(
       MiePhaseFunction(atmosphere.mie_phase_function_g, nu);
 }
 
-IrradianceSpectrum GetSunAndSkyIrradiance(
+IrradianceSpectrum ComputeSunAndSkyIrradiance(
     const in AtmosphereParameters atmosphere,
     const in TransmittanceTexture transmittance_texture,
     const in IrradianceTexture irradiance_texture,

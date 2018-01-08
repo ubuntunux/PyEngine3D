@@ -1,3 +1,4 @@
+#define COMBINED_SCATTERING_TEXTURES 0
 #define Length float
 #define Wavelength float
 #define Angle float

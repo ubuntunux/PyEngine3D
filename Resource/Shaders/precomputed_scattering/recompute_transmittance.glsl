@@ -1,4 +1,4 @@
-#include "precomputed_scattering/compute_atmosphere_predefine.glsl"
+#include "precomputed_scattering/atmosphere_predefine.glsl"
 #include "precomputed_scattering/precompute_vs.glsl"
 
 #ifdef GL_FRAGMENT_SHADER

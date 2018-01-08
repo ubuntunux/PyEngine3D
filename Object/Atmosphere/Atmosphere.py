@@ -26,7 +26,6 @@ class Atmosphere:
         self.use_constant_solar_spectrum = False
         self.use_ozone = True
         self.use_combined_textures = True
-        self.use_half_precision = True
         self.use_luminance = Luminance.PRECOMPUTED
         self.do_white_balance = False
         self.show_help = True
@@ -71,7 +70,7 @@ class Atmosphere:
             dtype=np.float32
         )
 
-        max_sun_zenith_angle = (102.0 if self.use_half_precision else 120.0) / 180.0 * kPi
+        max_sun_zenith_angle = 120.0 / 180.0 * kPi
 
         rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
         mie_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
@@ -135,22 +134,16 @@ class Atmosphere:
                            ground_albedo,
                            max_sun_zenith_angle,
                            kLengthUnitInMeters,
+                           self.use_luminance != Luminance.NONE,
                            num_precomputed_wavelengths,
-                           self.use_combined_textures,
-                           self.use_half_precision)
+                           self.use_combined_textures)
 
-        atmosphere_predefine_shader = resource_manager.getShader('precomputed_scattering.atmosphere_predefine')
-        atmosphere_predefine_shader.shader_code = self.model.atmosphere_shader_source
-        resource_manager.save_resource('precomputed_scattering.atmosphere_predefine', 'Shader')
-
-        self.atmosphere_shader = resource_manager.getShader('precomputed_scattering.atmosphere')
-        if self.use_luminance == Luminance.NONE:
-            macros = {'USE_LUMINANCE': 0}
-        else:
-            macros = {'USE_LUMINANCE': 1}
+        macros = {
+            'USE_LUMINANCE': 1 if self.use_luminance else 0,
+            'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
+        }
         self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
                                                                                  macros=macros)
-
         self.model.Init()
 
     def render_precomputed_atmosphere(self, main_camera, main_light):
