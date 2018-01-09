@@ -760,15 +760,10 @@ class MaterialInstanceLoader(ResourceLoader):
                 material_instance = self.getResourceData(name)
             else:
                 material_instance = self.getResourceData('default')
-        # elif macros:
-        #     logger.warn("%s material instance macro compare is very slow. make predefine. (%s)" %
-        #                 (material_instance.name, macros))
-        #     for key, value in macros.items():
-        #         if key not in material_instance.macros or value != material_instance.macros[key]:
-        #             material = self.resource_manager.getMaterial(material_instance.shader_name,
-        #                                                          macros)
-        #             material_instance.set_material(material)
-        #             return material_instance
+        elif macros:
+            material = self.resource_manager.getMaterial(material_instance.shader_name, macros)
+            material_instance.set_material(material)
+            return material_instance
         return material_instance
 
 
