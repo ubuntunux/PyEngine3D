@@ -142,11 +142,11 @@ void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_i
 
 #ifdef GL_FRAGMENT_SHADER
 in vec3 view_ray;
+in vec2 uv;
 layout(location = 0) out vec4 color;
 
 void main()
 {
-
     vec3 view_direction = normalize(view_ray);
     float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
     float shadow_in;

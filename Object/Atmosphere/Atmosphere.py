@@ -60,8 +60,8 @@ class Atmosphere:
         self.inited = True
         resource_manager = CoreManager.instance().resource_manager
 
-        positions = np.array([(-1, -1, 0, 1), (1, -1, 0, 1), (-1, 1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
-        indices = np.array([0, 1, 2, 2, 1, 3], dtype=np.uint32)
+        positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
+        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
 
         self.quad = VertexArrayBuffer(
             name='atmosphere quad',

@@ -169,10 +169,10 @@ class UniformTextureBase(UniformVariable):
 
     def bind_uniform(self, texture, num=1):
         if texture:
-            glUniform1i(self.location, self.textureIndex)
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
             # glEnable(GL_TEXTURE_CUBE_MAP)
             texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind
+            glUniform1i(self.location, self.textureIndex)
         else:
             logger.error("%s %s is None" % (self.name, self.__class__.__name__))
 
