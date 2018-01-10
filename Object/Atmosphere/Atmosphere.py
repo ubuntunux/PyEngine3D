@@ -26,7 +26,7 @@ class Atmosphere:
         self.use_constant_solar_spectrum = False
         self.use_ozone = True
         self.use_combined_textures = True
-        self.use_luminance = Luminance.PRECOMPUTED
+        self.use_luminance = Luminance.NONE
         self.do_white_balance = False
         self.show_help = True
         self.view_distance_meters = 9000.0

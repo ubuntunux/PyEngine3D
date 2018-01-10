@@ -182,7 +182,8 @@ class Model:
             wrap=GL_CLAMP_TO_EDGE
         )
 
-        if self.combine_scattering_textures:
+        self.optional_single_mie_scattering_texture = None
+        if not self.combine_scattering_textures:
             self.optional_single_mie_scattering_texture = rendertarget_manager.create_rendertarget(
                 "optional_single_mie_scattering_texture",
                 Texture3D,
@@ -196,8 +197,6 @@ class Model:
                 data_type=GL_FLOAT,
                 wrap=GL_CLAMP
             )
-        else:
-            self.optional_single_mie_scattering_texture = None
 
         self.irradiance_texture = rendertarget_manager.create_rendertarget(
             "irradiance_texture",
@@ -383,11 +382,12 @@ class Model:
                                 num_scattering_orders)
 
         # Note : recompute compute_transmittance
+        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
         recompute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_scattering.recompute_transmittance',
             macros=self.material_instance_macros)
         recompute_transmittance_mi.use_program()
-        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
+
         self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
