@@ -268,11 +268,11 @@ class Model:
 
         self.delta_multiple_scattering_texture = self.delta_rayleigh_scattering_texture
 
-        positions = np.array([(-1, 1), (-1, -1), (1, -1), (1, 1)], dtype=np.float32)
+        positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
         indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
 
         self.quad = VertexArrayBuffer(
-            name='atmosphere model quad',
+            name='precomputed atmosphere quad',
             datas=[positions, ],
             index_data=indices,
             dtype=np.float32
@@ -382,14 +382,13 @@ class Model:
                                 num_scattering_orders)
 
         # Note : recompute compute_transmittance
-        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
-        recompute_transmittance_mi = resource_manager.getMaterialInstance(
-            'precomputed_scattering.recompute_transmittance',
-            macros=self.material_instance_macros)
-        recompute_transmittance_mi.use_program()
-
-        self.quad.bind_vertex_buffer()
-        self.quad.draw_elements()
+        # renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
+        # recompute_transmittance_mi = resource_manager.getMaterialInstance(
+        #     'precomputed_scattering.recompute_transmittance',
+        #     macros=self.material_instance_macros)
+        # recompute_transmittance_mi.use_program()
+        # self.quad.bind_vertex_buffer()
+        # self.quad.draw_elements()
 
     def Precompute(self,
                    lambdas,
@@ -439,7 +438,7 @@ class Model:
         glDisablei(GL_BLEND, 1)
 
         # compute_single_scattering
-        if self.optional_single_mie_scattering_texture is not None:
+        if self.optional_single_mie_scattering_texture is None:
             renderer.framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
                                                           self.delta_mie_scattering_texture,
                                                           self.scattering_texture,
