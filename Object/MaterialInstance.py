@@ -28,7 +28,7 @@ class MaterialInstance:
         self.linked_material_component_map = dict()
         self.Attributes = Attributes()
 
-        material = CoreManager.instance().resource_manager.getMaterial(self.shader_name, self.macros)
+        material = data.get('material')
 
         # link uniform_buffers and uniform_data
         self.set_material(material)

@@ -268,8 +268,8 @@ class Model:
 
         self.delta_multiple_scattering_texture = self.delta_rayleigh_scattering_texture
 
-        positions = np.array([(-1, -1), (1, -1), (-1, 1), (1, 1)], dtype=np.float32)
-        indices = np.array([0, 1, 2, 2, 1, 3], dtype=np.uint32)
+        positions = np.array([(-1, 1), (-1, -1), (1, -1), (1, 1)], dtype=np.float32)
+        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
 
         self.quad = VertexArrayBuffer(
             name='atmosphere model quad',
@@ -407,13 +407,15 @@ class Model:
         shader_loader.save_resource(shader_name)
         shader_loader.load_resource(shader_name)
 
+        glEnable(GL_BLEND)
         glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
         glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
 
         self.quad.bind_vertex_buffer()
 
         # compute_transmittance
-        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture, depth_texture=None)
+        renderer.framebuffer_manager.bind_framebuffer(self.transmittance_texture,
+                                                      depth_texture=None)
         glDisablei(GL_BLEND, 0)
         compute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_scattering.compute_transmittance',
@@ -422,7 +424,8 @@ class Model:
         self.quad.draw_elements()
 
         # compute_direct_irradiance
-        renderer.framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture, self.irradiance_texture,
+        renderer.framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture,
+                                                      self.irradiance_texture,
                                                       depth_texture=None)
         if blend:
             glEnablei(GL_BLEND, 1)
@@ -457,9 +460,11 @@ class Model:
         if blend:
             glEnablei(GL_BLEND, 2)
             glEnablei(GL_BLEND, 3)
+
         for layer in range(SCATTERING_TEXTURE_DEPTH):
             compute_single_scattering_mi.bind_uniform_data("layer", layer)
             self.quad.draw_elements()
+
         glDisablei(GL_BLEND, 0)
         glDisablei(GL_BLEND, 1)
         glDisablei(GL_BLEND, 2)
