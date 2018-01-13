@@ -747,7 +747,9 @@ class MaterialInstanceLoader(ResourceLoader):
 
         if shader_name:
             resource_name = self.get_new_resource_name(resource_name)
-            material_instance = MaterialInstance(resource_name, shader_name=shader_name, macros=macros)
+            material = self.resource_manager.getMaterial(shader_name, macros)
+            material_instance = MaterialInstance(resource_name, material=material, shader_name=shader_name,
+                                                 macros=macros)
             if material_instance.valid:
                 resource = self.create_resource(resource_name)
                 resource.set_data(material_instance)

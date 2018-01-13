@@ -106,10 +106,10 @@ class MaterialInstance:
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 
-    def bind_uniform_data(self, uniform_name, uniform_data, num=1):
+    def bind_uniform_data(self, uniform_name, uniform_data, num=1, transpose=False):
         uniform = self.linked_uniform_map.get(uniform_name)
         if uniform:
-            uniform[0].bind_uniform(uniform_data, num)
+            uniform[0].bind_uniform(uniform_data, num, transpose)
         else:
             logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 

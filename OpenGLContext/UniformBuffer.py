@@ -85,7 +85,7 @@ class UniformVariable:
             self.valid = False
             # logger.warn("%s location is -1" % variable_name)
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         raise BaseException("You must implement bind function.")
 
 
@@ -97,64 +97,64 @@ class UniformArray(UniformVariable):
 class UniformBool(UniformVariable):
     uniform_type = "bool"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform1i(self.location, value)
 
 
 class UniformInt(UniformVariable):
     uniform_type = "int"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform1i(self.location, value)
 
 
 class UniformFloat(UniformVariable):
     uniform_type = "float"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform1f(self.location, value)
 
 
 class UniformVector2(UniformVariable):
     uniform_type = "vec2"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform2fv(self.location, num, value)
 
 
 class UniformVector3(UniformVariable):
     uniform_type = "vec3"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform3fv(self.location, num, value)
 
 
 class UniformVector4(UniformVariable):
     uniform_type = "vec4"
 
-    def bind_uniform(self, value, num=1):
+    def bind_uniform(self, value, num=1, transpose=False):
         glUniform4fv(self.location, num, value)
 
 
 class UniformMatrix2(UniformVariable):
     uniform_type = "mat2"
 
-    def bind_uniform(self, value, num=1):
-        glUniformMatrix2fv(self.location, num, GL_FALSE, value)
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix2fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformMatrix3(UniformVariable):
     uniform_type = "mat3"
 
-    def bind_uniform(self, value, num=1):
-        glUniformMatrix3fv(self.location, num, GL_FALSE, value)
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix3fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformMatrix4(UniformVariable):
     uniform_type = "mat4"
 
-    def bind_uniform(self, value, num=1):
-        glUniformMatrix4fv(self.location, num, GL_FALSE, value)
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix4fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformTextureBase(UniformVariable):
@@ -167,7 +167,7 @@ class UniformTextureBase(UniformVariable):
     def set_texture_index(self, textureIndex):
         self.textureIndex = textureIndex
 
-    def bind_uniform(self, texture, num=1):
+    def bind_uniform(self, texture, num=1, transpose=False):
         if texture:
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
             # glEnable(GL_TEXTURE_CUBE_MAP)
