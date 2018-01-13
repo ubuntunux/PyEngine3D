@@ -24,17 +24,19 @@ void main() {
     fs_output = texture(texture_source, texcoord);
 #elif GL_TEXTURE_3D == 1
     vec3 texture_size = textureSize(texture_source, 0);
-    float width = sqrt(texture_size.z);
-    float depth = floor(vs_output.tex_coord.x * width) + floor((1.0 - vs_output.tex_coord.y) * width) * width;
+    float l = log2(texture_size.z);
+    float width = exp2(ceil(l / 2.0));
+    float height = texture_size.z / width;
+    float depth = floor(vs_output.tex_coord.x * width) + floor((1.0 - vs_output.tex_coord.y) * height) * width;
     if(texture_size.z < depth)
     {
-        depth = 1.0;
+        depth = 0.0;
     }
     else
     {
         depth /= texture_size.z;
     }
-    vec3 texcoord = vec3(fract(vs_output.tex_coord.xy * width), depth);
+    vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
     fs_output = texture(texture_source, texcoord);
 #elif GL_TEXTURE_CUBE_MAP == 1
     vec4 position = vec4(vs_output.tex_coord.xy * 2.0 - 1.0 + JITTER_OFFSET, -1.0, 1.0);
