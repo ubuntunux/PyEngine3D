@@ -38,7 +38,7 @@ class Atmosphere:
         self.exposure = 10.0
 
         self.white_point = Float3()
-        self.earth_center = 0.0
+        self.earth_center = Float3()
         self.sun_size = Float2()
 
         self.model = None
@@ -113,7 +113,9 @@ class Atmosphere:
         else:
             self.white_point[...] = 1.0
 
-        self.earth_center = -kBottomRadius / kLengthUnitInMeters
+        self.earth_center[0] = 0.0
+        self.earth_center[0] = 0.0
+        self.earth_center[2] = -kBottomRadius / kLengthUnitInMeters
 
         self.sun_size[0] = math.tan(kSunAngularRadius)
         self.sun_size[1] = math.cos(kSunAngularRadius)
@@ -150,12 +152,29 @@ class Atmosphere:
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
 
-        # model_from_view
         l = self.view_distance_meters / kLengthUnitInMeters
-        model_from_view = main_camera.view_origin.transpose()
+
+        self.view_zenith_angle_radians = main_camera.transform.rot[0]
+        self.view_azimuth_angle_radians = main_camera.transform.rot[1]
+
+        cos_z = math.cos(self.view_zenith_angle_radians)
+        sin_z = math.sin(self.view_zenith_angle_radians)
+        cos_a = math.cos(self.view_azimuth_angle_radians)
+        sin_a = math.sin(self.view_azimuth_angle_radians)
+        ux = np.array([-sin_a, cos_a, 0.0], dtype=np.float32)
+        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], dtype=np.float32)
+        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], dtype=np.float32)
+        model_from_view = np.array(
+            [[ux[0], uy[0], uz[0], 0],
+             [ux[1], uy[1], uz[1], 0],
+             [ux[2], uy[2], uz[2], 0],
+             [0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+        model_from_view[...] = model_from_view.transpose()
+
         model_from_view[3][0] = model_from_view[2][0] * l
         model_from_view[3][1] = model_from_view[2][1] * l
         model_from_view[3][2] = model_from_view[2][2] * l
+        camera = np.array([model_from_view[3][0], model_from_view[3][1], model_from_view[3][2]], dtype=np.float32)
 
         # view_from_clip
         kFovY = main_camera.fov / 180.0 * kPi
@@ -173,9 +192,9 @@ class Atmosphere:
 
         # sun_direction
         self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        self.sun_direction[1] = cos(self.sun_zenith_angle_radians)
-        self.sun_direction[2] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        self.sun_direction = main_light.transform.front
+        self.sun_direction[1] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+        self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
+        # self.sun_direction = main_light.transform.front
 
         self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.model.transmittance_texture)
         self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.model.scattering_texture)
@@ -184,10 +203,10 @@ class Atmosphere:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.model.optional_single_mie_scattering_texture)
 
-        self.atmosphere_material_instance.bind_uniform_data("camera", model_from_view[3][0:3])
-        self.atmosphere_material_instance.bind_uniform_data("exposure", exposure)
+        self.atmosphere_material_instance.bind_uniform_data("camera", camera)
+        # self.atmosphere_material_instance.bind_uniform_data("exposure", exposure)
         self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
-        self.atmosphere_material_instance.bind_uniform_data("white_point", self.white_point)
+        # self.atmosphere_material_instance.bind_uniform_data("white_point", self.white_point)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
         self.atmosphere_material_instance.bind_uniform_data("model_from_view", model_from_view)

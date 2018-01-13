@@ -122,7 +122,7 @@ class Texture:
         )
 
         # only possible for texture 2d.
-        if get_image_data and GL_TEXTURE_2D == self.target:
+        if get_image_data and GL_TEXTURE_2D == self.target and self.texture_format in (GL_RGB, GL_RGBA):
             save_data['data'] = self.get_image_data()
 
         return save_data
@@ -141,6 +141,9 @@ class Texture:
             logger.warn('%s disable to generate mipmap.' % self.name)
 
     def bind_texture(self):
+        if self.buffer == -1:
+            logger.warn("%s texture is invalid." % self.name)
+            return
         glBindTexture(self.target, self.buffer)
         # if self.attachment:
         #     error_msg = "%s can not bind to a texture because it is attached to a frame buffer.." % self.name
@@ -202,14 +205,6 @@ class Texture2D(Texture):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
-
-    def get_save_data(self, get_image_data=True):
-        save_data = Texture.get_save_data(self)
-
-        if get_image_data:
-            save_data['data'] = self.get_image_data()
-
-        return save_data
 
 
 class Texture3D(Texture):

@@ -1,16 +1,11 @@
 #define USE_LUMINANCE 0
 
-#include "precomputed_scattering/atmosphere_predefine.glsl"
-#include "precomputed_scattering/atmosphere_vs.glsl"
-
 const vec3 kSphereCenter = vec3(0.0, 0.0, 1.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
 
 uniform vec3 camera;
-uniform float exposure;
-uniform vec3 white_point;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
@@ -19,6 +14,9 @@ uniform sampler2D transmittance_texture;
 uniform sampler3D scattering_texture;
 uniform sampler3D single_mie_scattering_texture;
 uniform sampler2D irradiance_texture;
+
+#include "precomputed_scattering/atmosphere_predefine.glsl"
+#include "precomputed_scattering/atmosphere_vs.glsl"
 
 #if USE_LUMINANCE == 1
     Luminance3 GetSolarRadiance() {
@@ -147,6 +145,8 @@ layout(location = 0) out vec4 color;
 
 void main()
 {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+
     vec3 view_direction = normalize(view_ray);
     float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
     float shadow_in;
@@ -218,7 +218,7 @@ void main()
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
 
-    color.xyz = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));
+    color.xyz = radiance * 3.0;
     color.w = 1.0;
     color = max(color, 0.0);
 }
