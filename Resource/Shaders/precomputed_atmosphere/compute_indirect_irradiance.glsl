@@ -1,5 +1,5 @@
-#include "precomputed_scattering/compute_atmosphere_predefine.glsl"
-#include "precomputed_scattering/precompute_vs.glsl"
+#include "precomputed_atmosphere/compute_atmosphere_predefine.glsl"
+#include "precomputed_atmosphere/precompute_vs.glsl"
 
 #ifdef GL_FRAGMENT_SHADER
 layout(location = 0) out vec3 delta_irradiance;

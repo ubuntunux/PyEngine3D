@@ -15,8 +15,8 @@ uniform sampler3D scattering_texture;
 uniform sampler3D single_mie_scattering_texture;
 uniform sampler2D irradiance_texture;
 
-#include "precomputed_scattering/atmosphere_predefine.glsl"
-#include "precomputed_scattering/atmosphere_vs.glsl"
+#include "precomputed_atmosphere/atmosphere_predefine.glsl"
+#include "precomputed_atmosphere/atmosphere_vs.glsl"
 
 #if USE_LUMINANCE == 1
     Luminance3 GetSolarRadiance() {

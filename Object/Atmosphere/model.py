@@ -146,7 +146,7 @@ class Model:
         # Atmosphere shader code
         resource_manager = CoreManager.instance().resource_manager
         shader_loader = resource_manager.shader_loader
-        shader_name = 'precomputed_scattering.atmosphere_predefine'
+        shader_name = 'precomputed_atmosphere.atmosphere_predefine'
         recompute_atmosphere_predefine = resource_manager.getShader(shader_name)
         recompute_atmosphere_predefine.shader_code = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
         shader_loader.save_resource(shader_name)
@@ -310,8 +310,8 @@ class Model:
         sun_k_r, sun_k_g, sun_k_b = self.kSun[0], self.kSun[1], self.kSun[2]
 
         resource_manager = CoreManager.instance().resource_manager
-        definitions_glsl = resource_manager.getShader('precomputed_scattering.definitions').shader_code
-        functions_glsl = resource_manager.getShader('precomputed_scattering.functions').shader_code
+        definitions_glsl = resource_manager.getShader('precomputed_atmosphere.definitions').shader_code
+        functions_glsl = resource_manager.getShader('precomputed_atmosphere.functions').shader_code
 
         header = ["const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
                   "const int TRANSMITTANCE_TEXTURE_HEIGHT = %d;" % TRANSMITTANCE_TEXTURE_HEIGHT,
@@ -386,7 +386,7 @@ class Model:
         renderer.framebuffer.set_depth_texture(None)
         renderer.framebuffer.bind_framebuffer()
         recompute_transmittance_mi = resource_manager.getMaterialInstance(
-            'precomputed_scattering.recompute_transmittance',
+            'precomputed_atmosphere.recompute_transmittance',
             macros=self.material_instance_macros)
         recompute_transmittance_mi.use_program()
         self.quad.bind_vertex_buffer()
@@ -401,7 +401,7 @@ class Model:
         shader_loader = resource_manager.shader_loader
         renderer = CoreManager.instance().renderer
 
-        shader_name = 'precomputed_scattering.compute_atmosphere_predefine'
+        shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
         compute_atmosphere_predefine = resource_manager.getShader(shader_name)
         compute_atmosphere_predefine.shader_code = self.glsl_header_factory(lambdas)
         shader_loader.save_resource(shader_name)
@@ -417,7 +417,7 @@ class Model:
         renderer.framebuffer.set_depth_texture(None)
         renderer.framebuffer.bind_framebuffer()
         compute_transmittance_mi = resource_manager.getMaterialInstance(
-            'precomputed_scattering.compute_transmittance',
+            'precomputed_atmosphere.compute_transmittance',
             macros=self.material_instance_macros)
         compute_transmittance_mi.use_program()
         self.quad.draw_elements()
@@ -427,7 +427,7 @@ class Model:
         renderer.framebuffer.set_depth_texture(None)
         renderer.framebuffer.bind_framebuffer()
         compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
-            'precomputed_scattering.compute_direct_irradiance',
+            'precomputed_atmosphere.compute_direct_irradiance',
             macros=self.material_instance_macros)
         compute_direct_irradiance_mi.use_program()
         compute_direct_irradiance_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
@@ -452,7 +452,7 @@ class Model:
             renderer.framebuffer.set_depth_texture(None)
             renderer.framebuffer.bind_framebuffer()
         compute_single_scattering_mi = resource_manager.getMaterialInstance(
-            'precomputed_scattering.compute_single_scattering',
+            'precomputed_atmosphere.compute_single_scattering',
             macros=self.material_instance_macros)
         compute_single_scattering_mi.use_program()
         compute_single_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
@@ -469,15 +469,13 @@ class Model:
             glDisablei(GL_BLEND, 2)
             glDisablei(GL_BLEND, 3)
 
-        return
-
         for scattering_order in range(2, num_scattering_orders+1):
             # compute_scattering_density
             renderer.framebuffer.set_color_textures(self.delta_scattering_density_texture)
             renderer.framebuffer.set_depth_texture(None)
             renderer.framebuffer.bind_framebuffer()
             compute_scattering_density_mi = resource_manager.getMaterialInstance(
-                'precomputed_scattering.compute_scattering_density',
+                'precomputed_atmosphere.compute_scattering_density',
                 macros=self.material_instance_macros)
             compute_scattering_density_mi.use_program()
             compute_scattering_density_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
@@ -501,7 +499,7 @@ class Model:
             renderer.framebuffer.set_depth_texture(None)
             renderer.framebuffer.bind_framebuffer()
             compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
-                'precomputed_scattering.compute_indirect_irradiance',
+                'precomputed_atmosphere.compute_indirect_irradiance',
                 macros=self.material_instance_macros)
             compute_indirect_irradiance_mi.use_program()
             compute_indirect_irradiance_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
@@ -524,7 +522,7 @@ class Model:
             renderer.framebuffer.set_depth_texture(None)
             renderer.framebuffer.bind_framebuffer()
             compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
-                'precomputed_scattering.compute_multiple_scattering',
+                'precomputed_atmosphere.compute_multiple_scattering',
                 macros=self.material_instance_macros)
             compute_multiple_scattering_mi.use_program()
             compute_multiple_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)

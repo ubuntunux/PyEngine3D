@@ -40,6 +40,8 @@ class Atmosphere:
         self.white_point = Float3()
         self.earth_center = Float3()
         self.sun_size = Float2()
+        self.model_from_view = Matrix4()
+        self.view_from_clip = Matrix4()
 
         self.model = None
         self.program = -1
@@ -48,18 +50,7 @@ class Atmosphere:
         self.atmosphere_shader = None
         self.atmosphere_material_instance = None
 
-        self.inited = False
-
-    def update(self):
-        pass
-
-    def InitModel(self):
-        if self.inited:
-            return
-
-        self.inited = True
         resource_manager = CoreManager.instance().resource_manager
-
         positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
         indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
 
@@ -120,39 +111,55 @@ class Atmosphere:
         self.sun_size[0] = math.tan(kSunAngularRadius)
         self.sun_size[1] = math.cos(kSunAngularRadius)
 
-        self.model = Model(wavelengths,
-                           solar_irradiance,
-                           kSunAngularRadius,
-                           kBottomRadius,
-                           kTopRadius,
-                           rayleigh_density,
-                           rayleigh_scattering,
-                           mie_density,
-                           mie_scattering,
-                           mie_extinction,
-                           kMiePhaseFunctionG,
-                           ozone_density,
-                           absorption_extinction,
-                           ground_albedo,
-                           max_sun_zenith_angle,
-                           kLengthUnitInMeters,
-                           self.use_luminance != Luminance.NONE,
-                           num_precomputed_wavelengths,
-                           self.use_combined_textures)
+        use_precomputed_model = False
+        if not use_precomputed_model:
+            self.transmittance_texture = resource_manager.getTexture('precomputed_atmosphere.transmittance')
+            self.scattering_texture = resource_manager.getTexture('precomputed_atmosphere.scattering')
+            self.irradiance_texture = resource_manager.getTexture('precomputed_atmosphere.irradiance')
+            if self.use_combined_textures:
+                self.optional_single_mie_scattering_texture = resource_manager.getTexture(
+                    'precomputed_atmosphere.optional_single_mie_scattering')
+            else:
+                self.use_combined_textures = None
+        else:
+            self.model = Model(wavelengths,
+                               solar_irradiance,
+                               kSunAngularRadius,
+                               kBottomRadius,
+                               kTopRadius,
+                               rayleigh_density,
+                               rayleigh_scattering,
+                               mie_density,
+                               mie_scattering,
+                               mie_extinction,
+                               kMiePhaseFunctionG,
+                               ozone_density,
+                               absorption_extinction,
+                               ground_albedo,
+                               max_sun_zenith_angle,
+                               kLengthUnitInMeters,
+                               self.use_luminance != Luminance.NONE,
+                               num_precomputed_wavelengths,
+                               self.use_combined_textures)
+            self.model.Init()
 
+            self.transmittance_texture = self.model.transmittance_texture
+            self.scattering_texture = self.model.scattering_texture
+            self.irradiance_texture = self.model.irradiance_texture
+            self.optional_single_mie_scattering_texture = self.model.optional_single_mie_scattering_texture
+
+        # order is important
         macros = {
             'USE_LUMINANCE': 1 if self.use_luminance else 0,
             'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
         }
-        self.atmosphere_material_instance = resource_manager.getMaterialInstance('precomputed_scattering.atmosphere',
-                                                                                 macros=macros)
-        self.model.Init()
+        self.atmosphere_material_instance = resource_manager.getMaterialInstance(
+            'precomputed_atmosphere.atmosphere',
+            macros=macros)
 
-    def render_precomputed_atmosphere(self, main_camera, main_light):
-        self.quad.bind_vertex_buffer()
-        self.atmosphere_material_instance.use_program()
-
-        l = self.view_distance_meters / kLengthUnitInMeters
+    def update(self, main_camera, main_light):
+        dist = main_camera.transform.pos[2]
+        l = (self.view_distance_meters + dist) / kLengthUnitInMeters
 
         self.view_zenith_angle_radians = main_camera.transform.rot[0]
         self.view_azimuth_angle_radians = main_camera.transform.rot[1]
@@ -161,69 +168,46 @@ class Atmosphere:
         sin_z = math.sin(self.view_zenith_angle_radians)
         cos_a = math.cos(self.view_azimuth_angle_radians)
         sin_a = math.sin(self.view_azimuth_angle_radians)
-        ux = np.array([-sin_a, cos_a, 0.0], dtype=np.float32)
-        uy = np.array([-cos_z * cos_a, -cos_z * sin_a, sin_z], dtype=np.float32)
-        uz = np.array([sin_z * cos_a, sin_z * sin_a, cos_z], dtype=np.float32)
-        model_from_view = np.array(
-            [[ux[0], uy[0], uz[0], 0],
-             [ux[1], uy[1], uz[1], 0],
-             [ux[2], uy[2], uz[2], 0],
-             [0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-        model_from_view[...] = model_from_view.transpose()
-
-        model_from_view[3][0] = model_from_view[2][0] * l
-        model_from_view[3][1] = model_from_view[2][1] * l
-        model_from_view[3][2] = model_from_view[2][2] * l
-        camera = np.array([model_from_view[3][0], model_from_view[3][1], model_from_view[3][2]], dtype=np.float32)
+        ux = [-sin_a, cos_a, 0.0, 0.0]
+        uy = [-cos_z * cos_a, -cos_z * sin_a, sin_z, 0.0]
+        uz = [sin_z * cos_a, sin_z * sin_a, cos_z, 0.0]
+        self.model_from_view[0][...] = ux
+        self.model_from_view[1][...] = uy
+        self.model_from_view[2][...] = uz
+        self.model_from_view[3][0] = self.model_from_view[2][0] * l
+        self.model_from_view[3][1] = self.model_from_view[2][1] * l
+        self.model_from_view[3][2] = self.model_from_view[2][2] * l
 
         # view_from_clip
         kFovY = main_camera.fov / 180.0 * kPi
         kTanFovY = math.tan(kFovY / 2.0)
-        view_from_clip = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
-                                   [0.0, kTanFovY, 0.0, 0.0],
-                                   [0.0, 0.0, 0.0, 1.0],
-                                   [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
-
-        # exposure
-        if self.use_luminance == Luminance.NONE:
-            exposure = self.exposure
-        else:
-            exposure = self.exposure * 1e-5
+        self.view_from_clip[...] = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
+                                        [0.0, kTanFovY, 0.0, 0.0],
+                                        [0.0, 0.0, 0.0, 1.0],
+                                        [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
 
         # sun_direction
-        self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        self.sun_direction[1] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
-        # self.sun_direction = main_light.transform.front
+        # self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+        # self.sun_direction[1] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
+        # self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
+        self.sun_direction[...] = main_light.transform.front
 
-        self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.model.transmittance_texture)
-        self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.model.scattering_texture)
-        self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.model.irradiance_texture)
-        if self.model.optional_single_mie_scattering_texture is not None:
+    def render_precomputed_atmosphere(self):
+        self.quad.bind_vertex_buffer()
+        self.atmosphere_material_instance.use_program()
+
+        self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
+        self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
+        self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
+        if not self.use_combined_textures:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
-                                                                self.model.optional_single_mie_scattering_texture)
+                                                                self.optional_single_mie_scattering_texture)
 
-        self.atmosphere_material_instance.bind_uniform_data("camera", camera)
-        # self.atmosphere_material_instance.bind_uniform_data("exposure", exposure)
+        self.atmosphere_material_instance.bind_uniform_data("camera", self.model_from_view[3][0:3])
         self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
-        # self.atmosphere_material_instance.bind_uniform_data("white_point", self.white_point)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
-        self.atmosphere_material_instance.bind_uniform_data("model_from_view", model_from_view)
-        self.atmosphere_material_instance.bind_uniform_data("view_from_clip", view_from_clip)
+        self.atmosphere_material_instance.bind_uniform_data("model_from_view", self.model_from_view)
+        self.atmosphere_material_instance.bind_uniform_data("view_from_clip", self.view_from_clip)
 
         self.quad.draw_elements()
-
-    def SetView(self,
-                view_distance_meters,
-                view_zenith_angle_radians,
-                view_azimuth_angle_radians,
-                sun_zenith_angle_radians,
-                sun_azimuth_angle_radians,
-                exposure):
-        self.view_distance_meters = view_distance_meters
-        self.view_zenith_angle_radians = view_zenith_angle_radians
-        self.view_azimuth_angle_radians = view_azimuth_angle_radians
-        self.sun_zenith_angle_radians = sun_zenith_angle_radians
-        self.sun_azimuth_angle_radians = sun_azimuth_angle_radians
-        self.exposure = exposure

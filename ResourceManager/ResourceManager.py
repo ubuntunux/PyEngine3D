@@ -18,6 +18,7 @@ import shutil
 import uuid
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import numpy as np
 from numpy import array, float32, uint8
 from OpenGL.GL import *
 
@@ -434,7 +435,7 @@ class ResourceLoader(object):
         return None
 
     def save_resource_data(self, resource, save_data, source_filepath=""):
-        #save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
+        # save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
         save_filepath = resource.name.replace('.', os.sep)
         save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
         save_dir = os.path.dirname(save_filepath)

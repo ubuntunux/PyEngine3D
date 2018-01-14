@@ -645,13 +645,8 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
-        atmosphere = self.scene_manager.atmosphere
-        if not atmosphere.inited:
-            atmosphere.InitModel()
-
         # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera,
-                                                                    self.scene_manager.main_light)
+        self.scene_manager.atmosphere.render_precomputed_atmosphere()
 
         # bind quad mesh
         self.postprocess.bind_quad()

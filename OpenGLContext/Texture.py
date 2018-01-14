@@ -1,5 +1,6 @@
 import gc
 from ctypes import c_void_p
+import itertools
 
 from OpenGL.GL import *
 
@@ -78,7 +79,7 @@ class Texture:
 
         self.width = texture_data.get('width', 0)
         self.height = texture_data.get('height', 0)
-        self.depth = texture_data.get('depth', 0)
+        self.depth = max(1, texture_data.get('depth', 1))
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_NEAREST
@@ -92,8 +93,8 @@ class Texture:
         self.wrap = texture_data.get('wrap', self.default_wrap)  # GL_REPEAT, GL_CLAMP
         self.buffer = None
 
-        logger.info("Create %s : %s %dx%d %s mipmap(%s)." % (
-            GetClassName(self), self.name, self.width, self.height, self.internal_format,
+        logger.info("Create %s : %s %dx%dx%d %s mipmap(%s)." % (
+            GetClassName(self), self.name, self.width, self.height, self.depth, str(self.internal_format),
             'Enable' if self.enable_mipmap else 'Disable'))
 
         self.attribute = Attributes()
@@ -121,16 +122,38 @@ class Texture:
             wrap=self.wrap
         )
 
-        # only possible for texture 2d.
-        if get_image_data and GL_TEXTURE_2D == self.target and self.texture_format in (GL_RGB, GL_RGBA):
-            save_data['data'] = self.get_image_data()
-
+        if get_image_data:
+            data = self.get_image_data()
+            if data is not None:
+                save_data['data'] = data
         return save_data
 
     def get_image_data(self):
-        glBindTexture(self.target, self.buffer)
-        data = glGetTexImage(self.target, 0, self.texture_format, self.data_type)
-        glBindTexture(self.target, 0)
+        if self.target not in (GL_TEXTURE_2D, GL_TEXTURE_3D) or self.texture_format not in (GL_RGB, GL_RGBA):
+            return None
+
+        if GL_TEXTURE_2D == self.target:
+            glBindTexture(self.target, self.buffer)
+            data = glGetTexImage(self.target, 0, self.texture_format, self.data_type)
+            glBindTexture(self.target, 0)
+            return data
+        elif GL_TEXTURE_3D == self.target:
+            glBindTexture(self.target, self.buffer)
+            fb = glGenFramebuffers(1)
+            glBindFramebuffer(GL_FRAMEBUFFER, fb)
+
+            data = []
+            for layer in range(self.depth):
+                glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
+                glReadBuffer(GL_COLOR_ATTACHMENT0)
+                pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
+                # Note : pixels is numpy.ndarray
+                data.append(pixels.tolist())
+            # list concatenate
+            data = list(itertools.chain(*data))
+            glBindTexture(self.target, 0)
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glDeleteFramebuffers(1, [fb, ])
         return data
 
     def generate_mipmap(self):
