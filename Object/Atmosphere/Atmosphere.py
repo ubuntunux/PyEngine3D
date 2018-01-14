@@ -35,25 +35,24 @@ class Atmosphere:
         self.sun_zenith_angle_radians = 1.3
         self.sun_azimuth_angle_radians = 2.9
         self.sun_direction = Float3()
-        self.exposure = 10.0
+        self.exposure = 3.0
 
         self.white_point = Float3()
-        self.earth_center = Float3()
-        self.sun_size = Float2()
+        self.earth_center = Float3(0.0, 0.0, -kBottomRadius / kLengthUnitInMeters)
+        self.sun_size = Float2(math.tan(kSunAngularRadius), math.cos(kSunAngularRadius))
         self.model_from_view = Matrix4()
         self.view_from_clip = Matrix4()
 
         self.model = None
-        self.program = -1
-
-        self.quad = None
-        self.atmosphere_shader = None
         self.atmosphere_material_instance = None
 
-        resource_manager = CoreManager.instance().resource_manager
+        self.transmittance_texture = None
+        self.scattering_texture = None
+        self.irradiance_texture = None
+        self.optional_single_mie_scattering_texture = None
+
         positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
         indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
-
         self.quad = VertexArrayBuffer(
             name='atmosphere quad',
             datas=[positions, ],
@@ -61,67 +60,59 @@ class Atmosphere:
             dtype=np.float32
         )
 
-        max_sun_zenith_angle = 120.0 / 180.0 * kPi
+        self.initialize()
 
-        rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
-        mie_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
+    def initialize(self):
+        resource_manager = CoreManager.instance().resource_manager
 
-        ozone_density = [DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0),
-                         DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0)]
-
-        wavelengths = []
-        solar_irradiance = []
-        rayleigh_scattering = []
-        mie_scattering = []
-        mie_extinction = []
-        absorption_extinction = []
-        ground_albedo = []
-
-        for i in range(kLambdaMin, kLambdaMax + 1, 10):
-            L = float(i) * 1e-3  # micro-meters
-            mie = kMieAngstromBeta / kMieScaleHeight * math.pow(L, -kMieAngstromAlpha)
-            wavelengths.append(i)
-            if self.use_constant_solar_spectrum:
-                solar_irradiance.append(kConstantSolarIrradiance)
-            else:
-                solar_irradiance.append(kSolarIrradiance[int((i - kLambdaMin) / 10)])
-            rayleigh_scattering.append(kRayleigh * math.pow(L, -4))
-            mie_scattering.append(mie * kMieSingleScatteringAlbedo)
-            mie_extinction.append(mie)
-            if self.use_ozone:
-                absorption_extinction.append(kMaxOzoneNumberDensity * kOzoneCrossSection[int((i - kLambdaMin) / 10)])
-            else:
-                absorption_extinction.append(0.0)
-            ground_albedo.append(kGroundAlbedo)
-
-        rayleigh_density = [rayleigh_layer, ]
-        mie_density = [mie_layer, ]
-        num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
-
-        if self.do_white_balance:
-            self.white_point[...] = ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance)
-            self.white_point /= (sum(self.white_point) / 3.0)
-        else:
-            self.white_point[...] = 1.0
-
-        self.earth_center[0] = 0.0
-        self.earth_center[0] = 0.0
-        self.earth_center[2] = -kBottomRadius / kLengthUnitInMeters
-
-        self.sun_size[0] = math.tan(kSunAngularRadius)
-        self.sun_size[1] = math.cos(kSunAngularRadius)
-
-        use_precomputed_model = False
-        if not use_precomputed_model:
+        # USE PRECOMPUTED TEXTURE
+        use_precomputed_texture = False
+        if not use_precomputed_texture:
             self.transmittance_texture = resource_manager.getTexture('precomputed_atmosphere.transmittance')
             self.scattering_texture = resource_manager.getTexture('precomputed_atmosphere.scattering')
             self.irradiance_texture = resource_manager.getTexture('precomputed_atmosphere.irradiance')
             if self.use_combined_textures:
                 self.optional_single_mie_scattering_texture = resource_manager.getTexture(
                     'precomputed_atmosphere.optional_single_mie_scattering')
-            else:
-                self.use_combined_textures = None
         else:
+            max_sun_zenith_angle = 120.0 / 180.0 * kPi
+
+            rayleigh_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0)
+            mie_layer = DensityProfileLayer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0)
+
+            ozone_density = [DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0),
+                             DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0)]
+
+            wavelengths = []
+            solar_irradiance = []
+            rayleigh_scattering = []
+            mie_scattering = []
+            mie_extinction = []
+            absorption_extinction = []
+            ground_albedo = []
+
+            for i in range(kLambdaMin, kLambdaMax + 1, 10):
+                L = float(i) * 1e-3  # micro-meters
+                mie = kMieAngstromBeta / kMieScaleHeight * math.pow(L, -kMieAngstromAlpha)
+                wavelengths.append(i)
+                if self.use_constant_solar_spectrum:
+                    solar_irradiance.append(kConstantSolarIrradiance)
+                else:
+                    solar_irradiance.append(kSolarIrradiance[int((i - kLambdaMin) / 10)])
+                rayleigh_scattering.append(kRayleigh * math.pow(L, -4))
+                mie_scattering.append(mie * kMieSingleScatteringAlbedo)
+                mie_extinction.append(mie)
+                if self.use_ozone:
+                    absorption_extinction.append(
+                        kMaxOzoneNumberDensity * kOzoneCrossSection[int((i - kLambdaMin) / 10)])
+                else:
+                    absorption_extinction.append(0.0)
+                ground_albedo.append(kGroundAlbedo)
+
+            rayleigh_density = [rayleigh_layer, ]
+            mie_density = [mie_layer, ]
+            num_precomputed_wavelengths = 15 if self.use_luminance == Luminance.PRECOMPUTED else 3
+
             self.model = Model(wavelengths,
                                solar_irradiance,
                                kSunAngularRadius,
@@ -148,7 +139,7 @@ class Atmosphere:
             self.irradiance_texture = self.model.irradiance_texture
             self.optional_single_mie_scattering_texture = self.model.optional_single_mie_scattering_texture
 
-        # order is important
+        # set material instance
         macros = {
             'USE_LUMINANCE': 1 if self.use_luminance else 0,
             'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
@@ -158,6 +149,11 @@ class Atmosphere:
             macros=macros)
 
     def update(self, main_camera, main_light):
+        if Luminance.NONE == self.use_luminance:
+            self.exposure = 3.0
+        else:
+            self.exposure = 0.00001
+
         dist = main_camera.transform.pos[2]
         l = (self.view_distance_meters + dist) / kLengthUnitInMeters
 
@@ -203,6 +199,7 @@ class Atmosphere:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.optional_single_mie_scattering_texture)
 
+        self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
         self.atmosphere_material_instance.bind_uniform_data("camera", self.model_from_view[3][0:3])
         self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)

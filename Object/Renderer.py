@@ -183,6 +183,8 @@ class Renderer(Singleton):
         if changed:
             self.rendertarget_manager.create_rendertargets()
             self.framebuffer_manager.clear()
+            if self.scene_manager.atmosphere:
+                self.scene_manager.atmosphere.initialize()
         self.core_manager.gc_collect()
 
     def ortho_view(self):

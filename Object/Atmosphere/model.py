@@ -469,6 +469,8 @@ class Model:
             glDisablei(GL_BLEND, 2)
             glDisablei(GL_BLEND, 3)
 
+        return
+
         for scattering_order in range(2, num_scattering_orders+1):
             # compute_scattering_density
             renderer.framebuffer.set_color_textures(self.delta_scattering_density_texture)

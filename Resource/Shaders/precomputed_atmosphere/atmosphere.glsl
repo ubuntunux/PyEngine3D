@@ -9,6 +9,7 @@ uniform vec3 camera;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
+uniform float exposure;
 
 uniform sampler2D transmittance_texture;
 uniform sampler3D scattering_texture;
@@ -218,7 +219,7 @@ void main()
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
 
-    color.xyz = radiance * 3.0;
+    color.xyz = radiance * exposure;
     color.w = 1.0;
     color = max(color, 0.0);
 }
