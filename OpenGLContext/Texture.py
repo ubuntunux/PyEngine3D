@@ -1,11 +1,40 @@
 import gc
 from ctypes import c_void_p
 import itertools
+import array
+
+import numpy as np
 
 from OpenGL.GL import *
 
 from Common import logger
-from Utilities import Singleton, GetClassName, Attributes
+from Utilities import Singleton, GetClassName, Attributes, Profiler
+
+
+def get_numpy_dtype(data_type):
+    if GL_BYTE == data_type:
+        return np.int8
+    elif GL_UNSIGNED_BYTE == data_type:
+        return np.uint8
+    elif GL_UNSIGNED_BYTE == data_type:
+        return np.uint8
+    elif GL_SHORT == data_type:
+        return np.int16
+    elif GL_UNSIGNED_SHORT == data_type:
+        return np.uint16
+    elif GL_INT == data_type:
+        return np.int32
+    elif GL_UNSIGNED_INT == data_type:
+        return np.uint32
+    elif GL_UNSIGNED_INT64 == data_type:
+        return np.uint64
+    elif GL_FLOAT == data_type:
+        return np.float32
+    elif GL_DOUBLE == data_type:
+        return np.float64
+
+    logger.error('Cannot convert to numpy dtype. UNKOWN DATA TYPE(%s)', data_type)
+    return np.uint8
 
 
 def get_internal_format(str_image_mode):
@@ -132,9 +161,16 @@ class Texture:
         if self.target not in (GL_TEXTURE_2D, GL_TEXTURE_3D) or self.texture_format not in (GL_RGB, GL_RGBA):
             return None
 
+        dtype = get_numpy_dtype(self.data_type)
+
         if GL_TEXTURE_2D == self.target:
             glBindTexture(self.target, self.buffer)
             data = glGetTexImage(self.target, 0, self.texture_format, self.data_type)
+            # convert to numpy array
+            if type(data) is bytes:
+                data = np.fromstring(data, dtype=dtype)
+            else:
+                data = np.array(data, dtype=dtype)
             glBindTexture(self.target, 0)
             return data
         elif GL_TEXTURE_3D == self.target:
@@ -142,19 +178,25 @@ class Texture:
             fb = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, fb)
 
+            stride = self.width * self.height
             data = []
             for layer in range(self.depth):
                 glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
                 glReadBuffer(GL_COLOR_ATTACHMENT0)
                 pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
-                # Note : pixels is numpy.ndarray
-                data.append(pixels.tolist())
-            # list concatenate
-            data = list(itertools.chain(*data))
+                # convert to numpy array
+                if type(data) is bytes:
+                    pixels = np.fromsring(pixels, dtype=dtype)
+                else:
+                    pixels = np.array(pixels, dtype=dtype)
+                data.extend(pixels.tolist())
+            data = np.array(data, dtype=dtype)
             glBindTexture(self.target, 0)
             glBindFramebuffer(GL_FRAMEBUFFER, 0)
             glDeleteFramebuffers(1, [fb, ])
-        return data
+            return data
+        logger.error('%s failed to get image data' % self.name)
+        return None
 
     def generate_mipmap(self):
         if self.enable_mipmap:
@@ -236,7 +278,7 @@ class Texture3D(Texture):
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)
 
-        data = texture_data.get('data', c_void_p(0))
+        data = texture_data.get('data')
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_3D, self.buffer)
