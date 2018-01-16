@@ -178,7 +178,6 @@ class Texture:
             fb = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, fb)
 
-            stride = self.width * self.height
             data = []
             for layer in range(self.depth):
                 glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
