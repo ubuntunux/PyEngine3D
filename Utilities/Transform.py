@@ -460,19 +460,29 @@ def perspective(fovy, aspect, znear, zfar):
     if fovy <= 0.0:
         fovy = 45.0
 
-    # common equation
-    h = np.tan(fovy / 360.0 * np.pi) * znear
-    w = h * aspect
-    left = -w
-    right = w
-    top = h
-    bottom = -h
+    height = np.tan(fovy / 360.0 * np.pi) * znear
+    width = height * aspect
+    depth = zfar - znear
 
-    M = Matrix4()
+    left = -width
+    right = width
+    top = height
+    bottom = -height
+
+    '''        
+    M = Maxtrix4()
     M[0, :] = [2.0 * znear / (right - left), 0.0, 0.0, 0.0]
     M[1, :] = [0.0, 2.0 * znear / (top - bottom), 0.0, 0.0]
     M[2, :] = [(right + left) / (right - left), (top + bottom) / (top - bottom), -(zfar + znear) / (zfar - znear), -1.0]
     M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / (zfar - znear), 0.0]
+    '''
+
+    # Compact version, it is assumed that x1 and x2 are the same.
+    M = Matrix4()
+    M[0, :] = [znear / width, 0.0, 0.0, 0.0]
+    M[1, :] = [0.0, znear / height, 0.0, 0.0]
+    M[2, :] = [0.0, 0.0, -(zfar + znear) / depth, -1.0]
+    M[3, :] = [0.0, 0.0, -2.0 * znear * zfar / depth, 0.0]
     return M
 
 

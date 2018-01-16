@@ -39,6 +39,8 @@ class FrameBuffer:
 
     def delete(self):
         logger.info("Delete %s" % GetClassName(self))
+        self.set_color_textures()
+        self.set_depth_texture(None)
         glDeleteFramebuffers(1, [self.buffer, ])
 
     def clear(self, clear_flag=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, clear_color=(0.0, 0.0, 0.0, 1.0)):
@@ -82,6 +84,7 @@ class FrameBuffer:
         self.commands.append(partial(*args))
 
     def build_command(self):
+        self.commands.clear()
         self.add_command(glBindFramebuffer, GL_FRAMEBUFFER, self.buffer)
 
         # bind color textures
@@ -224,11 +227,14 @@ class FrameBufferManager:
         self.current_framebuffer = None
 
     def clear(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
         for framebuffer in self.framebuffers.values():
             framebuffer.delete()
         self.framebuffers = {}
         self.current_framebuffer = None
+
+    def rebuild_command(self):
+        for framebuffer in self.framebuffers.values():
+            framebuffer.build_command()
 
     def delete_framebuffer(self, *textures, depth_texture):
         key = (textures, depth_texture)

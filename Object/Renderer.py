@@ -162,7 +162,7 @@ class Renderer(Singleton):
         elif viewMode == COMMAND.VIEWMODE_SHADING:
             self.viewMode = GL_FILL
 
-    def resizeScene(self, width=0, height=0):
+    def resizeScene(self, width=0, height=0, clear_rendertarget=False):
         changed = False
 
         if 0 < width and width != self.width:
@@ -179,10 +179,11 @@ class Renderer(Singleton):
         self.scene_manager.set_camera_aspect(self.aspect)
         self.scene_manager.update_camera_projection_matrix()
 
-        # resize render targets
-        if changed:
+        # recreate render targets and framebuffer
+        if changed or clear_rendertarget:
             self.rendertarget_manager.create_rendertargets()
-            self.framebuffer_manager.clear()
+            self.framebuffer_manager.rebuild_command()
+            # cause, rendertargets are cleared.
             if self.scene_manager.atmosphere:
                 self.scene_manager.atmosphere.initialize()
         self.core_manager.gc_collect()

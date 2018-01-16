@@ -7,7 +7,7 @@ from .constants import *
 
 from Utilities import *
 from App import CoreManager
-from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer
+from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer, FrameBuffer
 
 
 def CieColorMatchingFunctionTableValue(wavelength, column):
@@ -345,11 +345,13 @@ class Model:
     def Init(self, num_scattering_orders=4):
         resource_manager = CoreManager.instance().resource_manager
         renderer = CoreManager.instance().renderer
+        framebuffer = FrameBuffer()
 
         if not self.precompute_illuminance:
             lambdas = [kLambdaR, kLambdaG, kLambdaB]
             luminance_from_radiance = Matrix3()
-            self.Precompute(lambdas,
+            self.Precompute(framebuffer,
+                            lambdas,
                             luminance_from_radiance,
                             False,
                             num_scattering_orders)
@@ -376,15 +378,16 @@ class Model:
                 luminance_from_radiance[1] = [coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1)]
                 luminance_from_radiance[2] = [coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)]
 
-                self.Precompute(lambdas,
+                self.Precompute(framebuffer,
+                                lambdas,
                                 luminance_from_radiance,
                                 0 < i,
                                 num_scattering_orders)
 
         # Note : recompute compute_transmittance
-        renderer.framebuffer.set_color_textures(self.transmittance_texture)
-        renderer.framebuffer.set_depth_texture(None)
-        renderer.framebuffer.bind_framebuffer()
+        framebuffer.set_color_textures(self.transmittance_texture)
+        framebuffer.set_depth_texture(None)
+        framebuffer.bind_framebuffer()
         recompute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.recompute_transmittance',
             macros=self.material_instance_macros)
@@ -392,7 +395,10 @@ class Model:
         self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
+        framebuffer.delete()
+
     def Precompute(self,
+                   framebuffer,
                    lambdas,
                    luminance_from_radiance,
                    blend,
@@ -413,9 +419,9 @@ class Model:
         self.quad.bind_vertex_buffer()
 
         # compute_transmittance
-        renderer.framebuffer.set_color_textures(self.transmittance_texture)
-        renderer.framebuffer.set_depth_texture(None)
-        renderer.framebuffer.bind_framebuffer()
+        framebuffer.set_color_textures(self.transmittance_texture)
+        framebuffer.set_depth_texture(None)
+        framebuffer.bind_framebuffer()
         compute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_transmittance',
             macros=self.material_instance_macros)
@@ -423,9 +429,9 @@ class Model:
         self.quad.draw_elements()
 
         # compute_direct_irradiance
-        renderer.framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
-        renderer.framebuffer.set_depth_texture(None)
-        renderer.framebuffer.bind_framebuffer()
+        framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
+        framebuffer.set_depth_texture(None)
+        framebuffer.bind_framebuffer()
         compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_direct_irradiance',
             macros=self.material_instance_macros)
@@ -439,18 +445,18 @@ class Model:
 
         # compute_single_scattering
         if self.optional_single_mie_scattering_texture is None:
-            renderer.framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
+            framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
                                                     self.delta_mie_scattering_texture,
                                                     self.scattering_texture)
-            renderer.framebuffer.set_depth_texture(None)
-            renderer.framebuffer.bind_framebuffer()
+            framebuffer.set_depth_texture(None)
+            framebuffer.bind_framebuffer()
         else:
-            renderer.framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
+            framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
                                                     self.delta_mie_scattering_texture,
                                                     self.scattering_texture,
                                                     self.optional_single_mie_scattering_texture)
-            renderer.framebuffer.set_depth_texture(None)
-            renderer.framebuffer.bind_framebuffer()
+            framebuffer.set_depth_texture(None)
+            framebuffer.bind_framebuffer()
         compute_single_scattering_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_single_scattering',
             macros=self.material_instance_macros)
@@ -469,13 +475,14 @@ class Model:
             glDisablei(GL_BLEND, 2)
             glDisablei(GL_BLEND, 3)
 
+        # Note!!! : return is better result... I don't why..
         return
 
         for scattering_order in range(2, num_scattering_orders+1):
             # compute_scattering_density
-            renderer.framebuffer.set_color_textures(self.delta_scattering_density_texture)
-            renderer.framebuffer.set_depth_texture(None)
-            renderer.framebuffer.bind_framebuffer()
+            framebuffer.set_color_textures(self.delta_scattering_density_texture)
+            framebuffer.set_depth_texture(None)
+            framebuffer.bind_framebuffer()
             compute_scattering_density_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_scattering_density',
                 macros=self.material_instance_macros)
@@ -496,10 +503,10 @@ class Model:
                 self.quad.draw_elements()
 
             # compute_indirect_irradiance
-            renderer.framebuffer.set_color_textures(self.delta_irradiance_texture,
+            framebuffer.set_color_textures(self.delta_irradiance_texture,
                                                     self.irradiance_texture)
-            renderer.framebuffer.set_depth_texture(None)
-            renderer.framebuffer.bind_framebuffer()
+            framebuffer.set_depth_texture(None)
+            framebuffer.bind_framebuffer()
             compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_indirect_irradiance',
                 macros=self.material_instance_macros)
@@ -519,10 +526,10 @@ class Model:
             glDisablei(GL_BLEND, 1)
 
             # compute_multiple_scattering
-            renderer.framebuffer.set_color_textures(self.delta_multiple_scattering_texture,
+            framebuffer.set_color_textures(self.delta_multiple_scattering_texture,
                                                     self.scattering_texture)
-            renderer.framebuffer.set_depth_texture(None)
-            renderer.framebuffer.bind_framebuffer()
+            framebuffer.set_depth_texture(None)
+            framebuffer.bind_framebuffer()
             compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_multiple_scattering',
                 macros=self.material_instance_macros)

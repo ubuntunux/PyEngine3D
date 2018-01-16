@@ -368,6 +368,7 @@ class CoreManager(Singleton):
 
         def cmd_recreate_render_targets(value):
             self.renderer.rendertarget_manager.create_rendertargets()
+            self.renderer.framebuffer_manager.rebuild_command()
         self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
 
     def updateCommand(self):

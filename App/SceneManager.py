@@ -79,8 +79,8 @@ class SceneManager(Singleton):
         #     self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
 
     def post_open_scene(self):
+        self.renderer.resizeScene(clear_rendertarget=True)
         self.core_manager.sendObjectInfo(self.renderer.postprocess)
-        self.renderer.resizeScene()
 
     def new_scene(self):
         self.clear_scene()
