@@ -81,6 +81,7 @@ class SceneManager(Singleton):
     def post_open_scene(self):
         self.renderer.resizeScene(clear_rendertarget=True)
         self.core_manager.sendObjectInfo(self.renderer.postprocess)
+        self.core_manager.sendObjectInfo(self.atmosphere)
 
     def new_scene(self):
         self.clear_scene()
@@ -252,13 +253,13 @@ class SceneManager(Singleton):
         for obj_name in list(self.objectMap.keys()):
             self.deleteObject(obj_name)
 
-    def deleteObject(self, objName):
-        obj = self.getObject(objName)
+    def deleteObject(self, objectName):
+        obj = self.getObject(objectName)
         if obj and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
-    def getObject(self, objName):
-        return self.objectMap[objName] if objName in self.objectMap else None
+    def getObject(self, objectName):
+        return self.objectMap[objectName] if objectName in self.objectMap else None
 
     def getObjectNames(self):
         return self.objectMap.keys()
@@ -281,16 +282,20 @@ class SceneManager(Singleton):
     def get_skeleton_actor(self, index):
         return self.skeleton_actors[index] if index < len(self.skeleton_actors) else None
 
-    def getObjectAttribute(self, objName, objTypeName):
-        if objTypeName == PostProcess.__name__:
+    def getObjectAttribute(self, objectName, objectTypeName):
+        if objectTypeName == self.renderer.postprocess.name:
             obj = self.renderer.postprocess
+        elif objectTypeName == self.atmosphere.name:
+            obj = self.atmosphere
         else:
-            obj = self.getObject(objName)
+            obj = self.getObject(objectName)
         return obj.getAttribute() if obj else None
 
     def setObjectAttribute(self, objectName, objectTypeName, attributeName, attributeValue, attribute_index):
-        if objectTypeName == PostProcess.__name__:
+        if objectTypeName == self.renderer.postprocess.name:
             obj = self.renderer.postprocess
+        elif objectTypeName == self.atmosphere.name:
+            obj = self.atmosphere
         else:
             obj = self.getObject(objectName)
         obj and obj.setAttribute(attributeName, attributeValue, attribute_index)
@@ -298,8 +303,8 @@ class SceneManager(Singleton):
     def getSelectedObject(self):
         return self.selected_object
 
-    def setSelectedObject(self, objName):
-        selected_object = self.getObject(objName)
+    def setSelectedObject(self, objectName):
+        selected_object = self.getObject(objectName)
         if self.selected_object is not selected_object:
             if self.selected_object:
                 self.selected_object.setSelected(False)
@@ -307,8 +312,8 @@ class SceneManager(Singleton):
             if selected_object:
                 selected_object.setSelected(True)
 
-    def setObjectFocus(self, objName):
-        obj = self.getObject(objName)
+    def setObjectFocus(self, objectName):
+        obj = self.getObject(objectName)
         if obj and obj != self.main_camera:
             self.main_camera.transform.setPos(obj.transform.pos - self.main_camera.transform.front * 2.0)
 

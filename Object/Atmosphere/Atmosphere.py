@@ -11,6 +11,7 @@ from Common import logger
 from App import CoreManager
 from OpenGLContext import VertexArrayBuffer
 
+from Utilities import Attributes
 from .constants import *
 from .model import *
 
@@ -22,7 +23,11 @@ class Luminance:
 
 
 class Atmosphere:
+    name = 'Atmosphere'
+
     def __init__(self):
+        self.attributes = Attributes()
+        self.is_render_atmosphere = True
         self.use_constant_solar_spectrum = False
         self.use_ozone = True
         self.use_combined_textures = True
@@ -61,6 +66,14 @@ class Atmosphere:
         )
 
         self.initialize()
+
+    def getAttribute(self):
+        self.attributes.setAttribute('is_render_atmosphere', self.is_render_atmosphere)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
 
     def initialize(self):
         resource_manager = CoreManager.instance().resource_manager
@@ -149,6 +162,9 @@ class Atmosphere:
             macros=macros)
 
     def update(self, main_camera, main_light):
+        if not self.is_render_atmosphere:
+            return
+
         if Luminance.NONE == self.use_luminance:
             self.exposure = 3.0
         else:
@@ -189,6 +205,9 @@ class Atmosphere:
         self.sun_direction[...] = main_light.transform.front
 
     def render_precomputed_atmosphere(self):
+        if not self.is_render_atmosphere:
+            return
+
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
 

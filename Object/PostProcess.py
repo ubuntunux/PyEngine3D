@@ -29,8 +29,9 @@ class AntiAliasing(AutoEnum):
 
 
 class PostProcess:
+    name = 'PostProcess'
+
     def __init__(self):
-        self.name = 'PostProcess'
         self.core_manager = None
         self.resource_manager = None
         self.renderer = None
@@ -65,8 +66,11 @@ class PostProcess:
         self.is_render_ssr = True
         self.screeen_space_reflection = None
 
-        self.atmosphere = None
+        self.is_render_tonemapping = True
+        self.exposure = 1.0
         self.tonemapping = None
+
+        self.atmosphere = None
         self.linear_depth = None
         self.blur = None
         self.gaussian_blur = None
@@ -155,6 +159,9 @@ class PostProcess:
 
         self.Attributes.setAttribute('is_render_ssr', self.is_render_ssr)
         self.Attributes.setAttribute('is_render_motion_blur', self.is_render_motion_blur)
+
+        self.Attributes.setAttribute('is_render_tonemapping', self.is_render_tonemapping)
+        self.Attributes.setAttribute('exposure', self.exposure)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -236,6 +243,7 @@ class PostProcess:
     def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):
         frame_buffer.set_color_textures(texture_temp)
         frame_buffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
 
         self.gaussian_blur.use_program()
         self.gaussian_blur.bind_material_instance()
@@ -245,6 +253,7 @@ class PostProcess:
 
         frame_buffer.set_color_textures(texture_target)
         frame_buffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
 
         self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, blur_scale))
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_temp)
@@ -263,6 +272,8 @@ class PostProcess:
         texture_highlight = self.rendertarget_manager.get_temporary('highlight', texture_target)
         frame_buffer.set_color_textures(texture_highlight)
         frame_buffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         self.bloom_highlight.use_program()
         self.bloom_highlight.bind_material_instance()
         self.bloom_highlight.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
@@ -285,6 +296,8 @@ class PostProcess:
         def copy_bloom(src, dst):
             frame_buffer.set_color_textures(dst)
             frame_buffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.copy_texture(src)
             self.quad_geometry.draw_elements()
 
@@ -301,12 +314,16 @@ class PostProcess:
 
             frame_buffer.set_color_textures(temp_bloom_target)
             frame_buffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
             self.quad_geometry.draw_elements()
 
             frame_buffer.set_color_textures(bloom_target)
             frame_buffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
             self.quad_geometry.draw_elements()
@@ -316,6 +333,7 @@ class PostProcess:
 
         frame_buffer.set_color_textures(texture_target)
         frame_buffer.bind_framebuffer()
+
         self.bloom.use_program()
         self.bloom.bind_material_instance()
         self.bloom.bind_uniform_data("bloom_intensity", self.bloom_intensity)
@@ -337,8 +355,9 @@ class PostProcess:
     def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
+        self.tonemapping.bind_uniform_data("is_render_tonemapping", self.is_render_tonemapping)
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.tonemapping.bind_uniform_data("exposure", 1.0)
+        self.tonemapping.bind_uniform_data("exposure", self.exposure)
         self.quad_geometry.draw_elements()
 
     def render_ssao(self, screen_size, texture_normal, texture_linear_depth):

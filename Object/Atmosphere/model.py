@@ -388,6 +388,8 @@ class Model:
         framebuffer.set_color_textures(self.transmittance_texture)
         framebuffer.set_depth_texture(None)
         framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         recompute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.recompute_transmittance',
             macros=self.material_instance_macros)
@@ -422,6 +424,8 @@ class Model:
         framebuffer.set_color_textures(self.transmittance_texture)
         framebuffer.set_depth_texture(None)
         framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         compute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_transmittance',
             macros=self.material_instance_macros)
@@ -432,6 +436,8 @@ class Model:
         framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
         framebuffer.set_depth_texture(None)
         framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_direct_irradiance',
             macros=self.material_instance_macros)
@@ -450,6 +456,7 @@ class Model:
                                                     self.scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
         else:
             framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
                                                     self.delta_mie_scattering_texture,
@@ -457,6 +464,8 @@ class Model:
                                                     self.optional_single_mie_scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
         compute_single_scattering_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_single_scattering',
             macros=self.material_instance_macros)
@@ -475,14 +484,13 @@ class Model:
             glDisablei(GL_BLEND, 2)
             glDisablei(GL_BLEND, 3)
 
-        # Note!!! : return is better result... I don't why..
-        return
-
         for scattering_order in range(2, num_scattering_orders+1):
             # compute_scattering_density
             framebuffer.set_color_textures(self.delta_scattering_density_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             compute_scattering_density_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_scattering_density',
                 macros=self.material_instance_macros)
@@ -507,6 +515,8 @@ class Model:
                                                     self.irradiance_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_indirect_irradiance',
                 macros=self.material_instance_macros)
@@ -530,6 +540,8 @@ class Model:
                                                     self.scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_multiple_scattering',
                 macros=self.material_instance_macros)

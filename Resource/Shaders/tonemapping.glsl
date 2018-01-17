@@ -2,8 +2,9 @@
 
 #include "quad.glsl"
 
-uniform sampler2D texture_diffuse;
+uniform bool is_render_tonemapping;
 uniform float exposure;
+uniform sampler2D texture_diffuse;
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -53,8 +54,16 @@ float vignetting(vec2 uv, float inner_value, float outter_value)
 
 void main() {
     vec3 texColor = texture(texture_diffuse, vs_output.tex_coord.xy).xyz;
-    fs_output.xyz = Uncharted2Tonemap(texColor);
-    fs_output.xyz *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
+    if(is_render_tonemapping)
+    {
+        texColor = Uncharted2Tonemap(texColor);
+        texColor *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
+    }
+    else
+    {
+        texColor = pow(texColor, vec3(1.0 / 2.2));
+    }
+    fs_output.xyz = texColor;
     fs_output.a = 1.0;
 }
 #endif // GL_FRAGMENT_SHADER

@@ -253,6 +253,8 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(dst_texture)
             self.framebuffer_copy.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
 
             # generate mipmaps per face
@@ -326,6 +328,8 @@ class Renderer(Singleton):
         glFrontFace(GL_CCW)
         glEnable(GL_DEPTH_TEST)
         glDepthMask(True)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearDepth(1.0)
 
         if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
             self.render_deferred()
@@ -344,6 +348,9 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
+        # render solid
         self.render_solid()
 
         self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -373,6 +380,9 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.framebuffer.blit_framebuffer(self.width, self.height)
 
+        # flush
+        glFlush()
+
         endTime = timeModule.perf_counter()
         renderTime = endTime - startTime
         startTime = endTime
@@ -387,7 +397,7 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)
         self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
         self.framebuffer.bind_framebuffer()
-        glClearBufferfv(GL_DEPTH, 0, (1.0, 1.0, 1.0, 1.0))
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         camera = self.scene_manager.main_camera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
@@ -400,6 +410,8 @@ class Renderer(Singleton):
         # render velocity
         self.postprocess.bind_quad()
         self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        glClear(GL_COLOR_BUFFER_BIT)
+
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
 
         # render character normal, velocity
@@ -429,6 +441,8 @@ class Renderer(Singleton):
         # render velocity
         self.postprocess.bind_quad()
         self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        glClear(GL_COLOR_BUFFER_BIT)
+
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
 
         # render character gbuffer
@@ -445,7 +459,7 @@ class Renderer(Singleton):
         self.framebuffer_shadow.set_color_textures()
         self.framebuffer_shadow.set_depth_texture(RenderTargets.SHADOWMAP)
         self.framebuffer_shadow.bind_framebuffer()
-        self.framebuffer.clear(GL_DEPTH_BUFFER_BIT)
+        glClear(GL_DEPTH_BUFFER_BIT)
 
         light = self.scene_manager.main_light
         self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection, light.shadow_view_projection)
@@ -470,17 +484,23 @@ class Renderer(Singleton):
         if self.postprocess.is_render_ssr:
             self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
             self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
                                                             RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
 
         # Linear depth
         self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
         self.framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
 
         # SSAO
         if self.postprocess.is_render_ssao:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
+            glClear(GL_COLOR_BUFFER_BIT)
+
             self.postprocess.render_ssao((RenderTargets.SSAO.width, RenderTargets.SSAO.height),
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
@@ -667,12 +687,14 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
         self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
         self.framebuffer_copy.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
         self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         # Temporal AA
         if AntiAliasing.TAA == self.postprocess.anti_aliasing:
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
                                                           RenderTargets.TAA_RESOLVE,
                                                           RenderTargets.VELOCITY,
@@ -682,20 +704,23 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(RenderTargets.TAA_RESOLVE)
             self.framebuffer_copy.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         # Tone Map
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
         self.framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
         self.postprocess.render_tone_map(RenderTargets.HDR)
 
         # MSAA Test
         if AntiAliasing.MSAA == self.postprocess.anti_aliasing:
             self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_msaa.set_color_textures(RenderTargets.HDR)
             self.framebuffer_msaa.bind_framebuffer()
-            # resolve
+            # resolve MSAA
             self.framebuffer.copy_framebuffer(self.framebuffer_msaa)
 
         # Motion Blur
@@ -703,6 +728,7 @@ class Renderer(Singleton):
             backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', RenderTargets.BACKBUFFER)
             self.framebuffer.set_color_textures(backbuffer_copy)
             self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_motion_blur(RenderTargets.VELOCITY, RenderTargets.BACKBUFFER)
 
             # copy to backbuffer
@@ -710,6 +736,7 @@ class Renderer(Singleton):
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer_copy.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
 
         # debug render target
@@ -717,6 +744,7 @@ class Renderer(Singleton):
                 type(self.debug_texture) != RenderBuffer:
             self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
             self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_texture(self.debug_texture)
 
     def render_font(self):
