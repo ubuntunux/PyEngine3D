@@ -5,6 +5,7 @@ layout(std140, binding=0) uniform sceneConstants
     float RENDER_SSR;
     float RENDER_SSAO;
     vec2 BACKBUFFER_SIZE;
+    vec2 MOUSE_POS;
 };
 
 layout(std140, binding=1) uniform viewConstants

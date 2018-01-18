@@ -401,6 +401,9 @@ class CoreManager(Singleton):
             cmd, value = self.cmdQueue.get()
             self.commands[cmd.value](value)
 
+    def get_mouse_pos(self):
+        return self.game_backend.mouse_pos
+
     def update_event(self, event_type, event_value=None):
         if Event.QUIT == event_type:
             self.close()

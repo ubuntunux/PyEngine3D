@@ -522,8 +522,8 @@ class ShaderLoader(ResourceLoader):
         shader = self.getResourceData(resource_name)
         if shader:
             self.resource_manager.materialInstanceLoader.create_material_instance(resource_name=resource_name,
-                                                                                   shader_name=resource_name,
-                                                                                   macros={})
+                                                                                  shader_name=resource_name,
+                                                                                  macros={})
 
     def save_data_to_file(self, save_filepath, save_data):
         logger.info("Save : %s" % save_filepath)
@@ -556,8 +556,8 @@ class MaterialLoader(ResourceLoader):
         material = self.getResourceData(resource_name)
         if material:
             self.resource_manager.materialInstanceLoader.create_material_instance(resource_name=material.shader_name,
-                                                                                   shader_name=material.shader_name,
-                                                                                   macros=material.macros)
+                                                                                  shader_name=material.shader_name,
+                                                                                  macros=material.macros)
 
     def reload_materials(self, shader_filepath):
         reload_shader_names = []

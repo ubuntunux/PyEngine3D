@@ -113,6 +113,7 @@ class Renderer(Singleton):
 
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   [FLOAT4_ZERO,
+                                                   FLOAT2_ZERO,
                                                    FLOAT2_ZERO])
 
         self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
@@ -321,7 +322,9 @@ class Renderer(Singleton):
                    self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0,
                    self.postprocess.is_render_ssr,
                    self.postprocess.is_render_ssao),
-            Float2(RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height),
+            Float2(RenderTargets.BACKBUFFER.width,
+                   RenderTargets.BACKBUFFER.height),
+            self.core_manager.get_mouse_pos(),
         )
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
