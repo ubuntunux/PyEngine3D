@@ -22,7 +22,7 @@ import numpy as np
 from numpy import array, float32, uint8
 from OpenGL.GL import *
 
-from Common import logger, log_level
+from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, Font
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
@@ -729,9 +729,7 @@ class MaterialInstanceLoader(ResourceLoader):
         return False
 
     def open_resource(self, resource_name):
-        material_instance = self.getResourceData(resource_name)
-        if material_instance is not None:
-            self.core_manager.renderer.postprocess.set_render_material_instance(material_instance)
+        self.core_manager.request(COMMAND.VIEW_MATERIAL_INSTANCE, resource_name)
 
     def reload_material_instances(self, shader_name):
         for resource_name in self.resources:
@@ -832,9 +830,7 @@ class TextureLoader(ResourceLoader):
         self.create_resource("default_3d", default_3d)
 
     def open_resource(self, resource_name):
-        texture = self.getResourceData(resource_name)
-        if texture:
-            self.core_manager.renderer.set_debug_texture(texture)
+        self.core_manager.request(COMMAND.VIEW_TEXTURE, resource_name)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)

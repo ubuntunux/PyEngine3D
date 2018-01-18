@@ -57,7 +57,7 @@ void main() {
 #if SKELETAL
     layout (location = 1) in vec4 vs_out_bone_indicies;
     layout (location = 2) in vec4 vs_out_bone_weights;
-
+#endif
 layout (location = 0) out vec4 fs_output;
 
 void main() {

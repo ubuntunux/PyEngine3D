@@ -433,8 +433,13 @@ class PostProcess:
         return self.is_render_material_instance and self.target_material_instance is not None
 
     def set_render_material_instance(self, target_material_instance):
-        self.is_render_material_instance = True
-        self.target_material_instance = target_material_instance
+        if target_material_instance == self.target_material_instance:
+            # off by toggle
+            self.is_render_material_instance = False
+            self.target_material_instance = None
+        else:
+            self.is_render_material_instance = True
+            self.target_material_instance = target_material_instance
 
     def render_material_instance(self):
         if self.target_material_instance is not None:

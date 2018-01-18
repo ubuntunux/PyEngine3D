@@ -202,10 +202,16 @@ class CoreManager(Singleton):
 
     # Send messages
     def send(self, *args):
+        """
+        :param args: command, value1, value2,...
+        """
         if self.uiCmdQueue:
             self.uiCmdQueue.put(*args)
 
     def request(self, *args):
+        """
+        :param args: command, value1, value2,...
+        """
         if self.cmdQueue:
             self.cmdQueue.put(*args)
 
@@ -356,20 +362,35 @@ class CoreManager(Singleton):
         # set game backend
         self.commands[COMMAND.CHANGE_GAME_BACKEND.value] = self.change_game_backend
 
+        def cmd_recreate_render_targets(value):
+            self.renderer.rendertarget_manager.create_rendertargets()
+            self.renderer.framebuffer_manager.rebuild_command()
+        self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
+
         def cmd_view_rendertarget(value):
             rendertarget_index, rendertarget_name = value
             texture = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
             self.renderer.set_debug_texture(texture)
             if self.renderer.debug_texture:
                 attribute = self.renderer.debug_texture.getAttribute()
-                if attribute:
-                    self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+                self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget
 
-        def cmd_recreate_render_targets(value):
-            self.renderer.rendertarget_manager.create_rendertargets()
-            self.renderer.framebuffer_manager.rebuild_command()
-        self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
+        def cmd_view_texture(value):
+            texture = self.resource_manager.getTexture(value)
+            self.renderer.set_debug_texture(texture)
+            if texture is not None:
+                attribute = texture.getAttribute()
+                self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+        self.commands[COMMAND.VIEW_TEXTURE.value] = cmd_view_texture
+
+        def cmd_view_material_instance(value):
+            material_instance = self.resource_manager.getMaterialInstance(value)
+            if material_instance is not None and value == material_instance.name:
+                self.renderer.postprocess.set_render_material_instance(material_instance)
+                attribute = material_instance.getAttribute()
+                self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+        self.commands[COMMAND.VIEW_MATERIAL_INSTANCE.value] = cmd_view_material_instance
 
     def updateCommand(self):
         if self.uiCmdQueue is None:

@@ -1,4 +1,0 @@
-{'macros': {'SKELETAL': 0, 'TRANSPARENT_MATERIAL': 0},
- 'material_name': 'shadowmap_34fca5d9_03d7_365b_8c81_96c7243c3713',
- 'shader_name': 'shadowmap',
- 'uniform_datas': {'texture_diffuse': 'empty'}}
