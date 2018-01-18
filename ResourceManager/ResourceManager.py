@@ -521,7 +521,7 @@ class ShaderLoader(ResourceLoader):
     def open_resource(self, resource_name):
         shader = self.getResourceData(resource_name)
         if shader:
-            self.resource_manager.material_instanceLoader.create_material_instance(resource_name=resource_name,
+            self.resource_manager.materialInstanceLoader.create_material_instance(resource_name=resource_name,
                                                                                    shader_name=resource_name,
                                                                                    macros={})
 
@@ -555,7 +555,7 @@ class MaterialLoader(ResourceLoader):
     def open_resource(self, resource_name):
         material = self.getResourceData(resource_name)
         if material:
-            self.resource_manager.material_instanceLoader.create_material_instance(resource_name=material.shader_name,
+            self.resource_manager.materialInstanceLoader.create_material_instance(resource_name=material.shader_name,
                                                                                    shader_name=material.shader_name,
                                                                                    macros=material.macros)
 
@@ -580,7 +580,7 @@ class MaterialLoader(ResourceLoader):
                     reload_shader_names.append(material.shader_name)
 
         for shader_name in reload_shader_names:
-            self.resource_manager.material_instanceLoader.reload_material_instances(shader_name)
+            self.resource_manager.materialInstanceLoader.reload_material_instances(shader_name)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -663,7 +663,7 @@ class MaterialLoader(ResourceLoader):
                     resource.meta_data.include_files = material_datas.get('include_files', {})
 
                     # write material to file, and regist to resource manager
-                    shader_meta_data = self.resource_manager.shader_loader.getMetaData(shader_name)
+                    shader_meta_data = self.resource_manager.shaderLoader.getMetaData(shader_name)
                     if shader_meta_data:
                         source_filepath = shader_meta_data.resource_filepath
                     else:
@@ -727,6 +727,11 @@ class MaterialInstanceLoader(ResourceLoader):
                 return material_instance.valid
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
+
+    def open_resource(self, resource_name):
+        material_instance = self.getResourceData(resource_name)
+        if material_instance is not None:
+            self.core_manager.renderer.postprocess.set_render_material_instance(material_instance)
 
     def reload_material_instances(self, shader_name):
         for resource_name in self.resources:
@@ -1206,9 +1211,9 @@ class ResourceManager(Singleton):
         self.scene_manager = None
         self.fontLoader = None
         self.textureLoader = None
-        self.shader_loader = None
+        self.shaderLoader = None
         self.materialLoader = None
-        self.material_instanceLoader = None
+        self.materialInstanceLoader = None
         self.meshLoader = None
         self.sceneLoader = None
         self.scriptLoader = None
@@ -1229,9 +1234,9 @@ class ResourceManager(Singleton):
         # Be careful with the initialization order.
         self.fontLoader = self.regist_loader(FontLoader)
         self.textureLoader = self.regist_loader(TextureLoader)
-        self.shader_loader = self.regist_loader(ShaderLoader)
+        self.shaderLoader = self.regist_loader(ShaderLoader)
         self.materialLoader = self.regist_loader(MaterialLoader)
-        self.material_instanceLoader = self.regist_loader(MaterialInstanceLoader)
+        self.materialInstanceLoader = self.regist_loader(MaterialInstanceLoader)
         self.meshLoader = self.regist_loader(MeshLoader)
         self.sceneLoader = self.regist_loader(SceneLoader)
         self.scriptLoader = self.regist_loader(ScriptLoader)
@@ -1334,13 +1339,13 @@ class ResourceManager(Singleton):
 
     # FUNCTIONS : Shader
     def get_shader_version(self):
-        return self.shader_loader.get_shader_version()
+        return self.shaderLoader.get_shader_version()
 
     def getShader(self, shaderName):
-        return self.shader_loader.getResourceData(shaderName)
+        return self.shaderLoader.getResourceData(shaderName)
 
     def getShaderNameList(self):
-        return self.shader_loader.getResourceNameList()
+        return self.shaderLoader.getResourceNameList()
 
     # FUNCTIONS : Material
 
@@ -1353,17 +1358,17 @@ class ResourceManager(Singleton):
     # FUNCTIONS : MaterialInstance
 
     def getMaterialInstanceNameList(self):
-        return self.material_instanceLoader.getResourceNameList()
+        return self.materialInstanceLoader.getResourceNameList()
 
     def getMaterialInstance(self, name, shader_name='', macros={}):
-        return self.material_instanceLoader.getMaterialInstance(name, shader_name=shader_name, macros=macros)
+        return self.materialInstanceLoader.getMaterialInstance(name, shader_name=shader_name, macros=macros)
 
     def getDefaultMaterialInstance(self, skeletal=False):
         if skeletal:
-            return self.material_instanceLoader.getMaterialInstance(name='default_skeletal',
+            return self.materialInstanceLoader.getMaterialInstance(name='default_skeletal',
                                                                     shader_name='default',
                                                                     macros={'SKELETAL': 1})
-        return self.material_instanceLoader.getMaterialInstance('default')
+        return self.materialInstanceLoader.getMaterialInstance('default')
 
     # FUNCTIONS : Mesh
 

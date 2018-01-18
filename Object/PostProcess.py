@@ -11,6 +11,7 @@ from App import CoreManager
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from .RenderTarget import RenderTargets
+from .RenderOptions import RenderOption
 
 
 class JitterMode:
@@ -87,6 +88,9 @@ class PostProcess:
         self.jitter_frame = 0
         self.jitter_delta = Float2()
 
+        self.is_render_material_instance = False
+        self.target_material_instance = None
+
         self.Attributes = Attributes()
 
     def initialize(self):
@@ -162,12 +166,21 @@ class PostProcess:
 
         self.Attributes.setAttribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.setAttribute('exposure', self.exposure)
+
+        self.Attributes.setAttribute('is_render_material_instance', self.is_render_material_instance)
+        self.Attributes.setAttribute('render_material_instance', self.target_material_instance)
         return self.Attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'msaa_multisample_count':
             self.msaa_multisample_count = attributeValue
             self.set_anti_aliasing(self.anti_aliasing.value, force=True)
+        elif attributeName == 'render_material_instance':
+            target_material_instance = self.resource_manager.getMaterialInstance(attributeValue)
+            if target_material_instance is not None and attributeValue == target_material_instance.name:
+                self.target_material_instance = target_material_instance
+            else:
+                self.target_material_instance = None
         elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
@@ -415,3 +428,17 @@ class PostProcess:
         render_texture_mi.use_program()
         render_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()
+
+    def enable_render_material_instance(self):
+        return self.is_render_material_instance and self.target_material_instance is not None
+
+    def set_render_material_instance(self, target_material_instance):
+        self.is_render_material_instance = True
+        self.target_material_instance = target_material_instance
+
+    def render_material_instance(self):
+        if self.target_material_instance is not None:
+            self.quad_geometry.bind_vertex_buffer()
+            self.target_material_instance.use_program()
+            self.target_material_instance.bind_material_instance()
+            self.quad_geometry.draw_elements()

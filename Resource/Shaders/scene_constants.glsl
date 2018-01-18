@@ -4,6 +4,7 @@ layout(std140, binding=0) uniform sceneConstants
     float JITTER_FRAME;
     float RENDER_SSR;
     float RENDER_SSAO;
+    vec2 BACKBUFFER_SIZE;
 };
 
 layout(std140, binding=1) uniform viewConstants

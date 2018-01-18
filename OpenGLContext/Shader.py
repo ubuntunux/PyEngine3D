@@ -188,7 +188,7 @@ class Shader:
         # insert version as comment
         include_files = dict()  # { 'filename': uuid }
         resource_manager = CoreManager.instance().resource_manager
-        shader_file_dir = resource_manager.shader_loader.resource_path
+        shader_file_dir = resource_manager.shaderLoader.resource_path
 
         # do parsing
         line_num = 0

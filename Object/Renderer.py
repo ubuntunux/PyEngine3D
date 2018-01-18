@@ -58,6 +58,14 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
 
+        # material instances
+        self.scene_constants_material = None
+        self.debug_bone_material = None
+        self.pre_pass_material = None
+        self.pre_pass_skeletal_material = None
+        self.shadowmap_material = None
+        self.shadowmap_skeletal_material = None
+
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
 
@@ -88,12 +96,24 @@ class Renderer(Singleton):
         self.framebuffer_copy = FrameBuffer()
         self.framebuffer_msaa = FrameBuffer()
 
-        # Test Code : scene constants uniform buffer
-        material_instance = self.resource_manager.getMaterialInstance('scene_constants')
-        program = material_instance.get_program()
+        # material instances
+        self.scene_constants_material = self.resource_manager.getMaterialInstance('scene_constants')
+        self.debug_bone_material = self.resource_manager.getMaterialInstance("debug_bone")
+        self.pre_pass_material = self.resource_manager.getMaterialInstance("pre_pass")
+        self.pre_pass_skeletal_material = self.resource_manager.getMaterialInstance(name="pre_pass_skeletal",
+                                                                                    shader_name="pre_pass",
+                                                                                    macros={"SKELETAL": 1})
+        self.shadowmap_material = self.resource_manager.getMaterialInstance("shadowmap")
+        self.shadowmap_skeletal_material = self.resource_manager.getMaterialInstance(name="shadowmap_skeletal",
+                                                                                     shader_name="shadowmap",
+                                                                                     macros={"SKELETAL": 1})
+
+        # scene constants uniform buffer
+        program = self.scene_constants_material.get_program()
 
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
-                                                  [FLOAT4_ZERO, ])
+                                                  [FLOAT4_ZERO,
+                                                   FLOAT2_ZERO])
 
         self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
                                                   [MATRIX4_IDENTITY,
@@ -208,6 +228,7 @@ class Renderer(Singleton):
     def set_debug_texture(self, texture):
         self.debug_texture = texture
         if self.debug_texture:
+            self.postprocess.is_render_material_instance = False
             logger.info("Current texture : %s" % self.debug_texture.name)
 
     def render_light_probe(self, force=False):
@@ -299,7 +320,8 @@ class Renderer(Singleton):
             Float4(self.core_manager.currentTime,
                    self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0,
                    self.postprocess.is_render_ssr,
-                   self.postprocess.is_render_ssao)
+                   self.postprocess.is_render_ssao),
+            Float2(RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height),
         )
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
@@ -331,42 +353,59 @@ class Renderer(Singleton):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
 
-        if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
-            self.render_deferred()
+        if self.postprocess.enable_render_material_instance() and not RenderOption.RENDER_LIGHT_PROBE:
+            glDisable(GL_DEPTH_TEST)
+            glDisable(GL_CULL_FACE)
+            self.set_blend_state(False)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=None)
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_material_instance()
         else:
-            self.render_pre_pass()
+            # render normal scene
+            if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
+                self.render_deferred()
+            else:
+                self.render_pre_pass()
 
-        glDisable(GL_DEPTH_TEST)
-        self.render_preprocess()
+            glDisable(GL_DEPTH_TEST)
+            self.render_preprocess()
 
-        glFrontFace(GL_CW)
-        glEnable(GL_DEPTH_TEST)
-        self.render_shadow()
+            glFrontFace(GL_CW)
+            glEnable(GL_DEPTH_TEST)
+            self.render_shadow()
 
-        glFrontFace(GL_CCW)
-        glDepthMask(False)  # cause depth prepass and gbuffer
-        self.framebuffer.set_color_textures(RenderTargets.HDR)
-        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-        self.framebuffer.bind_framebuffer()
-        glClear(GL_COLOR_BUFFER_BIT)
+            glFrontFace(GL_CCW)
+            glDepthMask(False)  # cause depth prepass and gbuffer
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
+            self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
 
-        # render solid
-        self.render_solid()
+            # render solid
+            self.render_solid()
 
-        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.render_translucent()
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        if RenderOption.RENDER_LIGHT_PROBE:
-            glUseProgram(0)
-            endTime = timeModule.perf_counter()
-            renderTime = endTime - startTime
-            presentTime = 0.0
-            return renderTime, presentTime
+            # atmospherer
+            glDisable(GL_DEPTH_TEST)
+            self.postprocess.bind_quad()
+            self.postprocess.render_atmosphere()
 
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        self.set_blend_state(False)
-        self.render_postprocess()
+            # render translucent
+            glEnable(GL_DEPTH_TEST)
+            self.render_translucent()
+
+            if RenderOption.RENDER_LIGHT_PROBE:
+                glUseProgram(0)
+                endTime = timeModule.perf_counter()
+                renderTime = endTime - startTime
+                presentTime = 0.0
+                return renderTime, presentTime
+
+            glDisable(GL_DEPTH_TEST)
+            glDisable(GL_CULL_FACE)
+            self.set_blend_state(False)
+            self.render_postprocess()
 
         if RenderOption.RENDER_FONT:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -403,9 +442,8 @@ class Renderer(Singleton):
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
         # render background normal, depth
-        material_instance = self.resource_manager.getMaterialInstance("pre_pass")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.PRE_PASS,
-                           self.scene_manager.static_solid_render_infos, material_instance)
+                           self.scene_manager.static_solid_render_infos, self.pre_pass_material)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -418,11 +456,8 @@ class Renderer(Singleton):
         if RenderOption.RENDER_SKELETON_ACTOR:
             self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
             self.framebuffer.bind_framebuffer()
-            material_instance = self.resource_manager.getMaterialInstance(name="pre_pass_skeletal",
-                                                                          shader_name="pre_pass",
-                                                                          macros={"SKELETAL": 1})
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.PRE_PASS,
-                               self.scene_manager.skeleton_solid_render_infos, material_instance)
+                               self.scene_manager.skeleton_solid_render_infos, self.pre_pass_skeletal_material)
 
     def render_deferred(self):
         framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
@@ -464,16 +499,12 @@ class Renderer(Singleton):
         light = self.scene_manager.main_light
         self.uniformViewProjection.bind_uniform_block(light.shadow_view_projection, light.shadow_view_projection)
 
-        material_instance = self.resource_manager.getMaterialInstance("shadowmap")
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW,
-                           self.scene_manager.static_solid_render_infos, material_instance)
+                           self.scene_manager.static_solid_render_infos, self.shadowmap_material)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
-            material_instance = self.resource_manager.getMaterialInstance(name="shadowmap_skeletal",
-                                                                          shader_name="shadowmap",
-                                                                          macros={"SKELETAL": 1})
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW,
-                               self.scene_manager.skeleton_solid_render_infos, material_instance)
+                               self.scene_manager.skeleton_solid_render_infos, self.shadowmap_skeletal_material)
             self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
@@ -532,13 +563,6 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_solid_render_infos)
 
     def render_translucent(self):
-        # atmospherer
-        glDisable(GL_DEPTH_TEST)
-        self.postprocess.bind_quad()
-        self.postprocess.render_atmosphere()
-
-        # render translucent
-        glEnable(GL_DEPTH_TEST)
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING,
                            self.scene_manager.static_translucent_render_infos)
         self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
@@ -617,10 +641,10 @@ class Renderer(Singleton):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
         mesh = self.resource_manager.getMesh("Cube")
-        material_instance = self.resource_manager.getMaterialInstance("debug_bone")
         static_actors = self.scene_manager.static_actors[:]
 
-        if mesh and material_instance:
+        if mesh and self.debug_bone_material:
+            material_instance = self.debug_bone_material
             material_instance.use_program()
             material_instance.bind()
             mesh.bind_vertex_buffer()

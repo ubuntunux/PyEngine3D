@@ -145,12 +145,12 @@ class Model:
 
         # Atmosphere shader code
         resource_manager = CoreManager.instance().resource_manager
-        shader_loader = resource_manager.shader_loader
+        shaderLoader = resource_manager.shaderLoader
         shader_name = 'precomputed_atmosphere.atmosphere_predefine'
         recompute_atmosphere_predefine = resource_manager.getShader(shader_name)
         recompute_atmosphere_predefine.shader_code = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
-        shader_loader.save_resource(shader_name)
-        shader_loader.load_resource(shader_name)
+        shaderLoader.save_resource(shader_name)
+        shaderLoader.load_resource(shader_name)
 
         # create render targets
         rendertarget_manager = CoreManager.instance().rendertarget_manager
@@ -406,14 +406,14 @@ class Model:
                    blend,
                    num_scattering_orders):
         resource_manager = CoreManager.instance().resource_manager
-        shader_loader = resource_manager.shader_loader
+        shaderLoader = resource_manager.shaderLoader
         renderer = CoreManager.instance().renderer
 
         shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
         compute_atmosphere_predefine = resource_manager.getShader(shader_name)
         compute_atmosphere_predefine.shader_code = self.glsl_header_factory(lambdas)
-        shader_loader.save_resource(shader_name)
-        shader_loader.load_resource(shader_name)
+        shaderLoader.save_resource(shader_name)
+        shaderLoader.load_resource(shader_name)
 
         glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
         glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
