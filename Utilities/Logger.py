@@ -62,10 +62,7 @@ def createLogger(name, directory, level):
     # logFilename = os.path.join(directory, szTime + str(int((time.time() % 1.0) * 1000)) + "_" + name + '.log')
     logFilename = os.path.join(directory, name + '.log')
 
-    if os.path.exists(logFilename):
-        os.remove(logFilename)
-
-    fileHandler = logging.FileHandler(logFilename)
+    fileHandler = logging.FileHandler(logFilename, 'w')
     fileHandler.setFormatter(formatter)
     newLogger.addHandler(fileHandler)
     newLogger.info("Save log file : " + logFilename)
