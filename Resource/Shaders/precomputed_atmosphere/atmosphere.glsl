@@ -1,6 +1,6 @@
 #define USE_LUMINANCE 0
 
-const vec3 kSphereCenter = vec3(0.0, 0.0, 1.0);
+const vec3 kSphereCenter = vec3(0.0, 0.0, 2.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
@@ -159,12 +159,14 @@ void main()
     float p_dot_v = dot(p, view_direction);
     float p_dot_p = dot(p, p);
     float ray_sphere_center_squared_distance = p_dot_p - p_dot_v * p_dot_v;
-    float distance_to_intersection = -p_dot_v - sqrt(kSphereRadius * kSphereRadius - ray_sphere_center_squared_distance);
+    float squared_radius = kSphereRadius * kSphereRadius;
 
     float sphere_alpha = 0.0;
     vec3 sphere_radiance = vec3(0.0);
-    if (distance_to_intersection > 0.0)
+
+    if (ray_sphere_center_squared_distance <= squared_radius)
     {
+        float distance_to_intersection = -p_dot_v - sqrt(kSphereRadius * kSphereRadius - ray_sphere_center_squared_distance);
         float ray_sphere_distance = kSphereRadius - sqrt(ray_sphere_center_squared_distance);
         float ray_sphere_angular_distance = -ray_sphere_distance / p_dot_v;
         sphere_alpha = min(ray_sphere_angular_distance / fragment_angular_size, 1.0);
@@ -186,12 +188,14 @@ void main()
     p_dot_v = dot(p, view_direction);
     p_dot_p = dot(p, p);
     float ray_earth_center_squared_distance = p_dot_p - p_dot_v * p_dot_v;
-    distance_to_intersection = -p_dot_v - sqrt(earth_center.z * earth_center.z - ray_earth_center_squared_distance);
+    squared_radius = earth_center.z * earth_center.z;
 
     float ground_alpha = 0.0;
     vec3 ground_radiance = vec3(0.0);
-    if (distance_to_intersection > 0.0)
+
+    if (p_dot_v <= 0.0 && ray_earth_center_squared_distance <= squared_radius)
     {
+        float distance_to_intersection = -p_dot_v - sqrt(squared_radius - ray_earth_center_squared_distance);
         vec3 point = camera + view_direction * distance_to_intersection;
         vec3 normal = normalize(point - earth_center);
 

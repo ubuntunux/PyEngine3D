@@ -173,30 +173,19 @@ class Atmosphere:
         dist = main_camera.transform.pos[2]
         l = (self.view_distance_meters + dist) / kLengthUnitInMeters
 
-        self.view_zenith_angle_radians = main_camera.transform.rot[0]
-        self.view_azimuth_angle_radians = main_camera.transform.rot[1]
-
-        cos_z = math.cos(self.view_zenith_angle_radians)
-        sin_z = math.sin(self.view_zenith_angle_radians)
-        cos_a = math.cos(self.view_azimuth_angle_radians)
-        sin_a = math.sin(self.view_azimuth_angle_radians)
-        ux = [-sin_a, cos_a, 0.0, 0.0]
-        uy = [-cos_z * cos_a, -cos_z * sin_a, sin_z, 0.0]
-        uz = [sin_z * cos_a, sin_z * sin_a, cos_z, 0.0]
-        self.model_from_view[0][...] = ux
-        self.model_from_view[1][...] = uy
-        self.model_from_view[2][...] = uz
-        self.model_from_view[3][0] = self.model_from_view[2][0] * l
-        self.model_from_view[3][1] = self.model_from_view[2][1] * l
-        self.model_from_view[3][2] = self.model_from_view[2][2] * l
+        self.model_from_view[...] = main_camera.transform.matrix
+        self.model_from_view[3][0] += self.model_from_view[2][0] * l
+        self.model_from_view[3][1] += self.model_from_view[2][1] * l
+        self.model_from_view[3][2] += self.model_from_view[2][2] * l
 
         # view_from_clip
-        kFovY = main_camera.fov / 180.0 * kPi
-        kTanFovY = math.tan(kFovY / 2.0)
-        self.view_from_clip[...] = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
-                                        [0.0, kTanFovY, 0.0, 0.0],
-                                        [0.0, 0.0, 0.0, 1.0],
-                                        [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
+        # kFovY = main_camera.fov / 180.0 * kPi
+        # kTanFovY = math.tan(kFovY / 2.0)
+        # self.view_from_clip[...] = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
+        #                                      [0.0, kTanFovY, 0.0, 0.0],
+        #                                      [0.0, 0.0, 0.0, 1.0],
+        #                                      [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
+        self.view_from_clip[...] = np.linalg.inv(main_camera.projection)
 
         # sun_direction
         # self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
