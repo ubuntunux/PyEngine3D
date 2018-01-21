@@ -43,7 +43,7 @@ class Atmosphere:
         self.exposure = 3.0
 
         self.white_point = Float3()
-        self.earth_center = Float3(0.0, 0.0, -kBottomRadius / kLengthUnitInMeters)
+        self.earth_center = Float3(0.0, -kBottomRadius / kLengthUnitInMeters, 0.0)
         self.sun_size = Float2(math.tan(kSunAngularRadius), math.cos(kSunAngularRadius))
         self.model_from_view = Matrix4()
         self.view_from_clip = Matrix4()
@@ -193,7 +193,7 @@ class Atmosphere:
         # self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
         self.sun_direction[...] = main_light.transform.front
 
-    def render_precomputed_atmosphere(self):
+    def render_precomputed_atmosphere(self, texture_depth, texture_normal):
         if not self.is_render_atmosphere:
             return
 
@@ -203,6 +203,8 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
         self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
         self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
+        self.atmosphere_material_instance.bind_uniform_data("texture_depth", texture_depth)
+        self.atmosphere_material_instance.bind_uniform_data("texture_normal", texture_normal)
         if not self.use_combined_textures:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.optional_single_mie_scattering_texture)

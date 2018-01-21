@@ -1,6 +1,8 @@
+#include "utility.glsl"
+
 #define USE_LUMINANCE 0
 
-const vec3 kSphereCenter = vec3(0.0, 0.0, 2.0);
+const vec3 kSphereCenter = vec3(0.0, 2.0, 0.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
@@ -11,6 +13,8 @@ uniform vec3 sun_direction;
 uniform vec2 sun_size;
 uniform float exposure;
 
+uniform sampler2D texture_depth;
+uniform sampler2D texture_normal;
 uniform sampler2D transmittance_texture;
 uniform sampler3D scattering_texture;
 uniform sampler3D single_mie_scattering_texture;
@@ -99,7 +103,7 @@ float GetSkyVisibility(vec3 point)
 {
   vec3 p = point - kSphereCenter;
   float p_dot_p = dot(p, p);
-  return 1.0 + p.z / sqrt(p_dot_p) * kSphereRadius * kSphereRadius / p_dot_p;
+  return 1.0 + p.y / sqrt(p_dot_p) * kSphereRadius * kSphereRadius / p_dot_p;
 }
 
 void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_in, out float d_out)
@@ -148,6 +152,8 @@ void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 
+    float scene_depth = texture(texture_depth, uv).x;
+
     vec3 view_direction = normalize(view_ray);
     float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
     float shadow_in;
@@ -182,6 +188,22 @@ void main()
         vec3 transmittance;
         vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
         sphere_radiance = sphere_radiance * transmittance + in_scatter;
+    }
+
+    vec3 object_radiance = vec3(0.0);
+    {
+        vec3 normal = normalize(texture(texture_normal, uv).xyz);
+        vec3 point = camera + depth_to_relative_world(uv, scene_depth).xyz;
+        float distance_to_intersection = length(point);
+
+        vec3 sky_irradiance;
+        vec3 sun_irradiance = GetSunAndSkyIrradiance( point - earth_center, normal, sun_direction, sky_irradiance);
+        object_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
+
+        float shadow_length = 1.0;
+        vec3 transmittance;
+        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+        object_radiance = object_radiance * transmittance + in_scatter;
     }
 
     p = camera - earth_center;
@@ -222,6 +244,7 @@ void main()
     }
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
+    radiance = mix(max(vec3(0.0), object_radiance), radiance, scene_depth > 0.9999 ? 1.0 : 0.0);
 
     color.xyz = radiance * exposure;
     color.w = 1.0;

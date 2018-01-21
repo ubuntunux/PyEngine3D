@@ -696,7 +696,8 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
 
         # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere()
+        self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.DEPTHSTENCIL,
+                                                                    RenderTargets.WORLD_NORMAL)
 
         # bind quad mesh
         self.postprocess.bind_quad()
