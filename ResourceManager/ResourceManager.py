@@ -737,13 +737,10 @@ class MaterialInstanceLoader(ResourceLoader):
             if resource and resource.data:
                 material_instance = resource.data
                 if material_instance.shader_name == shader_name:
-                    old_program = material_instance.material.program
                     self.load_resource(resource_name)
 
         for resource_name in self.resources:
             resource = self.resources[resource_name]
-            if resource and resource.data:
-                material_instance = resource.data
 
     def create_material_instance(self, resource_name, shader_name, macros={}):
         if shader_name == '':
@@ -771,9 +768,11 @@ class MaterialInstanceLoader(ResourceLoader):
                 material_instance = self.getResourceData(name)
             else:
                 material_instance = self.getResourceData('default')
-        elif macros:
-            material = self.resource_manager.getMaterial(material_instance.shader_name, macros)
-            material_instance.set_material(material)
+        else:
+            for macro, value in macros.items():
+                if macro not in material_instance.macros or value != material_instance.macros[macro]:
+                    material = self.resource_manager.getMaterial(material_instance.shader_name, macros)
+                    material_instance.set_material(material)
             return material_instance
         return material_instance
 
