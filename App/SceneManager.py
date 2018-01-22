@@ -317,13 +317,9 @@ class SceneManager(Singleton):
         if obj and obj != self.main_camera:
             self.main_camera.transform.setPos(obj.transform.pos - self.main_camera.transform.front * 2.0)
 
-    def set_camera_aspect(self, aspect):
+    def update_camera_projection_matrix(self, fov=0.0, aspect=0.0):
         for camera in self.cameras:
-            camera.set_aspect(aspect)
-
-    def update_camera_projection_matrix(self):
-        for camera in self.cameras:
-            camera.update_projection()
+            camera.update_projection(fov, aspect)
 
     def update_render_info(self, object_type):
         if StaticActor == object_type:

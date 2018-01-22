@@ -24,7 +24,6 @@ class Camera(StaticActor):
         self.move_speed = object_data.get('move_speed', 0.0)
         self.pan_speed = object_data.get('pan_speed', 0.0)
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
-        self.need_to_update_projection = False
 
         self.front = Float3()
 
@@ -90,22 +89,20 @@ class Camera(StaticActor):
             # update viewport
             self.scene_manager.renderer.resizeScene()
 
-    def set_fov(self, fov):
-        self.need_to_update_projection = self.fov != fov
-        self.fov = fov
+    def update_projection(self, fov=0.0, aspect=0.0, force_update=False):
+        need_to_update = False
+        if 0.0 < fov and fov != self.fov:
+            self.fov = fov
+            need_to_update = True
 
-    def set_aspect(self, aspect):
-        self.need_to_update_projection = self.aspect != aspect
-        self.aspect = aspect
+        if 0.0 < aspect and aspect != self.aspect:
+            self.aspect = aspect
+            need_to_update = True
 
-    def update_projection(self):
-        if self.need_to_update_projection:
+        if force_update or need_to_update:
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
-            self.need_to_update_projection = False
 
-    def update(self, force_update = False):
-        self.update_projection()
-
+    def update(self, force_update=False):
         self.transform.updateTransform(update_view_transform=True, force_update=force_update)
 
         # negative front

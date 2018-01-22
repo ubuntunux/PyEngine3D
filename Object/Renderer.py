@@ -197,8 +197,7 @@ class Renderer(Singleton):
         self.aspect = float(self.width) / float(self.height)
 
         # update perspective and ortho
-        self.scene_manager.set_camera_aspect(self.aspect)
-        self.scene_manager.update_camera_projection_matrix()
+        self.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
 
         # recreate render targets and framebuffer
         if changed or clear_rendertarget:
@@ -241,7 +240,6 @@ class Renderer(Singleton):
         self.scene_manager.main_light_probe.isValid = True
 
         camera = self.scene_manager.main_camera
-        old_width, old_height = self.width, self.height
         old_pos = camera.transform.getPos().copy()
         old_rot = camera.transform.getRot().copy()
         old_fov = camera.fov
@@ -258,8 +256,7 @@ class Renderer(Singleton):
         self.postprocess.is_render_motion_blur = False
         self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
 
-        camera.set_fov(90)
-        self.resizeScene(512, 512)
+        camera.update_projection(fov=90.0, aspect=1.0)
 
         def render(pos, pitch, yaw, roll, cube_dir):
             camera.transform.setPos(pos)
@@ -300,8 +297,7 @@ class Renderer(Singleton):
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing
 
-        camera.set_fov(old_fov)
-        self.resizeScene(old_width, old_height)
+        camera.update_projection(old_fov, old_aspect)
 
         camera.transform.setPos(old_pos)
         camera.transform.setRot(old_rot)

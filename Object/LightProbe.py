@@ -19,10 +19,10 @@ class LightProbe(StaticActor):
         height=512,
         internal_format=GL_RGBA16F,
         texture_format=GL_RGBA,
-        min_filter=GL_LINEAR_MIPMAP_LINEAR,
+        min_filter=GL_LINEAR_MIPMAP_NEAREST,
         mag_filter=GL_LINEAR,
         data_type=GL_FLOAT,
-        wrap=GL_MIRRORED_REPEAT
+        wrap=GL_CLAMP_TO_EDGE
     )
 
     def __init__(self, name, **object_data):
