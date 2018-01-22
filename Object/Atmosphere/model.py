@@ -309,10 +309,6 @@ class Model:
         sky_k_r, sky_k_g, sky_k_b = self.kSky[0], self.kSky[1], self.kSky[2]
         sun_k_r, sun_k_g, sun_k_b = self.kSun[0], self.kSun[1], self.kSun[2]
 
-        resource_manager = CoreManager.instance().resource_manager
-        definitions_glsl = resource_manager.getShader('precomputed_atmosphere.definitions').shader_code
-        functions_glsl = resource_manager.getShader('precomputed_atmosphere.functions').shader_code
-
         header = ["const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
                   "const int TRANSMITTANCE_TEXTURE_HEIGHT = %d;" % TRANSMITTANCE_TEXTURE_HEIGHT,
                   "const int SCATTERING_TEXTURE_R_SIZE = %d;" % SCATTERING_TEXTURE_R_SIZE,
@@ -321,7 +317,9 @@ class Model:
                   "const int SCATTERING_TEXTURE_NU_SIZE = %d;" % SCATTERING_TEXTURE_NU_SIZE,
                   "const int IRRADIANCE_TEXTURE_WIDTH = %d;" % IRRADIANCE_TEXTURE_WIDTH,
                   "const int IRRADIANCE_TEXTURE_HEIGHT = %d;" % IRRADIANCE_TEXTURE_HEIGHT,
-                  definitions_glsl,
+                  "",
+                  '#include "precomputed_atmosphere/definitions.glsl"',
+                  "",
                   "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(",
                   to_string(self.solar_irradiance, lambdas, 1.0) + ",",
                   str(self.sun_angular_radius) + ",",
@@ -339,7 +337,9 @@ class Model:
                   str(cos(self.max_sun_zenith_angle)) + ");",
                   "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
                   "const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
-                  functions_glsl]
+                  "",
+                  '#include "precomputed_atmosphere/functions.glsl"',
+                  ""]
         return "\n".join(header)
 
     def Init(self, num_scattering_orders=4):
