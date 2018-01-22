@@ -42,7 +42,7 @@ class Material:
             self.valid = self.check_validate() and self.check_linked()
             if not self.valid:
                 logger.error("%s material has been failed to compile from binary" % self.name)
-            
+
         if not self.valid:
             self.compile_from_source(shader_codes)
             self.valid = self.check_validate() and self.check_linked()
@@ -180,10 +180,11 @@ class Material:
             if validation == GL_TRUE:
                 return True
             else:
-                logger.error("Validation failure (%s): %s" % (validation, glGetProgramInfoLog(self.program)))
+                logger.warn("Validation failure (%s): %s" % (validation, glGetProgramInfoLog(self.program)))
         else:
-            logger.error("Validation failure : %s" % self.name)
-        return False
+            logger.warn("Validation failure : %s" % self.name)
+        # always return True
+        return True
 
     def check_linked(self):
         if self.program >= 0:
