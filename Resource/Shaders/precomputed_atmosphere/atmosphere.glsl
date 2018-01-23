@@ -192,8 +192,8 @@ void main()
 
     vec3 object_radiance = vec3(0.0);
     {
-        vec3 normal = normalize(texture(texture_normal, uv).xyz);
-        vec3 point = camera + depth_to_relative_world(uv, scene_depth).xyz;
+        vec3 normal = -normalize(texture(texture_normal, uv).xyz);
+        vec3 point = camera + depth_to_relative_world(uv, scene_depth).xyz * 10.0;
         float distance_to_intersection = length(point);
 
         vec3 sky_irradiance;
@@ -210,7 +210,7 @@ void main()
     p_dot_v = dot(p, view_direction);
     p_dot_p = dot(p, p);
     float ray_earth_center_squared_distance = p_dot_p - p_dot_v * p_dot_v;
-    squared_radius = earth_center.z * earth_center.z;
+    squared_radius = earth_center.y * earth_center.y;
 
     float ground_alpha = 0.0;
     vec3 ground_radiance = vec3(0.0);
@@ -242,6 +242,7 @@ void main()
     {
         radiance = radiance + transmittance * GetSolarRadiance();
     }
+
     radiance = mix(radiance, ground_radiance, ground_alpha);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
     radiance = mix(max(vec3(0.0), object_radiance), radiance, scene_depth > 0.9999 ? 1.0 : 0.0);
