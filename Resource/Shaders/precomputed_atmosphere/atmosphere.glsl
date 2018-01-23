@@ -192,17 +192,17 @@ void main()
 
     vec3 object_radiance = vec3(0.0);
     {
-        vec3 normal = -normalize(texture(texture_normal, uv).xyz);
-        vec3 point = camera + depth_to_relative_world(uv, scene_depth).xyz * 10.0;
-        float distance_to_intersection = length(point);
+        vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
+        vec3 point = depth_to_relative_world(uv, scene_depth).xyz;
+        float distance_to_intersection = length(point.xyz);
 
         vec3 sky_irradiance;
-        vec3 sun_irradiance = GetSunAndSkyIrradiance( point - earth_center, normal, sun_direction, sky_irradiance);
+        vec3 sun_irradiance = GetSunAndSkyIrradiance( point.xyz - earth_center, normal, sun_direction, sky_irradiance);
         object_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
 
-        float shadow_length = 1.0;
+        float shadow_length = 0.0;
         vec3 transmittance;
-        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
+        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point.xyz - earth_center, shadow_length, sun_direction, transmittance);
         object_radiance = object_radiance * transmittance + in_scatter;
     }
 
