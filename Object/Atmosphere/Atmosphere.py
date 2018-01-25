@@ -84,7 +84,7 @@ class Atmosphere:
             self.transmittance_texture = resource_manager.getTexture('precomputed_atmosphere.transmittance')
             self.scattering_texture = resource_manager.getTexture('precomputed_atmosphere.scattering')
             self.irradiance_texture = resource_manager.getTexture('precomputed_atmosphere.irradiance')
-            if self.use_combined_textures:
+            if not self.use_combined_textures:
                 self.optional_single_mie_scattering_texture = resource_manager.getTexture(
                     'precomputed_atmosphere.optional_single_mie_scattering')
         else:
@@ -150,7 +150,8 @@ class Atmosphere:
             self.transmittance_texture = self.model.transmittance_texture
             self.scattering_texture = self.model.scattering_texture
             self.irradiance_texture = self.model.irradiance_texture
-            self.optional_single_mie_scattering_texture = self.model.optional_single_mie_scattering_texture
+            if not self.use_combined_textures:
+                self.optional_single_mie_scattering_texture = self.model.optional_single_mie_scattering_texture
 
         # set material instance
         macros = {
@@ -170,13 +171,7 @@ class Atmosphere:
         else:
             self.exposure = 0.00001
 
-        dist = main_camera.transform.pos[2]
-        l = (self.view_distance_meters + dist) / kLengthUnitInMeters
-
-        self.model_from_view[...] = main_camera.transform.matrix
-        self.model_from_view[3][0] += self.model_from_view[2][0] * l
-        self.model_from_view[3][1] += self.model_from_view[2][1] * l
-        self.model_from_view[3][2] += self.model_from_view[2][2] * l
+        self.model_from_view[...] = main_camera.transform.rotationMatrix
 
         # view_from_clip
         # kFovY = main_camera.fov / 180.0 * kPi
@@ -193,7 +188,7 @@ class Atmosphere:
         # self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
         self.sun_direction[...] = main_light.transform.front
 
-    def render_precomputed_atmosphere(self, texture_depth, texture_normal):
+    def render_precomputed_atmosphere(self, main_camera, texture_depth, texture_normal):
         if not self.is_render_atmosphere:
             return
 
@@ -205,12 +200,12 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
         self.atmosphere_material_instance.bind_uniform_data("texture_depth", texture_depth)
         self.atmosphere_material_instance.bind_uniform_data("texture_normal", texture_normal)
-        if not self.use_combined_textures:
+        if self.optional_single_mie_scattering_texture is not None:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.optional_single_mie_scattering_texture)
 
         self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
-        self.atmosphere_material_instance.bind_uniform_data("camera", self.model_from_view[3][0:3])
+        self.atmosphere_material_instance.bind_uniform_data("camera", main_camera.transform.getPos())
         self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
