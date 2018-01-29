@@ -48,6 +48,9 @@ class Atmosphere:
         self.model_from_view = Matrix4()
         self.view_from_clip = Matrix4()
 
+        self.kSky = Float3(1.0, 1.0, 1.0)
+        self.kSun = Float3(1.0, 1.0, 1.0)
+
         self.model = None
         self.atmosphere_material_instance = None
 
@@ -81,6 +84,10 @@ class Atmosphere:
         # USE PRECOMPUTED TEXTURE
         use_precomputed_texture = False
         if not use_precomputed_texture:
+            if self.use_luminance:
+                self.kSky[...] = kSkyRadianceToLuminance
+                self.kSun[...] = kSunRadianceToLuminance
+
             self.transmittance_texture = resource_manager.getTexture('precomputed_atmosphere.transmittance')
             self.scattering_texture = resource_manager.getTexture('precomputed_atmosphere.scattering')
             self.irradiance_texture = resource_manager.getTexture('precomputed_atmosphere.irradiance')
@@ -147,6 +154,8 @@ class Atmosphere:
                                self.use_combined_textures)
             self.model.Init()
 
+            self.kSky[...] = self.model.kSky
+            self.kSun[...] = self.model.kSun
             self.transmittance_texture = self.model.transmittance_texture
             self.scattering_texture = self.model.scattering_texture
             self.irradiance_texture = self.model.irradiance_texture
@@ -203,6 +212,9 @@ class Atmosphere:
         if self.optional_single_mie_scattering_texture is not None:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.optional_single_mie_scattering_texture)
+
+        self.atmosphere_material_instance.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", self.kSky)
+        self.atmosphere_material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
 
         self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
         self.atmosphere_material_instance.bind_uniform_data("camera", main_camera.transform.getPos())

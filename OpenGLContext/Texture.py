@@ -345,7 +345,7 @@ class TextureCube(Texture):
         glBindTexture(GL_TEXTURE_CUBE_MAP, self.buffer)
 
         def createTexImage2D(cube_index, texture):
-            if texture:
+            if texture is not None:
                 return glTexImage2D(cube_index,
                                     0,
                                     texture.internal_format,

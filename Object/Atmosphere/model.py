@@ -134,11 +134,16 @@ class Model:
         self.use_luminance = use_luminance
 
         self.precompute_illuminance = num_precomputed_wavelengths > 3
-        if self.precompute_illuminance:
-            self.kSky = [MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY]
-        else:
-            self.kSky = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, -3)
-        self.kSun = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, 0)
+
+        self.kSky = Float3(1.0, 1.0, 1.0)
+        self.kSun = Float3(1.0, 1.0, 1.0)
+
+        if use_luminance:
+            if self.precompute_illuminance:
+                self.kSky[...] = [MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY]
+            else:
+                self.kSky[...] = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, -3)
+            self.kSun[...] = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, 0)
 
         self.material_instance_macros = {
             'COMBINED_SCATTERING_TEXTURES': 1 if combine_scattering_textures else 0
@@ -307,9 +312,6 @@ class Model:
                     result += "))"
             return result
 
-        sky_k_r, sky_k_g, sky_k_b = self.kSky[0], self.kSky[1], self.kSky[2]
-        sun_k_r, sun_k_g, sun_k_b = self.kSun[0], self.kSun[1], self.kSun[2]
-
         header = ["const int TRANSMITTANCE_TEXTURE_WIDTH = %d;" % TRANSMITTANCE_TEXTURE_WIDTH,
                   "const int TRANSMITTANCE_TEXTURE_HEIGHT = %d;" % TRANSMITTANCE_TEXTURE_HEIGHT,
                   "const int SCATTERING_TEXTURE_R_SIZE = %d;" % SCATTERING_TEXTURE_R_SIZE,
@@ -318,6 +320,8 @@ class Model:
                   "const int SCATTERING_TEXTURE_NU_SIZE = %d;" % SCATTERING_TEXTURE_NU_SIZE,
                   "const int IRRADIANCE_TEXTURE_WIDTH = %d;" % IRRADIANCE_TEXTURE_WIDTH,
                   "const int IRRADIANCE_TEXTURE_HEIGHT = %d;" % IRRADIANCE_TEXTURE_HEIGHT,
+                  "const vec2 IRRADIANCE_TEXTURE_SIZE = vec2(%d, %d);" % (
+                    IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT),
                   "",
                   '#include "precomputed_atmosphere/definitions.glsl"',
                   "",
@@ -336,14 +340,6 @@ class Model:
                   to_string(self.absorption_extinction, lambdas, self.length_unit_in_meters) + ",",
                   to_string(self.ground_albedo, lambdas, 1.0) + ",",
                   str(cos(self.max_sun_zenith_angle)) + ");",
-                  "",
-                  "#if 1 == USE_LUMINANCE",
-                  "\tconst vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
-                  "\tconst vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
-                  "#else",
-                  "\tconst vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(1.0, 1.0, 1.0);",
-                  "\tconst vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(1.0, 1.0, 1.0);",
-                  "#endif",
                   "",
                   '#include "precomputed_atmosphere/functions.glsl"',
                   ""]
@@ -413,7 +409,6 @@ class Model:
                    num_scattering_orders):
         resource_manager = CoreManager.instance().resource_manager
         shaderLoader = resource_manager.shaderLoader
-        renderer = CoreManager.instance().renderer
 
         shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
         compute_atmosphere_predefine = resource_manager.getShader(shader_name)
@@ -458,16 +453,16 @@ class Model:
         # compute_single_scattering
         if self.optional_single_mie_scattering_texture is None:
             framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
-                                                    self.delta_mie_scattering_texture,
-                                                    self.scattering_texture)
+                                           self.delta_mie_scattering_texture,
+                                           self.scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
         else:
             framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
-                                                    self.delta_mie_scattering_texture,
-                                                    self.scattering_texture,
-                                                    self.optional_single_mie_scattering_texture)
+                                           self.delta_mie_scattering_texture,
+                                           self.scattering_texture,
+                                           self.optional_single_mie_scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -480,6 +475,7 @@ class Model:
         compute_single_scattering_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
 
         for layer in range(SCATTERING_TEXTURE_DEPTH):
+            framebuffer.bind_framebuffer(target_layer=layer)
             compute_single_scattering_mi.bind_uniform_data("layer", layer)
             if blend:
                 glEnablei(GL_BLEND, 2)
@@ -513,12 +509,12 @@ class Model:
             compute_scattering_density_mi.bind_uniform_data('scattering_order', scattering_order)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
+                framebuffer.bind_framebuffer(target_layer=layer)
                 compute_scattering_density_mi.bind_uniform_data('layer', layer)
                 self.quad.draw_elements()
 
             # compute_indirect_irradiance
-            framebuffer.set_color_textures(self.delta_irradiance_texture,
-                                                    self.irradiance_texture)
+            framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -542,8 +538,7 @@ class Model:
             glDisablei(GL_BLEND, 1)
 
             # compute_multiple_scattering
-            framebuffer.set_color_textures(self.delta_multiple_scattering_texture,
-                                                    self.scattering_texture)
+            framebuffer.set_color_textures(self.delta_multiple_scattering_texture, self.scattering_texture)
             framebuffer.set_depth_texture(None)
             framebuffer.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -558,6 +553,7 @@ class Model:
                                                              self.delta_scattering_density_texture)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
+                framebuffer.bind_framebuffer(target_layer=layer)
                 compute_multiple_scattering_mi.bind_uniform_data('layer', layer)
                 if blend:
                     glEnablei(GL_BLEND, 1)

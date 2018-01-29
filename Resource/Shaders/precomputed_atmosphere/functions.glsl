@@ -665,8 +665,6 @@ void GetRMuSFromIrradianceTextureUv(const in AtmosphereParameters atmosphere,
     mu_s = ClampCosine(2.0 * x_mu_s - 1.0);
 }
 
-
-const vec2 IRRADIANCE_TEXTURE_SIZE = vec2(IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
 vec3 ComputeDirectIrradianceTexture(
     const in AtmosphereParameters atmosphere,
     const in sampler2D transmittance_texture,
