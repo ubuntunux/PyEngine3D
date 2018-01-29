@@ -152,7 +152,7 @@ vec3 GetTransmittanceToTopAtmosphereBoundary(
     float r, float mu)
 {
     vec2 uv = GetTransmittanceTextureUvFromRMu(atmosphere, r, mu);
-    return DimensionlessSpectrum(texture(transmittance_texture, uv));
+    return vec3(texture(transmittance_texture, uv));
 }
 
 
@@ -171,14 +171,14 @@ vec3 GetTransmittance(
         return min(
             GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r_d, -mu_d) /
             GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r, -mu),
-            DimensionlessSpectrum(1.0));
+            vec3(1.0));
     }
     else
     {
         return min(
             GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r, mu) /
             GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r_d, mu_d),
-            DimensionlessSpectrum(1.0));
+            vec3(1.0));
     }
 }
 
@@ -248,8 +248,8 @@ void ComputeSingleScattering(
     const int SAMPLE_COUNT = 50;
     float dx = DistanceToNearestAtmosphereBoundary(atmosphere, r, mu, ray_r_mu_intersects_ground) / float(SAMPLE_COUNT);
 
-    vec3 rayleigh_sum = DimensionlessSpectrum(0.0);
-    vec3 mie_sum = DimensionlessSpectrum(0.0);
+    vec3 rayleigh_sum = vec3(0.0);
+    vec3 mie_sum = vec3(0.0);
     for (int i = 0; i <= SAMPLE_COUNT; ++i)
     {
         float d_i = float(i) * dx;
@@ -418,7 +418,7 @@ vec3 GetScattering(
     float lerp = tex_coord_x - tex_x;
     vec3 uvw0 = vec3((tex_x + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE), uvwz.z, uvwz.w);
     vec3 uvw1 = vec3((tex_x + 1.0 + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE), uvwz.z, uvwz.w);
-    return AbstractSpectrum(
+    return vec3(
         texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp);
 }
 
@@ -469,7 +469,7 @@ vec3 ComputeScatteringDensity(
     const int SAMPLE_COUNT = 16;
     const float dphi = PI / float(SAMPLE_COUNT);
     const float dtheta = PI / float(SAMPLE_COUNT);
-    vec3 rayleigh_mie = RadianceDensitySpectrum(0.0);
+    vec3 rayleigh_mie = vec3(0.0);
 
     for (int l = 0; l < SAMPLE_COUNT; ++l)
     {
@@ -479,8 +479,8 @@ vec3 ComputeScatteringDensity(
         bool ray_r_theta_intersects_ground = RayIntersectsGround(atmosphere, r, cos_theta);
 
         float distance_to_ground = 0.0;
-        vec3 transmittance_to_ground = DimensionlessSpectrum(0.0);
-        vec3 ground_albedo = DimensionlessSpectrum(0.0);
+        vec3 transmittance_to_ground = vec3(0.0);
+        vec3 ground_albedo = vec3(0.0);
         if (ray_r_theta_intersects_ground)
         {
             distance_to_ground = DistanceToBottomAtmosphereBoundary(atmosphere, r, cos_theta);
@@ -530,7 +530,7 @@ vec3 ComputeMultipleScattering(
 {
     const int SAMPLE_COUNT = 50;
     float dx = DistanceToNearestAtmosphereBoundary(atmosphere, r, mu, ray_r_mu_intersects_ground) / float(SAMPLE_COUNT);
-    vec3 rayleigh_mie_sum = RadianceSpectrum(0.0);
+    vec3 rayleigh_mie_sum = vec3(0.0);
     for (int i = 0; i <= SAMPLE_COUNT; ++i)
     {
         float d_i = float(i) * dx;
@@ -624,7 +624,7 @@ vec3 ComputeIndirectIrradiance(
     const float dphi = PI / float(SAMPLE_COUNT);
     const float dtheta = PI / float(SAMPLE_COUNT);
 
-    vec3 result = IrradianceSpectrum(0.0);
+    vec3 result = vec3(0.0);
     vec3 omega_s = vec3(sqrt(1.0 - mu_s * mu_s), 0.0, mu_s);
     for (int j = 0; j < SAMPLE_COUNT / 2; ++j)
     {
@@ -701,7 +701,7 @@ vec3 GetIrradiance(
     float mu_s)
 {
     vec2 uv = GetIrradianceTextureUvFromRMuS(atmosphere, r, mu_s);
-    return IrradianceSpectrum(texture(irradiance_texture, uv));
+    return vec3(texture(irradiance_texture, uv));
 }
 
 
@@ -736,12 +736,12 @@ vec3 GetCombinedScattering(
 #if COMBINED_SCATTERING_TEXTURES == 1
     vec4 combined_scattering =
         texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp;
-    vec3 scattering = IrradianceSpectrum(combined_scattering);
+    vec3 scattering = vec3(combined_scattering);
     single_mie_scattering = GetExtrapolatedSingleMieScattering(atmosphere, combined_scattering);
 #else
-    vec3 scattering = IrradianceSpectrum(
+    vec3 scattering = vec3(
         texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp);
-    single_mie_scattering = IrradianceSpectrum(
+    single_mie_scattering = vec3(
         texture(single_mie_scattering_texture, uvw0) * (1.0 - lerp) +
         texture(single_mie_scattering_texture, uvw1) * lerp);
 #endif
@@ -770,8 +770,8 @@ vec3 ComputeSkyRadiance(
     }
     else if(r > atmosphere.top_radius)
     {
-        transmittance = DimensionlessSpectrum(1.0);
-        return RadianceSpectrum(0.0);
+        transmittance = vec3(1.0);
+        return vec3(0.0);
     }
 
     float mu = rmu / r;
@@ -780,7 +780,7 @@ vec3 ComputeSkyRadiance(
     bool ray_r_mu_intersects_ground = RayIntersectsGround(atmosphere, r, mu);
 
     transmittance = ray_r_mu_intersects_ground ?
-        DimensionlessSpectrum(0.0) : GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r, mu);
+        vec3(0.0) : GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, r, mu);
     vec3 single_mie_scattering;
     vec3 scattering;
     if (shadow_length == 0.0)

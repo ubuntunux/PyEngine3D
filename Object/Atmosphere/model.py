@@ -131,6 +131,7 @@ class Model:
         self.length_unit_in_meters = length_unit_in_meters
         self.num_precomputed_wavelengths = num_precomputed_wavelengths
         self.combine_scattering_textures = combine_scattering_textures
+        self.use_luminance = use_luminance
 
         self.precompute_illuminance = num_precomputed_wavelengths > 3
         if self.precompute_illuminance:
@@ -335,8 +336,14 @@ class Model:
                   to_string(self.absorption_extinction, lambdas, self.length_unit_in_meters) + ",",
                   to_string(self.ground_albedo, lambdas, 1.0) + ",",
                   str(cos(self.max_sun_zenith_angle)) + ");",
-                  "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
-                  "const vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
+                  "",
+                  "#if 1 == USE_LUMINANCE",
+                  "\tconst vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sky_k_r, sky_k_g, sky_k_b),
+                  "\tconst vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(%f, %f, %f);" % (sun_k_r, sun_k_g, sun_k_b),
+                  "#else",
+                  "\tconst vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(1.0, 1.0, 1.0);",
+                  "\tconst vec3 SUN_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(1.0, 1.0, 1.0);",
+                  "#endif",
                   "",
                   '#include "precomputed_atmosphere/functions.glsl"',
                   ""]
@@ -344,7 +351,6 @@ class Model:
 
     def Init(self, num_scattering_orders=4):
         resource_manager = CoreManager.instance().resource_manager
-        renderer = CoreManager.instance().renderer
         framebuffer = FrameBuffer()
 
         if not self.precompute_illuminance:

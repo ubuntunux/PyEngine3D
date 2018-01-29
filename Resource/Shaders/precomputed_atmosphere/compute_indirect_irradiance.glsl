@@ -9,11 +9,12 @@ uniform sampler3D single_rayleigh_scattering_texture;
 uniform sampler3D single_mie_scattering_texture;
 uniform sampler3D multiple_scattering_texture;
 uniform int scattering_order;
-void main() {
-  delta_irradiance = ComputeIndirectIrradianceTexture(
-      ATMOSPHERE, single_rayleigh_scattering_texture,
-      single_mie_scattering_texture, multiple_scattering_texture,
-      gl_FragCoord.xy, scattering_order);
-  irradiance = luminance_from_radiance * delta_irradiance;
+void main()
+{
+    delta_irradiance = ComputeIndirectIrradianceTexture(
+        ATMOSPHERE, single_rayleigh_scattering_texture,
+        single_mie_scattering_texture, multiple_scattering_texture,
+        gl_FragCoord.xy, scattering_order);
+    irradiance = luminance_from_radiance * delta_irradiance;
 }
 #endif
