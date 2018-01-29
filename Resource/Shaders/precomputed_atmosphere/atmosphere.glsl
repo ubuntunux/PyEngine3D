@@ -1,3 +1,4 @@
+#include "PCFKernels.glsl"
 #include "utility.glsl"
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/atmosphere_vs.glsl"
@@ -13,6 +14,7 @@ uniform vec3 sun_direction;
 uniform vec2 sun_size;
 uniform float exposure;
 
+uniform sampler2D texture_shadow;
 uniform sampler2D texture_depth;
 uniform sampler2D texture_normal;
 uniform sampler2D transmittance_texture;
@@ -22,6 +24,41 @@ uniform sampler2D irradiance_texture;
 
 uniform vec3 SKY_RADIANCE_TO_LUMINANCE;
 uniform vec3 SUN_RADIANCE_TO_LUMINANCE;
+
+
+
+
+float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
+{
+    float shadow_factor = 0.0;
+    vec4 shadow_uv = SHADOW_MATRIX * vec4(world_position, 1.0);
+    shadow_uv.xyz /= shadow_uv.w;
+    shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
+    float shadow_depth = shadow_uv.z;
+
+    const float shadow_radius = 2.0;
+    const vec2 texture_size = textureSize(texture_shadow, 0);
+    const vec2 sample_scale = shadow_radius / texture_size;
+
+    float angle = rand(screen_tex_coord);
+
+    const int sample_count = min(4, PoissonSampleCount);
+
+    for(int i=0; i<sample_count; ++i)
+    {
+        // random poisson
+        vec2 uv = PoissonSamples[int(JITTER_FRAME + i + angle * PoissonSampleCount) % PoissonSampleCount];
+
+        uv = shadow_uv.xy + uv * sample_scale;
+        vec4 s = textureGather(texture_shadow, uv, 0);
+        shadow_factor += s[0] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[1] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[2] <= shadow_depth ? 0.0 : 1.0;
+        shadow_factor += s[3] <= shadow_depth ? 0.0 : 1.0;
+    }
+    shadow_factor /= sample_count * 4.0;
+    return shadow_factor;
+}
 
 vec3 GetSolarRadiance()
 {
@@ -213,7 +250,7 @@ void main()
         vec3 sun_irradiance = GetSunAndSkyIrradiance( point.xyz - earth_center, normal, sun_direction, sky_irradiance);
         scene_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
 
-        float shadow_length = 0.0;
+        float shadow_length = (1.0 - get_shadow_factor(uv, point, texture_shadow)) * 100000.0;
         vec3 transmittance;
         vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point.xyz - earth_center, shadow_length, sun_direction, transmittance);
         scene_radiance = scene_radiance * transmittance + in_scatter;
