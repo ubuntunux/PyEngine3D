@@ -181,6 +181,53 @@ void main()
 
     // float shadow_result = max(0.0, shadow_out - shadow_in);
 
+    // Scene
+    float scene_shadow_length = 0.0;
+    vec3 scene_radiance = vec3(0.0);
+    {
+        vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
+        vec3 point = (camera + scene_point) * 0.1;
+
+        bool shadow_enter = false;
+        float s_out = 0.0;
+        float s_in = 0.0;
+        float d = 0.1;
+        vec3 normalized_dir = normalize(scene_point);
+
+        for(int i=0; i<100; ++i)
+        {
+            vec3 world_pos = camera + normalized_dir * float(i) * d;
+            vec4 shadow_uv = SHADOW_MATRIX * vec4(world_pos, 1.0);
+            shadow_uv.xyz /= shadow_uv.w;
+            shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
+            float s = texture(texture_shadow, shadow_uv.xy, 0).x;
+
+            if(false == shadow_enter && s <= shadow_uv.z)
+            {
+                shadow_enter = true;
+                s_in = world_pos.z;
+                continue;
+            }
+
+            if(shadow_enter && (shadow_uv.z < s || i == 99))
+            {
+                s_out = world_pos.z;
+                break;
+            }
+        }
+
+        vec3 sky_irradiance;
+        vec3 sun_irradiance = GetSunAndSkyIrradiance( point.xyz - earth_center, normal, sun_direction, sky_irradiance);
+        scene_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
+
+        float shadow_length = max(0.0, abs(s_in - s_out)) * 2.0;
+        scene_shadow_length = shadow_length;
+
+        vec3 transmittance;
+        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point.xyz - earth_center, shadow_length, sun_direction, transmittance);
+        scene_radiance = scene_radiance * transmittance + in_scatter;
+    }
+
     // Ground
     vec3 p = camera - earth_center;
     float p_dot_v = dot(p, view_direction);
@@ -202,7 +249,7 @@ void main()
             sun_irradiance * GetSunVisibility(point, sun_direction) +
             sky_irradiance * GetSkyVisibility(point));
 
-        float shadow_length = max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) * lightshaft_fadein_hack;
+        float shadow_length = max(scene_shadow_length, max(0.0, min(shadow_out, distance_to_intersection) - shadow_in)) * lightshaft_fadein_hack;
         vec3 transmittance;
         vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
         ground_radiance = ground_radiance * transmittance + in_scatter;
@@ -232,7 +279,7 @@ void main()
         vec3 sun_irradiance = GetSunAndSkyIrradiance( point - earth_center, normal, sun_direction, sky_irradiance);
         sphere_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
 
-        float shadow_length = max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) * lightshaft_fadein_hack;
+        float shadow_length = max(scene_shadow_length, max(0.0, min(shadow_out, distance_to_intersection) - shadow_in)) * lightshaft_fadein_hack;
         vec3 transmittance;
         vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point - earth_center, shadow_length, sun_direction, transmittance);
         sphere_radiance = sphere_radiance * transmittance + in_scatter;
@@ -240,24 +287,10 @@ void main()
         // shadow_result = max(0.0, min(shadow_out, distance_to_intersection) - shadow_in);
     }
 
-    // Scene
-    vec3 scene_radiance = vec3(0.0);
-    {
-        vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
-        vec3 point = camera + scene_point;
 
-        vec3 sky_irradiance;
-        vec3 sun_irradiance = GetSunAndSkyIrradiance( point.xyz - earth_center, normal, sun_direction, sky_irradiance);
-        scene_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
-
-        float shadow_length = (1.0 - get_shadow_factor(uv, point, texture_shadow)) * 100000.0;
-        vec3 transmittance;
-        vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center, point.xyz - earth_center, shadow_length, sun_direction, transmittance);
-        scene_radiance = scene_radiance * transmittance + in_scatter;
-    }
 
     // Sky
-    float shadow_length = max(0.0, shadow_out - shadow_in) * lightshaft_fadein_hack;
+    float shadow_length = max(scene_shadow_length, max(0.0, shadow_out - shadow_in)) * lightshaft_fadein_hack;
     vec3 transmittance;
     vec3 radiance = GetSkyRadiance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
 
@@ -266,15 +299,6 @@ void main()
     {
         radiance = radiance + transmittance * GetSolarRadiance();
     }
-
-    //shadow_result = max(0.0, shadow_result);
-    //color.xyz = vec3(shadow_result, sphere_alpha * 0.01, 0.0) + radiance;
-    //return;
-
-    //color.xyz = vec3(max(0.0, shadow_out) * 0.1) * (1.0 - sphere_alpha) + radiance;
-    //color.xyz = vec3(max(0.0, shadow_out - shadow_in) * 0.1) + radiance;
-    //color.xyz = vec3(max(0.0, shadow_in) * 0.1) * (1.0 - sphere_alpha) + radiance;
-    //return;
 
     // Final composite
     radiance = mix(radiance, ground_radiance, ground_alpha);
