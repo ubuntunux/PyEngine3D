@@ -1,0 +1,4 @@
+{'macros': {},
+ 'material_name': 'examples.volumetric_light',
+ 'shader_name': 'examples.volumetric_light',
+ 'uniform_datas': {'texture_noise': 'noise.fbm'}}

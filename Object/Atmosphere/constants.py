@@ -51,7 +51,7 @@ kMaxOzoneNumberDensity = 300.0 * kDobsonUnit / 15000.0
 # Wavelength independent solar irradiance "spectrum" (not physically
 # realistic, but was used in the original implementation).
 kConstantSolarIrradiance = 1.5
-kBottomRadius = 6360000.0
+kBottomRadius = 6361000.0  # default : 6360000.0
 kTopRadius = 6420000.0
 kRayleigh = 1.24062e-6
 kRayleighScaleHeight = 8000.0

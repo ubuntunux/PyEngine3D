@@ -197,7 +197,7 @@ class Atmosphere:
         # self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
         self.sun_direction[...] = main_light.transform.front
 
-    def render_precomputed_atmosphere(self, main_camera, texture_depth, texture_normal, texture_shadow):
+    def render_precomputed_atmosphere(self, main_camera, texture_linear_depth, texture_normal, texture_shadow):
         if not self.is_render_atmosphere:
             return
 
@@ -208,7 +208,7 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
         self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
         self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
-        self.atmosphere_material_instance.bind_uniform_data("texture_depth", texture_depth)
+        self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.atmosphere_material_instance.bind_uniform_data("texture_normal", texture_normal)
         if self.optional_single_mie_scattering_texture is not None:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",

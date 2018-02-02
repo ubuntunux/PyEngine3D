@@ -693,7 +693,7 @@ class Renderer(Singleton):
 
         # atmosphere
         self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera,
-                                                                    RenderTargets.DEPTHSTENCIL,
+                                                                    RenderTargets.LINEAR_DEPTH,
                                                                     RenderTargets.WORLD_NORMAL,
                                                                     RenderTargets.SHADOWMAP)
 

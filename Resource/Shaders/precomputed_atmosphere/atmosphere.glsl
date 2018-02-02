@@ -15,7 +15,7 @@ uniform vec2 sun_size;
 uniform float exposure;
 
 uniform sampler2D texture_shadow;
-uniform sampler2D texture_depth;
+uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_normal;
 uniform sampler2D transmittance_texture;
 uniform sampler3D scattering_texture;
@@ -134,9 +134,10 @@ void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    float scene_depth = texture(texture_depth, uv).x;
-    vec3 scene_point = depth_to_relative_world(uv, scene_depth).xyz;
     vec3 view_direction = normalize(view_ray);
+    float scene_linear_depth = texture(texture_linear_depth, uv).x;
+    vec3 scene_point = view_direction * scene_linear_depth;
+
     float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
 
     float earth_radius = abs(earth_center.y);
@@ -165,42 +166,62 @@ void main()
         vec3 point = (camera + scene_point) * ratio;
 
         bool shadow_enter = false;
-        float s_out = 0.0;
-        float s_in = 0.0;
-        float d = 0.1;
+        bool do_exit = false;
+        float scene_shadow_out = 0.0;
+        float scene_shadow_in = 0.0;
+        float d = 0.2;
         vec3 normalized_dir = normalize(scene_point);
 
-        for(int i=0; i<100; ++i)
+        const int LOOP = 100;
+        for(int i=0; i<LOOP; ++i)
         {
-            vec3 world_pos = camera + normalized_dir * float(i) * d;
+            float ray_dist = float(i) * d;
+            vec3 world_pos = camera + normalized_dir * ray_dist;
             vec4 shadow_uv = SHADOW_MATRIX * vec4(world_pos, 1.0);
             shadow_uv.xyz /= shadow_uv.w;
             shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-            float s = texture(texture_shadow, shadow_uv.xy, 0).x;
+            float shadow_depth = texture(texture_shadow, shadow_uv.xy, 0).x;
 
-            if(false == shadow_enter && s <= shadow_uv.z)
+            if(shadow_uv.x < 0.0 || 1.0 < shadow_uv.x || shadow_uv.y < 0.0 || 1.0 < shadow_uv.y)
             {
-                // Check if the ray enters the earth.
-                if(render_ground && length(world_pos - earth_center) < earth_radius)
-                {
-                    s_in = 0.0;
-                    s_out = 0.0;
-                    break;
-                }
-
+                do_exit = true;
+            }
+            else if(false == shadow_enter && shadow_depth <= shadow_uv.z)
+            {
+                // enter the shadow.
                 shadow_enter = true;
-                s_in = world_pos.z;
-                continue;
+                scene_shadow_in = dot(normalized_dir, world_pos);
+
+                if(length(world_pos - earth_center) < earth_radius)
+                {
+                    // Clip shdoaw by ground. Check if the ray enters the earth.
+                    do_exit = true;
+                }
+            }
+            else if(shadow_enter && (shadow_uv.z < shadow_depth || scene_linear_depth <= ray_dist))
+            {
+                // It came out of the shadows or hit the surface of the object.
+                do_exit = true;
             }
 
-            if(shadow_enter && (shadow_uv.z < s || i == 99))
+            if(do_exit || i == (LOOP-1))
             {
-                s_out = world_pos.z;
+                if(shadow_enter)
+                {
+                    // If there is already a shadow, set the position outside the shadow to the current position.
+                    scene_shadow_out = dot(normalized_dir, world_pos);
+                }
+                else
+                {
+                    // Shadow not detected.
+                    scene_shadow_in = 0.0;
+                    scene_shadow_out = 0.0;
+                }
                 break;
             }
         }
 
-        scene_shadow_length = max(0.0, abs(s_out - s_in));
+        scene_shadow_length = max(0.0, scene_shadow_out - scene_shadow_in);
 
         vec3 sky_irradiance;
         vec3 sun_irradiance = GetSunAndSkyIrradiance( point.xyz - earth_center, normal, sun_direction, sky_irradiance);
@@ -302,7 +323,7 @@ void main()
 
     // Final composite
     radiance = mix(radiance, ground_radiance, ground_alpha);
-    radiance = mix(max(vec3(0.0), scene_radiance), radiance, scene_depth > 0.9999 ? 1.0 : 0.0);
+    radiance = mix(scene_radiance, radiance, scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
 
     color.xyz = radiance * exposure;
