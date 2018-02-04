@@ -364,4 +364,4 @@ class SceneManager(Singleton):
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
 
-        self.atmosphere.update(self.main_camera, self.main_light)
+        self.atmosphere.update(self.main_light)

@@ -734,7 +734,7 @@ vec3 GetCombinedScattering(
 #if COMBINED_SCATTERING_TEXTURES == 1
     vec4 combined_scattering =
         texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp;
-    vec3 scattering = vec3(combined_scattering);
+    vec3 scattering = vec3(combined_scattering.xyz);
     single_mie_scattering = GetExtrapolatedSingleMieScattering(atmosphere, combined_scattering);
 #else
     vec3 scattering = vec3(

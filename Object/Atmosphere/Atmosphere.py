@@ -45,8 +45,6 @@ class Atmosphere:
         self.white_point = Float3()
         self.earth_center = Float3(0.0, -kBottomRadius / kLengthUnitInMeters, 0.0)
         self.sun_size = Float2(math.tan(kSunAngularRadius), math.cos(kSunAngularRadius))
-        self.model_from_view = Matrix4()
-        self.view_from_clip = Matrix4()
 
         self.kSky = Float3(1.0, 1.0, 1.0)
         self.kSun = Float3(1.0, 1.0, 1.0)
@@ -171,7 +169,7 @@ class Atmosphere:
             'precomputed_atmosphere.atmosphere',
             macros=macros)
 
-    def update(self, main_camera, main_light):
+    def update(self, main_light):
         if not self.is_render_atmosphere:
             return
 
@@ -180,24 +178,9 @@ class Atmosphere:
         else:
             self.exposure = 0.00001
 
-        self.model_from_view[...] = main_camera.transform.rotationMatrix
-
-        # view_from_clip
-        # kFovY = main_camera.fov / 180.0 * kPi
-        # kTanFovY = math.tan(kFovY / 2.0)
-        # self.view_from_clip[...] = np.array([[kTanFovY * main_camera.aspect, 0.0, 0.0, 0.0],
-        #                                      [0.0, kTanFovY, 0.0, 0.0],
-        #                                      [0.0, 0.0, 0.0, 1.0],
-        #                                      [0.0, 0.0, -1.0, 1.0]], dtype=np.float32)
-        self.view_from_clip[...] = np.linalg.inv(main_camera.projection)
-
-        # sun_direction
-        # self.sun_direction[0] = cos(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        # self.sun_direction[1] = sin(self.sun_azimuth_angle_radians) * sin(self.sun_zenith_angle_radians)
-        # self.sun_direction[2] = cos(self.sun_zenith_angle_radians)
         self.sun_direction[...] = main_light.transform.front
 
-    def render_precomputed_atmosphere(self, main_camera, texture_linear_depth, texture_normal, texture_shadow):
+    def render_precomputed_atmosphere(self, texture_linear_depth, texture_normal, texture_shadow):
         if not self.is_render_atmosphere:
             return
 
@@ -218,11 +201,8 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
 
         self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
-        self.atmosphere_material_instance.bind_uniform_data("camera", main_camera.transform.getPos())
         self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
-        self.atmosphere_material_instance.bind_uniform_data("model_from_view", self.model_from_view)
-        self.atmosphere_material_instance.bind_uniform_data("view_from_clip", self.view_from_clip)
 
         self.quad.draw_elements()

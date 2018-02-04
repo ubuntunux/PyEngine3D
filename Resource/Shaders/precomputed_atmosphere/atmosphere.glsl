@@ -1,4 +1,3 @@
-#include "PCFKernels.glsl"
 #include "utility.glsl"
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/atmosphere_vs.glsl"
@@ -8,7 +7,6 @@ const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
 
-uniform vec3 camera;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
@@ -90,7 +88,7 @@ float GetSkyVisibility(vec3 point)
 
 void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_in, out float d_out)
 {
-    vec3 pos = camera - kSphereCenter;
+    vec3 pos = CAMERA_POSITION.xyz - kSphereCenter;
     float pos_dot_sun = dot(pos, sun_direction);
     float view_dot_sun = dot(view_direction, sun_direction);
     float k = sun_size.x;
@@ -133,6 +131,7 @@ layout(location = 0) out vec4 color;
 void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
+    vec3 camera = CAMERA_POSITION.xyz;
 
     vec3 view_direction = normalize(view_ray);
     float scene_linear_depth = texture(texture_linear_depth, uv).x;

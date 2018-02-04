@@ -692,8 +692,7 @@ class Renderer(Singleton):
         self.framebuffer.bind_framebuffer()
 
         # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere(self.scene_manager.main_camera,
-                                                                    RenderTargets.LINEAR_DEPTH,
+        self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                     RenderTargets.WORLD_NORMAL,
                                                                     RenderTargets.SHADOWMAP)
 

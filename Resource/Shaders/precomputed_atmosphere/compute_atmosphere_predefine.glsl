@@ -13,7 +13,7 @@ const vec2 IRRADIANCE_TEXTURE_SIZE = vec2(64, 16);
 const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(
 vec3(1.474000, 1.850400, 1.911980),
 0.004675,
-6360.0,
+6361.0,
 6420.0,
 DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000, 0.000000, 0.000000, 0.000000, 0.000000),DensityProfileLayer(0.000000, 1.000000, -0.125000, 0.000000, 0.000000))),
 vec3(0.005802, 0.013558, 0.033100),
