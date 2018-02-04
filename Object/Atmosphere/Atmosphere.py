@@ -201,7 +201,6 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
 
         self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
-        self.atmosphere_material_instance.bind_uniform_data("sun_direction", self.sun_direction)
         self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
 
