@@ -8,7 +8,6 @@ const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
 
 uniform vec3 earth_center;
-uniform vec3 sun_direction;
 uniform vec2 sun_size;
 uniform float exposure;
 
@@ -132,6 +131,7 @@ void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
     vec3 camera = CAMERA_POSITION.xyz;
+    vec3 sun_direction = LIGHT_DIRECTION.xyz;
 
     vec3 view_direction = normalize(view_ray);
     float scene_linear_depth = texture(texture_linear_depth, uv).x;
