@@ -2,11 +2,6 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/atmosphere_vs.glsl"
 
-const vec3 kSphereCenter = vec3(1.0, 1.0, -2.0);
-const float kSphereRadius = 1.0;
-const vec3 kSphereAlbedo = vec3(0.8);
-const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
-
 uniform vec3 earth_center;
 uniform vec2 sun_size;
 uniform float exposure;
@@ -134,9 +129,6 @@ void main()
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
 
     vec3 view_direction = normalize(view_ray);
-    float scene_linear_depth = texture(texture_linear_depth, uv).x;
-    vec3 scene_point = view_direction * scene_linear_depth;
-
     float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
 
     float earth_radius = abs(earth_center.y);
@@ -148,6 +140,9 @@ void main()
     float squared_radius;
     float sphere_shadow_in = 0.0;
     float sphere_shadow_out = 0.0;
+
+    float scene_linear_depth = texture(texture_linear_depth, uv).x;
+    vec3 scene_point = view_direction * scene_linear_depth;
 
     bool render_ground = false;
     float ground_alpha = 0.0;
@@ -321,12 +316,20 @@ void main()
     }
 
     // Final composite
-    radiance = mix(radiance, ground_radiance, ground_alpha);
+    if(render_ground)
+    {
+        radiance = mix(radiance, ground_radiance, ground_alpha);
+    }
+
     radiance = mix(scene_radiance, radiance, scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0);
-    radiance = mix(radiance, sphere_radiance, sphere_alpha);
+
+    if(render_sphere)
+    {
+        radiance = mix(radiance, sphere_radiance, sphere_alpha);
+    }
 
     color.xyz = radiance * exposure;
-    color.w = 1.0;
+    color.w = scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0;
     color = max(color, 0.0);
 }
 #endif

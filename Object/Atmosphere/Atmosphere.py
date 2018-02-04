@@ -188,11 +188,13 @@ class Atmosphere:
         self.atmosphere_material_instance.use_program()
 
         self.atmosphere_material_instance.bind_uniform_data('texture_shadow', texture_shadow)
+        self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
+        self.atmosphere_material_instance.bind_uniform_data("texture_normal", texture_normal)
+
         self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
         self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
         self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
-        self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
-        self.atmosphere_material_instance.bind_uniform_data("texture_normal", texture_normal)
+
         if self.optional_single_mie_scattering_texture is not None:
             self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
                                                                 self.optional_single_mie_scattering_texture)

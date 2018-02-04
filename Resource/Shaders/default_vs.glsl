@@ -1,5 +1,3 @@
-
-
 #define SKELETAL 0
 
 #include "scene_constants.glsl"

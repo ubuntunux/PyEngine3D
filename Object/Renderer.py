@@ -383,16 +383,23 @@ class Renderer(Singleton):
             # render solid
             self.render_solid()
 
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-            # atmospherer
+            # atmosphere
             glDisable(GL_DEPTH_TEST)
-            self.postprocess.bind_quad()
-            self.postprocess.render_atmosphere()
+            if self.scene_manager.atmosphere is None:
+                # simple cubemap atmosphere
+                self.postprocess.bind_quad()
+                self.postprocess.render_atmosphere()
 
             # render translucent
             glEnable(GL_DEPTH_TEST)
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_translucent()
+
+            if self.scene_manager.atmosphere is not None:
+                glDisable(GL_DEPTH_TEST)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.WORLD_NORMAL,
+                                                                            RenderTargets.SHADOWMAP)
 
             if RenderOption.RENDER_LIGHT_PROBE:
                 glUseProgram(0)
@@ -547,19 +554,14 @@ class Renderer(Singleton):
             else:
                 texture_probe = self.scene_manager.main_light_probe.texture_probe
             self.postprocess.bind_quad()
-            self.postprocess.render_deferred_shading(RenderTargets.DIFFUSE,
-                                                     RenderTargets.MATERIAL,
-                                                     RenderTargets.WORLD_NORMAL,
-                                                     RenderTargets.DEPTHSTENCIL,
-                                                     RenderTargets.SHADOWMAP,
-                                                     RenderTargets.SSAO,
-                                                     RenderTargets.SCREEN_SPACE_REFLECTION,
-                                                     texture_probe)
+            # render deferred
+            self.postprocess.render_deferred_shading(texture_probe, self.scene_manager.atmosphere)
         elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
-            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.scene_manager.static_solid_render_infos)
-            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING,
-                               self.scene_manager.skeleton_solid_render_infos)
+            self.render_actors(
+                RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING, self.scene_manager.static_solid_render_infos)
+            self.render_actors(
+                RenderGroup.SKELETON_ACTOR, RenderMode.LIGHTING, self.scene_manager.skeleton_solid_render_infos)
 
     def render_translucent(self):
         self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.LIGHTING,
@@ -690,11 +692,6 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
-
-        # atmosphere
-        self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                    RenderTargets.WORLD_NORMAL,
-                                                                    RenderTargets.SHADOWMAP)
 
         # bind quad mesh
         self.postprocess.bind_quad()

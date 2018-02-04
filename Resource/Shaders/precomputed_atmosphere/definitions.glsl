@@ -1,7 +1,6 @@
-#define COMBINED_SCATTERING_TEXTURES 0
+#include "scene_constants.glsl"
 
-const float PI = 3.14159265358979323846;
-const float deg = PI / 180.0;
+#define COMBINED_SCATTERING_TEXTURES 0
 
 
 struct DensityProfileLayer

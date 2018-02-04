@@ -2,9 +2,6 @@
 #include "utility.glsl"
 
 
-const float PI = 3.141592;
-
-
 float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
 {
     float shadow_factor = 0.0;

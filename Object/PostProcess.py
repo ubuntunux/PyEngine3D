@@ -399,18 +399,31 @@ class PostProcess:
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
-    def render_deferred_shading(self, texture_diffuse, texture_material, texture_normal,
-                                texture_depth, texture_shadow, texture_ssao, texture_scene_reflect, texture_probe):
+    def render_deferred_shading(self, texture_probe, atmosphere):
         self.deferred_shading.use_program()
         self.deferred_shading.bind_material_instance()
-        self.deferred_shading.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.deferred_shading.bind_uniform_data("texture_material", texture_material)
-        self.deferred_shading.bind_uniform_data("texture_normal", texture_normal)
-        self.deferred_shading.bind_uniform_data("texture_depth", texture_depth)
-        self.deferred_shading.bind_uniform_data("texture_shadow", texture_shadow)
-        self.deferred_shading.bind_uniform_data("texture_ssao", texture_ssao)
-        self.deferred_shading.bind_uniform_data("texture_scene_reflect", texture_scene_reflect)
+
+        self.deferred_shading.bind_uniform_data("texture_diffuse", RenderTargets.DIFFUSE)
+        self.deferred_shading.bind_uniform_data("texture_material", RenderTargets.MATERIAL)
+        self.deferred_shading.bind_uniform_data("texture_normal", RenderTargets.WORLD_NORMAL)
+        self.deferred_shading.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
+        self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.SHADOWMAP)
+        self.deferred_shading.bind_uniform_data("texture_ssao", RenderTargets.SSAO)
+        self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION)
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
+
+        self.deferred_shading.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
+        self.deferred_shading.bind_uniform_data("transmittance_texture", atmosphere.transmittance_texture)
+        self.deferred_shading.bind_uniform_data("scattering_texture", atmosphere.scattering_texture)
+        self.deferred_shading.bind_uniform_data("irradiance_texture", atmosphere.irradiance_texture)
+        if atmosphere.optional_single_mie_scattering_texture is not None:
+            self.deferred_shading.bind_uniform_data("single_mie_scattering_texture",
+                                                    atmosphere.optional_single_mie_scattering_texture)
+        self.deferred_shading.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", atmosphere.kSky)
+        self.deferred_shading.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", atmosphere.kSun)
+        self.deferred_shading.bind_uniform_data("exposure", atmosphere.exposure)
+        self.deferred_shading.bind_uniform_data("earth_center", atmosphere.earth_center)
+
         self.quad_geometry.draw_elements()
 
     def copy_texture(self, source_texture):

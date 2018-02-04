@@ -39,3 +39,11 @@ layout(std140, binding=3) uniform lightConstants
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
 const float SHADOW_BIAS = -0.0001;
+
+const float PI = 3.14159265358979323846;
+const float deg = PI / 180.0;
+
+const vec3 kSphereCenter = vec3(1.0, 1.0, -2.0);
+const float kSphereRadius = 1.0;
+const vec3 kSphereAlbedo = vec3(0.8);
+const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
