@@ -384,11 +384,11 @@ class Renderer(Singleton):
             self.render_solid()
 
             # atmosphere
-            glDisable(GL_DEPTH_TEST)
-            if self.scene_manager.atmosphere is None:
-                # simple cubemap atmosphere
-                self.postprocess.bind_quad()
-                self.postprocess.render_atmosphere()
+            # glDisable(GL_DEPTH_TEST)
+            # if self.scene_manager.atmosphere is None:
+            #     # simple cubemap atmosphere
+            #     self.postprocess.bind_quad()
+            #     self.postprocess.render_atmosphere()
 
             # render translucent
             glEnable(GL_DEPTH_TEST)
@@ -692,6 +692,11 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
+
+        # Atmosphere demo
+        # self.scene_manager.atmosphere.render_precomputed_atmosphere_demo(RenderTargets.LINEAR_DEPTH,
+        #                                                                  RenderTargets.WORLD_NORMAL,
+        #                                                                  RenderTargets.SHADOWMAP)
 
         # bind quad mesh
         self.postprocess.bind_quad()

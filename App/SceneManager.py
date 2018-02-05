@@ -147,6 +147,7 @@ class SceneManager(Singleton):
         scene_data = dict(
             cameras=[camera.get_save_data() for camera in self.cameras],
             lights=[light.get_save_data() for light in self.lights],
+            light_probes=[light_probe.get_save_data() for light_probe in self.light_probes],
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
         )

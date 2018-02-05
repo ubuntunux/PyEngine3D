@@ -38,6 +38,10 @@ class LightProbe(StaticActor):
         self.texture_back = None
         self.texture_probe = None
 
+    def get_save_data(self):
+        save_data = StaticActor.get_save_data(self)
+        return save_data
+
     def clear(self):
         self.clear_texture_faces()
         self.texture_probe.clear()

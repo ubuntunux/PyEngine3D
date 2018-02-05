@@ -340,8 +340,6 @@ class Model:
                   to_string(self.absorption_extinction, lambdas, self.length_unit_in_meters) + ",",
                   to_string(self.ground_albedo, lambdas, 1.0) + ",",
                   str(cos(self.max_sun_zenith_angle)) + ");",
-                  "",
-                  '#include "precomputed_atmosphere/functions.glsl"',
                   ""]
         return "\n".join(header)
 

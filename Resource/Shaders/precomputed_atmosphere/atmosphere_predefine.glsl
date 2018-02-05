@@ -25,5 +25,3 @@ DensityProfile(DensityProfileLayer[2](DensityProfileLayer(25.000000, 0.000000, 0
 vec3(0.000650, 0.001881, 0.000085),
 vec3(0.100000, 0.100000, 0.100000),
 -0.4999999690599179);
-
-#include "precomputed_atmosphere/functions.glsl"
