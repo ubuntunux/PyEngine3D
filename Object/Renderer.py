@@ -390,16 +390,19 @@ class Renderer(Singleton):
             #     self.postprocess.bind_quad()
             #     self.postprocess.render_atmosphere()
 
-            # render translucent
             glEnable(GL_DEPTH_TEST)
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            self.render_translucent()
 
+            # render atmosphere
             if self.scene_manager.atmosphere is not None:
                 glDisable(GL_DEPTH_TEST)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.WORLD_NORMAL,
                                                                             RenderTargets.SHADOWMAP)
+
+            # render translucent
+            glEnable(GL_DEPTH_TEST)
+            self.render_translucent()
 
             if RenderOption.RENDER_LIGHT_PROBE:
                 glUseProgram(0)
