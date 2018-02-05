@@ -163,6 +163,8 @@ class RenderTargetManager(Singleton):
         fullsize_y = height
         halfsize_x = int(width / 2)
         halfsize_y = int(height / 2)
+        quatersize_x = int(width / 4)
+        quatersize_y = int(height / 4)
 
         RenderTargets.BACKBUFFER = self.create_rendertarget(
             "BACKBUFFER",
@@ -306,8 +308,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.SCREEN_SPACE_REFLECTION = self.create_rendertarget(
             "SCREEN_SPACE_REFLECTION",
             texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
+            width=halfsize_x,
+            height=halfsize_y,
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
@@ -319,8 +321,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.SSAO = self.create_rendertarget(
             "SSAO",
             texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_x,
+            width=halfsize_x,
+            height=halfsize_y,
             internal_format=GL_R16F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,
