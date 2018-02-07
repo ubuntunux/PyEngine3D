@@ -51,23 +51,20 @@ void main() {
     vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, world_position.xyz, texture_shadow));
 
     // Atmosphere
-    float scene_shadow_length = 0.0;
-    vec3 scene_sun_irradiance = vec3(0.0);
-    vec3 scene_sky_irradiance = vec3(0.0);
+    vec3 scene_radiance = vec3(0.0);
     vec3 scene_in_scatter = vec3(0.0);
     {
-        float lightshaft_fadein_hack =
-            smoothstep(0.02, 0.04, dot(normalize(CAMERA_POSITION.xyz - earth_center), LIGHT_DIRECTION.xyz));
-
-        // Scene
         vec3 view_direction = normalize(-V);
         float scene_linear_depth = texture(texture_linear_depth, screen_tex_coord).x;
         vec3 normal = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
+        float scene_shadow_length;
+        vec3 scene_sun_irradiance;
+        vec3 scene_sky_irradiance;
         GetSceneRadiance(
             ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-        scene_sun_irradiance *= exposure;
+        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
         scene_sky_irradiance *= exposure;
         scene_in_scatter *= exposure;
         shadow_factor = max(shadow_factor, scene_sky_irradiance);
@@ -80,11 +77,13 @@ void main() {
                     texture_probe,
                     texture_scene_reflect,
                     screen_tex_coord,
-                    LIGHT_COLOR.xyz * scene_sun_irradiance,
+                    LIGHT_COLOR.xyz * scene_radiance,
                     N,
                     V,
                     L,
                     shadow_factor);
+
+    fs_output.xyz += scene_in_scatter;
 
     // SSAO
     if(RENDER_SSAO == 1.0f)
@@ -93,7 +92,7 @@ void main() {
     }
 
     // emissive
-    fs_output.xyz += base_color.xyz * base_color.w + scene_in_scatter;
+    fs_output.xyz += base_color.xyz * base_color.w;
     fs_output.w = 1.0;
 }
 #endif

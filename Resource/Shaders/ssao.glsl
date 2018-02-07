@@ -3,11 +3,12 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
-uniform vec2 screen_size;
-uniform vec2 radius_min_max;
-
 const int kernel_size = 32;
 uniform vec3 kernel[kernel_size];
+
+uniform bool isHalfSize;
+uniform vec2 texture_size;
+uniform vec2 radius_min_max;
 
 uniform sampler2D texture_noise;
 uniform sampler2D texture_normal;
@@ -19,7 +20,17 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
-    float linear_depth = texture(texture_linear_depth, tex_coord).x;
+
+    float linear_depth = 0.0;
+    if(isHalfSize)
+    {
+        vec4 depthGather = textureGather(texture_linear_depth, tex_coord, 0);
+        linear_depth = (depthGather.x + depthGather.y + depthGather.z + depthGather.w) * 0.25;
+    }
+    else
+    {
+        linear_depth = texture(texture_linear_depth, tex_coord).x;
+    }
 
     /*if(linear_depth >= NEAR_FAR.y)
     {
@@ -30,8 +41,11 @@ void main() {
     vec4 relative_pos = linear_depth_to_relative_world(tex_coord, linear_depth);
     vec3 normal = texture(texture_normal, tex_coord).xyz * 2.0 - 1.0;
     vec2 noise_size = textureSize(texture_noise, 0);
-    vec2 poisson =  PoissonSamples[int(JITTER_FRAME) % PoissonSampleCount];
-    vec3 randomVec = texture(texture_noise, (tex_coord * screen_size + poisson)/ noise_size).xyz;
+
+    float offset = rand(tex_coord);
+    offset = offset * texture_size.x + offset * texture_size.y;
+    vec2 poisson =  PoissonSamples[int(JITTER_FRAME + offset) % PoissonSampleCount];
+    vec3 randomVec = texture(texture_noise, (tex_coord * texture_size + poisson)/ noise_size).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
@@ -73,6 +87,5 @@ void main() {
     occlusion *= occlusion;
     fs_output.xyz = vec3(occlusion);
     fs_output.w = 1.0;
-
 }
 #endif // GL_FRAGMENT_SHADER

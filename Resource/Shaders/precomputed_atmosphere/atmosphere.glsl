@@ -14,7 +14,7 @@ layout(location = 0) out vec4 color;
 void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
-    vec3 camera = CAMERA_POSITION.xyz;
+    vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 view_direction = normalize(view_ray);
 
@@ -38,7 +38,7 @@ void main()
     // Sky
     vec3 transmittance;
     vec3 radiance = GetSkyRadiance(
-        ATMOSPHERE, camera * atmosphere_ratio - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+        ATMOSPHERE, camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
 
     // Sun
     if (dot(view_direction, sun_direction) > sun_size.y)

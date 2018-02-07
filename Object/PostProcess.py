@@ -373,10 +373,12 @@ class PostProcess:
         self.tonemapping.bind_uniform_data("exposure", self.exposure)
         self.quad_geometry.draw_elements()
 
-    def render_ssao(self, screen_size, texture_normal, texture_linear_depth):
+    def render_ssao(self, texture_size, isHalfSize, texture_normal, texture_linear_depth):
         self.ssao.use_program()
         self.ssao.bind_material_instance()
-        self.ssao.bind_uniform_data("screen_size", screen_size)
+
+        self.ssao.bind_uniform_data("isHalfSize", isHalfSize)
+        self.ssao.bind_uniform_data("texture_size", texture_size)
         self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
         self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
         self.ssao.bind_uniform_data("texture_noise", RenderTargets.SSAO_ROTATION_NOISE)

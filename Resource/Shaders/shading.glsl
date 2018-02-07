@@ -185,7 +185,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
     vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
 
-    // texture_probe is HDR
+    // Note : because texture_probe is HDR and not sRGB.
     //ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
     //ibl_specular_color = pow(ibl_specular_color, vec3(2.2));
 

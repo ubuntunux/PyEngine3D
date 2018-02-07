@@ -1041,12 +1041,6 @@ void GetSceneRadiance(
     float scene_linear_depth, vec3 view_direction, vec3 normal, sampler2D texture_shadow,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
 {
-    vec3 camera_pos = CAMERA_POSITION.xyz;
-    vec3 sun_direction = LIGHT_DIRECTION.xyz;
-    vec3 scene_point = view_direction * scene_linear_depth;
-    vec3 point = (camera_pos + scene_point) * atmosphere_ratio;
-    vec3 normalized_dir = normalize(scene_point);
-
     const float earth_radius = abs(earth_center.y);
     bool shadow_enter = false;
     bool do_exit = false;
@@ -1058,7 +1052,7 @@ void GetSceneRadiance(
     for(int i=0; i<LOOP; ++i)
     {
         float ray_dist = float(i) * d;
-        vec3 world_pos = camera_pos + normalized_dir * ray_dist;
+        vec3 world_pos = CAMERA_POSITION.xyz + view_direction * ray_dist;
         vec4 shadow_uv = SHADOW_MATRIX * vec4(world_pos, 1.0);
         shadow_uv.xyz /= shadow_uv.w;
         shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
@@ -1072,7 +1066,7 @@ void GetSceneRadiance(
         {
             // enter the shadow.
             shadow_enter = true;
-            scene_shadow_in = dot(normalized_dir, world_pos);
+            scene_shadow_in = dot(view_direction, world_pos);
 
             if(length(world_pos - earth_center) < earth_radius)
             {
@@ -1091,7 +1085,7 @@ void GetSceneRadiance(
             if(shadow_enter)
             {
                 // If there is already a shadow, set the position outside the shadow to the current position.
-                scene_shadow_out = dot(normalized_dir, world_pos);
+                scene_shadow_out = dot(view_direction, world_pos);
             }
             else
             {
@@ -1103,15 +1097,21 @@ void GetSceneRadiance(
         }
     }
 
-    scene_shadow_length = max(0.0, scene_shadow_out - scene_shadow_in);
+    vec3 sun_direction = LIGHT_DIRECTION.xyz;
+    vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
+    vec3 relative_point = relative_camera_pos + view_direction * scene_linear_depth * atmosphere_ratio;
+    float lightshaft_fadein_hack =
+        smoothstep(0.02, 0.04, dot(normalize(relative_camera_pos - earth_center), sun_direction));
+
+    scene_shadow_length = max(0.0, scene_shadow_out - scene_shadow_in) * lightshaft_fadein_hack * atmosphere_ratio;
 
     sun_irradiance = GetSunAndSkyIrradiance(
-        atmosphere, point.xyz - earth_center, normal, sun_direction, sky_irradiance);
+        atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
 
     vec3 transmittance;
-    in_scatter = GetSkyRadianceToPoint(
-        atmosphere, camera_pos - earth_center, point.xyz - earth_center, scene_shadow_length, sun_direction, transmittance);
+    in_scatter = GetSkyRadianceToPoint(atmosphere, relative_camera_pos - earth_center,
+        relative_point.xyz - earth_center, scene_shadow_length, sun_direction, transmittance);
 
-    sun_irradiance = sun_irradiance * transmittance / PI;
-    sky_irradiance = sky_irradiance * transmittance / PI;
+    sun_irradiance *= transmittance / PI;
+    sky_irradiance *= transmittance / PI;
 }
