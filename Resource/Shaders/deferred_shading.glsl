@@ -53,6 +53,9 @@ void main() {
     // Atmosphere
     float scene_shadow_length;
     vec3 scene_radiance;
+    vec3 scene_sun_irradiance;
+    vec3 scene_sky_irradiance;
+    vec3 scene_in_scatter;
     {
         float lightshaft_fadein_hack =
             smoothstep(0.02, 0.04, dot(normalize(CAMERA_POSITION.xyz - earth_center), LIGHT_DIRECTION.xyz));
@@ -61,8 +64,11 @@ void main() {
         vec3 view_direction = normalize(-V);
         float scene_linear_depth = texture(texture_linear_depth, screen_tex_coord).x;
         vec3 normal = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
+
         GetSceneRadiance(
-            ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow, scene_radiance, scene_shadow_length);
+            ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
+            scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
+        scene_radiance = scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter;
     }
 
     fs_output = surface_shading(base_color,

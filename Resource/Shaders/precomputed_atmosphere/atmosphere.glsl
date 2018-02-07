@@ -25,8 +25,13 @@ void main()
     vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
     float scene_shadow_length = 0.0;
     vec3 scene_radiance = vec3(0.0);
+    vec3 scene_sun_irradiance;
+    vec3 scene_sky_irradiance;
+    vec3 scene_in_scatter;
     GetSceneRadiance(
-        ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow, scene_radiance, scene_shadow_length);
+        ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
+        scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
+    scene_radiance = scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter;
 
     float shadow_length = scene_shadow_length * lightshaft_fadein_hack;
 

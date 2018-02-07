@@ -1039,7 +1039,7 @@ void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_i
 void GetSceneRadiance(
     const in AtmosphereParameters atmosphere,
     float scene_linear_depth, vec3 view_direction, vec3 normal, sampler2D texture_shadow,
-    out vec3 scene_radiance, out float scene_shadow_length)
+    out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
 {
     vec3 camera_pos = CAMERA_POSITION.xyz;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
@@ -1105,13 +1105,13 @@ void GetSceneRadiance(
 
     scene_shadow_length = max(0.0, scene_shadow_out - scene_shadow_in);
 
-    vec3 sky_irradiance;
-    vec3 sun_irradiance = GetSunAndSkyIrradiance(
+    sun_irradiance = GetSunAndSkyIrradiance(
         atmosphere, point.xyz - earth_center, normal, sun_direction, sky_irradiance);
-    scene_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
 
     vec3 transmittance;
-    vec3 in_scatter = GetSkyRadianceToPoint(
+    in_scatter = GetSkyRadianceToPoint(
         atmosphere, camera_pos - earth_center, point.xyz - earth_center, scene_shadow_length, sun_direction, transmittance);
-    scene_radiance = scene_radiance * transmittance + in_scatter;
+
+    sun_irradiance = sun_irradiance * transmittance / PI;
+    sky_irradiance = sky_irradiance * transmittance / PI;
 }
