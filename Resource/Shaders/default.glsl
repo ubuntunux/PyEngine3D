@@ -64,7 +64,7 @@ void main() {
     }
     else
     {
-        float shadow_factor = get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow);
+        vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow));
 
         fs_diffuse = surface_shading(base_color,
                         metalicness,

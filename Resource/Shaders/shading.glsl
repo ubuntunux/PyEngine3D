@@ -144,7 +144,7 @@ vec4 surface_shading(vec4 base_color,
                     vec3 N,
                     vec3 V,
                     vec3 L,
-                    float shadow_factor) {
+                    vec3 shadow_factor) {
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);

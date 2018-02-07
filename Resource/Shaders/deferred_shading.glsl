@@ -48,14 +48,13 @@ void main() {
     vec3 V = normalize(CAMERA_POSITION.xyz - world_position.xyz);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
 
-    float shadow_factor = get_shadow_factor(screen_tex_coord, world_position.xyz, texture_shadow);
+    vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, world_position.xyz, texture_shadow));
 
     // Atmosphere
-    float scene_shadow_length;
-    vec3 scene_radiance;
-    vec3 scene_sun_irradiance;
-    vec3 scene_sky_irradiance;
-    vec3 scene_in_scatter;
+    float scene_shadow_length = 0.0;
+    vec3 scene_sun_irradiance = vec3(0.0);
+    vec3 scene_sky_irradiance = vec3(0.0);
+    vec3 scene_in_scatter = vec3(0.0);
     {
         float lightshaft_fadein_hack =
             smoothstep(0.02, 0.04, dot(normalize(CAMERA_POSITION.xyz - earth_center), LIGHT_DIRECTION.xyz));
@@ -68,7 +67,10 @@ void main() {
         GetSceneRadiance(
             ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-        scene_radiance = scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter;
+        scene_sun_irradiance *= exposure;
+        scene_sky_irradiance *= exposure;
+        scene_in_scatter *= exposure;
+        shadow_factor = max(shadow_factor, scene_sky_irradiance);
     }
 
     fs_output = surface_shading(base_color,
@@ -78,7 +80,7 @@ void main() {
                     texture_probe,
                     texture_scene_reflect,
                     screen_tex_coord,
-                    LIGHT_COLOR.xyz * scene_radiance * exposure,
+                    LIGHT_COLOR.xyz * scene_sun_irradiance,
                     N,
                     V,
                     L,
@@ -91,7 +93,7 @@ void main() {
     }
 
     // emissive
-    fs_output.xyz += base_color.xyz * base_color.w;
+    fs_output.xyz += base_color.xyz * base_color.w + scene_in_scatter;
     fs_output.w = 1.0;
 }
 #endif
