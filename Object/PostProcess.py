@@ -71,7 +71,6 @@ class PostProcess:
         self.exposure = 1.0
         self.tonemapping = None
 
-        self.atmosphere = None
         self.linear_depth = None
         self.blur = None
         self.gaussian_blur = None
@@ -117,7 +116,6 @@ class PostProcess:
 
         self.velocity = self.resource_manager.getMaterialInstance("velocity")
 
-        self.atmosphere = self.resource_manager.getMaterialInstance("atmosphere")
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.blur = self.resource_manager.getMaterialInstance("blur")
         self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
@@ -237,13 +235,7 @@ class PostProcess:
         self.temporal_antialiasing.bind_uniform_data('texture_input', texture_input)
         self.temporal_antialiasing.bind_uniform_data('texture_prev', texture_prev)
         self.temporal_antialiasing.bind_uniform_data('texture_velocity', texture_velocity)
-        # self.temporal_antialiasing.bind_uniform_data('texture_depth', texture_linear_depth)
-        self.quad_geometry.draw_elements()
-
-    def render_atmosphere(self):
-        self.atmosphere.use_program()
-        self.atmosphere.bind_material_instance()
-        self.atmosphere.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
+        # self.temporal_antialiasing.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.quad_geometry.draw_elements()
 
     def render_blur(self, texture_diffuse, blur_kernel_radius=1.0):
@@ -373,11 +365,11 @@ class PostProcess:
         self.tonemapping.bind_uniform_data("exposure", self.exposure)
         self.quad_geometry.draw_elements()
 
-    def render_ssao(self, texture_size, isHalfSize, texture_normal, texture_linear_depth):
+    def render_ssao(self, texture_size, texture_lod, texture_normal, texture_linear_depth):
         self.ssao.use_program()
         self.ssao.bind_material_instance()
 
-        self.ssao.bind_uniform_data("isHalfSize", isHalfSize)
+        self.ssao.bind_uniform_data("texture_lod", texture_lod)
         self.ssao.bind_uniform_data("texture_size", texture_size)
         self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
         self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
@@ -444,7 +436,7 @@ class PostProcess:
         render_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()
 
-    def enable_render_material_instance(self):
+    def is_render_shader(self):
         return self.is_render_material_instance and self.target_material_instance is not None
 
     def set_render_material_instance(self, target_material_instance):

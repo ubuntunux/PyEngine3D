@@ -1,6 +1,0 @@
-{'macros': {},
- 'material_name': 'atmosphere',
- 'shader_name': 'atmosphere',
- 'uniform_datas': {'fog_color': array([ 0.40000001,  0.40000001,  0.5       ], dtype=float32),
-                   'texture_cube': 'field',
-                   'texture_linear_depth': 'empty'}}

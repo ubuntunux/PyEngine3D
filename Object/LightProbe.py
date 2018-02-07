@@ -8,6 +8,7 @@ from Utilities import *
 from Common import logger
 from App import CoreManager
 from OpenGLContext import Texture2D, TextureCube, CreateTexture
+from .RenderTarget import RenderTargets
 from .Actor import StaticActor
 from .Camera import Camera
 
@@ -28,6 +29,9 @@ class LightProbe(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
 
+        self.texture_datas['internal_format'] = RenderTargets.HDR.internal_format
+        self.texture_datas['data_type'] = RenderTargets.HDR.data_type
+
         self.isValid = False
 
         self.texture_right = None
@@ -42,29 +46,29 @@ class LightProbe(StaticActor):
         save_data = StaticActor.get_save_data(self)
         return save_data
 
-    def clear(self):
-        self.clear_texture_faces()
-        self.texture_probe.clear()
+    def delete(self):
+        self.delete_texture_faces()
+        self.texture_probe.delete()
         self.texture_probe = None
 
-    def clear_texture_faces(self):
+    def delete_texture_faces(self):
         if self.texture_right:
-            self.texture_right.clear()
+            self.texture_right.delete()
             self.texture_right = None
         if self.texture_left:
-            self.texture_left.clear()
+            self.texture_left.delete()
             self.texture_left = None
         if self.texture_top:
-            self.texture_top.clear()
+            self.texture_top.delete()
             self.texture_top = None
         if self.texture_bottom:
-            self.texture_bottom.clear()
+            self.texture_bottom.delete()
             self.texture_bottom = None
         if self.texture_front:
-            self.texture_front.clear()
+            self.texture_front.delete()
             self.texture_front = None
         if self.texture_back:
-            self.texture_back.clear()
+            self.texture_back.delete()
             self.texture_back = None
 
     def generate_texture_faces(self):
@@ -85,7 +89,6 @@ class LightProbe(StaticActor):
         cube_texture_datas['texture_positive_z'] = self.texture_front
         cube_texture_datas['texture_negative_z'] = self.texture_back
         self.texture_probe = CreateTexture(name=self.name + "_cube", **cube_texture_datas)
-        # self.clear_texture_faces()
 
     def get_texture(self, face):
         return getattr(self, "texture_" + face)

@@ -27,7 +27,8 @@ void main() {
 
     if(depth == 1.0)
     {
-        discard;
+        fs_output = vec4(0.0);
+        return;
     }
 
     vec4 base_color = texture(texture_diffuse, screen_tex_coord);
@@ -55,7 +56,7 @@ void main() {
     vec3 scene_in_scatter = vec3(0.0);
     {
         vec3 view_direction = normalize(-V);
-        float scene_linear_depth = texture(texture_linear_depth, screen_tex_coord).x;
+        float scene_linear_depth = textureLod(texture_linear_depth, screen_tex_coord, 0.0).x;
         vec3 normal = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
         float scene_shadow_length;

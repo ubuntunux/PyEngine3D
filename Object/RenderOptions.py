@@ -4,6 +4,7 @@ from Utilities import *
 
 class RenderOption:
     RENDER_LIGHT_PROBE = False
+    RENDER_ONLY_ATMOSPHERE = False
     RENDER_FONT = True
     RENDER_STATIC_ACTOR = True
     RENDER_SKELETON_ACTOR = True

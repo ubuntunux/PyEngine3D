@@ -196,9 +196,9 @@ vec4 surface_shading(vec4 base_color,
         ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
     }
 
-    diffuse_light += base_color.xyz * ibl_diffuse_color * light_color;
+    diffuse_light += base_color.xyz * ibl_diffuse_color * shadow_factor;
     vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * light_color;
+    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * shadow_factor;
 
     // final result
     vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting;

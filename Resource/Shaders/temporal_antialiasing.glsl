@@ -60,7 +60,7 @@ const bool UseExposureFiltering = false;
 uniform sampler2D texture_prev;
 uniform sampler2D texture_input;
 uniform sampler2D texture_velocity;
-uniform sampler2D texture_depth;
+uniform sampler2D texture_linear_depth;
 
 
 // All filtering functions assume that 'x' is normalized to [0, 1], where 1 == FilteRadius
@@ -208,14 +208,14 @@ vec3 Reproject(vec2 texCoord)
     }
     else if(DilationMode == DilationModes_DilateNearestDepth)
     {
-        vec2 inv_depth_tex_size = 1.0 / textureSize(texture_depth, 0).xy;
+        vec2 inv_depth_tex_size = 1.0 / textureSize(texture_linear_depth, 0).xy;
         float closestDepth = 10.0f;
         for(int vy = -1; vy <= 1; ++vy)
         {
             for(int vx = -1; vx <= 1; ++vx)
             {
                 vec2 neighborVelocity = texture(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
-                float neighborDepth = texture(texture_depth, texCoord + vec2(vx, vy) * inv_depth_tex_size).x;
+                float neighborDepth = textureLod(texture_linear_depth, texCoord + vec2(vx, vy) * inv_depth_tex_size, 0.0).x;
                 if(neighborDepth < closestDepth)
                 {
                     velocity = neighborVelocity;

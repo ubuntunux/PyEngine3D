@@ -6,7 +6,7 @@
 const int kernel_size = 32;
 uniform vec3 kernel[kernel_size];
 
-uniform bool isHalfSize;
+uniform float texture_lod;
 uniform vec2 texture_size;
 uniform vec2 radius_min_max;
 
@@ -20,17 +20,9 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
+    vec2 texel_size = 1.0 / texture_size;
 
-    float linear_depth = 0.0;
-    if(isHalfSize)
-    {
-        vec4 depthGather = textureGather(texture_linear_depth, tex_coord, 0);
-        linear_depth = (depthGather.x + depthGather.y + depthGather.z + depthGather.w) * 0.25;
-    }
-    else
-    {
-        linear_depth = texture(texture_linear_depth, tex_coord).x;
-    }
+    float linear_depth = textureLod(texture_linear_depth, tex_coord, texture_lod).x;
 
     /*if(linear_depth >= NEAR_FAR.y)
     {
@@ -70,6 +62,10 @@ void main() {
         }
 
         vec4 sampleDepth = textureGather(texture_linear_depth, offset.xy, 0);
+        //sampleDepth.x = textureLod(texture_linear_depth, offset.xy, texture_lod).x;
+        //sampleDepth.y = textureLod(texture_linear_depth, offset.xy + texel_size, texture_lod).x;
+        //sampleDepth.z = textureLod(texture_linear_depth, offset.xy + vec2(texel_size.x, 0.0), texture_lod).x;
+        //sampleDepth.w = textureLod(texture_linear_depth, offset.xy + vec2(0.0, texel_size.y), texture_lod).x;
 
         const float amount = 0.25;
         for(int j=0; j<4; ++j)

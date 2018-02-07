@@ -16,6 +16,8 @@ class Camera(StaticActor):
         self.scene_manager = scene_manager
         self.postprocess = self.scene_manager.renderer.postprocess
 
+        self.transform.setPos([0.0, 1.0, 0.0])
+
         self.meter_per_unit = object_data.get('meter_per_unit', 1.0)
         self.aspect = object_data.get('aspect', 0.0)
         self.fov = object_data.get('fov', 0.0)

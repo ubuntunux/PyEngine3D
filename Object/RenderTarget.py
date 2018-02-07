@@ -34,7 +34,6 @@ class RenderTargets:
     VELOCITY = None
     TEMP_RENDER_BUFFER_MULTISAMPLE = None
     TEMP_RGBA8 = None
-    TEMP_HDR = None
     TEMP_MULTISAMPLE_X4 = None
 
 
@@ -166,6 +165,9 @@ class RenderTargetManager(Singleton):
         quatersize_x = int(width / 4)
         quatersize_y = int(height / 4)
 
+        hdr_internal_format = GL_RGBA16F
+        hdr_data_type = GL_FLOAT
+
         RenderTargets.BACKBUFFER = self.create_rendertarget(
             "BACKBUFFER",
             texture_type=Texture2D,
@@ -199,11 +201,11 @@ class RenderTargetManager(Singleton):
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,
             height=fullsize_y,
-            internal_format=GL_RGBA16F,
+            internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
+            data_type=hdr_data_type,
             wrap=GL_CLAMP
         )
 
@@ -213,11 +215,11 @@ class RenderTargetManager(Singleton):
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,
             height=fullsize_y,
-            internal_format=GL_RGBA16F,
+            internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
+            data_type=hdr_data_type,
             wrap=GL_CLAMP
         )
 
@@ -227,11 +229,11 @@ class RenderTargetManager(Singleton):
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,
             height=fullsize_y,
-            internal_format=GL_RGBA16F,
+            internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
+            data_type=hdr_data_type,
             wrap=GL_CLAMP
         )
 
@@ -300,8 +302,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_R32F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,
-            min_filter=GL_NEAREST,
-            mag_filter=GL_NEAREST,
+            min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            mag_filter=GL_LINEAR,
             wrap=GL_CLAMP
         )
 
@@ -310,9 +312,9 @@ class RenderTargetManager(Singleton):
             texture_type=Texture2D,
             width=halfsize_x,
             height=halfsize_y,
-            internal_format=GL_RGBA8,
+            internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
-            data_type=GL_UNSIGNED_BYTE,
+            data_type=hdr_data_type,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             wrap=GL_CLAMP
@@ -375,19 +377,6 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            wrap=GL_CLAMP
-        )
-
-        RenderTargets.TEMP_HDR = self.create_rendertarget(
-            "TEMP_HDR",
-            texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
-            internal_format=GL_RGBA16F,
-            texture_format=GL_RGBA,
-            data_type=GL_FLOAT,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             wrap=GL_CLAMP

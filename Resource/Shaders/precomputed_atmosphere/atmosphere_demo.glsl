@@ -15,7 +15,7 @@ layout(location = 0) out vec4 color;
 void main()
 {
     color = vec4(0.0, 0.0, 0.0, 1.0);
-    vec3 camera = CAMERA_POSITION.xyz;
+    vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
 
     vec3 view_direction = normalize(view_ray);
@@ -31,8 +31,8 @@ void main()
     float sphere_shadow_out = 0.0;
 
     // Scene
-    float scene_linear_depth = texture(texture_linear_depth, uv).x;
-    vec3 scene_point = view_direction * scene_linear_depth;
+    float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
+    vec3 scene_point = view_direction * scene_linear_depth * atmosphere_ratio;
     vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
     float scene_shadow_length;
     vec3 scene_radiance;
@@ -131,7 +131,7 @@ void main()
 
     vec3 transmittance;
     vec3 radiance = GetSkyRadiance(
-        ATMOSPHERE, camera * atmosphere_ratio - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+        ATMOSPHERE, camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
 
     // Sun
     if (dot(view_direction, sun_direction) > sun_size.y)

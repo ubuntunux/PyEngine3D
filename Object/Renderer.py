@@ -232,12 +232,14 @@ class Renderer(Singleton):
             logger.info("Current texture : %s" % self.debug_texture.name)
 
     def render_light_probe(self, force=False):
-        if not force and self.scene_manager.main_light_probe.isValid:
+        light_probe = self.scene_manager.main_light_probe
+
+        if not force and light_probe.isValid:
             return
 
         logger.info("Rendering Cube map")
 
-        self.scene_manager.main_light_probe.isValid = True
+        light_probe.isValid = True
 
         camera = self.scene_manager.main_camera
         old_pos = camera.transform.getPos().copy()
@@ -258,7 +260,7 @@ class Renderer(Singleton):
 
         camera.update_projection(fov=90.0, aspect=1.0)
 
-        def render(pos, pitch, yaw, roll, cube_dir):
+        def render_cube_face(dst_texture, pos, pitch, yaw, roll):
             camera.transform.setPos(pos)
             camera.transform.setRot([pitch, yaw, roll])
             camera.update(force_update=True)
@@ -266,8 +268,7 @@ class Renderer(Singleton):
             # render
             self.renderScene()
 
-            dst_texture = self.scene_manager.main_light_probe.get_texture(cube_dir)
-
+            # copy
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(dst_texture)
@@ -278,17 +279,50 @@ class Renderer(Singleton):
 
             # generate mipmaps per face
             dst_texture.generate_mipmap()
+            return dst_texture
 
-        self.scene_manager.main_light_probe.generate_texture_faces()
-        pos = self.scene_manager.main_light_probe.transform.getPos()
-        render(pos, 0.0, math.pi * 0.0, 0.0, "back")
-        render(pos, 0.0, math.pi * 0.5, 0.0, "left")
-        render(pos, 0.0, math.pi * 1.0, 0.0, "front")
-        render(pos, 0.0, math.pi * 1.5, 0.0, "right")
-        render(pos, math.pi * -0.5, math.pi * 1.0, 0.0, "top")
-        render(pos, math.pi * 0.5, math.pi * 1.0, 0.0, "bottom")
+        # create temp cube faces
+        light_probe.generate_texture_faces()
+        temp_texture_back = light_probe.texture_back
+        temp_texture_left = light_probe.texture_left
+        temp_texture_front = light_probe.texture_front
+        temp_texture_right = light_probe.texture_right
+        temp_texture_top = light_probe.texture_top
+        temp_texture_bottom = light_probe.texture_bottom
 
-        self.scene_manager.main_light_probe.generate_texture_probe()
+        # recreate cube textures
+        light_probe.generate_texture_faces()
+
+        pos = light_probe.transform.getPos()
+        # render atmosphere scene to light_probe textures.
+        RenderOption.RENDER_ONLY_ATMOSPHERE = True
+        render_cube_face(light_probe.texture_back, pos, 0.0, math.pi * 0.0, 0.0)
+        render_cube_face(light_probe.texture_left, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(light_probe.texture_front, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(light_probe.texture_right, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(light_probe.texture_top, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(light_probe.texture_bottom, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        light_probe.generate_texture_probe()
+
+        # render final scene to temp textures.
+        RenderOption.RENDER_ONLY_ATMOSPHERE = False
+        render_cube_face(temp_texture_back, pos, 0.0, math.pi * 0.0, 0.0)
+        render_cube_face(temp_texture_left, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(temp_texture_front, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_right, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(temp_texture_top, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_bottom, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+
+        # generate final scene as cubemap
+        light_probe.delete_texture_faces()  # detele old textures
+        light_probe.texture_back = temp_texture_back
+        light_probe.texture_left = temp_texture_left
+        light_probe.texture_front = temp_texture_front
+        light_probe.texture_right = temp_texture_right
+        light_probe.texture_top = temp_texture_top
+        light_probe.texture_bottom = temp_texture_bottom
+        light_probe.generate_texture_probe()
+        light_probe.delete_texture_faces()  # delete temp textures
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
@@ -312,6 +346,15 @@ class Renderer(Singleton):
 
         if not camera or not light:
             return
+
+        def end_render_scene():
+            glUseProgram(0)
+            glFlush()
+
+            endTime = timeModule.perf_counter()
+            renderTime = endTime - startTime
+            presentTime = 0.0
+            return renderTime, presentTime
 
         self.uniformSceneConstants.bind_uniform_block(
             Float4(self.core_manager.currentTime,
@@ -352,13 +395,49 @@ class Renderer(Singleton):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
 
-        if self.postprocess.enable_render_material_instance() and not RenderOption.RENDER_LIGHT_PROBE:
+        if self.postprocess.is_render_shader() and not RenderOption.RENDER_LIGHT_PROBE:
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=None)
             glClear(GL_COLOR_BUFFER_BIT)
+            # render shader
             self.postprocess.render_material_instance()
+        elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
+            self.framebuffer.set_color_textures()
+            self.framebuffer.set_depth_texture(RenderTargets.SHADOWMAP)
+            self.framebuffer.bind_framebuffer()
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_DEPTH_BUFFER_BIT)
+
+            self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)
+            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
+            self.framebuffer.bind_framebuffer()
+            glClearColor(0.0, 1.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+            self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
+            self.framebuffer.set_depth_texture(None)
+            self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.bind_quad()
+            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
+            RenderTargets.LINEAR_DEPTH.generate_mipmap()
+
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.set_depth_texture(None)
+            self.framebuffer.bind_framebuffer()
+            glClearColor(0.0, 0.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            glDisable(GL_DEPTH_TEST)
+
+            # render atmosphere
+            if self.scene_manager.atmosphere.is_render_atmosphere:
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.WORLD_NORMAL,
+                                                                            RenderTargets.SHADOWMAP)
+            return end_render_scene()
         else:
             # render normal scene
             if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
@@ -383,18 +462,11 @@ class Renderer(Singleton):
             # render solid
             self.render_solid()
 
-            # atmosphere
-            # glDisable(GL_DEPTH_TEST)
-            # if self.scene_manager.atmosphere is None:
-            #     # simple cubemap atmosphere
-            #     self.postprocess.bind_quad()
-            #     self.postprocess.render_atmosphere()
-
-            glEnable(GL_DEPTH_TEST)
+            # set blend state
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
             # render atmosphere
-            if self.scene_manager.atmosphere is not None:
+            if self.scene_manager.atmosphere.is_render_atmosphere:
                 glDisable(GL_DEPTH_TEST)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.WORLD_NORMAL,
@@ -405,11 +477,7 @@ class Renderer(Singleton):
             self.render_translucent()
 
             if RenderOption.RENDER_LIGHT_PROBE:
-                glUseProgram(0)
-                endTime = timeModule.perf_counter()
-                renderTime = endTime - startTime
-                presentTime = 0.0
-                return renderTime, presentTime
+                return end_render_scene()
 
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
@@ -533,16 +601,18 @@ class Renderer(Singleton):
         self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
         self.framebuffer.bind_framebuffer()
         glClear(GL_COLOR_BUFFER_BIT)
-
         self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
+        RenderTargets.LINEAR_DEPTH.generate_mipmap()
 
         # SSAO
         if self.postprocess.is_render_ssao:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
             glClear(GL_COLOR_BUFFER_BIT)
 
+            texture_lod = math.log2(RenderTargets.LINEAR_DEPTH.width) - math.log2(RenderTargets.SSAO.width)
+
             self.postprocess.render_ssao(texture_size=(RenderTargets.SSAO.width, RenderTargets.SSAO.height),
-                                         isHalfSize=RenderTargets.SSAO.width < RenderTargets.BACKBUFFER.width,
+                                         texture_lod=texture_lod,
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
 
@@ -553,13 +623,10 @@ class Renderer(Singleton):
         # render solid
         if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
             glDisable(GL_DEPTH_TEST)
-            if RenderOption.RENDER_LIGHT_PROBE:
-                texture_probe = self.resource_manager.getTexture('field')
-            else:
-                texture_probe = self.scene_manager.main_light_probe.texture_probe
             self.postprocess.bind_quad()
             # render deferred
-            self.postprocess.render_deferred_shading(texture_probe, self.scene_manager.atmosphere)
+            self.postprocess.render_deferred_shading(self.scene_manager.main_light_probe.texture_probe,
+                                                     self.scene_manager.atmosphere)
         elif self.render_option_manager.rendering_type == RenderingType.FORWARD_RENDERING:
             glEnable(GL_DEPTH_TEST)
             self.render_actors(
@@ -580,10 +647,7 @@ class Renderer(Singleton):
         if material_instance and material_instance.material:
             material_instance.material.use_program()
 
-        if RenderOption.RENDER_LIGHT_PROBE:
-            texture_probe = self.resource_manager.getTexture('field')
-        else:
-            texture_probe = self.scene_manager.main_light_probe.texture_probe
+        texture_probe = self.scene_manager.main_light_probe.texture_probe
 
         material = None
         last_actor = None

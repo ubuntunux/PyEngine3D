@@ -13,6 +13,13 @@ layout(location = 0) out vec4 color;
 
 void main()
 {
+    float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
+
+    if(scene_linear_depth < NEAR_FAR.y)
+    {
+        discard;
+    }
+
     color = vec4(0.0, 0.0, 0.0, 1.0);
     vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
@@ -21,7 +28,6 @@ void main()
     float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
 
     // Scene
-    float scene_linear_depth = texture(texture_linear_depth, uv).x;
     vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
     float scene_shadow_length = 0.0;
     vec3 scene_radiance = vec3(0.0);
@@ -50,7 +56,7 @@ void main()
     radiance = mix(scene_radiance, radiance, scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0);
 
     color.xyz = radiance * exposure;
-    color.w = scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0;
+    color.w = 1.0;
     color = max(color, 0.0);
 }
 #endif
