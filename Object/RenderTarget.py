@@ -308,8 +308,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.SCREEN_SPACE_REFLECTION = self.create_rendertarget(
             "SCREEN_SPACE_REFLECTION",
             texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
+            width=halfsize_x,
+            height=halfsize_y,
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
@@ -321,8 +321,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.SSAO = self.create_rendertarget(
             "SSAO",
             texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
+            width=halfsize_x,
+            height=halfsize_y,
             internal_format=GL_R16F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,
