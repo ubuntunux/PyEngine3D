@@ -1,3 +1,4 @@
+import math
 import random
 
 import numpy as np
@@ -46,6 +47,7 @@ class RenderTargetManager(Singleton):
         self.rendertargets = dict()
         self.temp_rendertargets = dict()
         self.first_time = True
+        self.texture_lod_in_ssao = 1.0
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -405,5 +407,7 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RGBA8,
             wrap=GL_CLAMP
         )
+
+        self.texture_lod_in_ssao = math.log2(RenderTargets.LINEAR_DEPTH.width) - math.log2(RenderTargets.SSAO.width)
 
         self.core_manager.gc_collect()

@@ -609,10 +609,8 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            texture_lod = math.log2(RenderTargets.LINEAR_DEPTH.width) - math.log2(RenderTargets.SSAO.width)
-
             self.postprocess.render_ssao(texture_size=(RenderTargets.SSAO.width, RenderTargets.SSAO.height),
-                                         texture_lod=texture_lod,
+                                         texture_lod=self.rendertarget_manager.texture_lod_in_ssao,
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
 
