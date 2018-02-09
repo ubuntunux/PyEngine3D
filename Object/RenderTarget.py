@@ -23,6 +23,7 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
+    LIGHT_PROBE_TEMP = None
     TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
@@ -86,10 +87,7 @@ class RenderTargetManager(Singleton):
         if rendertarget_name in self.temp_rendertargets:
             temp_rendertarget = self.temp_rendertargets[rendertarget_name]
         elif reference_rendertarget:
-            rendertarget_datas = reference_rendertarget.get_save_data(get_image_data=False)
-            # don't copy image data
-            if 'data' in rendertarget_datas:
-                rendertarget_datas.pop('data')
+            rendertarget_datas = reference_rendertarget.get_texture_info()
             rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
             rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
             rendertarget_type = rendertarget_datas['texture_type']
@@ -139,7 +137,7 @@ class RenderTargetManager(Singleton):
     def recreate_rendertargets(self):
         for rendertarget_name in self.rendertargets:
             rendertarget = self.rendertargets[rendertarget_name]
-            datas = rendertarget.get_save_data(get_image_data=False)
+            datas = rendertarget.get_texture_info()
             self.create_rendertarget(rendertarget_name, **datas)
 
         self.clear_temp_rendertargets()
@@ -220,6 +218,19 @@ class RenderTargetManager(Singleton):
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.LIGHT_PROBE_TEMP = self.create_rendertarget(
+            "LIGHT_PROBE_TEMP",
+            texture_type=TextureCube,
+            width=512,
+            height=512,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR_MIPMAP_NEAREST,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
             wrap=GL_CLAMP

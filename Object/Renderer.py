@@ -10,7 +10,7 @@ from PIL import Image
 
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock
+from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
 from .PostProcess import AntiAliasing, PostProcess
 from .RenderTarget import RenderTargets
 from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
@@ -234,12 +234,13 @@ class Renderer(Singleton):
     def render_light_probe(self, force=False):
         light_probe = self.scene_manager.main_light_probe
 
-        if not force and light_probe.isValid:
+        if not force and light_probe.isRendered:
             return
 
-        logger.info("Rendering Cube map")
+        logger.info("Rendering Light Probe")
 
-        light_probe.isValid = True
+        # Set Valid
+        light_probe.isRendered = True
 
         camera = self.scene_manager.main_camera
         old_pos = camera.transform.getPos().copy()
@@ -260,7 +261,7 @@ class Renderer(Singleton):
 
         camera.update_projection(fov=90.0, aspect=1.0)
 
-        def render_cube_face(dst_texture, pos, pitch, yaw, roll):
+        def render_cube_face(dst_texture, target_face, pos, pitch, yaw, roll):
             camera.transform.setPos(pos)
             camera.transform.setRot([pitch, yaw, roll])
             camera.update(force_update=True)
@@ -272,57 +273,39 @@ class Renderer(Singleton):
             self.framebuffer.set_color_textures(RenderTargets.HDR)
             self.framebuffer.bind_framebuffer()
             self.framebuffer_copy.set_color_textures(dst_texture)
-            self.framebuffer_copy.bind_framebuffer()
+            self.framebuffer_copy.bind_framebuffer(target_face=target_face)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
 
-            # generate mipmaps per face
-            dst_texture.generate_mipmap()
             return dst_texture
 
-        # create temp cube faces
-        light_probe.generate_texture_faces()
-        temp_texture_back = light_probe.texture_back
-        temp_texture_left = light_probe.texture_left
-        temp_texture_front = light_probe.texture_front
-        temp_texture_right = light_probe.texture_right
-        temp_texture_top = light_probe.texture_top
-        temp_texture_bottom = light_probe.texture_bottom
-
-        # recreate cube textures
-        light_probe.generate_texture_faces()
-
         pos = light_probe.transform.getPos()
+
         # render atmosphere scene to light_probe textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = True
-        render_cube_face(light_probe.texture_back, pos, 0.0, math.pi * 0.0, 0.0)
-        render_cube_face(light_probe.texture_left, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(light_probe.texture_front, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(light_probe.texture_right, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(light_probe.texture_top, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(light_probe.texture_bottom, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        light_probe.generate_texture_probe()
+        texture_probe = light_probe.texture_probe
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        texture_probe.generate_mipmap()
 
         # render final scene to temp textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = False
-        render_cube_face(temp_texture_back, pos, 0.0, math.pi * 0.0, 0.0)
-        render_cube_face(temp_texture_left, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(temp_texture_front, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_right, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(temp_texture_top, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_bottom, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        temp_texture_probe = light_probe.generate_texture_probe(name='light_probe_temp')
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        temp_texture_probe.generate_mipmap()
 
-        # generate final scene as cubemap
-        light_probe.delete_texture_faces()  # detele old textures
-        light_probe.texture_back = temp_texture_back
-        light_probe.texture_left = temp_texture_left
-        light_probe.texture_front = temp_texture_front
-        light_probe.texture_right = temp_texture_right
-        light_probe.texture_top = temp_texture_top
-        light_probe.texture_bottom = temp_texture_bottom
-        light_probe.generate_texture_probe()
-        light_probe.delete_texture_faces()  # delete temp textures
+        # replace texture
+        light_probe.replace_texture_probe(temp_texture_probe)
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False

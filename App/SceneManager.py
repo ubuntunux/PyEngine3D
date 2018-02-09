@@ -200,6 +200,9 @@ class SceneManager(Singleton):
             self.objectMap.pop(object.name)
             self.update_render_info(object_type)
             self.core_manager.notifyDeleteObject(object.name)
+
+            if hasattr(object, 'delete'):
+                object.delete()
         else:
             logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
 

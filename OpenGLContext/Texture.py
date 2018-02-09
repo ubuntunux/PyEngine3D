@@ -1,3 +1,4 @@
+import copy
 import gc
 from ctypes import c_void_p
 import itertools
@@ -136,8 +137,8 @@ class Texture:
         glDeleteTextures([self.buffer, ])
         self.buffer = -1
 
-    def get_save_data(self, get_image_data=True):
-        save_data = dict(
+    def get_texture_info(self):
+        return dict(
             texture_type=self.__class__,
             width=self.width,
             height=self.height,
@@ -151,10 +152,11 @@ class Texture:
             wrap=self.wrap
         )
 
-        if get_image_data:
-            data = self.get_image_data()
-            if data is not None:
-                save_data['data'] = data
+    def get_save_data(self):
+        save_data = self.get_texture_info()
+        data = self.get_image_data()
+        if data is not None:
+            save_data['data'] = data
         return save_data
 
     def get_image_data(self):
@@ -334,44 +336,44 @@ class TextureCube(Texture):
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)
 
-        self.texture_positive_x = texture_data.get('texture_positive_x')
-        self.texture_negative_x = texture_data.get('texture_negative_x')
-        self.texture_positive_y = texture_data.get('texture_positive_y')
-        self.texture_negative_y = texture_data.get('texture_negative_y')
-        self.texture_positive_z = texture_data.get('texture_positive_z')
-        self.texture_negative_z = texture_data.get('texture_negative_z')
+        # If texture2d is None then create render target.
+        face_texture_datas = copy.copy(texture_data)
+        face_texture_datas.pop('name')
+        face_texture_datas['texture_type'] = Texture2D
+
+        self.texture_positive_x = texture_data.get(
+            'texture_positive_x', CreateTexture(name=self.name + "_right", **face_texture_datas))
+        self.texture_negative_x = texture_data.get(
+            'texture_negative_x', CreateTexture(name=self.name + "_left", **face_texture_datas))
+        self.texture_positive_y = texture_data.get(
+            'texture_positive_y', CreateTexture(name=self.name + "_top", **face_texture_datas))
+        self.texture_negative_y = texture_data.get(
+            'texture_negative_y', CreateTexture(name=self.name + "_bottom", **face_texture_datas))
+        self.texture_positive_z = texture_data.get(
+            'texture_positive_z', CreateTexture(name=self.name + "_front", **face_texture_datas))
+        self.texture_negative_z = texture_data.get(
+            'texture_negative_z', CreateTexture(name=self.name + "_back", **face_texture_datas))
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_CUBE_MAP, self.buffer)
 
-        def createTexImage2D(cube_index, texture):
-            if texture is not None:
-                return glTexImage2D(cube_index,
-                                    0,
-                                    texture.internal_format,
-                                    texture.width,
-                                    texture.height,
-                                    0,
-                                    texture.texture_format,
-                                    texture.data_type,
-                                    texture.get_image_data())
-            else:
-                return glTexImage2D(cube_index,
-                                    0,
-                                    self.internal_format,
-                                    self.width,
-                                    self.height,
-                                    0,
-                                    self.texture_format,
-                                    self.data_type,
-                                    c_void_p(0))
+        def createTexImage2D(target_face, texture):
+            glTexImage2D(target_face,
+                         0,
+                         texture.internal_format,
+                         texture.width,
+                         texture.height,
+                         0,
+                         texture.texture_format,
+                         texture.data_type,
+                         texture.get_image_data())
 
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, self.texture_positive_x)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, self.texture_negative_x)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, self.texture_positive_y)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, self.texture_negative_y)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, self.texture_positive_z)
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, self.texture_positive_x)  # Right
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, self.texture_negative_x)  # Left
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, self.texture_positive_y)  # Top
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, self.texture_negative_y)  # Bottom
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, self.texture_positive_z)  # Front
+        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)  # Back
 
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, self.wrap)
@@ -380,6 +382,15 @@ class TextureCube(Texture):
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0)
+
+    def delete(self):
+        super(TextureCube, self).delete()
+        self.texture_positive_x.delete()
+        self.texture_negative_x.delete()
+        self.texture_positive_y.delete()
+        self.texture_negative_y.delete()
+        self.texture_positive_z.delete()
+        self.texture_negative_z.delete()
 
     def get_save_data(self, get_image_data=True):
         save_data = Texture.get_save_data(self)
