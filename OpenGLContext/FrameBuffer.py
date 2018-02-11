@@ -2,7 +2,7 @@ from functools import partial
 
 from OpenGL.GL import *
 
-from Utilities import GetClassName
+from Utilities import GetClassName, Singleton
 from Common import logger
 
 from .RenderBuffer import RenderBuffer
@@ -32,8 +32,9 @@ class FrameBuffer:
         self.width = 0
         self.height = 0
         self.commands = []
-        self.target_face = GL_TEXTURE_CUBE_MAP_POSITIVE_X
-        self.target_layer = 0
+        self.target_face = GL_TEXTURE_CUBE_MAP_POSITIVE_X  # cubemap face
+        self.target_layer = 0  # 3d texture layer
+        self.target_level = 0  # mipmap level
 
     def __del__(self):
         self.set_color_textures()
@@ -86,18 +87,19 @@ class FrameBuffer:
         if GL_RENDERBUFFER == target:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, texture_buffer)
         elif GL_TEXTURE_2D == target:
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture_buffer, 0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture_buffer, self.target_level)
         elif GL_TEXTURE_3D == target:
             glFramebufferTexture3D(
-                GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, 0, self.target_layer)
+                GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level, self.target_layer)
         elif GL_TEXTURE_CUBE_MAP == target:
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, 0)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
 
-    def bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0):
+    def bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, level=0):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
 
         self.target_face = target_face
         self.target_layer = target_layer
+        self.target_level = level
 
         # bind color textures
         for i, color_texture in enumerate(self.color_textures):
@@ -224,7 +226,7 @@ class FrameBuffer:
                           GL_COLOR_BUFFER_BIT, filter_type)
 
 
-class FrameBufferManager:
+class FrameBufferManager(Singleton):
     def __init__(self):
         self.framebuffers = {}
         self.current_framebuffer = None
@@ -257,9 +259,11 @@ class FrameBufferManager:
             framebuffer.build_command()
         return framebuffer
 
-    def bind_framebuffer(self, *textures, depth_texture, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0):
+    def bind_framebuffer(self, *textures, depth_texture=None, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0,
+                         level=0):
         self.current_framebuffer = self.get_framebuffer(*textures, depth_texture=depth_texture)
         self.current_framebuffer.target_face = target_face
         self.current_framebuffer.target_layer = target_layer
+        self.current_framebuffer.level = level
         self.current_framebuffer.run_bind_framebuffer()
         return self.current_framebuffer

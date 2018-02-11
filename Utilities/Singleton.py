@@ -1,20 +1,21 @@
 # method type
 class Singleton:
-  __instance = None
+    __instance = None
 
-  @classmethod
-  def __getInstance(cls):
-    return cls.__instance
+    @classmethod
+    def __getInstance(cls):
+        return cls.__instance
 
-  @classmethod
-  def getInstance(cls):
-    return cls.__instance
+    @classmethod
+    def getInstance(cls):
+        return cls.__instance
 
-  @classmethod
-  def instance(cls, *args, **kargs):
-    cls.__instance = cls(*args, **kargs)
-    cls.instance = cls.__getInstance
-    return cls.__instance
+    @classmethod
+    def instance(cls, *args, **kargs):
+        cls.__instance = cls(*args, **kargs)
+        cls.instance = cls.__getInstance
+        return cls.__instance
+
 
 if __name__ == '__main__':
     # base class type singleton
@@ -22,6 +23,7 @@ if __name__ == '__main__':
         pass
 
     import unittest
+
     class TestStringMethods(unittest.TestCase):
         def test_singleton(self):
             c1_1 = TestClass_1.instance()

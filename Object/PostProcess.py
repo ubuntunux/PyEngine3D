@@ -73,6 +73,7 @@ class PostProcess:
 
         self.linear_depth = None
         self.blur = None
+        self.circle_blur = None
         self.gaussian_blur = None
         self.deferred_shading = None
         self.copy_texture_mi = None
@@ -118,6 +119,7 @@ class PostProcess:
 
         self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
         self.blur = self.resource_manager.getMaterialInstance("blur")
+        self.circle_blur = self.resource_manager.getMaterialInstance("circle_blur")
         self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
         self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
@@ -243,6 +245,14 @@ class PostProcess:
         self.blur.bind_material_instance()
         self.blur.bind_uniform_data("blur_kernel_radius", blur_kernel_radius)
         self.blur.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.quad_geometry.draw_elements()
+
+    def render_circle_blur(self, texture_color, loop_count=9, radius=1.0):
+        self.circle_blur.use_program()
+        self.circle_blur.bind_material_instance()
+        self.circle_blur.bind_uniform_data("loop_count", loop_count)
+        self.circle_blur.bind_uniform_data("radius", radius)
+        self.circle_blur.bind_uniform_data("texture_color", texture_color)
         self.quad_geometry.draw_elements()
 
     def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):

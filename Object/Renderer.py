@@ -89,7 +89,7 @@ class Renderer(Singleton):
         self.postprocess = PostProcess()
         self.postprocess.initialize()
 
-        self.framebuffer_manager = FrameBufferManager()
+        self.framebuffer_manager = FrameBufferManager.instance()
 
         self.framebuffer = FrameBuffer()
         self.framebuffer_shadow = FrameBuffer()
@@ -382,7 +382,7 @@ class Renderer(Singleton):
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=None)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
             # render shader
             self.postprocess.render_material_instance()
@@ -507,7 +507,7 @@ class Renderer(Singleton):
 
         # render velocity
         self.postprocess.bind_quad()
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
@@ -535,7 +535,7 @@ class Renderer(Singleton):
 
         # render velocity
         self.postprocess.bind_quad()
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY, depth_texture=None)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
@@ -589,7 +589,7 @@ class Renderer(Singleton):
 
         # SSAO
         if self.postprocess.is_render_ssao:
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO, depth_texture=None)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.postprocess.render_ssao(texture_size=(RenderTargets.SSAO.width, RenderTargets.SSAO.height),
@@ -750,14 +750,6 @@ class Renderer(Singleton):
         # bind quad mesh
         self.postprocess.bind_quad()
 
-        # Bloom
-        if self.postprocess.is_render_bloom:
-            self.postprocess.render_bloom(self.framebuffer, RenderTargets.HDR)
-
-        # Blur Test
-        # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
-        # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
-
         # copy HDR target
         self.framebuffer.set_color_textures(RenderTargets.HDR)
         self.framebuffer.bind_framebuffer()
@@ -782,6 +774,14 @@ class Renderer(Singleton):
             self.framebuffer_copy.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+
+        # Bloom
+        if self.postprocess.is_render_bloom:
+            self.postprocess.render_bloom(self.framebuffer, RenderTargets.HDR)
+
+        # Blur Test
+        # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
+        # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
 
         # Tone Map
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)

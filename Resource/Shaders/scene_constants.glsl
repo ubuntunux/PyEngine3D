@@ -41,6 +41,7 @@ const int MAX_BONES = 100;
 const float SHADOW_BIAS = -0.0001;
 
 const float PI = 3.14159265358979323846;
+const float TWO_PI = PI * 2.0;
 const float deg = PI / 180.0;
 
 const vec3 kSphereCenter = vec3(1.0, 1.0, -2.0);
