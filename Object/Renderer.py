@@ -571,15 +571,6 @@ class Renderer(Singleton):
         self.postprocess.bind_quad()
         self.framebuffer.set_depth_texture(None)
 
-        # Screen Space Reflection
-        if self.postprocess.is_render_ssr:
-            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
-            self.framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
-
-            self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
-                                                            RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
-
         # Linear depth
         self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
         self.framebuffer.bind_framebuffer()
@@ -587,15 +578,25 @@ class Renderer(Singleton):
         self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
         RenderTargets.LINEAR_DEPTH.generate_mipmap()
 
+        # Screen Space Reflection
+        if self.postprocess.is_render_ssr:
+            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
+            self.framebuffer.bind_framebuffer()
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
+                                                            RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
+
         # SSAO
         if self.postprocess.is_render_ssao:
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO)
+            temp_ssao = self.rendertarget_manager.get_temporary('temp_ssao', RenderTargets.SSAO)
+            self.framebuffer.set_color_textures(RenderTargets.SSAO)
+            self.framebuffer.bind_framebuffer()
             glClear(GL_COLOR_BUFFER_BIT)
-
             self.postprocess.render_ssao(texture_size=(RenderTargets.SSAO.width, RenderTargets.SSAO.height),
                                          texture_lod=self.rendertarget_manager.texture_lod_in_ssao,
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
+            self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.SSAO, temp_ssao)
 
     def render_solid(self):
         camera = self.scene_manager.main_camera
@@ -778,6 +779,7 @@ class Renderer(Singleton):
         # Bloom
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, RenderTargets.HDR)
+            # self.postprocess.render_onepass_bloom(self.framebuffer, RenderTargets.HDR)
 
         # Blur Test
         # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)

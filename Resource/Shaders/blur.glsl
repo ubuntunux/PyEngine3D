@@ -17,12 +17,15 @@ void main() {
 
     float weight = 0.0;
 
+    float radius = sqrt(2.0) * blur_kernel_radius + 0.125;
+
     for( float y = -blur_kernel_radius; y <= blur_kernel_radius; y++ )
     {
         for( float x = -blur_kernel_radius; x <= blur_kernel_radius; x++ )
         {
-            fs_output += texture(texture_diffuse, tex_coord + vec2(x, y) * scale);
-            weight += 1.0;
+            float wg = pow(1.0 - length(vec2(x, y)) / radius, 3.0);
+            fs_output += texture(texture_diffuse, tex_coord + vec2(x, y) * scale) * wg;
+            weight += wg;
         }
     }
 

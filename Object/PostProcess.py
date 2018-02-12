@@ -48,8 +48,11 @@ class PostProcess:
         self.bloom_highlight = None
         self.bloom_intensity = 1.0
         self.bloom_threshold_min = 0.75
-        self.bloom_threshold_max = 1.5
+        self.bloom_threshold_max = 10.0
         self.bloom_scale = 1.0
+
+        self.onepass_bloom = None
+        self.onepass_bloom_composite = None
 
         self.is_render_motion_blur = True
         self.motion_blur = None
@@ -58,7 +61,7 @@ class PostProcess:
         self.is_render_ssao = True
         self.ssao = None
         self.ssao_blur_radius = 2.0
-        self.ssao_radius_min_max = np.array([0.01, 1.0], dtype=np.float32)
+        self.ssao_radius_min_max = np.array([0.1, 2.0], dtype=np.float32)
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
 
@@ -105,13 +108,16 @@ class PostProcess:
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
 
+        self.onepass_bloom = self.resource_manager.getMaterialInstance("examples.onepass_bloom")
+        self.onepass_bloom_composite = self.resource_manager.getMaterialInstance("examples.onepass_bloom_composite")
+
         # SSAO
         self.ssao = self.resource_manager.getMaterialInstance("ssao")
         for i in range(self.ssao_kernel_size):
             scale = float(i) / float(self.ssao_kernel_size)
             scale = min(max(0.1, scale * scale), 1.0)
             self.ssao_kernel[i][0] = random.uniform(-1.0, 1.0)
-            self.ssao_kernel[i][1] = random.uniform(0.0, 1.0)
+            self.ssao_kernel[i][1] = random.uniform(0.5, 1.0)
             self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
 
@@ -296,17 +302,19 @@ class PostProcess:
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
         self.quad_geometry.draw_elements()
 
-        texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
-        texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
-        texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 8.0)
-        texture_bloom3 = self.rendertarget_manager.get_temporary('bloom3', texture_target, 1.0 / 16.0)
-        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_target, 1.0 / 2.0)
-        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_target, 1.0 / 4.0)
-        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_target, 1.0 / 8.0)
-        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 16.0)
+        texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 4.0)
+        texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 8.0)
+        texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 16.0)
+        texture_bloom3 = self.rendertarget_manager.get_temporary('bloom3', texture_target, 1.0 / 32.0)
+        texture_bloom4 = self.rendertarget_manager.get_temporary('bloom4', texture_target, 1.0 / 64.0)
+        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_target, 1.0 / 4.0)
+        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_target, 1.0 / 8.0)
+        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_target, 1.0 / 16.0)
+        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 32.0)
+        texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_target, 1.0 / 64.0)
 
-        bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3]
-        temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp]
+        bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
+        temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
 
         def copy_bloom(src, dst):
             frame_buffer.set_color_textures(dst)
@@ -320,6 +328,7 @@ class PostProcess:
         copy_bloom(texture_bloom0, texture_bloom1)
         copy_bloom(texture_bloom1, texture_bloom2)
         copy_bloom(texture_bloom2, texture_bloom3)
+        copy_bloom(texture_bloom3, texture_bloom4)
 
         self.gaussian_blur.use_program()
         self.gaussian_blur.bind_material_instance()
@@ -356,9 +365,36 @@ class PostProcess:
         self.bloom.bind_uniform_data("texture_bloom1", texture_bloom1)
         self.bloom.bind_uniform_data("texture_bloom2", texture_bloom2)
         self.bloom.bind_uniform_data("texture_bloom3", texture_bloom3)
+        self.bloom.bind_uniform_data("texture_bloom4", texture_bloom3)
         self.quad_geometry.draw_elements()
 
         # restore blend state
+        self.renderer.restore_blend_state_prev()
+
+    def render_onepass_bloom(self, frame_buffer, texture_target):
+        texture_bloom = self.rendertarget_manager.get_temporary('onepass_bloom', texture_target)
+        frame_buffer.set_color_textures(texture_bloom)
+        frame_buffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
+        self.onepass_bloom.use_program()
+        self.onepass_bloom.bind_material_instance()
+        self.onepass_bloom.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
+        self.onepass_bloom.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
+        self.onepass_bloom.bind_uniform_data('texture_diffuse', texture_target)
+        self.quad_geometry.draw_elements()
+
+        self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
+
+        frame_buffer.set_color_textures(texture_target)
+        frame_buffer.bind_framebuffer()
+
+        self.onepass_bloom_composite.use_program()
+        self.onepass_bloom_composite.bind_material_instance()
+        self.onepass_bloom_composite.bind_uniform_data("bloom_intensity", self.bloom_intensity)
+        self.onepass_bloom_composite.bind_uniform_data('texture_bloom', texture_bloom)
+        self.quad_geometry.draw_elements()
+
         self.renderer.restore_blend_state_prev()
 
     def render_linear_depth(self, texture_depth):

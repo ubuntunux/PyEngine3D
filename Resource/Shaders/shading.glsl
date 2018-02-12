@@ -10,27 +10,22 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
     float shadow_depth = shadow_uv.z;
 
-    const float shadow_radius = 2.0;
-    const vec2 texture_size = textureSize(texture_shadow, 0);
-    const vec2 sample_scale = shadow_radius / texture_size;
+    const int loop_count = 16;
+    float texel_radius = 1.0 / length(textureSize(texture_shadow, 0));
+    float rad_step = TWO_PI / float(loop_count);
+    float rad = 0.0;
 
-    float angle = rand(screen_tex_coord);
+    float s = textureLod(texture_shadow, shadow_uv.xy, 0.0).x;
+    shadow_factor += (shadow_depth + 0.001 < s) ? 1.0 : 0.0;
 
-    const int sample_count = min(4, PoissonSampleCount);
-
-    for(int i=0; i<sample_count; ++i)
+    for(int i=0; i<loop_count; ++i)
     {
-        // random poisson
-        vec2 uv = PoissonSamples[int(JITTER_FRAME + i + angle * PoissonSampleCount) % PoissonSampleCount];
-
-        uv = shadow_uv.xy + uv * sample_scale;
-        vec4 s = textureGather(texture_shadow, uv, 0);
-        shadow_factor += s[0] <= shadow_depth ? 0.0 : 1.0;
-        shadow_factor += s[1] <= shadow_depth ? 0.0 : 1.0;
-        shadow_factor += s[2] <= shadow_depth ? 0.0 : 1.0;
-        shadow_factor += s[3] <= shadow_depth ? 0.0 : 1.0;
+        rad += rad_step;
+        vec2 uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius;
+        s = textureLod(texture_shadow, uv, 0.0).x;
+        shadow_factor += (shadow_depth + 0.001 < s) ? 1.0 : 0.0;
     }
-    shadow_factor /= sample_count * 4.0;
+    shadow_factor /= float(loop_count + 1);
     return shadow_factor;
 }
 

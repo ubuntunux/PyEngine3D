@@ -135,21 +135,18 @@ class RenderTargetManager(Singleton):
         return rendertarget
 
     def recreate_rendertargets(self):
+        self.core_manager.clearRenderTargetList()
+
         for rendertarget_name in self.rendertargets:
             rendertarget = self.rendertargets[rendertarget_name]
             datas = rendertarget.get_texture_info()
             self.create_rendertarget(rendertarget_name, **datas)
+            self.core_manager.sendRenderTargetInfo(rendertarget_name)
 
         self.clear_temp_rendertargets()
         self.core_manager.gc_collect()
 
     def create_rendertargets(self):
-        if not self.first_time:
-            self.recreate_rendertargets()
-            return
-
-        self.first_time = False
-
         self.clear()
 
         # Note : # clear rendertarget infos in GUI
@@ -190,8 +187,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_DEPTH24_STENCIL8,
             texture_format=GL_DEPTH_STENCIL,
             data_type=GL_UNSIGNED_INT_24_8,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 
@@ -273,8 +270,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 
@@ -287,8 +284,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 
@@ -315,7 +312,7 @@ class RenderTargetManager(Singleton):
             internal_format=GL_R32F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,
-            min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            min_filter=GL_LINEAR_MIPMAP_NEAREST,
             mag_filter=GL_LINEAR,
             wrap=GL_CLAMP
         )
@@ -377,8 +374,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_RG32F,
             texture_format=GL_RG,
             data_type=GL_FLOAT,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 

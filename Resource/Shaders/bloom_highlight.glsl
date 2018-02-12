@@ -14,10 +14,9 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
-    vec3 result = vec3(0.0, 0.0, 0.0);
-    result = texture(texture_diffuse, tex_coord).xyz;
-    float luminance = get_luminance(result);
-    result = vec3(smoothstep(bloom_threshold_min, bloom_threshold_max, luminance));
-    fs_output = vec4(result, 1.0);
+    vec3 color = texture(texture_diffuse, tex_coord).xyz;
+    float luminance = max(0.01, get_luminance(color));
+    color = color * min(bloom_threshold_max, max(0.0, luminance - bloom_threshold_min)) / luminance;
+    fs_output = vec4(color, 1.0);
 }
 #endif // GL_FRAGMENT_SHADER

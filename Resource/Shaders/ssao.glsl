@@ -34,21 +34,17 @@ void main() {
     vec3 normal = texture(texture_normal, tex_coord).xyz * 2.0 - 1.0;
     vec2 noise_size = textureSize(texture_noise, 0);
 
-    float offset = rand(tex_coord);
-    offset = offset * texture_size.x + offset * texture_size.y;
-    vec2 poisson =  PoissonSamples[int(JITTER_FRAME + offset) % PoissonSampleCount];
-    vec3 randomVec = texture(texture_noise, (tex_coord * texture_size + poisson)/ noise_size).xyz;
+    vec3 randomVec = texture(texture_noise, tex_coord * texture_size / noise_size).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
     mat3 tbn = mat3(tangent, normal, bitangent);
 
     float occlusion = 0.0;
-    int sample_count = kernel_size;
-    for (int i = 0; i < sample_count; ++i) {
-        // get sample position:
-        vec3 pos = tbn * kernel[i];
-        pos = pos * radius_min_max.y + relative_pos.xyz;
+    int sample_count = min(16, kernel_size);
+    for (int i = 0; i < sample_count; ++i)
+    {
+        vec3 pos = (tbn * kernel[i]) * radius_min_max.y + relative_pos.xyz;
 
         // project sample position:
         vec4 offset = vec4(pos, 1.0);
@@ -61,25 +57,18 @@ void main() {
             continue;
         }
 
-        vec4 sampleDepth = textureGather(texture_linear_depth, offset.xy, 0);
-        //sampleDepth.x = textureLod(texture_linear_depth, offset.xy, texture_lod).x;
-        //sampleDepth.y = textureLod(texture_linear_depth, offset.xy + texel_size, texture_lod).x;
-        //sampleDepth.z = textureLod(texture_linear_depth, offset.xy + vec2(texel_size.x, 0.0), texture_lod).x;
-        //sampleDepth.w = textureLod(texture_linear_depth, offset.xy + vec2(0.0, texel_size.y), texture_lod).x;
-
-        const float amount = 0.25;
-        for(int j=0; j<4; ++j)
+        float sampleDepth = textureLod(texture_linear_depth, offset.xy, texture_lod).x;
+        sampleDepth = linear_depth - sampleDepth;
+        if(radius_min_max.x <= sampleDepth && sampleDepth <= radius_min_max.y)
         {
-            sampleDepth[j] = linear_depth - sampleDepth[j];
-            if(sampleDepth[j] > radius_min_max.x && abs(sampleDepth[j]) < radius_min_max.y )
-            {
-                occlusion += clamp(amount * (0.5 + sampleDepth[j]), 0.0, amount);
-                //occlusion += amount;
-            }
+            float weight = clamp(1.0 - (sampleDepth - radius_min_max.x) / (radius_min_max.y - radius_min_max.x), 0.0, 1.0);
+            occlusion += pow(weight, 3.0);
         }
+
+
     }
 
-    occlusion = clamp(1.0 - occlusion / (float(sample_count) - 1.0), 0.0, 1.0);
+    occlusion = clamp(1.0 - occlusion / float(sample_count), 0.0, 1.0);
     occlusion *= occlusion;
     fs_output.xyz = vec3(occlusion);
     fs_output.w = 1.0;
