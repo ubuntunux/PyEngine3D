@@ -343,7 +343,7 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
-        texture_size = 256
+        texture_size = 4
         texture_data = np.zeros((texture_size * texture_size, 3), dtype=np.float16)
         for i in range(texture_size * texture_size):
             texture_data[i][0] = random.uniform(-1.0, 1.0)
