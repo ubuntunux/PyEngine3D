@@ -39,8 +39,8 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec4 position = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 prev_position = vec4(0.0, 0.0, 0.0, 0.0);
-    vec3 vertex_normal = vec3(0.0, 1.0, 0.0);
-    vec3 vertex_tangent = vec3(0.0, 1.0, 0.0);
+    vec3 vertex_normal = vec3(0.0, 0.0, 0.0);
+    vec3 vertex_tangent = vec3(0.0, 0.0, 0.0);
 
 #if 1 == SKELETAL
     for(int i=0; i<MAX_BONES_PER_VERTEX; ++i)

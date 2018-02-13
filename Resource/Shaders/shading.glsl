@@ -139,11 +139,11 @@ vec4 surface_shading(vec4 base_color,
                     vec3 N,
                     vec3 V,
                     vec3 L,
-                    vec3 shadow_factor) {
+                    vec3 shadow_factor,
+                    vec3 sky_irradiance) {
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
-    float less_roughness = roughness * roughness;
 
     // compute material reflectance
     vec3 R = reflect(-V, N);
@@ -167,7 +167,7 @@ vec4 surface_shading(vec4 base_color,
 
     // specular : mix between metal and non-metal material, for non-metal constant base specular factor of 0.04 grey is used
     vec3 specfresnel = fresnel_factor(f0, HdV);
-    vec3 specular_lighting = cooktorrance_specular(NdL, NdV, NdH, specfresnel, less_roughness);
+    vec3 specular_lighting = cooktorrance_specular(NdL, NdV, NdH, specfresnel, roughness);
     specular_lighting = specular_lighting * light_color * NdL * shadow_factor;
 
     // diffuse
@@ -179,7 +179,7 @@ vec4 surface_shading(vec4 base_color,
     const float env_mipmap_count = log2(min(env_size.x, env_size.y));
 
     vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
-    vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * less_roughness).xyz;
+    vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
 
     // Note : because texture_probe is HDR and not sRGB.
     //ibl_diffuse_color = pow(ibl_diffuse_color, vec3(2.2));
@@ -192,9 +192,9 @@ vec4 surface_shading(vec4 base_color,
         ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
     }
 
-    diffuse_light += base_color.xyz * ibl_diffuse_color * shadow_factor;
-    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, less_roughness), 0.0, 1.0);
-    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * shadow_factor;
+    diffuse_light += base_color.xyz * ibl_diffuse_color * max(shadow_factor, sky_irradiance);
+    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
+    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * max(shadow_factor, sky_irradiance);
 
     // final result
     vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting;

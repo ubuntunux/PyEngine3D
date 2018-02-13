@@ -25,35 +25,19 @@ void main()
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 view_direction = normalize(view_ray);
 
-    float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
-
     // Scene
-    vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
-    float scene_shadow_length = 0.0;
-    vec3 scene_radiance = vec3(0.0);
-    vec3 scene_sun_irradiance;
-    vec3 scene_sky_irradiance;
-    vec3 scene_in_scatter;
-    GetSceneRadiance(
-        ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
-        scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-    scene_radiance = scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter;
-
-    float shadow_length = scene_shadow_length * lightshaft_fadein_hack;
+    float scene_shadow_length = GetSceneShadowLength(scene_linear_depth, view_direction, texture_shadow);
 
     // Sky
     vec3 transmittance;
     vec3 radiance = GetSkyRadiance(
-        ATMOSPHERE, camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+        ATMOSPHERE, camera - earth_center, view_direction, scene_shadow_length, sun_direction, transmittance);
 
     // Sun
-    if (dot(view_direction, sun_direction) > sun_size.y)
+    if (render_sun && dot(view_direction, sun_direction) > sun_size.y)
     {
         radiance = radiance + transmittance * GetSolarRadiance(ATMOSPHERE);
     }
-
-    // Final composite
-    radiance = mix(scene_radiance, radiance, scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0);
 
     color.xyz = radiance * exposure;
     color.w = 1.0;

@@ -65,6 +65,7 @@ void main() {
     else
     {
         vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow));
+        vec3 sky_irradiance = vec3(0.0);
 
         fs_diffuse = surface_shading(base_color,
                         metalicness,
@@ -77,7 +78,8 @@ void main() {
                         N,
                         V,
                         L,
-                        shadow_factor);
+                        shadow_factor,
+                        sky_irradiance);
 
         // SSAO
         if(RENDER_SSAO == 1.0f)

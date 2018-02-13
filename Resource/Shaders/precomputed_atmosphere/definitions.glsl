@@ -5,6 +5,7 @@
 uniform vec3 earth_center;
 uniform vec2 sun_size;
 uniform float exposure;
+uniform bool render_sun;
 
 uniform sampler2D transmittance_texture;
 uniform sampler3D scattering_texture;
@@ -1035,11 +1036,7 @@ void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_i
     }
 }
 
-
-void GetSceneRadiance(
-    const in AtmosphereParameters atmosphere,
-    float scene_linear_depth, vec3 view_direction, vec3 normal, sampler2D texture_shadow,
-    out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
+float GetSceneShadowLength(float scene_linear_depth, vec3 view_direction, sampler2D texture_shadow)
 {
     const float earth_radius = abs(earth_center.y);
     bool shadow_enter = false;
@@ -1099,11 +1096,21 @@ void GetSceneRadiance(
 
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
-    vec3 relative_point = relative_camera_pos + view_direction * scene_linear_depth * atmosphere_ratio;
-    float lightshaft_fadein_hack =
-        smoothstep(0.02, 0.04, dot(normalize(relative_camera_pos - earth_center), sun_direction));
+    float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(relative_camera_pos - earth_center), sun_direction));
 
-    scene_shadow_length = max(0.0, scene_shadow_out - scene_shadow_in) * lightshaft_fadein_hack * atmosphere_ratio;
+    return max(0.0, scene_shadow_out - scene_shadow_in) * lightshaft_fadein_hack * 2.0;
+}
+
+void GetSceneRadiance(
+    const in AtmosphereParameters atmosphere,
+    float scene_linear_depth, vec3 view_direction, vec3 normal, sampler2D texture_shadow,
+    out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
+{
+    vec3 sun_direction = LIGHT_DIRECTION.xyz;
+    vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
+    vec3 relative_point = relative_camera_pos + view_direction * scene_linear_depth * atmosphere_ratio;
+
+    scene_shadow_length = GetSceneShadowLength(scene_linear_depth, view_direction, texture_shadow);
 
     sun_irradiance = GetSunAndSkyIrradiance(
         atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);

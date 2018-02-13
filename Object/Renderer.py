@@ -417,9 +417,8 @@ class Renderer(Singleton):
 
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.WORLD_NORMAL,
-                                                                            RenderTargets.SHADOWMAP)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(
+                    RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
             return end_render_scene()
         else:
             # render normal scene
@@ -451,9 +450,8 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 glDisable(GL_DEPTH_TEST)
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.WORLD_NORMAL,
-                                                                            RenderTargets.SHADOWMAP)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(
+                    RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
 
             # render translucent
             glEnable(GL_DEPTH_TEST)

@@ -54,21 +54,20 @@ void main() {
     // Atmosphere
     vec3 scene_radiance = vec3(0.0);
     vec3 scene_in_scatter = vec3(0.0);
+    vec3 scene_sun_irradiance;
+    vec3 scene_sky_irradiance;
     {
         vec3 view_direction = normalize(-V);
         float scene_linear_depth = textureLod(texture_linear_depth, screen_tex_coord, 0.0).x;
         vec3 normal = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
         float scene_shadow_length;
-        vec3 scene_sun_irradiance;
-        vec3 scene_sky_irradiance;
         GetSceneRadiance(
             ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
         scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
         scene_sky_irradiance *= exposure;
         scene_in_scatter *= exposure;
-        shadow_factor = max(shadow_factor, scene_sky_irradiance);
     }
 
     fs_output = surface_shading(base_color,
@@ -82,7 +81,8 @@ void main() {
                     N,
                     V,
                     L,
-                    shadow_factor);
+                    shadow_factor,
+                    scene_sky_irradiance);
 
     fs_output.xyz += scene_in_scatter;
 
