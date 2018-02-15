@@ -4,6 +4,7 @@
 
 float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
 {
+    const float shadow_bias = 0.001;
     float shadow_factor = 0.0;
     vec4 shadow_uv = SHADOW_MATRIX * vec4(world_position, 1.0);
     shadow_uv.xyz /= shadow_uv.w;
@@ -11,19 +12,22 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     float shadow_depth = shadow_uv.z;
 
     const int loop_count = 16;
-    float texel_radius = 1.0 / length(textureSize(texture_shadow, 0));
+    float texel_radius = 0.5 / length(textureSize(texture_shadow, 0));
     float rad_step = TWO_PI / float(loop_count);
     float rad = 0.0;
 
-    float s = textureLod(texture_shadow, shadow_uv.xy, 0.0).x;
-    shadow_factor += (shadow_depth + 0.001 < s) ? 1.0 : 0.0;
+    float depth = textureLod(texture_shadow, shadow_uv.xy + vec2(texel_radius), 0.0).x;
+    //float slope = min(1.0, abs(depth + (dFdx(depth) + dFdy(depth)) / 3.0) * 0.01);
+    //float slope_bias = mix(shadow_bias, -0.001, slope);
+
+    shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
 
     for(int i=0; i<loop_count; ++i)
     {
         rad += rad_step;
-        vec2 uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius;
-        s = textureLod(texture_shadow, uv, 0.0).x;
-        shadow_factor += (shadow_depth + 0.001 < s) ? 1.0 : 0.0;
+        vec2 uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius * 2.0  + vec2(texel_radius);
+        depth = textureLod(texture_shadow, uv, 0.0).x;
+        shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
     }
     shadow_factor /= float(loop_count + 1);
     return shadow_factor;
