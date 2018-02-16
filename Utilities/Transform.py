@@ -512,8 +512,8 @@ def compute_tangent(positions, texcoords, normals, indices):
         deltaPos3 = positions[i3] - positions[i1]
         deltaUV2 = texcoords[i2] - texcoords[i1]
         deltaUV3 = texcoords[i3] - texcoords[i1]
-        r = (deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0])
-        r = 1.0 / r if r != 0.0 else 0.0
+        r = deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0]
+        r = (1.0 / r) if r != 0.0 else 0.0
 
         tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
         tangent = normalize(tangent)

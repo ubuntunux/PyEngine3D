@@ -134,6 +134,7 @@ class Quad(Mesh):
             normals=[(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)],
             texcoords=[(0, 1), (0, 0), (1, 0), (1, 1)],
             indices=[0, 1, 2, 0, 2, 3])
+
         geometry_datas = [geometry_data, ]
         Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
 
@@ -184,6 +185,46 @@ class Cube(Mesh):
                 16, 17, 18, 16, 18, 19,
                 20, 21, 22, 20, 22, 23
             ])
+        geometry_datas = [geometry_data, ]
+        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+
+
+# ------------------------------#
+# CLASS : Plane
+# ------------------------------#
+class Plane(Mesh):
+    def __init__(self, width=4, height=4):
+        positions = []
+        colors = []
+        normals = []
+        texcoords = []
+        indices = []
+
+        width_points = width + 1
+        height_points = height + 1
+        width_step = 1.0 / width
+        height_step = 1.0 / height
+        for y in range(height_points):
+            y = y * height_step
+            for x in range(width_points):
+                x = x * width_step
+                positions.append((x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0))
+                colors.append((1, 1, 1, 1))
+                normals.append((0, 0, 1))
+                texcoords.append((x, 1.0 - y))
+
+        for y in range(height):
+            for x in range(width):
+                i = y * width_points + x
+                indices.extend([i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1])
+
+        geometry_data = dict(
+            positions=positions,
+            colors=colors,
+            normals=normals,
+            texcoords=texcoords,
+            indices=indices)
+
         geometry_datas = [geometry_data, ]
         Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
 

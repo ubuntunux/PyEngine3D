@@ -23,7 +23,7 @@ from numpy import array, float32, uint8
 from OpenGL.GL import *
 
 from Common import *
-from Object import MaterialInstance, Triangle, Quad, Cube, Mesh, Model, Font
+from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
@@ -498,7 +498,6 @@ class ShaderLoader(ResourceLoader):
             if resource.is_need_to_load():
                 file_path = resource.meta_data.resource_filepath
                 if os.path.exists(file_path):
-                    shader_code = ""
                     try:
                         f = codecs.open(file_path, mode='r', encoding='utf-8')
                         shader_code = f.read()
@@ -981,6 +980,8 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Triangle", Triangle())
         self.create_resource("Quad", Quad())
         self.create_resource("Cube", Cube())
+        self.create_resource("Plane", Plane(width=4, height=4))
+        self.save_resource("Plane")
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
@@ -1361,8 +1362,8 @@ class ResourceManager(Singleton):
     def getDefaultMaterialInstance(self, skeletal=False):
         if skeletal:
             return self.materialInstanceLoader.getMaterialInstance(name='default_skeletal',
-                                                                    shader_name='default',
-                                                                    macros={'SKELETAL': 1})
+                                                                   shader_name='default',
+                                                                   macros={'SKELETAL': 1})
         return self.materialInstanceLoader.getMaterialInstance('default')
 
     # FUNCTIONS : Mesh

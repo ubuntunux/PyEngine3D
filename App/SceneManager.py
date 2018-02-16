@@ -3,12 +3,12 @@ from collections import OrderedDict
 import os
 import glob
 import math
-import time as timeModule
 
 import numpy as np
 
 from Common import logger
-from Object import Atmosphere, SkeletonActor, StaticActor, Camera, Light, LightProbe, Sky, PostProcess, RenderInfo
+from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, PostProcess, RenderInfo
+from Object import Atmosphere, Ocean
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
@@ -28,8 +28,8 @@ class SceneManager(Singleton):
         self.selected_object = None
 
         # envirment object
-        self.sky = None
         self.atmosphere = None
+        self.ocean = None
 
         self.cameras = []
         self.lights = []
@@ -96,7 +96,7 @@ class SceneManager(Singleton):
         self.main_light = self.addLight()
         self.main_light_probe = self.addLightProbe()
         self.atmosphere = Atmosphere()
-        self.sky = Sky()
+        self.ocean = Ocean()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
@@ -131,9 +131,8 @@ class SceneManager(Singleton):
             self.addLightProbe()
         self.main_light_probe = self.get_light_probe(0)
 
-        self.sky = Sky()
-
         self.atmosphere = Atmosphere()
+        self.ocean = Ocean()
 
         for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)

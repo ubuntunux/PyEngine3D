@@ -444,16 +444,19 @@ class Renderer(Singleton):
             # render solid
             self.render_solid()
 
-            # set blend state
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 glDisable(GL_DEPTH_TEST)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(
                     RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
 
+            # if self.scene_manager.ocean.is_render_ocean:
+            #     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            #     self.scene_manager.ocean.render_ocean()
+            #     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
             # render translucent
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glEnable(GL_DEPTH_TEST)
             self.render_translucent()
 
@@ -528,8 +531,7 @@ class Renderer(Singleton):
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
 
         # render static gbuffer
-        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER,
-                           self.scene_manager.static_solid_render_infos)
+        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.GBUFFER, self.scene_manager.static_solid_render_infos)
 
         # render velocity
         self.postprocess.bind_quad()
@@ -741,11 +743,6 @@ class Renderer(Singleton):
         self.framebuffer.set_depth_texture(None)
         self.framebuffer.bind_framebuffer()
 
-        # Atmosphere demo
-        # self.scene_manager.atmosphere.render_precomputed_atmosphere_demo(RenderTargets.LINEAR_DEPTH,
-        #                                                                  RenderTargets.WORLD_NORMAL,
-        #                                                                  RenderTargets.SHADOWMAP)
-
         # bind quad mesh
         self.postprocess.bind_quad()
 
@@ -778,10 +775,6 @@ class Renderer(Singleton):
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(self.framebuffer, RenderTargets.HDR)
             # self.postprocess.render_onepass_bloom(self.framebuffer, RenderTargets.HDR)
-
-        # Blur Test
-        # hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
-        # self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.HDR, hdr_copy)
 
         # Tone Map
         self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
