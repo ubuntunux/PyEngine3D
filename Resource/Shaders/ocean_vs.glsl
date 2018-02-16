@@ -1,3 +1,5 @@
+#include "scene_constants.glsl"
+
 struct VERTEX_OUTPUT
 {
     vec2 tex_coord;
@@ -19,6 +21,10 @@ void main() {
     vs_output.tex_coord = vs_in_tex_coord;
     vs_output.position = vs_in_position;
     vs_output.position.y += height;
-    gl_Position = vec4(vs_output.position, 1.0);
+    vs_output.position.z -= 1.0;
+
+    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(vs_output.position, 1.0);
+
+    gl_Position = proj_pos;
 }
 #endif // GL_VERTEX_SHADER
