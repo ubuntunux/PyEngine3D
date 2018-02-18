@@ -77,3 +77,8 @@ vec3 invert_y(vec3 vector)
 {
     return vec3(vector.x, -vector.y, vector.z);
 }
+
+float safe_atan(float y, float x)
+{
+    return mod(atan(y, x), TWO_PI);
+}
