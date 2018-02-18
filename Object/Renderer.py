@@ -231,95 +231,6 @@ class Renderer(Singleton):
             self.postprocess.is_render_material_instance = False
             logger.info("Current texture : %s" % self.debug_texture.name)
 
-    def render_light_probe(self, force=False):
-        light_probe = self.scene_manager.main_light_probe
-
-        if not force and light_probe.isRendered:
-            return
-
-        logger.info("Rendering Light Probe")
-
-        # Set Valid
-        light_probe.isRendered = True
-
-        camera = self.scene_manager.main_camera
-        old_pos = camera.transform.getPos().copy()
-        old_rot = camera.transform.getRot().copy()
-        old_fov = camera.fov
-        old_aspect = camera.aspect
-        old_render_motion_blur = self.postprocess.is_render_motion_blur
-        old_antialiasing = self.postprocess.anti_aliasing
-        old_render_font = RenderOption.RENDER_FONT
-        old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
-
-        # set render light probe
-        RenderOption.RENDER_SKELETON_ACTOR = False
-        RenderOption.RENDER_LIGHT_PROBE = True
-        RenderOption.RENDER_FONT = False
-        self.postprocess.is_render_motion_blur = False
-        self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
-
-        camera.update_projection(fov=90.0, aspect=1.0)
-
-        def render_cube_face(dst_texture, target_face, pos, pitch, yaw, roll):
-            camera.transform.setPos(pos)
-            camera.transform.setRot([pitch, yaw, roll])
-            camera.update(force_update=True)
-
-            # render
-            self.renderScene()
-
-            # copy
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.bind_framebuffer()
-            self.framebuffer_copy.set_color_textures(dst_texture)
-            self.framebuffer_copy.bind_framebuffer(target_face=target_face)
-            glClear(GL_COLOR_BUFFER_BIT)
-
-            self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
-
-            return dst_texture
-
-        pos = light_probe.transform.getPos()
-
-        # render atmosphere scene to light_probe textures.
-        RenderOption.RENDER_ONLY_ATMOSPHERE = True
-        texture_probe = light_probe.texture_probe
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
-        texture_probe.generate_mipmap()
-
-        # render final scene to temp textures.
-        RenderOption.RENDER_ONLY_ATMOSPHERE = False
-        temp_texture_probe = light_probe.generate_texture_probe(name='light_probe_temp')
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
-        temp_texture_probe.generate_mipmap()
-
-        # replace texture
-        light_probe.replace_texture_probe(temp_texture_probe)
-
-        # restore
-        RenderOption.RENDER_LIGHT_PROBE = False
-        RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
-        RenderOption.RENDER_FONT = old_render_font
-        self.postprocess.is_render_motion_blur = old_render_motion_blur
-        self.postprocess.anti_aliasing = old_antialiasing
-
-        camera.update_projection(old_fov, old_aspect)
-
-        camera.transform.setPos(old_pos)
-        camera.transform.setRot(old_rot)
-        camera.update(force_update=True)
-
     def renderScene(self):
         startTime = timeModule.perf_counter()
 
@@ -450,12 +361,12 @@ class Renderer(Singleton):
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(
                     RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
 
-            # if self.scene_manager.ocean.is_render_ocean:
-            #     glDisable(GL_CULL_FACE)
-            #     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            #     self.scene_manager.ocean.render_ocean()
-            #     glEnable(GL_CULL_FACE)
-            #     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            if self.scene_manager.ocean.is_render_ocean:
+                glDisable(GL_CULL_FACE)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                self.scene_manager.ocean.render_ocean()
+                glEnable(GL_CULL_FACE)
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
             # render translucent
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -494,6 +405,95 @@ class Renderer(Singleton):
 
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
+
+    def render_light_probe(self, force=False):
+        light_probe = self.scene_manager.main_light_probe
+
+        if not force and light_probe.isRendered:
+            return
+
+        logger.info("Rendering Light Probe")
+
+        # Set Valid
+        light_probe.isRendered = True
+
+        camera = self.scene_manager.main_camera
+        old_pos = camera.transform.getPos().copy()
+        old_rot = camera.transform.getRot().copy()
+        old_fov = camera.fov
+        old_aspect = camera.aspect
+        old_render_motion_blur = self.postprocess.is_render_motion_blur
+        old_antialiasing = self.postprocess.anti_aliasing
+        old_render_font = RenderOption.RENDER_FONT
+        old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
+
+        # set render light probe
+        RenderOption.RENDER_SKELETON_ACTOR = False
+        RenderOption.RENDER_LIGHT_PROBE = True
+        RenderOption.RENDER_FONT = False
+        self.postprocess.is_render_motion_blur = False
+        self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
+
+        camera.update_projection(fov=90.0, aspect=1.0)
+
+        def render_cube_face(dst_texture, target_face, pos, pitch, yaw, roll):
+            camera.transform.setPos(pos)
+            camera.transform.setRot([pitch, yaw, roll])
+            camera.update(force_update=True)
+
+            # render
+            self.renderScene()
+
+            # copy
+            self.framebuffer.set_color_textures(RenderTargets.HDR)
+            self.framebuffer.bind_framebuffer()
+            self.framebuffer_copy.set_color_textures(dst_texture)
+            self.framebuffer_copy.bind_framebuffer(target_face=target_face)
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
+
+            return dst_texture
+
+        pos = light_probe.transform.getPos()
+
+        # render atmosphere scene to light_probe textures.
+        RenderOption.RENDER_ONLY_ATMOSPHERE = True
+        texture_probe = light_probe.texture_probe
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        texture_probe.generate_mipmap()
+
+        # render final scene to temp textures.
+        RenderOption.RENDER_ONLY_ATMOSPHERE = False
+        temp_texture_probe = light_probe.generate_texture_probe(name='light_probe_temp')
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        temp_texture_probe.generate_mipmap()
+
+        # replace texture
+        light_probe.replace_texture_probe(temp_texture_probe)
+
+        # restore
+        RenderOption.RENDER_LIGHT_PROBE = False
+        RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
+        RenderOption.RENDER_FONT = old_render_font
+        self.postprocess.is_render_motion_blur = old_render_motion_blur
+        self.postprocess.anti_aliasing = old_antialiasing
+
+        camera.update_projection(old_fov, old_aspect)
+
+        camera.transform.setPos(old_pos)
+        camera.transform.setRot(old_rot)
+        camera.update(force_update=True)
 
     def render_pre_pass(self):
         self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)

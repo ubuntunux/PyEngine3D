@@ -17,13 +17,33 @@ layout (location = 4) in vec2 vs_in_tex_coord;
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
-void main() {
+
+void main()
+{
+    float h = height - CAMERA_POSITION.y;
+    /*vec3 world_pos;
+    world_pos.xz = vs_in_position.yx * 100.0;
+    world_pos.y = h;
+    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);*/
+
+
+    vec4 world_pos = INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_in_position.xy, -1.0, 1.0);
+    world_pos.xyz /= world_pos.w;
+
+    vec3 dir = normalize(world_pos.xyz);
+
+    float dist = (dir.y < 0.0) ? min(NEAR_FAR.y, h / dir.y) : NEAR_FAR.y;
+    world_pos.xz = dir.xz * dist;
+    world_pos.y = h;
+
+    vs_output.tex_coord = vs_in_tex_coord;
+    vs_output.position = world_pos.xyz;
+
+    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);
+    proj_pos.x = vs_in_position.x * proj_pos.w;
+
     vs_output.tex_coord = vs_in_tex_coord;
     vs_output.position = vs_in_position;
-    vs_output.position.y += height;
-    vs_output.position.z -= 1.0;
-
-    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(vs_output.position, 1.0);
 
     gl_Position = proj_pos;
 }
