@@ -22,7 +22,8 @@ layout (location = 2) out vec4 fs_normal;
 layout (location = 3) out vec2 fs_velocity;
 #endif
 
-void main() {
+void main()
+{
     vec2 screen_tex_coord = vs_output.projection_pos.xy / vs_output.projection_pos.w * 0.5 + 0.5;
     float depth = texture(texture_depth, screen_tex_coord).x;
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
@@ -44,51 +45,40 @@ void main() {
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
     vec3 L = normalize(LIGHT_DIRECTION.xyz);
 
+    // Render GBuffer
     if(is_render_gbuffer)
     {
         fs_diffuse.xyz = base_color.xyz + emissive_color.xyz * clamp(emissive_color.w, 0.0, 1.0);
-        // encoding
+        // emissive
         fs_diffuse.w = (get_linear_luminance(emissive_color.xyz) * emissive_color.w) * 0.1;
-
         fs_material = vec4(get_roughness(), metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);
-
 #if 1 == SKELETAL
         fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) - (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
         // NDC coord -> Screen Coord
         fs_velocity *= 0.5;
-
-        // jitter offset
         fs_velocity.xy -= JITTER_DELTA;
 #endif
     }
-    else
+    else // Render Forward
     {
-        vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, vs_output.world_position, texture_shadow));
-        vec3 sky_irradiance = vec3(0.0);
-
-        fs_diffuse = surface_shading(base_color,
+        fs_diffuse = surface_shading(
+                        base_color,
+                        emissive_color.xyz * emissive_color.w,
                         metalicness,
                         get_roughness(),
                         reflectance,
                         texture_probe,
                         texture_scene_reflect,
+                        texture_ssao,
+                        texture_shadow,
                         screen_tex_coord,
+                        vs_output.world_position,
                         LIGHT_COLOR.xyz,
                         N,
                         V,
                         L,
-                        shadow_factor,
-                        sky_irradiance);
-
-        // SSAO
-        if(RENDER_SSAO == 1.0f)
-        {
-            fs_diffuse.xyz *= texture(texture_ssao, screen_tex_coord).x;
-        }
-
-        // Emissive
-        fs_diffuse.xyz += emissive_color.xyz * emissive_color.w;
+                        depth);
     }
 }
 #endif

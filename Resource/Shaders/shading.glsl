@@ -1,5 +1,6 @@
 #include "PCFKernels.glsl"
 #include "utility.glsl"
+#include "precomputed_atmosphere/atmosphere_predefine.glsl"
 
 
 float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
@@ -133,18 +134,42 @@ vec2 env_BRDF_pproximate(float NoV, float roughness) {
     - http://www.curious-creature.com/pbr_sandbox/shaders/pbr.fs
     - https://gist.github.com/galek/53557375251e1a942dfa */
 vec4 surface_shading(vec4 base_color,
+                    vec3 emissive_color,
                     float metallic,
                     float roughness,
                     float reflectance,
                     samplerCube texture_probe,
                     sampler2D texture_scene_reflect,
+                    sampler2D texture_ssao,
+                    sampler2D texture_shadow,
                     vec2 screen_tex_coord,
+                    vec3 world_position,
                     vec3 light_color,
                     vec3 N,
                     vec3 V,
                     vec3 L,
-                    vec3 shadow_factor,
-                    vec3 sky_irradiance) {
+                    float depth)
+{
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
+
+    // Atmosphere
+    vec3 scene_radiance = vec3(0.0);
+    vec3 scene_in_scatter = vec3(0.0);
+    vec3 scene_sun_irradiance;
+    vec3 scene_sky_irradiance;
+    float scene_shadow_length;
+    {
+        float scene_linear_depth = depth_to_linear_depth(depth);
+
+        GetSceneRadiance(
+            ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
+            scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
+        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
+        scene_sky_irradiance *= exposure;
+        scene_in_scatter *= exposure;
+    }
+
+    light_color = light_color * scene_radiance;
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
@@ -196,11 +221,23 @@ vec4 surface_shading(vec4 base_color,
         ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
     }
 
-    diffuse_light += base_color.xyz * ibl_diffuse_color * max(shadow_factor, sky_irradiance);
+    diffuse_light += base_color.xyz * ibl_diffuse_color * max(shadow_factor, scene_sky_irradiance);
     vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * max(shadow_factor, sky_irradiance);
+    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * max(shadow_factor, scene_sky_irradiance);
 
     // final result
     vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting;
+
+    result += scene_in_scatter;
+
+    // SSAO
+    if(RENDER_SSAO == 1.0f)
+    {
+        result *= texture(texture_ssao, screen_tex_coord).x;
+    }
+
+    // Emissive
+    result += emissive_color;
+
     return vec4(max(vec3(0.0), result), opacity);
 }

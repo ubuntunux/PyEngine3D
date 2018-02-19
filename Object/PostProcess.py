@@ -452,7 +452,7 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION)
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
 
-        self.deferred_shading.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
+        # Bind Atmosphere
         self.deferred_shading.bind_uniform_data("transmittance_texture", atmosphere.transmittance_texture)
         self.deferred_shading.bind_uniform_data("scattering_texture", atmosphere.scattering_texture)
         self.deferred_shading.bind_uniform_data("irradiance_texture", atmosphere.irradiance_texture)
