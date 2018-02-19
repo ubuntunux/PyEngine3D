@@ -362,6 +362,7 @@ class Renderer(Singleton):
                     RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
 
             if self.scene_manager.ocean.is_render_ocean:
+                glEnable(GL_DEPTH_TEST)
                 glDisable(GL_CULL_FACE)
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 self.scene_manager.ocean.render_ocean()

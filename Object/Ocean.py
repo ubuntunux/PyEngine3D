@@ -13,7 +13,7 @@ class Ocean:
         resource_manager = CoreManager.instance().resource_manager
         self.is_render_ocean = True
         self.height = 0.0
-        self.mesh = Plane(width=10, height=10)
+        self.mesh = Plane(width=100, height=100)
         self.geometry = self.mesh.get_geometry()
         self.material_instance = resource_manager.getMaterialInstance('ocean')
 

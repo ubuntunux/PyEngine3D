@@ -23,7 +23,7 @@ void main()
 {
     float h = height - CAMERA_POSITION.y;
 
-    vec3 world_pos;
+    /*vec3 world_pos;
 
     float radius = max(abs(vs_in_position.x), abs(vs_in_position.y));
 
@@ -37,9 +37,9 @@ void main()
     }
 
     world_pos.y = h;
-    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);
+    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);*/
 
-    /*vec4 world_pos = INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_in_position.xy, -1.0, 1.0);
+    vec4 world_pos = INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_in_position.xy, -1.0, 1.0);
     world_pos.xyz /= world_pos.w;
 
     vec3 dir = normalize(world_pos.xyz);
@@ -62,7 +62,7 @@ void main()
     vs_output.position = world_pos.xyz;
 
     vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);
-    proj_pos.x = vs_in_position.x * proj_pos.w;*/
+    proj_pos.x = vs_in_position.x * proj_pos.w;
 
     vs_output.tex_coord = vs_in_tex_coord;
     vs_output.position = vs_in_position;
