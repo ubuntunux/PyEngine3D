@@ -22,6 +22,7 @@ class Ocean:
 
     def render_ocean(self):
         self.material_instance.use_program()
+        self.material_instance.bind_material_instance()
         self.material_instance.bind_uniform_data('height', self.height)
         self.geometry.bind_vertex_buffer()
         self.geometry.draw_elements()

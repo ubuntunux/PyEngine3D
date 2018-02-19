@@ -1,13 +1,18 @@
 #include "scene_constants.glsl"
 #include "utility.glsl"
 
+#ifdef MATERIAL_COMPONENTS
+    uniform sampler2D texture_noise;
+#endif
+
+uniform float height;
+
+
 struct VERTEX_OUTPUT
 {
     vec2 tex_coord;
     vec3 position;
 };
-
-uniform float height;
 
 #ifdef GL_VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -23,10 +28,10 @@ void main()
 {
     float h = height - CAMERA_POSITION.y;
 
-    vec4 world_pos = INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_in_position.xy, -1.0, 1.0);
-    world_pos.xyz /= world_pos.w;
+    vec4 relarive_pos = INV_VIEW_ORIGIN * INV_PROJECTION * vec4(vs_in_position.xy + JITTER_OFFSET, -1.0, 1.0);
+    relarive_pos.xyz /= relarive_pos.w;
 
-    vec3 dir = normalize(world_pos.xyz);
+    vec3 dir = normalize(relarive_pos.xyz);
 
     float dist;
 
@@ -39,17 +44,20 @@ void main()
         dist = (dir.y < 0.0) ? (h / dir.y) : NEAR_FAR.y;
     }
 
-    world_pos.xz = dir.xz * dist;
-    world_pos.y = h;
+    relarive_pos.xz = dir.xz * dist;
+    relarive_pos.y = h;
 
-    vs_output.tex_coord = vs_in_tex_coord;
+    vec3 world_pos = relarive_pos.xyz + CAMERA_POSITION.xyz;
+    vec2 uv = world_pos.xz * 0.01;
+    float noise = texture(texture_noise, uv).x;
+
+    world_pos.y += sin(TIME + noise * 10.0) * 2.0;
+
     vs_output.position = world_pos.xyz;
+    vs_output.tex_coord = vs_output.position.xz * 0.01;
 
-    vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(world_pos.xyz, 1.0);
+    vec4 proj_pos = VIEW_PROJECTION * vec4(world_pos.xyz, 1.0);
     proj_pos.x = vs_in_position.x * proj_pos.w;
-
-    vs_output.tex_coord = vs_in_tex_coord;
-    vs_output.position = vs_in_position;
 
     gl_Position = proj_pos;
 }

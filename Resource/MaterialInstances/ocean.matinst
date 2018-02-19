@@ -1,0 +1,4 @@
+{'macros': {},
+ 'material_name': 'ocean',
+ 'shader_name': 'ocean',
+ 'uniform_datas': {'height': 0.0, 'texture_noise': 'noise.gradientnoise'}}
