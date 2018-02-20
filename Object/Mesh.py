@@ -45,13 +45,6 @@ class Mesh:
             skeleton = Skeleton(index=i, **skeleton_data)
             self.skeletons.append(skeleton)
 
-        if self.has_bone():
-            # skeletal actor
-            self.instance_location_model = 7
-        else:
-            # static actor
-            self.instance_location_model = 5
-
         self.animations = []
         for i, animation_data in enumerate(mesh_data.get('animation_datas', [])):
             if animation_data:
@@ -66,11 +59,6 @@ class Mesh:
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer:
-                # create model matrix instance buffer.
-                # vertex_buffer.create_instance_buffer(instance_name="model",
-                #                                      layout_location=self.instance_location_model,
-                #                                      element_data=MATRIX4_IDENTITY)
-
                 # find skeleton of geometry
                 skeleton = None
                 for skeleton in self.skeletons:
@@ -190,7 +178,7 @@ class Cube(Mesh):
 
 
 # ------------------------------#
-# CLASS : Plane
+# CLASS : XZ Plane
 # ------------------------------#
 class Plane(Mesh):
     def __init__(self, width=4, height=4):
@@ -208,9 +196,9 @@ class Plane(Mesh):
             y = y * height_step
             for x in range(width_points):
                 x = x * width_step
-                positions.append((x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0))
+                positions.append((x - 0.5, 0.0, 0.5 - y))
                 colors.append((1, 1, 1, 1))
-                normals.append((0, 0, 1))
+                normals.append((0, 1, 0))
                 texcoords.append((x, 1.0 - y))
 
         for y in range(height):

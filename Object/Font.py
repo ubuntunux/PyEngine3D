@@ -80,7 +80,7 @@ class FontManager(Singleton):
         render_size = len(self.render_queues)
         text_count = len(text)
         if text_count > render_size - self.render_index:
-            self.render_queues.extend([[0,0,0,0], ] * (text_count - (render_size - self.render_index)))
+            self.render_queues.extend([[0, 0, 0, 0], ] * (text_count - (render_size - self.render_index)))
 
         if self.render_index != 0:
             self.pos_y -= font_size

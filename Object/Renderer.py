@@ -375,6 +375,7 @@ class Renderer(Singleton):
             if RenderOption.RENDER_LIGHT_PROBE:
                 return end_render_scene()
 
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
