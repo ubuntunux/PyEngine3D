@@ -566,7 +566,8 @@ class CoreManager(Singleton):
         selected_object = self.scene_manager.getSelectedObject()
         if selected_object:
             self.font_manager.log("Selected Object : %s" % selected_object.name)
-            self.font_manager.log(selected_object.transform.getTransformInfos())
+            if hasattr(selected_object, 'transform'):
+                self.font_manager.log(selected_object.transform.getTransformInfos())
         self.gpuTime = (time.perf_counter() - startTime) * 1000.0
 
         if self.need_to_gc_collect:

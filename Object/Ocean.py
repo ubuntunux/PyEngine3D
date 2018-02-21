@@ -8,13 +8,13 @@ from Utilities import *
 
 
 class Ocean:
-    name = 'Ocean'
-
-    def __init__(self):
-        logger.info("Create %s : %s" % (GetClassName(self), self.name))
-        resource_manager = CoreManager.instance().resource_manager
+    def __init__(self, **object_data):
+        self.name = object_data.get('name', 'ocean')
+        self.height = object_data.get('height', 0.0)
         self.is_render_ocean = True
+        self.attributes = Attributes()
 
+        resource_manager = CoreManager.instance().resource_manager
         self.material_instance = resource_manager.getMaterialInstance('ocean')
 
         self.mesh = Plane(width=100, height=100)
@@ -22,11 +22,26 @@ class Ocean:
         self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
                                                            layout_location=5,
                                                            element_data=FLOAT2_ZERO)
-        self.grid_size = Float2(100.0, 100.0)
-        self.grid_count = 10
-        self.offsets = np.array(
-            [Float2(i % self.grid_count, i // self.grid_count) for i in range(self.grid_count * self.grid_count)],
-            dtype=np.float32)
+        # instanced grid
+        # self.grid_size = Float2(100.0, 100.0)
+        # self.grid_count = 1
+        # self.offsets = np.array(
+        #     [Float2(i % self.grid_count, i // self.grid_count) for i in range(self.grid_count * self.grid_count)],
+        #     dtype=np.float32)
+
+    def getAttribute(self):
+        self.attributes.setAttribute('height', self.height)
+        self.attributes.setAttribute('is_render_ocean', self.is_render_ocean)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
+
+    def get_save_data(self):
+        save_data = dict()
+        save_data['height'] = self.height
+        return save_data
 
     def update(self, delta):
         pass
@@ -34,9 +49,14 @@ class Ocean:
     def render_ocean(self):
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()
-        self.material_instance.bind_uniform_data('grid_size', self.grid_size)
-        self.geometry.bind_instance_buffer(instance_name="offset",
-                                           instance_data=self.offsets,
-                                           divisor=1)
+        self.material_instance.bind_uniform_data('height', self.height)
         self.geometry.bind_vertex_buffer()
-        self.geometry.draw_elements_instanced(len(self.offsets))
+        self.geometry.draw_elements()
+
+        # instanced grid
+        # self.material_instance.bind_uniform_data('grid_size', self.grid_size)
+        # self.geometry.bind_instance_buffer(instance_name="offset",
+        #                                    instance_data=self.offsets,
+        #                                    divisor=1)
+        # self.geometry.bind_vertex_buffer()
+        # self.geometry.draw_elements_instanced(len(self.offsets))

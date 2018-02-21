@@ -196,7 +196,7 @@ class Plane(Mesh):
             y = y * height_step
             for x in range(width_points):
                 x = x * width_step
-                positions.append((x - 0.5, 0.0, 0.5 - y))
+                positions.append((x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0))
                 colors.append((1, 1, 1, 1))
                 normals.append((0, 1, 0))
                 texcoords.append((x, 1.0 - y))

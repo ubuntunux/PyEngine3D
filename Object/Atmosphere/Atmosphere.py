@@ -23,9 +23,8 @@ class Luminance:
 
 
 class Atmosphere:
-    name = 'Atmosphere'
-
-    def __init__(self):
+    def __init__(self, **object_data):
+        self.name = object_data.get('name', 'atmosphere')
         self.attributes = Attributes()
         self.is_render_atmosphere = True
         self.use_constant_solar_spectrum = False
@@ -76,6 +75,10 @@ class Atmosphere:
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
+
+    def get_save_data(self):
+        save_data = {}
+        return save_data
 
     def initialize(self):
         resource_manager = CoreManager.instance().resource_manager

@@ -85,8 +85,7 @@ class SceneManager(Singleton):
 
     def post_open_scene(self):
         self.renderer.resizeScene(clear_rendertarget=True)
-        self.core_manager.sendObjectInfo(self.renderer.postprocess)
-        self.core_manager.sendObjectInfo(self.atmosphere)
+        self.regist_object(self.renderer.postprocess)
 
     def new_scene(self):
         self.clear_scene()
@@ -95,8 +94,8 @@ class SceneManager(Singleton):
         self.main_camera = self.addCamera()
         self.main_light = self.addLight()
         self.main_light_probe = self.addLightProbe()
-        self.atmosphere = Atmosphere()
-        self.ocean = Ocean()
+        self.atmosphere = self.addAtmosphere()
+        self.ocean = self.addOcean()
 
         self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
 
@@ -131,8 +130,11 @@ class SceneManager(Singleton):
             self.addLightProbe()
         self.main_light_probe = self.get_light_probe(0)
 
-        self.atmosphere = Atmosphere()
-        self.ocean = Ocean()
+        atmosphere_data = scene_data.get('atmosphere', {})
+        self.atmosphere = self.addAtmosphere(**atmosphere_data)
+
+        ocean_data = scene_data.get('ocean', {})
+        self.ocean = self.addOcean(**ocean_data)
 
         for object_data in scene_data.get('static_actors', []):
             self.addObject(**object_data)
@@ -152,6 +154,8 @@ class SceneManager(Singleton):
             cameras=[camera.get_save_data() for camera in self.cameras],
             lights=[light.get_save_data() for light in self.lights],
             light_probes=[light_probe.get_save_data() for light_probe in self.light_probes],
+            atmosphere=self.atmosphere.get_save_data(),
+            ocean=self.ocean.get_save_data(),
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
         )
@@ -184,7 +188,8 @@ class SceneManager(Singleton):
         if object and object.name not in self.objectMap:
             object_type = type(object)
             object_list = self.get_object_list(object_type)
-            object_list.append(object)
+            if object_list is not None:
+                object_list.append(object)
             self.objectMap[object.name] = object
             self.update_render_info(object_type)
             self.core_manager.sendObjectInfo(object)
@@ -195,7 +200,8 @@ class SceneManager(Singleton):
         if object and object.name in self.objectMap:
             object_type = type(object)
             object_list = self.get_object_list(object_type)
-            object_list.remove(object)
+            if object_list is not None:
+                object_list.remove(object)
             self.objectMap.pop(object.name)
             self.update_render_info(object_type)
             self.core_manager.notifyDeleteObject(object.name)
@@ -229,6 +235,20 @@ class SceneManager(Singleton):
         light_probe = LightProbe(**light_probe_data)
         self.regist_object(light_probe)
         return light_probe
+
+    def addAtmosphere(self, **atmosphere_data):
+        atmosphere_data['name'] = self.generateObjectName(atmosphere_data.get('name', 'atmosphere'))
+        logger.info("add Atmosphere : %s" % atmosphere_data['name'])
+        atmosphere = Atmosphere(**atmosphere_data)
+        self.regist_object(atmosphere)
+        return atmosphere
+
+    def addOcean(self, **object_data):
+        object_data['name'] = self.generateObjectName(object_data.get('name', 'ocean'))
+        logger.info("add Ocean : %s" % object_data['name'])
+        ocean = Ocean(**object_data)
+        self.regist_object(ocean)
+        return ocean
 
     def addObject(self, **object_data):
         model = object_data.get('model')
@@ -291,21 +311,11 @@ class SceneManager(Singleton):
         return self.skeleton_actors[index] if index < len(self.skeleton_actors) else None
 
     def getObjectAttribute(self, objectName, objectTypeName):
-        if objectTypeName == self.renderer.postprocess.name:
-            obj = self.renderer.postprocess
-        elif objectTypeName == self.atmosphere.name:
-            obj = self.atmosphere
-        else:
-            obj = self.getObject(objectName)
+        obj = self.getObject(objectName)
         return obj.getAttribute() if obj else None
 
     def setObjectAttribute(self, objectName, objectTypeName, attributeName, attributeValue, attribute_index):
-        if objectTypeName == self.renderer.postprocess.name:
-            obj = self.renderer.postprocess
-        elif objectTypeName == self.atmosphere.name:
-            obj = self.atmosphere
-        else:
-            obj = self.getObject(objectName)
+        obj = self.getObject(objectName)
         obj and obj.setAttribute(attributeName, attributeValue, attribute_index)
 
     def getSelectedObject(self):
@@ -314,10 +324,10 @@ class SceneManager(Singleton):
     def setSelectedObject(self, objectName):
         selected_object = self.getObject(objectName)
         if self.selected_object is not selected_object:
-            if self.selected_object:
+            if self.selected_object and hasattr(self.selected_object, "setSelected"):
                 self.selected_object.setSelected(False)
             self.selected_object = selected_object
-            if selected_object:
+            if selected_object and hasattr(selected_object, "setSelected"):
                 selected_object.setSelected(True)
 
     def setObjectFocus(self, objectName):
@@ -373,3 +383,4 @@ class SceneManager(Singleton):
             skeleton_actor.update(dt)
 
         self.atmosphere.update(self.main_light)
+        self.ocean.update(dt)
