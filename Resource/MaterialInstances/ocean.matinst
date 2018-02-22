@@ -1,4 +1,7 @@
 {'macros': {},
  'material_name': 'ocean',
  'shader_name': 'ocean',
- 'uniform_datas': {'height': 0.0, 'texture_noise': 'noise.gradientnoise'}}
+ 'uniform_datas': {'height': 0.0,
+                   'texture_foam': 'water-foam-sea',
+                   'texture_noise': 'noise.gradientnoise',
+                   'uv_tiling': array([ 2.,  2.], dtype=float32)}}
