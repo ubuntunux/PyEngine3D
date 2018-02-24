@@ -14,6 +14,7 @@ struct VERTEX_OUTPUT
 {
     vec2 tex_coord;
     vec3 wave_offset;
+    vec3 wave_normal;
 };
 
 #ifdef GL_VERTEX_SHADER
@@ -26,7 +27,7 @@ layout (location = 5) in vec2 offset;   // instance buffer
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
-vec3 GerstnerWave(vec3 world_pos, vec3 dir, float frequency, float speed, float intensity, float noise)
+void GerstnerWave(vec3 world_pos, vec3 dir, float frequency, float speed, float intensity, float noise, inout vec3 wave_offset, inout vec3 wave_normal)
 {
     speed *= TIME * frequency;
     dir = normalize(dir);
@@ -37,7 +38,10 @@ vec3 GerstnerWave(vec3 world_pos, vec3 dir, float frequency, float speed, float 
     float d = dot(dir, world_pos) * frequency + noise_offset;
     float s = sin(d + speed) * intensity;
     float c = cos(d + speed) * intensity;
-    return vec3(0.0, c, 0.0) - dir * s * 2.0;
+
+    wave_offset += vec3(0.0, c, 0.0) - dir * s;
+    vec3 center = vec3(0.0, intensity, 0.0);
+    wave_normal += normalize(center - wave_offset) * intensity;
 }
 
 
@@ -65,25 +69,42 @@ void main()
     world_pos.xyz += CAMERA_POSITION.xyz;
 
     vec2 uv = world_pos.xz * 0.01;
-    float noise = texture(texture_noise, uv * 0.5).x * 0.0;
+    float noise = texture(texture_noise, uv * 0.5).x * 0.2;
 
-    vec3 wave_offset = GerstnerWave(world_pos.xyz, vec3(1.0, 0.0, 1.0), 0.05, 15.0, 8.0, noise);
-    wave_offset += GerstnerWave(world_pos.xyz, vec3(-0.2, 0.0, 1.0), 0.07, 10.5, 7.0, noise);
-    wave_offset += GerstnerWave(world_pos.xyz, vec3(0.5, 0.0, 1.0), 0.09, 18.71, 5.0, noise);
-    wave_offset += GerstnerWave(world_pos.xyz, vec3(0.7, 0.0, -0.2), 0.06, 12.31, 5.0, noise);
+    float frequency = 0.7;
+    float speed = 1.0;
+    float intensity = 0.5;
 
-    //wave_offset += GerstnerWave(world_pos.xyz, vec3(0.1, 0.0, 0.19), 0.432, 5.31, 1.0, noise);
-    //wave_offset += GerstnerWave(world_pos.xyz, vec3(-0.31, 0.0, -2.35), 0.65, 2.31, 0.3, noise);
+    vec3 wave_normal = vec3(0.0, 0.0, 0.0);
+    vec3 wave_offset = vec3(0.0, 0.0, 0.0);
+    GerstnerWave(world_pos.xyz, vec3(1.0, 0.0, 1.0), 0.05 * frequency, 25.0 * speed, 15.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(-0.2, 0.0, 1.0), 0.04 * frequency, 20.5 * speed, 12.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(0.5, 0.0, 1.0), 0.09 * frequency, 18.71 * speed, 10.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(0.7, 0.0, -0.2), 0.06 * frequency, 12.31 * speed, 8.0 * intensity, noise, wave_offset, wave_normal);
+
+    GerstnerWave(world_pos.xyz, vec3(0.1, 0.0, 0.19), 0.432 * frequency, 9.31 * speed, 1.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(-0.31, 0.0, -2.35), 0.65 * frequency, 8.31 * speed, 0.8 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(0.15, 0.0, -0.29), 0.532 * frequency, 5.31 * speed, 0.7 * intensity, noise, wave_offset, wave_normal);
+
+    GerstnerWave(world_pos.xyz, vec3(-0.15, 0.0, -0.79), 0.132 * frequency, 12.31 * speed, 1.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(-0.71, 0.0, 1.35), 0.25 * frequency, 15.31 * speed, 0.8 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(0.35, 0.0, 0.09), 0.332 * frequency, 17.31 * speed, 0.9 * intensity, noise, wave_offset, wave_normal);
 
     world_pos.xyz += wave_offset;
+
+    //float dist_fade = clamp(1.0 - dist / NEAR_FAR.y, 0.0, 1.0);
+    //wave_offset *= dist_fade;
+    //wave_normal = mix(vec3(0.0, 1.0, 0.0), wave_normal, dist_fade);
 
     vec4 proj_pos = VIEW_PROJECTION * vec4(world_pos.xyz, 1.0);
     if(dist < NEAR_FAR.y)
     {
-        proj_pos.xy = mix(proj_pos.xy, vs_in_position.xz * proj_pos.w, clamp(abs(vs_in_position.xz) * 10.0 - 9.0, 0.0, 1.0));
+        vec2 fade = clamp(abs(vs_in_position.xz) * 7.0 - 6.0, 0.0, 1.0);
+        proj_pos.xy = mix(proj_pos.xy, vs_in_position.xz * proj_pos.w, fade);
     }
 
     vs_output.wave_offset = wave_offset;
+    vs_output.wave_normal = normalize(wave_normal);
     vs_output.tex_coord = uv;
     gl_Position = proj_pos;
 }
