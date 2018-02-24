@@ -182,29 +182,33 @@ class Cube(Mesh):
 # ------------------------------#
 class Plane(Mesh):
     def __init__(self, width=4, height=4):
-        positions = []
-        colors = []
-        normals = []
-        texcoords = []
-        indices = []
-
         width_points = width + 1
         height_points = height + 1
         width_step = 1.0 / width
         height_step = 1.0 / height
+        array_count = width_points * height_points
+        positions = np.zeros(array_count * 3).reshape(array_count, 3)
+        colors = np.zeros(array_count * 4).reshape(array_count, 4)
+        normals = np.zeros(array_count * 3).reshape(array_count, 3)
+        texcoords = np.zeros(array_count * 2).reshape(array_count, 2)
+        array_index = 0
         for y in range(height_points):
             y = y * height_step
             for x in range(width_points):
                 x = x * width_step
-                positions.append((x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0))
-                colors.append((1, 1, 1, 1))
-                normals.append((0, 1, 0))
-                texcoords.append((x, 1.0 - y))
+                positions[array_index][:] = [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0]
+                colors[array_index][:] = [1, 1, 1, 1]
+                normals[array_index][:] = [0, 1, 0]
+                texcoords[array_index][:] = [x, 1.0 - y]
+                array_index += 1
 
+        array_index = 0
+        indices = np.zeros(width * height * 6)
         for y in range(height):
             for x in range(width):
                 i = y * width_points + x
-                indices.extend([i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1])
+                indices[array_index: array_index + 6] = [i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1]
+                array_index += 6
 
         geometry_data = dict(
             positions=positions,
