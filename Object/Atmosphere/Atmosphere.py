@@ -187,58 +187,32 @@ class Atmosphere:
 
         self.sun_direction[...] = main_light.transform.front
 
+    def bind_precomputed_atmosphere(self, material_instance, render_object=True):
+        material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
+        material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
+        if render_object:
+            # sun irradiance
+            material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
+
+        if self.optional_single_mie_scattering_texture is not None:
+            material_instance.bind_uniform_data("single_mie_scattering_texture",
+                                                self.optional_single_mie_scattering_texture)
+
+        material_instance.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", self.kSky)
+        material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
+
+        material_instance.bind_uniform_data("exposure", self.exposure)
+        material_instance.bind_uniform_data("earth_center", self.earth_center)
+
     def render_precomputed_atmosphere(self, texture_linear_depth, texture_shadow, render_sun):
         if not self.is_render_atmosphere:
             return
 
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
-
-        self.atmosphere_material_instance.bind_uniform_data('texture_shadow', texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
-
-        self.atmosphere_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
-        self.atmosphere_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
-        # self.atmosphere_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
-
-        if self.optional_single_mie_scattering_texture is not None:
-            self.atmosphere_material_instance.bind_uniform_data("single_mie_scattering_texture",
-                                                                self.optional_single_mie_scattering_texture)
-
-        self.atmosphere_material_instance.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", self.kSky)
-        self.atmosphere_material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
-
-        self.atmosphere_material_instance.bind_uniform_data("exposure", self.exposure)
-        self.atmosphere_material_instance.bind_uniform_data("earth_center", self.earth_center)
+        self.atmosphere_material_instance.bind_uniform_data("texture_shadow", texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
         self.atmosphere_material_instance.bind_uniform_data("render_sun", render_sun)
-
-        self.quad.draw_elements()
-
-    def render_precomputed_atmosphere_demo(self, texture_linear_depth, texture_normal, texture_shadow):
-        if not self.is_render_atmosphere:
-            return
-
-        self.quad.bind_vertex_buffer()
-        self.atmosphere_demo_material_instance.use_program()
-
-        self.atmosphere_demo_material_instance.bind_uniform_data('texture_shadow', texture_shadow)
-        self.atmosphere_demo_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
-        self.atmosphere_demo_material_instance.bind_uniform_data("texture_normal", texture_normal)
-
-        self.atmosphere_demo_material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
-        self.atmosphere_demo_material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
-        self.atmosphere_demo_material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
-
-        if self.optional_single_mie_scattering_texture is not None:
-            self.atmosphere_demo_material_instance.bind_uniform_data("single_mie_scattering_texture",
-                                                                     self.optional_single_mie_scattering_texture)
-
-        self.atmosphere_demo_material_instance.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", self.kSky)
-        self.atmosphere_demo_material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", self.kSun)
-
-        self.atmosphere_demo_material_instance.bind_uniform_data("exposure", self.exposure)
-        self.atmosphere_demo_material_instance.bind_uniform_data("earth_center", self.earth_center)
-        self.atmosphere_demo_material_instance.bind_uniform_data("sun_size", self.sun_size)
-
+        self.bind_precomputed_atmosphere(self.atmosphere_material_instance, render_object=False)
         self.quad.draw_elements()

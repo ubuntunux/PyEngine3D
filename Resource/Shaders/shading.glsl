@@ -17,18 +17,33 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     float rad_step = TWO_PI / float(loop_count);
     float rad = 0.0;
 
-    float depth = textureLod(texture_shadow, shadow_uv.xy + vec2(texel_radius), 0.0).x;
     //float slope = min(1.0, abs(depth + (dFdx(depth) + dFdy(depth)) / 3.0) * 0.01);
     //float slope_bias = mix(shadow_bias, -0.001, slope);
 
-    shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
+    vec2 uv = vec2(0.0);
+    float depth = 0.0;
+
+    if(0.0 <= uv.x && uv.x <= 1.0 && 0.0 <= uv.y && uv.y <= 1.0)
+    {
+        uv = shadow_uv.xy + vec2(texel_radius);
+        depth = textureLod(texture_shadow, uv, 0.0).x;
+        shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
+    }
 
     for(int i=0; i<loop_count; ++i)
     {
         rad += rad_step;
-        vec2 uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius * 2.0  + vec2(texel_radius);
-        depth = textureLod(texture_shadow, uv, 0.0).x;
-        shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
+        uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius * 2.0  + vec2(texel_radius);
+
+        if(0.0 <= uv.x && uv.x <= 1.0 && 0.0 <= uv.y && uv.y <= 1.0)
+        {
+            depth = textureLod(texture_shadow, uv, 0.0).x;
+            shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
+        }
+        else
+        {
+            shadow_factor += 1.0;
+        }
     }
     shadow_factor /= float(loop_count + 1);
     return shadow_factor;
@@ -138,9 +153,9 @@ vec4 surface_shading(vec4 base_color,
                     float metallic,
                     float roughness,
                     float reflectance,
+                    float ssao_factor,
+                    vec4 scene_reflect_color,
                     samplerCube texture_probe,
-                    sampler2D texture_scene_reflect,
-                    sampler2D texture_ssao,
                     sampler2D texture_shadow,
                     vec2 screen_tex_coord,
                     vec3 world_position,
@@ -217,7 +232,6 @@ vec4 surface_shading(vec4 base_color,
     // mix scene reflection
     if(RENDER_SSR == 1.0f)
     {
-        vec4 scene_reflect_color = texture(texture_scene_reflect, screen_tex_coord);
         ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
     }
 
@@ -226,14 +240,12 @@ vec4 surface_shading(vec4 base_color,
     specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * max(shadow_factor, scene_sky_irradiance);
 
     // final result
-    vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting;
-
-    result += scene_in_scatter;
+    vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting + scene_in_scatter;
 
     // SSAO
     if(RENDER_SSAO == 1.0f)
     {
-        result *= texture(texture_ssao, screen_tex_coord).x;
+        result *= ssao_factor;
     }
 
     // Emissive

@@ -361,14 +361,20 @@ class Renderer(Singleton):
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(
                     RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
 
+            # blend state
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
             if self.scene_manager.ocean.is_render_ocean:
                 glEnable(GL_DEPTH_TEST)
                 glDisable(GL_CULL_FACE)
-                self.scene_manager.ocean.render_ocean()
+                self.scene_manager.ocean.render_ocean(atmoshpere=self.scene_manager.atmosphere,
+                                                      texture_depth=RenderTargets.DEPTHSTENCIL,
+                                                      texture_probe=self.scene_manager.main_light_probe.texture_probe,
+                                                      texture_shadow=RenderTargets.SHADOWMAP,
+                                                      texture_scene_reflect=RenderTargets.SCREEN_SPACE_REFLECTION)
                 glEnable(GL_CULL_FACE)
 
             # render translucent
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glEnable(GL_DEPTH_TEST)
             self.render_translucent()
 
@@ -648,7 +654,6 @@ class Renderer(Singleton):
             scene_material_instance.material.use_program()
 
         texture_probe = self.scene_manager.main_light_probe.texture_probe
-        atmosphere = self.scene_manager.atmosphere
 
         last_actor = None
         last_geometry = None
@@ -678,17 +683,8 @@ class Renderer(Singleton):
                         material_instance.bind_uniform_data('texture_scene_reflect',
                                                             RenderTargets.SCREEN_SPACE_REFLECTION)
                         # Bind Atmosphere
-                        material_instance.bind_uniform_data("transmittance_texture",
-                                                            atmosphere.transmittance_texture)
-                        material_instance.bind_uniform_data("scattering_texture", atmosphere.scattering_texture)
-                        material_instance.bind_uniform_data("irradiance_texture", atmosphere.irradiance_texture)
-                        if atmosphere.optional_single_mie_scattering_texture is not None:
-                            material_instance.bind_uniform_data("single_mie_scattering_texture",
-                                                                atmosphere.optional_single_mie_scattering_texture)
-                        material_instance.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", atmosphere.kSky)
-                        material_instance.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", atmosphere.kSun)
-                        material_instance.bind_uniform_data("exposure", atmosphere.exposure)
-                        material_instance.bind_uniform_data("earth_center", atmosphere.earth_center)
+                        self.scene_manager.atmosphere.bind_precomputed_atmosphere(material_instance)
+
             elif RenderMode.PRE_PASS == render_mode or RenderMode.SHADOW == render_mode:
                 if last_material_instance != material_instance and material_instance:
                     data_diffuse = material_instance.get_uniform_data('texture_diffuse')

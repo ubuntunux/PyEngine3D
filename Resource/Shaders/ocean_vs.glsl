@@ -15,6 +15,8 @@ struct VERTEX_OUTPUT
     vec2 tex_coord;
     vec3 wave_offset;
     vec3 wave_normal;
+    vec3 world_pos;
+    vec4 proj_pos;
 };
 
 #ifdef GL_VERTEX_SHADER
@@ -41,7 +43,7 @@ void GerstnerWave(vec3 world_pos, vec3 dir, float frequency, float speed, float 
 
     wave_offset += vec3(0.0, c, 0.0) - dir * s;
     vec3 center = vec3(0.0, intensity, 0.0);
-    wave_normal += normalize(center - wave_offset) * intensity;
+    wave_normal += normalize(center - wave_offset) * vec3(intensity, 1.0, intensity);
 }
 
 
@@ -77,7 +79,7 @@ void main()
 
     vec3 wave_normal = vec3(0.0, 0.0, 0.0);
     vec3 wave_offset = vec3(0.0, 0.0, 0.0);
-    GerstnerWave(world_pos.xyz, vec3(1.0, 0.0, 1.0), 0.05 * frequency, 25.0 * speed, 15.0 * intensity, noise, wave_offset, wave_normal);
+    GerstnerWave(world_pos.xyz, vec3(1.0, 0.0, 1.0), 0.05 * frequency, 25.0 * speed, 10.0 * intensity, noise, wave_offset, wave_normal);
     GerstnerWave(world_pos.xyz, vec3(-0.2, 0.0, 1.0), 0.04 * frequency, 20.5 * speed, 12.0 * intensity, noise, wave_offset, wave_normal);
     GerstnerWave(world_pos.xyz, vec3(0.5, 0.0, 1.0), 0.09 * frequency, 18.71 * speed, 10.0 * intensity, noise, wave_offset, wave_normal);
     GerstnerWave(world_pos.xyz, vec3(0.7, 0.0, -0.2), 0.06 * frequency, 12.31 * speed, 8.0 * intensity, noise, wave_offset, wave_normal);
@@ -103,9 +105,11 @@ void main()
         proj_pos.xy = mix(proj_pos.xy, vs_in_position.xz * proj_pos.w, fade);
     }
 
+    vs_output.world_pos = world_pos.xyz;
     vs_output.wave_offset = wave_offset;
     vs_output.wave_normal = normalize(wave_normal);
     vs_output.tex_coord = uv;
+    vs_output.proj_pos = proj_pos;
     gl_Position = proj_pos;
 }
 #endif // GL_VERTEX_SHADER

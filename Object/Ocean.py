@@ -46,10 +46,19 @@ class Ocean:
     def update(self, delta):
         pass
 
-    def render_ocean(self):
+    def render_ocean(self, atmoshpere, texture_depth, texture_probe, texture_shadow, texture_scene_reflect):
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()
         self.material_instance.bind_uniform_data('height', self.height)
+
+        self.material_instance.bind_uniform_data('texture_depth', texture_depth)
+        self.material_instance.bind_uniform_data('texture_probe', texture_probe)
+        self.material_instance.bind_uniform_data('texture_shadow', texture_shadow)
+        self.material_instance.bind_uniform_data('texture_scene_reflect', texture_scene_reflect)
+
+        # Bind Atmosphere
+        atmoshpere.bind_precomputed_atmosphere(self.material_instance)
+
         self.geometry.bind_vertex_buffer()
         self.geometry.draw_elements()
 

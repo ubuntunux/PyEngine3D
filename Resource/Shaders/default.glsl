@@ -60,17 +60,18 @@ void main()
         fs_velocity.xy -= JITTER_DELTA;
 #endif
     }
-    else // Render Forward
+    else
     {
+        // Render Forward
         fs_diffuse = surface_shading(
                         base_color,
                         emissive_color.xyz * emissive_color.w,
                         metalicness,
                         get_roughness(),
                         reflectance,
+                        texture(texture_ssao, screen_tex_coord).x,
+                        texture(texture_scene_reflect, screen_tex_coord),
                         texture_probe,
-                        texture_scene_reflect,
-                        texture_ssao,
                         texture_shadow,
                         screen_tex_coord,
                         vs_output.world_position,

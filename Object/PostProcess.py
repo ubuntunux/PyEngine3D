@@ -447,22 +447,14 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_material", RenderTargets.MATERIAL)
         self.deferred_shading.bind_uniform_data("texture_normal", RenderTargets.WORLD_NORMAL)
         self.deferred_shading.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
+
+        self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
         self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.SHADOWMAP)
         self.deferred_shading.bind_uniform_data("texture_ssao", RenderTargets.SSAO)
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION)
-        self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
 
         # Bind Atmosphere
-        self.deferred_shading.bind_uniform_data("transmittance_texture", atmosphere.transmittance_texture)
-        self.deferred_shading.bind_uniform_data("scattering_texture", atmosphere.scattering_texture)
-        self.deferred_shading.bind_uniform_data("irradiance_texture", atmosphere.irradiance_texture)
-        if atmosphere.optional_single_mie_scattering_texture is not None:
-            self.deferred_shading.bind_uniform_data("single_mie_scattering_texture",
-                                                    atmosphere.optional_single_mie_scattering_texture)
-        self.deferred_shading.bind_uniform_data("SKY_RADIANCE_TO_LUMINANCE", atmosphere.kSky)
-        self.deferred_shading.bind_uniform_data("SUN_RADIANCE_TO_LUMINANCE", atmosphere.kSun)
-        self.deferred_shading.bind_uniform_data("exposure", atmosphere.exposure)
-        self.deferred_shading.bind_uniform_data("earth_center", atmosphere.earth_center)
+        atmosphere.bind_precomputed_atmosphere(self.deferred_shading)
 
         self.quad_geometry.draw_elements()
 
