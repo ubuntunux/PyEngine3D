@@ -16,11 +16,12 @@ void main() {
     vec3 front = vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
     vec3 relative_pos = CAMERA_POSITION.xyz - vs_output.world_pos.xyz;
 
-    vec3 N = normalize(mix(vs_output.wave_normal, vec3(0.0, 1.0, 0.0), 0.5));
+    vec3 N = normalize(vs_output.wave_normal);
     vec3 V = normalize(relative_pos);
     vec3 L = LIGHT_DIRECTION.xyz;
     vec3 H = normalize(V + L);
     vec3 R = reflect(-V, N);
+    R.y = abs(R.y);
 
     float NdL = max(0.0, dot(N, L));
     float NdV = max(0.001, dot(N, V));
@@ -36,9 +37,10 @@ void main() {
     float scene_linear_depth = depth_to_linear_depth(texture(texture_depth, screen_tex_coord).x);
     vec4 scene_reflect_color = texture(texture_scene_reflect, screen_tex_coord);
     vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
-    vec3 ocean_color = vec3(0.5, 0.5, 1.0);
+    vec3 ocean_color = vec3(1.0, 1.0, 1.0);
     float peak = clamp(vs_output.wave_offset.y, 0.0, 1.0);
-    vec3 base_color = mix(foam, ocean_color, peak);
+    vec3 base_color = mix(ocean_color, foam, peak);
+    float depth_diff = clamp(abs(scene_linear_depth - ocean_linear_depth) * 0.5, 0.0, 1.0);
 
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, vs_output.world_pos, texture_shadow) );
 
@@ -60,10 +62,9 @@ void main() {
     vec3 light_color = LIGHT_COLOR.xyz * ocean_radiance;
 
     // Fresnel specular reflectance at normal incidence
-    const float ior = 1.38;
-    vec3 f0 = vec3(abs ((1.0 - ior) / (1.0 + ior)));
-    f0 = mix(max(vec3(0.04), f0), base_color.xyz, metallic);
-    vec3 specfresnel = fresnel_factor(f0, HdV);
+    const float ior = 1.333;
+    vec3 f0 = vec3(abs((1.0 - ior) / (1.0 + ior)));
+    vec3 specfresnel = fresnel_factor(f0, abs(HdV));
 
     // diffuse
     vec3 diffuse_light = vec3(NdL * 0.5 + 0.5);
@@ -91,7 +92,7 @@ void main() {
     // final result
     fs_output.xyz = diffuse_light * (1.0 - metallic) + specular_lighting + ocean_in_scatter;
     fs_output.xyz = mix(fs_output.xyz, ocean_in_scatter, ocean_linear_depth / NEAR_FAR.y);
-    fs_output.a = clamp((scene_linear_depth - ocean_linear_depth) * 0.5, 0.0, 1.0);
+    fs_output.a = depth_diff;
     /////////////////////////////////////
 }
 #endif // GL_FRAGMENT_SHADER

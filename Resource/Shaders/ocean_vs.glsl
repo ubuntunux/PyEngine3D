@@ -38,10 +38,10 @@ void GerstnerWave(vec3 world_pos, vec3 dir, float frequency, float speed, float 
     intensity = intensity * (noise * 0.5 + 0.5);
 
     float d = dot(dir, world_pos) * frequency + noise_offset;
-    float s = sin(d + speed) * intensity;
-    float c = cos(d + speed) * intensity;
+    float s = sin(d + speed);
+    float c = cos(d + speed);
 
-    wave_offset += vec3(0.0, c, 0.0) - dir * s;
+    wave_offset += (vec3(0.0, c, 0.0) - dir * s) * intensity;
     vec3 center = vec3(0.0, intensity, 0.0);
     wave_normal += normalize(center - wave_offset) * vec3(intensity, 1.0, intensity);
 }
@@ -68,6 +68,9 @@ void main()
 
     world_pos.xz = dir.xz * dist;
     world_pos.y = h;
+
+    float dist_fade = length(world_pos.xyz);
+
     world_pos.xyz += CAMERA_POSITION.xyz;
 
     vec2 uv = world_pos.xz * 0.01;
@@ -91,6 +94,10 @@ void main()
     GerstnerWave(world_pos.xyz, vec3(-0.15, 0.0, -0.79), 0.132 * frequency, 12.31 * speed, 1.0 * intensity, noise, wave_offset, wave_normal);
     GerstnerWave(world_pos.xyz, vec3(-0.71, 0.0, 1.35), 0.25 * frequency, 15.31 * speed, 0.8 * intensity, noise, wave_offset, wave_normal);
     GerstnerWave(world_pos.xyz, vec3(0.35, 0.0, 0.09), 0.332 * frequency, 17.31 * speed, 0.9 * intensity, noise, wave_offset, wave_normal);
+
+    dist_fade = clamp(1.0 - dist_fade * 0.001, 0.0, 1.0);
+    wave_normal.xz *= dist_fade;
+    wave_offset *= dist_fade;
 
     world_pos.xyz += wave_offset;
 

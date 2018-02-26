@@ -17,7 +17,7 @@ class Ocean:
         resource_manager = CoreManager.instance().resource_manager
         self.material_instance = resource_manager.getMaterialInstance('ocean')
 
-        self.mesh = Plane(width=100, height=100)
+        self.mesh = Plane(width=200, height=200)
         self.geometry = self.mesh.get_geometry()
         self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
                                                            layout_location=5,

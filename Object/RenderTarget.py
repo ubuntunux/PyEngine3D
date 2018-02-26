@@ -23,7 +23,7 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
-    LIGHT_PROBE_TEMP = None
+    LIGHT_PROBE_ATMOSPHERE = None
     TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
@@ -220,8 +220,8 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
-        RenderTargets.LIGHT_PROBE_TEMP = self.create_rendertarget(
-            "LIGHT_PROBE_TEMP",
+        RenderTargets.LIGHT_PROBE_ATMOSPHERE = self.create_rendertarget(
+            "LIGHT_PROBE_ATMOSPHERE",
             texture_type=TextureCube,
             width=512,
             height=512,

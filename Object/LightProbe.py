@@ -35,6 +35,5 @@ class LightProbe(StaticActor):
 
     @staticmethod
     def generate_texture_probe(name):
-        texture_datas = copy.copy(RenderTargets.LIGHT_PROBE_TEMP.get_texture_info())
-        texture_datas['texture_type'] = TextureCube
+        texture_datas = RenderTargets.LIGHT_PROBE_ATMOSPHERE.get_texture_info()
         return CreateTexture(name=name, **texture_datas)

@@ -9,6 +9,8 @@ import numpy as np
 from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, PostProcess, RenderInfo
 from Object import Atmosphere, Ocean
+from Object.RenderOptions import RenderOption
+from Object.RenderTarget import RenderTargets
 from OpenGLContext import UniformBlock
 from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
 
@@ -300,6 +302,11 @@ class SceneManager(Singleton):
 
     def get_light(self, index):
         return self.lights[index] if index < len(self.lights) else None
+
+    def get_light_probe_texture(self):
+        if RenderOption.RENDER_LIGHT_PROBE:
+            return RenderTargets.LIGHT_PROBE_ATMOSPHERE
+        return self.main_light_probe.texture_probe
 
     def get_light_probe(self, index):
         return self.light_probes[index] if index < len(self.light_probes) else None

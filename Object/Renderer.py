@@ -369,7 +369,7 @@ class Renderer(Singleton):
                 glDisable(GL_CULL_FACE)
                 self.scene_manager.ocean.render_ocean(atmoshpere=self.scene_manager.atmosphere,
                                                       texture_depth=RenderTargets.DEPTHSTENCIL,
-                                                      texture_probe=self.scene_manager.main_light_probe.texture_probe,
+                                                      texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP,
                                                       texture_scene_reflect=RenderTargets.SCREEN_SPACE_REFLECTION)
                 glEnable(GL_CULL_FACE)
@@ -465,28 +465,25 @@ class Renderer(Singleton):
 
         # render atmosphere scene to light_probe textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = True
-        texture_probe = light_probe.texture_probe
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
-        texture_probe.generate_mipmap()
+        texture_cube = RenderTargets.LIGHT_PROBE_ATMOSPHERE
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        texture_cube.generate_mipmap()
 
         # render final scene to temp textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = False
-        temp_texture_probe = light_probe.generate_texture_probe(name='light_probe_temp')
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(temp_texture_probe, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
-        temp_texture_probe.generate_mipmap()
-
-        # replace texture
-        light_probe.replace_texture_probe(temp_texture_probe)
+        texture_cube = light_probe.texture_probe
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
+        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        texture_cube.generate_mipmap()
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
@@ -626,7 +623,7 @@ class Renderer(Singleton):
             glDisable(GL_DEPTH_TEST)
             self.postprocess.bind_quad()
             # render deferred
-            self.postprocess.render_deferred_shading(self.scene_manager.main_light_probe.texture_probe,
+            self.postprocess.render_deferred_shading(self.scene_manager.get_light_probe_texture(),
                                                      self.scene_manager.atmosphere)
         elif RenderingType.FORWARD_RENDERING == self.render_option_manager.rendering_type:
             glEnable(GL_DEPTH_TEST)
@@ -653,8 +650,6 @@ class Renderer(Singleton):
         if scene_material_instance and scene_material_instance.material:
             scene_material_instance.material.use_program()
 
-        texture_probe = self.scene_manager.main_light_probe.texture_probe
-
         last_actor = None
         last_geometry = None
         last_material = None
@@ -677,7 +672,7 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('is_render_gbuffer', RenderMode.GBUFFER == render_mode)
                     # Render Forward
                     if RenderMode.SHADING == render_mode:
-                        material_instance.bind_uniform_data('texture_probe', texture_probe)
+                        material_instance.bind_uniform_data('texture_probe', self.scene_manager.get_light_probe_texture())
                         material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
                         material_instance.bind_uniform_data('texture_scene_reflect',
