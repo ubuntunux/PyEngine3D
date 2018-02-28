@@ -311,6 +311,10 @@ class SceneManager(Singleton):
     def get_light_probe(self, index):
         return self.light_probes[index] if index < len(self.light_probes) else None
 
+    def reset_light_probe(self):
+        for light_probe in self.light_probes:
+            light_probe.isRendered = False
+
     def get_static_actor(self, index):
         return self.static_actors[index] if index < len(self.static_actors) else None
 

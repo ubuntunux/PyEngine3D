@@ -363,8 +363,10 @@ class CoreManager(Singleton):
         self.commands[COMMAND.CHANGE_GAME_BACKEND.value] = self.change_game_backend
 
         def cmd_recreate_render_targets(value):
+            self.renderer.framebuffer_manager.clear_framebuffer()
             self.renderer.rendertarget_manager.create_rendertargets()
-            self.renderer.framebuffer_manager.rebuild_command()
+            self.scene_manager.reset_light_probe()
+            self.scene_manager.atmosphere.initialize()
         self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
 
         def cmd_view_rendertarget(value):
@@ -429,7 +431,7 @@ class CoreManager(Singleton):
                         if obj_instance:
                             self.sendObjectInfo(obj_instance)
             elif Keyboard._2 == event_value:
-                self.renderer.render_light_probe(force=True)
+                self.scene_manager.reset_light_probe()
             elif Keyboard._3 == event_value:
                 self.gc_collect()
             elif Keyboard.DELETE == event_value:
@@ -522,7 +524,7 @@ class CoreManager(Singleton):
 
         # render scene
         startTime = time.perf_counter()
-        self.renderer.render_light_probe()
+        self.renderer.render_light_probe(self.scene_manager.main_light_probe)
         renderTime, presentTime = self.renderer.renderScene()
 
         self.renderTime = renderTime * 1000.0  # millisecond

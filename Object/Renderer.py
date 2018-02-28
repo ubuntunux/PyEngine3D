@@ -36,10 +36,6 @@ class Renderer(Singleton):
         # components
         self.lastShader = None
         self.screen = None
-        self.framebuffer = None
-        self.framebuffer_shadow = None
-        self.framebuffer_copy = None
-        self.framebuffer_msaa = None
         self.debug_texture = None
 
         self.blend_enable = False
@@ -90,11 +86,6 @@ class Renderer(Singleton):
         self.postprocess.initialize()
 
         self.framebuffer_manager = FrameBufferManager.instance()
-
-        self.framebuffer = FrameBuffer()
-        self.framebuffer_shadow = FrameBuffer()
-        self.framebuffer_copy = FrameBuffer()
-        self.framebuffer_msaa = FrameBuffer()
 
         # material instances
         self.scene_constants_material = self.resource_manager.getMaterialInstance('scene_constants')
@@ -201,9 +192,9 @@ class Renderer(Singleton):
 
         # recreate render targets and framebuffer
         if changed or clear_rendertarget:
+            self.framebuffer_manager.clear_framebuffer()
             self.rendertarget_manager.create_rendertargets()
-            self.framebuffer_manager.rebuild_command()
-            # cause, rendertargets are cleared.
+            self.scene_manager.reset_light_probe()
             if self.scene_manager.atmosphere:
                 self.scene_manager.atmosphere.initialize()
         self.core_manager.gc_collect()
@@ -298,32 +289,25 @@ class Renderer(Singleton):
             # render shader
             self.postprocess.render_material_instance()
         elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
-            self.framebuffer.set_color_textures()
-            self.framebuffer.set_depth_texture(RenderTargets.SHADOWMAP)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_DEPTH_BUFFER_BIT)
 
-            self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)
-            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL,
+                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
             glClearColor(0.0, 1.0, 0.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-            self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
-            self.framebuffer.set_depth_texture(None)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.bind_quad()
             self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
             RenderTargets.LINEAR_DEPTH.generate_mipmap()
 
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.set_depth_texture(None)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClearColor(0.0, 0.0, 0.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
-
             glDisable(GL_DEPTH_TEST)
 
             # render atmosphere
@@ -347,9 +331,7 @@ class Renderer(Singleton):
 
             glFrontFace(GL_CCW)
             glDepthMask(False)  # cause depth prepass and gbuffer
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
             glClear(GL_COLOR_BUFFER_BIT)
 
             # render solid
@@ -395,9 +377,9 @@ class Renderer(Singleton):
         glUseProgram(0)
 
         # blit frame buffer
-        self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer.blit_framebuffer(self.width, self.height)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
+        self.framebuffer_manager.unbind_framebuffer()
 
         # flush
         glFlush()
@@ -412,10 +394,8 @@ class Renderer(Singleton):
         presentTime = timeModule.perf_counter() - startTime
         return renderTime, presentTime
 
-    def render_light_probe(self, force=False):
-        light_probe = self.scene_manager.main_light_probe
-
-        if not force and light_probe.isRendered:
+    def render_light_probe(self, light_probe):
+        if light_probe.isRendered:
             return
 
         logger.info("Rendering Light Probe")
@@ -451,13 +431,11 @@ class Renderer(Singleton):
             self.renderScene()
 
             # copy
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.bind_framebuffer()
-            self.framebuffer_copy.set_color_textures(dst_texture)
-            self.framebuffer_copy.bind_framebuffer(target_face=target_face)
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+            self.framebuffer_manager.bind_framebuffer(dst_texture, target_face=target_face)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            self.framebuffer_copy.mirror_framebuffer(self.framebuffer)
+            self.framebuffer_manager.mirror_framebuffer(src_framebuffer)
 
             return dst_texture
 
@@ -499,9 +477,7 @@ class Renderer(Singleton):
         camera.update(force_update=True)
 
     def render_pre_pass(self):
-        self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL)
-        self.framebuffer.set_depth_texture(RenderTargets.DEPTHSTENCIL)
-        self.framebuffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL, depth_texture=RenderTargets.DEPTHSTENCIL)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         camera = self.scene_manager.main_camera
@@ -522,19 +498,19 @@ class Renderer(Singleton):
 
         # render character normal, velocity
         if RenderOption.RENDER_SKELETON_ACTOR:
-            self.framebuffer.set_color_textures(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL, RenderTargets.VELOCITY)
             self.render_actors(RenderGroup.SKELETON_ACTOR,
                                RenderMode.PRE_PASS,
                                self.scene_manager.skeleton_solid_render_infos,
                                self.pre_pass_skeletal_material)
 
     def render_deferred(self):
-        framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
-                                                                RenderTargets.MATERIAL,
-                                                                RenderTargets.WORLD_NORMAL,
-                                                                depth_texture=RenderTargets.DEPTHSTENCIL)
-        framebuffer.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, (0.0, 0.0, 0.0, 0.0))
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
+                                                  RenderTargets.MATERIAL,
+                                                  RenderTargets.WORLD_NORMAL,
+                                                  depth_texture=RenderTargets.DEPTHSTENCIL)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         camera = self.scene_manager.main_camera
         self.uniformViewProjection.bind_uniform_block(camera.view_projection, camera.prev_view_projection, )
@@ -563,9 +539,7 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_solid_render_infos)
 
     def render_shadow(self):
-        self.framebuffer_shadow.set_color_textures()
-        self.framebuffer_shadow.set_depth_texture(RenderTargets.SHADOWMAP)
-        self.framebuffer_shadow.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
         glClear(GL_DEPTH_BUFFER_BIT)
 
         light = self.scene_manager.main_light
@@ -581,23 +555,19 @@ class Renderer(Singleton):
                                RenderMode.SHADOW,
                                self.scene_manager.skeleton_solid_render_infos,
                                self.shadowmap_skeletal_material)
-            self.framebuffer_shadow.unbind_framebuffer()
 
     def render_preprocess(self):
         self.postprocess.bind_quad()
-        self.framebuffer.set_depth_texture(None)
 
         # Linear depth
-        self.framebuffer.set_color_textures(RenderTargets.LINEAR_DEPTH)
-        self.framebuffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
         glClear(GL_COLOR_BUFFER_BIT)
         self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
         RenderTargets.LINEAR_DEPTH.generate_mipmap()
 
         # Screen Space Reflection
         if self.postprocess.is_render_ssr:
-            self.framebuffer.set_color_textures(RenderTargets.SCREEN_SPACE_REFLECTION)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SCREEN_SPACE_REFLECTION)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
                                                             RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
@@ -605,14 +575,13 @@ class Renderer(Singleton):
         # SSAO
         if self.postprocess.is_render_ssao:
             temp_ssao = self.rendertarget_manager.get_temporary('temp_ssao', RenderTargets.SSAO)
-            self.framebuffer.set_color_textures(RenderTargets.SSAO)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SSAO)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_ssao(texture_size=(RenderTargets.SSAO.width, RenderTargets.SSAO.height),
                                          texture_lod=self.rendertarget_manager.texture_lod_in_ssao,
                                          texture_normal=RenderTargets.WORLD_NORMAL,
                                          texture_linear_depth=RenderTargets.LINEAR_DEPTH)
-            self.postprocess.render_gaussian_blur(self.framebuffer, RenderTargets.SSAO, temp_ssao)
+            self.postprocess.render_gaussian_blur(RenderTargets.SSAO, temp_ssao)
 
     def render_solid(self):
         camera = self.scene_manager.main_camera
@@ -764,84 +733,69 @@ class Renderer(Singleton):
 
     def render_postprocess(self):
         # bind frame buffer
-        self.framebuffer.set_color_textures(RenderTargets.HDR)
-        self.framebuffer.set_depth_texture(None)
-        self.framebuffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
         # bind quad mesh
         self.postprocess.bind_quad()
 
         # copy HDR target
-        self.framebuffer.set_color_textures(RenderTargets.HDR)
-        self.framebuffer.bind_framebuffer()
-        self.framebuffer_copy.set_color_textures(RenderTargets.HDR_PREV)
-        self.framebuffer_copy.bind_framebuffer()
+        src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_PREV)
         glClear(GL_COLOR_BUFFER_BIT)
-        self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+        self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
         # Temporal AA
         if AntiAliasing.TAA == self.postprocess.anti_aliasing:
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
                                                           RenderTargets.TAA_RESOLVE,
                                                           RenderTargets.VELOCITY,
                                                           RenderTargets.LINEAR_DEPTH)
 
-            self.framebuffer.set_color_textures(RenderTargets.HDR)
-            self.framebuffer.bind_framebuffer()
-            self.framebuffer_copy.set_color_textures(RenderTargets.TAA_RESOLVE)
-            self.framebuffer_copy.bind_framebuffer()
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.TAA_RESOLVE)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+            self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
         # Bloom
         if self.postprocess.is_render_bloom:
-            self.postprocess.render_bloom(self.framebuffer, RenderTargets.HDR)
-            # self.postprocess.render_onepass_bloom(self.framebuffer, RenderTargets.HDR)
+            self.postprocess.render_bloom(RenderTargets.HDR)
+            # self.postprocess.render_onepass_bloom(RenderTargets.HDR)
 
         # Tone Map
-        self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
-        self.framebuffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         glClear(GL_COLOR_BUFFER_BIT)
         self.postprocess.render_tone_map(RenderTargets.HDR)
 
         # MSAA Test
         if AntiAliasing.MSAA == self.postprocess.anti_aliasing:
-            self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
-            self.framebuffer.bind_framebuffer()
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.framebuffer_msaa.set_color_textures(RenderTargets.HDR)
-            self.framebuffer_msaa.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             # resolve MSAA
-            self.framebuffer.copy_framebuffer(self.framebuffer_msaa)
+            self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
         # Motion Blur
         if self.postprocess.is_render_motion_blur:
             backbuffer_copy = self.rendertarget_manager.get_temporary('backbuffer_copy', RenderTargets.BACKBUFFER)
-            self.framebuffer.set_color_textures(backbuffer_copy)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(backbuffer_copy)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_motion_blur(RenderTargets.VELOCITY, RenderTargets.BACKBUFFER)
 
             # copy to backbuffer
-            self.framebuffer.set_color_textures(backbuffer_copy)
-            self.framebuffer.bind_framebuffer()
-            self.framebuffer_copy.set_color_textures(RenderTargets.BACKBUFFER)
-            self.framebuffer_copy.bind_framebuffer()
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(backbuffer_copy)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.framebuffer_copy.copy_framebuffer(self.framebuffer)
+            self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
         # debug render target
         if self.debug_texture and self.debug_texture is not RenderTargets.BACKBUFFER and \
                 type(self.debug_texture) != RenderBuffer:
-            self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
-            self.framebuffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_texture(self.debug_texture)
 
     def render_font(self):
-        self.framebuffer.set_color_textures(RenderTargets.BACKBUFFER)
-        self.framebuffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.font_manager.render_font(self.width, self.height)

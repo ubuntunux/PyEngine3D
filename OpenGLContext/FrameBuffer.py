@@ -7,7 +7,6 @@ from Common import logger
 
 from .RenderBuffer import RenderBuffer
 
-프레임버퍼설정은한번만하고나중엔그냥바인딩만하면된다
 
 class FrameBuffer:
     errors = (
@@ -46,10 +45,6 @@ class FrameBuffer:
         self.set_color_textures()
         self.set_depth_texture(None)
         glDeleteFramebuffers(1, [self.buffer, ])
-
-    def clear(self, clear_flag=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, clear_color=(0.0, 0.0, 0.0, 1.0)):
-        glClearColor(*clear_color)
-        glClear(clear_flag)
 
     def set_viewport(self, x, y, width, height):
         self.x = x
@@ -95,12 +90,12 @@ class FrameBuffer:
         elif GL_TEXTURE_CUBE_MAP == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
 
-    def bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, level=0):
+    def bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
         glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
 
         self.target_face = target_face
         self.target_layer = target_layer
-        self.target_level = level
+        self.target_level = target_level
 
         # bind color textures
         for i, color_texture in enumerate(self.color_textures):
@@ -183,7 +178,12 @@ class FrameBuffer:
         else:
             self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
 
-    def run_bind_framebuffer(self):
+    def run_bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+        self.target_face = target_face
+        self.target_layer = target_layer
+        self.target_level = target_level
+
+        # run command
         for cmd in self.commands:
             cmd()
 
@@ -232,7 +232,7 @@ class FrameBufferManager(Singleton):
         self.framebuffers = {}
         self.current_framebuffer = None
 
-    def clear(self):
+    def clear_framebuffer(self):
         for framebuffer in self.framebuffers.values():
             framebuffer.delete()
         self.framebuffers = {}
@@ -248,7 +248,7 @@ class FrameBufferManager(Singleton):
             framebuffer = self.framebuffers.pop(key)
             framebuffer.delete()
 
-    def get_framebuffer(self, *textures, depth_texture):
+    def get_framebuffer(self, *textures, depth_texture=None):
         key = (textures, depth_texture)
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
@@ -260,11 +260,23 @@ class FrameBufferManager(Singleton):
             framebuffer.build_command()
         return framebuffer
 
-    def bind_framebuffer(self, *textures, depth_texture=None, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0,
-                         level=0):
+    def bind_framebuffer(self, *textures, depth_texture=None,
+                         target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
         self.current_framebuffer = self.get_framebuffer(*textures, depth_texture=depth_texture)
-        self.current_framebuffer.target_face = target_face
-        self.current_framebuffer.target_layer = target_layer
-        self.current_framebuffer.level = level
-        self.current_framebuffer.run_bind_framebuffer()
+        self.current_framebuffer.run_bind_framebuffer(target_face=target_face,
+                                                      target_layer=target_layer,
+                                                      target_level=target_level)
         return self.current_framebuffer
+
+    def unbind_framebuffer(self):
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        self.current_framebuffer.copy_framebuffer(src, target, filter_type)
+
+    def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        self.current_framebuffer.mirror_framebuffer(src, target, filter_type)
+
+    def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
+        self.current_framebuffer.blit_framebuffer(window_width, window_height, filter_type)

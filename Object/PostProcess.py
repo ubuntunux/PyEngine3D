@@ -10,6 +10,7 @@ from OpenGL.GLU import *
 from App import CoreManager
 from Common import logger, log_level, COMMAND
 from Utilities import *
+from OpenGLContext import FrameBufferManager
 from .RenderTarget import RenderTargets
 from .RenderOptions import RenderOption
 
@@ -37,6 +38,7 @@ class PostProcess:
         self.resource_manager = None
         self.renderer = None
         self.rendertarget_manager = None
+        self.framebuffer_manager = None
         self.quad = None
         self.quad_geometry = None
 
@@ -101,6 +103,7 @@ class PostProcess:
         self.resource_manager = self.core_manager.resource_manager
         self.renderer = self.core_manager.renderer
         self.rendertarget_manager = self.core_manager.rendertarget_manager
+        self.framebuffer_manager = FrameBufferManager.instance()
 
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
@@ -261,9 +264,8 @@ class PostProcess:
         self.circle_blur.bind_uniform_data("texture_color", texture_color)
         self.quad_geometry.draw_elements()
 
-    def render_gaussian_blur(self, frame_buffer, texture_target, texture_temp, blur_scale=1.0):
-        frame_buffer.set_color_textures(texture_temp)
-        frame_buffer.bind_framebuffer()
+    def render_gaussian_blur(self, texture_target, texture_temp, blur_scale=1.0):
+        self.framebuffer_manager.bind_framebuffer(texture_temp)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.gaussian_blur.use_program()
@@ -272,8 +274,7 @@ class PostProcess:
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_target)
         self.quad_geometry.draw_elements()
 
-        frame_buffer.set_color_textures(texture_target)
-        frame_buffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(texture_target)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, blur_scale))
@@ -289,10 +290,9 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad_geometry.draw_elements()
 
-    def render_bloom(self, frame_buffer, texture_target):
+    def render_bloom(self, texture_target):
         texture_highlight = self.rendertarget_manager.get_temporary('highlight', texture_target)
-        frame_buffer.set_color_textures(texture_highlight)
-        frame_buffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(texture_highlight)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.bloom_highlight.use_program()
@@ -317,8 +317,7 @@ class PostProcess:
         temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
 
         def copy_bloom(src, dst):
-            frame_buffer.set_color_textures(dst)
-            frame_buffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(dst)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.copy_texture(src)
@@ -336,16 +335,14 @@ class PostProcess:
             bloom_target = bloom_targets[i]
             temp_bloom_target = temp_bloom_rendertargets[i]
 
-            frame_buffer.set_color_textures(temp_bloom_target)
-            frame_buffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(temp_bloom_target)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
             self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
             self.quad_geometry.draw_elements()
 
-            frame_buffer.set_color_textures(bloom_target)
-            frame_buffer.bind_framebuffer()
+            self.framebuffer_manager.bind_framebuffer(bloom_target)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
@@ -355,8 +352,7 @@ class PostProcess:
         # set additive
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
 
-        frame_buffer.set_color_textures(texture_target)
-        frame_buffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(texture_target)
 
         self.bloom.use_program()
         self.bloom.bind_material_instance()
@@ -371,10 +367,9 @@ class PostProcess:
         # restore blend state
         self.renderer.restore_blend_state_prev()
 
-    def render_onepass_bloom(self, frame_buffer, texture_target):
+    def render_onepass_bloom(self, texture_target):
         texture_bloom = self.rendertarget_manager.get_temporary('onepass_bloom', texture_target)
-        frame_buffer.set_color_textures(texture_bloom)
-        frame_buffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(texture_bloom)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.onepass_bloom.use_program()
@@ -386,8 +381,7 @@ class PostProcess:
 
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
 
-        frame_buffer.set_color_textures(texture_target)
-        frame_buffer.bind_framebuffer()
+        self.framebuffer_manager.bind_framebuffer(texture_target)
 
         self.onepass_bloom_composite.use_program()
         self.onepass_bloom_composite.bind_material_instance()
