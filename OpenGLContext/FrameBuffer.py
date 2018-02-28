@@ -7,6 +7,7 @@ from Common import logger
 
 from .RenderBuffer import RenderBuffer
 
+프레임버퍼설정은한번만하고나중엔그냥바인딩만하면된다
 
 class FrameBuffer:
     errors = (
