@@ -210,6 +210,7 @@ class Atmosphere:
 
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
+        self.atmosphere_material_instance.bind_material_instance()
         self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.atmosphere_material_instance.bind_uniform_data("texture_shadow", texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
