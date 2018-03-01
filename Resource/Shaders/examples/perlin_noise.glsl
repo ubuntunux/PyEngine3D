@@ -22,18 +22,18 @@ float noise(vec2 p, float freq){
 
 float perlinNoise(vec2 p){
 	float persistance = 0.7;
-	float n = 0.0;
+	float noise = 0.0;
 	float weights = 0.0;
-	float f = 4.0;
+	float freq = 1.0;
 	float amp = 1.0;
 	for (int i = 0; i<50; i++)
 	{
-		n += amp * noise(p, f);
-		f *= 2.0;
+		noise += amp * noise(p, freq);
 		weights += amp;
 		amp *= persistance;
+		freq *= 2.0;
 	}
-	return n / weights;
+	return noise / weights;
 }
 
 #ifdef GL_FRAGMENT_SHADER
@@ -42,7 +42,7 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 st = vs_output.tex_coord;
-    float n = perlinNoise(st);
+    float n = perlinNoise(st * 5.0);
     fs_output = vec4(vec3(n), 1.0);
 }
 #endif
