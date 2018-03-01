@@ -65,18 +65,16 @@ float PseudoRandom(vec2 xy)
 }
 
 float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
-float rand2(vec4 seed4){
-    float dot_product = dot(seed4, vec4(12.9898,78.233,45.164,94.673));
-    return fract(sin(dot_product) * 43758.5453);
+float rand3(vec3 uvw, float scale)
+{
+	return fract(sin(dot(uvw, vec3(12.9898, 78.233, 45.164))) * 43758.5453123);
 }
 
-float random (in vec2 st) {
-    return fract(sin(dot(st.xy,
-                         vec2(12.9898,78.233)))
-                 * 43758.5453123);
+float rand4(vec4 seed4){
+    return fract(sin(dot(seed4, vec4(12.9898, 78.233, 45.164, 94.673))) * 43758.5453123);
 }
 
 vec3 invert_y(vec3 vector)

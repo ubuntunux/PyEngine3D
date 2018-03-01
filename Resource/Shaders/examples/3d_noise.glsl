@@ -1,37 +1,40 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
-float rand(vec2 c){
-	return fract(sin(dot(c, vec2(12.9898,78.233))) * 43758.5453123);
+float rand(vec3 uvw, float scale)
+{
+    // This is tiling part, adjusts with the scale...
+    uvw = mod(uvw, scale);
+	return fract(sin(dot(uvw, vec3(12.9898, 78.233, 45.164))) * 43758.5453123);
 }
 
-float noise(vec2 p, float freq){
-    float unit = 1.0 / freq;
-	vec2 ij = floor(p / unit);
-	vec2 xy = mod(p, unit) / unit;
-	xy = 0.5 * (1.0 - cos(PI * xy));
-	float a = rand((ij + vec2(0.0, 0.0)));
-	float b = rand((ij + vec2(1.0, 0.0)));
-	float c = rand((ij + vec2(0.0, 1.0)));
-	float d = rand((ij + vec2(1.0, 1.0)));
 
-	float x1 = mix(a, b, xy.x);
-	float x2 = mix(c, d, xy.x);
-	return mix(x1, x2, xy.y);
+// This one has non-ideal tiling properties that I'm still tuning
+float noise(vec3 x, float scale) {
+	const vec3 step = vec3(110, 241, 171);
+
+	x *= scale;
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+
+	vec3 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(mix( rand(i + vec3(0, 0, 0), scale), rand(i + vec3(1, 0, 0), scale), u.x),
+                   mix( rand(i + vec3(0, 1, 0), scale), rand(i + vec3(1, 1, 0), scale), u.x), u.y),
+               mix(mix( rand(i + vec3(0, 0, 1), scale), rand(i + vec3(1, 0, 1), scale), u.x),
+                   mix( rand(i + vec3(0, 1, 1), scale), rand(i + vec3(1, 1, 1), scale), u.x), u.y), u.z);
 }
 
-float perlinNoise(vec2 p){
+float perlinNoise(vec3 p, float scale){
 	float persistance = 0.7;
 	float n = 0.0;
 	float weights = 0.0;
-	float f = 4.0;
 	float amp = 1.0;
 	for (int i = 0; i<50; i++)
 	{
-		n += amp * noise(p, f);
-		f *= 2.0;
+		n += amp * noise(p, scale);
 		weights += amp;
 		amp *= persistance;
+		scale *= 2.0;
 	}
 	return n / weights;
 }
@@ -41,8 +44,9 @@ layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
 void main() {
-    vec2 st = vs_output.tex_coord;
-    float n = perlinNoise(st);
+    vec3 st = vec3(vs_output.tex_coord, 0);
+    const int scale = 6;
+    float n = perlinNoise( st, float(scale));
     fs_output = vec4(vec3(n), 1.0);
 }
 #endif
