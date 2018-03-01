@@ -45,35 +45,74 @@ void main()
 
     // Cloud
     vec4 cloud = vec4(0.0);
-    float cloud_height = 100.0;
+    const float cloud_height = 200.0;
+    const float cloud_thickness = 100.0;
     float height_diff = cloud_height - CAMERA_POSITION.y;
-    if(0.0 < view_direction.y && 0.0 < height_diff || view_direction.y < 0.0 && height_diff < 0.0)
+    if(0.0 < view_direction.y && 0.0 < (height_diff + cloud_thickness) || view_direction.y < 0.0 && height_diff < 0.0)
     {
-        vec3 cloud_pos = view_direction / view_direction.y * height_diff;
 
-        float dist = clamp(length(cloud_pos), 0.0, NEAR_FAR.y);
+        // relative ray march start pos from the camera
+        vec3 ray_start_pos;
 
-        cloud_pos.xz += CAMERA_POSITION.xz;
+        const bool in_the_cloud = -cloud_thickness < height_diff && height_diff < 0.0;
+
+        if(in_the_cloud)
+        {
+            // be in clouds
+            ray_start_pos = vec3(0.0, 0.0, 0.0);
+        }
+        else if(0.0 < view_direction.y)
+        {
+            // under the sky
+            ray_start_pos = view_direction * abs(height_diff / view_direction.y);
+        }
+        else
+        {
+            // above the sky
+            ray_start_pos = view_direction * abs((height_diff + cloud_thickness) / view_direction.y);
+        }
+
+        float dist = clamp(length(ray_start_pos), 0.0, NEAR_FAR.y);
+
+        ray_start_pos += CAMERA_POSITION.xyz;
 
         if(dist < NEAR_FAR.y)
         {
-            const int count = 50;
-            const float dist_step = dist / height_diff * 1.0;
+            const int count = 100;
             const float cloud_pow = 5.0;
-            const float cloud_speed = 0.5;
-            const vec3 cloud_color = vec3(0.5, 0.5, 0.7);
+            const float cloud_speed = TIME * 0.006;
+            const float cloud_sharpen = 0.3;
 
+            float march_height = cloud_thickness;
+
+            if(0.0 < view_direction.y)
+            {
+                // Looking up at the sky
+                march_height = clamp(cloud_thickness + height_diff, 0.0, cloud_thickness);
+            }
+            else
+            {
+                // Looking down at the sky
+                march_height = clamp(-height_diff, 0.0, cloud_thickness);
+            }
+
+            float march_step = abs(march_height / view_direction.y) / float(count);
+            // When you are in the clouds, march steps are likely to be too large.
+            march_step = min(march_step, 5.0);
+
+            const vec3 cloud_color = vec3(0.5, 0.5, 0.7);
             cloud.xyz = cloud_color;
 
             for(int i=0; i<count; ++i)
             {
-                vec2 uv = (cloud_pos.xz + view_direction.xz * float(count - i) * dist_step) * 0.001;
-                vec2 distortion = texture(texture_noise, uv * 3.5 - vec2(TIME * 0.03), 0.0).xy;
-                float opacity = texture(texture_noise, uv + vec2(TIME * 0.02) + distortion * 0.1, 0.0).x;
-                const float sharpen = 0.3;
-                opacity = clamp((opacity - sharpen) / (1.0 - sharpen), 0.0, 1.0);
+                vec2 uv = (ray_start_pos.xz + view_direction.xz * float(count - i) * march_step) * 0.001;
+                vec2 distortion = texture(texture_noise, uv * 3.5 - vec2(cloud_speed * 1.5), 0.0).xy;
+
+                float opacity = texture(texture_noise, uv + vec2(cloud_speed) + distortion * 0.1, 0.0).x;
+                opacity = clamp((opacity - cloud_sharpen) / (1.0 - cloud_sharpen), 0.0, 1.0);
                 opacity = pow(opacity, cloud_pow);
-                cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w * 0.9), opacity);
+
+                cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w), opacity);
                 cloud.w = clamp(cloud.w + opacity, 0.0, 1.0);
             }
 

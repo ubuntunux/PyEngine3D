@@ -73,6 +73,12 @@ float rand2(vec4 seed4){
     return fract(sin(dot_product) * 43758.5453);
 }
 
+float random (in vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))
+                 * 43758.5453123);
+}
+
 vec3 invert_y(vec3 vector)
 {
     return vec3(vector.x, -vector.y, vector.z);
