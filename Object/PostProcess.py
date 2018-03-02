@@ -240,6 +240,9 @@ class PostProcess:
     def bind_quad(self):
         self.quad_geometry.bind_vertex_buffer()
 
+    def draw_elements(self):
+        self.quad_geometry.draw_elements()
+
     def render_temporal_antialiasing(self, texture_input, texture_prev, texture_velocity, texture_linear_depth):
         self.temporal_antialiasing.use_program()
         self.temporal_antialiasing.bind_material_instance()

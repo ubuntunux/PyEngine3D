@@ -39,35 +39,41 @@ def get_numpy_dtype(data_type):
 
 
 def get_internal_format(str_image_mode):
-    if str_image_mode == "RGB":
-        return GL_RGB
-    elif str_image_mode == "RGBA":
+    if str_image_mode == "RGBA":
         return GL_RGBA
+    elif str_image_mode == "RGB":
+        return GL_RGB
+    elif str_image_mode == "L":
+        return GL_LUMINANCE
     else:
         logger.error("get_internal_format::unknown image mode ( %s )" % str_image_mode)
     return GL_RGBA
 
 
 def get_texture_format(str_image_mode):
-    if str_image_mode == "RGB":
-        return GL_RGB
-    elif str_image_mode == "RGBA":
+    if str_image_mode == "RGBA":
         # R,G,B,A order. GL_BGRA is faster than GL_RGBA
         return GL_RGBA  # GL_BGRA
+    elif str_image_mode == "RGB":
+        return GL_RGB
+    elif str_image_mode == "L":
+        return GL_LUMINANCE
     else:
         logger.error("get_texture_format::unknown image mode ( %s )" % str_image_mode)
     return GL_RGBA
 
 
 def get_image_mode(texture_internal_format):
-    if texture_internal_format in (GL_RGB, GL_BGR):
-        return "RGB"
-    elif texture_internal_format in (GL_RGBA, GL_BGRA):
+    if texture_internal_format in (GL_RGBA, GL_BGRA):
         return "RGBA"
-    elif texture_internal_format in (GL_RED, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT):
-        return "R"
+    elif texture_internal_format in (GL_RGB, GL_BGR):
+        return "RGB"
     elif texture_internal_format == GL_RG:
         return "RG"
+    elif texture_internal_format in (GL_RED, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT):
+        return "R"
+    elif texture_internal_format == GL_LUMINANCE:
+        return "L"
     else:
         logger.error("get_image_mode::unknown image format ( %s )" % texture_internal_format)
     return "RGBA"
@@ -186,8 +192,8 @@ class Texture:
                 glReadBuffer(GL_COLOR_ATTACHMENT0)
                 pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
                 # convert to numpy array
-                if type(data) is bytes:
-                    pixels = np.fromsring(pixels, dtype=dtype)
+                if type(pixels) is bytes:
+                    pixels = np.fromstring(pixels, dtype=dtype)
                 else:
                     pixels = np.array(pixels, dtype=dtype)
                 data.extend(pixels.tolist())

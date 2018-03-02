@@ -7,7 +7,7 @@ uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_normal;
 
 #ifdef MATERIAL_COMPONENTS
-    uniform sampler2D texture_noise;
+    uniform sampler3D texture_noise;
 #endif
 
 #ifdef GL_FRAGMENT_SHADER
@@ -46,7 +46,7 @@ void main()
     // Cloud
     vec4 cloud = vec4(0.0);
     const float cloud_height = 200.0;
-    const float cloud_thickness = 100.0;
+    const float cloud_thickness = 200.0;
     float height_diff = cloud_height - CAMERA_POSITION.y;
     if(0.0 < view_direction.y && 0.0 < (height_diff + cloud_thickness) || view_direction.y < 0.0 && height_diff < 0.0)
     {
@@ -79,9 +79,7 @@ void main()
         if(dist < NEAR_FAR.y)
         {
             const int count = 100;
-            const float cloud_pow = 5.0;
-            const float cloud_speed = TIME * 0.006;
-            const float cloud_sharpen = 0.3;
+            const float cloud_speed = TIME * 0.03;
 
             float march_height = cloud_thickness;
 
@@ -105,12 +103,15 @@ void main()
 
             for(int i=0; i<count; ++i)
             {
-                vec2 uv = (ray_start_pos.xz + view_direction.xz * float(count - i) * march_step) * 0.001;
-                vec2 distortion = texture(texture_noise, uv * 3.5 - vec2(cloud_speed * 1.5), 0.0).xy;
+                vec3 uvw = (ray_start_pos.xyz + view_direction.xyz * float(count - i) * march_step);
 
-                float opacity = texture(texture_noise, uv + vec2(cloud_speed) + distortion * 0.1, 0.0).x;
-                opacity = clamp((opacity - cloud_sharpen) / (1.0 - cloud_sharpen), 0.0, 1.0);
-                opacity = pow(opacity, cloud_pow);
+                float distortion = texture(texture_noise, uvw * 0.0051 + vec3(cloud_speed, 0.0, cloud_speed) * 0.5).x;
+                float opacity = texture(texture_noise, uvw * 0.0012 -
+                    vec3(cloud_speed, 0.0, cloud_speed) +
+                    distortion * 0.2).x;
+
+                opacity = pow(opacity, 15.0 + 5 * clamp(abs(uvw.y * 2.0 - 1.0), 0.0, 1.0)  );
+                opacity = clamp(opacity * 30.0, 0.0, 1.0);
 
                 cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w), opacity);
                 cloud.w = clamp(cloud.w + opacity, 0.0, 1.0);

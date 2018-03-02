@@ -62,9 +62,9 @@ def CreateUniformDataFromString(data_type, strValue=None):
             return texture
         elif data_type == 'sampler2DMS':
             logger.warn('sampler2DMS need multisample texture.')
-            return CoreManager.instance().resource_manager.getTexture('empty')
+            return CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
         elif data_type == 'sampler3D':
-            return CoreManager.instance().resource_manager.getTexture('default_3d')
+            return CoreManager.instance().resource_manager.getTexture(strValue or 'default_3d')
         elif data_type == 'samplerCube':
             texture = CoreManager.instance().resource_manager.getTexture(strValue or 'default_cube')
             return texture

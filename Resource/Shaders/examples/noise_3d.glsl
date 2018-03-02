@@ -10,7 +10,8 @@ float rand(vec3 uvw, float scale)
 
 
 // This one has non-ideal tiling properties that I'm still tuning
-float noise(vec3 x, float scale) {
+float noise(vec3 x, float scale)
+{
 	const vec3 step = vec3(110, 241, 171);
 
 	x *= scale;
@@ -24,7 +25,8 @@ float noise(vec3 x, float scale) {
                    mix( rand(i + vec3(0, 1, 1), scale), rand(i + vec3(1, 1, 1), scale), u.x), u.y), u.z);
 }
 
-float perlinNoise(vec3 p, float scale){
+float perlinNoise(vec3 p, float scale)
+{
 	float persistance = 0.7;
 	float n = 0.0;
 	float weights = 0.0;
@@ -43,10 +45,12 @@ float perlinNoise(vec3 p, float scale){
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
+uniform float depth;
+
 void main() {
-    vec3 st = vec3(vs_output.tex_coord, 0);
+    vec3 st = vec3(vs_output.tex_coord, depth);
     const int scale = 6;
     float n = perlinNoise( st, float(scale));
-    fs_output = vec4(vec3(n), 1.0);
+    fs_output = vec4(n);
 }
 #endif

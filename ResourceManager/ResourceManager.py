@@ -28,7 +28,7 @@ from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, Texture
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
-from . import Collada, OBJ, loadDDS, generate_font_data
+from . import Collada, OBJ, loadDDS, generate_font_data, TextureGenerator
 
 
 # -----------------------#
@@ -800,16 +800,7 @@ class TextureLoader(ResourceLoader):
 
         # gradient 3d texture
         size = 64
-        value = 255.0 / float(size)
-        data = array([0, 0, 0, 255] * size * size * size, dtype=uint8)
-        for z in range(size):
-            for y in range(size):
-                for x in range(size):
-                    index = (x + y * size + z * size * size) * 4
-                    data[index] = x * value
-                    data[index+1] = y * value
-                    data[index+2] = z * value
-
+        data = TextureGenerator.get_default_3d_data(size)
         default_3d = CreateTexture(
             name='default_3d',
             texture_type=Texture3D,

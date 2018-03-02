@@ -9,6 +9,6 @@
                    'scattering_texture': 'default_3d',
                    'sun_size': array([ 1.,  1.], dtype=float32),
                    'texture_linear_depth': 'empty',
-                   'texture_noise': 'noise.gradientnoise',
+                   'texture_noise': 'noise_3d',
                    'texture_shadow': 'empty',
                    'transmittance_texture': 'empty'}}
