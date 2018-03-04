@@ -82,6 +82,8 @@ def get_image_mode(texture_internal_format):
 def CreateTexture(**texture_datas):
     texture_class = texture_datas.get('texture_type', Texture2D)
     if texture_class is not None:
+        if type(texture_class) is str:
+            texture_class = eval(texture_class)
         return texture_class(**texture_datas)
     return None
 
@@ -127,6 +129,9 @@ class Texture:
             self.enable_mipmap = False
 
         self.wrap = texture_data.get('wrap', self.default_wrap)  # GL_REPEAT, GL_CLAMP
+        self.wrap_s = texture_data.get('wrap_s')
+        self.wrap_t = texture_data.get('wrap_t')
+        self.wrap_r = texture_data.get('wrap_r')
         self.buffer = None
 
         logger.info("Create %s : %s %dx%dx%d %s mipmap(%s)." % (
@@ -145,7 +150,7 @@ class Texture:
 
     def get_texture_info(self):
         return dict(
-            texture_type=self.__class__,
+            texture_type=self.__class__.__name__,
             width=self.width,
             height=self.height,
             depth=self.depth,
@@ -155,7 +160,10 @@ class Texture:
             data_type=self.data_type,
             min_filter=self.min_filter,
             mag_filter=self.mag_filter,
-            wrap=self.wrap
+            wrap=self.wrap,
+            wrap_s=self.wrap_s,
+            wrap_t=self.wrap_t,
+            wrap_r=self.wrap_r,
         )
 
     def get_save_data(self):
@@ -242,6 +250,22 @@ class Texture:
         self.attribute.setAttribute("mag_filter", self.mag_filter)
         self.attribute.setAttribute("multisample_count", self.multisample_count)
         self.attribute.setAttribute("wrap", self.wrap)
+        self.attribute.setAttribute("wrap_s", self.wrap_s)
+        self.attribute.setAttribute("wrap_t", self.wrap_t)
+        self.attribute.setAttribute("wrap_r", self.wrap_r)
+        return self.attribute
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        if hasattr(self, attributeName):
+            setattr(self, attributeName, eval(attributeValue))
+
+        if 'wrap' in attributeName:
+            glBindTexture(self.target, self.buffer)
+            glTexParameteri(self.target, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
+            glTexParameteri(self.target, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
+            glTexParameteri(self.target, GL_TEXTURE_WRAP_R, self.wrap_r or self.wrap)
+            glBindTexture(self.target, 0)
+
         return self.attribute
 
 
@@ -272,8 +296,8 @@ class Texture2D(Texture):
             # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
             # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, self.wrap)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, self.wrap)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
@@ -307,9 +331,9 @@ class Texture3D(Texture):
             # glTexStorage2D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height)
             # glTexSubImage2D(GL_TEXTURE_3D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, self.wrap)
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, self.wrap)
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, self.wrap_r or self.wrap)
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_3D, 0)
@@ -382,9 +406,9 @@ class TextureCube(Texture):
         createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)  # Back
 
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, self.wrap)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, self.wrap)
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, self.wrap)
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, self.wrap_r or self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0)

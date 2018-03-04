@@ -24,6 +24,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
+from Object import CreateProceduralTexture, NoiseTexture3D
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
@@ -164,6 +165,11 @@ class Resource:
 
         # Notify that data has been loaded.
         ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
+
+    def delete_data(self):
+        if self.data is not None and hasattr(self.data, 'delete'):
+            self.data.delete()
+        self.data = None
 
     def clear_data(self):
         self.data = None
@@ -830,7 +836,8 @@ class TextureLoader(ResourceLoader):
 
             texture_datas = self.load_resource_data(resource)
             if texture_datas:
-                if texture_datas.get('texture_type') == TextureCube:
+                texture_type = texture_datas.get('texture_type')
+                if TextureCube == texture_type or TextureCube.__name__ == texture_type:
                     empty_texture = self.getResourceData('empty')
                     texture_datas['texture_positive_x'] = self.getResourceData(
                         texture_datas['texture_positive_x']) or empty_texture
@@ -948,6 +955,43 @@ class TextureLoader(ResourceLoader):
         except:
             logger.error(traceback.format_exc())
         logger.info("Failed to convert resource : %s" % source_filepath)
+
+
+# -----------------------#
+# CLASS : ProceduralTextureLoader
+# -----------------------#
+class ProceduralTextureLoader(ResourceLoader):
+    name = "ProceduralTextureLoader"
+    resource_dir_name = 'ProceduralTextures'
+    resource_type_name = 'ProceduralTexture'
+    resource_version = 0
+    USE_FILE_COMPRESS_TO_SAVE = False
+    fileExt = '.ptexture'
+
+    def initialize(self):
+        # load and regist resource
+        super(ProceduralTextureLoader, self).initialize()
+
+        resource = self.getResource("NoiseTexture3D")
+        if resource is None:
+            self.create_resource("NoiseTexture3D", NoiseTexture3D())
+            self.save_resource("NoiseTexture3D")
+
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            data = self.load_resource_data(resource)
+            if data:
+                resource_data = CreateProceduralTexture(**data)
+                resource.set_data(resource_data)
+                return True
+        logger.error('%s failed to load %s' % (self.name, resource_name))
+        return False
+
+    def open_resource(self, resource_name):
+        texture = self.getResourceData(resource_name)
+        if texture is not None:
+            texture.render()
 
 
 # -----------------------#
@@ -1205,6 +1249,7 @@ class ResourceManager(Singleton):
         self.sceneLoader = None
         self.scriptLoader = None
         self.modelLoader = None
+        self.proceduralTextureLoader = None
 
     def regist_loader(self, resource_loader_class):
         resource_loader = resource_loader_class(self.core_manager, self.root_path)
@@ -1228,6 +1273,7 @@ class ResourceManager(Singleton):
         self.sceneLoader = self.regist_loader(SceneLoader)
         self.scriptLoader = self.regist_loader(ScriptLoader)
         self.modelLoader = self.regist_loader(ModelLoader)
+        self.proceduralTextureLoader = self.regist_loader(ProceduralTextureLoader)
 
         # initialize
         for resource_loader in self.resource_loaders:
@@ -1365,7 +1411,12 @@ class ResourceManager(Singleton):
     def getMesh(self, meshName):
         return self.meshLoader.getResourceData(meshName)
 
-    # FUNCTIONS : Texture
+    # FUNCTIONS : Procedural Texture
+
+    def getProceduralTexture(self, textureName):
+        return self.proceduralTextureLoader.getResourceData(textureName)
+
+    # FUNCTIONS : ProTexture
 
     def getTextureNameList(self):
         return self.textureLoader.getResourceNameList()

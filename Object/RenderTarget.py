@@ -91,6 +91,8 @@ class RenderTargetManager(Singleton):
             rendertarget_datas['width'] = int(rendertarget_datas['width'] * scale)
             rendertarget_datas['height'] = int(rendertarget_datas['height'] * scale)
             rendertarget_type = rendertarget_datas['texture_type']
+            if type(rendertarget_type) is str:
+                rendertarget_type = eval(rendertarget_type)
             temp_rendertarget = rendertarget_type(name=rendertarget_name, **rendertarget_datas)
             if temp_rendertarget:
                 self.temp_rendertargets[rendertarget_name] = temp_rendertarget

@@ -12,6 +12,7 @@ from .Light import Light
 from .LightProbe import LightProbe
 from .Atmosphere import *
 from .Ocean import *
+from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D
 from .PostProcess import PostProcess
 from .RenderTarget import RenderTargets, RenderTargetManager
 from .Font import FontData, FontManager

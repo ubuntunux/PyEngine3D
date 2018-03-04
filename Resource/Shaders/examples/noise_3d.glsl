@@ -25,9 +25,8 @@ float noise(vec3 x, float scale)
                    mix( rand(i + vec3(0, 1, 1), scale), rand(i + vec3(1, 1, 1), scale), u.x), u.y), u.z);
 }
 
-float perlinNoise(vec3 p, float scale)
+float perlinNoise(vec3 p, float scale, float persistance)
 {
-	float persistance = 0.7;
 	float n = 0.0;
 	float weights = 0.0;
 	float amp = 1.0;
@@ -46,11 +45,12 @@ layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
 uniform float depth;
+uniform float noise_persistance;
+uniform int noise_scale;
 
 void main() {
     vec3 st = vec3(vs_output.tex_coord, depth);
-    const int scale = 6;
-    float n = perlinNoise( st, float(scale));
+    float n = perlinNoise( st, float(noise_scale), noise_persistance);
     fs_output = vec4(n);
 }
 #endif

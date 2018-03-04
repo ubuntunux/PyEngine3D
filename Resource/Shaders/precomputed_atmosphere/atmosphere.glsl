@@ -103,18 +103,20 @@ void main()
 
             for(int i=0; i<count; ++i)
             {
+                float weight = 1.0 - abs((float(count - i) / float(count)) * 2.0 - 1.0);
+                weight = 0.1;
                 vec3 uvw = (ray_start_pos.xyz + view_direction.xyz * float(count - i) * march_step);
 
                 float distortion = texture(texture_noise, uvw * 0.0051 + vec3(cloud_speed, 0.0, cloud_speed) * 0.5).x;
                 float opacity = texture(texture_noise, uvw * 0.0012 -
                     vec3(cloud_speed, 0.0, cloud_speed) +
-                    distortion * 0.2).x;
+                    distortion * 0.05).x;
 
-                opacity = pow(opacity, 15.0 + 5 * clamp(abs(uvw.y * 2.0 - 1.0), 0.0, 1.0)  );
+                opacity = pow(opacity, 15.0 + 5 * clamp(abs(uvw.y * 2.0 - 1.0), 0.0, 1.0));
                 opacity = clamp(opacity * 30.0, 0.0, 1.0);
 
-                cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w), opacity);
-                cloud.w = clamp(cloud.w + opacity, 0.0, 1.0);
+                cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w), opacity * weight);
+                cloud.w = clamp(cloud.w + opacity * weight, 0.0, 1.0);
             }
 
             const float minDist = 100.0;
