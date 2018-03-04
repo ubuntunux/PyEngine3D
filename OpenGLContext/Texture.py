@@ -256,7 +256,7 @@ class Texture:
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if hasattr(self, attributeName):
+        if hasattr(self, attributeName) and "" != attributeValue:
             setattr(self, attributeName, eval(attributeValue))
 
         if 'wrap' in attributeName:

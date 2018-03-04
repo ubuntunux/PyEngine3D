@@ -22,6 +22,7 @@ class NoiseTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
 
+        self.noise_name = 'noise_3d'
         self.noise_width = data.get('noise_width', 256)
         self.noise_height = data.get('noise_height', 256)
         self.noise_depth = data.get('noise_depth', 32)
@@ -36,7 +37,7 @@ class NoiseTexture3D:
         renderer = core_manager.renderer
 
         texture = CreateTexture(
-            name='noise_3d',
+            name=self.noise_name,
             texture_type=Texture3D,
             image_mode='RGBA',
             width=self.noise_width,
@@ -48,12 +49,11 @@ class NoiseTexture3D:
             mag_filter=GL_LINEAR,
             data_type=GL_UNSIGNED_BYTE,
             wrap=GL_REPEAT,
-            wrap_r=GL_CLAMP_TO_EDGE,
         )
 
-        resource = resource_manager.textureLoader.getResource('noise_3d')
+        resource = resource_manager.textureLoader.getResource(self.noise_name)
         if resource is None:
-            resource = resource_manager.textureLoader.create_resource("noise_3d", texture)
+            resource = resource_manager.textureLoader.create_resource(self.noise_name, texture)
             resource_manager.textureLoader.save_resource(resource.name)
         else:
             old_texture = resource.get_data()
