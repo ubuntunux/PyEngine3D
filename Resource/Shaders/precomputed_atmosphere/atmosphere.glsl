@@ -50,7 +50,6 @@ void main()
     float height_diff = cloud_height - CAMERA_POSITION.y;
     if(0.0 < view_direction.y && 0.0 < (height_diff + cloud_thickness) || view_direction.y < 0.0 && height_diff < 0.0)
     {
-
         // relative ray march start pos from the camera
         vec3 ray_start_pos;
 
@@ -78,8 +77,8 @@ void main()
 
         if(dist < NEAR_FAR.y)
         {
-            const int count = 100;
-            const float cloud_speed = TIME * 0.03;
+            const int count = 200;
+            const vec3 cloud_speed = vec3(0.03, 0.03, 0.0) * TIME;
 
             float march_height = cloud_thickness;
 
@@ -98,29 +97,27 @@ void main()
             // When you are in the clouds, march steps are likely to be too large.
             march_step = min(march_step, 5.0);
 
+            const float absorption = 0.5;
+            vec3 light_color = vec3(1.0, 1.0, 1.0) * LIGHT_COLOR.xyz;
             const vec3 cloud_color = vec3(0.5, 0.5, 0.7);
-            cloud.xyz = cloud_color;
+            cloud.xyz = vec3(0.0);
 
             for(int i=0; i<count; ++i)
             {
-                float weight = 1.0 - abs((float(count - i) / float(count)) * 2.0 - 1.0);
-                weight = 0.1;
-                vec3 uvw = (ray_start_pos.xyz + view_direction.xyz * float(count - i) * march_step);
+                vec3 uvw = ray_start_pos.xzy + view_direction.xzy * float(count - i) * march_step;
 
-                float distortion = texture(texture_noise, uvw * 0.0051 + vec3(cloud_speed, 0.0, cloud_speed) * 0.5).x;
-                float opacity = texture(texture_noise, uvw * 0.0012 -
-                    vec3(cloud_speed, 0.0, cloud_speed) +
-                    distortion * 0.05).x;
+                float distortion = 0.0;//texture(texture_noise, uvw * 0.0051 + cloud_speed * 0.5).x;
+                float cloud_density = texture(texture_noise, uvw * 0.0012 - cloud_speed + distortion * 0.05).x;
 
-                opacity = pow(opacity, 15.0 + 5 * clamp(abs(uvw.y * 2.0 - 1.0), 0.0, 1.0));
-                opacity = clamp(opacity * 30.0, 0.0, 1.0);
+                cloud_density = clamp(pow(cloud_density, 10.0) * 2.0, 0.0, 1.0);
 
-                cloud.xyz = mix(cloud.xyz, cloud_color * (1.0 - cloud.w), opacity * weight);
-                cloud.w = clamp(cloud.w + opacity * weight, 0.0, 1.0);
+                cloud.xyz = mix(cloud.xyz, light_color, cloud_density);
+                cloud.w = clamp(cloud.w + cloud_density, 0.0, 1.0);
+
+                light_color = clamp(light_color * (1.0 - pow(cloud_density, 0.5) * absorption), 0.0, 1.0);
             }
 
             const float minDist = 100.0;
-
             cloud.w *= clamp(1.0 - (dist - minDist) / (NEAR_FAR.y - minDist), 0.0, 1.0);
         }
     }
