@@ -15,6 +15,14 @@ in vec3 view_ray;
 in vec2 uv;
 layout(location = 0) out vec4 color;
 
+
+float get_cloud_density(vec3 uvw, vec3 cloud_speed)
+{
+    float distortion = 0.0;//texture(texture_noise, uvw * 0.0051 + cloud_speed * 0.5).x;
+    float cloud_density = texture(texture_noise, uvw * 0.0012 - cloud_speed + distortion * 0.05).x;
+    return clamp(pow(cloud_density, 10.0) * 2.0, 0.0, 1.0);
+}
+
 void main()
 {
     float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
@@ -77,9 +85,6 @@ void main()
 
         if(dist < NEAR_FAR.y)
         {
-            const int count = 200;
-            const vec3 cloud_speed = vec3(0.03, 0.03, 0.0) * TIME;
-
             float march_height = cloud_thickness;
 
             if(0.0 < view_direction.y)
@@ -93,28 +98,34 @@ void main()
                 march_height = clamp(-height_diff, 0.0, cloud_thickness);
             }
 
-            float march_step = abs(march_height / view_direction.y) / float(count);
-            // When you are in the clouds, march steps are likely to be too large.
-            march_step = min(march_step, 5.0);
-
-            const float absorption = 0.5;
-            vec3 light_color = vec3(1.0, 1.0, 1.0) * LIGHT_COLOR.xyz;
+            const float absorption = 0.8;
             const vec3 cloud_color = vec3(0.5, 0.5, 0.7);
-            cloud.xyz = vec3(0.0);
+            const int march_count = 50;
+            const vec3 cloud_speed = vec3(0.03, 0.03, 0.0) * TIME;
+            const int light_march_count = 10;
 
-            for(int i=0; i<count; ++i)
+            float march_step = abs(march_height / view_direction.y) / float(march_count);
+            // When you are in the clouds, march steps are likely to be too large.
+            //if(in_the_cloud)
             {
-                vec3 uvw = ray_start_pos.xzy + view_direction.xzy * float(count - i) * march_step;
+                march_step = min(march_step, 5.0);
+            }
 
-                float distortion = 0.0;//texture(texture_noise, uvw * 0.0051 + cloud_speed * 0.5).x;
-                float cloud_density = texture(texture_noise, uvw * 0.0012 - cloud_speed + distortion * 0.05).x;
+            for(int i=0; i<march_count; ++i)
+            {
+                vec3 uvw = ray_start_pos.xzy + view_direction.xzy * float(march_count - i) * march_step;
+                float cloud_density = get_cloud_density(uvw, cloud_speed);
+                vec3 light_color = vec3(1.0, 1.0, 1.0) * LIGHT_COLOR.xyz;
 
-                cloud_density = clamp(pow(cloud_density, 10.0) * 2.0, 0.0, 1.0);
+                for(int j=0; j<light_march_count; ++j)
+                {
+                    vec3 uvw_light = uvw + LIGHT_DIRECTION.xzy * float(light_march_count - j) * march_step;
+                    float cloud_density2 = get_cloud_density(uvw_light, cloud_speed);
+                    light_color = clamp(light_color * (1.0 - pow(cloud_density2, 0.5) * absorption), 0.0, 1.0);
+                }
 
                 cloud.xyz = mix(cloud.xyz, light_color, cloud_density);
                 cloud.w = clamp(cloud.w + cloud_density, 0.0, 1.0);
-
-                light_color = clamp(light_color * (1.0 - pow(cloud_density, 0.5) * absorption), 0.0, 1.0);
             }
 
             const float minDist = 100.0;
