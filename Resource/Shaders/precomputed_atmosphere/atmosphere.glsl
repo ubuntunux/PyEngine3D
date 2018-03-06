@@ -53,13 +53,14 @@ void main()
 
     // Cloud
     vec4 cloud = vec4(0.0);
-    const float cloud_height = 200.0;
+    const float cloud_height = 500.0;
     const float cloud_thickness = 200.0;
     float height_diff = cloud_height - CAMERA_POSITION.y;
-    if(0.0 < view_direction.y && 0.0 < (height_diff + cloud_thickness) || view_direction.y < 0.0 && height_diff < 0.0)
+    //if(0.0 < view_direction.y && 0.0 < (height_diff + cloud_thickness) || view_direction.y < 0.0 && height_diff < 0.0)
     {
         // relative ray march start pos from the camera
         vec3 ray_start_pos;
+        float hit_dist;
 
         const bool in_the_cloud = -cloud_thickness < height_diff && height_diff < 0.0;
 
@@ -67,49 +68,62 @@ void main()
         {
             // be in clouds
             ray_start_pos = vec3(0.0, 0.0, 0.0);
-        }
-        else if(0.0 < view_direction.y)
-        {
-            // under the sky
-            ray_start_pos = view_direction * abs(height_diff / view_direction.y);
+            hit_dist = 0.0;
         }
         else
         {
-            // above the sky
-            ray_start_pos = view_direction * abs((height_diff + cloud_thickness) / view_direction.y);
-        }
+            // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 
-        float dist = clamp(length(ray_start_pos), 0.0, NEAR_FAR.y);
+            // multiply 1.0 is not correct but looking good.
+            vec3 earth_center_pos = earth_center / (cloud_height < CAMERA_POSITION.y ? atmosphere_ratio : 1.0);
 
-        ray_start_pos += CAMERA_POSITION.xyz;
+            vec3 to_origin = vec3(0.0, CAMERA_POSITION.y, 0.0) - earth_center_pos;
+            float c = pow(dot(view_direction, to_origin), 2.0) - dot(to_origin, to_origin);
 
-        if(dist < NEAR_FAR.y)
-        {
-            float march_height = cloud_thickness;
-
-            if(0.0 < view_direction.y)
+            if(cloud_height < CAMERA_POSITION.y)
             {
-                // Looking up at the sky
-                march_height = clamp(cloud_thickness + height_diff, 0.0, cloud_thickness);
+                // above the sky
+                if(view_direction.y < 0.0)
+                {
+                    float r = cloud_height - earth_center_pos.y + cloud_thickness;
+                    c = -sqrt(c + r * r);
+                }
+                else
+                {
+                    // discard
+                    hit_dist = -1.0;
+                }
             }
             else
             {
-                // Looking down at the sky
-                march_height = clamp(-height_diff, 0.0, cloud_thickness);
+                // under the sky
+                if(0.0 < view_direction.y)
+                {
+                    float r = cloud_height - earth_center_pos.y;
+                    c = sqrt(c + r * r);
+                }
+                else
+                {
+                    float r = cloud_height - earth_center_pos.y;
+                    c = sqrt(c + r * r);
+                }
             }
 
+            hit_dist = -dot(view_direction, to_origin) + c;
+            ray_start_pos = view_direction * hit_dist;
+        }
+
+        ray_start_pos.xyz += CAMERA_POSITION.xyz;
+
+        if(0.0 <= hit_dist && hit_dist < NEAR_FAR.y)
+        {
             const float absorption = 0.8;
             const vec3 cloud_color = vec3(0.5, 0.5, 0.7);
             const int march_count = 50;
             const vec3 cloud_speed = vec3(0.03, 0.03, 0.0) * TIME;
             const int light_march_count = 10;
 
-            float march_step = abs(march_height / view_direction.y) / float(march_count);
-            // When you are in the clouds, march steps are likely to be too large.
-            //if(in_the_cloud)
-            {
-                march_step = min(march_step, 5.0);
-            }
+            float march_step = cloud_thickness / float(march_count);
 
             for(int i=0; i<march_count; ++i)
             {
@@ -128,8 +142,8 @@ void main()
                 cloud.w = clamp(cloud.w + cloud_density, 0.0, 1.0);
             }
 
-            const float minDist = 100.0;
-            cloud.w *= clamp(1.0 - (dist - minDist) / (NEAR_FAR.y - minDist), 0.0, 1.0);
+            const float minDist = 1000.0;
+            cloud.w *= clamp(1.0 - (hit_dist - minDist) / (NEAR_FAR.y - minDist), 0.0, 1.0);
         }
     }
 
