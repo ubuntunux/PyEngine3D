@@ -1103,14 +1103,14 @@ float GetSceneShadowLength(float scene_linear_depth, vec3 view_direction, sample
 
 void GetSceneRadiance(
     const in AtmosphereParameters atmosphere,
-    float scene_linear_depth, vec3 view_direction, vec3 normal, sampler2D texture_shadow,
+    float scene_linear_depth, vec3 eye_direction, vec3 normal, sampler2D texture_shadow,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
 {
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
-    vec3 relative_point = relative_camera_pos + view_direction * scene_linear_depth * atmosphere_ratio;
+    vec3 relative_point = relative_camera_pos + eye_direction * scene_linear_depth * atmosphere_ratio;
 
-    scene_shadow_length = GetSceneShadowLength(scene_linear_depth, view_direction, texture_shadow);
+    scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
 
     sun_irradiance = GetSunAndSkyIrradiance(
         atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
