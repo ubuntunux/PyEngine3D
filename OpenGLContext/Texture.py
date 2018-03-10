@@ -189,14 +189,17 @@ class Texture:
                 data = np.array(data, dtype=dtype)
             glBindTexture(self.target, 0)
             return data
-        elif GL_TEXTURE_3D == self.target:
+        elif GL_TEXTURE_3D == self.target or GL_TEXTURE_2D_ARRAY == self.target:
             glBindTexture(self.target, self.buffer)
             fb = glGenFramebuffers(1)
             glBindFramebuffer(GL_FRAMEBUFFER, fb)
 
             data = []
             for layer in range(self.depth):
-                glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
+                if GL_TEXTURE_3D == self.target:
+                    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
+                elif GL_TEXTURE_2D_ARRAY == self.target:
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
                 glReadBuffer(GL_COLOR_ATTACHMENT0)
                 pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
                 # convert to numpy array
