@@ -25,7 +25,7 @@ from OpenGL.GL import *
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from Object import CreateProceduralTexture, NoiseTexture3D
-from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
+from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
@@ -823,6 +823,23 @@ class TextureLoader(ResourceLoader):
             data=data,
         )
         self.create_resource("default_3d", default_3d)
+
+        default_2d_array = CreateTexture(
+            name='default_2d_array',
+            texture_type=Texture2DArray,
+            image_mode='RGBA',
+            width=size,
+            height=size,
+            depth=size,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            data_type=GL_UNSIGNED_BYTE,
+            wrap=GL_CLAMP_TO_EDGE,
+            data=data,
+        )
+        self.create_resource("default_2d_array", default_2d_array)
 
     def open_resource(self, resource_name):
         self.core_manager.request(COMMAND.VIEW_TEXTURE, resource_name)

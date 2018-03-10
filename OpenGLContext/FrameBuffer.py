@@ -84,6 +84,8 @@ class FrameBuffer:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, texture_buffer)
         elif GL_TEXTURE_2D == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture_buffer, self.target_level)
+        elif GL_TEXTURE_2D_ARRAY == target:
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture_buffer, 0, self.target_layer)
         elif GL_TEXTURE_3D == target:
             glFramebufferTexture3D(
                 GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level, self.target_layer)

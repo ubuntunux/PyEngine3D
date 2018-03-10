@@ -303,6 +303,56 @@ class Texture2D(Texture):
         glBindTexture(GL_TEXTURE_2D, 0)
 
 
+class Texture2DArray(Texture):
+    target = GL_TEXTURE_2D_ARRAY
+
+    def __init__(self, **texture_data):
+        Texture.__init__(self, **texture_data)
+
+        data = texture_data.get('data')
+
+        self.buffer = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D_ARRAY, self.buffer)
+        glTexImage3D(GL_TEXTURE_2D_ARRAY,
+                     0,
+                     self.internal_format,
+                     self.width,
+                     self.height,
+                     self.depth,
+                     0,
+                     self.texture_format,
+                     self.data_type,
+                     data)
+
+        # glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, self.internal_format, self.width, self.height, self.depth)
+        # area = self.width * self.height
+        # for layer in range(self.depth):
+        #     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+        #                     0,
+        #                     0,
+        #                     0,
+        #                     layer,
+        #                     self.width,
+        #                     self.height,
+        #                     1,
+        #                     self.texture_format,
+        #                     self.data_type,
+        #                     data[layer * area: (layer + 1) * area])
+
+        if self.enable_mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D_ARRAY)
+            # create indivisual mipmapThis creates a texture with a single mipmap level.
+            # You will also need separate glTexSubImage2D calls to upload each mipmap
+            # glTexStorage2D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height)
+            # glTexSubImage2D(GL_TEXTURE_3D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
+
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, self.min_filter)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, self.mag_filter)
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0)
+
+
 class Texture3D(Texture):
     target = GL_TEXTURE_3D
 

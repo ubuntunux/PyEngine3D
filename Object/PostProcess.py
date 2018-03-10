@@ -83,6 +83,7 @@ class PostProcess:
         self.deferred_shading = None
         self.copy_texture_mi = None
         self.render_texture_2d = None
+        self.render_texture_2d_array = None
         self.render_texture_3d = None
         self.render_texture_cube = None
 
@@ -138,6 +139,9 @@ class PostProcess:
         self.render_texture_2d = self.resource_manager.getMaterialInstance(name="render_texture_2d",
                                                                            shader_name="render_texture",
                                                                            macros={'GL_TEXTURE_2D': 1})
+        self.render_texture_2d_array = self.resource_manager.getMaterialInstance(name="render_texture_2d_array",
+                                                                                 shader_name="render_texture",
+                                                                                 macros={'GL_TEXTURE_2D_ARRAY': 1})
         self.render_texture_3d = self.resource_manager.getMaterialInstance(name="render_texture_3d",
                                                                            shader_name="render_texture",
                                                                            macros={'GL_TEXTURE_3D': 1})
@@ -465,6 +469,8 @@ class PostProcess:
             render_texture_mi = self.render_texture_3d
         elif source_texture.target == GL_TEXTURE_CUBE_MAP:
             render_texture_mi = self.render_texture_cube
+        elif source_texture.target == GL_TEXTURE_2D_ARRAY:
+            render_texture_mi = self.render_texture_2d_array
         else:
             render_texture_mi = self.render_texture_2d
         render_texture_mi.use_program()
