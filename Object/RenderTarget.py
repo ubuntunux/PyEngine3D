@@ -9,7 +9,7 @@ from OpenGL.GL.EXT.framebuffer_object import *
 
 from Utilities import *
 from Common import logger
-from OpenGLContext import Texture2D, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
+from OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
 
 
 class Option:
@@ -36,6 +36,7 @@ class RenderTargets:
     VELOCITY = None
     TEMP_RENDER_BUFFER_MULTISAMPLE = None
     TEMP_RGBA8 = None
+    TEMP_2D_ARRAY = None
     TEMP_MULTISAMPLE_X4 = None
 
 
@@ -386,6 +387,20 @@ class RenderTargetManager(Singleton):
             texture_type=Texture2D,
             width=fullsize_x,
             height=fullsize_y,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            data_type=GL_UNSIGNED_BYTE,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.TEMP_2D_ARRAY = self.create_rendertarget(
+            "TEMP_2D_ARRAY",
+            texture_type=Texture2DArray,
+            width=fullsize_x,
+            height=fullsize_y,
+            depth=5,
             internal_format=GL_RGBA8,
             texture_format=GL_RGBA,
             data_type=GL_UNSIGNED_BYTE,
