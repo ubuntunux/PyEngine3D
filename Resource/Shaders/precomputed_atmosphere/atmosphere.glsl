@@ -134,8 +134,7 @@ void main()
         }
 
         // Atmosphere
-        vec3 scene_radiance = vec3(0.0);
-        vec3 scene_in_scatter = vec3(0.0);
+        vec3 scene_in_scatter;
         vec3 scene_sun_irradiance;
         vec3 scene_sky_irradiance;
         {
@@ -143,7 +142,7 @@ void main()
             GetSceneRadiance(
                 ATMOSPHERE, hit_dist, -eye_direction, scene_shadow_length,
                 scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
-            scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
+            scene_sun_irradiance = scene_sun_irradiance * exposure;
             scene_sky_irradiance *= exposure;
             scene_in_scatter *= exposure;
         }
@@ -151,7 +150,7 @@ void main()
         // apply altitude of camera
         ray_start_pos.y += CAMERA_POSITION.y;
 
-        const vec3 light_color = LIGHT_COLOR.xyz * scene_radiance;
+        const vec3 light_color = LIGHT_COLOR.xyz * scene_sun_irradiance;
         float dist_fade = clamp(1.0 - (hit_dist - min_dist) / (far_dist - min_dist), 0.0, 1.0);
         cloud.xyz = light_color;
 
@@ -165,7 +164,7 @@ void main()
             const bool inverse_ray_march = false;
 
             float march_step = cloud_thickness / float(march_count) / max(0.5, abs(eye_direction.y));
-            float distortion = texture(texture_noise, ray_start_pos.xzy * 0.005 + cloud_speed * 0.5).x;
+            float distortion = texture(texture_noise, ray_start_pos.xzy * 0.0005 + cloud_speed * 0.5).x;
 
             for(int i=0; i<march_count; ++i)
             {
