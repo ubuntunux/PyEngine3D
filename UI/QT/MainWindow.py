@@ -195,7 +195,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
 
         # render targets
         self.comboRenderTargets = self.findChild(QtGui.QComboBox, "comboRenderTargets")
-        self.comboRenderTargets.currentIndexChanged.connect(self.view_rendertarget)
+        self.comboRenderTargets.activated.connect(self.view_rendertarget)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST)),
                      self.clearRenderTargetList)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO)),
@@ -422,7 +422,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     selected_item_type = selectedItem.text(1)
                     # send changed data
                     self.appCmdQueue.put(command, (selected_item_name, selected_item_type, attributeName, value, index))
-
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
