@@ -324,21 +324,6 @@ class Texture2DArray(Texture):
                      self.data_type,
                      data)
 
-        # glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, self.internal_format, self.width, self.height, self.depth)
-        # area = self.width * self.height
-        # for layer in range(self.depth):
-        #     glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-        #                     0,
-        #                     0,
-        #                     0,
-        #                     layer,
-        #                     self.width,
-        #                     self.height,
-        #                     1,
-        #                     self.texture_format,
-        #                     self.data_type,
-        #                     data[layer * area: (layer + 1) * area])
-
         if self.enable_mipmap:
             glGenerateMipmap(GL_TEXTURE_2D_ARRAY)
             # create indivisual mipmapThis creates a texture with a single mipmap level.
