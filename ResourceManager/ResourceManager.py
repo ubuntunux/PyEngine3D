@@ -794,7 +794,7 @@ class TextureLoader(ResourceLoader):
     external_dir_names = [os.path.join('Externals', 'Textures'), ]
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
-                           TIFF=".tiff", DXT=".dds", KTX=".ktx")
+                           TIFF=".tiff", DXT=".dds", KTX=".ktx", PGM=".pgm")
 
     def __init__(self, core_manager, root_path):
         ResourceLoader.__init__(self, core_manager, root_path)
