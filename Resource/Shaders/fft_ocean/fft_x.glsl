@@ -1,44 +1,14 @@
-#ifdef _VERTEX_
-
+#ifdef GL_VERTEX_SHADER
 varying vec2 uvIn;
 
 void main() {
     uvIn = gl_Vertex.zw;
     gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
 }
-
 #endif
 
-#ifdef _GEOMETRY_
-#version 120
-#extension GL_EXT_gpu_shader4 : enable
-#extension GL_EXT_geometry_shader4 : enable
 
-uniform int nLayers;
-
-varying in vec2 uvIn[];
-varying vec2 uv;
-
-void main() {
-    for (int i = 0; i < nLayers; ++i) {
-        gl_Layer = i;
-        gl_PrimitiveID = i;
-        gl_Position = gl_PositionIn[0];
-        uv = uvIn[0];
-        EmitVertex();
-        gl_Position = gl_PositionIn[1];
-        uv = uvIn[1];
-        EmitVertex();
-        gl_Position = gl_PositionIn[2];
-        uv = uvIn[2];
-        EmitVertex();
-        EndPrimitive();
-    }
-}
-
-#endif
-
-#ifdef _FRAGMENT_
+#ifdef GL_FRAGMENT_SHADER
 #extension GL_EXT_gpu_shader4 : enable
 
 uniform sampler2D butterflySampler;
@@ -67,5 +37,4 @@ void main() {
 
     gl_FragColor = fft2(gl_PrimitiveID, i, w);
 }
-
 #endif

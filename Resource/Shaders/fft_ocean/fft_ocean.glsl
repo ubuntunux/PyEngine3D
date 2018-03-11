@@ -1,39 +1,5 @@
 #extension GL_EXT_gpu_shader4 : enable
 
-/**
- * Real-time Realistic Ocean Lighting using Seamless Transitions from Geometry to BRDF
- * Copyright (c) 2009 INRIA
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the copyright holders nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
- * THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
- * Author: Eric Bruneton
- */
-
 uniform mat4 screenToCamera; // screen space to camera space
 uniform mat4 cameraToWorld; // camera space to world space
 uniform mat4 worldToScreen; // world space to screen space
@@ -54,8 +20,7 @@ uniform vec3 seaColor; // sea bottom color
 varying vec2 u; // coordinates in world space used to compute P(u)
 varying vec3 P; // wave point P(u) in world space
 
-#ifdef _VERTEX_
-
+#ifdef GL_VERTEX_SHADER
 vec2 oceanPos(vec4 vertex) {
     vec3 cameraDir = normalize((screenToCamera * vertex).xyz);
     vec3 worldDir = (cameraToWorld * vec4(cameraDir, 0.0)).xyz;
@@ -89,11 +54,9 @@ void main() {
 
     gl_Position = worldToScreen * vec4(P, 1.0);
 }
-
 #endif
 
-#ifdef _FRAGMENT_
-
+#ifdef GL_FRAGMENT_SHADER
 // ---------------------------------------------------------------------------
 // REFLECTED SUN RADIANCE
 // ---------------------------------------------------------------------------
@@ -105,8 +68,8 @@ float erfc(float x) {
 
 float Lambda(float cosTheta, float sigmaSq) {
 	float v = cosTheta / sqrt((1.0 - cosTheta * cosTheta) * (2.0 * sigmaSq));
-    return max(0.0, (exp(-v * v) - v * sqrt(M_PI) * erfc(v)) / (2.0 * v * sqrt(M_PI)));
-	//return (exp(-v * v)) / (2.0 * v * sqrt(M_PI)); // approximate, faster formula
+    return max(0.0, (exp(-v * v) - v * sqrt(PI) * erfc(v)) / (2.0 * v * sqrt(PI)));
+	//return (exp(-v * v)) / (2.0 * v * sqrt(PI)); // approximate, faster formula
 }
 
 // L, V, N, Tx, Ty in world space
@@ -120,7 +83,7 @@ float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaS
     float zH = dot(H, N); // cos of facet normal zenith angle
     float zH2 = zH * zH;
 
-    float p = exp(-0.5 * (zetax * zetax / sigmaSq.x + zetay * zetay / sigmaSq.y)) / (2.0 * M_PI * sqrt(sigmaSq.x * sigmaSq.y));
+    float p = exp(-0.5 * (zetax * zetax / sigmaSq.x + zetay * zetay / sigmaSq.y)) / (2.0 * PI * sqrt(sigmaSq.x * sigmaSq.y));
 
     float tanV = atan(dot(V, Ty), dot(V, Tx));
     float cosV2 = 1.0 / (1.0 + tanV * tanV);
@@ -250,12 +213,12 @@ void main() {
 #endif
 
 #ifdef SEA_CONTRIB
-    vec3 Lsea = seaColor * Esky / M_PI;
+    vec3 Lsea = seaColor * Esky / PI;
     gl_FragColor.rgb += (1.0 - fresnel) * Lsea;
 #endif
 
 #if !defined(SEA_CONTRIB) && !defined(SKY_CONTRIB) && !defined(SUN_CONTRIB)
-    gl_FragColor.rgb += 0.0001 * seaColor * (Lsun * max(dot(N, worldSunDir), 0.0) + Esky) / M_PI;
+    gl_FragColor.rgb += 0.0001 * seaColor * (Lsun * max(dot(N, worldSunDir), 0.0) + Esky) / PI;
 #endif
 
     gl_FragColor.rgb = hdr(gl_FragColor.rgb);

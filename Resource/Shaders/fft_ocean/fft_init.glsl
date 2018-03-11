@@ -1,22 +1,9 @@
 uniform sampler2D spectrum_1_2_Sampler;
 uniform sampler2D spectrum_3_4_Sampler;
-
 uniform float FFT_SIZE;
-
 uniform vec4 INVERSE_GRID_SIZES;
-
 uniform float t;
-
 varying vec2 uv;
-
-#ifdef _VERTEX_
-
-void main() {
-    uv = gl_Vertex.zw;
-    gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
-}
-
-#else
 
 vec2 getSpectrum(float k, vec2 s0, vec2 s0c) {
     float w = sqrt(9.81 * k * (1.0 + k * k / (370.0 * 370.0)));
@@ -29,6 +16,14 @@ vec2 i(vec2 z) {
     return vec2(-z.y, z.x); // returns i times z (complex number)
 }
 
+#ifdef GL_VERTEX_SHADER
+void main() {
+    uv = gl_Vertex.zw;
+    gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
+}
+#endif
+
+#ifdef GL_FRAGMENT_SHADER
 void main() {
     vec2 st = floor(uv * FFT_SIZE) / FFT_SIZE;
     float x = uv.x > 0.5 ? st.x - 1.0 : st.x;
@@ -65,5 +60,4 @@ void main() {
     gl_FragData[3] = gl_FragData[1] * vec4(IK1, IK1, IK2, IK2);
     gl_FragData[4] = gl_FragData[2] * vec4(IK3, IK3, IK4, IK4);
 }
-
 #endif

@@ -11,16 +11,12 @@ uniform float c;
 
 varying vec2 uv;
 
-#ifdef _VERTEX_
-
+#ifdef GL_VERTEX_SHADER
 void main() {
     uv = gl_Vertex.zw;
     gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
 }
-
-#else
-
-#define M_PI 3.14159265
+#endif
 
 vec2 getSlopeVariances(vec2 k, float A, float B, float C, vec2 spectrumSample) {
     float w = 1.0 - exp(A * k.x * k.x + B * k.x * k.y + C * k.y * k.y);
@@ -28,6 +24,7 @@ vec2 getSlopeVariances(vec2 k, float A, float B, float C, vec2 spectrumSample) {
     return kw * kw * dot(spectrumSample, spectrumSample) * 2.0;
 }
 
+#ifdef GL_FRAGMENT_SHADER
 void main() {
     const float SCALE = 10.0;
     float a = floor(uv.x * N_SLOPE_VARIANCE);
@@ -44,7 +41,7 @@ void main() {
         for (int x = 0; x < FFT_SIZE; ++x) {
             int i = x >= FFT_SIZE / 2 ? x - FFT_SIZE : x;
             int j = y >= FFT_SIZE / 2 ? y - FFT_SIZE : y;
-            vec2 k = 2.0 * M_PI * vec2(i, j);
+            vec2 k = 2.0 * PI * vec2(i, j);
 
             vec4 spectrum12 = texture2D(spectrum_1_2_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
             vec4 spectrum34 = texture2D(spectrum_3_4_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
@@ -57,5 +54,4 @@ void main() {
     }
     gl_FragColor = slopeVariances.xxxy;
 }
-
 #endif
