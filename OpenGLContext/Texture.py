@@ -198,8 +198,12 @@ class Texture:
             for layer in range(self.depth):
                 if GL_TEXTURE_3D == self.target:
                     glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
-                elif GL_TEXTURE_2D_ARRAY == self.target:
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
+                elif GL_TEXTURE_2D_ARRAY == self.target:                    
+                    # glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
+                    이걸로 해보자
+                    glCopyImageSubData(texture2D_ID, GL_TEXTURE_2D, 0, 0, 0, 0,
+                                       self.buffer, GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer,
+                                       self.width, self.height, 1);
                 glReadBuffer(GL_COLOR_ATTACHMENT0)
                 pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
                 # convert to numpy array
