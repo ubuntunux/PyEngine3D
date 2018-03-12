@@ -100,8 +100,10 @@ class Config:
     def getFilename(self):
         return self.filename
 
+
 if __name__ == '__main__':
     import unittest
+
 
     class test(unittest.TestCase):
         def testConfig(self):

@@ -12,6 +12,7 @@ class Data:
     def set_dict(self, dict_data: dict):
         self.__dict__ = dict_data
 
+
 '''
 Example:
 >>> data = Data()

@@ -24,7 +24,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from Object import CreateProceduralTexture, NoiseTexture3D
+from Object import CreateProceduralTexture, NoiseTexture3D, FFTOceanTexture
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
@@ -309,6 +309,9 @@ class ResourceLoader(object):
     def convert_resource(self, resource, source_filepath):
         logger.warn("convert_resource is not implemented in %s." % self.name)
 
+    def hasResource(self, resourceName):
+        return resourceName in self.resources
+
     def getResource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
             return self.resources[resourceName]
@@ -412,7 +415,7 @@ class ResourceLoader(object):
     def save_resource(self, resource_name):
         resource = self.getResource(resource_name)
         resource_data = self.getResourceData(resource_name)
-        if resource and resource_data:
+        if resource  is not None and resource_data is not None:
             if hasattr(resource_data, 'get_save_data'):
                 save_data = resource_data.get_save_data()
                 self.save_resource_data(resource, save_data)
@@ -422,7 +425,7 @@ class ResourceLoader(object):
 
     def load_resource_data(self, resource):
         filePath = ''
-        if resource:
+        if resource is not None:
             filePath = resource.meta_data.resource_filepath
             try:
                 if os.path.exists(filePath):
@@ -473,7 +476,7 @@ class ResourceLoader(object):
 
     def delete_resource(self, resource_name):
         resource = self.getResource(resource_name)
-        if resource:
+        if resource is not None:
             logger.info("Deleted the %s." % resource.name)
             if resource.name in self.metaDatas:
                 resource_filepath = self.metaDatas[resource.name].resource_filepath
@@ -989,16 +992,21 @@ class ProceduralTextureLoader(ResourceLoader):
         # load and regist resource
         super(ProceduralTextureLoader, self).initialize()
 
-        resource = self.getResource("NoiseTexture3D")
-        if resource is None:
-            self.create_resource("NoiseTexture3D", NoiseTexture3D())
-            self.save_resource("NoiseTexture3D")
+        resource_name = "NoiseTexture3D"
+        if not self.hasResource(resource_name):
+            self.create_resource(resource_name, NoiseTexture3D())
+            self.save_resource(resource_name)
+
+        resource_name = "FFTOceanTexture"
+        if not self.hasResource(resource_name):
+            self.create_resource(resource_name, FFTOceanTexture())
+            self.save_resource(resource_name)
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
         if resource:
             data = self.load_resource_data(resource)
-            if data:
+            if data is not None:
                 resource_data = CreateProceduralTexture(**data)
                 resource.set_data(resource_data)
                 return True

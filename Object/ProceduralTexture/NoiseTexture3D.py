@@ -10,25 +10,15 @@ from Utilities import Attributes
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
 
 
-def CreateProceduralTexture(**datas):
-    texture_class = datas.get('texture_type', None)
-    if texture_class is not None:
-        texture_class = eval(texture_class)
-        return texture_class(**datas)
-    return None
-
-
 class NoiseTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
-
-        self.noise_name = 'noise_3d'
+        self.texture_name = 'noise_3d'
         self.noise_width = data.get('noise_width', 256)
         self.noise_height = data.get('noise_height', 256)
         self.noise_depth = data.get('noise_depth', 32)
         self.noise_persistance = data.get('noise_persistance', 0.7)
         self.noise_scale = data.get('noise_scale', 6)
-
         self.attribute = Attributes()
 
     def render(self):
@@ -37,7 +27,7 @@ class NoiseTexture3D:
         renderer = core_manager.renderer
 
         texture = CreateTexture(
-            name=self.noise_name,
+            name=self.texture_name,
             texture_type=Texture3D,
             image_mode='RGBA',
             width=self.noise_width,
@@ -51,9 +41,9 @@ class NoiseTexture3D:
             wrap=GL_REPEAT,
         )
 
-        resource = resource_manager.textureLoader.getResource(self.noise_name)
+        resource = resource_manager.textureLoader.getResource(self.texture_name)
         if resource is None:
-            resource = resource_manager.textureLoader.create_resource(self.noise_name, texture)
+            resource = resource_manager.textureLoader.create_resource(self.texture_name, texture)
             resource_manager.textureLoader.save_resource(resource.name)
         else:
             old_texture = resource.get_data()
@@ -91,6 +81,7 @@ class NoiseTexture3D:
     def get_save_data(self):
         save_data = dict(
             texture_type=self.__class__.__name__,
+            texture_name=self.texture_name,
             noise_width=self.noise_width,
             noise_height=self.noise_height,
             noise_depth=self.noise_depth,
@@ -100,6 +91,7 @@ class NoiseTexture3D:
         return save_data
 
     def getAttribute(self):
+        self.attribute.setAttribute("texture_name", self.texture_name)
         self.attribute.setAttribute("noise_width", self.noise_width)
         self.attribute.setAttribute("noise_height", self.noise_height)
         self.attribute.setAttribute("noise_depth", self.noise_depth)
