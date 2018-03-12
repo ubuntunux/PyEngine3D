@@ -1,4 +1,4 @@
-from math import log, exp, sqrt
+from math import log, exp, sqrt, tanh, sin, cos, atan2
 import numpy as np
 
 from OpenGL.GL import *
@@ -144,42 +144,6 @@ def computeWeight(N, k):
     return cosl(2.0 * M_PI * k / float(N)), sinl(2.0 * M_PI * k / float(N))
 
 
-def computeButterflyLookupTexture():
-    data = np.array(FFT_SIZE * PASSES * 4, dtype=np.float32)
-
-    for i in range(PASSES):
-        nBlocks  = int(pow(2.0, float(PASSES - 1 - i)))
-        nHInputs = int(pow(2.0, float(i)))
-        for j in range(nBlocks):
-            for k in range(nHInputs):
-                i1, i2, j1, j2 = 0, 0, 0, 0
-                if i == 0:
-                    i1 = j * nHInputs * 2 + k
-                    i2 = j * nHInputs * 2 + nHInputs + k
-                    j1 = bitReverse(i1, FFT_SIZE)
-                    j2 = bitReverse(i2, FFT_SIZE)
-                else:
-                    i1 = j * nHInputs * 2 + k
-                    i2 = j * nHInputs * 2 + nHInputs + k
-                    j1 = i1
-                    j2 = i2
-
-                wr, wi = computeWeight(FFT_SIZE, k * nBlocks)
-
-                offset1 = 4 * (i1 + i * FFT_SIZE)
-                data[offset1 + 0] = (j1 + 0.5) / FFT_SIZE
-                data[offset1 + 1] = (j2 + 0.5) / FFT_SIZE
-                data[offset1 + 2] = wr
-                data[offset1 + 3] = wi
-
-                offset2 = 4 * (i2 + i * FFT_SIZE)
-                data[offset2 + 0] = (j1 + 0.5) / FFT_SIZE
-                data[offset2 + 1] = (j2 + 0.5) / FFT_SIZE
-                data[offset2 + 2] = -wr
-                data[offset2 + 3] = -wi
-    return data
-
-
 class FFTOcean:
     def __init__(self, **object_data):
         self.name = object_data.get('name', 'fft_ocean')
@@ -188,7 +152,16 @@ class FFTOcean:
         self.attributes = Attributes()
 
         resource_manager = CoreManager.instance().resource_manager
-        self.material_instance = resource_manager.getMaterialInstance('fft_ocean')
+        self.framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
+
+        self.fft_init = resource_manager.getMaterialInstance('fft_init')
+        self.fft_ocean = resource_manager.getMaterialInstance('fft_ocean')
+        self.fft_variance = resource_manager.getMaterialInstance('fft_variance')
+        self.fft_x = resource_manager.getMaterialInstance('fft_x')
+        self.fft_y = resource_manager.getMaterialInstance('fft_y')
+
+        self.quad = resource_manager.getMesh("Quad")
+        self.quad_geometry = self.quad.get_geometry()
 
         self.mesh = Plane(width=200, height=200)
         self.geometry = self.mesh.get_geometry()
@@ -197,6 +170,7 @@ class FFTOcean:
                                                            element_data=FLOAT2_ZERO)
 
         # create render targets
+        data_spectrum12, data_spectrum34 = self.generateWavesSpectrum()
         self.texture_spectrum_1_2 = CreateTexture(
             name='spectrum_1_2',
             texture_type=Texture2D,
@@ -209,6 +183,7 @@ class FFTOcean:
             mag_filter=GL_NEAREST,
             data_type=GL_FLOAT,
             wrap=GL_REPEAT,
+            data=data_spectrum12,
         )
 
         self.texture_spectrum_3_4 = CreateTexture(
@@ -223,6 +198,7 @@ class FFTOcean:
             mag_filter=GL_NEAREST,
             data_type=GL_FLOAT,
             wrap=GL_REPEAT,
+            data=data_spectrum34,
         )
 
         self.texture_slope_variance = CreateTexture(
@@ -287,8 +263,42 @@ class FFTOcean:
             data=data,
         )
 
-        self.generateWavesSpectrum()
         self.computeSlopeVarianceTex()
+
+    def computeButterflyLookupTexture(self):
+        data = np.array(FFT_SIZE * PASSES * 4, dtype=np.float32)
+
+        for i in range(PASSES):
+            nBlocks = int(pow(2.0, float(PASSES - 1 - i)))
+            nHInputs = int(pow(2.0, float(i)))
+            for j in range(nBlocks):
+                for k in range(nHInputs):
+                    i1, i2, j1, j2 = 0, 0, 0, 0
+                    if i == 0:
+                        i1 = j * nHInputs * 2 + k
+                        i2 = j * nHInputs * 2 + nHInputs + k
+                        j1 = bitReverse(i1, FFT_SIZE)
+                        j2 = bitReverse(i2, FFT_SIZE)
+                    else:
+                        i1 = j * nHInputs * 2 + k
+                        i2 = j * nHInputs * 2 + nHInputs + k
+                        j1 = i1
+                        j2 = i2
+
+                    wr, wi = computeWeight(FFT_SIZE, k * nBlocks)
+
+                    offset1 = 4 * (i1 + i * FFT_SIZE)
+                    data[offset1 + 0] = (j1 + 0.5) / FFT_SIZE
+                    data[offset1 + 1] = (j2 + 0.5) / FFT_SIZE
+                    data[offset1 + 2] = wr
+                    data[offset1 + 3] = wi
+
+                    offset2 = 4 * (i2 + i * FFT_SIZE)
+                    data[offset2 + 0] = (j1 + 0.5) / FFT_SIZE
+                    data[offset2 + 1] = (j2 + 0.5) / FFT_SIZE
+                    data[offset2 + 2] = -wr
+                    data[offset2 + 3] = -wi
+        return data
 
     def generateWavesSpectrum(self):
         spectrum12 = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
@@ -303,11 +313,7 @@ class FFTOcean:
                 getSpectrumSample(i, j, GRID2_SIZE, M_PI * FFT_SIZE / GRID1_SIZE, spectrum12 + offset + 2)
                 getSpectrumSample(i, j, GRID3_SIZE, M_PI * FFT_SIZE / GRID2_SIZE, spectrum34 + offset)
                 getSpectrumSample(i, j, GRID4_SIZE, M_PI * FFT_SIZE / GRID3_SIZE, spectrum34 + offset + 2)
-
-        # glActiveTexture(GL_TEXTURE0 + SPECTRUM_1_2_UNIT)
-        # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, FFT_SIZE, FFT_SIZE, 0, GL_RGBA, GL_FLOAT, spectrum12)
-        # glActiveTexture(GL_TEXTURE0 + SPECTRUM_3_4_UNIT)
-        # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, FFT_SIZE, FFT_SIZE, 0, GL_RGBA, GL_FLOAT, spectrum34)
+        return spectrum12, spectrum34
 
     def computeSlopeVarianceTex(self):
         theoreticSlopeVariance = 0.0
@@ -328,19 +334,15 @@ class FFTOcean:
                 totalSlopeVariance += getSlopeVariance(i / GRID3_SIZE, j / GRID3_SIZE, spectrum34 + offset)
                 totalSlopeVariance += getSlopeVariance(i / GRID4_SIZE, j / GRID4_SIZE, spectrum34 + offset + 2)
 
-        # glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, variancesFbo)
-        # glViewport(0, 0, N_SLOPE_VARIANCE, N_SLOPE_VARIANCE)
-        #
-        # glUseProgram(variances->program)
-        # glUniform4f(
-        #     glGetUniformLocation(variances->program, "GRID_SIZES"), GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE)
-        # glUniform1f(glGetUniformLocation(variances->program, "slopeVarianceDelta"), 0.5 * (
-        #         theoreticSlopeVariance - totalSlopeVariance))
-        #
-        # for layer in range(N_SLOPE_VARIANCE):
-        #     glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_3D, slopeVarianceTex, 0, layer)
-        #     glUniform1f(glGetUniformLocation(variances->program, "c"), layer)
-        #     drawQuad()
+        self.fft_variance.use_program()
+        self.fft_variance.bind_uniform("GRID_SIZES", [GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE])
+        self.fft_variance.bind_uniform("slopeVarianceDelta", (theoreticSlopeVariance - totalSlopeVariance) * 0.5)
+        self.quad_geometry.bind_vertex_buffer()
+
+        for layer in range(N_SLOPE_VARIANCE):
+            self.framebuffer_manager.bind_framebuffer(self.texture_slope_variance, target_layer=layer)
+            self.fft_variance.bind_uniform("c", layer)
+            self.quad_geometry.draw_elements()
 
     def simulateFFTWaves(self, t):
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fftFbo1)
@@ -413,6 +415,8 @@ class FFTOcean:
 
 class Ocean:
     def __init__(self, **object_data):
+        # self.fft_ocean = FFTOcean()
+
         self.name = object_data.get('name', 'ocean')
         self.height = object_data.get('height', 0.0)
         self.is_render_ocean = True
