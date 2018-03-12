@@ -6,7 +6,7 @@ from OpenGL.GL import *
 from Common import logger
 from App import CoreManager
 from Object import Plane
-from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer, FrameBuffer
+from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, VertexArrayBuffer, FrameBuffer
 from Utilities import *
 
 
@@ -102,20 +102,18 @@ def frandom(seed):
     return r / float(1 << 24)
 
 
-def getSpectrumSample(i, j, lengthScale, kMin, result):
+def getSpectrumSample(i, j, lengthScale, kMin):
     seed = 1234
     dk = 2.0 * M_PI / lengthScale
     kx = i * dk
     ky = j * dk
     if abs(kx) < kMin and abs(ky) < kMin:
-        result[0] = 0.0
-        result[1] = 0.0
+        return 0.0, 0.0
     else:
         S = spectrum(kx, ky)
         h = sqrt(S / 2.0) * dk
         phi = frandom(seed) * 2.0 * M_PI
-        result[0] = h * cos(phi)
-        result[1] = h * sin(phi)
+        return h * cos(phi), h * sin(phi)
 
 
 def getSlopeVariance(kx, ky, spectrumSample):
@@ -170,7 +168,9 @@ class FFTOcean:
                                                            element_data=FLOAT2_ZERO)
 
         # create render targets
+        print(1)
         data_spectrum12, data_spectrum34 = self.generateWavesSpectrum()
+        print(2)
         self.texture_spectrum_1_2 = CreateTexture(
             name='spectrum_1_2',
             texture_type=Texture2D,
@@ -247,6 +247,7 @@ class FFTOcean:
         )
 
         data = self.computeButterflyLookupTexture()
+        print(3)
         self.texture_butterfly = CreateTexture(
             name='butterfly',
             texture_type=Texture2D,
@@ -264,6 +265,7 @@ class FFTOcean:
         )
 
         self.computeSlopeVarianceTex()
+        print(4)
 
     def computeButterflyLookupTexture(self):
         data = np.array(FFT_SIZE * PASSES * 4, dtype=np.float32)
@@ -305,14 +307,15 @@ class FFTOcean:
         spectrum34 = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
 
         for y in range(FFT_SIZE):
+            print(y)
             for x in range(FFT_SIZE):
                 offset = 4 * (x + y * FFT_SIZE)
                 i = (x - FFT_SIZE) if (x >= FFT_SIZE / 2) else x
                 j = (y - FFT_SIZE) if (y >= FFT_SIZE / 2) else y
-                getSpectrumSample(i, j, GRID1_SIZE, M_PI / GRID1_SIZE, spectrum12 + offset)
-                getSpectrumSample(i, j, GRID2_SIZE, M_PI * FFT_SIZE / GRID1_SIZE, spectrum12 + offset + 2)
-                getSpectrumSample(i, j, GRID3_SIZE, M_PI * FFT_SIZE / GRID2_SIZE, spectrum34 + offset)
-                getSpectrumSample(i, j, GRID4_SIZE, M_PI * FFT_SIZE / GRID3_SIZE, spectrum34 + offset + 2)
+                spectrum12[offset: offset+2] = getSpectrumSample(i, j, GRID1_SIZE, M_PI / GRID1_SIZE)
+                spectrum12[offset+2: offset + 4] = getSpectrumSample(i, j, GRID2_SIZE, M_PI * FFT_SIZE / GRID1_SIZE)
+                spectrum34[offset: offset + 2] = getSpectrumSample(i, j, GRID3_SIZE, M_PI * FFT_SIZE / GRID2_SIZE)
+                spectrum34[offset + 2: offset + 4] = getSpectrumSample(i, j, GRID4_SIZE, M_PI * FFT_SIZE / GRID3_SIZE)
         return spectrum12, spectrum34
 
     def computeSlopeVarianceTex(self):
