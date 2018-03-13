@@ -135,8 +135,6 @@ class FFTOceanTexture:
 
         self.renderer = CoreManager.instance().renderer
         self.resource_manager = CoreManager.instance().resource_manager
-        self.framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
-        print(self.framebuffer_manager)
 
         self.fft_seed = Data(data=1234)
 
@@ -265,8 +263,7 @@ class FFTOceanTexture:
         self.quad_geometry.bind_vertex_buffer()
 
         for layer in range(N_SLOPE_VARIANCE):
-            print(layer, self.framebuffer_manager)
-            self.framebuffer_manager.bind_framebuffer(self.texture_slope_variance, target_layer=layer)
+            self.renderer.framebuffer_manager.bind_framebuffer(self.texture_slope_variance, target_layer=layer)
             self.fft_variance.bind_uniform_data("c", layer)
             self.quad_geometry.draw_elements()
 

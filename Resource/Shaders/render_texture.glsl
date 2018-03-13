@@ -59,7 +59,7 @@ vec4 get_texture_2d_array(sampler2DArray texture_source)
 void main() {
 #if GL_TEXTURE_2D == 1
     vec2 texcoord = vs_output.tex_coord.xy;
-    fs_output = texture(texture_source, texcoord) * 1000.0;
+    fs_output = texture(texture_source, texcoord);
 #elif GL_TEXTURE_2D_ARRAY == 1
     fs_output = get_texture_2d_array(texture_source);
 #elif GL_TEXTURE_3D == 1
