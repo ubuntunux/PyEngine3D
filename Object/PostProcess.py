@@ -94,6 +94,10 @@ class PostProcess:
         self.jitter_frame = 0
         self.jitter_delta = Float2()
 
+        self.debug_absolute = False
+        self.debug_intensity_min = 0.0
+        self.debug_intensity_max = 1.0
+
         self.is_render_material_instance = False
         self.target_material_instance = None
 
@@ -179,6 +183,10 @@ class PostProcess:
 
         self.Attributes.setAttribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.setAttribute('exposure', self.exposure)
+
+        self.Attributes.setAttribute('debug_absolute', self.debug_absolute)
+        self.Attributes.setAttribute('debug_intensity_min', self.debug_intensity_min)
+        self.Attributes.setAttribute('debug_intensity_max', self.debug_intensity_max)
 
         self.Attributes.setAttribute('is_render_material_instance', self.is_render_material_instance)
         self.Attributes.setAttribute('render_material_instance', self.target_material_instance)
@@ -474,6 +482,9 @@ class PostProcess:
         else:
             render_texture_mi = self.render_texture_2d
         render_texture_mi.use_program()
+        render_texture_mi.bind_uniform_data("debug_absolute", self.debug_absolute)
+        render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
+        render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
         render_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()
 

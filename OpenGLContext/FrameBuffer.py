@@ -79,16 +79,16 @@ class FrameBuffer:
             texture.set_attachment(True)
         self.depth_texture = texture
 
-    def func_bind_framebuffer(self, attachment, target, texture_buffer):
+    def func_bind_framebuffer(self, attachment, target, texture_buffer, offset=0):
         if GL_RENDERBUFFER == target:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, texture_buffer)
         elif GL_TEXTURE_2D == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture_buffer, self.target_level)
         elif GL_TEXTURE_2D_ARRAY == target:
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture_buffer, 0, self.target_layer)
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture_buffer, 0, self.target_layer + offset)
         elif GL_TEXTURE_3D == target:
-            glFramebufferTexture3D(
-                GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level, self.target_layer)
+            glFramebufferTexture3D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level,
+                                   self.target_layer + offset)
         elif GL_TEXTURE_CUBE_MAP == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
 
@@ -100,10 +100,18 @@ class FrameBuffer:
         self.target_level = target_level
 
         # bind color textures
+        layer_offset = 0
+        last_texture = None
         for i, color_texture in enumerate(self.color_textures):
+            if last_texture != color_texture:
+                layer_offset = 0
+                last_texture = color_texture
+            else:
+                layer_offset += 1
+
             attachment = GL_COLOR_ATTACHMENT0 + i
             if color_texture:
-                self.func_bind_framebuffer(attachment, color_texture.target, color_texture.buffer)
+                self.func_bind_framebuffer(attachment, color_texture.target, color_texture.buffer, layer_offset)
                 # just for single render target.
                 # glDrawBuffer(attachment)
                 # important
@@ -150,10 +158,20 @@ class FrameBuffer:
         self.add_command(glBindFramebuffer, GL_FRAMEBUFFER, self.buffer)
 
         # bind color textures
+        layer_offset = 0
+        last_texture = None
         for i, color_texture in enumerate(self.color_textures):
+            if last_texture != color_texture:
+                layer_offset = 0
+                last_texture = color_texture
+            else:
+                layer_offset += 1
+
             attachment = GL_COLOR_ATTACHMENT0 + i
+
             if color_texture:
-                self.add_command(self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer)
+                self.add_command(
+                    self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer, layer_offset)
                 # just for single render target.
                 # self.add_command(glDrawBuffer, attachment)
                 # important

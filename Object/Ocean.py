@@ -46,7 +46,9 @@ class Ocean:
         return save_data
 
     def update(self, delta):
-        pass
+        resource_manager = CoreManager.instance().resource_manager
+        fft_ocean = resource_manager.proceduralTextureLoader.getResourceData("FFTOceanTexture")
+        fft_ocean.update(delta)
 
     def render_ocean(self, atmoshpere, texture_depth, texture_probe, texture_shadow, texture_scene_reflect):
         self.material_instance.use_program()

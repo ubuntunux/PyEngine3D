@@ -17,44 +17,42 @@
     uniform samplerCube texture_source;
 #endif
 
+uniform bool debug_absolute;
+uniform float debug_intensity_min;
+uniform float debug_intensity_max;
+
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
-vec4 get_texture_3d(sampler3D texture_source)
-{
-    vec3 texture_size = textureSize(texture_source, 0);
-    float l = log2(texture_size.z);
-    float width = exp2(ceil(l / 2.0));
-    float height = texture_size.z / width;
-    float depth = floor(vs_output.tex_coord.x * width) + floor((1.0 - vs_output.tex_coord.y) * height) * width;
-    if(texture_size.z < depth)
-    {
-        depth = 0.0;
-    }
-    else
-    {
-        depth /= texture_size.z;
-    }
-    vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
-    return texture(texture_source, texcoord);
-}
-
 vec4 get_texture_2d_array(sampler2DArray texture_source)
 {
     vec3 texture_size = textureSize(texture_source, 0);
-    float l = log2(texture_size.z);
-    float width = exp2(ceil(l / 2.0));
-    float height = texture_size.z / width;
+    float width = ceil(sqrt(texture_size.z));
+    float height = ceil(texture_size.z / width);
     float depth = floor(vs_output.tex_coord.x * width) + floor((1.0 - vs_output.tex_coord.y) * height) * width;
-    if(texture_size.z < depth)
+    if(texture_size.z <= depth)
     {
-        depth = 0.0;
+        return vec4(0.0, 0.0, 0.0, 0.0);
     }
     vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
     return texture(texture_source, texcoord);
 }
 
+vec4 get_texture_3d(sampler3D texture_source)
+{
+    vec3 texture_size = textureSize(texture_source, 0);
+    float width = ceil(sqrt(texture_size.z));
+    float height = ceil(texture_size.z / width);
+    float depth = floor(vs_output.tex_coord.x * width) + floor((1.0 - vs_output.tex_coord.y) * height) * width;
+    if(texture_size.z <= depth)
+    {
+        return vec4(0.0, 0.0, 0.0, 0.0);
+    }
+    depth /= texture_size.z;
+    vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
+    return texture(texture_source, texcoord);
+}
 
 void main() {
 #if GL_TEXTURE_2D == 1
@@ -71,7 +69,11 @@ void main() {
     position.y = -position.y;
     fs_output = texture(texture_source, normalize(position.xyz));
 #endif
-
+    if(debug_absolute)
+    {
+        fs_output.xyz = abs(fs_output.xyz);
+    }
+    fs_output.xyz = clamp((fs_output.xyz - debug_intensity_min) / (debug_intensity_max - debug_intensity_min), 0.0, 1.0);
     fs_output.w = 1.0;
 }
 #endif // GL_FRAGMENT_SHADER

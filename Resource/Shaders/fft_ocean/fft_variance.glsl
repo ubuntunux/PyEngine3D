@@ -1,3 +1,5 @@
+#include "scene_constants.glsl"
+
 uniform float N_SLOPE_VARIANCE;
 
 uniform sampler2D spectrum_1_2_Sampler;
@@ -9,23 +11,31 @@ uniform float slopeVarianceDelta;
 
 uniform float c;
 
-varying vec2 uv;
 
 #ifdef GL_VERTEX_SHADER
-void main() {
-    uv = gl_Vertex.zw;
-    gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
+layout(location = 0) in vec4 vertex;
+out vec2 uv;
+void main()
+{
+    uv = vertex.xy * 0.5 + 0.5;
+    gl_Position = vertex;
 }
 #endif
 
-vec2 getSlopeVariances(vec2 k, float A, float B, float C, vec2 spectrumSample) {
+
+#ifdef GL_FRAGMENT_SHADER
+in vec2 uv;
+layout(location = 0) out vec4 color;
+
+vec2 getSlopeVariances(vec2 k, float A, float B, float C, vec2 spectrumSample)
+{
     float w = 1.0 - exp(A * k.x * k.x + B * k.x * k.y + C * k.y * k.y);
     vec2 kw = k * w;
     return kw * kw * dot(spectrumSample, spectrumSample) * 2.0;
 }
 
-#ifdef GL_FRAGMENT_SHADER
-void main() {
+void main()
+{
     const float SCALE = 10.0;
     float a = floor(uv.x * N_SLOPE_VARIANCE);
     float b = floor(uv.y * N_SLOPE_VARIANCE);
@@ -37,21 +47,26 @@ void main() {
     C = -0.5 * C;
 
     vec2 slopeVariances = vec2(slopeVarianceDelta);
-    for (int y = 0; y < FFT_SIZE; ++y) {
-        for (int x = 0; x < FFT_SIZE; ++x) {
-            int i = x >= FFT_SIZE / 2 ? x - FFT_SIZE : x;
-            int j = y >= FFT_SIZE / 2 ? y - FFT_SIZE : y;
+    vec4 spectrum12;
+    vec4 spectrum34;
+
+    for (int y = 0; y < FFT_SIZE; ++y)
+    {
+        for (int x = 0; x < FFT_SIZE; ++x)
+        {
+            int i = x >= (FFT_SIZE / 2) ? x - FFT_SIZE : x;
+            int j = y >= (FFT_SIZE / 2) ? y - FFT_SIZE : y;
             vec2 k = 2.0 * PI * vec2(i, j);
 
-            vec4 spectrum12 = texture2D(spectrum_1_2_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
-            vec4 spectrum34 = texture2D(spectrum_3_4_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
+            spectrum12 = texture(spectrum_1_2_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
+            spectrum34 = texture(spectrum_3_4_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
 
-            slopeVariances += getSlopeVariances(k / GRID_SIZES.x, A, B, C, spectrum12.xy);
-            slopeVariances += getSlopeVariances(k / GRID_SIZES.y, A, B, C, spectrum12.zw);
-            slopeVariances += getSlopeVariances(k / GRID_SIZES.z, A, B, C, spectrum34.xy);
-            slopeVariances += getSlopeVariances(k / GRID_SIZES.w, A, B, C, spectrum34.zw);
+            slopeVariances += getSlopeVariances(k / GRID_SIZES.x, A, B, C, spectrum12.xy) * 100.0;
+            slopeVariances += getSlopeVariances(k / GRID_SIZES.y, A, B, C, spectrum12.zw) * 100.0;
+            slopeVariances += getSlopeVariances(k / GRID_SIZES.z, A, B, C, spectrum34.xy) * 100.0;
+            slopeVariances += getSlopeVariances(k / GRID_SIZES.w, A, B, C, spectrum34.zw) * 100.0;
         }
     }
-    gl_FragColor = slopeVariances.xxxy;
+    color = slopeVariances.xxxy;
 }
 #endif

@@ -21,14 +21,16 @@ varying vec2 u; // coordinates in world space used to compute P(u)
 varying vec3 P; // wave point P(u) in world space
 
 #ifdef GL_VERTEX_SHADER
-vec2 oceanPos(vec4 vertex) {
+vec2 oceanPos(vec4 vertex)
+{
     vec3 cameraDir = normalize((screenToCamera * vertex).xyz);
     vec3 worldDir = (cameraToWorld * vec4(cameraDir, 0.0)).xyz;
     float t = -worldCamera.z / worldDir.z;
     return worldCamera.xy + t * worldDir.xy;
 }
 
-void main() {
+void main()
+{
     gl_Position = gl_Vertex;
 
     u = oceanPos(gl_Vertex);
@@ -57,23 +59,21 @@ void main() {
 #endif
 
 #ifdef GL_FRAGMENT_SHADER
-// ---------------------------------------------------------------------------
-// REFLECTED SUN RADIANCE
-// ---------------------------------------------------------------------------
-
 // assumes x>0
-float erfc(float x) {
+float erfc(float x)
+{
 	return 2.0 * exp(-x * x) / (2.319 * x + sqrt(4.0 + 1.52 * x * x));
 }
 
-float Lambda(float cosTheta, float sigmaSq) {
+float Lambda(float cosTheta, float sigmaSq)
+{
 	float v = cosTheta / sqrt((1.0 - cosTheta * cosTheta) * (2.0 * sigmaSq));
     return max(0.0, (exp(-v * v) - v * sqrt(PI) * erfc(v)) / (2.0 * v * sqrt(PI)));
-	//return (exp(-v * v)) / (2.0 * v * sqrt(PI)); // approximate, faster formula
 }
 
 // L, V, N, Tx, Ty in world space
-float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq) {
+float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq)
+{
     vec3 H = normalize(L + V);
     float zetax = dot(H, Tx) / dot(H, N);
     float zetay = dot(H, Ty) / dot(H, N);
@@ -112,8 +112,10 @@ vec4 myTexture2DGrad(sampler2D tex, vec2 u, vec2 s, vec2 t)
     const int N = 1; // use (2*N+1)^2 samples
     vec4 r = vec4(0.0);
     float l = max(0.0, log2(max(length(s), length(t)) * TEX_SIZE) - 0.0);
-    for (int i = -N; i <= N; ++i) {
-        for (int j = -N; j <= N; ++j) {
+    for (int i = -N; i <= N; ++i)
+    {
+        for (int j = -N; j <= N; ++j)
+        {
             r += texture2DLod(tex, u + (s * float(i) + t * float(j)) / float(N), l);
         }
     }
@@ -121,19 +123,22 @@ vec4 myTexture2DGrad(sampler2D tex, vec2 u, vec2 s, vec2 t)
 }
 
 // V, N, Tx, Ty in world space
-vec2 U(vec2 zeta, vec3 V, vec3 N, vec3 Tx, vec3 Ty) {
+vec2 U(vec2 zeta, vec3 V, vec3 N, vec3 Tx, vec3 Ty)
+{
     vec3 f = normalize(vec3(-zeta, 1.0)); // tangent space
     vec3 F = f.x * Tx + f.y * Ty + f.z * N; // world space
     vec3 R = 2.0 * dot(F, V) * F - V;
     return R.xy / (1.0 + R.z);
 }
 
-float meanFresnel(float cosThetaV, float sigmaV) {
+float meanFresnel(float cosThetaV, float sigmaV)
+{
 	return pow(1.0 - cosThetaV, 5.0 * exp(-2.69 * sigmaV)) / (1.0 + 22.7 * pow(sigmaV, 1.5));
 }
 
 // V, N in world space
-float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq) {
+float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq)
+{
     vec2 v = V.xy; // view direction in wind space
     vec2 t = v * v / (1.0 - V.z * V.z); // cos^2 and sin^2 of view direction
     float sigmaV2 = dot(t, sigmaSq); // slope variance in view direction
@@ -141,7 +146,8 @@ float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq) {
 }
 
 // V, N, Tx, Ty in world space;
-vec3 meanSkyRadiance(vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq) {
+vec3 meanSkyRadiance(vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq)
+{
     vec4 result = vec4(0.0);
 
     const float eps = 0.001;
@@ -154,15 +160,13 @@ vec3 meanSkyRadiance(vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq) {
 #else
     result = myTexture2DGrad(skySampler, u0 * (0.5 / 1.1) + 0.5, dux * (0.5 / 1.1), duy * (0.5 / 1.1));
 #endif
-    //if texture2DLod and texture2DGrad are not defined, you can use this (no filtering):
-    //result = texture2D(skySampler, u0 * (0.5 / 1.1) + 0.5);
-
     return result.rgb;
 }
 
 // ----------------------------------------------------------------------------
 
-void main() {
+void main()
+{
     vec3 V = normalize(worldCamera - P);
 
     vec2 slopes = texture2DArray(fftWavesSampler, vec3(u / GRID_SIZES.x, 1.0)).xy;

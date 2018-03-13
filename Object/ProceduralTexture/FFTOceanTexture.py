@@ -136,6 +136,8 @@ class FFTOceanTexture:
         self.renderer = CoreManager.instance().renderer
         self.resource_manager = CoreManager.instance().resource_manager
 
+        self.acc_time = 0.0
+
         self.fft_seed = Data(data=1234)
 
         self.fft_init = self.resource_manager.getMaterialInstance('fft_ocean.init')
@@ -258,8 +260,13 @@ class FFTOceanTexture:
                 totalSlopeVariance += getSlopeVariance(i/GRID4_SIZE, j/GRID4_SIZE, s34_2, s34_3)
 
         self.fft_variance.use_program()
-        self.fft_variance.bind_uniform_data("GRID_SIZES", [GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE])
+        self.fft_variance.bind_uniform_data("GRID_SIZES", np.array([GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE],
+                                                                   dtype=np.float32))
         self.fft_variance.bind_uniform_data("slopeVarianceDelta", (theoreticSlopeVariance - totalSlopeVariance) * 0.5)
+        self.fft_variance.bind_uniform_data("N_SLOPE_VARIANCE", N_SLOPE_VARIANCE)
+        self.fft_variance.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
+        self.fft_variance.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
+        self.fft_variance.bind_uniform_data("FFT_SIZE", FFT_SIZE)
         self.quad_geometry.bind_vertex_buffer()
 
         for layer in range(N_SLOPE_VARIANCE):
@@ -267,52 +274,76 @@ class FFTOceanTexture:
             self.fft_variance.bind_uniform_data("c", layer)
             self.quad_geometry.draw_elements()
 
-    def simulateFFTWaves(self, t):
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fftFbo1)
-        glViewport(0, 0, FFT_SIZE, FFT_SIZE)
-        # glUseProgram(init->program)
-        # glUniform1f(glGetUniformLocation(init->program, "FFT_SIZE"), FFT_SIZE)
-        # glUniform4f(glGetUniformLocation(init->program, "INVERSE_GRID_SIZES"),
-        # 2.0 * M_PI * FFT_SIZE / GRID1_SIZE,
-        # 2.0 * M_PI * FFT_SIZE / GRID2_SIZE,
-        # 2.0 * M_PI * FFT_SIZE / GRID3_SIZE,
-        # 2.0 * M_PI * FFT_SIZE / GRID4_SIZE)
-        # glUniform1f(glGetUniformLocation(init->program, "t"), t)
-        # drawQuad()
-        #
+    def simulateFFTWaves(self):
+        # initialize
+        INVERSE_GRID_SIZES = np.array([2.0 * M_PI * FFT_SIZE / GRID1_SIZE,
+                                       2.0 * M_PI * FFT_SIZE / GRID2_SIZE,
+                                       2.0 * M_PI * FFT_SIZE / GRID3_SIZE,
+                                       2.0 * M_PI * FFT_SIZE / GRID4_SIZE], dtype=np.float32)
+
+        self.fft_init.use_program()
+        self.fft_init.bind_uniform_data("FFT_SIZE", FFT_SIZE)
+        self.fft_init.bind_uniform_data("INVERSE_GRID_SIZES", INVERSE_GRID_SIZES)
+        self.fft_init.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
+        self.fft_init.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
+        self.fft_init.bind_uniform_data("t", self.acc_time)
+
+        self.quad_geometry.bind_vertex_buffer()
+        self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
+                                                           self.texture_fft_a,
+                                                           self.texture_fft_a,
+                                                           self.texture_fft_a,
+                                                           self.texture_fft_a)
+        self.quad_geometry.draw_elements()
+
         # # fft passes
-        # glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fftFbo2)
-        # glUseProgram(fftx->program)
-        # glUniform1i(glGetUniformLocation(fftx->program, "nLayers"), choppy ? 5: 3)
-        # for i in range(PASSES):
-        #     glUniform1f(glGetUniformLocation(fftx->program, "pass"), float(i + 0.5) / PASSES)
-        #     if i % 2 == 0:
-        #         glUniform1i(glGetUniformLocation(fftx->program, "imgSampler"), FFT_A_UNIT)
-        #         glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT)
-        #     else:
-        #         glUniform1i(glGetUniformLocation(fftx->program, "imgSampler"), FFT_B_UNIT)
-        #         glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT)
-        #     drawQuad()
-        #
-        # glUseProgram(ffty->program)
-        # glUniform1i(glGetUniformLocation(ffty->program, "nLayers"), choppy ? 5: 3)
-        # for i in range(PASSES, 2 * PASSES):
-        #     glUniform1f(glGetUniformLocation(ffty->program, "pass"), float(i - PASSES + 0.5) / PASSES)
-        #     if i % 2 == 0:
-        #         glUniform1i(glGetUniformLocation(ffty->program, "imgSampler"), FFT_A_UNIT)
-        #         glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT)
-        #     else:
-        #         glUniform1i(glGetUniformLocation(ffty->program, "imgSampler"), FFT_B_UNIT)
-        #         glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT)
-        #     drawQuad()
-        #
-        # glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)
-        # glActiveTexture(GL_TEXTURE0 + FFT_A_UNIT)
-        # glGenerateMipmapEXT(GL_TEXTURE_2D_ARRAY_EXT)
+        self.fft_x.use_program()
+        # self.fft_x.bind_uniform_data("nLayers", 5 if choppy else 3)
+        self.fft_x.bind_uniform_data("butterflySampler", self.texture_butterfly)
+        for i in range(PASSES):
+            self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
+            if i % 2 == 0:
+                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b)
+                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
+            else:
+                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a)
+                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
+            self.quad_geometry.draw_elements()
+
+        self.fft_y.use_program()
+        # self.fft_y.bind_uniform_data("nLayers", 5 if choppy else 3)
+        self.fft_y.bind_uniform_data("butterflySampler", self.texture_butterfly)
+        for i in range(PASSES):
+            self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
+            if i % 2 == 0:
+                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b,
+                                                                   self.texture_fft_b)
+                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
+            else:
+                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a,
+                                                                   self.texture_fft_a)
+                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
+            self.quad_geometry.draw_elements()
+
+        self.texture_fft_a.generate_mipmap()
 
     def update(self, delta):
-        self.t += delta
-        simulateFFTWaves(self.t)
+        self.acc_time += delta
+        # self.simulateFFTWaves()
 
         # glUseProgram(render->program)
         # glUniformMatrix4fv(
@@ -345,6 +376,16 @@ class FFTOceanTexture:
             resource.set_data(texture)
 
     def render(self):
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CCW)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(True)
+        glDisable(GL_BLEND)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearDepth(1.0)
+
         self.spectrum12_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
         self.spectrum34_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
         self.variance_data = np.zeros(FFT_SIZE * PASSES * 4, dtype=np.float32)
@@ -452,30 +493,3 @@ class FFTOceanTexture:
         self.set_resource_data(self.texture_fft_b)
         self.set_resource_data(self.texture_butterfly)
 
-        # glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
-        # glDepthFunc(GL_LEQUAL)
-        # glEnable(GL_CULL_FACE)
-        # glFrontFace(GL_CCW)
-        # glEnable(GL_DEPTH_TEST)
-        # glDepthMask(True)
-        # glClearColor(0.0, 0.0, 0.0, 1.0)
-        # glClearDepth(1.0)
-        #
-        # renderer.set_blend_state(False)
-        #
-        # renderer.framebuffer_manager.bind_framebuffer(texture)
-        # glClear(GL_COLOR_BUFFER_BIT)
-        #
-        # renderer.postprocess.bind_quad()
-        #
-        # mat = resource_manager.getMaterialInstance('examples.noise_3d')
-        # mat.use_program()
-        # mat.bind_uniform_data('noise_persistance', self.noise_persistance)
-        # mat.bind_uniform_data('noise_scale', self.noise_scale)
-        #
-        # for i in range(texture.depth):
-        #     mat.bind_uniform_data('depth', i / texture.depth)
-        #     renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
-        #     renderer.postprocess.draw_elements()
-        #
-        # renderer.restore_blend_state_prev()

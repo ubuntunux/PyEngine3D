@@ -1,28 +1,13 @@
-#ifdef GL_VERTEX_SHADER
-varying vec2 uvIn;
-
-void main() {
-    uvIn = gl_Vertex.zw;
-    gl_Position = vec4(gl_Vertex.xy, 0.0, 1.0);
-}
-#endif
-
-
-#ifdef GL_FRAGMENT_SHADER
-#extension GL_EXT_gpu_shader4 : enable
-
 uniform sampler2D butterflySampler;
 uniform sampler2DArray imgSampler; // 2 complex inputs (= 4 values) per layer
-
 uniform float pass;
-
-varying vec2 uv;
 
 // performs two FFTs on two inputs packed in a single texture
 // returns two results packed in a single vec4
-vec4 fft2(int layer, vec2 i, vec2 w) {
-    vec4 input1 = texture2DArrayLod(imgSampler, vec3(i.x, uv.y, layer), 0.0);
-    vec4 input2 = texture2DArrayLod(imgSampler, vec3(i.y, uv.y, layer), 0.0);
+vec4 fft2(int layer, vec2 i, vec2 w, vec2 uv)
+{
+    vec4 input1 = texture(imgSampler, vec3(i.x, uv.y, layer), 0.0);
+    vec4 input2 = texture(imgSampler, vec3(i.y, uv.y, layer), 0.0);
     float res1x = w.x * input2.x - w.y * input2.y;
     float res1y = w.y * input2.x + w.x * input2.y;
     float res2x = w.x * input2.z - w.y * input2.w;
@@ -30,11 +15,33 @@ vec4 fft2(int layer, vec2 i, vec2 w) {
     return input1 + vec4(res1x, res1y, res2x, res2y);
 }
 
-void main() {
-    vec4 data = texture2DLod(butterflySampler, vec2(uv.x, pass), 0.0);
+
+#ifdef GL_VERTEX_SHADER
+layout(location = 0) in vec4 vertex;
+out vec2 uv;
+void main()
+{
+    uv = vertex.xy * 0.5 + 0.5;
+    gl_Position = vertex;
+}
+#endif
+
+
+#ifdef GL_FRAGMENT_SHADER
+in vec2 uv;
+
+layout(location = 0) out vec4 color0;
+
+void main()
+{
+    vec4 data = texture(butterflySampler, vec2(uv.x, pass), 0.0);
     vec2 i = data.xy;
     vec2 w = data.zw;
 
-    gl_FragColor = fft2(gl_PrimitiveID, i, w);
+    color0 = fft2(0, i, w, uv);
+    /*color1 = fft2(1, i, w, uv);
+    color2 = fft2(2, i, w, uv);
+    color3 = fft2(3, i, w, uv);
+    color4 = fft2(4, i, w, uv);*/
 }
 #endif
