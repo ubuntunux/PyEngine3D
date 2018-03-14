@@ -95,6 +95,7 @@ class PostProcess:
         self.jitter_delta = Float2()
 
         self.debug_absolute = False
+        self.debug_mipmap = 0.0
         self.debug_intensity_min = 0.0
         self.debug_intensity_max = 1.0
 
@@ -160,8 +161,8 @@ class PostProcess:
             anti_aliasing = str(anti_aliasing)
             return anti_aliasing.split('.')[-1] if '.' in anti_aliasing else anti_aliasing
 
-        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in
-                              range(AntiAliasing.COUNT.value)]
+        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x))
+                              for x in range(AntiAliasing.COUNT.value)]
         # Send to GUI
         self.core_manager.sendAntiAliasingList(anti_aliasing_list)
 
@@ -185,6 +186,7 @@ class PostProcess:
         self.Attributes.setAttribute('exposure', self.exposure)
 
         self.Attributes.setAttribute('debug_absolute', self.debug_absolute)
+        self.Attributes.setAttribute('debug_mipmap', self.debug_mipmap)
         self.Attributes.setAttribute('debug_intensity_min', self.debug_intensity_min)
         self.Attributes.setAttribute('debug_intensity_max', self.debug_intensity_max)
 
@@ -483,6 +485,7 @@ class PostProcess:
             render_texture_mi = self.render_texture_2d
         render_texture_mi.use_program()
         render_texture_mi.bind_uniform_data("debug_absolute", self.debug_absolute)
+        render_texture_mi.bind_uniform_data("debug_mipmap", self.debug_mipmap)
         render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
         render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
         render_texture_mi.bind_uniform_data("texture_source", source_texture)

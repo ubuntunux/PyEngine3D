@@ -31,6 +31,10 @@ void main()
 in vec2 uv;
 
 layout(location = 0) out vec4 color0;
+layout(location = 1) out vec4 color1;
+layout(location = 2) out vec4 color2;
+layout(location = 3) out vec4 color3;
+layout(location = 4) out vec4 color4;
 
 void main()
 {
@@ -39,9 +43,9 @@ void main()
     vec2 w = data.zw;
 
     color0 = fft2(0, i, w, uv);
-    /*color1 = fft2(1, i, w, uv);
+    color1 = fft2(1, i, w, uv);
     color2 = fft2(2, i, w, uv);
     color3 = fft2(3, i, w, uv);
-    color4 = fft2(4, i, w, uv);*/
+    color4 = fft2(4, i, w, uv);
 }
 #endif

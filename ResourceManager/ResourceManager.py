@@ -1016,7 +1016,7 @@ class ProceduralTextureLoader(ResourceLoader):
     def open_resource(self, resource_name):
         texture = self.getResourceData(resource_name)
         if texture is not None:
-            texture.render()
+            texture.generate_texture()
 
 
 # -----------------------#

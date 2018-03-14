@@ -19,6 +19,8 @@ class Ocean:
         resource_manager = CoreManager.instance().resource_manager
         self.material_instance = resource_manager.getMaterialInstance('ocean')
 
+        self.fft_ocean = resource_manager.proceduralTextureLoader.getResourceData("FFTOceanTexture")
+
         self.mesh = Plane(width=200, height=200)
         self.geometry = self.mesh.get_geometry()
         self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
@@ -46,11 +48,11 @@ class Ocean:
         return save_data
 
     def update(self, delta):
-        resource_manager = CoreManager.instance().resource_manager
-        fft_ocean = resource_manager.proceduralTextureLoader.getResourceData("FFTOceanTexture")
-        fft_ocean.update(delta)
+        self.fft_ocean.update(delta)
 
     def render_ocean(self, atmoshpere, texture_depth, texture_probe, texture_shadow, texture_scene_reflect):
+        self.fft_ocean.render()
+
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()
         self.material_instance.bind_uniform_data('height', self.height)

@@ -21,7 +21,7 @@ class NoiseTexture3D:
         self.noise_scale = data.get('noise_scale', 6)
         self.attribute = Attributes()
 
-    def render(self):
+    def generate_texture(self):
         core_manager = CoreManager.getInstance()
         resource_manager = core_manager.resource_manager
         renderer = core_manager.renderer

@@ -13,63 +13,68 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
         UniformBool, UniformInt, UniformFloat,
         UniformVector2, UniformVector3, UniformVector4,
         UniformMatrix2, UniformMatrix3, UniformMatrix4,
-        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture3D, UniformTextureCube
+        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube
     ]
     for uniform_class in uniform_classes:
         if uniform_class.uniform_type == uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
             return uniform_buffer if uniform_buffer.valid else None
     else:
-        logger.error('Cannot matched to %s type of %s.' % (uniform_type, uniform_name))
+        error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
+        logger.error(error_message)
+        raise BaseException(error_message)
     return None
 
 
 def CreateUniformDataFromString(data_type, strValue=None):
     """ return converted data from string or default data """
-    try:
-        if data_type == 'bool':
-            return np.bool(strValue) if strValue else np.bool(False)
-        elif data_type == 'float':
-            # return float(strValue) if strValue else 0.0
-            return np.float32(strValue) if strValue else np.float32(0)
-        elif data_type == 'int':
-            # return int(strValue) if strValue else 0
-            return np.int32(strValue) if strValue else np.int32(0)
-        elif data_type in ('vec2', 'vec3', 'vec4'):
-            componentCount = int(data_type[-1])
-            if strValue is not None:
-                vecValue = eval(strValue) if type(strValue) is str else strValue
-                if len(vecValue) == componentCount:
-                    return np.array(vecValue, dtype=np.float32)
-                else:
-                    logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
-                    raise ValueError
+    if data_type == 'bool':
+        return np.bool(strValue) if strValue else np.bool(False)
+    elif data_type == 'float':
+        # return float(strValue) if strValue else 0.0
+        return np.float32(strValue) if strValue else np.float32(0)
+    elif data_type == 'int':
+        # return int(strValue) if strValue else 0
+        return np.int32(strValue) if strValue else np.int32(0)
+    elif data_type in ('vec2', 'vec3', 'vec4'):
+        componentCount = int(data_type[-1])
+        if strValue is not None:
+            vecValue = eval(strValue) if type(strValue) is str else strValue
+            if len(vecValue) == componentCount:
+                return np.array(vecValue, dtype=np.float32)
             else:
-                return np.array([1.0, ] * componentCount, dtype=np.float32)
-        elif data_type in ('mat2', 'mat3', 'mat4'):
-            componentCount = int(data_type[-1])
-            if strValue is not None:
-                vecValue = eval(strValue) if type(strValue) is str else strValue
-                if len(vecValue) == componentCount:
-                    return np.array(vecValue, dtype=np.float32)
-                else:
-                    logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
-                    raise ValueError
+                logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
+                raise ValueError
+        else:
+            return np.array([1.0, ] * componentCount, dtype=np.float32)
+    elif data_type in ('mat2', 'mat3', 'mat4'):
+        componentCount = int(data_type[-1])
+        if strValue is not None:
+            vecValue = eval(strValue) if type(strValue) is str else strValue
+            if len(vecValue) == componentCount:
+                return np.array(vecValue, dtype=np.float32)
             else:
-                return np.eye(componentCount, dtype=np.float32)
-        elif data_type == 'sampler2D':
-            texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
-            return texture
-        elif data_type == 'sampler2DMS':
-            logger.warn('sampler2DMS need multisample texture.')
-            return CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
-        elif data_type == 'sampler3D':
-            return CoreManager.instance().resource_manager.getTexture(strValue or 'default_3d')
-        elif data_type == 'samplerCube':
-            texture = CoreManager.instance().resource_manager.getTexture(strValue or 'default_cube')
-            return texture
-    except ValueError:
-        logger.error(traceback.format_exc())
+                logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
+                raise ValueError
+        else:
+            return np.eye(componentCount, dtype=np.float32)
+    elif data_type == 'sampler2D':
+        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
+        return texture
+    elif data_type == 'sampler2DMS':
+        logger.warn('sampler2DMS need multisample texture.')
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
+    elif data_type == 'sampler2DArray':
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'default_2d_array')
+    elif data_type == 'sampler3D':
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'default_3d')
+    elif data_type == 'samplerCube':
+        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'default_cube')
+        return texture
+
+    error_message = 'Cannot find uniform data of %s.' % data_type
+    logger.error(error_message)
+    raise ValueError(error_message)
     return None
 
 
@@ -179,6 +184,10 @@ class UniformTextureBase(UniformVariable):
 
 class UniformTexture2D(UniformTextureBase):
     uniform_type = "sampler2D"
+
+
+class UniformTexture2DArray(UniformTextureBase):
+    uniform_type = "sampler2DArray"
 
 
 class UniformTexture2DMultiSample(UniformTextureBase):

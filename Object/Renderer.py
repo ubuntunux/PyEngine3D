@@ -282,6 +282,7 @@ class Renderer(Singleton):
         glClearDepth(1.0)
 
         if self.postprocess.is_render_shader() and not RenderOption.RENDER_LIGHT_PROBE:
+            """ debug shader """
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
@@ -290,6 +291,7 @@ class Renderer(Singleton):
             # render shader
             self.postprocess.render_material_instance()
         elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
+            """ render light probe """
             self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_DEPTH_BUFFER_BIT)
@@ -317,7 +319,7 @@ class Renderer(Singleton):
                     RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
             return end_render_scene()
         else:
-            # render normal scene
+            """ render normal scene """
             if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
                 self.render_deferred()
             else:

@@ -18,6 +18,7 @@
 #endif
 
 uniform bool debug_absolute;
+uniform float debug_mipmap;
 uniform float debug_intensity_min;
 uniform float debug_intensity_max;
 
@@ -36,7 +37,7 @@ vec4 get_texture_2d_array(sampler2DArray texture_source)
         return vec4(0.0, 0.0, 0.0, 0.0);
     }
     vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
-    return texture(texture_source, texcoord);
+    return texture(texture_source, texcoord, debug_mipmap);
 }
 
 vec4 get_texture_3d(sampler3D texture_source)
@@ -51,13 +52,13 @@ vec4 get_texture_3d(sampler3D texture_source)
     }
     depth /= texture_size.z;
     vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
-    return texture(texture_source, texcoord);
+    return texture(texture_source, texcoord, debug_mipmap);
 }
 
 void main() {
 #if GL_TEXTURE_2D == 1
     vec2 texcoord = vs_output.tex_coord.xy;
-    fs_output = texture(texture_source, texcoord);
+    fs_output = texture(texture_source, texcoord, debug_mipmap);
 #elif GL_TEXTURE_2D_ARRAY == 1
     fs_output = get_texture_2d_array(texture_source);
 #elif GL_TEXTURE_3D == 1
@@ -67,7 +68,7 @@ void main() {
     position = INV_VIEW_ORIGIN * INV_PROJECTION * position;
     position.xyz /= position.w;
     position.y = -position.y;
-    fs_output = texture(texture_source, normalize(position.xyz));
+    fs_output = texture(texture_source, normalize(position.xyz), debug_mipmap);
 #endif
     if(debug_absolute)
     {

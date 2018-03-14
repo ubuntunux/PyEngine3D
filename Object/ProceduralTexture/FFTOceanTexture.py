@@ -275,6 +275,18 @@ class FFTOceanTexture:
             self.quad_geometry.draw_elements()
 
     def simulateFFTWaves(self):
+        fft_a_framebuffer = self.renderer.framebuffer_manager.get_framebuffer(self.texture_fft_a,
+                                                                              self.texture_fft_a,
+                                                                              self.texture_fft_a,
+                                                                              self.texture_fft_a,
+                                                                              self.texture_fft_a)
+
+        fft_b_framebuffer = self.renderer.framebuffer_manager.get_framebuffer(self.texture_fft_b,
+                                                                              self.texture_fft_b,
+                                                                              self.texture_fft_b,
+                                                                              self.texture_fft_b,
+                                                                              self.texture_fft_b)
+
         # initialize
         INVERSE_GRID_SIZES = np.array([2.0 * M_PI * FFT_SIZE / GRID1_SIZE,
                                        2.0 * M_PI * FFT_SIZE / GRID2_SIZE,
@@ -289,11 +301,6 @@ class FFTOceanTexture:
         self.fft_init.bind_uniform_data("t", self.acc_time)
 
         self.quad_geometry.bind_vertex_buffer()
-        self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
-                                                           self.texture_fft_a,
-                                                           self.texture_fft_a,
-                                                           self.texture_fft_a,
-                                                           self.texture_fft_a)
         self.quad_geometry.draw_elements()
 
         # # fft passes
@@ -303,19 +310,11 @@ class FFTOceanTexture:
         for i in range(PASSES):
             self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
             if i % 2 == 0:
-                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b)
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
+                fft_b_framebuffer.run_bind_framebuffer()
             else:
-                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a)
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
+                fft_a_framebuffer.run_bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         self.fft_y.use_program()
@@ -324,26 +323,20 @@ class FFTOceanTexture:
         for i in range(PASSES):
             self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
             if i % 2 == 0:
-                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b,
-                                                                   self.texture_fft_b)
-                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
+                fft_b_framebuffer.run_bind_framebuffer()
+                self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_a)
             else:
-                self.renderer.framebuffer_manager.bind_framebuffer(self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a,
-                                                                   self.texture_fft_a)
-                self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
+                fft_a_framebuffer.run_bind_framebuffer()
+                self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_b)
             self.quad_geometry.draw_elements()
 
         self.texture_fft_a.generate_mipmap()
 
     def update(self, delta):
         self.acc_time += delta
-        # self.simulateFFTWaves()
+
+    def render(self):
+        self.simulateFFTWaves()
 
         # glUseProgram(render->program)
         # glUniformMatrix4fv(
@@ -375,7 +368,7 @@ class FFTOceanTexture:
             old_texture.delete()
             resource.set_data(texture)
 
-    def render(self):
+    def generate_texture(self):
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
