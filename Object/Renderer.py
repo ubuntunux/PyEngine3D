@@ -352,6 +352,10 @@ class Renderer(Singleton):
             if self.scene_manager.ocean.is_render_ocean:
                 glEnable(GL_DEPTH_TEST)
                 glDisable(GL_CULL_FACE)
+
+                # fft_ocean = self.resource_manager.proceduralTextureLoader.getResourceData("FFTOceanTexture")
+                # fft_ocean.render()
+
                 self.scene_manager.ocean.render_ocean(atmoshpere=self.scene_manager.atmosphere,
                                                       texture_depth=RenderTargets.DEPTHSTENCIL,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
