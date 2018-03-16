@@ -5,7 +5,7 @@ from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
-from Object import Plane
+from Object import Plane, RenderTargets
 from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, VertexArrayBuffer, FrameBuffer
 from Utilities import *
 
@@ -23,15 +23,6 @@ gridSize = 8.0
 hdrExposure = 0.4
 choppy = True
 
-grid_width = 1024
-grid_height = 768
-cameraTheta = 45.0
-
-N_SLOPE_VARIANCE = 10
-GRID1_SIZE = 5488.0
-GRID2_SIZE = 392.0
-GRID3_SIZE = 28.0
-GRID4_SIZE = 2.0
 WIND = 5.0
 OMEGA = 0.84
 A = 1.0
@@ -39,6 +30,17 @@ cm = 0.23
 km = 370.0
 PASSES = 8  # number of passes needed for the FFT 6 -> 64, 7 -> 128, 8 -> 256, etc
 FFT_SIZE = 1 << PASSES  # size of the textures storing the waves in frequency and spatial domains
+
+N_SLOPE_VARIANCE = 10
+GRID1_SIZE = 5488.0
+GRID2_SIZE = 392.0
+GRID3_SIZE = 28.0
+GRID4_SIZE = 2.0
+GRID_SIZES = np.array([GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE], dtype=np.float32)
+INVERSE_GRID_SIZES = np.array([2.0 * M_PI * FFT_SIZE / GRID1_SIZE,
+                               2.0 * M_PI * FFT_SIZE / GRID2_SIZE,
+                               2.0 * M_PI * FFT_SIZE / GRID3_SIZE,
+                               2.0 * M_PI * FFT_SIZE / GRID4_SIZE], dtype=np.float32)
 
 
 def sqr(x):
@@ -166,13 +168,15 @@ class FFTOceanTexture:
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
-        # self.geometry = self.generate_mesh()
+        # grid_width = 1024
+        # grid_height = 768
+        # self.ocean_geometry = self.generate_mesh(grid_width, grid_height)
+        # self.cellSize = np.array([gridSize / float(grid_width), gridSize / float(grid_height)], dtype=np.float32)
 
-        self.mesh = Plane(width=200, height=200)
-        self.geometry = self.mesh.get_geometry()
-        self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
-                                                           layout_location=5,
-                                                           element_data=FLOAT2_ZERO)
+        self.gridCount = 200
+        self.cellSize = np.array([1.0 / float(self.gridCount), 1.0 / float(self.gridCount)], dtype=np.float32)
+        self.ocean_mesh = Plane(width=self.gridCount, height=self.gridCount, xz_plane=False)
+        self.ocean_geometry = self.ocean_mesh.get_geometry()
 
     def get_save_data(self):
         save_data = dict(
@@ -268,8 +272,7 @@ class FFTOceanTexture:
                 totalSlopeVariance += getSlopeVariance(i/GRID4_SIZE, j/GRID4_SIZE, s34_2, s34_3)
 
         self.fft_variance.use_program()
-        self.fft_variance.bind_uniform_data("GRID_SIZES", np.array([GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE],
-                                                                   dtype=np.float32))
+        self.fft_variance.bind_uniform_data("GRID_SIZES", GRID_SIZES)
         self.fft_variance.bind_uniform_data("slopeVarianceDelta", (theoreticSlopeVariance - totalSlopeVariance) * 0.5)
         self.fft_variance.bind_uniform_data("N_SLOPE_VARIANCE", N_SLOPE_VARIANCE)
         self.fft_variance.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
@@ -282,7 +285,12 @@ class FFTOceanTexture:
             self.fft_variance.bind_uniform_data("c", layer)
             self.quad_geometry.draw_elements()
 
-    def simulateFFTWaves(self):
+    def simulateFFTWaves(self, delta):
+        self.acc_time += delta
+
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_BLEND)
+
         fft_a_framebuffer = self.renderer.framebuffer_manager.get_framebuffer(self.texture_fft_a,
                                                                               self.texture_fft_a,
                                                                               self.texture_fft_a,
@@ -296,11 +304,6 @@ class FFTOceanTexture:
                                                                               self.texture_fft_b)
 
         # initialize
-        INVERSE_GRID_SIZES = np.array([2.0 * M_PI * FFT_SIZE / GRID1_SIZE,
-                                       2.0 * M_PI * FFT_SIZE / GRID2_SIZE,
-                                       2.0 * M_PI * FFT_SIZE / GRID3_SIZE,
-                                       2.0 * M_PI * FFT_SIZE / GRID4_SIZE], dtype=np.float32)
-
         self.fft_init.use_program()
         self.fft_init.bind_uniform_data("FFT_SIZE", FFT_SIZE)
         self.fft_init.bind_uniform_data("INVERSE_GRID_SIZES", INVERSE_GRID_SIZES)
@@ -309,32 +312,32 @@ class FFTOceanTexture:
         self.fft_init.bind_uniform_data("t", self.acc_time)
 
         self.quad_geometry.bind_vertex_buffer()
+        fft_a_framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
         self.quad_geometry.draw_elements()
 
         # # fft passes
         self.fft_x.use_program()
-        # self.fft_x.bind_uniform_data("nLayers", 5 if choppy else 3)
         self.fft_x.bind_uniform_data("butterflySampler", self.texture_butterfly)
         for i in range(PASSES):
             self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
             if i % 2 == 0:
+                fft_b_framebuffer.bind_framebuffer()
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
-                fft_b_framebuffer.run_bind_framebuffer()
             else:
+                fft_a_framebuffer.bind_framebuffer()
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
-                fft_a_framebuffer.run_bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         self.fft_y.use_program()
-        # self.fft_y.bind_uniform_data("nLayers", 5 if choppy else 3)
         self.fft_y.bind_uniform_data("butterflySampler", self.texture_butterfly)
         for i in range(PASSES):
             self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
             if i % 2 == 0:
-                fft_b_framebuffer.run_bind_framebuffer()
+                fft_b_framebuffer.bind_framebuffer()
                 self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_a)
             else:
-                fft_a_framebuffer.run_bind_framebuffer()
+                fft_a_framebuffer.bind_framebuffer()
                 self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_b)
             self.quad_geometry.draw_elements()
 
@@ -344,22 +347,15 @@ class FFTOceanTexture:
         self.acc_time += delta
 
     def render(self):
-        self.simulateFFTWaves()
-
         self.fft_ocean.use_program()
-        self.fft_ocean.bind_uniform_data("gridSize",
-                                         np.array([gridSize / float(grid_width), gridSize / float(grid_height)],
-                                                  dtype=np.float32))
-        self.fft_ocean.bind_uniform_data("GRID_SIZES",
-                                         np.array([GRID1_SIZE, GRID2_SIZE, GRID3_SIZE, GRID4_SIZE], dtype=np.float32))
+        self.fft_ocean.bind_uniform_data("height", self.height)
+        self.fft_ocean.bind_uniform_data("cellSize", self.cellSize)
+        self.fft_ocean.bind_uniform_data("GRID_SIZES", GRID_SIZES)
 
-        # self.fft_ocean.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
-        # self.fft_ocean.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
         self.fft_ocean.bind_uniform_data("fftWavesSampler", self.texture_fft_a)
         self.fft_ocean.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)
-
-        self.geometry.bind_vertex_buffer()
-        self.geometry.draw_elements()
+        self.ocean_geometry.bind_vertex_buffer()
+        self.ocean_geometry.draw_elements()
 
     def set_resource_data(self, texture):
         resource = self.resource_manager.textureLoader.getResource(texture.name)
@@ -480,8 +476,6 @@ class FFTOceanTexture:
             data=self.variance_data,
         )
 
-        self.generate_mesh()
-
         self.computeSlopeVarianceTex()
 
         self.set_resource_data(self.texture_spectrum_1_2)
@@ -491,7 +485,7 @@ class FFTOceanTexture:
         self.set_resource_data(self.texture_fft_b)
         self.set_resource_data(self.texture_butterfly)
 
-    def generate_mesh(self):
+    def generate_mesh(self, grid_width, grid_height):
         camera = self.scene_manager.main_camera
         horizon = tan(camera.fov / 180.0 * M_PI)
         s = min(1.1, 0.5 + horizon * 0.5)
@@ -526,12 +520,12 @@ class FFTOceanTexture:
             ni = 0
             i = -grid_width * hmargin
             while i < grid_width * (1.0 + hmargin):
-                indices[vboSize] = ni + (nj + 1) * nx
+                indices[vboSize+0] = ni + (nj + 1) * nx
                 indices[vboSize+1] = (ni + 1) + (nj + 1) * nx
                 indices[vboSize+2] = (ni + 1) + nj * nx
-                indices[vboSize+3] = (ni + 1) + nj * nx
+                indices[vboSize+5] = (ni + 1) + nj * nx
                 indices[vboSize+4] = ni + (nj + 1) * nx
-                indices[vboSize+5] = ni + nj * nx
+                indices[vboSize+3] = ni + nj * nx
                 vboSize += 6
                 ni += 1
                 i += gridSize

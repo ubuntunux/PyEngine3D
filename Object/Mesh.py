@@ -178,10 +178,10 @@ class Cube(Mesh):
 
 
 # ------------------------------#
-# CLASS : XZ Plane
+# CLASS : Plane
 # ------------------------------#
 class Plane(Mesh):
-    def __init__(self, width=4, height=4):
+    def __init__(self, width=4, height=4, xz_plane=True):
         width_points = width + 1
         height_points = height + 1
         width_step = 1.0 / width
@@ -196,7 +196,8 @@ class Plane(Mesh):
             y = y * height_step
             for x in range(width_points):
                 x = x * width_step
-                positions[array_index][:] = [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0]
+                positions[array_index][:] = \
+                    [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0] if xz_plane else [x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0]
                 colors[array_index][:] = [1, 1, 1, 1]
                 normals[array_index][:] = [0, 1, 0]
                 texcoords[array_index][:] = [x, 1.0 - y]
