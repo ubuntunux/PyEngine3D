@@ -9,6 +9,11 @@ uniform vec4 GRID_SIZES;
 uniform sampler2DArray fftWavesSampler;
 uniform sampler3D slopeVarianceSampler;
 
+#ifdef MATERIAL_COMPONENTS
+    uniform vec2 uv_tiling;
+    uniform sampler2D texture_foam;
+#endif
+
 
 struct VERTEX_OUTPUT
 {
@@ -49,7 +54,8 @@ vec2 oceanPos(vec4 vertex, out float dist)
 void main()
 {
     float dist, dist_x, dist_y;
-    vec4 vertex_pos = vec4(vs_in_position * vec3(1.5, 1.5, 1.0), 1.0);
+    vec3 vertex_scale = vec3(1.5, 1.5, 1.0);
+    vec4 vertex_pos = vec4(vs_in_position * vertex_scale, 1.0);
     vec2 u = oceanPos(vertex_pos, dist);
     vec2 ux = oceanPos(vertex_pos + vec4(cellSize.x, 0.0, 0.0, 0.0), dist_x);
     vec2 uy = oceanPos(vertex_pos + vec4(0.0, cellSize.y, 0.0, 0.0), dist_y);
@@ -71,10 +77,11 @@ void main()
 
     vec4 proj_pos = VIEW_PROJECTION * vec4(world_pos.xyz, 1.0);
 
+    float fade = 1.0f;
     if(dist < NEAR_FAR.y)
     {
-        vec2 fade = clamp(abs(vertex_pos.xy) * 7.0 - 6.0, 0.0, 1.0);
-        proj_pos.xy = mix(proj_pos.xy, vertex_pos.xy * proj_pos.w, fade);
+        fade = 1.0 - pow(clamp(length(vertex_pos.xy / vertex_scale.xy), 0.0, 1.0), 4.0);
+        proj_pos.xy = mix(vertex_pos.xy * proj_pos.w, proj_pos.xy, fade);
     }
 
     vs_output.uv = u;
@@ -89,6 +96,46 @@ void main()
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
+
+float erfc(float x)
+{
+	return 2.0 * exp(-x * x) / (2.319 * x + sqrt(4.0 + 1.52 * x * x));
+}
+
+float Lambda(float cosTheta, float sigmaSq)
+{
+	float v = cosTheta / sqrt((1.0 - cosTheta * cosTheta) * (2.0 * sigmaSq));
+    return max(0.0, (exp(-v * v) - v * sqrt(PI) * erfc(v)) / (2.0 * v * sqrt(PI)));
+}
+
+float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq)
+{
+    vec3 H = normalize(L + V);
+    float zetax = dot(H, Tx) / dot(H, N);
+    float zetay = dot(H, Ty) / dot(H, N);
+
+    float zL = dot(L, N); // cos of source zenith angle
+    float zV = dot(V, N); // cos of receiver zenith angle
+    float zH = dot(H, N); // cos of facet normal zenith angle
+    float zH2 = zH * zH;
+
+    float p = exp(-0.5 * (zetax * zetax / sigmaSq.x + zetay * zetay / sigmaSq.y)) / (2.0 * PI * sqrt(sigmaSq.x * sigmaSq.y));
+
+    float tanV = atan(dot(V, Ty), dot(V, Tx));
+    float cosV2 = 1.0 / (1.0 + tanV * tanV);
+    float sigmaV2 = sigmaSq.x * cosV2 + sigmaSq.y * (1.0 - cosV2);
+
+    float tanL = atan(dot(L, Ty), dot(L, Tx));
+    float cosL2 = 1.0 / (1.0 + tanL * tanL);
+    float sigmaL2 = sigmaSq.x * cosL2 + sigmaSq.y * (1.0 - cosL2);
+
+    float fresnel = 0.02 + 0.98 * pow(1.0 - dot(V, H), 5.0);
+
+    zL = max(zL, 0.01);
+    zV = max(zV, 0.01);
+
+    return fresnel * p / ((1.0 + Lambda(zL, sigmaL2) + Lambda(zV, sigmaV2)) * zV * zH2 * zH2 * 4.0);
+}
 
 float meanFresnel(float cosThetaV, float sigmaV)
 {
@@ -106,19 +153,32 @@ float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq)
 
 void main()
 {
-    vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_pos);
     vec2 uv = vs_output.uv;
+    vec2 screen_tex_coord = (vs_output.proj_pos.xy / vs_output.proj_pos.w) * 0.5 + 0.5;
+    vec3 relative_pos = CAMERA_POSITION.xyz - vs_output.world_pos.xyz;
 
-    vec2 slopes = texture(fftWavesSampler, vec3(uv / GRID_SIZES.x, 1.0)).xy;
-    slopes += texture(fftWavesSampler, vec3(uv / GRID_SIZES.y, 1.0)).zw;
-    slopes += texture(fftWavesSampler, vec3(uv / GRID_SIZES.z, 2.0)).xy;
-    slopes += texture(fftWavesSampler, vec3(uv / GRID_SIZES.w, 2.0)).zw;
+    vec2 slopes = textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.x, 1.0), 0.0).xy;
+    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.y, 1.0), 0.0).zw;
+    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.z, 2.0), 0.0).xy;
+    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.w, 2.0), 0.0).zw;
 
-    vec3 N = normalize(vec3(-slopes.x, -slopes.y, 1.0));
+    vec3 V = normalize(relative_pos);
+    vec3 N = normalize(vec3(-slopes.x, 0.1, -slopes.y));
     if (dot(V, N) < 0.0)
     {
         N = reflect(N, V); // reflects backfacing normals
     }
+
+    vec3 L = LIGHT_DIRECTION.xyz;
+    vec3 H = normalize(V + L);
+    vec3 R = reflect(-V, N);
+    R.y = abs(R.y);
+
+    float NdL = max(0.0, dot(N, L));
+    float NdV = max(0.001, dot(N, V));
+    float NdH = max(0.001, dot(N, H));
+    float HdV = max(0.001, dot(H, V));
+    float LdV = max(0.001, dot(L, V));
 
     float Jxx = dFdx(uv.x);
     float Jxy = dFdy(uv.x);
@@ -140,7 +200,11 @@ void main()
 
     float fresnel = 0.02 + 0.98 * meanFresnel(V, N, sigmaSq);
 
-    fs_output = vec4(fresnel, fresnel, fresnel, 1.0);
-}
+    vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
 
+    fs_output.rgb = vec3(reflectedSunRadiance(L, V, N, Tx, Ty, sigmaSq));
+    fs_output.xyz = vec3(fresnel, fresnel, fresnel);
+    fs_output.xyz = mix(fs_output.xyz, foam, 0.4);
+    fs_output.w = 1.0;
+}
 #endif

@@ -348,6 +348,7 @@ class FFTOceanTexture:
 
     def render(self):
         self.fft_ocean.use_program()
+        self.fft_ocean.bind_material_instance()
         self.fft_ocean.bind_uniform_data("height", self.height)
         self.fft_ocean.bind_uniform_data("cellSize", self.cellSize)
         self.fft_ocean.bind_uniform_data("GRID_SIZES", GRID_SIZES)

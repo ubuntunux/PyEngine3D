@@ -8,7 +8,7 @@ class Bone:
     def __init__(self, name, index, depth, inv_bind_matrix):
         # v += {[(v * BindShapeMatrix) * InvBindMatrix * JointMatrix(animation)] * JointWeight}
         self.name = name
-        self.transform = TransformObject.TransformObject()
+        self.transform = TransformObject()
         self.inv_bind_matrix = inv_bind_matrix
         self.parent = None
         self.children = []
