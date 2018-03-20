@@ -163,7 +163,7 @@ void main()
     slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.w, 2.0), 0.0).zw;
 
     vec3 V = normalize(relative_pos);
-    vec3 N = normalize(vec3(-slopes.x, 0.1, -slopes.y));
+    vec3 N = normalize(vec3(slopes.x, 1.0, slopes.y));
     if (dot(V, N) < 0.0)
     {
         N = reflect(N, V); // reflects backfacing normals
@@ -203,8 +203,8 @@ void main()
     vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
 
     fs_output.rgb = vec3(reflectedSunRadiance(L, V, N, Tx, Ty, sigmaSq));
-    fs_output.xyz = vec3(fresnel, fresnel, fresnel);
-    fs_output.xyz = mix(fs_output.xyz, foam, 0.4);
+    //fs_output.xyz = vec3(fresnel, fresnel, fresnel);
+    fs_output.xyz = mix(fs_output.xyz, vec3(NdL), 0.999);
     fs_output.w = 1.0;
 }
 #endif

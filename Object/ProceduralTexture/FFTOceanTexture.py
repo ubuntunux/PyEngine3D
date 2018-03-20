@@ -322,23 +322,23 @@ class FFTOceanTexture:
         for i in range(PASSES):
             self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
             if i % 2 == 0:
-                fft_b_framebuffer.bind_framebuffer()
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_a)
+                fft_b_framebuffer.bind_framebuffer()
             else:
-                fft_a_framebuffer.bind_framebuffer()
                 self.fft_x.bind_uniform_data("imgSampler", self.texture_fft_b)
+                fft_a_framebuffer.bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         self.fft_y.use_program()
         self.fft_y.bind_uniform_data("butterflySampler", self.texture_butterfly)
-        for i in range(PASSES):
+        for i in range(PASSES, PASSES * 2, 1):
             self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
             if i % 2 == 0:
-                fft_b_framebuffer.bind_framebuffer()
                 self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_a)
+                fft_b_framebuffer.bind_framebuffer()
             else:
-                fft_a_framebuffer.bind_framebuffer()
                 self.fft_y.bind_uniform_data("imgSampler", self.texture_fft_b)
+                fft_a_framebuffer.bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         self.texture_fft_a.generate_mipmap()
