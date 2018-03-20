@@ -73,7 +73,7 @@ void main()
     dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.z, 4.0), dux / GRID_SIZES.z, duy / GRID_SIZES.z).xy;
     dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.w, 4.0), dux / GRID_SIZES.w, duy / GRID_SIZES.w).zw;
 
-    vec3 world_pos = vec3(u.x, 0.0, u.y) + dP;
+    vec3 world_pos = vec3(u.x, height, u.y) + dP;
 
     vec4 proj_pos = VIEW_PROJECTION * vec4(world_pos.xyz, 1.0);
 
