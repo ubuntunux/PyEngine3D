@@ -75,6 +75,16 @@ class Mesh:
                 self.geometries.append(geometry)
         self.attributes = Attributes()
 
+    def get_save_data(self):
+        save_data = dict(
+            geometry_datas=self.get_geometry_datas()
+        )
+        return save_data
+
+    def get_geometry_datas(self):
+        """need to implement"""
+        pass
+
     def has_bone(self):
         return len(self.skeletons) > 0
 
@@ -99,16 +109,22 @@ class Mesh:
         pass
 
 
+# ------------------------------#
+# CLASS : Triangle
+# ------------------------------#
 class Triangle(Mesh):
     def __init__(self):
+        geometry_datas = self.get_geometry_datas()
+        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+
+    def get_geometry_datas(self):
         geometry_data = dict(
             positions=[(-1, -1, 0), (1, -1, 0), (-1, 1, 0)],
             colors=[(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1)],
             normals=[(0, 0, 1), (0, 0, 1), (0, 0, 1)],
             texcoords=[(0, 0), (1, 0), (0, 1)],
             indices=[0, 1, 2])
-        geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        return [geometry_data, ]
 
 
 # ------------------------------#
@@ -116,6 +132,10 @@ class Triangle(Mesh):
 # ------------------------------#
 class Quad(Mesh):
     def __init__(self):
+        geometry_datas = self.get_geometry_datas()
+        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+
+    def get_geometry_datas(self):
         geometry_data = dict(
             positions=[(-1, 1, 0), (-1, -1, 0), (1, -1, 0), (1, 1, 0)],
             colors=[(1, 1, 1, 1), (1, 1, 1, 1), (1, 1, 1, 1), (1, 1, 1, 1)],
@@ -123,8 +143,7 @@ class Quad(Mesh):
             texcoords=[(0, 1), (0, 0), (1, 0), (1, 1)],
             indices=[0, 1, 2, 0, 2, 3])
 
-        geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        return [geometry_data, ]
 
 
 # ------------------------------#
@@ -132,6 +151,10 @@ class Quad(Mesh):
 # ------------------------------#
 class Cube(Mesh):
     def __init__(self):
+        geometry_datas = self.get_geometry_datas()
+        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+
+    def get_geometry_datas(self):
         geometry_data = dict(
             positions=[
                 (-1, 1, 1), (-1, -1, 1), (1, -1, 1), (1, 1, 1),
@@ -173,8 +196,7 @@ class Cube(Mesh):
                 16, 17, 18, 16, 18, 19,
                 20, 21, 22, 20, 22, 23
             ])
-        geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        return [geometry_data, ]
 
 
 # ------------------------------#
@@ -182,10 +204,17 @@ class Cube(Mesh):
 # ------------------------------#
 class Plane(Mesh):
     def __init__(self, width=4, height=4, xz_plane=True):
-        width_points = width + 1
-        height_points = height + 1
-        width_step = 1.0 / width
-        height_step = 1.0 / height
+        self.width = width
+        self.height = height
+        self.xz_plane = xz_plane
+        geometry_datas = self.get_geometry_datas()
+        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+
+    def get_geometry_datas(self):
+        width_points = self.width + 1
+        height_points = self.height + 1
+        width_step = 1.0 / self.width
+        height_step = 1.0 / self.height
         array_count = width_points * height_points
         positions = np.zeros(array_count * 3).reshape(array_count, 3)
         colors = np.zeros(array_count * 4).reshape(array_count, 4)
@@ -197,18 +226,19 @@ class Plane(Mesh):
             for x in range(width_points):
                 x = x * width_step
                 positions[array_index][:] = \
-                    [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0] if xz_plane else [x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0]
+                    [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0] if self.xz_plane else [x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0]
                 colors[array_index][:] = [1, 1, 1, 1]
                 normals[array_index][:] = [0, 1, 0]
                 texcoords[array_index][:] = [x, 1.0 - y]
                 array_index += 1
 
         array_index = 0
-        indices = np.zeros(width * height * 6)
-        for y in range(height):
-            for x in range(width):
+        indices = np.zeros(self.width * self.height * 6)
+        for y in range(self.height):
+            for x in range(self.width):
                 i = y * width_points + x
-                indices[array_index: array_index + 6] = [i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1]
+                indices[array_index: array_index + 6] = [i, i + width_points, i + width_points + 1, i,
+                                                         i + width_points + 1, i + 1]
                 array_index += 6
 
         geometry_data = dict(
@@ -218,8 +248,7 @@ class Plane(Mesh):
             texcoords=texcoords,
             indices=indices)
 
-        geometry_datas = [geometry_data, ]
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        return [geometry_data, ]
 
 
 # ------------------------------#

@@ -11,21 +11,6 @@ from Utilities import *
 
 
 M_PI = 3.14159265
-octaves = 10.0
-lacunarity = 2.2
-gain = 0.7
-norm = 0.5
-clamp1 = -0.15
-clamp2 = 0.2
-sunTheta = M_PI / 2.0 - 0.05
-cameraHeight = 2.0
-gridSize = 8.0
-hdrExposure = 0.4
-choppy = True
-
-WIND = 5.0
-OMEGA = 0.84
-A = 1.0
 cm = 0.23
 km = 370.0
 PASSES = 8  # number of passes needed for the FFT 6 -> 64, 7 -> 128, 8 -> 256, etc
@@ -49,55 +34,6 @@ def sqr(x):
 
 def omega(k):
     return math.sqrt(9.81 * k * (1.0 + sqr(k / km)))
-
-
-def spectrum(kx, ky, omnispectrum=False):
-    U10 = WIND
-    Omega = OMEGA
-
-    k = sqrt(kx * kx + ky * ky)
-    c = omega(k) / k
-
-    # spectral peak
-    kp = 9.81 * sqr(Omega / U10)
-    cp = omega(kp) / kp
-
-    # friction velocity
-    z0 = 3.7e-5 * sqr(U10) / 9.81 * pow(U10 / cp, 0.9)
-    u_star = 0.41 * U10 / log(10.0 / z0)
-
-    Lpm = exp(- 5.0 / 4.0 * sqr(kp / k))
-    gamma = 1.7 if Omega < 1.0 else 1.7 + 6.0 * log(Omega)
-    sigma = 0.08 * (1.0 + 4.0 / pow(Omega, 3.0))
-    Gamma = exp(-1.0 / (2.0 * sqr(sigma)) * sqr(sqrt(k / kp) - 1.0))
-    Jp = pow(gamma, Gamma)
-    Fp = Lpm * Jp * exp(- Omega / sqrt(10.0) * (sqrt(k / kp) - 1.0))
-    alphap = 0.006 * sqrt(Omega)
-    Bl = 0.5 * alphap * cp / c * Fp
-
-    alpham = 0.01
-    if u_star < cm:
-        alpham *= (1.0 + log(u_star / cm))
-    else:
-        alpham *= (1.0 + 3.0 * log(u_star / cm))
-    Fm = exp(-0.25 * sqr(k / km - 1.0))
-    Bh = 0.5 * alpham * cm / c * Fm * Lpm
-
-    if omnispectrum:
-        return A * (Bl + Bh) / (k * sqr(k))
-
-    a0 = log(2.0) / 4.0
-    ap = 4.0
-    am = 0.13 * u_star / cm
-    Delta = tanh(a0 + ap * pow(c / cp, 2.5) + am * pow(cm / c, 2.5))
-    phi = atan2(ky, kx)
-
-    if kx < 0.0:
-        return 0.0
-    else:
-        Bl *= 2.0
-        Bh *= 2.0
-    return A * (Bl + Bh) * (1.0 + Delta * cos(2.0 * phi)) / (2.0 * M_PI * sqr(sqr(k)))
 
 
 def frandom(seed_data):
@@ -133,6 +69,10 @@ def computeWeight(N, k):
 
 
 class FFTOceanTexture:
+    WIND = 5.0
+    OMEGA = 0.84
+    AMPLITUDE = 1.0
+
     def __init__(self, **object_data):
         self.name = self.__class__.__name__
 
@@ -168,29 +108,81 @@ class FFTOceanTexture:
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
-        # grid_width = 1024
-        # grid_height = 768
-        # self.ocean_geometry = self.generate_mesh(grid_width, grid_height)
-        # self.cellSize = np.array([gridSize / float(grid_width), gridSize / float(grid_height)], dtype=np.float32)
+        self.grid_size = 200
+        self.cell_size = np.array([1.0 / float(self.grid_size), 1.0 / float(self.grid_size)], dtype=np.float32)
 
-        self.gridCount = 200
-        self.cellSize = np.array([1.0 / float(self.gridCount), 1.0 / float(self.gridCount)], dtype=np.float32)
-        self.ocean_mesh = Plane(width=self.gridCount, height=self.gridCount, xz_plane=False)
+        self.ocean_mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
         self.ocean_geometry = self.ocean_mesh.get_geometry()
 
     def get_save_data(self):
         save_data = dict(
             texture_type=self.__class__.__name__,
+            WIND=self.WIND,
+            OMEGA=self.OMEGA,
+            AMPLITUDE=self.AMPLITUDE,
         )
         return save_data
 
     def getAttribute(self):
+        self.attribute.setAttribute('WIND', self.WIND)
+        self.attribute.setAttribute('OMEGA', self.OMEGA)
+        self.attribute.setAttribute('AMPLITUDE', self.AMPLITUDE)
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
+            self.generate_texture()
         return self.attribute
+
+    def spectrum(self, kx, ky, omnispectrum=False):
+        U10 = self.WIND
+        Omega = self.OMEGA
+        Amp = self.AMPLITUDE
+
+        k = sqrt(kx * kx + ky * ky)
+        c = omega(k) / k
+
+        # spectral peak
+        kp = 9.81 * sqr(Omega / U10)
+        cp = omega(kp) / kp
+
+        # friction velocity
+        z0 = 3.7e-5 * sqr(U10) / 9.81 * pow(U10 / cp, 0.9)
+        u_star = 0.41 * U10 / log(10.0 / z0)
+
+        Lpm = exp(- 5.0 / 4.0 * sqr(kp / k))
+        gamma = 1.7 if Omega < 1.0 else 1.7 + 6.0 * log(Omega)
+        sigma = 0.08 * (1.0 + 4.0 / pow(Omega, 3.0))
+        Gamma = exp(-1.0 / (2.0 * sqr(sigma)) * sqr(sqrt(k / kp) - 1.0))
+        Jp = pow(gamma, Gamma)
+        Fp = Lpm * Jp * exp(- Omega / sqrt(10.0) * (sqrt(k / kp) - 1.0))
+        alphap = 0.006 * sqrt(Omega)
+        Bl = 0.5 * alphap * cp / c * Fp
+
+        alpham = 0.01
+        if u_star < cm:
+            alpham *= (1.0 + log(u_star / cm))
+        else:
+            alpham *= (1.0 + 3.0 * log(u_star / cm))
+        Fm = exp(-0.25 * sqr(k / km - 1.0))
+        Bh = 0.5 * alpham * cm / c * Fm * Lpm
+
+        if omnispectrum:
+            return Amp * (Bl + Bh) / (k * sqr(k))
+
+        a0 = log(2.0) / 4.0
+        ap = 4.0
+        am = 0.13 * u_star / cm
+        Delta = tanh(a0 + ap * pow(c / cp, 2.5) + am * pow(cm / c, 2.5))
+        phi = atan2(ky, kx)
+
+        if kx < 0.0:
+            return 0.0
+        else:
+            Bl *= 2.0
+            Bh *= 2.0
+        return Amp * (Bl + Bh) * (1.0 + Delta * cos(2.0 * phi)) / (2.0 * M_PI * sqr(sqr(k)))
 
     def getSpectrumSample(self, i, j, lengthScale, kMin):
         dk = 2.0 * M_PI / lengthScale
@@ -199,7 +191,7 @@ class FFTOceanTexture:
         if abs(kx) < kMin and abs(ky) < kMin:
             return 0.0, 0.0
         else:
-            S = spectrum(kx, ky)
+            S = self.spectrum(kx, ky)
             h = sqrt(S / 2.0) * dk
             self.fft_seed.data = (self.fft_seed.data * 1103515245 + 12345) & 0x7FFFFFFF
             phi = frandom(self.fft_seed.data) * 2.0 * M_PI
@@ -255,7 +247,7 @@ class FFTOceanTexture:
         k = 5e-3
         while k < 1e3:
             nextK = k * 1.001
-            theoreticSlopeVariance += k * k * spectrum(k, 0, True) * (nextK - k)
+            theoreticSlopeVariance += k * k * self.spectrum(k, 0, True) * (nextK - k)
             k = nextK
 
         totalSlopeVariance = 0.0
@@ -343,14 +335,11 @@ class FFTOceanTexture:
 
         self.texture_fft_a.generate_mipmap()
 
-    def update(self, delta):
-        self.acc_time += delta
-
     def render(self):
         self.fft_ocean.use_program()
         self.fft_ocean.bind_material_instance()
         self.fft_ocean.bind_uniform_data("height", self.height)
-        self.fft_ocean.bind_uniform_data("cellSize", self.cellSize)
+        self.fft_ocean.bind_uniform_data("cellSize", self.cell_size)
         self.fft_ocean.bind_uniform_data("GRID_SIZES", GRID_SIZES)
 
         self.fft_ocean.bind_uniform_data("fftWavesSampler", self.texture_fft_a)
@@ -358,7 +347,7 @@ class FFTOceanTexture:
         self.ocean_geometry.bind_vertex_buffer()
         self.ocean_geometry.draw_elements()
 
-    def set_resource_data(self, texture):
+    def save_texture(self, texture):
         resource = self.resource_manager.textureLoader.getResource(texture.name)
         if resource is None:
             resource = self.resource_manager.textureLoader.create_resource(texture.name, texture)
@@ -479,64 +468,9 @@ class FFTOceanTexture:
 
         self.computeSlopeVarianceTex()
 
-        self.set_resource_data(self.texture_spectrum_1_2)
-        self.set_resource_data(self.texture_spectrum_3_4)
-        self.set_resource_data(self.texture_slope_variance)
-        self.set_resource_data(self.texture_fft_a)
-        self.set_resource_data(self.texture_fft_b)
-        self.set_resource_data(self.texture_butterfly)
-
-    def generate_mesh(self, grid_width, grid_height):
-        camera = self.scene_manager.main_camera
-        horizon = tan(camera.fov / 180.0 * M_PI)
-        s = min(1.1, 0.5 + horizon * 0.5)
-
-        vmargin = 0.1
-        hmargin = 0.1
-
-        vboParams = [grid_width, grid_height, gridSize, camera.fov]
-        count = int(ceil(grid_height * (s + vmargin) / gridSize) + 5) * int(
-            ceil(grid_width * (1.0 + 2.0 * hmargin) / gridSize) + 5)
-        data = np.zeros(count * 4, dtype=np.float32).reshape(count, 4)
-
-        n = 0
-        nx = 0
-        j = grid_height * s - 0.1
-        while j > (-grid_height * vmargin - gridSize):
-            nx = 0
-            i = -grid_width * hmargin
-            while i < (grid_width * (1.0 + hmargin) + gridSize):
-                n += 1
-                data[n][...] = [-1.0 + 2.0 * i / grid_width, -1.0 + 2.0 * j / grid_height, 0.0, 1.0]
-                nx += 1
-                i += gridSize
-            j -= gridSize
-
-        vboSize = 0
-        indices = np.zeros(6 * int(ceil(grid_height * (s + vmargin) / gridSize) + 4) *
-                           int(ceil(grid_width * (1.0 + 2.0 * hmargin) / gridSize) + 4), dtype=np.uint32)
-        nj = 0
-        j = grid_height * s - 0.1
-        while j > (-grid_height * vmargin):
-            ni = 0
-            i = -grid_width * hmargin
-            while i < grid_width * (1.0 + hmargin):
-                indices[vboSize+0] = ni + (nj + 1) * nx
-                indices[vboSize+1] = (ni + 1) + (nj + 1) * nx
-                indices[vboSize+2] = (ni + 1) + nj * nx
-                indices[vboSize+5] = (ni + 1) + nj * nx
-                indices[vboSize+4] = ni + (nj + 1) * nx
-                indices[vboSize+3] = ni + nj * nx
-                vboSize += 6
-                ni += 1
-                i += gridSize
-            nj += 1
-            j -= gridSize
-
-        return VertexArrayBuffer(
-            name='fft ocean geometry',
-            datas=[data, ],
-            index_data=indices,
-            dtype=np.float32
-        )
-
+        self.save_texture(self.texture_spectrum_1_2)
+        self.save_texture(self.texture_spectrum_3_4)
+        self.save_texture(self.texture_slope_variance)
+        self.save_texture(self.texture_fft_a)
+        self.save_texture(self.texture_fft_b)
+        self.save_texture(self.texture_butterfly)

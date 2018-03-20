@@ -1041,7 +1041,6 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Quad", Quad())
         self.create_resource("Cube", Cube())
         self.create_resource("Plane", Plane(width=4, height=4, xz_plane=True))
-        self.save_resource("Plane")
 
     def load_resource(self, resource_name):
         resource = self.getResource(resource_name)
