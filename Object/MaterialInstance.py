@@ -26,6 +26,7 @@ class MaterialInstance:
         self.macros = copy.copy(data.get('macros', OrderedDict()))
         self.linked_uniform_map = dict()
         self.linked_material_component_map = dict()
+        self.show_message = {}
         self.Attributes = Attributes()
 
         material = data.get('material')
@@ -110,8 +111,9 @@ class MaterialInstance:
         uniform = self.linked_uniform_map.get(uniform_name)
         if uniform:
             uniform[0].bind_uniform(uniform_data, num, transpose)
-        else:
-            logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
+        elif uniform_name not in self.show_message or self.show_message[uniform_name]:
+            self.show_message[uniform_name] = False
+            logger.error('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 
     def get_uniform_data(self, uniform_name):
         uniform = self.linked_uniform_map.get(uniform_name)

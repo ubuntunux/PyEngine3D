@@ -167,8 +167,6 @@ vec4 surface_shading(vec4 base_color,
                     vec3 L,
                     float depth)
 {
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
-
     // Atmosphere
     vec3 scene_radiance = vec3(0.0);
     vec3 scene_in_scatter = vec3(0.0);
@@ -186,7 +184,10 @@ vec4 surface_shading(vec4 base_color,
         scene_in_scatter *= exposure;
     }
 
-    light_color = light_color * scene_radiance;
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
+    shadow_factor = max(shadow_factor, scene_sky_irradiance);
+
+    light_color = light_color * scene_sun_irradiance;
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
@@ -206,6 +207,7 @@ vec4 surface_shading(vec4 base_color,
     f0 = mix(max(vec3(0.04), f0 * reflectance * reflectance), base_color.xyz, metallic);
 
     float opacity = base_color.w;
+
 #if TRANSPARENT_MATERIAL == 1
     float reflectivity = max(max(f0.r, f0.g), f0.b);
     opacity = clamp(base_color.w + base_color.w * reflectivity, 0.0, 1.0);
@@ -214,16 +216,18 @@ vec4 surface_shading(vec4 base_color,
     // specular : mix between metal and non-metal material, for non-metal constant base specular factor of 0.04 grey is used
     vec3 specfresnel = fresnel_factor(f0, HdV);
     vec3 specular_lighting = cooktorrance_specular(NdL, NdV, NdH, specfresnel, roughness);
-    specular_lighting = specular_lighting * light_color * NdL * shadow_factor;
+    specular_lighting = specular_lighting * light_color * NdL;
 
     // diffuse
     vec3 diffuse_light = vec3(oren_nayar(roughness, NdL, NdV, N, V, L));
-    diffuse_light = diffuse_light * base_color.xyz * (vec3(1.0) - specfresnel) * light_color * shadow_factor;
+    diffuse_light = diffuse_light * (vec3(1.0) - specfresnel) * light_color;
 
     // Image based lighting
     const vec2 env_size = textureSize(texture_probe, 0);
     const float env_mipmap_count = log2(min(env_size.x, env_size.y));
 
+    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
+    vec3 shValue = fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y;
     vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
     vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
 
@@ -237,12 +241,13 @@ vec4 surface_shading(vec4 base_color,
         ibl_specular_color.xyz = mix(ibl_specular_color.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
     }
 
-    diffuse_light += base_color.xyz * ibl_diffuse_color * max(shadow_factor, scene_sky_irradiance);
-    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-    specular_lighting += (fresnel_factor(f0, NdV) * envBRDF.x + envBRDF.y) * ibl_specular_color * max(shadow_factor, scene_sky_irradiance);
+    diffuse_light += shValue * ibl_diffuse_color;
+    specular_lighting += shValue * ibl_specular_color;
+    specular_lighting = mix(specular_lighting, specular_lighting * base_color.xyz, vec3(metallic));
 
     // final result
-    vec3 result = diffuse_light * (1.0 - metallic) + specular_lighting + scene_in_scatter;
+    vec3 result = (base_color.xyz * diffuse_light * (1.0 - metallic) + specular_lighting) * shadow_factor;
+    result += scene_in_scatter;
 
     // SSAO
     if(RENDER_SSAO == 1.0f)

@@ -85,6 +85,7 @@ class UniformVariable:
     def __init__(self, program, variable_name):
         self.name = variable_name
         self.location = glGetUniformLocation(program, variable_name)
+        self.show_message = True
         self.valid = True
         if self.location == -1:
             self.valid = False
@@ -178,7 +179,8 @@ class UniformTextureBase(UniformVariable):
             # glEnable(GL_TEXTURE_CUBE_MAP)
             texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind
             glUniform1i(self.location, self.textureIndex)
-        else:
+        elif self.show_message:
+            self.show_message = False
             logger.error("%s %s is None" % (self.name, self.__class__.__name__))
 
 

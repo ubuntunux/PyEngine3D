@@ -353,11 +353,10 @@ class Renderer(Singleton):
                 glEnable(GL_DEPTH_TEST)
                 glEnable(GL_CULL_FACE)
                 glFrontFace(GL_CCW)
-                self.scene_manager.ocean.render_ocean(atmoshpere=self.scene_manager.atmosphere,
+                self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
                                                       texture_depth=RenderTargets.DEPTHSTENCIL,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
-                                                      texture_shadow=RenderTargets.SHADOWMAP,
-                                                      texture_scene_reflect=RenderTargets.SCREEN_SPACE_REFLECTION)
+                                                      texture_shadow=RenderTargets.SHADOWMAP)
                 glEnable(GL_CULL_FACE)
 
             # render translucent

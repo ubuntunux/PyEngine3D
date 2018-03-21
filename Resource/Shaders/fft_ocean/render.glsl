@@ -2,12 +2,17 @@
 
 #include "scene_constants.glsl"
 #include "utility.glsl"
+#include "shading.glsl"
+
 
 uniform float height;
 uniform vec2 cellSize;
 uniform vec4 GRID_SIZES;
 uniform sampler2DArray fftWavesSampler;
 uniform sampler3D slopeVarianceSampler;
+uniform sampler2D texture_depth;
+uniform sampler2D texture_shadow;
+uniform samplerCube texture_probe;
 
 #ifdef MATERIAL_COMPONENTS
     uniform vec2 uv_tiling;
@@ -155,7 +160,9 @@ void main()
 {
     vec2 uv = vs_output.uv;
     vec2 screen_tex_coord = (vs_output.proj_pos.xy / vs_output.proj_pos.w) * 0.5 + 0.5;
+    float scene_linear_depth = vs_output.proj_pos.w;
     vec3 relative_pos = CAMERA_POSITION.xyz - vs_output.world_pos.xyz;
+    float roughness = 0.1;
 
     vec2 slopes = textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.x, 1.0), 0.0).xy;
     slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.y, 1.0), 0.0).zw;
@@ -196,20 +203,61 @@ void main()
 
     sigmaSq = max(sigmaSq, 2e-5);
 
+    float fresnel = 0.02 + 0.98 * meanFresnel(V, N, sigmaSq);
+
     vec3 Ty = normalize(vec3(0.0, N.z, -N.y));
     vec3 Tx = cross(Ty, N);
 
-    float fresnel = 0.02 + 0.98 * meanFresnel(V, N, sigmaSq);
-
-    vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
-
-    vec3 seaColor = vec3(1.0, 1.0, 1.0) * foam;
-
     float specular_intensity = reflectedSunRadiance(L, V, N, Tx, Ty, sigmaSq) * 10.0;
 
-    //fs_output.rgb = vec3(specular_intensity);
-    fs_output.rgb += (1.0 - fresnel) * seaColor * (dot(N, L) * 0.5 + 0.5);
-    fs_output.rgb += pow(NdH, 30.0) * 5.0;
+    // Atmosphere
+    vec3 scene_radiance = vec3(0.0);
+    vec3 scene_in_scatter = vec3(0.0);
+    vec3 scene_sun_irradiance;
+    vec3 scene_sky_irradiance;
+    float scene_shadow_length;
+
+    {
+        // float scene_linear_depth = depth_to_linear_depth(depth);
+
+        GetSceneRadiance(
+            ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
+            scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
+        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
+        scene_sky_irradiance *= exposure;
+        scene_in_scatter *= exposure;
+    }
+
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, vs_output.world_pos.xyz, texture_shadow) );
+    shadow_factor = max(shadow_factor, scene_sky_irradiance);
+
+    // vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
+
+    vec3 seaColor = vec3(0.7, 0.7, 1.0);
+    vec3 light_color = LIGHT_COLOR.xyz * scene_sun_irradiance;
+
+    // diffuse
+    vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;
+
+    vec3 specular_lighting = pow(NdH, 30.0) * light_color;
+
+    // Image based lighting
+    const vec2 env_size = textureSize(texture_probe, 0);
+    const float env_mipmap_count = log2(min(env_size.x, env_size.y));
+
+    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
+    float shValue = fresnel * envBRDF.x + envBRDF.y;
+
+    vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
+    vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
+
+    diffuse_light += shValue * ibl_diffuse_color;
+    specular_lighting += shValue * ibl_specular_color;
+
+    // final result
+    vec3 result = (diffuse_light + specular_lighting) * shadow_factor + scene_in_scatter;
+
+    fs_output.xyz = result;
     fs_output.w = 1.0;
 }
 #endif

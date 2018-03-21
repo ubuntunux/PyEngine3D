@@ -74,6 +74,7 @@
     - Color Correction
     - Color Grading
 * Rendering
+    - Light Probe lod convolution
     - 2D Texture Mipmap to RenderTarget
     - Hierachical-Z depth
     - Animation calculation in gpu    
