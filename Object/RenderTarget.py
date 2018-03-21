@@ -10,6 +10,7 @@ from OpenGL.GL.EXT.framebuffer_object import *
 from Utilities import *
 from Common import logger
 from OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
+from Object.ProceduralTexture import FFTOceanConstants
 
 
 class Option:
@@ -34,6 +35,8 @@ class RenderTargets:
     SSAO = None
     SSAO_ROTATION_NOISE = None
     VELOCITY = None
+    FFT_A = None
+    FFT_B = None
     TEMP_RENDER_BUFFER_MULTISAMPLE = None
     TEMP_RGBA8 = None
     TEMP_2D_ARRAY = None
@@ -380,6 +383,36 @@ class RenderTargetManager(Singleton):
             min_filter=GL_NEAREST,
             mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
+        )
+
+        RenderTargets.FFT_A = CreateTexture(
+            name='FFT_A',
+            texture_type=Texture2DArray,
+            image_mode='RGBA',
+            width=FFTOceanConstants.FFT_SIZE,
+            height=FFTOceanConstants.FFT_SIZE,
+            depth=5,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_REPEAT
+        )
+
+        RenderTargets.FFT_B = CreateTexture(
+            name='FFT_B',
+            texture_type=Texture2DArray,
+            image_mode='RGBA',
+            width=FFTOceanConstants.FFT_SIZE,
+            height=FFTOceanConstants.FFT_SIZE,
+            depth=5,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_REPEAT
         )
 
         RenderTargets.TEMP_RGBA8 = self.create_rendertarget(

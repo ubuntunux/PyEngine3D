@@ -3,11 +3,11 @@ import numpy as np
 
 from OpenGL.GL import *
 
-from .constants import *
-
 from Utilities import *
 from App import CoreManager
 from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer, FrameBuffer
+
+from .constants import *
 
 
 def CieColorMatchingFunctionTableValue(wavelength, column):
