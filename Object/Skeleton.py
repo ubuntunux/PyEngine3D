@@ -1,7 +1,7 @@
 import numpy as np
 
 from Common import logger
-from Object import TransformObject
+from .TransformObject import TransformObject
 
 
 class Bone:

@@ -6,7 +6,7 @@ from App import CoreManager
 from OpenGLContext import VertexArrayBuffer
 from Common import logger, log_level, COMMAND
 from Utilities import *
-from .Renderer import RenderOption
+from .RenderOptions import RenderOption
 
 
 class FontData:

@@ -4,10 +4,11 @@ import traceback
 import numpy as np
 
 from Common import logger
+from App import CoreManager
 from OpenGLContext import CreateVertexArrayBuffer, UniformMatrix4
 from Utilities import Attributes, GetClassName, normalize, Matrix4, MATRIX4_IDENTITY
-from Object import Skeleton, Animation
-from App import CoreManager
+from .Skeleton import Skeleton
+from .Animation import Animation
 
 
 class Geometry:

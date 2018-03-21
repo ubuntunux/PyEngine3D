@@ -105,7 +105,8 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from ResourceManager import ResourceManager
-        from Object import RenderTargetManager, Renderer, FontManager, RenderOptionManager
+        from Object import RenderTargetManager, FontManager, RenderOptionManager
+        from .Renderer import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
