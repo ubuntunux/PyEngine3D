@@ -67,11 +67,6 @@ class Ocean:
         self.fft_render = self.resource_manager.getMaterialInstance('fft_ocean.render')
         self.fft_variance = self.resource_manager.getMaterialInstance('fft_ocean.fft_variance')
 
-        self.texture_spectrum_1_2 = self.resource_manager.getTexture("fft_ocean.spectrum_1_2")
-        self.texture_spectrum_3_4 = self.resource_manager.getTexture("fft_ocean.spectrum_3_4")
-        self.texture_slope_variance = self.resource_manager.getTexture("fft_ocean.slope_variance")
-        self.texture_butterfly = self.resource_manager.getTexture("fft_ocean.butterfly")
-
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
@@ -80,6 +75,17 @@ class Ocean:
 
         self.mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
         self.geometry = self.mesh.get_geometry()
+
+        self.texture_spectrum_1_2 = self.resource_manager.getTexture("fft_ocean.spectrum_1_2")
+        self.texture_spectrum_3_4 = self.resource_manager.getTexture("fft_ocean.spectrum_3_4")
+        self.texture_slope_variance = self.resource_manager.getTexture("fft_ocean.slope_variance")
+        self.texture_butterfly = self.resource_manager.getTexture("fft_ocean.butterfly")
+
+        if None in (self.texture_spectrum_1_2,
+                    self.texture_spectrum_3_4,
+                    self.texture_slope_variance,
+                    self.texture_butterfly):
+            self.generate_texture()
 
         # self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
         #                                                    layout_location=5,

@@ -310,7 +310,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         width, height, full_screen = screen_info
         self.spinWidth.setValue(width)
         self.spinHeight.setValue(height)
-        self.checkFullScreen.setChecked(full_screen)
+        self.checkFullScreen.setChecked(full_screen or False)
 
     def clearRenderTargetList(self):
         self.comboRenderTargets.clear()
