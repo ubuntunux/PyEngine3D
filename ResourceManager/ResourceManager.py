@@ -24,7 +24,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from Object import CreateProceduralTexture, NoiseTexture3D, FFTOceanTexture
+from Object import CreateProceduralTexture, NoiseTexture3D
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
@@ -995,11 +995,6 @@ class ProceduralTextureLoader(ResourceLoader):
         resource_name = "NoiseTexture3D"
         if not self.hasResource(resource_name):
             self.create_resource(resource_name, NoiseTexture3D())
-            self.save_resource(resource_name)
-
-        resource_name = "FFTOceanTexture"
-        if not self.hasResource(resource_name):
-            self.create_resource(resource_name, FFTOceanTexture())
             self.save_resource(resource_name)
 
     def load_resource(self, resource_name):

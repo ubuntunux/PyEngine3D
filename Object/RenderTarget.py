@@ -10,7 +10,7 @@ from OpenGL.GL.EXT.framebuffer_object import *
 from Utilities import *
 from Common import logger
 from OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
-from Object.ProceduralTexture import FFTOceanConstants
+from Object.Ocean import Constants as OceanConstants
 
 
 class Option:
@@ -389,8 +389,8 @@ class RenderTargetManager(Singleton):
             name='FFT_A',
             texture_type=Texture2DArray,
             image_mode='RGBA',
-            width=FFTOceanConstants.FFT_SIZE,
-            height=FFTOceanConstants.FFT_SIZE,
+            width=OceanConstants.FFT_SIZE,
+            height=OceanConstants.FFT_SIZE,
             depth=5,
             internal_format=GL_RGBA16F,
             texture_format=GL_RGBA,
@@ -404,8 +404,8 @@ class RenderTargetManager(Singleton):
             name='FFT_B',
             texture_type=Texture2DArray,
             image_mode='RGBA',
-            width=FFTOceanConstants.FFT_SIZE,
-            height=FFTOceanConstants.FFT_SIZE,
+            width=OceanConstants.FFT_SIZE,
+            height=OceanConstants.FFT_SIZE,
             depth=5,
             internal_format=GL_RGBA16F,
             texture_format=GL_RGBA,

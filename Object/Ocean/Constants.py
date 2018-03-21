@@ -2,6 +2,10 @@ from math import pi
 
 import numpy as np
 
+WIND = 5.0
+OMEGA = 0.84
+AMPLITUDE = 1.0
+
 cm = 0.23
 km = 370.0
 

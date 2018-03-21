@@ -1,5 +1,4 @@
 from .NoiseTexture3D import NoiseTexture3D
-from .FFTOceanTexture import FFTOceanTexture
 
 
 def CreateProceduralTexture(**datas):

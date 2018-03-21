@@ -5,10 +5,11 @@ from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
-from OpenGLContext import CreateTexture, Texture2D, Texture3D
+from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, VertexArrayBuffer, FrameBuffer
 from Utilities import *
 from Object.Mesh import Plane
-from .FFTOceanConstants import *
+from Object import RenderTarget
+from .Constants import *
 
 
 def sqr(x):
@@ -43,27 +44,27 @@ def computeWeight(N, k):
     return cos(2.0 * pi * k / float(N)), sin(2.0 * pi * k / float(N))
 
 
-class FFTOceanTexture:
-    WIND = 5.0
-    OMEGA = 0.84
-    AMPLITUDE = 1.0
-
+class Ocean:
     def __init__(self, **object_data):
-        self.name = self.__class__.__name__
-
+        self.name = object_data.get('name', 'ocean')
+        self.height = object_data.get('height', 0.0)
+        self.wind = object_data.get('wind', WIND)
+        self.omega = object_data.get('omega', OMEGA)
+        self.amplitude = object_data.get('amplitude', AMPLITUDE)
         self.is_render_ocean = True
-        self.attribute = Attributes()
+        self.attributes = Attributes()
+
+        self.acc_time = 0.0
+        self.fft_seed = Data(data=1234)
 
         self.renderer = CoreManager.instance().renderer
         self.scene_manager = CoreManager.instance().scene_manager
         self.resource_manager = CoreManager.instance().resource_manager
 
-        self.fft_seed = Data(data=1234)
-
-        self.spectrum12_data = None
-        self.spectrum34_data = None
-        self.butterfly_data = None
-
+        self.fft_init = self.resource_manager.getMaterialInstance('fft_ocean.init')
+        self.fft_x = self.resource_manager.getMaterialInstance('fft_ocean.fft_x')
+        self.fft_y = self.resource_manager.getMaterialInstance('fft_ocean.fft_y')
+        self.fft_render = self.resource_manager.getMaterialInstance('fft_ocean.render')
         self.fft_variance = self.resource_manager.getMaterialInstance('fft_ocean.fft_variance')
 
         self.texture_spectrum_1_2 = self.resource_manager.getTexture("fft_ocean.spectrum_1_2")
@@ -74,26 +75,48 @@ class FFTOceanTexture:
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
-    def get_save_data(self):
-        save_data = dict(
-            texture_type=self.__class__.__name__,
-            WIND=self.WIND,
-            OMEGA=self.OMEGA,
-            AMPLITUDE=self.AMPLITUDE,
-        )
-        return save_data
+        self.grid_size = 200
+        self.cell_size = np.array([1.0 / float(self.grid_size), 1.0 / float(self.grid_size)], dtype=np.float32)
+
+        self.mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
+        self.geometry = self.mesh.get_geometry()
+
+        # self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
+        #                                                    layout_location=5,
+        #                                                    element_data=FLOAT2_ZERO)
+
+        # instanced grid
+        # self.grid_size = Float2(100.0, 100.0)
+        # self.grid_count = 1
+        # self.offsets = np.array(
+        #     [Float2(i % self.grid_count, i // self.grid_count) for i in range(self.grid_count * self.grid_count)],
+        #     dtype=np.float32)
 
     def getAttribute(self):
-        self.attribute.setAttribute('WIND', self.WIND)
-        self.attribute.setAttribute('OMEGA', self.OMEGA)
-        self.attribute.setAttribute('AMPLITUDE', self.AMPLITUDE)
-        return self.attribute
+        self.attributes.setAttribute('is_render_ocean', self.is_render_ocean)
+        self.attributes.setAttribute('height', self.height)
+        self.attributes.setAttribute('wind', self.wind)
+        self.attributes.setAttribute('omega', self.omega)
+        self.attributes.setAttribute('amplitude', self.amplitude)
+        return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
-            self.generate_texture()
-        return self.attribute
+            # recreate resources
+            if attributeName in ('amplitude', 'wind', 'omega'):
+                self.generate_texture()
+        return self.attributes
+
+    def get_save_data(self):
+        save_data = dict(
+            texture_type=self.__class__.__name__,
+            height=self.height,
+            wind=self.wind,
+            omega=self.omega,
+            amplitude=self.amplitude,
+        )
+        return save_data
 
     def getSlopeVariance(self, kx, ky, spectrumSample0, spectrumSample1):
         kSquare = kx * kx + ky * ky
@@ -103,9 +126,9 @@ class FFTOceanTexture:
         return kSquare * hSquare * 2.0
 
     def spectrum(self, kx, ky, omnispectrum=False):
-        U10 = self.WIND
-        Omega = self.OMEGA
-        Amp = self.AMPLITUDE
+        U10 = self.wind
+        Omega = self.omega
+        Amp = self.amplitude
 
         k = sqrt(kx * kx + ky * ky)
         c = omega(k) / k
@@ -164,7 +187,7 @@ class FFTOceanTexture:
             phi = frandom(self.fft_seed.data) * 2.0 * pi
             return h * cos(phi), h * sin(phi)
 
-    def computeButterflyLookupTexture(self):
+    def computeButterflyLookupTexture(self, butterfly_data):
         for i in range(PASSES):
             nBlocks = int(pow(2.0, float(PASSES - 1 - i)))
             nHInputs = int(pow(2.0, float(i)))
@@ -185,18 +208,18 @@ class FFTOceanTexture:
                     wr, wi = computeWeight(FFT_SIZE, k * nBlocks)
 
                     offset1 = 4 * (i1 + i * FFT_SIZE)
-                    self.butterfly_data[offset1 + 0] = (j1 + 0.5) / FFT_SIZE
-                    self.butterfly_data[offset1 + 1] = (j2 + 0.5) / FFT_SIZE
-                    self.butterfly_data[offset1 + 2] = wr
-                    self.butterfly_data[offset1 + 3] = wi
+                    butterfly_data[offset1 + 0] = (j1 + 0.5) / FFT_SIZE
+                    butterfly_data[offset1 + 1] = (j2 + 0.5) / FFT_SIZE
+                    butterfly_data[offset1 + 2] = wr
+                    butterfly_data[offset1 + 3] = wi
 
                     offset2 = 4 * (i2 + i * FFT_SIZE)
-                    self.butterfly_data[offset2 + 0] = (j1 + 0.5) / FFT_SIZE
-                    self.butterfly_data[offset2 + 1] = (j2 + 0.5) / FFT_SIZE
-                    self.butterfly_data[offset2 + 2] = -wr
-                    self.butterfly_data[offset2 + 3] = -wi
+                    butterfly_data[offset2 + 0] = (j1 + 0.5) / FFT_SIZE
+                    butterfly_data[offset2 + 1] = (j2 + 0.5) / FFT_SIZE
+                    butterfly_data[offset2 + 2] = -wr
+                    butterfly_data[offset2 + 3] = -wi
 
-    def generateWavesSpectrum(self):
+    def generateWavesSpectrum(self, spectrum12_data, spectrum34_data):
         for y in range(FFT_SIZE):
             for x in range(FFT_SIZE):
                 offset = 4 * (x + y * FFT_SIZE)
@@ -206,10 +229,10 @@ class FFTOceanTexture:
                 s12_2, s12_3 = self.getSpectrumSample(i, j, GRID2_SIZE, pi * FFT_SIZE / GRID1_SIZE)
                 s34_0, s34_1 = self.getSpectrumSample(i, j, GRID3_SIZE, pi * FFT_SIZE / GRID2_SIZE)
                 s34_2, s34_3 = self.getSpectrumSample(i, j, GRID4_SIZE, pi * FFT_SIZE / GRID3_SIZE)
-                self.spectrum12_data[offset: offset+4] = s12_0, s12_1, s12_2, s12_3
-                self.spectrum34_data[offset: offset+4] = s34_0, s34_1, s34_2, s34_3
+                spectrum12_data[offset: offset+4] = s12_0, s12_1, s12_2, s12_3
+                spectrum34_data[offset: offset+4] = s34_0, s34_1, s34_2, s34_3
 
-    def computeSlopeVarianceTex(self):
+    def computeSlopeVarianceTex(self, spectrum12_data, spectrum34_data):
         theoreticSlopeVariance = 0.0
         k = 5e-3
         while k < 1e3:
@@ -223,8 +246,8 @@ class FFTOceanTexture:
                 offset = 4 * (x + y * FFT_SIZE)
                 i = 2.0 * pi * ((x - FFT_SIZE) if (x >= FFT_SIZE / 2) else x)
                 j = 2.0 * pi * ((y - FFT_SIZE) if (y >= FFT_SIZE / 2) else y)
-                s12_0, s12_1, s12_2, s12_3 = self.spectrum12_data[offset: offset + 4]
-                s34_0, s34_1, s34_2, s34_3 = self.spectrum34_data[offset: offset + 4]
+                s12_0, s12_1, s12_2, s12_3 = spectrum12_data[offset: offset + 4]
+                s34_0, s34_1, s34_2, s34_3 = spectrum34_data[offset: offset + 4]
                 totalSlopeVariance += self.getSlopeVariance(i/GRID1_SIZE, j/GRID1_SIZE, s12_0, s12_1)
                 totalSlopeVariance += self.getSlopeVariance(i/GRID2_SIZE, j/GRID2_SIZE, s12_2, s12_3)
                 totalSlopeVariance += self.getSlopeVariance(i/GRID3_SIZE, j/GRID3_SIZE, s34_0, s34_1)
@@ -265,12 +288,12 @@ class FFTOceanTexture:
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
 
-        self.spectrum12_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
-        self.spectrum34_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
-        self.butterfly_data = np.zeros(FFT_SIZE * PASSES * 4, dtype=np.float32)
+        spectrum12_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
+        spectrum34_data = np.zeros(FFT_SIZE * FFT_SIZE * 4, dtype=np.float32)
+        butterfly_data = np.zeros(FFT_SIZE * PASSES * 4, dtype=np.float32)
 
-        self.generateWavesSpectrum()
-        self.computeButterflyLookupTexture()
+        self.generateWavesSpectrum(spectrum12_data, spectrum34_data)
+        self.computeButterflyLookupTexture(butterfly_data)
 
         # create render targets
         self.texture_spectrum_1_2 = CreateTexture(
@@ -285,7 +308,7 @@ class FFTOceanTexture:
             mag_filter=GL_NEAREST,
             data_type=GL_FLOAT,
             wrap=GL_REPEAT,
-            data=self.spectrum12_data,
+            data=spectrum12_data,
         )
 
         self.texture_spectrum_3_4 = CreateTexture(
@@ -300,7 +323,7 @@ class FFTOceanTexture:
             mag_filter=GL_NEAREST,
             data_type=GL_FLOAT,
             wrap=GL_REPEAT,
-            data=self.spectrum34_data,
+            data=spectrum34_data,
         )
 
         self.texture_slope_variance = CreateTexture(
@@ -330,12 +353,112 @@ class FFTOceanTexture:
             mag_filter=GL_NEAREST,
             wrap=GL_CLAMP_TO_EDGE,
             data_type=GL_FLOAT,
-            data=self.butterfly_data,
+            data=butterfly_data,
         )
 
-        self.computeSlopeVarianceTex()
+        self.computeSlopeVarianceTex(spectrum12_data, spectrum34_data)
 
         self.save_texture(self.texture_spectrum_1_2)
         self.save_texture(self.texture_spectrum_3_4)
         self.save_texture(self.texture_slope_variance)
         self.save_texture(self.texture_butterfly)
+
+    def update(self, delta):
+        self.simulateFFTWaves(delta)
+
+    def simulateFFTWaves(self, delta):
+        self.acc_time += delta
+
+        framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
+        RenderTargets = RenderTarget.RenderTargets
+
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_BLEND)
+
+        fft_a_framebuffer = framebuffer_manager.get_framebuffer(RenderTargets.FFT_A,
+                                                                RenderTargets.FFT_A,
+                                                                RenderTargets.FFT_A,
+                                                                RenderTargets.FFT_A,
+                                                                RenderTargets.FFT_A)
+
+        fft_b_framebuffer = framebuffer_manager.get_framebuffer(RenderTargets.FFT_B,
+                                                                RenderTargets.FFT_B,
+                                                                RenderTargets.FFT_B,
+                                                                RenderTargets.FFT_B,
+                                                                RenderTargets.FFT_B)
+
+        # initialize
+        self.fft_init.use_program()
+        self.fft_init.bind_uniform_data("FFT_SIZE", FFT_SIZE)
+        self.fft_init.bind_uniform_data("INVERSE_GRID_SIZES", INVERSE_GRID_SIZES)
+        self.fft_init.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
+        self.fft_init.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
+        self.fft_init.bind_uniform_data("t", self.acc_time)
+
+        self.quad_geometry.bind_vertex_buffer()
+        fft_a_framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.quad_geometry.draw_elements()
+
+        # # fft passes
+        self.fft_x.use_program()
+        self.fft_x.bind_uniform_data("butterflySampler", self.texture_butterfly)
+        for i in range(PASSES):
+            self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
+            if i % 2 == 0:
+                self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
+                fft_b_framebuffer.bind_framebuffer()
+            else:
+                self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
+                fft_a_framebuffer.bind_framebuffer()
+            self.quad_geometry.draw_elements()
+
+        self.fft_y.use_program()
+        self.fft_y.bind_uniform_data("butterflySampler", self.texture_butterfly)
+        for i in range(PASSES, PASSES * 2, 1):
+            self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
+            if i % 2 == 0:
+                self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
+                fft_b_framebuffer.bind_framebuffer()
+            else:
+                self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
+                fft_a_framebuffer.bind_framebuffer()
+            self.quad_geometry.draw_elements()
+
+        RenderTargets.FFT_A.generate_mipmap()
+
+    def render_ocean(self, atmoshpere, texture_depth, texture_probe, texture_shadow, texture_scene_reflect):
+        self.fft_render.use_program()
+        self.fft_render.bind_material_instance()
+        self.fft_render.bind_uniform_data("height", self.height)
+        self.fft_render.bind_uniform_data("cellSize", self.cell_size)
+        self.fft_render.bind_uniform_data("GRID_SIZES", GRID_SIZES)
+
+        self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
+        self.fft_render.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)
+        self.geometry.bind_vertex_buffer()
+        self.geometry.draw_elements()
+        return
+
+        self.material_instance.use_program()
+        self.material_instance.bind_material_instance()
+        self.material_instance.bind_uniform_data('height', self.height)
+
+        self.material_instance.bind_uniform_data('texture_depth', texture_depth)
+        self.material_instance.bind_uniform_data('texture_probe', texture_probe)
+        self.material_instance.bind_uniform_data('texture_shadow', texture_shadow)
+        self.material_instance.bind_uniform_data('texture_scene_reflect', texture_scene_reflect)
+
+        # Bind Atmosphere
+        atmoshpere.bind_precomputed_atmosphere(self.material_instance)
+
+        self.geometry.bind_vertex_buffer()
+        self.geometry.draw_elements()
+
+        # instanced grid
+        # self.material_instance.bind_uniform_data('grid_size', self.grid_size)
+        # self.geometry.bind_instance_buffer(instance_name="offset",
+        #                                    instance_data=self.offsets,
+        #                                    divisor=1)
+        # self.geometry.bind_vertex_buffer()
+        # self.geometry.draw_elements_instanced(len(self.offsets))

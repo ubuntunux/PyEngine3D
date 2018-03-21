@@ -8,6 +8,8 @@ class RenderOption:
     RENDER_FONT = True
     RENDER_STATIC_ACTOR = True
     RENDER_SKELETON_ACTOR = True
+    RENDER_ATMOSPHERE = True
+    RENDER_OCEAN = True
 
 
 class RenderingType(AutoEnum):
