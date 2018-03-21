@@ -57,7 +57,6 @@
     - Dominant Directional Light, Spot, point, area light
     - SkyLight, AmbientLight, Spherical Harmonic Light
 * Object
-    - Instancing
     - Select, Move, Modify
     - Gizmo
     - Culling
@@ -75,12 +74,9 @@
     - Color Correction
     - Color Grading
 * Rendering
-    - 3D Texture read / write
     - 2D Texture Mipmap to RenderTarget
     - Hierachical-Z depth
-    - Animation calculation in gpu
-    - Blend mode
-        - Additive, Multiply, Blending
+    - Animation calculation in gpu    
     - Multisample texture - glTexImage2DMultisample
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
     - View Mode
@@ -90,13 +86,10 @@
         - occlusion culling
         - distance culling
     - Coarse Shading, Checkboard rendering
-    - Paraboloid environment map
-    - Forward Renderer
-    - Deferred Renderer
-    - LightPrepass Renderer
-    - Fog
-    - Volumtric Scattering
-    - Atmospheric Scattering
+    - Paraboloid environment map    
+    - Volumtric Fog
+    - Fur Rendering
+    - Procedural geometry    
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource
