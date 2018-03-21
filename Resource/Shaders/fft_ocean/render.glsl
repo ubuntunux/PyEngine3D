@@ -171,7 +171,7 @@ void main()
 
     vec3 V = normalize(relative_pos);
     vec3 vertex_normal = vec3(-vs_output.wave_offset.x, 1.0 - vs_output.wave_offset.y, -vs_output.wave_offset.z);
-    vec3 N = normalize(mix(vec3(-slopes.x, 1.0, -slopes.y), vertex_normal, 0.7));
+    vec3 N = normalize(mix(vec3(-slopes.x, 1.0, -slopes.y), vertex_normal, 0.5));
     if (dot(V, N) < 0.0)
     {
         N = reflect(N, V); // reflects backfacing normals
