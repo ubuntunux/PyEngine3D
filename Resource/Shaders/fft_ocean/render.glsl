@@ -113,11 +113,11 @@ float Lambda(float cosTheta, float sigmaSq)
     return max(0.0, (exp(-v * v) - v * sqrt(PI) * erfc(v)) / (2.0 * v * sqrt(PI)));
 }
 
-float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaSq)
+float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Tz, vec2 sigmaSq)
 {
     vec3 H = normalize(L + V);
     float zetax = dot(H, Tx) / dot(H, N);
-    float zetay = dot(H, Ty) / dot(H, N);
+    float zetay = dot(H, Tz) / dot(H, N);
 
     float zL = dot(L, N); // cos of source zenith angle
     float zV = dot(V, N); // cos of receiver zenith angle
@@ -126,11 +126,11 @@ float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Ty, vec2 sigmaS
 
     float p = exp(-0.5 * (zetax * zetax / sigmaSq.x + zetay * zetay / sigmaSq.y)) / (2.0 * PI * sqrt(sigmaSq.x * sigmaSq.y));
 
-    float tanV = atan(dot(V, Ty), dot(V, Tx));
+    float tanV = atan(dot(V, Tz), dot(V, Tx));
     float cosV2 = 1.0 / (1.0 + tanV * tanV);
     float sigmaV2 = sigmaSq.x * cosV2 + sigmaSq.y * (1.0 - cosV2);
 
-    float tanL = atan(dot(L, Ty), dot(L, Tx));
+    float tanL = atan(dot(L, Tz), dot(L, Tx));
     float cosL2 = 1.0 / (1.0 + tanL * tanL);
     float sigmaL2 = sigmaSq.x * cosL2 + sigmaSq.y * (1.0 - cosL2);
 
@@ -205,10 +205,10 @@ void main()
 
     float fresnel = 0.02 + 0.98 * meanFresnel(V, N, sigmaSq);
 
-    vec3 Ty = normalize(vec3(0.0, N.z, -N.y));
-    vec3 Tx = cross(Ty, N);
+    vec3 Tz = normalize(vec3(0.0, N.z, -N.y));
+    vec3 Tx = cross(Tz, N);
 
-    float specular_intensity = reflectedSunRadiance(L, V, N, Tx, Ty, sigmaSq) * 10.0;
+    float specular_intensity = reflectedSunRadiance(L, V, N, Tx, Tz, sigmaSq) * 10.0;
 
     // Atmosphere
     vec3 scene_radiance = vec3(0.0);
