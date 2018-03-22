@@ -385,8 +385,8 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
-        RenderTargets.FFT_A = CreateTexture(
-            name='FFT_A',
+        RenderTargets.FFT_A = self.create_rendertarget(
+            'FFT_A',
             texture_type=Texture2DArray,
             image_mode='RGBA',
             width=OceanConstants.FFT_SIZE,
@@ -400,8 +400,8 @@ class RenderTargetManager(Singleton):
             wrap=GL_REPEAT
         )
 
-        RenderTargets.FFT_B = CreateTexture(
-            name='FFT_B',
+        RenderTargets.FFT_B = self.create_rendertarget(
+            'FFT_B',
             texture_type=Texture2DArray,
             image_mode='RGBA',
             width=OceanConstants.FFT_SIZE,

@@ -320,6 +320,8 @@ class Renderer(Singleton):
             return end_render_scene()
         else:
             """ render normal scene """
+            self.scene_manager.ocean.simulateFFTWaves()
+
             if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
                 self.render_deferred()
             else:
@@ -351,10 +353,10 @@ class Renderer(Singleton):
 
             if self.scene_manager.ocean.is_render_ocean:
                 glEnable(GL_DEPTH_TEST)
-                glEnable(GL_CULL_FACE)
-                glFrontFace(GL_CCW)
+                glDisable(GL_CULL_FACE)
+
                 self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
-                                                      texture_depth=RenderTargets.DEPTHSTENCIL,
+                                                      texture_linear_depth=RenderTargets.LINEAR_DEPTH,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)
                 glEnable(GL_CULL_FACE)

@@ -2,12 +2,14 @@ from math import pi
 
 import numpy as np
 
+cm = 0.23
+km = 370.0
+
 WIND = 5.0
 OMEGA = 0.84
 AMPLITUDE = 1.0
 
-cm = 0.23
-km = 370.0
+CHOPPY_FACTOR = np.array([2.3, 2.1, 1.3, 0.9], dtype=np.float32)
 
 PASSES = 8  # number of passes needed for the FFT 6 -> 64, 7 -> 128, 8 -> 256, etc
 FFT_SIZE = 1 << PASSES  # size of the textures storing the waves in frequency and spatial domains

@@ -51,6 +51,7 @@ class Ocean:
         self.wind = object_data.get('wind', WIND)
         self.omega = object_data.get('omega', OMEGA)
         self.amplitude = object_data.get('amplitude', AMPLITUDE)
+        self.choppy = object_data.get('choppy', CHOPPY_FACTOR)
         self.is_render_ocean = True
         self.attributes = Attributes()
 
@@ -104,6 +105,7 @@ class Ocean:
         self.attributes.setAttribute('wind', self.wind)
         self.attributes.setAttribute('omega', self.omega)
         self.attributes.setAttribute('amplitude', self.amplitude)
+        self.attributes.setAttribute('choppy', self.choppy)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -370,16 +372,11 @@ class Ocean:
         self.save_texture(self.texture_butterfly)
 
     def update(self, delta):
-        self.simulateFFTWaves(delta)
-
-    def simulateFFTWaves(self, delta):
         self.acc_time += delta
 
+    def simulateFFTWaves(self):
         framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
         RenderTargets = RenderTarget.RenderTargets
-
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_BLEND)
 
         fft_a_framebuffer = framebuffer_manager.get_framebuffer(RenderTargets.FFT_A,
                                                                 RenderTargets.FFT_A,
@@ -394,6 +391,9 @@ class Ocean:
                                                                 RenderTargets.FFT_B)
 
         # initialize
+        fft_a_framebuffer.bind_framebuffer()
+        glClear(GL_COLOR_BUFFER_BIT)
+
         self.fft_init.use_program()
         self.fft_init.bind_uniform_data("FFT_SIZE", FFT_SIZE)
         self.fft_init.bind_uniform_data("INVERSE_GRID_SIZES", INVERSE_GRID_SIZES)
@@ -402,8 +402,6 @@ class Ocean:
         self.fft_init.bind_uniform_data("t", self.acc_time)
 
         self.quad_geometry.bind_vertex_buffer()
-        fft_a_framebuffer.bind_framebuffer()
-        glClear(GL_COLOR_BUFFER_BIT)
         self.quad_geometry.draw_elements()
 
         # # fft passes
@@ -433,16 +431,17 @@ class Ocean:
 
         RenderTargets.FFT_A.generate_mipmap()
 
-    def render_ocean(self, atmosphere, texture_depth, texture_probe, texture_shadow):
+    def render_ocean(self, atmosphere, texture_linear_depth, texture_probe, texture_shadow):
         self.fft_render.use_program()
         self.fft_render.bind_material_instance()
         self.fft_render.bind_uniform_data("height", self.height)
         self.fft_render.bind_uniform_data("cellSize", self.cell_size)
         self.fft_render.bind_uniform_data("GRID_SIZES", GRID_SIZES)
+        self.fft_render.bind_uniform_data("choppy", self.choppy)
 
         self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
         self.fft_render.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)
-        self.fft_render.bind_uniform_data('texture_depth', texture_depth)
+        self.fft_render.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.fft_render.bind_uniform_data('texture_probe', texture_probe)
         self.fft_render.bind_uniform_data('texture_shadow', texture_shadow)
 

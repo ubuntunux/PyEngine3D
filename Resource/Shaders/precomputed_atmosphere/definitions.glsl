@@ -1110,6 +1110,10 @@ void GetSceneRadiance(
     vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 relative_point = relative_camera_pos + eye_direction * scene_linear_depth * atmosphere_ratio;
 
+    // Avoid brightening
+    relative_camera_pos.y = max(0.0, relative_camera_pos.y);
+    relative_point.y = max(0.0, relative_point.y);
+
     scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
 
     sun_irradiance = GetSunAndSkyIrradiance(

@@ -394,4 +394,5 @@ class SceneManager(Singleton):
             skeleton_actor.update(dt)
 
         self.atmosphere.update(self.main_light)
+
         self.ocean.update(dt)

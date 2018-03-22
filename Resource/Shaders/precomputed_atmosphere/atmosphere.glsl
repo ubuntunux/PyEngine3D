@@ -82,8 +82,7 @@ void main()
     const float min_dist = 1000.0;
     const float far_dist = NEAR_FAR.y * 2.0;
 
-    // multiply atmosphere_ratio is correct but looking good.
-    vec3 earth_center_pos = earth_center / (cloud_height < CAMERA_POSITION.y ? atmosphere_ratio : 0.5);
+    vec3 earth_center_pos = earth_center / atmosphere_ratio;
 
     const float cloud_bottom_height = cloud_height - earth_center_pos.y;
     const float cloud_top_height = cloud_bottom_height + cloud_thickness;
@@ -213,6 +212,7 @@ void main()
             }
             cloud.w *= dist_fade;
         }
+        cloud.xyz += scene_in_scatter;
     }
 
     color.xyz = mix(radiance * exposure, cloud.xyz, cloud.w);
