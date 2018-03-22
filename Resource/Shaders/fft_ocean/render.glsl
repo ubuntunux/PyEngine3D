@@ -239,7 +239,9 @@ void main()
     // diffuse
     vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;
 
-    vec3 specular_lighting = pow(NdH, 30.0) * light_color;
+    const float specular_power = 60.0;    
+    vec3 specular_lighting = vec3(pow(NdH, specular_power) * (specular_power + 2.0) / 8.0);   // specular normalization
+    specular_lighting *= light_color;
 
     // Image based lighting
     const vec2 env_size = textureSize(texture_probe, 0);
