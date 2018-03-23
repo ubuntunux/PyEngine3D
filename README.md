@@ -30,11 +30,10 @@
 * Actors
     - Tree, Foliage actor
     - Landscape
-    - SkyBox
     - Wind
-    - Ocean, River
-    - Light Probe
-        - camera of light probe
+    - River
+    - Probe
+    - Particles
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
