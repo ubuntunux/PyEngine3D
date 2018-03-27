@@ -51,7 +51,11 @@ class Ocean:
         self.wind = object_data.get('wind', WIND)
         self.omega = object_data.get('omega', OMEGA)
         self.amplitude = object_data.get('amplitude', AMPLITUDE)
-        self.choppy = object_data.get('choppy', CHOPPY_FACTOR)
+
+        self.simulation_wind = object_data.get('simulation_wind', 1.0)
+        self.simulation_amplitude = object_data.get('simulation_amplitude', 3.0)
+        self.simulation_scale = object_data.get('simulation_scale', 1.0)
+
         self.is_render_ocean = True
         self.attributes = Attributes()
 
@@ -73,6 +77,7 @@ class Ocean:
 
         self.grid_size = 200
         self.cell_size = np.array([1.0 / float(self.grid_size), 1.0 / float(self.grid_size)], dtype=np.float32)
+        self.simulation_size = GRID_SIZES * self.simulation_scale
 
         self.mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
         self.geometry = self.mesh.get_geometry()
@@ -105,7 +110,9 @@ class Ocean:
         self.attributes.setAttribute('wind', self.wind)
         self.attributes.setAttribute('omega', self.omega)
         self.attributes.setAttribute('amplitude', self.amplitude)
-        self.attributes.setAttribute('choppy', self.choppy)
+        self.attributes.setAttribute('simulation_wind', self.simulation_wind)
+        self.attributes.setAttribute('simulation_amplitude', self.simulation_amplitude)
+        self.attributes.setAttribute('simulation_scale', self.simulation_scale)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
@@ -114,6 +121,8 @@ class Ocean:
             # recreate resources
             if attributeName in ('amplitude', 'wind', 'omega'):
                 self.generate_texture()
+            elif attributeName == 'simulation_scale':
+                self.simulation_size = GRID_SIZES * self.simulation_scale
         return self.attributes
 
     def get_save_data(self):
@@ -399,7 +408,7 @@ class Ocean:
         self.fft_init.bind_uniform_data("INVERSE_GRID_SIZES", INVERSE_GRID_SIZES)
         self.fft_init.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
         self.fft_init.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
-        self.fft_init.bind_uniform_data("t", self.acc_time)
+        self.fft_init.bind_uniform_data("t", self.acc_time * self.simulation_wind)
 
         self.quad_geometry.bind_vertex_buffer()
         self.quad_geometry.draw_elements()
@@ -435,9 +444,10 @@ class Ocean:
         self.fft_render.use_program()
         self.fft_render.bind_material_instance()
         self.fft_render.bind_uniform_data("height", self.height)
-        self.fft_render.bind_uniform_data("cellSize", self.cell_size)
-        self.fft_render.bind_uniform_data("GRID_SIZES", GRID_SIZES)
-        self.fft_render.bind_uniform_data("choppy", self.choppy)
+        self.fft_render.bind_uniform_data("simulation_wind", self.simulation_wind)
+        self.fft_render.bind_uniform_data("simulation_amplitude", self.simulation_amplitude)
+        self.fft_render.bind_uniform_data("simulation_size", self.simulation_size)
+        self.fft_render.bind_uniform_data("cell_size", self.cell_size)
 
         self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
         self.fft_render.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)

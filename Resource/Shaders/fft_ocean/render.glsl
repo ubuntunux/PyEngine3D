@@ -4,11 +4,10 @@
 #include "utility.glsl"
 #include "shading.glsl"
 
-
 uniform float height;
-uniform vec2 cellSize;
-uniform vec4 GRID_SIZES;
-uniform vec4 choppy;
+uniform float simulation_amplitude;
+uniform vec4 simulation_size;
+uniform vec2 cell_size;
 
 uniform sampler2DArray fftWavesSampler;
 uniform sampler3D slopeVarianceSampler;
@@ -64,23 +63,23 @@ void main()
     vec3 vertex_scale = vec3(1.5, 1.5, 1.0);
     vec4 vertex_pos = vec4(vs_in_position * vertex_scale, 1.0);
     vec2 u = oceanPos(vertex_pos, dist);
-    vec2 ux = oceanPos(vertex_pos + vec4(cellSize.x, 0.0, 0.0, 0.0), dist_x);
-    vec2 uy = oceanPos(vertex_pos + vec4(0.0, cellSize.y, 0.0, 0.0), dist_y);
+    vec2 ux = oceanPos(vertex_pos + vec4(cell_size.x, 0.0, 0.0, 0.0), dist_x);
+    vec2 uy = oceanPos(vertex_pos + vec4(0.0, cell_size.y, 0.0, 0.0), dist_y);
     vec2 dux = abs(ux - u) * 2.0;
     vec2 duy = abs(uy - u) * 2.0;
 
     vec3 dP = vec3(0.0);
-    dP.y += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.x, 0.0), dux / GRID_SIZES.x, duy / GRID_SIZES.x).x;
-    dP.y += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.y, 0.0), dux / GRID_SIZES.y, duy / GRID_SIZES.y).y;
-    dP.y += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.z, 0.0), dux / GRID_SIZES.z, duy / GRID_SIZES.z).z;
-    dP.y += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.w, 0.0), dux / GRID_SIZES.w, duy / GRID_SIZES.w).w;
+    dP.y += textureGrad(fftWavesSampler, vec3(u / simulation_size.x, 0.0), dux / simulation_size.x, duy / simulation_size.x).x;
+    dP.y += textureGrad(fftWavesSampler, vec3(u / simulation_size.y, 0.0), dux / simulation_size.y, duy / simulation_size.y).y;
+    dP.y += textureGrad(fftWavesSampler, vec3(u / simulation_size.z, 0.0), dux / simulation_size.z, duy / simulation_size.z).z;
+    dP.y += textureGrad(fftWavesSampler, vec3(u / simulation_size.w, 0.0), dux / simulation_size.w, duy / simulation_size.w).w;
 
-    dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.x, 3.0), dux / GRID_SIZES.x, duy / GRID_SIZES.x).xy;
-    dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.y, 3.0), dux / GRID_SIZES.y, duy / GRID_SIZES.y).zw;
-    dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.z, 4.0), dux / GRID_SIZES.z, duy / GRID_SIZES.z).xy;
-    dP.xz += textureGrad(fftWavesSampler, vec3(u / GRID_SIZES.w, 4.0), dux / GRID_SIZES.w, duy / GRID_SIZES.w).zw;
+    dP.xz += textureGrad(fftWavesSampler, vec3(u / simulation_size.x, 3.0), dux / simulation_size.x, duy / simulation_size.x).xy;
+    dP.xz += textureGrad(fftWavesSampler, vec3(u / simulation_size.y, 3.0), dux / simulation_size.y, duy / simulation_size.y).zw;
+    dP.xz += textureGrad(fftWavesSampler, vec3(u / simulation_size.z, 4.0), dux / simulation_size.z, duy / simulation_size.z).xy;
+    dP.xz += textureGrad(fftWavesSampler, vec3(u / simulation_size.w, 4.0), dux / simulation_size.w, duy / simulation_size.w).zw;
 
-    vec3 world_pos = vec3(u.x, height, u.y) + dP;
+    vec3 world_pos = vec3(u.x, height, u.y) + dP * simulation_amplitude;
 
     vec4 proj_pos = VIEW_PROJECTION * vec4(world_pos.xyz, 1.0);
 
@@ -180,14 +179,20 @@ void main()
     float bg_linear_depth = texture(texture_linear_depth, screen_tex_coord).x;
     float roughness = 0.1;
 
-    vec2 slopes = textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.x, 1.0), 0.0).xy;
-    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.y, 1.0), 0.0).zw;
-    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.z, 2.0), 0.0).xy;
-    slopes += textureLod(fftWavesSampler, vec3(uv / GRID_SIZES.w, 2.0), 0.0).zw;
+    vec2 slopes = textureLod(fftWavesSampler, vec3(uv / simulation_size.x, 1.0), 0.0).xy;
+    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw;
+    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.z, 2.0), 0.0).xy;
+    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw;
 
-    vec3 V = normalize(relative_pos);
-    vec3 vertex_normal = normalize(vec3(-vs_output.wave_offset.x, 1.0 - vs_output.wave_offset.y, -vs_output.wave_offset.z));
-    vec3 N = normalize(vec3(-slopes.x, 1.0, -slopes.y));
+    float dist = length(relative_pos);
+    float distance_fade = clamp(1.0 - dist * 0.005, 0.0, 1.0);
+    vec3 V = relative_pos / dist;
+
+    vec3 vertex_normal = normalize(vec3(-vs_output.wave_offset.x, vs_output.wave_offset.y, -vs_output.wave_offset.z));
+    vertex_normal.y = 0.5 - vertex_normal.y * 0.5;
+    vertex_normal = normalize(vertex_normal);
+
+    vec3 N = normalize(mix(vec3(-slopes.x, 1.0, -slopes.y), vertex_normal, 0.1));
     if (dot(V, N) < 0.0)
     {
         N = reflect(N, V); // reflects backfacing normals
@@ -219,8 +224,6 @@ void main()
 
     sigmaSq = max(sigmaSq, 2e-5);
 
-    float fresnel = 0.02 + 0.98 * meanFresnel(V, N, sigmaSq);
-
     vec3 Tz = normalize(vec3(0.0, N.z, -N.y));
     vec3 Tx = cross(Tz, N);
 
@@ -245,9 +248,17 @@ void main()
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, vs_output.world_pos.xyz, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
-    vec3 foam = texture(texture_foam, uv * uv_tiling).xyz;
+    float fresnel = clamp(0.02 + 0.98 * meanFresnel(V, N, sigmaSq), 0.0, 1.0);
+    float wave_peak = pow(1.0 - vertex_normal.y, 4.0) + pow(1.0 - N.y, 2.0) * 30.0;
+    wave_peak = clamp(wave_peak * simulation_amplitude, 0.0, 1.0);
+
     vec3 seaColor = vec3(1.0, 1.0, 1.0);
     vec3 light_color = LIGHT_COLOR.xyz * scene_sun_irradiance;
+
+    const float foam_sharpen = 1.0;
+    vec3 foam = texture(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
+    float lum = get_luminance(foam);
+    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak * 100.0;
 
     // diffuse
     vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;
@@ -275,7 +286,7 @@ void main()
     float depth_diff = bg_linear_depth - scene_linear_depth;
     float opacity = pow(fresnel, 0.5) + get_luminance(specular_lighting.xyz) + depth_diff * depth_diff * 0.02;
 
-    opacity = clamp(opacity, 0.0, 1.0) * pow(clamp(depth_diff * 0.5, 0.0, 1.0), 20.0);
+    opacity = clamp(opacity, 0.0, 1.0) * pow(clamp(depth_diff * 0.5, 0.0, 1.0), 20.0) * distance_fade;
 
     fs_output.xyz = result;
     fs_output.w = clamp(opacity, 0.0, 1.0);
