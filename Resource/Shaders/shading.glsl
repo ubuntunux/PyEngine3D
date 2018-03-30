@@ -98,18 +98,27 @@ float D_beckmann(in float roughness, in float NdH)
 
 float D_GGX(in float roughness, in float NdH)
 {
-    float m = roughness * roughness;
+    /*float m = roughness * roughness;
     float m2 = m * m;
     float d = (NdH * m2 - NdH) * NdH + 1.0;
-    return m2 / (PI * d * d);
+    return m2 / (PI * d * d);*/
+
+    float m2     = roughness * roughness;
+    float denom  = NdH * NdH * (m2 - 1.0) + 1.0;
+    return m2 / (PI * denom * denom);
 }
 
 float G_schlick(in float roughness, in float NdV, in float NdL)
 {
-    float k = roughness * roughness * 0.5;
+    /*float k = roughness * roughness * 0.5;
     float V = NdV * (1.0 - k) + k;
     float L = NdL * (1.0 - k) + k;
-    return 0.25 / (V * L);
+    return 0.25 / (V * L);*/
+
+    float k = roughness * roughness * 0.5;
+    float ggx1 = NdV / (NdV * (1.0 - k) + k);
+    float ggx2 = NdL / (NdL * (1.0 - k) + k);
+    return ggx1 * ggx2;
 }
 
 // simple phong specular calculation with normalization

@@ -143,7 +143,7 @@ class Ocean:
         return kSquare * hSquare * 2.0
 
     def spectrum(self, kx, ky, omnispectrum=False):
-        U10 = self.wind
+        U10 = max(0.001, self.wind)
         Omega = self.omega
         Amp = self.amplitude
 

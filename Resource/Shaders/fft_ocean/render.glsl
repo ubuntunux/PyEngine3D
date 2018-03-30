@@ -204,10 +204,10 @@ void main()
     R.y = abs(R.y);
 
     float NdL = max(0.0, dot(N, L));
-    float NdV = max(0.001, dot(N, V));
-    float NdH = max(0.001, dot(N, H));
-    float HdV = max(0.001, dot(H, V));
-    float LdV = max(0.001, dot(L, V));
+    float NdV = max(0.0, dot(N, V));
+    float NdH = max(0.0, dot(N, H));
+    float HdV = max(0.0, dot(H, V));
+    float LdV = max(0.0, dot(L, V));
 
     float Jxx = dFdx(uv.x);
     float Jxy = dFdy(uv.x);
@@ -258,7 +258,7 @@ void main()
     const float foam_sharpen = 1.0;
     vec3 foam = texture(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
     float lum = get_luminance(foam);
-    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak * 100.0;
+    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak * 10.0;
 
     // diffuse
     vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;
