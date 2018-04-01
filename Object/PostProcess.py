@@ -82,10 +82,7 @@ class PostProcess:
         self.gaussian_blur = None
         self.deferred_shading = None
         self.copy_texture_mi = None
-        self.render_texture_2d = None
-        self.render_texture_2d_array = None
-        self.render_texture_3d = None
-        self.render_texture_cube = None
+        self.render_texture_mi = None
 
         self.temporal_antialiasing = None
         self.jitter_mode = JitterMode.Hammersley4x
@@ -141,18 +138,7 @@ class PostProcess:
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
         self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
         self.copy_texture_mi = self.resource_manager.getMaterialInstance("copy_texture")
-        self.render_texture_2d = self.resource_manager.getMaterialInstance(name="render_texture_2d",
-                                                                           shader_name="render_texture",
-                                                                           macros={'GL_TEXTURE_2D': 1})
-        self.render_texture_2d_array = self.resource_manager.getMaterialInstance(name="render_texture_2d_array",
-                                                                                 shader_name="render_texture",
-                                                                                 macros={'GL_TEXTURE_2D_ARRAY': 1})
-        self.render_texture_3d = self.resource_manager.getMaterialInstance(name="render_texture_3d",
-                                                                           shader_name="render_texture",
-                                                                           macros={'GL_TEXTURE_3D': 1})
-        self.render_texture_cube = self.resource_manager.getMaterialInstance(name="render_texture_cube",
-                                                                             shader_name="render_texture",
-                                                                             macros={'GL_TEXTURE_CUBE_MAP': 1})
+        self.render_texture_mi = self.resource_manager.getMaterialInstance("render_texture")
 
         # TAA
         self.temporal_antialiasing = self.resource_manager.getMaterialInstance("temporal_antialiasing")
@@ -475,20 +461,22 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_texture(self, source_texture):
-        if source_texture.target == GL_TEXTURE_3D:
-            render_texture_mi = self.render_texture_3d
-        elif source_texture.target == GL_TEXTURE_CUBE_MAP:
-            render_texture_mi = self.render_texture_cube
-        elif source_texture.target == GL_TEXTURE_2D_ARRAY:
-            render_texture_mi = self.render_texture_2d_array
-        else:
-            render_texture_mi = self.render_texture_2d
-        render_texture_mi.use_program()
-        render_texture_mi.bind_uniform_data("debug_absolute", self.debug_absolute)
-        render_texture_mi.bind_uniform_data("debug_mipmap", self.debug_mipmap)
-        render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
-        render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
-        render_texture_mi.bind_uniform_data("texture_source", source_texture)
+        target = source_texture.target
+        self.render_texture_mi.use_program()
+        self.render_texture_mi.bind_uniform_data("debug_absolute", self.debug_absolute)
+        self.render_texture_mi.bind_uniform_data("debug_mipmap", self.debug_mipmap)
+        self.render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
+        self.render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
+        self.render_texture_mi.bind_uniform_data("debug_target", source_texture.target)
+        self.render_texture_mi.bind_uniform_data("texture_source_2d",
+                                                 source_texture if GL_TEXTURE_2D == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_2d_array",
+                                                 source_texture if GL_TEXTURE_2D_ARRAY == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_3d",
+                                                 source_texture if GL_TEXTURE_3D == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_cube",
+                                                 source_texture if GL_TEXTURE_CUBE_MAP == target else None)
+        self.quad_geometry.bind_vertex_buffer()
         self.quad_geometry.draw_elements()
 
     def is_render_shader(self):

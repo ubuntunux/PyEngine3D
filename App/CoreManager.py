@@ -216,6 +216,9 @@ class CoreManager(Singleton):
         if self.cmdQueue:
             self.cmdQueue.put(*args)
 
+    def sendObjectAttribute(self, attribute):
+        self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
+
     def sendResourceInfo(self, resource_info):
         self.send(COMMAND.TRANS_RESOURCE_INFO, resource_info)
 
@@ -335,6 +338,7 @@ class CoreManager(Singleton):
 
         # Scene object commands
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
+        self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.actionObject(value)
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.deleteObject(value)
 
         def cmd_request_object_attribute(value):

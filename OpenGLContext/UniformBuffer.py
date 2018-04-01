@@ -174,7 +174,7 @@ class UniformTextureBase(UniformVariable):
         self.textureIndex = textureIndex
 
     def bind_uniform(self, texture, num=1, transpose=False):
-        if texture:
+        if texture is not None:
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
             # glEnable(GL_TEXTURE_CUBE_MAP)
             texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind

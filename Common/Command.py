@@ -72,6 +72,7 @@ class COMMAND(AutoEnum):
     CLEAR_OBJECT_LIST = ()
     REQUEST_OBJECT_LIST = ()
     TRANS_OBJECT_LIST = ()
+    ACTION_OBJECT = ()
     DELETE_OBJECT = ()
     DELETE_OBJECT_INFO = ()
     TRANS_OBJECT_INFO = ()

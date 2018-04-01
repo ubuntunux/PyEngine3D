@@ -70,11 +70,21 @@ class Renderer(Singleton):
         logger.info("=" * 30)
         logger.info("Initialize Renderer")
 
+        logger.info("GL_MAX_VERTEX_ATTRIBS: %d" % glGetIntegerv(GL_MAX_VERTEX_ATTRIBS))
+        logger.info("GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS))
+        logger.info("GL_MAX_VERTEX_UNIFORM_COMPONENTS: %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS))
         logger.info("GL_MAX_VERTEX_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS))
         logger.info("GL_MAX_GEOMETRY_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS))
         logger.info("GL_MAX_FRAGMENT_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS))
+        logger.info("GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: %d" % glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS))
         logger.info("GL_MAX_UNIFORM_BLOCK_SIZE : %d" % glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE))
         logger.info("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT : %d" % glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT))
+        logger.info("GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))
+        logger.info("GL_MAX_DRAW_BUFFERS: %d" % glGetIntegerv(GL_MAX_DRAW_BUFFERS))
+        logger.info("GL_MAX_TEXTURE_COORDS: %d" % glGetIntegerv(GL_MAX_TEXTURE_COORDS))
+        logger.info("GL_MAX_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS))
+        logger.info("GL_MAX_VARYING_FLOATS: %d" % glGetIntegerv(GL_MAX_VARYING_FLOATS))
+
         logger.info("=" * 30)
 
         self.core_manager = core_manager
@@ -219,7 +229,7 @@ class Renderer(Singleton):
 
     def set_debug_texture(self, texture):
         self.debug_texture = texture
-        if self.debug_texture:
+        if self.debug_texture is not None:
             self.postprocess.is_render_material_instance = False
             logger.info("Current texture : %s" % self.debug_texture.name)
 
@@ -373,6 +383,13 @@ class Renderer(Singleton):
             glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
             self.render_postprocess()
+
+        # debug render target
+        if self.debug_texture is not None and self.debug_texture is not RenderTargets.BACKBUFFER and \
+                type(self.debug_texture) != RenderBuffer:
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_texture(self.debug_texture)
 
         if RenderOption.RENDER_FONT:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -793,13 +810,6 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_manager.copy_framebuffer(src_framebuffer)
-
-        # debug render target
-        if self.debug_texture and self.debug_texture is not RenderTargets.BACKBUFFER and \
-                type(self.debug_texture) != RenderBuffer:
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-            glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_texture(self.debug_texture)
 
     def render_font(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)

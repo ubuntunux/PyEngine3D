@@ -283,6 +283,14 @@ class SceneManager(Singleton):
         for obj_name in list(self.objectMap.keys()):
             self.deleteObject(obj_name)
 
+    def actionObject(self, objectName):
+        obj = self.getObject(objectName)
+        if obj is not None:
+            object_type = type(obj)
+            if LightProbe == object_type:
+                self.renderer.set_debug_texture(obj.texture_probe)
+                self.core_manager.sendObjectAttribute(obj.texture_probe.getAttribute())
+
     def deleteObject(self, objectName):
         obj = self.getObject(objectName)
         if obj and obj not in (self.main_camera, self.main_light, self.main_light_probe):

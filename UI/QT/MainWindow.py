@@ -225,6 +225,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
+        self.object_menu.addAction(self.tr("Action"), self.actionObject)
         self.object_menu.addAction(self.tr("Remove"), self.deleteObject)
         self.objectList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.objectList.customContextMenuRequested.connect(self.openObjectMenu)
@@ -572,6 +573,11 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item = QtGui.QTreeWidgetItem(self.objectList)
         item.setText(0, object_name)
         item.setText(1, object_type)
+
+    def actionObject(self, *args):
+        selectedItems = self.objectList.selectedItems()
+        for selectedItem in selectedItems:
+            self.appCmdQueue.put(COMMAND.ACTION_OBJECT, selectedItem.text(0))
 
     def deleteObject(self, *args):
         selectedItems = self.objectList.selectedItems()
