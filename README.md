@@ -76,7 +76,7 @@
     - Light Probe lod convolution
     - 2D Texture Mipmap to RenderTarget
     - Hierachical-Z depth
-    - Animation calculation in gpu    
+    - Animation calculation in gpu
     - Multisample texture - glTexImage2DMultisample
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
     - View Mode
@@ -89,7 +89,7 @@
     - Paraboloid environment map    
     - Volumtric Fog
     - Fur Rendering
-    - Procedural geometry    
+    - Procedural Terrain
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource
