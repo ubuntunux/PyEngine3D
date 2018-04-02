@@ -192,7 +192,7 @@ void main()
     vertex_normal.y = 0.5 - vertex_normal.y * 0.5;
     vertex_normal = normalize(vertex_normal);
 
-    vec3 N = normalize(mix(vec3(-slopes.x, 1.0, -slopes.y), vertex_normal, 0.1));
+    vec3 N = normalize(vec3(-slopes.x, 1.0, -slopes.y) + vertex_normal * 0.2);
     if (dot(V, N) < 0.0)
     {
         N = reflect(N, V); // reflects backfacing normals
