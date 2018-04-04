@@ -11,7 +11,7 @@ from .Skeleton import Skeleton, Bone
 from .Mesh import Geometry, Mesh, Triangle, Quad, Cube, Plane
 from .Model import Model
 
-from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D
+from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from .Actor import SkeletonActor, StaticActor
 from .Camera import Camera
 from .Light import Light

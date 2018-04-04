@@ -29,15 +29,14 @@ class NoiseTexture3D:
         texture = CreateTexture(
             name=self.texture_name,
             texture_type=Texture3D,
-            image_mode='RGBA',
             width=self.noise_width,
             height=self.noise_height,
             depth=self.noise_depth,
-            internal_format=GL_RGBA8,
-            texture_format=GL_RGBA,
+            internal_format=GL_R16F,
+            texture_format=GL_RED,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
-            data_type=GL_UNSIGNED_BYTE,
+            data_type=GL_FLOAT,
             wrap=GL_REPEAT,
         )
 

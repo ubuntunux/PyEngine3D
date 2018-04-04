@@ -1,3 +1,4 @@
+from .CloudTexture3D import CloudTexture3D
 from .NoiseTexture3D import NoiseTexture3D
 
 

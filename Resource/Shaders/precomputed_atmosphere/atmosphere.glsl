@@ -43,17 +43,21 @@ float get_cloud_density(vec3 uvw, vec3 cloud_speed, float weight)
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    const float noise_01_scale = 0.002;
-    const float noise_02_scale = 0.0005;
+    const float noise_01_scale = 0.001;
+    const float noise_02_scale = 0.0004;
     const float noise_01_speed = noise_01_scale / noise_02_scale;
 
-    float cloud_noise = texture(texture_noise_02, uvw * noise_02_scale * vec3(1.0, 1.0, 2.0) + cloud_speed * 0.5).x;
-    cloud_noise = pow(clamp(cloud_noise * 1.8, 0.0, 1.0), 64.0);
+    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * noise_01_speed).x;
+    noise_01 = pow(clamp(noise_01 * 1.8, 0.0, 1.0), 32.0);
 
-    float cloud_density = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * noise_01_speed).x;
-    cloud_density = pow(clamp(cloud_density * 1.5, 0.0, 1.0), 2.0);
+    float noise_02 = texture(texture_noise_02, uvw * noise_02_scale + cloud_speed * 0.5).x;
+    noise_02 = pow(clamp(noise_02 * 1.7, 0.0, 1.0), 128.0);
 
-    return cloud_density * cloud_noise * pow(weight, 10.0);
+    float cloud_density = noise_02 * pow(weight, 16.0);
+
+    cloud_density *= noise_01;
+
+    return cloud_density;
 }
 
 void main()
@@ -87,7 +91,7 @@ void main()
     // Cloud
     vec4 cloud = vec4(0.0);
     const float cloud_height = 500.0;
-    const float cloud_thickness = 250.0;
+    const float cloud_thickness = 500.0;
     const float min_dist = 1000.0;
     const float far_dist = NEAR_FAR.y * 2.0;
 
@@ -165,10 +169,10 @@ void main()
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
             const int march_count = 30;
-            const float cloud_absorption = 3.0 / float(march_count);
-            const float light_absorption = 10.0 / float(march_count);
+            const int light_march_count = 3;
+            const float cloud_absorption = min(1.0, 3.0 / float(march_count));
+            const float light_absorption = min(1.0, 1.0 / float(light_march_count));
             const vec3 cloud_speed = vec3(0.01, 0.01, 0.0) * TIME;
-            const int light_march_count = 5;
             const bool inverse_ray_march = false;
 
             float march_step = cloud_thickness / float(march_count) / max(0.5, abs(eye_direction.y));
@@ -218,7 +222,7 @@ void main()
                     }
                 }
             }
-            cloud.w *= clamp(dist_fade + 0.3, 0.0, 1.0);
+            // cloud.w *= clamp(dist_fade + 0.3, 0.0, 1.0);
         }
         cloud.xyz += scene_in_scatter;
     }

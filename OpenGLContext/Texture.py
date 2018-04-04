@@ -70,7 +70,7 @@ def get_image_mode(texture_internal_format):
         return "RGB"
     elif texture_internal_format == GL_RG:
         return "RG"
-    elif texture_internal_format in (GL_RED, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT):
+    elif texture_internal_format in (GL_R8, GL_R16F, GL_RED, GL_DEPTH_STENCIL, GL_DEPTH_COMPONENT):
         return "R"
     elif texture_internal_format == GL_LUMINANCE:
         return "L"
@@ -174,8 +174,7 @@ class Texture:
         return save_data
 
     def get_image_data(self):
-        if self.target not in (GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D) or \
-                self.texture_format not in (GL_RGB, GL_RGBA):
+        if self.target not in (GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D):
             return None
 
         dtype = get_numpy_dtype(self.data_type)
