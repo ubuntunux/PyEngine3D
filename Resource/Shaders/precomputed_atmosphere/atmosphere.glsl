@@ -43,19 +43,17 @@ float get_cloud_density(vec3 uvw, vec3 cloud_speed, float weight)
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    const float noise_01_scale = 0.001;
-    const float noise_02_scale = 0.0004;
+    const float noise_01_scale = 0.0015;
+    const float noise_02_scale = 0.0002;
     const float noise_01_speed = noise_01_scale / noise_02_scale;
 
     float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * noise_01_speed).x;
-    noise_01 = pow(clamp(noise_01 * 1.8, 0.0, 1.0), 32.0);
+    noise_01 = pow(clamp(noise_01 * 1.5, 0.0, 1.0), 128.0);
 
     float noise_02 = texture(texture_noise_02, uvw * noise_02_scale + cloud_speed * 0.5).x;
-    noise_02 = pow(clamp(noise_02 * 1.7, 0.0, 1.0), 128.0);
+    noise_02 = pow(clamp(noise_02 * 1.3, 0.0, 1.0), 64.0);
 
-    float cloud_density = noise_02 * pow(weight, 16.0);
-
-    cloud_density *= noise_01;
+    float cloud_density = noise_01 * noise_02 * pow(weight, 16.0);
 
     return cloud_density;
 }
@@ -168,7 +166,7 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            const int march_count = 30;
+            int march_count = 32;
             const int light_march_count = 3;
             const float cloud_absorption = min(1.0, 3.0 / float(march_count));
             const float light_absorption = min(1.0, 1.0 / float(light_march_count));

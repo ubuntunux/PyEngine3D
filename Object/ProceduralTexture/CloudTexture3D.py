@@ -19,6 +19,8 @@ class CloudTexture3D:
         self.depth = data.get('depth', 32)
         self.scale = data.get('scale', 1.0)
         self.density = data.get('density', 1.0)
+        self.noise_persistance = data.get('noise_persistance', 0.7)
+        self.noise_scale = data.get('noise_scale', 6)
         self.attribute = Attributes()
 
     def generate_texture(self):
@@ -77,10 +79,12 @@ class CloudTexture3D:
 
         renderer.postprocess.bind_quad()
 
-        mat = resource_manager.getMaterialInstance('examples.cloud_3d')
+        mat = resource_manager.getMaterialInstance('examples.cloud_noise_3d')
         mat.use_program()
         mat.bind_uniform_data('spheres', spheres, num=count)
         mat.bind_uniform_data('density', self.density)
+        mat.bind_uniform_data('noise_persistance', self.noise_persistance)
+        mat.bind_uniform_data('noise_scale', self.noise_scale)
 
         for i in range(texture.depth):
             mat.bind_uniform_data('depth', i / texture.depth)
@@ -98,6 +102,8 @@ class CloudTexture3D:
             depth=self.depth,
             scale=self.scale,
             density=self.density,
+            noise_persistance=self.noise_persistance,
+            noise_scale=self.noise_scale,
         )
         return save_data
 
@@ -108,6 +114,8 @@ class CloudTexture3D:
         self.attribute.setAttribute("depth", self.depth)
         self.attribute.setAttribute("scale", self.scale)
         self.attribute.setAttribute("density", self.density)
+        self.attribute.setAttribute("noise_persistance", self.noise_persistance)
+        self.attribute.setAttribute("noise_scale", self.noise_scale)
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
