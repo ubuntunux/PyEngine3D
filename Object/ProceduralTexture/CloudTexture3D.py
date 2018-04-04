@@ -14,11 +14,11 @@ class CloudTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
         self.texture_name = 'cloud_3d'
-        self.noise_width = data.get('noise_width', 256)
-        self.noise_height = data.get('noise_height', 256)
-        self.noise_depth = data.get('noise_depth', 32)
-        self.noise_persistance = data.get('noise_persistance', 0.7)
-        self.noise_scale = data.get('noise_scale', 6)
+        self.width = data.get('width', 256)
+        self.height = data.get('height', 256)
+        self.depth = data.get('depth', 32)
+        self.scale = data.get('scale', 1.0)
+        self.density = data.get('density', 1.0)
         self.attribute = Attributes()
 
     def generate_texture(self):
@@ -29,9 +29,9 @@ class CloudTexture3D:
         texture = CreateTexture(
             name=self.texture_name,
             texture_type=Texture3D,
-            width=self.noise_width,
-            height=self.noise_height,
-            depth=self.noise_depth,
+            width=self.width,
+            height=self.height,
+            depth=self.depth,
             internal_format=GL_R16F,
             texture_format=GL_RED,
             min_filter=GL_LINEAR,
@@ -48,6 +48,18 @@ class CloudTexture3D:
             old_texture = resource.get_data()
             old_texture.delete()
             resource.set_data(texture)
+
+        radius = min(self.width, min(self.height, self.depth))
+        radius_min = 3.0 / radius  # 3 at least texel
+
+        count = 500
+        spheres = np.zeros(shape=(count, 4), dtype=np.float32)
+        for i in range(count):
+            x = random.random()
+            y = random.random()
+            z = random.random()
+            r = random.uniform(radius_min, 0.5 * self.scale)
+            spheres[i][...] = [x, y, z, r]
 
         glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
         glDepthFunc(GL_LEQUAL)
@@ -67,8 +79,8 @@ class CloudTexture3D:
 
         mat = resource_manager.getMaterialInstance('examples.cloud_3d')
         mat.use_program()
-        mat.bind_uniform_data('noise_persistance', self.noise_persistance)
-        mat.bind_uniform_data('noise_scale', self.noise_scale)
+        mat.bind_uniform_data('spheres', spheres, num=count)
+        mat.bind_uniform_data('density', self.density)
 
         for i in range(texture.depth):
             mat.bind_uniform_data('depth', i / texture.depth)
@@ -81,21 +93,21 @@ class CloudTexture3D:
         save_data = dict(
             texture_type=self.__class__.__name__,
             texture_name=self.texture_name,
-            noise_width=self.noise_width,
-            noise_height=self.noise_height,
-            noise_depth=self.noise_depth,
-            noise_persistance=self.noise_persistance,
-            noise_scale=self.noise_scale,
+            width=self.width,
+            height=self.height,
+            depth=self.depth,
+            scale=self.scale,
+            density=self.density,
         )
         return save_data
 
     def getAttribute(self):
         self.attribute.setAttribute("texture_name", self.texture_name)
-        self.attribute.setAttribute("noise_width", self.noise_width)
-        self.attribute.setAttribute("noise_height", self.noise_height)
-        self.attribute.setAttribute("noise_depth", self.noise_depth)
-        self.attribute.setAttribute("noise_persistance", self.noise_persistance)
-        self.attribute.setAttribute("noise_scale", self.noise_scale)
+        self.attribute.setAttribute("width", self.width)
+        self.attribute.setAttribute("height", self.height)
+        self.attribute.setAttribute("depth", self.depth)
+        self.attribute.setAttribute("scale", self.scale)
+        self.attribute.setAttribute("density", self.density)
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
