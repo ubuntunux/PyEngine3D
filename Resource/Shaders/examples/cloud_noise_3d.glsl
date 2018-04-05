@@ -1,3 +1,4 @@
+#include "blending.glsl"
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
@@ -64,6 +65,6 @@ void main() {
 
     float n = perlinNoise(uvw, float(noise_scale), noise_persistance);
 
-    fs_output = mix(density_max, n, 0.5) * density;
+    fs_output = HardLight(density_max, n) * density;
 }
 #endif

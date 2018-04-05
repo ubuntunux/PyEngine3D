@@ -51,16 +51,13 @@ class CloudTexture3D:
             old_texture.delete()
             resource.set_data(texture)
 
-        radius = min(self.width, min(self.height, self.depth))
-        radius_min = 3.0 / radius  # 3 at least texel
-
         count = 500
         spheres = np.zeros(shape=(count, 4), dtype=np.float32)
         for i in range(count):
             x = random.random()
             y = random.random()
             z = random.random()
-            r = random.uniform(radius_min, 0.5 * self.scale)
+            r = random.uniform(0.5 * self.scale, self.scale)
             spheres[i][...] = [x, y, z, r]
 
         glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
