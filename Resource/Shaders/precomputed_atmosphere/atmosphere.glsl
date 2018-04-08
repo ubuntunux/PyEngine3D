@@ -7,6 +7,15 @@ uniform sampler2D texture_shadow;
 uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_normal;
 
+uniform float cloud_base_tiling;
+uniform float cloud_base_contrast;
+uniform float cloud_base_coverage;
+uniform float cloud_detail_tiling;
+uniform float cloud_detail_contrast;
+uniform float cloud_detail_coverage;
+uniform float cloud_altitude;
+uniform float cloud_height;
+
 #ifdef MATERIAL_COMPONENTS
     uniform sampler3D texture_noise_01;
     uniform sampler3D texture_noise_02;
@@ -40,22 +49,17 @@ void GetSceneRadiance(
 }
 
 
-float get_cloud_density(vec3 uvw, vec3 cloud_speed, float weight)
+float get_cloud_density(vec3 noise_01_scale, vec3 noise_02_scale, vec3 uvw, vec3 cloud_speed, float weight)
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    const float contrast = 9.0;
-    const float noise_01_scale = 0.002;
-    const float noise_02_scale = 0.00015;
-    const float noise_01_speed = noise_01_scale / noise_02_scale;
-
-    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * noise_01_speed).x * weight;
-    noise_01 = saturate(Contrast(noise_01, contrast));
+    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * cloud_detail_tiling / cloud_base_tiling).x * weight;
+    noise_01 = saturate(Contrast((noise_01 - 1.0 + cloud_detail_coverage) * weight, cloud_detail_contrast));
 
     float noise_02 = texture(texture_noise_02, uvw * noise_02_scale + cloud_speed * 0.5).x;
-    noise_02 = saturate(Contrast(pow(noise_02, 6.0), contrast));
+    noise_02 = saturate(Contrast((noise_02 - 1.0 + cloud_base_coverage) * weight, cloud_base_contrast));
 
-    return Overlay(noise_02, noise_01) * weight;
+    return Overlay(noise_02, noise_01);
 }
 
 void main()
@@ -88,8 +92,6 @@ void main()
 
     // Cloud
     vec4 cloud = vec4(0.0);
-    const float cloud_altitude = 500.0;
-    const float cloud_height = 500.0;
     const float min_dist = 1000.0;
     const float far_dist = NEAR_FAR.y * 4.0;
 
@@ -167,11 +169,17 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            int march_count = 32;
-            const int light_march_count = 4;
+            int march_count = 64;
+            const int light_march_count = 5;
             const float cloud_absorption = min(1.0, 3.0 / float(march_count));
             const float light_absorption = min(1.0, 2.0 / float(light_march_count));
             const vec3 cloud_speed = vec3(0.01, 0.01, 0.0) * TIME;
+            vec3 noise_01_scale = textureSize(texture_noise_01, 0);
+            vec3 noise_02_scale = textureSize(texture_noise_01, 0);
+            noise_01_scale = max(noise_01_scale.x, max(noise_01_scale.y, noise_01_scale.z)) / noise_01_scale;
+            noise_01_scale *= cloud_detail_tiling;
+            noise_02_scale = max(noise_02_scale.x, max(noise_02_scale.y, noise_02_scale.z)) / noise_02_scale;
+            noise_02_scale *= cloud_base_tiling;
 
             float march_step = cloud_height / float(march_count) / max(0.5, abs(eye_direction.y));
 
@@ -184,16 +192,17 @@ void main()
                 float fade = saturate((length(ray_pos - earth_center_pos.xyz)  - cloud_bottom_dist) / cloud_height);
                 fade = sqrt(1.0 - abs(fade * 2.0 - 1.0));
 
-                float cloud_density = get_cloud_density(ray_pos.xzy, cloud_speed, fade);
+                float cloud_density = get_cloud_density(noise_01_scale, noise_02_scale, ray_pos.xzy, cloud_speed, fade);
 
-                float light_intensity = 1.0 - cloud_density * light_absorption;
-                for(int j=1; j<light_march_count; ++j)
+                float light_intensity = 1.0;
+                for(int j=0; j<light_march_count; ++j)
                 {
-                    vec3 light_pos = ray_pos + sun_direction * float(j) * march_step;
+                    vec3 light_pos = ray_pos + sun_direction * float(light_march_count - j) * march_step;
                     float relative_altitude = length(light_pos.xyz - earth_center_pos.xyz) - cloud_bottom_dist;
                     fade = sqrt(1.0 - abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0));
 
-                    float light_density = get_cloud_density(light_pos.xzy, cloud_speed, fade);
+                    float light_density = get_cloud_density(noise_01_scale, noise_02_scale, light_pos.xzy, cloud_speed, fade);
+
                     light_intensity *= 1.0 - light_density * light_absorption;
 
                     if(cloud_height < relative_altitude || relative_altitude < 0.0 || light_intensity <= 0.01)

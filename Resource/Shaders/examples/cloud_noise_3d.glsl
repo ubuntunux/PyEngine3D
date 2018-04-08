@@ -2,10 +2,20 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
+const int count = 500;
+uniform vec4 spheres[count];
+uniform float depth;
+uniform float density;
+uniform float noise_persistance;
+uniform int noise_scale;
+uniform float noise_contrast;
+uniform float noise_seed;
+
+
 float rand(vec3 uvw, float scale)
 {
     // This is tiling part, adjusts with the scale...
-    uvw = mod(uvw, scale);
+    uvw = mod(uvw + vec3(fract(noise_seed)), scale);
 	return fract(sin(dot(uvw, vec3(12.9898, 78.233, 45.164))) * 43758.5453123);
 }
 
@@ -45,13 +55,6 @@ float perlinNoise(vec3 p, float scale, float persistance)
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out float fs_output;
 
-const int count = 500;
-uniform vec4 spheres[count];
-uniform float depth;
-uniform float density;
-uniform float noise_persistance;
-uniform int noise_scale;
-
 
 void main() {
     vec3 uvw = vec3(vs_output.tex_coord, depth);
@@ -64,6 +67,8 @@ void main() {
     }
 
     float n = perlinNoise(uvw, float(noise_scale), noise_persistance);
+
+    n = Contrast(n, noise_contrast);
 
     fs_output = HardLight(density_max, n) * density;
 }

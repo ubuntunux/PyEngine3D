@@ -21,6 +21,7 @@ class CloudTexture3D:
         self.density = data.get('density', 1.0)
         self.noise_persistance = data.get('noise_persistance', 0.7)
         self.noise_scale = data.get('noise_scale', 6)
+        self.noise_contrast = data.get('noise_contrast', 1.0)
         self.attribute = Attributes()
 
     def generate_texture(self):
@@ -51,15 +52,6 @@ class CloudTexture3D:
             old_texture.delete()
             resource.set_data(texture)
 
-        count = 500
-        spheres = np.zeros(shape=(count, 4), dtype=np.float32)
-        for i in range(count):
-            x = random.random()
-            y = random.random()
-            z = random.random()
-            r = random.uniform(0.5 * self.scale, self.scale)
-            spheres[i][...] = [x, y, z, r]
-
         glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
@@ -78,15 +70,45 @@ class CloudTexture3D:
 
         mat = resource_manager.getMaterialInstance('examples.cloud_noise_3d')
         mat.use_program()
-        mat.bind_uniform_data('spheres', spheres, num=count)
         mat.bind_uniform_data('density', self.density)
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)
         mat.bind_uniform_data('noise_scale', self.noise_scale)
+        mat.bind_uniform_data('noise_contrast', self.noise_contrast)
+        mat.bind_uniform_data('noise_seed', core_manager.currentTime)
+
+        # render spheres
+        count = 500
+        spheres = np.zeros(shape=(count, 4), dtype=np.float32)
+        for i in range(count):
+            x = random.random()
+            y = random.random()
+            z = random.random()
+            r = random.uniform(0.5 * self.scale, self.scale)
+            spheres[i][...] = [x, y, z, r]
+        mat.bind_uniform_data('spheres', spheres, num=count)
 
         for i in range(texture.depth):
             mat.bind_uniform_data('depth', i / texture.depth)
             renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
             renderer.postprocess.draw_elements()
+
+        # # render small spheres
+        # renderer.restore_blend_state_prev()
+        # renderer.set_blend_state(True, equation=GL_MAX, func_src=GL_ONE, func_dst=GL_ONE)
+        #
+        # spheres = np.zeros(shape=(count, 4), dtype=np.float32)
+        # for i in range(count):
+        #     x = random.random()
+        #     y = random.random()
+        #     z = random.random()
+        #     r = random.uniform(0.5 * self.scale * 0.5, self.scale * 0.5)
+        #     spheres[i][...] = [x, y, z, r]
+        # mat.bind_uniform_data('spheres', spheres, num=count)
+        #
+        # for i in range(texture.depth):
+        #     mat.bind_uniform_data('depth', i / texture.depth)
+        #     renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
+        #     renderer.postprocess.draw_elements()
 
         renderer.restore_blend_state_prev()
 
@@ -101,6 +123,7 @@ class CloudTexture3D:
             density=self.density,
             noise_persistance=self.noise_persistance,
             noise_scale=self.noise_scale,
+            noise_contrast=self.noise_contrast,
         )
         return save_data
 
@@ -113,6 +136,7 @@ class CloudTexture3D:
         self.attribute.setAttribute("density", self.density)
         self.attribute.setAttribute("noise_persistance", self.noise_persistance)
         self.attribute.setAttribute("noise_scale", self.noise_scale)
+        self.attribute.setAttribute("noise_contrast", self.noise_contrast)
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):

@@ -1,10 +1,16 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
+uniform float depth;
+uniform float noise_persistance;
+uniform int noise_scale;
+uniform float noise_seed;
+
+
 float rand(vec3 uvw, float scale)
 {
     // This is tiling part, adjusts with the scale...
-    uvw = mod(uvw, scale);
+    uvw = mod(uvw + vec3(fract(noise_seed)), scale);
 	return fract(sin(dot(uvw, vec3(12.9898, 78.233, 45.164))) * 43758.5453123);
 }
 
@@ -43,10 +49,6 @@ float perlinNoise(vec3 p, float scale, float persistance)
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
-
-uniform float depth;
-uniform float noise_persistance;
-uniform int noise_scale;
 
 void main() {
     vec3 st = vec3(vs_output.tex_coord, depth);

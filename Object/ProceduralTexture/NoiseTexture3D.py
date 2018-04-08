@@ -69,6 +69,7 @@ class NoiseTexture3D:
         mat.use_program()
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)
         mat.bind_uniform_data('noise_scale', self.noise_scale)
+        mat.bind_uniform_data('noise_seed', core_manager.currentTime)
 
         for i in range(texture.depth):
             mat.bind_uniform_data('depth', i / texture.depth)
