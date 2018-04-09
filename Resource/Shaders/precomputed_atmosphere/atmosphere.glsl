@@ -169,7 +169,7 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            int march_count = 64;
+            int march_count = 128;
             const int light_march_count = 5;
             const float cloud_absorption = min(1.0, 3.0 / float(march_count));
             const float light_absorption = min(1.0, 2.0 / float(light_march_count));
@@ -181,7 +181,7 @@ void main()
             noise_02_scale = max(noise_02_scale.x, max(noise_02_scale.y, noise_02_scale.z)) / noise_02_scale;
             noise_02_scale *= cloud_base_tiling;
 
-            float march_step = cloud_height / float(march_count) / max(0.5, abs(eye_direction.y));
+            float march_step = cloud_height / float(march_count) * max(0.5, 1.0 - abs(eye_direction.y)) * 2.0;
 
             for(int i=0; i<march_count; ++i)
             {
