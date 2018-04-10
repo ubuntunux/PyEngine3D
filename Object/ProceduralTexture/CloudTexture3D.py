@@ -68,7 +68,7 @@ class CloudTexture3D:
 
         renderer.postprocess.bind_quad()
 
-        mat = resource_manager.getMaterialInstance('examples.cloud_noise_3d')
+        mat = resource_manager.getMaterialInstance('procedural.cloud_noise_3d')
         mat.use_program()
         mat.bind_uniform_data('density', self.density)
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)
@@ -91,24 +91,6 @@ class CloudTexture3D:
             mat.bind_uniform_data('depth', i / texture.depth)
             renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
             renderer.postprocess.draw_elements()
-
-        # # render small spheres
-        # renderer.restore_blend_state_prev()
-        # renderer.set_blend_state(True, equation=GL_MAX, func_src=GL_ONE, func_dst=GL_ONE)
-        #
-        # spheres = np.zeros(shape=(count, 4), dtype=np.float32)
-        # for i in range(count):
-        #     x = random.random()
-        #     y = random.random()
-        #     z = random.random()
-        #     r = random.uniform(0.5 * self.scale * 0.5, self.scale * 0.5)
-        #     spheres[i][...] = [x, y, z, r]
-        # mat.bind_uniform_data('spheres', spheres, num=count)
-        #
-        # for i in range(texture.depth):
-        #     mat.bind_uniform_data('depth', i / texture.depth)
-        #     renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
-        #     renderer.postprocess.draw_elements()
 
         renderer.restore_blend_state_prev()
 

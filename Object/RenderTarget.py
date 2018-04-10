@@ -33,7 +33,6 @@ class RenderTargets:
     LINEAR_DEPTH = None
     SCREEN_SPACE_REFLECTION = None
     SSAO = None
-    SSAO_ROTATION_NOISE = None
     VELOCITY = None
     FFT_A = None
     FFT_B = None
@@ -347,28 +346,6 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             wrap=GL_CLAMP
-        )
-
-        texture_size = 4
-        texture_data = np.zeros((texture_size * texture_size, 3), dtype=np.float16)
-        for i in range(texture_size * texture_size):
-            texture_data[i][0] = random.uniform(-1.0, 1.0)
-            texture_data[i][1] = 0.0
-            texture_data[i][2] = random.uniform(-1.0, 1.0)
-            texture_data[i][:] = normalize(texture_data[i])
-
-        RenderTargets.SSAO_ROTATION_NOISE = self.create_rendertarget(
-            "SSAO_ROTATION_NOISE",
-            texture_type=Texture2D,
-            width=texture_size,
-            height=texture_size,
-            internal_format=GL_RGB16F,
-            texture_format=GL_RGB,
-            data_type=GL_FLOAT,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            wrap=GL_REPEAT,
-            data=texture_data
         )
 
         RenderTargets.VELOCITY = self.create_rendertarget(

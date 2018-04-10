@@ -65,7 +65,7 @@ class NoiseTexture3D:
 
         renderer.postprocess.bind_quad()
 
-        mat = resource_manager.getMaterialInstance('examples.noise_3d')
+        mat = resource_manager.getMaterialInstance('procedural.noise_3d')
         mat.use_program()
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)
         mat.bind_uniform_data('noise_scale', self.noise_scale)

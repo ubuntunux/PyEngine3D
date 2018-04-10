@@ -1,8 +1,15 @@
+import random
+
 import numpy as np
 from numpy import array, mod, floor, ceil, sin, cos, dot
 
+from OpenGL.GL import *
 
-def get_default_3d_data(size):
+from Utilities import normalize
+from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, TextureCube
+
+
+def generate_3d_data(size):
     value = 255.0 / float(size)
     data = array([0, 0, 0, 255] * size * size * size, dtype=np.uint8)
     for z in range(size):
@@ -15,51 +22,136 @@ def get_default_3d_data(size):
     return data
 
 
-def get_noise_3d(width, height, depth, noise_scale=6):
-    def lerp(x, y, t):
-        return x * (1.0 - t) + y * t
+def generate_random_data(texture_size, data_type):
+    texture_data = np.zeros((texture_size * texture_size, 4), dtype=data_type)
+    for i in range(texture_size * texture_size):
+        texture_data[i][0] = random.random()
+        texture_data[i][1] = random.random()
+        texture_data[i][2] = random.random()
+        texture_data[i][3] = random.random()
+    return texture_data
 
-    def random_3d(uvw, scale) -> float:
-        # This is tiling part, adjusts with the scale...
-        uvw = mod(uvw, scale)
-        return mod(sin(dot(uvw, [12.9898, 78.233, 45.164])) * 43758.5453123, 1.0)
 
-    # This one has non-ideal tiling properties that I'm still tuning
-    def noise_3d(uvw, scale) -> float:
-        uvw *= scale
-        ijk = floor(uvw)
-        xyz = mod(uvw, 1.0)
-        xyz = xyz * xyz * (3.0 - 2.0 * xyz)
+def generate_random_normal(texture_size, data_type):
+    texture_data = np.zeros((texture_size * texture_size, 3), dtype=data_type)
+    for i in range(texture_size * texture_size):
+        texture_data[i][0] = random.uniform(-1.0, 1.0)
+        texture_data[i][1] = 0.0
+        texture_data[i][2] = random.uniform(-1.0, 1.0)
+        texture_data[i][:] = normalize(texture_data[i])
+    return texture_data
 
-        return lerp(
-            lerp(lerp(random_3d(ijk + array([0, 0, 0]), scale), random_3d(ijk + array([1, 0, 0]), scale), xyz[0]),
-                 lerp(random_3d(ijk + array([0, 1, 0]), scale), random_3d(ijk + array([1, 1, 0]), scale), xyz[0]),
-                 xyz[1]),
-            lerp(lerp(random_3d(ijk + array([0, 0, 1]), scale), random_3d(ijk + array([1, 0, 1]), scale), xyz[0]),
-                 lerp(random_3d(ijk + array([0, 1, 1]), scale), random_3d(ijk + array([1, 1, 1]), scale), xyz[0]),
-                 xyz[1]), xyz[2])
 
-    data = array([0, 0, 0, 0] * width * height * depth, np.uint8)
-    for w in range(depth):
-        for v in range(height):
-            for u in range(width):
-                print(u)
-                octaves = 50
-                persistance = 0.7
-                noise_value = 0.0
-                weights = 0.0
-                amp = 1.0
-                scale = noise_scale
-                for i in range(octaves):
-                    uvw = np.array([u/width, v/height, w/depth])
-                    noise_value += amp * noise_3d(uvw, scale)
-                    weights += amp
-                    amp *= persistance
-                    scale *= 2
-                noise_value /= weights
-                index = (u + v * width + w * width * height) * 4
-                data[index] = noise_value
-                data[index + 1] = noise_value
-                data[index + 2] = noise_value
-                data[index + 3] = noise_value
-    return data
+def generate_common_textures(texture_loader):
+    resource_name = "common.default_3d"
+    if not texture_loader.hasResource(resource_name):
+        size = 64
+        data = generate_3d_data(size)
+        texture = CreateTexture(
+            name=resource_name,
+            texture_type=Texture3D,
+            width=size,
+            height=size,
+            depth=size,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            data_type=GL_UNSIGNED_BYTE,
+            wrap=GL_REPEAT,
+            data=data,
+        )
+        texture_loader.create_resource(resource_name, texture)
+        texture_loader.save_resource(resource_name)
+
+    resource_name = "common.default_2d_array"
+    if not texture_loader.hasResource(resource_name):
+        size = 64
+        data = generate_3d_data(size)
+        texture = CreateTexture(
+            name=resource_name,
+            texture_type=Texture2DArray,
+            width=size,
+            height=size,
+            depth=size,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            data_type=GL_UNSIGNED_BYTE,
+            wrap=GL_REPEAT,
+            data=data,
+        )
+        texture_loader.create_resource(resource_name, texture)
+        texture_loader.save_resource(resource_name)
+
+    resource_name = "common.random"
+    if not texture_loader.hasResource(resource_name):
+        size = 512
+        data = generate_random_data(size, np.float16)
+        texture = CreateTexture(
+            name=resource_name,
+            texture_type=Texture2D,
+            width=size,
+            height=size,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_RGBA,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            data_type=GL_FLOAT,
+            wrap=GL_REPEAT,
+            data=data,
+        )
+        texture_loader.create_resource(resource_name, texture)
+        texture_loader.save_resource(resource_name)
+
+    resource_name = "common.random_normal"
+    if not texture_loader.hasResource(resource_name):
+        size = 4
+        data = generate_random_normal(size, np.float16)
+        texture = CreateTexture(
+            name=resource_name,
+            texture_type=Texture2D,
+            width=size,
+            height=size,
+            internal_format=GL_RGB16F,
+            texture_format=GL_RGB,
+            data_type=GL_FLOAT,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            wrap=GL_REPEAT,
+            data=data
+        )
+        texture_loader.create_resource(resource_name, texture)
+        texture_loader.save_resource(resource_name)
+
+    def generate_color_texture(resource_name, size, color):
+        if not texture_loader.hasResource(resource_name):
+            data = array([color for i in range(size * size)], dtype=np.uint8)
+            component_count = len(color)
+            texture = CreateTexture(
+                name=resource_name,
+                texture_type=Texture2D,
+                width=size,
+                height=size,
+                internal_format=GL_RGBA8 if component_count == 4 else GL_RGB8,
+                texture_format=GL_RGBA if component_count == 4 else GL_RGB,
+                min_filter=GL_NEAREST,
+                mag_filter=GL_NEAREST,
+                data_type=GL_UNSIGNED_BYTE,
+                wrap=GL_CLAMP_TO_EDGE,
+                data=data,
+            )
+            texture_loader.create_resource(resource_name, texture)
+            texture_loader.save_resource(resource_name)
+
+    generate_color_texture("common.flat_red", 2, [255, 0, 0, 255])
+    generate_color_texture("common.flat_green", 2, [0, 255, 0, 255])
+    generate_color_texture("common.flat_blue", 2, [0, 0, 255, 255])
+    generate_color_texture("common.flat_black", 2, [0, 0, 0, 255])
+    generate_color_texture("common.flat_gray", 2, [128, 128, 128, 255])
+    generate_color_texture("common.flat_white", 2, [255, 255, 255, 255])
+    generate_color_texture("common.flat_normal", 2, [128, 128, 255, 255])
+    generate_color_texture("common.flat_black_no_alpha", 2, [0, 0, 0, 0])
+    generate_color_texture("common.flat_white_no_alpha", 2, [255, 255, 255, 0])
+    generate_color_texture("common.flat_normal_no_alpha", 2, [128, 128, 255, 0])

@@ -59,17 +59,17 @@ def CreateUniformDataFromString(data_type, strValue=None):
         else:
             return np.eye(componentCount, dtype=np.float32)
     elif data_type == 'sampler2D':
-        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
+        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'common.flat_gray')
         return texture
     elif data_type == 'sampler2DMS':
         logger.warn('sampler2DMS need multisample texture.')
-        return CoreManager.instance().resource_manager.getTexture(strValue or 'empty')
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'common.flat_gray')
     elif data_type == 'sampler2DArray':
-        return CoreManager.instance().resource_manager.getTexture(strValue or 'default_2d_array')
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'common.default_2d_array')
     elif data_type == 'sampler3D':
-        return CoreManager.instance().resource_manager.getTexture(strValue or 'default_3d')
+        return CoreManager.instance().resource_manager.getTexture(strValue or 'common.default_3d')
     elif data_type == 'samplerCube':
-        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'default_cube')
+        texture = CoreManager.instance().resource_manager.getTexture(strValue or 'common.default_cube')
         return texture
 
     error_message = 'Cannot find uniform data of %s.' % data_type

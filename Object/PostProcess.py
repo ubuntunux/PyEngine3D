@@ -66,6 +66,7 @@ class PostProcess:
         self.ssao_radius_min_max = np.array([0.1, 2.0], dtype=np.float32)
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
+        self.ssao_random_texture = None
 
         self.velocity = None
 
@@ -126,6 +127,7 @@ class PostProcess:
             self.ssao_kernel[i][1] = random.uniform(0.5, 1.0)
             self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
+        self.ssao_random_texture = self.resource_manager.getTexture('common.random_normal')
 
         self.velocity = self.resource_manager.getMaterialInstance("velocity")
 
@@ -416,7 +418,7 @@ class PostProcess:
         self.ssao.bind_uniform_data("texture_size", texture_size)
         self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
         self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
-        self.ssao.bind_uniform_data("texture_noise", RenderTargets.SSAO_ROTATION_NOISE)
+        self.ssao.bind_uniform_data("texture_noise", self.ssao_random_texture)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.quad_geometry.draw_elements()
