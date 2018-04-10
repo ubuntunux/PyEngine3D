@@ -53,13 +53,13 @@ float get_cloud_density(vec3 noise_01_scale, vec3 noise_02_scale, vec3 uvw, vec3
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * cloud_detail_tiling / cloud_base_tiling).x * weight;
-    noise_01 = saturate(Contrast((noise_01 - 1.0 + cloud_detail_coverage) * weight, cloud_detail_contrast));
-
     float noise_02 = texture(texture_noise_02, uvw * noise_02_scale + cloud_speed * 0.5).x;
     noise_02 = saturate(Contrast((noise_02 - 1.0 + cloud_base_coverage) * weight, cloud_base_contrast));
 
-    return Overlay(noise_02, noise_01);
+    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * cloud_detail_tiling / cloud_base_tiling).x * weight;
+    noise_01 = saturate(Contrast((noise_01 - 1.0 + cloud_detail_coverage) * weight, cloud_detail_contrast));
+
+    return noise_01 * noise_02;
 }
 
 void main()
@@ -166,13 +166,14 @@ void main()
         const vec3 light_color = LIGHT_COLOR.xyz * (scene_sun_irradiance + scene_sky_irradiance);
 
         cloud.xyz = light_color;
+        cloud.w = 0.0;
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            int march_count = 128;
-            const int light_march_count = 5;
+            int march_count = 64;
+            const int light_march_count = 3;
             const float cloud_absorption = min(1.0, 3.0 / float(march_count));
-            const float light_absorption = min(1.0, 2.0 / float(light_march_count));
+            const float light_absorption = min(1.0, 3.0 / float(light_march_count));
             const vec3 cloud_speed = vec3(0.01, 0.01, 0.0) * TIME;
             vec3 noise_01_scale = textureSize(texture_noise_01, 0);
             vec3 noise_02_scale = textureSize(texture_noise_01, 0);
@@ -181,7 +182,10 @@ void main()
             noise_02_scale = max(noise_02_scale.x, max(noise_02_scale.y, noise_02_scale.z)) / noise_02_scale;
             noise_02_scale *= cloud_base_tiling;
 
-            float march_step = cloud_height / float(march_count) * max(0.5, 1.0 - abs(eye_direction.y)) * 2.0;
+            // march step by distance
+            float march_step = cloud_height / max(0.1, abs(eye_direction.y)) / float(march_count);
+            //float march_step = cloud_height / float(march_count);
+            float light_march_step = cloud_height / float(march_count);
 
             for(int i=0; i<march_count; ++i)
             {
@@ -189,8 +193,15 @@ void main()
                 ray_pos = ray_start_pos.xyz + eye_direction.xyz * float(i) * march_step;
 
                 // fade top and bottom
-                float fade = saturate((length(ray_pos - earth_center_pos.xyz)  - cloud_bottom_dist) / cloud_height);
-                fade = sqrt(1.0 - abs(fade * 2.0 - 1.0));
+                float relative_altitude = length(ray_pos - earth_center_pos.xyz) - cloud_bottom_dist;
+
+                if(0 != i && (cloud_height < relative_altitude || relative_altitude < 0.0))
+                {
+                    break;
+                }
+
+                float fade = saturate(relative_altitude / cloud_height);
+                fade = 1.0 - pow(abs(fade * 2.0 - 1.0), 3.0);
 
                 float cloud_density = get_cloud_density(noise_01_scale, noise_02_scale, ray_pos.xzy, cloud_speed, fade);
 
@@ -198,14 +209,20 @@ void main()
                 for(int j=0; j<light_march_count; ++j)
                 {
                     vec3 light_pos = ray_pos + sun_direction * float(light_march_count - j) * march_step;
-                    float relative_altitude = length(light_pos.xyz - earth_center_pos.xyz) - cloud_bottom_dist;
-                    fade = sqrt(1.0 - abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0));
+                    relative_altitude = length(light_pos.xyz - earth_center_pos.xyz) - cloud_bottom_dist;
+
+                    if(cloud_height < relative_altitude || relative_altitude < 0.0)
+                    {
+                        continue;
+                    }
+
+                    fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
 
                     float light_density = get_cloud_density(noise_01_scale, noise_02_scale, light_pos.xzy, cloud_speed, fade);
 
                     light_intensity *= 1.0 - light_density * light_absorption;
 
-                    if(cloud_height < relative_altitude || relative_altitude < 0.0 || light_intensity <= 0.01)
+                    if(light_intensity <= 0.01)
                     {
                         break;
                     }

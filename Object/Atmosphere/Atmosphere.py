@@ -97,7 +97,7 @@ class Atmosphere:
     def get_save_data(self):
         save_data = {}
         for attribute in self.attributes.getAttributeNames():
-            save_data.set(attribute, self.attributes.getAttribute(attribute))
+            save_data[attribute] = self.attributes.getAttribute(attribute)
         return save_data
 
     def initialize(self):

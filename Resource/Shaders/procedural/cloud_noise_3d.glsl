@@ -2,54 +2,11 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
-const int count = 500;
-uniform vec4 spheres[count];
 uniform float depth;
-uniform float density;
-uniform float noise_persistance;
-uniform int noise_scale;
-uniform float noise_contrast;
-uniform float noise_seed;
-
-
-float rand(vec3 uvw, float scale)
-{
-    // This is tiling part, adjusts with the scale...
-    uvw = mod(uvw + vec3(fract(noise_seed)), scale);
-	return fract(sin(dot(uvw, vec3(12.9898, 78.233, 45.164))) * 43758.5453123);
-}
-
-
-// This one has non-ideal tiling properties that I'm still tuning
-float noise(vec3 x, float scale)
-{
-	const vec3 step = vec3(110, 241, 171);
-
-	x *= scale;
-	vec3 i = floor(x);
-	vec3 f = fract(x);
-
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(mix( rand(i + vec3(0, 0, 0), scale), rand(i + vec3(1, 0, 0), scale), u.x),
-                   mix( rand(i + vec3(0, 1, 0), scale), rand(i + vec3(1, 1, 0), scale), u.x), u.y),
-               mix(mix( rand(i + vec3(0, 0, 1), scale), rand(i + vec3(1, 0, 1), scale), u.x),
-                   mix( rand(i + vec3(0, 1, 1), scale), rand(i + vec3(1, 1, 1), scale), u.x), u.y), u.z);
-}
-
-float perlinNoise(vec3 p, float scale, float persistance)
-{
-	float n = 0.0;
-	float weights = 0.0;
-	float amp = 1.0;
-	for (int i = 0; i<50; i++)
-	{
-		n += amp * noise(p, scale);
-		weights += amp;
-		amp *= persistance;
-		scale *= 2.0;
-	}
-	return n / weights;
-}
+uniform float random_seed;
+uniform int sphere_count;
+uniform float sphere_scale;
+uniform sampler2D texture_random;
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -58,18 +15,53 @@ layout (location = 0) out float fs_output;
 
 void main() {
     vec3 uvw = vec3(vs_output.tex_coord, depth);
-    float density_max = 0.0;
-    for(int i=0; i<count; ++i)
+    float density_max = 1.0;
+
+    vec2 texture_size = textureSize(texture_random, 0);
+    float texel_count = texture_size.x * texture_size.y;
+
+    vec4 sphere;
+
+    for(int i=0; i<sphere_count; ++i)
     {
-        vec3 diff = abs(spheres[i].xyz - uvw);
+        float texture_index = mod(float(i) + random_seed * texel_count, texel_count);
+        vec2 texture_uv;
+        texture_uv.x = texture_index / texture_size.x;
+        texture_uv.y = floor(texture_uv.x);
+        texture_uv.x = texture_uv.x - texture_uv.y;
+        texture_uv.y /= texture_size.y;
+
+        sphere = texture(texture_random, texture_uv);
+        sphere.w = mix(0.7, 1.0, sphere.w) * sphere_scale * 0.3;
+
+        // find nearest sphere for outside sphere of uvw.
+        vec3 diff = abs(sphere.xyz - uvw);
         diff = min(diff, abs(vec3(1.0) - diff));
-        density_max = max(density_max, clamp(1.0 - length(diff) / spheres[i].w, 0.0, 1.0));
+
+        density_max = min(density_max, length(diff) / sphere.w);
     }
 
-    float n = perlinNoise(uvw, float(noise_scale), noise_persistance);
+    float density_max2 = 1.0;
 
-    n = Contrast(n, noise_contrast);
+    for(int i=0; i<sphere_count / 10; ++i)
+    {
+        float texture_index = mod(float(i) + random_seed * texel_count, texel_count);
+        vec2 texture_uv;
+        texture_uv.x = texture_index / texture_size.x;
+        texture_uv.y = floor(texture_uv.x);
+        texture_uv.x = texture_uv.x - texture_uv.y;
+        texture_uv.y /= texture_size.y;
 
-    fs_output = HardLight(density_max, n) * density;
+        sphere = texture(texture_random, texture_uv);
+        sphere.w = mix(0.7, 1.0, sphere.w);
+
+        // find nearest sphere for outside sphere of uvw.
+        vec3 diff = abs(sphere.xyz - uvw);
+        diff = min(diff, abs(vec3(1.0) - diff));
+
+        density_max2 = min(density_max2, length(diff) / sphere.w);
+    }
+
+    fs_output = (1.0 - density_max) * pow(1.0 - density_max2, 2.0);
 }
 #endif
