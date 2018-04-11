@@ -49,14 +49,15 @@ class Atmosphere:
         self.kSun = Float3(1.0, 1.0, 1.0)
 
         # cloud constants
-        self.cloud_base_tiling = 0.0002
-        self.cloud_base_contrast = 8.0
-        self.cloud_base_coverage = 1.0
-        self.cloud_detail_tiling = 0.002
-        self.cloud_detail_contrast = 8.0
-        self.cloud_detail_coverage = 1.0
         self.cloud_altitude = 500.0
-        self.cloud_height = 500.0
+        self.cloud_height = 300.0
+        self.cloud_contrast = 2.0
+        self.cloud_coverage = 0.8
+        self.cloud_tiling = 0.0004
+        self.cloud_speed = 0.01
+        self.noise_contrast = 1.0
+        self.noise_coverage = 1.0
+        self.noise_tiling = 0.0003
 
         self.model = None
         self.atmosphere_material_instance = None
@@ -67,6 +68,9 @@ class Atmosphere:
         self.irradiance_texture = None
         self.optional_single_mie_scattering_texture = None
 
+        self.cloud_texture = None
+        self.noise_texture = None
+
         positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
         indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
         self.quad = VertexArrayBuffer(
@@ -76,32 +80,43 @@ class Atmosphere:
             dtype=np.float32
         )
 
+        self.load_data(object_data)
+
         self.initialize()
 
     def getAttribute(self):
         self.attributes.setAttribute('is_render_atmosphere', self.is_render_atmosphere)
-        self.attributes.setAttribute('cloud_base_tiling', self.cloud_base_tiling)
-        self.attributes.setAttribute('cloud_base_contrast', self.cloud_base_contrast)
-        self.attributes.setAttribute('cloud_base_coverage', self.cloud_base_coverage)
-        self.attributes.setAttribute('cloud_detail_tiling', self.cloud_detail_tiling)
-        self.attributes.setAttribute('cloud_detail_contrast', self.cloud_detail_contrast)
-        self.attributes.setAttribute('cloud_detail_coverage', self.cloud_detail_coverage)
         self.attributes.setAttribute('cloud_altitude', self.cloud_altitude)
         self.attributes.setAttribute('cloud_height', self.cloud_height)
+        self.attributes.setAttribute('cloud_tiling', self.cloud_tiling)
+        self.attributes.setAttribute('cloud_contrast', self.cloud_contrast)
+        self.attributes.setAttribute('cloud_coverage', self.cloud_coverage)
+        self.attributes.setAttribute('cloud_speed', self.cloud_speed)
+        self.attributes.setAttribute('noise_tiling', self.noise_tiling)
+        self.attributes.setAttribute('noise_contrast', self.noise_contrast)
+        self.attributes.setAttribute('noise_coverage', self.noise_coverage)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
+    def load_data(self, object_data):
+        for key, value in object_data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
     def get_save_data(self):
         save_data = {}
         for attribute in self.attributes.getAttributeNames():
-            save_data[attribute] = self.attributes.getAttribute(attribute)
+            save_data[attribute] = self.attributes.getAttribute(attribute).value
         return save_data
 
     def initialize(self):
         resource_manager = CoreManager.instance().resource_manager
+
+        self.cloud_texture = resource_manager.getTexture('precomputed_atmosphere.cloud_3d')
+        self.noise_texture = resource_manager.getTexture('precomputed_atmosphere.noise_3d')
 
         # USE PRECOMPUTED TEXTURE
         use_precomputed_texture = False
@@ -224,14 +239,18 @@ class Atmosphere:
         material_instance.bind_uniform_data("exposure", self.exposure)
         material_instance.bind_uniform_data("earth_center", self.earth_center)
 
-        material_instance.bind_uniform_data('cloud_base_tiling', self.cloud_base_tiling)
-        material_instance.bind_uniform_data('cloud_base_contrast', self.cloud_base_contrast)
-        material_instance.bind_uniform_data('cloud_base_coverage', self.cloud_base_coverage)
-        material_instance.bind_uniform_data('cloud_detail_tiling', self.cloud_detail_tiling)
-        material_instance.bind_uniform_data('cloud_detail_contrast', self.cloud_detail_contrast)
-        material_instance.bind_uniform_data('cloud_detail_coverage', self.cloud_detail_coverage)
+        material_instance.bind_uniform_data("texture_cloud", self.cloud_texture)
+        material_instance.bind_uniform_data("texture_noise", self.noise_texture)
+
         material_instance.bind_uniform_data('cloud_altitude', self.cloud_altitude)
         material_instance.bind_uniform_data('cloud_height', self.cloud_height)
+        material_instance.bind_uniform_data('cloud_tiling', self.cloud_tiling)
+        material_instance.bind_uniform_data('cloud_contrast', self.cloud_contrast)
+        material_instance.bind_uniform_data('cloud_coverage', self.cloud_coverage)
+        material_instance.bind_uniform_data('cloud_speed', self.cloud_speed)
+        material_instance.bind_uniform_data('noise_tiling', self.noise_tiling)
+        material_instance.bind_uniform_data('noise_contrast', self.noise_contrast)
+        material_instance.bind_uniform_data('noise_coverage', self.noise_coverage)
 
     def render_precomputed_atmosphere(self, texture_linear_depth, texture_shadow, render_sun):
         if not self.is_render_atmosphere:

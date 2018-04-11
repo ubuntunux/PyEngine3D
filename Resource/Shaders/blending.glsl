@@ -1,5 +1,10 @@
 // https://github.com/jamieowen/glsl-blend
 
+float Remap(float originalValue, float originalMin, float originalMax, float newMin, float newMax)
+{
+	return newMin + (((originalValue - originalMin) / (originalMax - originalMin)) * (newMax - newMin));
+}
+
 float Sharpen(float base, float sharpen)
 {
     return (base - sharpen) / (1.0 - sharpen);

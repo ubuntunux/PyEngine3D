@@ -7,19 +7,19 @@ uniform sampler2D texture_shadow;
 uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_normal;
 
-uniform float cloud_base_tiling;
-uniform float cloud_base_contrast;
-uniform float cloud_base_coverage;
-uniform float cloud_detail_tiling;
-uniform float cloud_detail_contrast;
-uniform float cloud_detail_coverage;
+uniform sampler3D texture_cloud;
+uniform sampler3D texture_noise;
+
 uniform float cloud_altitude;
 uniform float cloud_height;
+uniform float cloud_tiling;
+uniform float cloud_contrast;
+uniform float cloud_coverage;
+uniform float cloud_speed;
+uniform float noise_tiling;
+uniform float noise_contrast;
+uniform float noise_coverage;
 
-#ifdef MATERIAL_COMPONENTS
-    uniform sampler3D texture_noise_01;
-    uniform sampler3D texture_noise_02;
-#endif
 
 #ifdef GL_FRAGMENT_SHADER
 in vec3 view_ray;
@@ -49,17 +49,18 @@ void GetSceneRadiance(
 }
 
 
-float get_cloud_density(vec3 noise_01_scale, vec3 noise_02_scale, vec3 uvw, vec3 cloud_speed, float weight)
+float get_cloud_density(vec3 cloud_scale, vec3 noise_scale, vec3 uvw, vec3 speed, float weight)
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    float noise_02 = texture(texture_noise_02, uvw * noise_02_scale + cloud_speed * 0.5).x;
-    noise_02 = saturate(Contrast((noise_02 - 1.0 + cloud_base_coverage) * weight, cloud_base_contrast));
+    float cloud = texture(texture_cloud, uvw * cloud_scale + speed * cloud_tiling / noise_tiling).x;
+    cloud = saturate(Contrast((cloud - 1.0 + cloud_coverage), cloud_contrast));
 
-    float noise_01 = texture(texture_noise_01, uvw * noise_01_scale + cloud_speed * cloud_detail_tiling / cloud_base_tiling).x * weight;
-    noise_01 = saturate(Contrast((noise_01 - 1.0 + cloud_detail_coverage) * weight, cloud_detail_contrast));
+    float noise = texture(texture_noise, uvw * noise_scale + speed * 0.5).x;
+    noise = saturate(Contrast((noise - 1.0 + noise_coverage) * weight, noise_contrast));
 
-    return noise_01 * noise_02;
+    // Remap is very important!!
+    return saturate(Remap(noise, 1.0 - cloud, 1.0, 0.0, 1.0));
 }
 
 void main()
@@ -170,24 +171,25 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            int march_count = 64;
-            const int light_march_count = 3;
-            const float cloud_absorption = min(1.0, 3.0 / float(march_count));
-            const float light_absorption = min(1.0, 3.0 / float(light_march_count));
-            const vec3 cloud_speed = vec3(0.01, 0.01, 0.0) * TIME;
-            vec3 noise_01_scale = textureSize(texture_noise_01, 0);
-            vec3 noise_02_scale = textureSize(texture_noise_01, 0);
-            noise_01_scale = max(noise_01_scale.x, max(noise_01_scale.y, noise_01_scale.z)) / noise_01_scale;
-            noise_01_scale *= cloud_detail_tiling;
-            noise_02_scale = max(noise_02_scale.x, max(noise_02_scale.y, noise_02_scale.z)) / noise_02_scale;
-            noise_02_scale *= cloud_base_tiling;
+            const float march_count_min = 16.0;
+            const float march_count = mix(march_count_min * 2.0, march_count_min, abs(eye_direction.y));
+            const float light_march_count = 8.0;
 
-            // march step by distance
-            float march_step = cloud_height / max(0.1, abs(eye_direction.y)) / float(march_count);
-            //float march_step = cloud_height / float(march_count);
-            float light_march_step = cloud_height / float(march_count);
+            const float march_step = cloud_height / march_count_min;
 
-            for(int i=0; i<march_count; ++i)
+            const float cloud_absorption = min(1.0, 1.0 / float(march_count));
+            const float light_absorption = min(1.0, 4.0 / float(light_march_count));
+            const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
+
+            vec3 cloud_scale = textureSize(texture_cloud, 0);
+            cloud_scale = max(cloud_scale.x, max(cloud_scale.y, cloud_scale.z)) / cloud_scale;
+            cloud_scale *= cloud_tiling;
+
+            vec3 noise_scale = textureSize(texture_noise, 0);
+            noise_scale = max(noise_scale.x, max(noise_scale.y, noise_scale.z)) / noise_scale;
+            noise_scale *= noise_tiling;
+
+            for(int i=0; i<int(march_count); ++i)
             {
                 vec3 ray_pos;
                 ray_pos = ray_start_pos.xyz + eye_direction.xyz * float(i) * march_step;
@@ -203,7 +205,7 @@ void main()
                 float fade = saturate(relative_altitude / cloud_height);
                 fade = 1.0 - pow(abs(fade * 2.0 - 1.0), 3.0);
 
-                float cloud_density = get_cloud_density(noise_01_scale, noise_02_scale, ray_pos.xzy, cloud_speed, fade);
+                float cloud_density = get_cloud_density(cloud_scale, noise_scale, ray_pos.xzy, speed, fade);
 
                 float light_intensity = 1.0;
                 for(int j=0; j<light_march_count; ++j)
@@ -218,7 +220,7 @@ void main()
 
                     fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
 
-                    float light_density = get_cloud_density(noise_01_scale, noise_02_scale, light_pos.xzy, cloud_speed, fade);
+                    float light_density = get_cloud_density(cloud_scale, noise_scale, light_pos.xzy, speed, fade);
 
                     light_intensity *= 1.0 - light_density * light_absorption;
 

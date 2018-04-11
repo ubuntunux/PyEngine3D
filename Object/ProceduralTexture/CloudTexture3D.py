@@ -14,11 +14,13 @@ class CloudTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
         self.texture_name = 'cloud_3d'
-        self.width = data.get('width', 256)
-        self.height = data.get('height', 256)
-        self.depth = data.get('depth', 32)
-        self.sphere_scale = data.get('sphere_scale', 0.3)
-        self.sphere_count = data.get('sphere_count', 500)
+        self.width = data.get('width', 128)
+        self.height = data.get('height', 128)
+        self.depth = data.get('depth', 128)
+        self.sphere_scale = data.get('sphere_scale', 0.15)
+        self.sphere_count = data.get('sphere_count', 4096)
+        self.noise_persistance = data.get('noise_persistance', 0.7)
+        self.noise_scale = data.get('noise_scale', 6)
         self.attribute = Attributes()
 
     def generate_texture(self):
@@ -71,6 +73,8 @@ class CloudTexture3D:
         mat.bind_uniform_data('random_seed', random.random())
         mat.bind_uniform_data('sphere_count', self.sphere_count)
         mat.bind_uniform_data('sphere_scale', self.sphere_scale)
+        mat.bind_uniform_data('noise_persistance', self.noise_persistance)
+        mat.bind_uniform_data('noise_scale', self.noise_scale)
 
         for i in range(texture.depth):
             mat.bind_uniform_data('depth', i / texture.depth)
@@ -88,6 +92,8 @@ class CloudTexture3D:
             depth=self.depth,
             sphere_scale=self.sphere_scale,
             sphere_count=self.sphere_count,
+            noise_persistance=self.noise_persistance,
+            noise_scale=self.noise_scale,
         )
         return save_data
 
@@ -98,6 +104,8 @@ class CloudTexture3D:
         self.attribute.setAttribute("depth", self.depth)
         self.attribute.setAttribute("sphere_scale", self.sphere_scale)
         self.attribute.setAttribute("sphere_count", self.sphere_count)
+        self.attribute.setAttribute("noise_persistance", self.noise_persistance)
+        self.attribute.setAttribute("noise_scale", self.noise_scale)
         return self.attribute
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
