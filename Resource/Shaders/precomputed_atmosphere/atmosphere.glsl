@@ -88,7 +88,7 @@ void main()
     // Sun
     if (render_sun && dot(eye_direction, sun_direction) > sun_size.y)
     {
-        radiance = radiance + transmittance * GetSolarRadiance(ATMOSPHERE);
+        radiance += transmittance * GetSolarRadiance(ATMOSPHERE);
     }
 
     // Cloud
@@ -171,13 +171,13 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            const float march_count_min = 16.0;
+            const float march_count_min = 32.0;
             const float march_count = mix(march_count_min * 2.0, march_count_min, abs(eye_direction.y));
             const float light_march_count = 8.0;
 
             const float march_step = cloud_height / march_count_min;
 
-            const float cloud_absorption = min(1.0, 1.0 / float(march_count));
+            const float cloud_absorption = min(1.0, 24.0 / float(march_count));
             const float light_absorption = min(1.0, 4.0 / float(light_march_count));
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
 
@@ -208,6 +208,7 @@ void main()
                 float cloud_density = get_cloud_density(cloud_scale, noise_scale, ray_pos.xzy, speed, fade);
 
                 float light_intensity = 1.0;
+
                 for(int j=0; j<light_march_count; ++j)
                 {
                     vec3 light_pos = ray_pos + sun_direction * float(light_march_count - j) * march_step;
@@ -215,7 +216,7 @@ void main()
 
                     if(cloud_height < relative_altitude || relative_altitude < 0.0)
                     {
-                        continue;
+                        break;
                     }
 
                     fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
@@ -226,12 +227,14 @@ void main()
 
                     if(light_intensity <= 0.01)
                     {
+                        light_intensity = 0.0;
                         break;
                     }
                 }
 
-                cloud.w = clamp(cloud.w + cloud_density * (1.0 - cloud_absorption), 0.0, 1.0);
-                cloud.xyz = light_color * light_intensity;
+                cloud.xyz += light_color * light_intensity * (1.0 - cloud.w);
+                cloud.w = clamp(cloud.w + cloud_density * cloud_absorption, 0.0, 1.0);
+
                 if(1.0 <= cloud.w)
                 {
                     break;
@@ -241,6 +244,7 @@ void main()
             float dist_fade = clamp(1.0 - (hit_dist - min_dist) / (far_dist - min_dist), 0.0, 1.0);
             cloud.w *= clamp(dist_fade, 0.0, 1.0);
         }
+        cloud.xyz *= 0.02;
         cloud.xyz += scene_in_scatter;
     }
 
