@@ -52,7 +52,7 @@ class Atmosphere:
         self.cloud_altitude = 500.0
         self.cloud_height = 300.0
         self.cloud_speed = 0.01
-        self.cloud_absorption = 0.2
+        self.cloud_absorption = 0.3
 
         self.cloud_contrast = 2.0
         self.cloud_coverage = 0.8
