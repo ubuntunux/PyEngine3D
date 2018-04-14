@@ -307,16 +307,16 @@ class PostProcess:
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
         self.quad_geometry.draw_elements()
 
-        texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 4.0)
-        texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 8.0)
-        texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 16.0)
-        texture_bloom3 = self.rendertarget_manager.get_temporary('bloom3', texture_target, 1.0 / 32.0)
-        texture_bloom4 = self.rendertarget_manager.get_temporary('bloom4', texture_target, 1.0 / 64.0)
-        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_target, 1.0 / 4.0)
-        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_target, 1.0 / 8.0)
-        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_target, 1.0 / 16.0)
-        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 32.0)
-        texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_target, 1.0 / 64.0)
+        texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
+        texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
+        texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 8.0)
+        texture_bloom3 = self.rendertarget_manager.get_temporary('bloom3', texture_target, 1.0 / 16.0)
+        texture_bloom4 = self.rendertarget_manager.get_temporary('bloom4', texture_target, 1.0 / 32.0)
+        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_target, 1.0 / 2.0)
+        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_target, 1.0 / 4.0)
+        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_target, 1.0 / 8.0)
+        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 16.0)
+        texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_target, 1.0 / 32.0)
 
         bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
         temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
@@ -366,7 +366,7 @@ class PostProcess:
         self.bloom.bind_uniform_data("texture_bloom1", texture_bloom1)
         self.bloom.bind_uniform_data("texture_bloom2", texture_bloom2)
         self.bloom.bind_uniform_data("texture_bloom3", texture_bloom3)
-        self.bloom.bind_uniform_data("texture_bloom4", texture_bloom3)
+        self.bloom.bind_uniform_data("texture_bloom4", texture_bloom4)
         self.quad_geometry.draw_elements()
 
         # restore blend state

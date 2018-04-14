@@ -12,14 +12,16 @@ uniform sampler3D texture_noise;
 
 uniform float cloud_altitude;
 uniform float cloud_height;
+uniform float cloud_speed;
+
 uniform float cloud_tiling;
 uniform float cloud_contrast;
 uniform float cloud_coverage;
-uniform float cloud_speed;
+uniform float cloud_absorption;
+
 uniform float noise_tiling;
 uniform float noise_contrast;
 uniform float noise_coverage;
-
 
 #ifdef GL_FRAGMENT_SHADER
 in vec3 view_ray;
@@ -56,7 +58,7 @@ float get_cloud_density(vec3 cloud_scale, vec3 noise_scale, vec3 uvw, vec3 speed
     float cloud = texture(texture_cloud, uvw * cloud_scale + speed * cloud_tiling / noise_tiling).x;
     cloud = saturate(Contrast((cloud - 1.0 + cloud_coverage), cloud_contrast));
 
-    float noise = texture(texture_noise, uvw * noise_scale + speed * 0.5).x;
+    float noise = texture(texture_noise, uvw * noise_scale + speed * 0.3).x;
     noise = saturate(Contrast((noise - 1.0 + noise_coverage) * weight, noise_contrast));
 
     // Remap is very important!!
@@ -174,11 +176,7 @@ void main()
             const float march_count_min = 32.0;
             const float march_count = mix(march_count_min * 2.0, march_count_min, abs(eye_direction.y));
             const float light_march_count = 8.0;
-
-            const float march_step = cloud_height / march_count_min;
-
-            const float cloud_absorption = min(1.0, 24.0 / float(march_count));
-            const float light_absorption = min(1.0, 4.0 / float(light_march_count));
+            const float march_step = cloud_height / march_count_min * 2.0;
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
 
             vec3 cloud_scale = textureSize(texture_cloud, 0);
@@ -223,7 +221,7 @@ void main()
 
                     float light_density = get_cloud_density(cloud_scale, noise_scale, light_pos.xzy, speed, fade);
 
-                    light_intensity *= 1.0 - light_density * light_absorption;
+                    light_intensity = saturate(light_intensity - light_density * cloud_absorption);
 
                     if(light_intensity <= 0.01)
                     {

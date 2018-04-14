@@ -51,10 +51,13 @@ class Atmosphere:
         # cloud constants
         self.cloud_altitude = 500.0
         self.cloud_height = 300.0
+        self.cloud_speed = 0.01
+        self.cloud_absorption = 0.2
+
         self.cloud_contrast = 2.0
         self.cloud_coverage = 0.8
         self.cloud_tiling = 0.0004
-        self.cloud_speed = 0.01
+
         self.noise_contrast = 1.0
         self.noise_coverage = 1.0
         self.noise_tiling = 0.0003
@@ -89,9 +92,12 @@ class Atmosphere:
         self.attributes.setAttribute('cloud_altitude', self.cloud_altitude)
         self.attributes.setAttribute('cloud_height', self.cloud_height)
         self.attributes.setAttribute('cloud_tiling', self.cloud_tiling)
+        self.attributes.setAttribute('cloud_speed', self.cloud_speed)
+
         self.attributes.setAttribute('cloud_contrast', self.cloud_contrast)
         self.attributes.setAttribute('cloud_coverage', self.cloud_coverage)
-        self.attributes.setAttribute('cloud_speed', self.cloud_speed)
+        self.attributes.setAttribute('cloud_absorption', self.cloud_absorption)
+
         self.attributes.setAttribute('noise_tiling', self.noise_tiling)
         self.attributes.setAttribute('noise_contrast', self.noise_contrast)
         self.attributes.setAttribute('noise_coverage', self.noise_coverage)
@@ -244,10 +250,13 @@ class Atmosphere:
 
         material_instance.bind_uniform_data('cloud_altitude', self.cloud_altitude)
         material_instance.bind_uniform_data('cloud_height', self.cloud_height)
+        material_instance.bind_uniform_data('cloud_speed', self.cloud_speed)
+        material_instance.bind_uniform_data('cloud_absorption', self.cloud_absorption)
+
         material_instance.bind_uniform_data('cloud_tiling', self.cloud_tiling)
         material_instance.bind_uniform_data('cloud_contrast', self.cloud_contrast)
         material_instance.bind_uniform_data('cloud_coverage', self.cloud_coverage)
-        material_instance.bind_uniform_data('cloud_speed', self.cloud_speed)
+
         material_instance.bind_uniform_data('noise_tiling', self.noise_tiling)
         material_instance.bind_uniform_data('noise_contrast', self.noise_contrast)
         material_instance.bind_uniform_data('noise_coverage', self.noise_coverage)
