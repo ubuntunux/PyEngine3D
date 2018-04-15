@@ -13,11 +13,11 @@ uniform sampler3D texture_noise;
 uniform float cloud_altitude;
 uniform float cloud_height;
 uniform float cloud_speed;
+uniform float cloud_absorption;
 
 uniform float cloud_tiling;
 uniform float cloud_contrast;
 uniform float cloud_coverage;
-uniform float cloud_absorption;
 
 uniform float noise_tiling;
 uniform float noise_contrast;
@@ -175,8 +175,8 @@ void main()
         {
             const float march_count_min = 32.0;
             const float march_count = mix(march_count_min * 2.0, march_count_min, abs(eye_direction.y));
-            const float light_march_count = 8.0;
-            const float march_step = cloud_height / march_count_min * 2.0;
+            const float light_march_count = 16.0;
+            const float march_step = cloud_height / march_count_min;
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
 
             vec3 cloud_scale = textureSize(texture_cloud, 0);
@@ -230,7 +230,7 @@ void main()
                     }
                 }
 
-                cloud.xyz += light_color * light_intensity * (1.0 - cloud.w);
+                cloud.xyz += cloud_density * light_color * light_intensity;
                 cloud.w = clamp(cloud.w + cloud_density * cloud_absorption, 0.0, 1.0);
 
                 if(1.0 <= cloud.w)
@@ -241,9 +241,9 @@ void main()
 
             float dist_fade = clamp(1.0 - (hit_dist - min_dist) / (far_dist - min_dist), 0.0, 1.0);
             cloud.w *= clamp(dist_fade, 0.0, 1.0);
+
         }
-        cloud.xyz *= 0.02;
-        cloud.xyz += scene_in_scatter;
+        cloud.xyz = cloud.xyz * cloud_absorption * 0.65 + scene_in_scatter;
     }
 
     color.xyz = mix(radiance * exposure, cloud.xyz, cloud.w);
