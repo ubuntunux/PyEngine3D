@@ -296,8 +296,7 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_bloom(self, texture_target):
-        texture_highlight = self.rendertarget_manager.get_temporary('highlight', texture_target)
-        self.framebuffer_manager.bind_framebuffer(texture_highlight)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_HIGHLIGHT)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.bloom_highlight.use_program()
@@ -306,6 +305,8 @@ class PostProcess:
         self.bloom_highlight.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
         self.quad_geometry.draw_elements()
+
+        RenderTargets.HDR_HIGHLIGHT.generate_mipmap()
 
         texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
         texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
@@ -321,18 +322,18 @@ class PostProcess:
         bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
         temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
 
-        def copy_bloom(src, dst):
+        def copy_bloom(src, level, dst):
+            src_framebuffer = self.framebuffer_manager.bind_framebuffer(src, target_level=level)
             self.framebuffer_manager.bind_framebuffer(dst)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            self.copy_texture(src)
-            self.quad_geometry.draw_elements()
+            self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
-        copy_bloom(texture_highlight, texture_bloom0)
-        copy_bloom(texture_bloom0, texture_bloom1)
-        copy_bloom(texture_bloom1, texture_bloom2)
-        copy_bloom(texture_bloom2, texture_bloom3)
-        copy_bloom(texture_bloom3, texture_bloom4)
+        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 0, texture_bloom0)
+        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 1, texture_bloom1)
+        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 2, texture_bloom2)
+        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 3, texture_bloom3)
+        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 4, texture_bloom4)
 
         self.gaussian_blur.use_program()
         self.gaussian_blur.bind_material_instance()

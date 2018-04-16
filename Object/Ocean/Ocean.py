@@ -400,7 +400,7 @@ class Ocean:
                                                                 RenderTargets.FFT_B)
 
         # initialize
-        fft_a_framebuffer.bind_framebuffer()
+        fft_a_framebuffer.run_bind_framebuffer()
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.fft_init.use_program()
@@ -420,10 +420,10 @@ class Ocean:
             self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
             if i % 2 == 0:
                 self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
-                fft_b_framebuffer.bind_framebuffer()
+                fft_b_framebuffer.run_bind_framebuffer()
             else:
                 self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
-                fft_a_framebuffer.bind_framebuffer()
+                fft_a_framebuffer.run_bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         self.fft_y.use_program()
@@ -432,10 +432,10 @@ class Ocean:
             self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
             if i % 2 == 0:
                 self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
-                fft_b_framebuffer.bind_framebuffer()
+                fft_b_framebuffer.run_bind_framebuffer()
             else:
                 self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
-                fft_a_framebuffer.bind_framebuffer()
+                fft_a_framebuffer.run_bind_framebuffer()
             self.quad_geometry.draw_elements()
 
         RenderTargets.FFT_A.generate_mipmap()

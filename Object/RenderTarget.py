@@ -24,6 +24,7 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
+    HDR_HIGHLIGHT = None
     LIGHT_PROBE_ATMOSPHERE = None
     TAA_RESOLVE = None
     DIFFUSE = None
@@ -220,6 +221,19 @@ class RenderTargetManager(Singleton):
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.HDR_HIGHLIGHT = self.create_rendertarget(
+            "HDR_HIGHLIGHT",
+            texture_type=Texture2D,
+            width=halfsize_x,
+            height=halfsize_y,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR_MIPMAP_NEAREST,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
             wrap=GL_CLAMP

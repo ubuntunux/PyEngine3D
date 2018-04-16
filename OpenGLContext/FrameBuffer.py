@@ -27,10 +27,11 @@ class FrameBuffer:
         self.attach_count = 0
         self.attachments = [0, ] * self.max_draw_buffers
         self.depth_texture = None
-        self.x = 0
-        self.y = 0
         self.width = 0
         self.height = 0
+        self.viewport_width = 0
+        self.viewport_height = 0
+        self.viewport_scale = 1.0
         self.commands = []
         self.target_face = GL_TEXTURE_CUBE_MAP_POSITIVE_X  # cubemap face
         self.target_layer = 0  # 3d texture layer
@@ -40,18 +41,16 @@ class FrameBuffer:
         self.set_color_textures()
         self.set_depth_texture(None)
 
+    def get_error(self, error_code):
+        for error in self.errors:
+            if error == error_code:
+                return str(error)
+
     def delete(self):
         logger.info("Delete %s" % GetClassName(self))
         self.set_color_textures()
         self.set_depth_texture(None)
         glDeleteFramebuffers(1, [self.buffer, ])
-
-    def set_viewport(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        glViewport(x, y, width, height)
 
     def set_color_textures(self, *textures):
         texture_count = len(textures)
@@ -79,6 +78,14 @@ class FrameBuffer:
             texture.set_attachment(True)
         self.depth_texture = texture
 
+    def set_viewport(self, x, y, width, height, scale):
+        self.width = width
+        self.height = height
+        self.viewport_width = int(width * scale)
+        self.viewport_height = int(height * scale)
+        self.viewport_scale = scale
+        glViewport(x, y, self.viewport_width, self.viewport_height)
+
     def func_bind_framebuffer(self, attachment, target, texture_buffer, offset=0):
         if GL_RENDERBUFFER == target:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, texture_buffer)
@@ -91,64 +98,6 @@ class FrameBuffer:
                                    self.target_layer + offset)
         elif GL_TEXTURE_CUBE_MAP == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
-
-    def bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
-        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
-
-        self.target_face = target_face
-        self.target_layer = target_layer
-        self.target_level = target_level
-
-        # bind color textures
-        layer_offset = 0
-        last_texture = None
-        for i, color_texture in enumerate(self.color_textures):
-            if last_texture != color_texture:
-                layer_offset = 0
-                last_texture = color_texture
-            else:
-                layer_offset += 1
-
-            attachment = GL_COLOR_ATTACHMENT0 + i
-            if color_texture:
-                self.func_bind_framebuffer(attachment, color_texture.target, color_texture.buffer, layer_offset)
-                # just for single render target.
-                # glDrawBuffer(attachment)
-                # important
-                glReadBuffer(attachment)
-            else:
-                glFramebufferTexture(GL_FRAMEBUFFER, attachment, 0, 0)
-
-        if self.attach_count > 0:
-            # Specifies a list of color buffers to be drawn into
-            glDrawBuffers(self.attach_count, self.attachments)
-        else:
-            # Important - We need to explicitly tell OpenGL we're not going to render any color data.
-            glDrawBuffer(GL_NONE)
-            glReadBuffer(GL_NONE)
-
-        # bind depth texture
-        if self.depth_texture:
-            if self.depth_texture.internal_format in (GL_DEPTH_STENCIL, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8):
-                attachment = GL_DEPTH_STENCIL_ATTACHMENT
-            else:
-                attachment = GL_DEPTH_ATTACHMENT
-            self.func_bind_framebuffer(attachment, self.depth_texture.target, self.depth_texture.buffer)
-        else:
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
-
-        # set viewport
-        if self.attach_count > 0:
-            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height)
-        elif self.depth_texture:
-            # Set viewport if there isn't any color texture.
-            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height)
-
-        gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
-        if gl_error != GL_FRAMEBUFFER_COMPLETE:
-            error_message = "glCheckFramebufferStatus error %s." % self.get_error(gl_error)
-            logger.error(error_message)
-            raise BaseException(error_message)
 
     def add_command(self, *args):
         self.commands.append(partial(*args))
@@ -169,26 +118,18 @@ class FrameBuffer:
 
             attachment = GL_COLOR_ATTACHMENT0 + i
 
-            if color_texture:
+            if color_texture is not None:
                 self.add_command(
                     self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer, layer_offset)
-                # just for single render target.
-                # self.add_command(glDrawBuffer, attachment)
-                # important
-                self.add_command(glReadBuffer, attachment)
-            # else:
-            #     self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, attachment, 0, 0)
 
         if self.attach_count > 0:
-            # Specifies a list of color buffers to be drawn into
             self.add_command(glDrawBuffers, self.attach_count, self.attachments)
         else:
-            # Important - We need to explicitly tell OpenGL we're not going to render any color data.
             self.add_command(glDrawBuffer, GL_NONE)
             self.add_command(glReadBuffer, GL_NONE)
 
         # bind depth texture
-        if self.depth_texture:
+        if self.depth_texture is not None:
             if self.depth_texture.internal_format in (GL_DEPTH_STENCIL, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8):
                 attachment = GL_DEPTH_STENCIL_ATTACHMENT
             else:
@@ -203,27 +144,22 @@ class FrameBuffer:
         self.target_layer = target_layer
         self.target_level = target_level
 
+        # update viewport
+        viewport_scale = 1.0 / (2.0 ** target_level)
+        if self.attach_count > 0:
+            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height, viewport_scale)
+        elif self.depth_texture is not None:
+            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height, viewport_scale)
+
         # run command
         for cmd in self.commands:
             cmd()
-
-        # set viewport
-        if self.attach_count > 0:
-            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height)
-        elif self.depth_texture:
-            # Set viewport if there isn't any color texture.
-            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height)
 
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
             error_message = "glCheckFramebufferStatus error %s." % self.get_error(gl_error)
             logger.error(error_message)
             raise BaseException(error_message)
-
-    def get_error(self, error_code):
-        for error in self.errors:
-            if error == error_code:
-                return str(error)
 
     def unbind_framebuffer(self):
         self.set_color_textures()
@@ -233,18 +169,19 @@ class FrameBuffer:
     def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
-        glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, self.width, self.height, target, filter_type)
+        glBlitFramebuffer(0, 0, src.viewport_width, src.viewport_height,
+                          0, 0, self.viewport_width, self.viewport_height, target, filter_type)
 
     def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
-        glBlitFramebuffer(src.width, 0, 0, src.height, 0, 0, self.width, self.height, target, filter_type)
+        glBlitFramebuffer(src.viewport_width, 0, 0, src.viewport_height,
+                          0, 0, self.viewport_width, self.viewport_height, target, filter_type)
 
     def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
-        glBlitFramebuffer(0, 0, self.width, self.height,
-                          0, 0, window_width, window_height,
-                          GL_COLOR_BUFFER_BIT, filter_type)
+        glBlitFramebuffer(0, 0, self.viewport_width, self.viewport_height,
+                          0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, filter_type)
 
 
 class FrameBufferManager(Singleton):
