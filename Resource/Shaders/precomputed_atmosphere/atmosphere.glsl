@@ -173,10 +173,10 @@ void main()
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            const float march_count_min = 32.0;
-            const float march_count = mix(march_count_min * 2.0, march_count_min, abs(eye_direction.y));
-            const float light_march_count = 16.0;
-            const float march_step = cloud_height / march_count_min;
+            const float march_count = 32.0;
+            const float light_march_count = 8.0;
+            const float march_step = cloud_height / march_count;
+
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
 
             vec3 cloud_scale = textureSize(texture_cloud, 0);
@@ -214,7 +214,7 @@ void main()
 
                     if(cloud_height < relative_altitude || relative_altitude < 0.0)
                     {
-                        break;
+                        continue;
                     }
 
                     fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
