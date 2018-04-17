@@ -468,7 +468,6 @@ class Model:
             glDisablei(GL_BLEND, 2)
             glDisablei(GL_BLEND, 3)
 
-
         for layer in range(SCATTERING_TEXTURE_DEPTH):
             current_framebuffer.run_bind_framebuffer(target_layer=layer)
             compute_single_scattering_mi.bind_uniform_data("layer", layer)
@@ -510,12 +509,12 @@ class Model:
             compute_indirect_irradiance_mi.use_program()
             compute_indirect_irradiance_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
             compute_indirect_irradiance_mi.bind_uniform_data('scattering_order', scattering_order - 1)
-            # compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
-            #                                                  self.delta_rayleigh_scattering_texture)
-            # compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
-            #                                                  self.delta_mie_scattering_texture)
-            # compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
-            #                                                  self.delta_multiple_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
+                                                             self.delta_rayleigh_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
+                                                             self.delta_mie_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
+                                                             self.delta_multiple_scattering_texture)
             self.quad.draw_elements()
 
             # compute_multiple_scattering
