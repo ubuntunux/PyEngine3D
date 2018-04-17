@@ -176,8 +176,7 @@ class UniformTextureBase(UniformVariable):
     def bind_uniform(self, texture, num=1, transpose=False):
         if texture is not None:
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
-            # glEnable(GL_TEXTURE_CUBE_MAP)
-            texture.bind_texture()  # glBindTexture(texture.target, texture.texture_bind
+            texture.bind_texture()
             glUniform1i(self.location, self.textureIndex)
         elif self.show_message:
             self.show_message = False

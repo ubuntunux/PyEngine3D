@@ -125,8 +125,8 @@ class Atmosphere:
         self.noise_texture = resource_manager.getTexture('precomputed_atmosphere.noise_3d')
 
         # USE PRECOMPUTED TEXTURE
-        use_precomputed_texture = False
-        if not use_precomputed_texture:
+        use_precomputed_texture = True
+        if use_precomputed_texture:
             if self.use_luminance:
                 self.kSky[...] = kSkyRadianceToLuminance
                 self.kSun[...] = kSunRadianceToLuminance

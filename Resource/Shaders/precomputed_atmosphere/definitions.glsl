@@ -8,9 +8,13 @@ uniform float exposure;
 uniform bool render_sun;
 
 uniform sampler2D transmittance_texture;
+uniform sampler2D irradiance_texture;
 uniform sampler3D scattering_texture;
 uniform sampler3D single_mie_scattering_texture;
-uniform sampler2D irradiance_texture;
+uniform sampler3D single_rayleigh_scattering_texture;
+uniform sampler3D scattering_density_texture;
+uniform sampler3D multiple_scattering_texture;
+
 
 uniform vec3 SKY_RADIANCE_TO_LUMINANCE;
 uniform vec3 SUN_RADIANCE_TO_LUMINANCE;

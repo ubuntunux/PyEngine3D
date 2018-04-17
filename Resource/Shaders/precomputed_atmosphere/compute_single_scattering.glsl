@@ -1,6 +1,5 @@
 #include "precomputed_atmosphere/compute_atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/precompute_vs.glsl"
-// #include "precomputed_atmosphere/precompute_gs.glsl"
 
 
 #ifdef GL_FRAGMENT_SHADER
@@ -8,9 +7,10 @@ layout(location = 0) out vec3 delta_rayleigh;
 layout(location = 1) out vec3 delta_mie;
 layout(location = 2) out vec4 scattering;
 layout(location = 3) out vec3 single_mie_scattering;
+
 uniform mat3 luminance_from_radiance;
-uniform sampler2D transmittance_texture;
 uniform int layer;
+
 void main()
 {
     ComputeSingleScatteringTexture(

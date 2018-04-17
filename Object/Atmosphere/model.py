@@ -345,13 +345,12 @@ class Model:
 
     def Init(self, num_scattering_orders=4):
         resource_manager = CoreManager.instance().resource_manager
-        framebuffer = FrameBuffer()
+        framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
 
         if not self.precompute_illuminance:
             lambdas = [kLambdaR, kLambdaG, kLambdaB]
             luminance_from_radiance = Matrix3()
-            self.Precompute(framebuffer,
-                            lambdas,
+            self.Precompute(lambdas,
                             luminance_from_radiance,
                             False,
                             num_scattering_orders)
@@ -378,17 +377,13 @@ class Model:
                 luminance_from_radiance[1] = [coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1)]
                 luminance_from_radiance[2] = [coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)]
 
-                self.Precompute(framebuffer,
-                                lambdas,
+                self.Precompute(lambdas,
                                 luminance_from_radiance,
                                 0 < i,
                                 num_scattering_orders)
 
         # Note : recompute compute_transmittance
-        framebuffer.set_color_textures(self.transmittance_texture)
-        framebuffer.set_depth_texture(None)
-        framebuffer.bind_framebuffer()
-        glClear(GL_COLOR_BUFFER_BIT)
+        framebuffer_manager.bind_framebuffer(self.transmittance_texture)
 
         recompute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.recompute_transmittance',
@@ -397,15 +392,14 @@ class Model:
         self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
-        framebuffer.delete()
-
     def Precompute(self,
-                   framebuffer,
                    lambdas,
                    luminance_from_radiance,
                    blend,
                    num_scattering_orders):
+
         resource_manager = CoreManager.instance().resource_manager
+        framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
         shaderLoader = resource_manager.shaderLoader
 
         shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
@@ -414,16 +408,19 @@ class Model:
         shaderLoader.save_resource(shader_name)
         shaderLoader.load_resource(shader_name)
 
-        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
-        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
+        if blend:
+            glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD)
+            glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE)
+        else:
+            glDisable(GL_BLEND)
 
         self.quad.bind_vertex_buffer()
 
         # compute_transmittance
-        framebuffer.set_color_textures(self.transmittance_texture)
-        framebuffer.set_depth_texture(None)
-        framebuffer.bind_framebuffer()
-        glClear(GL_COLOR_BUFFER_BIT)
+        framebuffer_manager.bind_framebuffer(self.transmittance_texture)
+
+        if blend:
+            glDisablei(GL_BLEND, 0)
 
         compute_transmittance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_transmittance',
@@ -432,38 +429,29 @@ class Model:
         self.quad.draw_elements()
 
         # compute_direct_irradiance
-        framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
-        framebuffer.set_depth_texture(None)
-        framebuffer.bind_framebuffer()
-        glClear(GL_COLOR_BUFFER_BIT)
+        framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture, self.irradiance_texture)
+
+        if blend:
+            glDisablei(GL_BLEND, 0)
+            glEnablei(GL_BLEND, 1)
 
         compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_direct_irradiance',
             macros=self.material_instance_macros)
         compute_direct_irradiance_mi.use_program()
         compute_direct_irradiance_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
-        if blend:
-            glEnablei(GL_BLEND, 1)
         self.quad.draw_elements()
-        glDisablei(GL_BLEND, 0)
-        glDisablei(GL_BLEND, 1)
 
         # compute_single_scattering
         if self.optional_single_mie_scattering_texture is None:
-            framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
-                                           self.delta_mie_scattering_texture,
-                                           self.scattering_texture)
-            framebuffer.set_depth_texture(None)
-            framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
+            current_framebuffer = framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                                       self.delta_mie_scattering_texture,
+                                                                       self.scattering_texture)
         else:
-            framebuffer.set_color_textures(self.delta_rayleigh_scattering_texture,
-                                           self.delta_mie_scattering_texture,
-                                           self.scattering_texture,
-                                           self.optional_single_mie_scattering_texture)
-            framebuffer.set_depth_texture(None)
-            framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
+            current_framebuffer = framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                                       self.delta_mie_scattering_texture,
+                                                                       self.scattering_texture,
+                                                                       self.optional_single_mie_scattering_texture)
 
         compute_single_scattering_mi = resource_manager.getMaterialInstance(
             'precomputed_atmosphere.compute_single_scattering',
@@ -472,24 +460,22 @@ class Model:
         compute_single_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
         compute_single_scattering_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
 
-        for layer in range(SCATTERING_TEXTURE_DEPTH):
-            framebuffer.bind_framebuffer(target_layer=layer)
-            compute_single_scattering_mi.bind_uniform_data("layer", layer)
-            if blend:
-                glEnablei(GL_BLEND, 2)
-                glEnablei(GL_BLEND, 3)
-            self.quad.draw_elements()
+        if blend:
             glDisablei(GL_BLEND, 0)
             glDisablei(GL_BLEND, 1)
-            glDisablei(GL_BLEND, 2)
-            glDisablei(GL_BLEND, 3)
+            glEnablei(GL_BLEND, 2)
+            glEnablei(GL_BLEND, 3)
 
-        for scattering_order in range(2, num_scattering_orders+1):
+        for layer in range(SCATTERING_TEXTURE_DEPTH):
+            current_framebuffer.run_bind_framebuffer(target_layer=layer)
+            compute_single_scattering_mi.bind_uniform_data("layer", layer)
+            self.quad.draw_elements()
+
+        for scattering_order in range(2, num_scattering_orders + 1):
             # compute_scattering_density
-            framebuffer.set_color_textures(self.delta_scattering_density_texture)
-            framebuffer.set_depth_texture(None)
-            framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
+            framebuffer = framebuffer_manager.get_framebuffer(self.delta_scattering_density_texture)
+            if blend:
+                glDisablei(GL_BLEND, 0)
 
             compute_scattering_density_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_scattering_density',
@@ -507,39 +493,36 @@ class Model:
             compute_scattering_density_mi.bind_uniform_data('scattering_order', scattering_order)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
-                framebuffer.bind_framebuffer(target_layer=layer)
+                framebuffer.run_bind_framebuffer(target_layer=layer)
                 compute_scattering_density_mi.bind_uniform_data('layer', layer)
                 self.quad.draw_elements()
 
             # compute_indirect_irradiance
-            framebuffer.set_color_textures(self.delta_irradiance_texture, self.irradiance_texture)
-            framebuffer.set_depth_texture(None)
-            framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
+            framebuffer_manager.bind_framebuffer(self.delta_irradiance_texture, self.irradiance_texture)
+            if blend:
+                glDisablei(GL_BLEND, 0)
+                glEnablei(GL_BLEND, 1)
 
             compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_indirect_irradiance',
                 macros=self.material_instance_macros)
             compute_indirect_irradiance_mi.use_program()
             compute_indirect_irradiance_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
-            compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
-                                                             self.delta_rayleigh_scattering_texture)
-            compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
-                                                             self.delta_mie_scattering_texture)
-            compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
-                                                             self.delta_multiple_scattering_texture)
             compute_indirect_irradiance_mi.bind_uniform_data('scattering_order', scattering_order - 1)
-            if blend:
-                glEnablei(GL_BLEND, 1)
+            # compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
+            #                                                  self.delta_rayleigh_scattering_texture)
+            # compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
+            #                                                  self.delta_mie_scattering_texture)
+            # compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
+            #                                                  self.delta_multiple_scattering_texture)
             self.quad.draw_elements()
-            glDisablei(GL_BLEND, 0)
-            glDisablei(GL_BLEND, 1)
 
             # compute_multiple_scattering
-            framebuffer.set_color_textures(self.delta_multiple_scattering_texture, self.scattering_texture)
-            framebuffer.set_depth_texture(None)
-            framebuffer.bind_framebuffer()
-            glClear(GL_COLOR_BUFFER_BIT)
+            framebuffer = framebuffer_manager.get_framebuffer(self.delta_multiple_scattering_texture,
+                                                              self.scattering_texture)
+            if blend:
+                glDisablei(GL_BLEND, 0)
+                glEnablei(GL_BLEND, 1)
 
             compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
                 'precomputed_atmosphere.compute_multiple_scattering',
@@ -551,10 +534,7 @@ class Model:
                                                              self.delta_scattering_density_texture)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
-                framebuffer.bind_framebuffer(target_layer=layer)
+                framebuffer.run_bind_framebuffer(target_layer=layer)
                 compute_multiple_scattering_mi.bind_uniform_data('layer', layer)
-                if blend:
-                    glEnablei(GL_BLEND, 1)
                 self.quad.draw_elements()
-                glDisablei(GL_BLEND, 0)
-                glDisablei(GL_BLEND, 1)
+
