@@ -48,6 +48,7 @@ class PostProcess:
         self.is_render_bloom = True
         self.bloom = None
         self.bloom_highlight = None
+        self.bloom_downsampling = None
         self.bloom_intensity = 1.0
         self.bloom_threshold_min = 0.75
         self.bloom_threshold_max = 10.0
@@ -114,6 +115,7 @@ class PostProcess:
 
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
+        self.bloom_downsampling = self.resource_manager.getMaterialInstance("bloom_downsampling")
 
         self.onepass_bloom = self.resource_manager.getMaterialInstance("examples.onepass_bloom")
         self.onepass_bloom_composite = self.resource_manager.getMaterialInstance("examples.onepass_bloom_composite")
@@ -296,18 +298,6 @@ class PostProcess:
         self.quad_geometry.draw_elements()
 
     def render_bloom(self, texture_target):
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_HIGHLIGHT)
-        glClear(GL_COLOR_BUFFER_BIT)
-
-        self.bloom_highlight.use_program()
-        self.bloom_highlight.bind_material_instance()
-        self.bloom_highlight.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
-        self.bloom_highlight.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
-        self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
-        self.quad_geometry.draw_elements()
-
-        RenderTargets.HDR_HIGHLIGHT.generate_mipmap()
-
         texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
         texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
         texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 8.0)
@@ -319,21 +309,33 @@ class PostProcess:
         texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 16.0)
         texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_target, 1.0 / 32.0)
 
-        bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
-        temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
+        self.framebuffer_manager.bind_framebuffer(texture_bloom0)
+        glClear(GL_COLOR_BUFFER_BIT)
 
-        def copy_bloom(src, level, dst):
-            src_framebuffer = self.framebuffer_manager.bind_framebuffer(src, target_level=level)
+        self.bloom_highlight.use_program()
+        self.bloom_highlight.bind_material_instance()
+        self.bloom_highlight.bind_uniform_data('bloom_threshold_min', self.bloom_threshold_min)
+        self.bloom_highlight.bind_uniform_data('bloom_threshold_max', self.bloom_threshold_max)
+        self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
+        self.quad_geometry.draw_elements()
+
+        bloom_targets = \
+            [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
+        temp_bloom_rendertargets = \
+            [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
+
+        def downsampling(src, dst):
             self.framebuffer_manager.bind_framebuffer(dst)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            self.framebuffer_manager.copy_framebuffer(src_framebuffer)
+            self.bloom_downsampling.use_program()
+            self.bloom_downsampling.bind_uniform_data("texture_source", src)
+            self.quad_geometry.draw_elements()
 
-        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 0, texture_bloom0)
-        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 1, texture_bloom1)
-        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 2, texture_bloom2)
-        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 3, texture_bloom3)
-        copy_bloom(RenderTargets.HDR_HIGHLIGHT, 4, texture_bloom4)
+        downsampling(texture_bloom0, texture_bloom1)
+        downsampling(texture_bloom1, texture_bloom2)
+        downsampling(texture_bloom2, texture_bloom3)
+        downsampling(texture_bloom3, texture_bloom4)
 
         self.gaussian_blur.use_program()
         self.gaussian_blur.bind_material_instance()
@@ -341,19 +343,17 @@ class PostProcess:
             bloom_target = bloom_targets[i]
             temp_bloom_target = temp_bloom_rendertargets[i]
 
-            self.framebuffer_manager.bind_framebuffer(temp_bloom_target)
-            glClear(GL_COLOR_BUFFER_BIT)
+            loop = 2
+            for j in range(loop):
+                self.framebuffer_manager.bind_framebuffer(temp_bloom_target)
+                self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
+                self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
+                self.quad_geometry.draw_elements()
 
-            self.gaussian_blur.bind_uniform_data("blur_scale", (self.bloom_scale, 0.0))
-            self.gaussian_blur.bind_uniform_data("texture_diffuse", bloom_target)
-            self.quad_geometry.draw_elements()
-
-            self.framebuffer_manager.bind_framebuffer(bloom_target)
-            glClear(GL_COLOR_BUFFER_BIT)
-
-            self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
-            self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
-            self.quad_geometry.draw_elements()
+                self.framebuffer_manager.bind_framebuffer(bloom_target)
+                self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, self.bloom_scale))
+                self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
+                self.quad_geometry.draw_elements()
 
         # set additive
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
