@@ -109,9 +109,9 @@ class Model:
                  ground_albedo,
                  max_sun_zenith_angle,
                  length_unit_in_meters,
-                 use_luminance,
                  num_precomputed_wavelengths,
-                 combine_scattering_textures):
+                 precompute_illuminance,
+                 use_combined_textures):
 
         self.wavelengths = wavelengths
         self.solar_irradiance = solar_irradiance
@@ -130,39 +130,24 @@ class Model:
         self.max_sun_zenith_angle = max_sun_zenith_angle
         self.length_unit_in_meters = length_unit_in_meters
         self.num_precomputed_wavelengths = num_precomputed_wavelengths
-        self.combine_scattering_textures = combine_scattering_textures
-        self.use_luminance = use_luminance
-
-        self.precompute_illuminance = num_precomputed_wavelengths > 3
-
-        self.kSky = Float3(1.0, 1.0, 1.0)
-        self.kSun = Float3(1.0, 1.0, 1.0)
-
-        if use_luminance:
-            if self.precompute_illuminance:
-                self.kSky[...] = [MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY, MAX_LUMINOUS_EFFICACY]
-            else:
-                self.kSky[...] = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, -3)
-            self.kSun[...] = ComputeSpectralRadianceToLuminanceFactors(self.wavelengths, self.solar_irradiance, 0)
+        self.precompute_illuminance = precompute_illuminance
+        self.use_combined_textures = use_combined_textures
 
         self.material_instance_macros = {
-            'COMBINED_SCATTERING_TEXTURES': 1 if combine_scattering_textures else 0
+            'COMBINED_SCATTERING_TEXTURES': 1 if use_combined_textures else 0
         }
 
         # Atmosphere shader code
         resource_manager = CoreManager.instance().resource_manager
-        shaderLoader = resource_manager.shaderLoader
+        shaderLoader = resource_manager.shader_loader
         shader_name = 'precomputed_atmosphere.atmosphere_predefine'
         recompute_atmosphere_predefine = resource_manager.getShader(shader_name)
         recompute_atmosphere_predefine.shader_code = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
         shaderLoader.save_resource(shader_name)
         shaderLoader.load_resource(shader_name)
 
-        # create render targets
-        rendertarget_manager = CoreManager.instance().rendertarget_manager
-
-        self.transmittance_texture = rendertarget_manager.create_rendertarget(
-            "transmittance_texture",
+        self.transmittance_texture = CreateTexture(
+            name="precomputed_atmosphere.transmittance",
             texture_type=Texture2D,
             width=TRANSMITTANCE_TEXTURE_WIDTH,
             height=TRANSMITTANCE_TEXTURE_HEIGHT,
@@ -174,8 +159,8 @@ class Model:
             wrap=GL_CLAMP_TO_EDGE
         )
 
-        self.scattering_texture = rendertarget_manager.create_rendertarget(
-            "scattering_texture",
+        self.scattering_texture = CreateTexture(
+            name="precomputed_atmosphere.scattering",
             texture_type=Texture3D,
             width=SCATTERING_TEXTURE_WIDTH,
             height=SCATTERING_TEXTURE_HEIGHT,
@@ -188,10 +173,23 @@ class Model:
             wrap=GL_CLAMP_TO_EDGE
         )
 
+        self.irradiance_texture = CreateTexture(
+            name="precomputed_atmosphere.irradiance",
+            texture_type=Texture2D,
+            width=IRRADIANCE_TEXTURE_WIDTH,
+            height=IRRADIANCE_TEXTURE_HEIGHT,
+            internal_format=GL_RGBA32F,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=GL_FLOAT,
+            wrap=GL_CLAMP
+        )
+
         self.optional_single_mie_scattering_texture = None
-        if not self.combine_scattering_textures:
-            self.optional_single_mie_scattering_texture = rendertarget_manager.create_rendertarget(
-                "optional_single_mie_scattering_texture",
+        if not self.use_combined_textures:
+            self.optional_single_mie_scattering_texture = CreateTexture(
+                name="precomputed_atmosphere.optional_single_mie_scattering_texture",
                 texture_type=Texture3D,
                 width=SCATTERING_TEXTURE_WIDTH,
                 height=SCATTERING_TEXTURE_HEIGHT,
@@ -204,8 +202,8 @@ class Model:
                 wrap=GL_CLAMP
             )
 
-        self.irradiance_texture = rendertarget_manager.create_rendertarget(
-            "irradiance_texture",
+        self.delta_irradiance_texture = CreateTexture(
+            name="precomputed_atmosphere.delta_irradiance_texture",
             texture_type=Texture2D,
             width=IRRADIANCE_TEXTURE_WIDTH,
             height=IRRADIANCE_TEXTURE_HEIGHT,
@@ -217,21 +215,8 @@ class Model:
             wrap=GL_CLAMP
         )
 
-        self.delta_irradiance_texture = rendertarget_manager.create_rendertarget(
-            "delta_irradiance_texture",
-            texture_type=Texture2D,
-            width=IRRADIANCE_TEXTURE_WIDTH,
-            height=IRRADIANCE_TEXTURE_HEIGHT,
-            internal_format=GL_RGBA32F,
-            texture_format=GL_RGBA,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
-            wrap=GL_CLAMP
-        )
-
-        self.delta_rayleigh_scattering_texture = rendertarget_manager.create_rendertarget(
-            "delta_rayleigh_scattering_texture",
+        self.delta_rayleigh_scattering_texture = CreateTexture(
+            name="precomputed_atmosphere.delta_rayleigh_scattering_texture",
             texture_type=Texture3D,
             width=SCATTERING_TEXTURE_WIDTH,
             height=SCATTERING_TEXTURE_HEIGHT,
@@ -244,8 +229,8 @@ class Model:
             wrap=GL_CLAMP
         )
 
-        self.delta_mie_scattering_texture = rendertarget_manager.create_rendertarget(
-            "delta_mie_scattering_texture",
+        self.delta_mie_scattering_texture = CreateTexture(
+            name="precomputed_atmosphere.delta_mie_scattering_texture",
             texture_type=Texture3D,
             width=SCATTERING_TEXTURE_WIDTH,
             height=SCATTERING_TEXTURE_HEIGHT,
@@ -258,8 +243,8 @@ class Model:
             wrap=GL_CLAMP
         )
 
-        self.delta_scattering_density_texture = rendertarget_manager.create_rendertarget(
-            "delta_scattering_density_texture",
+        self.delta_scattering_density_texture = CreateTexture(
+            name="precomputed_atmosphere.delta_scattering_density_texture",
             texture_type=Texture3D,
             width=SCATTERING_TEXTURE_WIDTH,
             height=SCATTERING_TEXTURE_HEIGHT,
@@ -343,7 +328,7 @@ class Model:
                   ""]
         return "\n".join(header)
 
-    def Init(self, num_scattering_orders=4):
+    def generate(self, num_scattering_orders=4):
         resource_manager = CoreManager.instance().resource_manager
         framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
 
@@ -392,6 +377,24 @@ class Model:
         self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
+        # save textures
+        def save_texture(texture):
+            resource = resource_manager.texture_loader.getResource(texture.name)
+            if resource is None:
+                resource = resource_manager.texture_loader.create_resource(texture.name, texture)
+                resource_manager.texture_loader.save_resource(resource.name)
+            else:
+                old_texture = resource.get_data()
+                old_texture.delete()
+                resource.set_data(texture)
+
+        save_texture(self.transmittance_texture)
+        save_texture(self.scattering_texture)
+        save_texture(self.irradiance_texture)
+
+        if not self.use_combined_textures:
+            save_texture(self.optional_single_mie_scattering_texture)
+
     def Precompute(self,
                    lambdas,
                    luminance_from_radiance,
@@ -400,7 +403,7 @@ class Model:
 
         resource_manager = CoreManager.instance().resource_manager
         framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
-        shaderLoader = resource_manager.shaderLoader
+        shaderLoader = resource_manager.shader_loader
 
         shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
         compute_atmosphere_predefine = resource_manager.getShader(shader_name)

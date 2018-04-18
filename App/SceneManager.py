@@ -19,7 +19,7 @@ class SceneManager(Singleton):
     def __init__(self):
         self.core_manager = None
         self.resource_manager = None
-        self.sceneLoader = None
+        self.scene_loader = None
         self.renderer = None
         self.__current_scene_name = ""
 
@@ -50,7 +50,7 @@ class SceneManager(Singleton):
         logger.info("initialize " + GetClassName(self))
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
-        self.sceneLoader = self.resource_manager.sceneLoader
+        self.scene_loader = self.resource_manager.scene_loader
         self.renderer = core_manager.renderer
 
         # new scene
@@ -81,9 +81,9 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
 
         # delete empty scene
-        # resource = self.resource_manager.sceneLoader.getResource(self.__current_scene_name)
+        # resource = self.resource_manager.scene_loader.getResource(self.__current_scene_name)
         # if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
-        #     self.resource_manager.sceneLoader.delete_resource(self.__current_scene_name)
+        #     self.resource_manager.scene_loader.delete_resource(self.__current_scene_name)
 
     def post_open_scene(self):
         self.renderer.resizeScene(clear_rendertarget=True)
@@ -99,12 +99,12 @@ class SceneManager(Singleton):
         self.atmosphere = self.addAtmosphere()
         self.ocean = self.addOcean()
 
-        self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
+        self.set_current_scene_name(self.resource_manager.scene_loader.get_new_resource_name("new_scene"))
 
         logger.info("New scene : %s" % self.__current_scene_name)
 
         scene_data = self.get_save_data()
-        self.resource_manager.sceneLoader.create_resource(self.__current_scene_name, scene_data)
+        self.resource_manager.scene_loader.create_resource(self.__current_scene_name, scene_data)
 
         self.post_open_scene()
 
@@ -148,8 +148,8 @@ class SceneManager(Singleton):
 
     def save_scene(self):
         if self.__current_scene_name == "":
-            self.set_current_scene_name(self.resource_manager.sceneLoader.get_new_resource_name("new_scene"))
-        self.resource_manager.sceneLoader.save_resource(self.__current_scene_name)
+            self.set_current_scene_name(self.resource_manager.scene_loader.get_new_resource_name("new_scene"))
+        self.resource_manager.scene_loader.save_resource(self.__current_scene_name)
 
     def get_save_data(self):
         scene_data = dict(

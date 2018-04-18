@@ -158,9 +158,6 @@ void main()
             GetSceneRadiance(
                 ATMOSPHERE, hit_dist, -eye_direction, scene_shadow_length,
                 scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
-            scene_sun_irradiance = scene_sun_irradiance * exposure;
-            scene_sky_irradiance *= exposure;
-            scene_in_scatter *= exposure;
         }
 
         // apply altitude of camera
@@ -246,7 +243,7 @@ void main()
         cloud.xyz = cloud.xyz * cloud_absorption * 0.65 + scene_in_scatter;
     }
 
-    color.xyz = mix(radiance * exposure, cloud.xyz, cloud.w);
+    color.xyz = mix(radiance, cloud.xyz, cloud.w);
     color.w = 1.0;
     color = max(color, 0.0);
 }

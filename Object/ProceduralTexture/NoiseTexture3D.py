@@ -40,10 +40,10 @@ class NoiseTexture3D:
             wrap=GL_REPEAT,
         )
 
-        resource = resource_manager.textureLoader.getResource(self.texture_name)
+        resource = resource_manager.texture_loader.getResource(self.texture_name)
         if resource is None:
-            resource = resource_manager.textureLoader.create_resource(self.texture_name, texture)
-            resource_manager.textureLoader.save_resource(resource.name)
+            resource = resource_manager.texture_loader.create_resource(self.texture_name, texture)
+            resource_manager.texture_loader.save_resource(resource.name)
         else:
             old_texture = resource.get_data()
             old_texture.delete()

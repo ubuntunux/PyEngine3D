@@ -240,9 +240,7 @@ void main()
         GetSceneRadiance(
             ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter) * exposure;
-        scene_sky_irradiance *= exposure;
-        scene_in_scatter *= exposure;
+        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter);
     }
 
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, vs_output.world_pos.xyz, texture_shadow) );
@@ -258,7 +256,7 @@ void main()
     const float foam_sharpen = 1.0;
     vec3 foam = texture(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
     float lum = get_luminance(foam);
-    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak * 10.0;
+    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak;
 
     // diffuse
     vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;

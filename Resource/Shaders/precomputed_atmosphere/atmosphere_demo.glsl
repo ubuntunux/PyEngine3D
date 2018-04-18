@@ -144,7 +144,7 @@ void main()
     radiance = mix(scene_radiance, radiance, scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0);
     radiance = mix(radiance, sphere_radiance, sphere_alpha);
 
-    color.xyz = radiance * exposure;
+    color.xyz = radiance;
     color.w = scene_linear_depth < NEAR_FAR.y ? 0.0 : 1.0;
     color = max(color, 0.0);
 }

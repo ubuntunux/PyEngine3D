@@ -10,9 +10,6 @@ kSunAngularRadius = 0.00935 / 2.0
 kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius
 kLengthUnitInMeters = 1000.0
 
-kSkyRadianceToLuminance = [114974.916437, 71305.954816, 65310.548555]
-kSunRadianceToLuminance = [98242.786222, 69954.398112, 66475.012354]
-
 # Values from "Reference Solar Spectral Irradiance: ASTM G-173", ETR column
 # http://rredc.nrel.gov/solar/spectra/am1.5/ASTMG173/ASTMG173.html
 # summed and averaged in each bin (e.g. the value for 360nm is the average

@@ -4,7 +4,7 @@
 
 uniform vec3 earth_center;
 uniform vec2 sun_size;
-uniform float exposure;
+uniform float atmosphere_exposure;
 uniform bool render_sun;
 
 uniform sampler2D transmittance_texture;

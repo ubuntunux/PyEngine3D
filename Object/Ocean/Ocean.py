@@ -285,10 +285,10 @@ class Ocean:
             self.quad_geometry.draw_elements()
 
     def save_texture(self, texture):
-        resource = self.resource_manager.textureLoader.getResource(texture.name)
+        resource = self.resource_manager.texture_loader.getResource(texture.name)
         if resource is None:
-            resource = self.resource_manager.textureLoader.create_resource(texture.name, texture)
-            self.resource_manager.textureLoader.save_resource(resource.name)
+            resource = self.resource_manager.texture_loader.create_resource(texture.name, texture)
+            self.resource_manager.texture_loader.save_resource(resource.name)
         else:
             old_texture = resource.get_data()
             old_texture.delete()
