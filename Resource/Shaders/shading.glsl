@@ -192,8 +192,7 @@ vec4 surface_shading(vec4 base_color,
                     float depth)
 {
     // Atmosphere
-    vec3 scene_radiance = vec3(0.0);
-    vec3 scene_in_scatter = vec3(0.0);
+    vec3 scene_in_scatter;
     vec3 scene_sun_irradiance;
     vec3 scene_sky_irradiance;
     float scene_shadow_length;
@@ -203,7 +202,6 @@ vec4 surface_shading(vec4 base_color,
         GetSceneRadiance(
             ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-        scene_radiance = (scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter);
     }
 
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );

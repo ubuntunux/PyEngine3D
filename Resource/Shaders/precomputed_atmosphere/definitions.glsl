@@ -1105,6 +1105,7 @@ float GetSceneShadowLength(float scene_linear_depth, vec3 view_direction, sample
     return max(0.0, scene_shadow_out - scene_shadow_in) * lightshaft_fadein_hack * 2.0;
 }
 
+
 void GetSceneRadiance(
     const in AtmosphereParameters atmosphere,
     float scene_linear_depth, vec3 eye_direction, vec3 normal, sampler2D texture_shadow,
@@ -1121,7 +1122,7 @@ void GetSceneRadiance(
     scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
 
     sun_irradiance = GetSunAndSkyIrradiance(
-        atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
+            atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
 
     vec3 transmittance;
     in_scatter = GetSkyRadianceToPoint(atmosphere, relative_camera_pos - earth_center,

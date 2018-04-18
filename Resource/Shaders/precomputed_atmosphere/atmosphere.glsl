@@ -29,7 +29,7 @@ in vec2 uv;
 layout(location = 0) out vec4 color;
 
 
-void GetSceneRadiance(
+void GetCloudRadiance(
     const in AtmosphereParameters atmosphere,
     float dist, vec3 eye_direction, float scene_shadow_length,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter)
@@ -40,7 +40,7 @@ void GetSceneRadiance(
     vec3 N = normalize(relative_point - earth_center);
 
     sun_irradiance = GetSunAndSkyIrradiance(
-        atmosphere, relative_point.xyz - earth_center, N, sun_direction, sky_irradiance);
+        atmosphere, relative_point.xyz - earth_center, sun_direction, sun_direction, sky_irradiance);
 
     vec3 transmittance;
     in_scatter = GetSkyRadianceToPoint(atmosphere, relative_camera_pos - earth_center,
@@ -150,20 +150,21 @@ void main()
         }
 
         // Atmosphere
-        vec3 scene_in_scatter;
-        vec3 scene_sun_irradiance;
-        vec3 scene_sky_irradiance;
+        vec3 cloud_in_scatter;
+        vec3 cloud_sun_irradiance;
+        vec3 cloud_sky_irradiance;
         {
             float scene_shadow_length = 0.0;
-            GetSceneRadiance(
-                ATMOSPHERE, hit_dist, -eye_direction, scene_shadow_length,
-                scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
+            GetCloudRadiance(
+                ATMOSPHERE, hit_dist, eye_direction, scene_shadow_length,
+                cloud_sun_irradiance, cloud_sky_irradiance, cloud_in_scatter);
         }
 
         // apply altitude of camera
         ray_start_pos.y += CAMERA_POSITION.y;
 
-        const vec3 light_color = LIGHT_COLOR.xyz * (scene_sun_irradiance + scene_sky_irradiance);
+        const vec3 light_color =
+            LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance + cloud_in_scatter) * radiance;
 
         cloud.xyz = light_color;
         cloud.w = 0.0;
@@ -192,9 +193,9 @@ void main()
                 // fade top and bottom
                 float relative_altitude = length(ray_pos - earth_center_pos.xyz) - cloud_bottom_dist;
 
-                if(0 != i && (cloud_height < relative_altitude || relative_altitude < 0.0))
+                if(cloud_height < relative_altitude || relative_altitude < 0.0)
                 {
-                    break;
+                    continue;
                 }
 
                 float fade = saturate(relative_altitude / cloud_height);
@@ -228,6 +229,7 @@ void main()
                 }
 
                 cloud.xyz += cloud_density * light_color * light_intensity;
+
                 cloud.w = clamp(cloud.w + cloud_density * cloud_absorption, 0.0, 1.0);
 
                 if(1.0 <= cloud.w)
@@ -238,9 +240,7 @@ void main()
 
             float dist_fade = clamp(1.0 - (hit_dist - min_dist) / (far_dist - min_dist), 0.0, 1.0);
             cloud.w *= clamp(dist_fade, 0.0, 1.0);
-
         }
-        cloud.xyz = cloud.xyz * cloud_absorption * 0.65 + scene_in_scatter;
     }
 
     color.xyz = mix(radiance, cloud.xyz, cloud.w);
