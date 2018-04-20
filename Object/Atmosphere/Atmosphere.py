@@ -52,7 +52,7 @@ class Atmosphere:
 
         # cloud constants
         self.cloud_altitude = 500.0
-        self.cloud_height = 300.0
+        self.cloud_height = 500.0
         self.cloud_speed = 0.01
         self.cloud_absorption = 0.3
 

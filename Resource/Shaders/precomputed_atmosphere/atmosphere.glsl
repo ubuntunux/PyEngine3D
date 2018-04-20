@@ -163,16 +163,22 @@ void main()
         // apply altitude of camera
         ray_start_pos.y += CAMERA_POSITION.y;
 
-        const vec3 light_color =
-            LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance + cloud_in_scatter) * max(vec3(clamp(sun_direction.y, 0.0, 1.0) * 0.1), radiance);
+        vec3 earth_to_ray = normalize(ray_start_pos.xyz - earth_center_pos.xyz);
 
-        cloud.xyz = light_color;
+        vec3 light_color = LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance + cloud_in_scatter);
+
+        float altitude_ratio = saturate(CAMERA_POSITION.y / (cloud_altitude + cloud_height));
+        float atmosphere_lighting = pow(saturate(dot(earth_to_ray, sun_direction) * 0.5 + 0.5), 4.0);
+
+        light_color *= mix(radiance, vec3(atmosphere_lighting * 0.3), vec3(atmosphere_lighting));
+
+        cloud.xyz = cloud_in_scatter * (1.0 - cloud_absorption) * 0.5;
         cloud.w = 0.0;
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
-            const float march_count = 32.0;
-            const float light_march_count = 16.0;
+            const float march_count = 24.0;
+            const float light_march_count = 12.0;
             const float march_step = cloud_height / march_count;
 
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
@@ -203,7 +209,7 @@ void main()
 
                 float cloud_density = get_cloud_density(cloud_scale, noise_scale, ray_pos.xzy, speed, fade);
                 
-                if( cloud_density <= 0.01)
+                if(cloud_density <= 0.01)
                 {
                     continue;
                 }
@@ -223,13 +229,13 @@ void main()
                     fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
 
                     float light_density = get_cloud_density(cloud_scale, noise_scale, light_pos.xzy, speed, fade);
-                    
-                    if( light_density <= 0.01 )
+
+                    if(light_density <= 0.01)
                     {
                         continue;
                     }
 
-                    light_intensity = saturate(light_intensity - light_density * cloud_absorption);
+                    light_intensity *= (1.0 - light_density * cloud_absorption);
 
                     if(light_intensity <= 0.01)
                     {
