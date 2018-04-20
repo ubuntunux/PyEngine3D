@@ -210,6 +210,24 @@ class FrameBufferManager(Singleton):
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
         else:
+            if 0 <len(textures):
+                error = False
+                width = textures[0].width
+                height = textures[0].height
+                
+                for texture in textures[1:]:
+                    if texture is not None and (width != texture.width or height != texture.height):
+                        error = True
+                        break
+                
+                if depth_texture is not None and (width != depth_texture.width or height != depth_texture.height):
+                    error = True
+                    
+                if error:
+                    error_message = "Render targets must be the same size."
+                    logger.error(error_message)
+                    raise BaseException(error_message)
+                
             framebuffer = FrameBuffer()
             self.framebuffers[key] = framebuffer
             framebuffer.set_color_textures(*textures)
