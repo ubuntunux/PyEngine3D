@@ -164,7 +164,7 @@ void main()
         ray_start_pos.y += CAMERA_POSITION.y;
 
         const vec3 light_color =
-            LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance + cloud_in_scatter) * radiance;
+            LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance + cloud_in_scatter) * max(vec3(clamp(sun_direction.y, 0.0, 1.0) * 0.1), radiance);
 
         cloud.xyz = light_color;
         cloud.w = 0.0;
@@ -172,7 +172,7 @@ void main()
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
             const float march_count = 32.0;
-            const float light_march_count = 8.0;
+            const float light_march_count = 16.0;
             const float march_step = cloud_height / march_count;
 
             const vec3 speed = vec3(cloud_speed, cloud_speed, 0.0) * TIME;
@@ -202,6 +202,11 @@ void main()
                 fade = 1.0 - pow(abs(fade * 2.0 - 1.0), 3.0);
 
                 float cloud_density = get_cloud_density(cloud_scale, noise_scale, ray_pos.xzy, speed, fade);
+                
+                if( cloud_density <= 0.01)
+                {
+                    continue;
+                }
 
                 float light_intensity = 1.0;
 
@@ -218,6 +223,11 @@ void main()
                     fade = 1.0 - pow(abs(saturate(relative_altitude / cloud_height) * 2.0 - 1.0), 3.0);
 
                     float light_density = get_cloud_density(cloud_scale, noise_scale, light_pos.xzy, speed, fade);
+                    
+                    if( light_density <= 0.01 )
+                    {
+                        continue;
+                    }
 
                     light_intensity = saturate(light_intensity - light_density * cloud_absorption);
 
