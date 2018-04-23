@@ -233,32 +233,19 @@ class Renderer(Singleton):
             self.postprocess.is_render_material_instance = False
             logger.info("Current texture : %s" % self.debug_texture.name)
 
-    def renderScene(self):
-        startTime = timeModule.perf_counter()
-
-        # bind scene constants
+    def bind_uniform_blocks(self):
         camera = self.scene_manager.main_camera
         light = self.scene_manager.main_light
 
         if not camera or not light:
             return
 
-        def end_render_scene():
-            glUseProgram(0)
-            glFlush()
-
-            endTime = timeModule.perf_counter()
-            renderTime = endTime - startTime
-            presentTime = 0.0
-            return renderTime, presentTime
-
         self.uniformSceneConstants.bind_uniform_block(
             Float4(self.core_manager.currentTime,
                    self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0,
                    self.postprocess.is_render_ssr,
                    self.postprocess.is_render_ssao),
-            Float2(RenderTargets.BACKBUFFER.width,
-                   RenderTargets.BACKBUFFER.height),
+            Float2(RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height),
             self.core_manager.get_mouse_pos(),
         )
 
@@ -278,6 +265,21 @@ class Renderer(Singleton):
                                                       light.transform.front, FLOAT_ZERO,
                                                       light.lightColor,
                                                       light.shadow_view_projection)
+
+    def renderScene(self):
+        startTime = timeModule.perf_counter()
+
+        def end_render_scene():
+            glUseProgram(0)
+            glFlush()
+
+            endTime = timeModule.perf_counter()
+            renderTime = endTime - startTime
+            presentTime = 0.0
+            return renderTime, presentTime
+
+        # bind scene constants uniform blocks
+        self.bind_uniform_blocks()
 
         self.set_blend_state(False)
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
@@ -325,8 +327,9 @@ class Renderer(Singleton):
 
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(
-                    RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.SHADOWMAP,
+                                                                            not RenderOption.RENDER_LIGHT_PROBE)
             return end_render_scene()
         else:
             """ render normal scene """
@@ -355,8 +358,9 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 glDisable(GL_DEPTH_TEST)
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(
-                    RenderTargets.LINEAR_DEPTH, RenderTargets.SHADOWMAP, render_sun=not RenderOption.RENDER_LIGHT_PROBE)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.SHADOWMAP,
+                                                                            not RenderOption.RENDER_LIGHT_PROBE)
 
             # blend state
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -444,9 +448,9 @@ class Renderer(Singleton):
 
         camera.update_projection(fov=90.0, aspect=1.0)
 
-        def render_cube_face(dst_texture, target_face, pos, pitch, yaw, roll):
+        def render_cube_face(dst_texture, target_face, pos, rotation):
             camera.transform.setPos(pos)
-            camera.transform.setRot([pitch, yaw, roll])
+            camera.transform.setRot(rotation)
             camera.update(force_update=True)
 
             # render
@@ -461,28 +465,53 @@ class Renderer(Singleton):
 
             return dst_texture
 
+        target_faces = [GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+                        GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+                        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+                        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
+
         pos = light_probe.transform.getPos()
+
+        camera_rotations = [[0.0, math.pi * 1.5, 0.0],
+                            [0.0, math.pi * 0.5, 0.0],
+                            [math.pi * -0.5, math.pi * 1.0, 0.0],
+                            [math.pi * 0.5, math.pi * 1.0, 0.0],
+                            [0.0, math.pi * 1.0, 0.0],
+                            [0.0, 0.0, 0.0]]
 
         # render atmosphere scene to light_probe textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = True
         texture_cube = RenderTargets.LIGHT_PROBE_ATMOSPHERE
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        for i in range(6):
+            render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
         texture_cube.generate_mipmap()
+
+        # convolution
+        # self.postprocess.bind_quad()
+        # irradiance_environment = self.resource_manager.getMaterialInstance('irradiance_environment')
+        # irradiance_environment.use_program()
+        #
+        # temp_cube = self.rendertarget_manager.get_temporary('temp_cube', RenderTargets.LIGHT_PROBE_ATMOSPHERE)
+        # mipmap_count = math.floor(math.log2(min(temp_cube.width, temp_cube.height)))
+        #
+        # for i in range(6):
+        #     camera.transform.setPos(pos)
+        #     camera.transform.setRot(camera_rotations[i])
+        #     camera.update(force_update=True)
+        #     self.bind_uniform_blocks()
+        #     for lod in range(mipmap_count):
+        #         self.framebuffer_manager.bind_framebuffer(temp_cube, target_face=target_faces[i], target_level=lod)
+        #         irradiance_environment.bind_uniform_data("texture_source", texture_cube)
+        #         irradiance_environment.bind_uniform_data("texture_lod", float(lod))
+        #         self.postprocess.draw_elements()
 
         # render final scene to temp textures.
         RenderOption.RENDER_ONLY_ATMOSPHERE = False
         texture_cube = light_probe.texture_probe
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_X, pos, 0.0, math.pi * 1.5, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, pos, 0.0, math.pi * 0.5, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, pos, math.pi * -0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, pos, math.pi * 0.5, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, pos, 0.0, math.pi * 1.0, 0.0)
-        render_cube_face(texture_cube, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, pos, 0.0, math.pi * 0.0, 0.0)
+        for i in range(6):
+            render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
         texture_cube.generate_mipmap()
 
         # restore

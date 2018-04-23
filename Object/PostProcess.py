@@ -470,7 +470,7 @@ class PostProcess:
         self.render_texture_mi.bind_uniform_data("debug_mipmap", self.debug_mipmap)
         self.render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
         self.render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
-        self.render_texture_mi.bind_uniform_data("debug_target", source_texture.target)
+        self.render_texture_mi.bind_uniform_data("debug_target", target)
         self.render_texture_mi.bind_uniform_data("texture_source_2d",
                                                  source_texture if GL_TEXTURE_2D == target else None)
         self.render_texture_mi.bind_uniform_data("texture_source_2d_array",

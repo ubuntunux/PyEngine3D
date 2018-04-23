@@ -172,7 +172,7 @@ void main()
 
         light_color *= mix(radiance, vec3(atmosphere_lighting * 0.3), vec3(atmosphere_lighting));
 
-        cloud.xyz = cloud_in_scatter * (1.0 - cloud_absorption) * 0.5;
+        cloud.xyz = cloud_in_scatter * (1.0 - cloud_absorption);
         cloud.w = 0.0;
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
