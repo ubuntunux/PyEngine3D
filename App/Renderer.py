@@ -434,10 +434,15 @@ class Renderer(Singleton):
         old_rot = camera.transform.getRot().copy()
         old_fov = camera.fov
         old_aspect = camera.aspect
-        old_render_motion_blur = self.postprocess.is_render_motion_blur
-        old_antialiasing = self.postprocess.anti_aliasing
         old_render_font = RenderOption.RENDER_FONT
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
+
+        old_render_motion_blur = self.postprocess.is_render_motion_blur
+        old_antialiasing = self.postprocess.anti_aliasing
+        old_debug_absolute = self.postprocess.debug_absolute
+        old_debug_mipmap = self.postprocess.debug_mipmap
+        old_debug_intensity_min = self.postprocess.debug_intensity_min
+        old_debug_intensity_max = self.postprocess.debug_intensity_max
 
         # set render light probe
         RenderOption.RENDER_SKELETON_ACTOR = False
@@ -488,13 +493,26 @@ class Renderer(Singleton):
             render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
         texture_cube.generate_mipmap()
 
-        # convolution
-        # self.postprocess.bind_quad()
+        # render final scene to temp textures.
+        RenderOption.RENDER_ONLY_ATMOSPHERE = False
+        texture_cube = light_probe.texture_probe
+        for i in range(6):
+            render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
+        texture_cube.generate_mipmap()
+
+        # # convolution
+        # temp_cube = self.rendertarget_manager.get_temporary('temp_cube', texture_cube)
+        # mipmap_count = math.floor(math.log2(min(temp_cube.width, temp_cube.height)))
         # irradiance_environment = self.resource_manager.getMaterialInstance('irradiance_environment')
         # irradiance_environment.use_program()
         #
-        # temp_cube = self.rendertarget_manager.get_temporary('temp_cube', RenderTargets.LIGHT_PROBE_ATMOSPHERE)
-        # mipmap_count = math.floor(math.log2(min(temp_cube.width, temp_cube.height)))
+        # # invert x-axis... I don't know why... :(
+        # camera_rotations = [[0.0, math.pi * 0.5, 0.0],
+        #                     [0.0, math.pi * 1.5, 0.0],
+        #                     [math.pi * -0.5, math.pi * 1.0, 0.0],
+        #                     [math.pi * 0.5, math.pi * 1.0, 0.0],
+        #                     [0.0, math.pi * 1.0, 0.0],
+        #                     [0.0, 0.0, 0.0]]
         #
         # for i in range(6):
         #     camera.transform.setPos(pos)
@@ -503,16 +521,11 @@ class Renderer(Singleton):
         #     self.bind_uniform_blocks()
         #     for lod in range(mipmap_count):
         #         self.framebuffer_manager.bind_framebuffer(temp_cube, target_face=target_faces[i], target_level=lod)
-        #         irradiance_environment.bind_uniform_data("texture_source", texture_cube)
-        #         irradiance_environment.bind_uniform_data("texture_lod", float(lod))
-        #         self.postprocess.draw_elements()
-
-        # render final scene to temp textures.
-        RenderOption.RENDER_ONLY_ATMOSPHERE = False
-        texture_cube = light_probe.texture_probe
-        for i in range(6):
-            render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
-        texture_cube.generate_mipmap()
+        #         self.postprocess.debug_absolute = False
+        #         self.postprocess.debug_mipmap = float(0)
+        #         self.postprocess.debug_intensity_min = 0.0
+        #         self.postprocess.debug_intensity_max = 1.0
+        #         self.postprocess.render_texture(texture_cube)
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
@@ -520,6 +533,10 @@ class Renderer(Singleton):
         RenderOption.RENDER_FONT = old_render_font
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing
+        self.postprocess.debug_absolute = old_debug_absolute
+        self.postprocess.debug_mipmap = old_debug_mipmap
+        self.postprocess.debug_intensity_min = old_debug_intensity_min
+        self.postprocess.debug_intensity_max = old_debug_intensity_max
 
         camera.update_projection(old_fov, old_aspect)
 
