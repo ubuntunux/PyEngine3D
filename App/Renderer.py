@@ -829,12 +829,22 @@ class Renderer(Singleton):
         # Bloom
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(RenderTargets.HDR)
-            # self.postprocess.render_onepass_bloom(RenderTargets.HDR)
+
+        # Luminance
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.LUMINANCE)
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.postprocess.render_luminance(RenderTargets.HDR)
+        RenderTargets.LUMINANCE.generate_mipmap()
+
+        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.LUMINANCE_ACCUMULATE)
+        self.postprocess.render_luminance_accumulate(RenderTargets.LUMINANCE)
+        self.set_blend_state(False)
 
         # Tone Map
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         glClear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_tone_map(RenderTargets.HDR)
+        self.postprocess.render_tone_map(RenderTargets.HDR, RenderTargets.LUMINANCE_ACCUMULATE)
 
         # MSAA Test
         if AntiAliasing.MSAA == self.postprocess.anti_aliasing:

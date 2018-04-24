@@ -45,6 +45,9 @@ class PostProcess:
         self.anti_aliasing = AntiAliasing.TAA
         self.msaa_multisample_count = 4
 
+        self.luminance = None
+        self.luminance_accumulate = None
+
         self.is_render_bloom = True
         self.bloom = None
         self.bloom_highlight = None
@@ -76,6 +79,7 @@ class PostProcess:
 
         self.is_render_tonemapping = True
         self.exposure = 1.0
+        self.contrast = 1.0
         self.tonemapping = None
 
         self.linear_depth = None
@@ -112,6 +116,9 @@ class PostProcess:
 
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
+
+        self.luminance = self.resource_manager.getMaterialInstance("luminance")
+        self.luminance_accumulate = self.resource_manager.getMaterialInstance("luminance_accumulate")
 
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
@@ -174,6 +181,7 @@ class PostProcess:
 
         self.Attributes.setAttribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.setAttribute('exposure', self.exposure)
+        self.Attributes.setAttribute('contrast', self.contrast)
 
         self.Attributes.setAttribute('debug_absolute', self.debug_absolute)
         self.Attributes.setAttribute('debug_mipmap', self.debug_mipmap)
@@ -297,6 +305,18 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad_geometry.draw_elements()
 
+    def render_luminance(self, texture_source):
+        self.luminance.use_program()
+        self.luminance.bind_material_instance()
+        self.luminance.bind_uniform_data('texture_source', texture_source)
+        self.quad_geometry.draw_elements()
+
+    def render_luminance_accumulate(self, texture_luminance):
+        self.luminance_accumulate.use_program()
+        self.luminance_accumulate.bind_material_instance()
+        self.luminance_accumulate.bind_uniform_data('texture_luminance', texture_luminance)
+        self.quad_geometry.draw_elements()
+
     def render_bloom(self, texture_target):
         texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
         texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
@@ -319,10 +339,9 @@ class PostProcess:
         self.bloom_highlight.bind_uniform_data('texture_diffuse', texture_target)
         self.quad_geometry.draw_elements()
 
-        bloom_targets = \
-            [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
-        temp_bloom_rendertargets = \
-            [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp, texture_bloom3_temp, texture_bloom4_temp]
+        bloom_targets = [texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3, texture_bloom4]
+        temp_bloom_rendertargets = [texture_bloom0_temp, texture_bloom1_temp, texture_bloom2_temp,
+                                    texture_bloom3_temp, texture_bloom4_temp]
 
         def downsampling(src, dst):
             self.framebuffer_manager.bind_framebuffer(dst)
@@ -403,12 +422,14 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
-    def render_tone_map(self, texture_diffuse):
+    def render_tone_map(self, texture_diffuse, texture_luminance):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("is_render_tonemapping", self.is_render_tonemapping)
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.tonemapping.bind_uniform_data("texture_luminance", texture_luminance)
         self.tonemapping.bind_uniform_data("exposure", self.exposure)
+        self.tonemapping.bind_uniform_data("contrast", self.contrast)
         self.quad_geometry.draw_elements()
 
     def render_ssao(self, texture_size, texture_lod, texture_normal, texture_linear_depth):

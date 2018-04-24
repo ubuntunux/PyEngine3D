@@ -165,13 +165,14 @@ class UniformMatrix4(UniformVariable):
 
 class UniformTextureBase(UniformVariable):
     uniform_type = "UniformTextureBase"
+    texture_offset = 0
 
     def __init__(self, program, variable_name):
         UniformVariable.__init__(self, program, variable_name)
         self.textureIndex = 0
 
     def set_texture_index(self, textureIndex):
-        self.textureIndex = textureIndex
+        self.textureIndex = textureIndex + self.texture_offset
 
     def bind_uniform(self, texture, num=1, transpose=False):
         if texture is not None:
@@ -185,19 +186,24 @@ class UniformTextureBase(UniformVariable):
 
 class UniformTexture2D(UniformTextureBase):
     uniform_type = "sampler2D"
+    texture_offset = 0
 
 
 class UniformTexture2DArray(UniformTextureBase):
     uniform_type = "sampler2DArray"
+    texture_offset = 16
 
 
 class UniformTexture2DMultiSample(UniformTextureBase):
     uniform_type = "sampler2DMS"
+    texture_offset = 32
 
 
 class UniformTexture3D(UniformTextureBase):
     uniform_type = "sampler3D"
+    texture_offset = 48
 
 
 class UniformTextureCube(UniformTextureBase):
     uniform_type = "samplerCube"
+    texture_offset = 64

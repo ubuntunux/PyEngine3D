@@ -272,7 +272,7 @@ vec4 surface_shading(vec4 base_color,
     specular_light = mix(specular_light, specular_light * base_color.xyz, vec3(metallic));
 
     result = (diffuse_light + specular_light) * shadow_factor;
-    result += scene_in_scatter;
+    // result += scene_in_scatter;
 
     // SSAO
     if(RENDER_SSAO == 1.0f)
