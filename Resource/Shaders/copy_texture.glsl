@@ -2,7 +2,7 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
-uniform bool copy_alpha;
+uniform float target_level;
 uniform sampler2D texture_source;
 
 #ifdef GL_FRAGMENT_SHADER
@@ -11,7 +11,7 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     vec2 texcoord = vs_output.tex_coord.xy;
-    fs_output = texture(texture_source, texcoord);
+    fs_output = texture(texture_source, texcoord, target_level);
 
 }
 #endif // GL_FRAGMENT_SHADER

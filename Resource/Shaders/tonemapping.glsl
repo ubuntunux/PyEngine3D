@@ -5,7 +5,6 @@ uniform bool is_render_tonemapping;
 uniform float exposure;
 uniform float contrast;
 uniform sampler2D texture_diffuse;
-uniform sampler2D texture_luminance;
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -26,9 +25,9 @@ vec3 Uncharted2TonemapFunction(vec3 x)
      return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
-vec3 Uncharted2Tonemap(vec3 hdrColor, float luminance)
+vec3 Uncharted2Tonemap(vec3 hdrColor)
 {
-    hdrColor *= exposure / max(0.1, luminance);
+    hdrColor *= exposure;
     hdrColor = Uncharted2TonemapFunction(hdrColor * ExposureBias);
     vec3 whiteScale = 1.0f / Uncharted2TonemapFunction(vec3(W));
     return pow(hdrColor * whiteScale, vec3(1.0 / 2.2));
@@ -58,9 +57,7 @@ void main() {
 
     if(is_render_tonemapping)
     {
-        float luminance = texture(texture_luminance, vec2(0.5, 0.5)).x;
-
-        texColor = Uncharted2Tonemap(texColor, luminance);
+        texColor = Uncharted2Tonemap(texColor);
         texColor *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
     }
     else

@@ -45,9 +45,6 @@ class PostProcess:
         self.anti_aliasing = AntiAliasing.TAA
         self.msaa_multisample_count = 4
 
-        self.luminance = None
-        self.luminance_accumulate = None
-
         self.is_render_bloom = True
         self.bloom = None
         self.bloom_highlight = None
@@ -116,9 +113,6 @@ class PostProcess:
 
         self.quad = self.resource_manager.getMesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
-
-        self.luminance = self.resource_manager.getMaterialInstance("luminance")
-        self.luminance_accumulate = self.resource_manager.getMaterialInstance("luminance_accumulate")
 
         self.bloom = self.resource_manager.getMaterialInstance("bloom")
         self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
@@ -305,18 +299,6 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad_geometry.draw_elements()
 
-    def render_luminance(self, texture_source):
-        self.luminance.use_program()
-        self.luminance.bind_material_instance()
-        self.luminance.bind_uniform_data('texture_source', texture_source)
-        self.quad_geometry.draw_elements()
-
-    def render_luminance_accumulate(self, texture_luminance):
-        self.luminance_accumulate.use_program()
-        self.luminance_accumulate.bind_material_instance()
-        self.luminance_accumulate.bind_uniform_data('texture_luminance', texture_luminance)
-        self.quad_geometry.draw_elements()
-
     def render_bloom(self, texture_target):
         texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
         texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
@@ -422,12 +404,11 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
 
-    def render_tone_map(self, texture_diffuse, texture_luminance):
+    def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("is_render_tonemapping", self.is_render_tonemapping)
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.tonemapping.bind_uniform_data("texture_luminance", texture_luminance)
         self.tonemapping.bind_uniform_data("exposure", self.exposure)
         self.tonemapping.bind_uniform_data("contrast", self.contrast)
         self.quad_geometry.draw_elements()
@@ -479,8 +460,9 @@ class PostProcess:
 
         self.quad_geometry.draw_elements()
 
-    def copy_texture(self, source_texture):
+    def copy_texture(self, source_texture, target_level=0.0):
         self.copy_texture_mi.use_program()
+        self.copy_texture_mi.bind_uniform_data("target_level", target_level)
         self.copy_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad_geometry.draw_elements()
 

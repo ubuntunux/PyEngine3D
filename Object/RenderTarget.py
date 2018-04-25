@@ -24,8 +24,6 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
-    LUMINANCE = None
-    LUMINANCE_ACCUMULATE = None
     LIGHT_PROBE_ATMOSPHERE = None
     TAA_RESOLVE = None
     DIFFUSE = None
@@ -226,35 +224,6 @@ class RenderTargetManager(Singleton):
             data_type=hdr_data_type,
             wrap=GL_CLAMP
         )
-
-        RenderTargets.LUMINANCE = self.create_rendertarget(
-            "LUMINANCE",
-            texture_type=Texture2D,
-            width=halfsize_x,
-            height=halfsize_y,
-            internal_format=GL_R16F,
-            texture_format=GL_RED,
-            min_filter=GL_LINEAR_MIPMAP_LINEAR,
-            mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
-            wrap=GL_CLAMP
-        )
-
-        RenderTargets.LUMINANCE_ACCUMULATE = self.create_rendertarget(
-            "LUMINANCE_ACCUMULATE",
-            texture_type=Texture2D,
-            width=2,
-            height=2,
-            internal_format=hdr_internal_format,
-            texture_format=GL_RGBA,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            data_type=GL_FLOAT,
-            wrap=GL_CLAMP
-        )
-
-        self.core_manager.renderer.framebuffer_manager.bind_framebuffer(RenderTargets.LUMINANCE_ACCUMULATE)
-        glClear(GL_COLOR_BUFFER_BIT)
 
         RenderTargets.LIGHT_PROBE_ATMOSPHERE = self.create_rendertarget(
             "LIGHT_PROBE_ATMOSPHERE",
