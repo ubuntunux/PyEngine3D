@@ -337,6 +337,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
 
         # Scene object commands
+        self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.addLight()
+
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
         self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.actionObject(value)
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.deleteObject(value)

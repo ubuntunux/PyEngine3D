@@ -138,7 +138,10 @@ class Renderer(Singleton):
                                                   [FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
-                                                   MATRIX4_IDENTITY])
+                                                   MATRIX4_IDENTITY,
+                                                   FLOAT3_ZERO,
+                                                   FLOAT_ZERO,
+                                                   FLOAT3_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -235,9 +238,10 @@ class Renderer(Singleton):
 
     def bind_uniform_blocks(self):
         camera = self.scene_manager.main_camera
-        light = self.scene_manager.main_light
+        main_light = self.scene_manager.main_light
+        point_light = self.scene_manager.point_lights[0] if 0 < len(self.scene_manager.point_lights) else None
 
-        if not camera or not light:
+        if not camera or not main_light:
             return
 
         self.uniformSceneConstants.bind_uniform_block(
@@ -261,10 +265,15 @@ class Renderer(Singleton):
                                                      self.postprocess.jitter)
 
         # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
-        self.uniformLightConstants.bind_uniform_block(light.transform.getPos(), FLOAT_ZERO,
-                                                      light.transform.front, FLOAT_ZERO,
-                                                      light.lightColor,
-                                                      light.shadow_view_projection)
+        self.uniformLightConstants.bind_uniform_block(
+            main_light.transform.getPos(), FLOAT_ZERO,
+            main_light.transform.front, FLOAT_ZERO,
+            main_light.light_color,
+            main_light.shadow_view_projection,
+            point_light.light_color if point_light is not None else FLOAT3_ZERO,
+            Float(point_light.light_radius) if point_light is not None else FLOAT_ZERO,
+            point_light.transform.getPos() if point_light is not None else FLOAT3_ZERO
+        )
 
     def renderScene(self):
         startTime = timeModule.perf_counter()

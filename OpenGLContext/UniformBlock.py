@@ -25,7 +25,7 @@ class UniformBlock:
 
         self.buffer = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
-        glBufferData(GL_UNIFORM_BUFFER, self.blockSize, c_void_p(0), GL_DYNAMIC_DRAW)
+        glBufferData(GL_UNIFORM_BUFFER, self.blockSize, c_void_p(0), GL_STATIC_DRAW)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
     def __del__(self):

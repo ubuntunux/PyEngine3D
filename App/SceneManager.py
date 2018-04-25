@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, Light, LightProbe, PostProcess, RenderInfo
+from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess, RenderInfo
 from Object import Atmosphere, Ocean
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
@@ -34,7 +34,7 @@ class SceneManager(Singleton):
         self.ocean = None
 
         self.cameras = []
-        self.lights = []
+        self.point_lights = []
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
@@ -69,7 +69,7 @@ class SceneManager(Singleton):
         self.main_light = None
         self.main_light_probe = None
         self.cameras = []
-        self.lights = []
+        self.point_lights = []
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
@@ -94,7 +94,7 @@ class SceneManager(Singleton):
 
         # add scene objects
         self.main_camera = self.addCamera()
-        self.main_light = self.addLight()
+        self.main_light = self.addMainLight()
         self.main_light_probe = self.addLightProbe()
         self.atmosphere = self.addAtmosphere()
         self.ocean = self.addOcean()
@@ -117,12 +117,17 @@ class SceneManager(Singleton):
         camera_datas = scene_data.get('cameras', [])
         for camera_data in camera_datas:
             self.addCamera(**camera_data)
-        self.main_camera = self.get_camera(0)
+        self.main_camera = self.cameras[0] if 0 < len(self.cameras) else None
+
+        main_light_data = scene_data.get('main_light', None)
+        if main_light_data is not None:
+            self.main_light = self.addMainLight(**main_light_data)
+        else:
+            self.main_light = self.addMainLight()
 
         light_datas = scene_data.get('lights', [])
         for light_data in light_datas:
             self.addLight(**light_data)
-        self.main_light = self.get_light(0)
 
         light_probe_datas = scene_data.get('light_probes', [])
         if light_probe_datas:
@@ -130,7 +135,7 @@ class SceneManager(Singleton):
                 self.addLightProbe(**light_probe_data)
         else:
             self.addLightProbe()
-        self.main_light_probe = self.get_light_probe(0)
+        self.main_light_probe = self.light_probes[0] if 0 < len(self.light_probes) else None
 
         atmosphere_data = scene_data.get('atmosphere', {})
         self.atmosphere = self.addAtmosphere(**atmosphere_data)
@@ -154,7 +159,8 @@ class SceneManager(Singleton):
     def get_save_data(self):
         scene_data = dict(
             cameras=[camera.get_save_data() for camera in self.cameras],
-            lights=[light.get_save_data() for light in self.lights],
+            main_light=self.main_light.get_save_data() if self.main_light is not None else dict(),
+            lights=[light.get_save_data() for light in self.point_lights],
             light_probes=[light_probe.get_save_data() for light_probe in self.light_probes],
             atmosphere=self.atmosphere.get_save_data(),
             ocean=self.ocean.get_save_data(),
@@ -176,8 +182,8 @@ class SceneManager(Singleton):
     def get_object_list(self, object_type):
         if Camera == object_type:
             return self.cameras
-        elif Light == object_type:
-            return self.lights
+        elif PointLight == object_type:
+            return self.point_lights
         elif LightProbe == object_type:
             return self.light_probes
         elif StaticActor == object_type:
@@ -222,11 +228,19 @@ class SceneManager(Singleton):
         self.regist_object(camera)
         return camera
 
+    def addMainLight(self, **light_data):
+        light_data['name'] = self.generateObjectName(light_data.get('name', 'main_light'))
+        light_data['model'] = self.resource_manager.getModel('Cube')
+        logger.info("add MainLight : %s" % light_data['name'])
+        light = MainLight(**light_data)
+        self.regist_object(light)
+        return light
+
     def addLight(self, **light_data):
         light_data['name'] = self.generateObjectName(light_data.get('name', 'light'))
         light_data['model'] = self.resource_manager.getModel('Cube')
         logger.info("add Light : %s" % light_data['name'])
-        light = Light(**light_data)
+        light = PointLight(**light_data)
         self.regist_object(light)
         return light
 
@@ -274,7 +288,7 @@ class SceneManager(Singleton):
 
     def clearObjects(self):
         self.cameras = []
-        self.lights = []
+        self.point_lights = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}
@@ -305,29 +319,14 @@ class SceneManager(Singleton):
     def getObjects(self):
         return self.objectMap.values()
 
-    def get_camera(self, index):
-        return self.cameras[index] if index < len(self.cameras) else None
-
-    def get_light(self, index):
-        return self.lights[index] if index < len(self.lights) else None
-
     def get_light_probe_texture(self):
         if RenderOption.RENDER_LIGHT_PROBE:
             return RenderTargets.LIGHT_PROBE_ATMOSPHERE
         return self.main_light_probe.texture_probe
 
-    def get_light_probe(self, index):
-        return self.light_probes[index] if index < len(self.light_probes) else None
-
     def reset_light_probe(self):
         for light_probe in self.light_probes:
             light_probe.isRendered = False
-
-    def get_static_actor(self, index):
-        return self.static_actors[index] if index < len(self.static_actors) else None
-
-    def get_skeleton_actor(self, index):
-        return self.skeleton_actors[index] if index < len(self.skeleton_actors) else None
 
     def getObjectAttribute(self, objectName, objectTypeName):
         obj = self.getObject(objectName)
@@ -392,8 +391,11 @@ class SceneManager(Singleton):
         for camera in self.cameras:
             camera.update()
 
-        for light in self.lights:
-            light.update(self.main_camera)
+        if self.main_light is not None:
+            self.main_light.update(self.main_camera)
+
+        for light in self.point_lights:
+            light.update()
 
         for static_actor in self.static_actors:
             static_actor.update(dt)

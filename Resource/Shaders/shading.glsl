@@ -207,7 +207,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
-    light_color = light_color * scene_sun_irradiance;
+    light_color = light_color * scene_sun_irradiance * shadow_factor;
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
@@ -240,6 +240,25 @@ vec4 surface_shading(vec4 base_color,
     {
         diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * NdL * light_color;
         specular_light += cooktorrance_specular(fresnel, NdL, NdV, NdH, roughness) * NdL * light_color;
+
+
+        //for(int i=0; i<int(POINT_LIGHT_COUNT); ++i)
+        {
+            float point_light_radius = POINT_LIGHT_RADIUS;
+            vec3 point_light_dir = POINT_LIGHT_POS.xyz - world_position;
+            float point_light_dist = length(point_light_dir);
+            point_light_dir /= point_light_dist;
+
+            vec3 point_light_half = normalize(V + point_light_dir);
+            float point_light_attenuation = clamp(1.0 - sqrt(point_light_dist) / point_light_radius, 0.0, 1.0);
+            vec3 point_light_color = POINT_LIGHT_COLOR.xyz * point_light_attenuation;
+
+            float point_light_NdL = max(0.01, dot(N, point_light_dir));
+            float point_light_NdH = max(0.01, dot(N, point_light_half));
+
+            diffuse_light += oren_nayar(roughness, point_light_NdL, NdV, N, V, point_light_dir) / PI * point_light_NdL * point_light_color;
+            specular_light += cooktorrance_specular(fresnel, point_light_NdL, NdV, point_light_NdH, roughness) * point_light_NdL * point_light_color;
+        }
     }
 
     // Image based lighting
@@ -271,7 +290,7 @@ vec4 surface_shading(vec4 base_color,
     diffuse_light *= base_color.xyz * clamp((vec3(1.0) - fresnel) * (1.0 - metallic), 0.0, 1.0);
     specular_light = mix(specular_light, specular_light * base_color.xyz, vec3(metallic));
 
-    result = (diffuse_light + specular_light) * shadow_factor;
+    result = diffuse_light + specular_light;
     // result += scene_in_scatter;
 
     // SSAO

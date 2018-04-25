@@ -34,6 +34,9 @@ layout(std140, binding=3) uniform lightConstants
     vec4 LIGHT_DIRECTION;
     vec4 LIGHT_COLOR;
     mat4 SHADOW_MATRIX;
+    vec3 POINT_LIGHT_COLOR;
+    float POINT_LIGHT_RADIUS;
+    vec3 POINT_LIGHT_POS;
 };
 
 const int MAX_BONES_PER_VERTEX = 4;
@@ -48,3 +51,6 @@ const vec3 kSphereCenter = vec3(1.0, 1.0, -2.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
+
+
+

@@ -68,6 +68,9 @@ class COMMAND(AutoEnum):
     TRANS_RESOURCE_ATTRIBUTE = ()
     SET_RESOURCE_ATTRIBUTE = ()
 
+    # light
+    ADD_LIGHT = ()
+
     # object
     CLEAR_OBJECT_LIST = ()
     REQUEST_OBJECT_LIST = ()

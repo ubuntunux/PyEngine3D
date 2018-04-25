@@ -183,6 +183,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         btn = self.findChild(QtGui.QPushButton, "btnTest")
         btn.clicked.connect(self.test)
 
+        btn = self.findChild(QtGui.QPushButton, "btnAddLight")
+        btn.clicked.connect(self.addLight)
+
         # screen
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_SCREEN_INFO)),
                      self.setScreenInfo)
@@ -568,6 +571,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # ------------------------- #
     # Widget - Object List
     # ------------------------- #
+    def addLight(self):
+        self.appCmdQueue.put(COMMAND.ADD_LIGHT)
+
     def addObjectInfo(self, object_info):
         object_name, object_type = object_info
         item = QtGui.QTreeWidgetItem(self.objectList)

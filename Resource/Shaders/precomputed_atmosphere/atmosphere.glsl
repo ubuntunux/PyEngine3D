@@ -24,7 +24,8 @@ uniform float noise_contrast;
 uniform float noise_coverage;
 
 #ifdef GL_FRAGMENT_SHADER
-in vec3 view_ray;
+in vec3 eye_ray;
+in vec3 screen_center_ray;
 in vec2 uv;
 layout(location = 0) out vec4 color;
 
@@ -77,7 +78,9 @@ void main()
     color = vec4(0.0, 0.0, 0.0, 1.0);
     vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
-    vec3 eye_direction = normalize(view_ray);
+    vec3 eye_direction = normalize(eye_ray);
+
+    float scene_dist = scene_linear_depth / max(0.01, dot(screen_center_ray, eye_direction));
 
     // Scene
     float scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
@@ -175,7 +178,7 @@ void main()
         cloud.xyz = cloud_in_scatter * (1.0 - cloud_absorption);
         cloud.w = 0.0;
 
-        if(0.0 <= hit_dist && hit_dist < far_dist)
+        if(hit_dist < scene_dist && 0.0 <= hit_dist && hit_dist < far_dist)
         {
             const float march_count = 24.0;
             const float light_march_count = 12.0;

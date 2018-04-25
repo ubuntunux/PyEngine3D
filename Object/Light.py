@@ -6,25 +6,25 @@ from App import CoreManager
 from Object import StaticActor
 
 
-class Light(StaticActor):
+class MainLight(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
-        self.lightColor = Float4(*object_data.get('lightColor', (1.0, 1.0, 1.0, 1.0)))
+        self.light_color = Float4(*object_data.get('light_color', (1.0, 1.0, 1.0, 1.0)))
         self.shadow_view_projection = MATRIX4_IDENTITY.copy()
 
     def getAttribute(self):
         super().getAttribute()
-        self.attributes.setAttribute('lightColor', self.lightColor)
+        self.attributes.setAttribute('light_color', self.light_color)
         return self.attributes
 
     def setAttribute(self, attributeName, attributeValue, attribute_index):
         super().setAttribute(attributeName, attributeValue, attribute_index)
-        if attributeName == 'lightColor':
-            self.lightColor[:] = attributeValue[:]
+        if attributeName == 'light_color':
+            self.light_color[:] = attributeValue[:]
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)
-        save_data['lightColor'] = self.lightColor.tolist()
+        save_data['light_color'] = self.light_color.tolist()
         return save_data
 
     def update(self, current_camera):
@@ -38,3 +38,32 @@ class Light(StaticActor):
             lightPosMatrix = getTranslateMatrix(*(-current_camera.transform.getPos()))
             # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
             self.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, self.transform.inverse_matrix), projection)
+
+
+class PointLight(StaticActor):
+    def __init__(self, name, **object_data):
+        StaticActor.__init__(self, name, **object_data)
+        self.light_color = Float3(*object_data.get('light_color', (1.0, 1.0, 1.0)))
+        self.light_radius = object_data.get('light_radius', 10.0)
+
+    def getAttribute(self):
+        super().getAttribute()
+        self.attributes.setAttribute('light_color', self.light_color)
+        self.attributes.setAttribute('light_radius', self.light_radius)
+        return self.attributes
+
+    def setAttribute(self, attributeName, attributeValue, attribute_index):
+        super().setAttribute(attributeName, attributeValue, attribute_index)
+        if attributeName == 'light_color':
+            self.light_color[:] = attributeValue[:]
+        elif hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
+
+    def get_save_data(self):
+        save_data = StaticActor.get_save_data(self)
+        save_data['light_color'] = self.light_color.tolist()
+        save_data['light_radius'] = self.light_radius
+        return save_data
+
+    def update(self):
+        self.transform.updateTransform()
