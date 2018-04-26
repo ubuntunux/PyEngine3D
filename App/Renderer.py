@@ -512,29 +512,26 @@ class Renderer(Singleton):
         # # convolution
         # temp_cube = self.rendertarget_manager.get_temporary('temp_cube', texture_cube)
         # mipmap_count = math.floor(math.log2(min(temp_cube.width, temp_cube.height)))
+        #
+        # face_matrixies = [np.array([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+        #                   np.array([[0, 0, -1, 0], [0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+        #                   np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+        #                   np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+        #                   np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32),
+        #                   np.array([[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]], dtype=np.float32)]
+        #
+        # self.postprocess.bind_quad()
+        #
         # irradiance_environment = self.resource_manager.getMaterialInstance('irradiance_environment')
         # irradiance_environment.use_program()
-        #
-        # # invert x-axis... I don't know why... :(
-        # camera_rotations = [[0.0, math.pi * 0.5, 0.0],
-        #                     [0.0, math.pi * 1.5, 0.0],
-        #                     [math.pi * -0.5, math.pi * 1.0, 0.0],
-        #                     [math.pi * 0.5, math.pi * 1.0, 0.0],
-        #                     [0.0, math.pi * 1.0, 0.0],
-        #                     [0.0, 0.0, 0.0]]
+        # irradiance_environment.bind_uniform_data("texture_environment", texture_cube)
         #
         # for i in range(6):
-        #     camera.transform.setPos(pos)
-        #     camera.transform.setRot(camera_rotations[i])
-        #     camera.update(force_update=True)
-        #     self.bind_uniform_blocks()
         #     for lod in range(mipmap_count):
         #         self.framebuffer_manager.bind_framebuffer(temp_cube, target_face=target_faces[i], target_level=lod)
-        #         self.postprocess.debug_absolute = False
-        #         self.postprocess.debug_mipmap = float(0)
-        #         self.postprocess.debug_intensity_min = 0.0
-        #         self.postprocess.debug_intensity_max = 1.0
-        #         self.postprocess.render_texture(texture_cube)
+        #         glClear(GL_COLOR_BUFFER_BIT)
+        #         irradiance_environment.bind_uniform_data("face_matrix", face_matrixies[i])
+        #         self.postprocess.draw_elements()
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False

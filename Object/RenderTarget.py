@@ -232,10 +232,10 @@ class RenderTargetManager(Singleton):
             height=512,
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
-            min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            min_filter=GL_LINEAR_MIPMAP_NEAREST,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
-            wrap=GL_REPEAT
+            wrap=GL_CLAMP_TO_EDGE
         )
 
         RenderTargets.TAA_RESOLVE = self.create_rendertarget(
