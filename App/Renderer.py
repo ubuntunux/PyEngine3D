@@ -509,29 +509,33 @@ class Renderer(Singleton):
             render_cube_face(texture_cube, target_faces[i], pos, camera_rotations[i])
         texture_cube.generate_mipmap()
 
-        # # convolution
-        # temp_cube = self.rendertarget_manager.get_temporary('temp_cube', texture_cube)
-        # mipmap_count = math.floor(math.log2(min(temp_cube.width, temp_cube.height)))
-        #
-        # face_matrixies = [np.array([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
-        #                   np.array([[0, 0, -1, 0], [0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
-        #                   np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
-        #                   np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
-        #                   np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32),
-        #                   np.array([[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]], dtype=np.float32)]
-        #
-        # self.postprocess.bind_quad()
-        #
-        # irradiance_environment = self.resource_manager.getMaterialInstance('irradiance_environment')
-        # irradiance_environment.use_program()
-        # irradiance_environment.bind_uniform_data("texture_environment", texture_cube)
-        #
-        # for i in range(6):
-        #     for lod in range(mipmap_count):
-        #         self.framebuffer_manager.bind_framebuffer(temp_cube, target_face=target_faces[i], target_level=lod)
-        #         glClear(GL_COLOR_BUFFER_BIT)
-        #         irradiance_environment.bind_uniform_data("face_matrix", face_matrixies[i])
-        #         self.postprocess.draw_elements()
+        # convolution
+        temp_cube = self.rendertarget_manager.get_temporary('temp_cube', light_probe.texture_probe)
+        mipmap_count = temp_cube.get_mipmap_count()
+
+        face_matrixies = [np.array([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+                          np.array([[0, 0, -1, 0], [0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+                          np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+                          np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
+                          np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32),
+                          np.array([[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]], dtype=np.float32)]
+
+        self.postprocess.bind_quad()
+
+        convolve_environment = self.resource_manager.getMaterialInstance('convolve_environment')
+        convolve_environment.use_program()
+
+        for i in range(6):
+            for lod in range(mipmap_count):
+                self.framebuffer_manager.bind_framebuffer(temp_cube, target_face=target_faces[i], target_level=lod)
+                glClear(GL_COLOR_BUFFER_BIT)
+                convolve_environment.bind_uniform_data("texture_environment", texture_cube)
+                convolve_environment.bind_uniform_data("face_matrix", face_matrixies[i])
+                convolve_environment.bind_uniform_data("lod", float(lod))
+                convolve_environment.bind_uniform_data("mipmap_count", float(mipmap_count))
+                self.postprocess.draw_elements()
+
+        light_probe.replace_texture_probe(temp_cube)
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False

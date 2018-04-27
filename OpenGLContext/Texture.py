@@ -3,6 +3,7 @@ import gc
 from ctypes import c_void_p
 import itertools
 import array
+import math
 
 import numpy as np
 
@@ -215,6 +216,10 @@ class Texture:
             return data
         logger.error('%s failed to get image data' % self.name)
         return None
+
+    def get_mipmap_count(self):
+        factor = max(max(self.width, self.height), self.depth)
+        return math.floor(math.log2(factor)) + 1
 
     def generate_mipmap(self):
         if self.enable_mipmap:
