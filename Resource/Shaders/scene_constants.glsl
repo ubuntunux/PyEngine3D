@@ -28,15 +28,23 @@ layout(std140, binding=2) uniform viewProjection
     mat4 PREV_VIEW_PROJECTION;
 };
 
+struct POINT_LIGHT
+{
+    vec3 COLOR;
+    float RADIUS;
+    vec3 POS;
+    float temp;
+};
+
+const int max_point_lights = 2;
+
 layout(std140, binding=3) uniform lightConstants
 {
     vec4 LIGHT_POSITION;
     vec4 LIGHT_DIRECTION;
     vec4 LIGHT_COLOR;
     mat4 SHADOW_MATRIX;
-    vec3 POINT_LIGHT_COLOR;
-    float POINT_LIGHT_RADIUS;
-    vec3 POINT_LIGHT_POS;
+    POINT_LIGHT point_lights[max_point_lights];
 };
 
 const int MAX_BONES_PER_VERTEX = 4;

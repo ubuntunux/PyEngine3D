@@ -141,7 +141,13 @@ class Renderer(Singleton):
                                                    MATRIX4_IDENTITY,
                                                    FLOAT3_ZERO,
                                                    FLOAT_ZERO,
-                                                   FLOAT3_ZERO])
+                                                   FLOAT3_ZERO,
+                                                   FLOAT_ZERO,
+                                                   FLOAT3_ZERO,
+                                                   FLOAT_ZERO,
+                                                   FLOAT3_ZERO,
+                                                   FLOAT_ZERO
+                                                   ])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -240,6 +246,7 @@ class Renderer(Singleton):
         camera = self.scene_manager.main_camera
         main_light = self.scene_manager.main_light
         point_light = self.scene_manager.point_lights[0] if 0 < len(self.scene_manager.point_lights) else None
+        point_light2 = self.scene_manager.point_lights[1] if 1 < len(self.scene_manager.point_lights) else None
 
         if not camera or not main_light:
             return
@@ -272,7 +279,12 @@ class Renderer(Singleton):
             main_light.shadow_view_projection,
             point_light.light_color if point_light is not None else FLOAT3_ZERO,
             Float(point_light.light_radius) if point_light is not None else FLOAT_ZERO,
-            point_light.transform.getPos() if point_light is not None else FLOAT3_ZERO
+            point_light.transform.getPos() if point_light is not None else FLOAT3_ZERO,
+            FLOAT_ZERO,
+            point_light2.light_color if point_light2 is not None else FLOAT3_ZERO,
+            Float(point_light2.light_radius) if point_light2 is not None else FLOAT_ZERO,
+            point_light2.transform.getPos() if point_light2 is not None else FLOAT3_ZERO,
+            FLOAT_ZERO,
         )
 
     def renderScene(self):
