@@ -510,7 +510,9 @@ class Renderer(Singleton):
         texture_cube.generate_mipmap()
 
         # convolution
-        temp_cube = self.rendertarget_manager.get_temporary('temp_cube', light_probe.texture_probe)
+        texture_info = light_probe.texture_probe.get_texture_info()
+        texture_info['name'] = 'temp_cube'
+        temp_cube = CreateTexture(**texture_info)
         mipmap_count = temp_cube.get_mipmap_count()
 
         face_matrixies = [np.array([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32),
@@ -536,6 +538,8 @@ class Renderer(Singleton):
                 self.postprocess.draw_elements()
 
         light_probe.replace_texture_probe(temp_cube)
+
+        self.rendertarget_manager.get_temporary('temp_cube', light_probe.texture_probe)
 
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
