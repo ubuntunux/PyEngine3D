@@ -1,3 +1,6 @@
+from Utilities import *
+
+
 class RenderInfo:
     def __init__(self):
         self.actor = None
@@ -6,8 +9,18 @@ class RenderInfo:
         self.material_instance = None
 
     @staticmethod
-    def gather_render_infos(actor_list, solid_render_infos, translucent_render_infos):
+    def gather_render_infos(camera, actor_list, solid_render_infos, translucent_render_infos):
+        # camera_pos = camera.transform.getPos()
+        # view_front = -camera.transform.front
+
         for actor in actor_list:
+            # to_actor = actor.transform.getPos() - camera_pos
+            #
+            # temp = camera.left_diagonal * np.dot(to_actor, camera.left_diagonal)
+            # if dot(view_front, camera.left_diagonal) < dot(view_front, camera.left_diagonal):
+            #     if magnitude(to_actor - temp) < actor.model.mesh.radius:
+            #         continue
+
             for geometry in actor.get_geometries():
                 material_instance = actor.get_material_instance(geometry.index)
                 render_info = RenderInfo()
@@ -30,7 +43,7 @@ class RenderInstanceInfo:
         self.model_instance_location = -1
 
     @staticmethod
-    def gather_render_infos(actor_list, check_actor_change, model_instance_location, solid_render_infos,
+    def gather_render_infos(camera, actor_list, check_actor_change, model_instance_location, solid_render_infos,
                             translucent_render_infos):
         last_actor = None
         last_geometry = None
@@ -50,7 +63,7 @@ class RenderInstanceInfo:
 
                 if new_render_info and geometry  is not None and material_instance is not None:
                     # convert to numpy array.
-                    if render_info:
+                    if render_info is not None:
                         render_info.model_instance_data = np.array(render_info.model_instance_data, np.float32)
 
                     render_info = RenderInfo()
@@ -66,7 +79,7 @@ class RenderInstanceInfo:
                     new_render_info = False
 
                 # append instance data
-                if render_info:
+                if render_info is not None:
                     render_info.model_instance_data.append(actor.transform.matrix)
 
                 last_actor = actor

@@ -6,9 +6,20 @@ import numpy as np
 from Common import logger
 from App import CoreManager
 from OpenGLContext import CreateVertexArrayBuffer, UniformMatrix4
-from Utilities import Attributes, GetClassName, normalize, Matrix4, MATRIX4_IDENTITY
+from Utilities import *
 from .Skeleton import Skeleton
 from .Animation import Animation
+
+
+def calc_bounding(positions):
+    # precompute bind_shape_matrix
+    boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+    boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+    for position in positions:
+        boundMin = np.minimum(boundMin, position)
+        boundMax = np.maximum(boundMax, position)
+    radius = magnitude(np.maximum(abs(boundMax), abs(boundMin)))
+    return boundMin, boundMax, radius
 
 
 class Geometry:
@@ -17,6 +28,11 @@ class Geometry:
         self.index = geometry_data.get('index', 0)
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
+
+        self.boundMin = geometry_data.get('boundMin', Float3())
+        self.boundMax = geometry_data.get('boundMax', Float3())
+        self.boundCenter = (self.boundMin + self.boundMax) * 0.5
+        self.radius = geometry_data.get('radius', 0.0)
 
     def create_instance_buffer(self, instance_name, layout_location, element_data):
         self.vertex_buffer.create_instance_buffer(instance_name, layout_location, element_data)
@@ -41,6 +57,11 @@ class Mesh:
         self.name = mesh_name
         self.instance_location_model = -1
 
+        self.boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+        self.boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+        self.boundCenter = Float3()
+        self.radius = 0.0
+
         self.skeletons = []
         for i, skeleton_data in enumerate(mesh_data.get('skeleton_datas', [])):
             skeleton = Skeleton(index=i, **skeleton_data)
@@ -59,21 +80,39 @@ class Mesh:
         self.geometries = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
-            if vertex_buffer:
+            if vertex_buffer is not None:
                 # find skeleton of geometry
                 skeleton = None
                 for skeleton in self.skeletons:
                     if skeleton.name == geometry_data.get('skeleton_name', ''):
                         break
 
+                boundMin = geometry_data.get('boundMin')
+                boundMax = geometry_data.get('boundMax')
+                radius = geometry_data.get('radius')
+
+                if boundMin is None or boundMax is None or radius is None:
+                    positions = np.array(geometry_data['positions'], dtype=np.float32)
+                    boundMin, boundMax, radius = calc_bounding(positions)
+
+                self.boundMin = np.minimum(self.boundMin, boundMin)
+                self.boundMax = np.maximum(self.boundMax, boundMax)
+                self.radius = max(self.radius, radius)
+
                 # create geometry
                 geometry = Geometry(
                     name=vertex_buffer.name,
                     index=i,
                     vertex_buffer=vertex_buffer,
-                    skeleton=skeleton
+                    skeleton=skeleton,
+                    boundMin=boundMin,
+                    boundMax=boundMax,
+                    radius=radius
                 )
                 self.geometries.append(geometry)
+
+        self.boundCenter = (self.boundMin + self.boundMax) * 0.5
+
         self.attributes = Attributes()
 
     def get_save_data(self):

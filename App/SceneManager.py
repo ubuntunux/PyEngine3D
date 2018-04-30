@@ -283,7 +283,7 @@ class SceneManager(Singleton):
         return None
 
     def addObjectHere(self, model):
-        pos = self.main_camera.transform.pos + self.main_camera.front * 10.0
+        pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
         return self.addObject(model=model, pos=pos)
 
     def clearObjects(self):
@@ -367,7 +367,8 @@ class SceneManager(Singleton):
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
 
-        RenderInfo.gather_render_infos(actor_list=self.static_actors,
+        RenderInfo.gather_render_infos(camera=self.main_camera,
+                                       actor_list=self.static_actors,
                                        solid_render_infos=self.static_solid_render_infos,
                                        translucent_render_infos=self.static_translucent_render_infos)
 
@@ -378,7 +379,8 @@ class SceneManager(Singleton):
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
 
-        RenderInfo.gather_render_infos(actor_list=self.skeleton_actors,
+        RenderInfo.gather_render_infos(camera=self.main_camera,
+                                       actor_list=self.skeleton_actors,
                                        solid_render_infos=self.skeleton_solid_render_infos,
                                        translucent_render_infos=self.skeleton_translucent_render_infos)
 
@@ -386,6 +388,9 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
 
     def update_scene(self, dt):
+        self.update_static_render_info()
+        self.update_skeleton_render_info()
+
         self.renderer.postprocess.update()
 
         for camera in self.cameras:

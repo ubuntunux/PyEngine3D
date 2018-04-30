@@ -157,7 +157,7 @@ class OBJ:
                                  indices=copy.deepcopy(indices),
                                  bound_min=copy.deepcopy(boundMin),
                                  bound_max=copy.deepcopy(boundMax),
-                                 radius=magnitude(boundMax - boundMin))
+                                 radius=magnitude(np.maximum(abs(boundMax), abs(boundMin))))
             geometry_datas.append(geometry_data)
         return geometry_datas
 

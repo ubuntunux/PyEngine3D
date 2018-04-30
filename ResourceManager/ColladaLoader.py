@@ -651,7 +651,7 @@ class Collada:
                 bone_weights=copy.deepcopy(bone_weights),
                 bound_min=copy.deepcopy(boundMin),
                 bound_max=copy.deepcopy(boundMax),
-                radius=magnitude(boundMax - boundMin)
+                radius=magnitude(np.maximum(abs(boundMax), abs(boundMin)))
             )
 
             geometry_datas.append(geometry_data)

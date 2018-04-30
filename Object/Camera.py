@@ -27,7 +27,10 @@ class Camera(StaticActor):
         self.pan_speed = object_data.get('pan_speed', 0.0)
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
 
-        self.front = Float3()
+        self.left_diagonal = Float3()
+        self.right_diagonal = Float3()
+        self.top_diagonal = Float3()
+        self.bottom_diagonal = Float3()
 
         self.projection = Matrix4()
         self.projection_offset = Float2()
@@ -105,13 +108,21 @@ class Camera(StaticActor):
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
 
     def update(self, force_update=False):
-        self.transform.updateTransform(update_view_transform=True, force_update=force_update)
+        updated = self.transform.updateTransform(update_view_transform=True, force_update=force_update)
 
-        # negative front
-        self.front[...] = -self.transform.front
+        if updated or force_update:
+            self.top_diagonal[...] = normalize(-self.transform.front + self.transform.up / self.projection[1][1])
+            self.bottom_diagonal[...] = normalize(-self.transform.front - self.transform.up / self.projection[1][1])
+            self.left_diagonal[...] = normalize(-self.transform.front - self.transform.left / self.projection[0][0])
+            self.right_diagonal[...] = normalize(-self.transform.front + self.transform.left / self.projection[0][0])
 
-        self.prev_view = self.transform.prev_inverse_matrix
-        self.prev_view_origin[...] = self.view_origin
+            self.prev_view = self.transform.prev_inverse_matrix
+            self.prev_view_origin[...] = self.view_origin
+
+            self.view = self.transform.inverse_matrix
+            self.view_origin[...] = self.view
+            self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
+
         self.prev_view_projection[...] = self.view_projection
         self.prev_view_origin_projection[...] = self.view_origin_projection
 
@@ -120,8 +131,5 @@ class Camera(StaticActor):
         self.projection[2][0] = -self.postprocess.jitter[0]
         self.projection[2][1] = -self.postprocess.jitter[1]
 
-        self.view = self.transform.inverse_matrix
-        self.view_origin[...] = self.view
-        self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
         self.view_projection[...] = np.dot(self.view, self.projection)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)

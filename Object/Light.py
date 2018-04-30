@@ -36,7 +36,6 @@ class MainLight(StaticActor):
             projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
 
             lightPosMatrix = getTranslateMatrix(*(-current_camera.transform.getPos()))
-            # shadow_projection[3, 0:3] = light.transform.front * -shadow_distance
             self.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, self.transform.inverse_matrix), projection)
 
 
