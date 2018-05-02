@@ -24,8 +24,10 @@
  - pygame
 
 ## TODO
-* Bug
-    - normal map was flipped by wrong tangent_to_world matrix in default.glsl.
+* Job
+    - wrong tangent_to_world matrix bug
+    - view frustum culling
+    - point light culling
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
