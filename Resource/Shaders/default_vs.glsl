@@ -70,7 +70,8 @@ void main() {
     vec3 bitangent = cross(vertex_tangent, vertex_normal);
 
     // Note : Normalization is very important because tangent_to_world may have been scaled..
-    vs_output.tangent_to_world = model * mat4(vec4(vertex_tangent, 0.0), vec4(vertex_normal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
+    vs_output.tangent_to_world = model *
+        mat4(vec4(vertex_tangent, 0.0), vec4(vertex_normal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 
     position = VIEW_PROJECTION * model * position;
     prev_position = PREV_VIEW_PROJECTION * model * prev_position;

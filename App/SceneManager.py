@@ -7,7 +7,8 @@ import math
 import numpy as np
 
 from Common import logger
-from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess, RenderInfo
+from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
+from Object import RenderInfo, cone_sphere_culling, always_pass
 from Object import Atmosphere, Ocean
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
@@ -43,8 +44,10 @@ class SceneManager(Singleton):
         # render group
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
+        self.static_shadow_render_infos = []
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
+        self.skeleton_shadow_render_infos = []
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -366,11 +369,19 @@ class SceneManager(Singleton):
     def update_static_render_info(self):
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
+        self.static_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(camera=self.main_camera,
+        RenderInfo.gather_render_infos(culling_func=cone_sphere_culling,
+                                       camera=self.main_camera,
                                        actor_list=self.static_actors,
                                        solid_render_infos=self.static_solid_render_infos,
                                        translucent_render_infos=self.static_translucent_render_infos)
+
+        RenderInfo.gather_render_infos(culling_func=always_pass,
+                                       camera=self.main_light,
+                                       actor_list=self.static_actors,
+                                       solid_render_infos=self.static_shadow_render_infos,
+                                       translucent_render_infos=None)
 
         self.static_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.static_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
@@ -378,11 +389,19 @@ class SceneManager(Singleton):
     def update_skeleton_render_info(self):
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
+        self.skeleton_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(camera=self.main_camera,
+        RenderInfo.gather_render_infos(culling_func=cone_sphere_culling,
+                                       camera=self.main_camera,
                                        actor_list=self.skeleton_actors,
                                        solid_render_infos=self.skeleton_solid_render_infos,
                                        translucent_render_infos=self.skeleton_translucent_render_infos)
+
+        RenderInfo.gather_render_infos(culling_func=always_pass,
+                                       camera=self.main_light,
+                                       actor_list=self.skeleton_actors,
+                                       solid_render_infos=self.skeleton_shadow_render_infos,
+                                       translucent_render_infos=None)
 
         self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))

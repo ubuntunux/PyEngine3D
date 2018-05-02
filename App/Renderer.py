@@ -641,13 +641,13 @@ class Renderer(Singleton):
 
         self.render_actors(RenderGroup.STATIC_ACTOR,
                            RenderMode.SHADOW,
-                           self.scene_manager.static_solid_render_infos,
+                           self.scene_manager.static_shadow_render_infos,
                            self.shadowmap_material)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
             self.render_actors(RenderGroup.SKELETON_ACTOR,
                                RenderMode.SHADOW,
-                               self.scene_manager.skeleton_solid_render_infos,
+                               self.scene_manager.skeleton_shadow_render_infos,
                                self.shadowmap_skeletal_material)
 
     def render_preprocess(self):

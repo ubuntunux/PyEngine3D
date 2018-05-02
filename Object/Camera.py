@@ -1,3 +1,4 @@
+from math import *
 import numpy as np
 
 from Common import logger
@@ -26,11 +27,7 @@ class Camera(StaticActor):
         self.move_speed = object_data.get('move_speed', 0.0)
         self.pan_speed = object_data.get('pan_speed', 0.0)
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
-
-        self.left_diagonal = Float3()
-        self.right_diagonal = Float3()
-        self.top_diagonal = Float3()
-        self.bottom_diagonal = Float3()
+        self.half_cone = 0.0  # view frustum cone half radian
 
         self.projection = Matrix4()
         self.projection_offset = Float2()
@@ -91,8 +88,10 @@ class Camera(StaticActor):
         StaticActor.setAttribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
-            # update viewport
-            self.scene_manager.renderer.resizeScene()
+            if "fov" == attributeName:
+                self.update_projection(force_update=True)
+            else:
+                self.scene_manager.renderer.resizeScene()
 
     def update_projection(self, fov=0.0, aspect=0.0, force_update=False):
         need_to_update = False
@@ -106,16 +105,12 @@ class Camera(StaticActor):
 
         if force_update or need_to_update:
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
+            self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
 
     def update(self, force_update=False):
         updated = self.transform.updateTransform(update_view_transform=True, force_update=force_update)
 
         if updated or force_update:
-            self.top_diagonal[...] = normalize(-self.transform.front + self.transform.up / self.projection[1][1])
-            self.bottom_diagonal[...] = normalize(-self.transform.front - self.transform.up / self.projection[1][1])
-            self.left_diagonal[...] = normalize(-self.transform.front - self.transform.left / self.projection[0][0])
-            self.right_diagonal[...] = normalize(-self.transform.front + self.transform.left / self.projection[0][0])
-
             self.prev_view = self.transform.prev_inverse_matrix
             self.prev_view_origin[...] = self.view_origin
 

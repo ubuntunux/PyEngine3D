@@ -24,6 +24,8 @@
  - pygame
 
 ## TODO
+* Bug
+    - normal map was flipped by wrong tangent_to_world matrix in default.glsl.
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
@@ -58,7 +60,7 @@
 * Object
     - Select, Move, Modify
     - Gizmo
-    - Culling
+    - View Frustum Culling
     - VTF Skinning
 * Particle System
     - runtime particles
@@ -74,7 +76,6 @@
     - Color Grading
 * Rendering
     - Light Probe lod convolution
-    - 2D Texture Mipmap to RenderTarget
     - Hierachical-Z depth
     - Animation calculation in gpu
     - Multisample texture - glTexImage2DMultisample

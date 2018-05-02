@@ -460,7 +460,7 @@ def perspective(fovy, aspect, znear, zfar):
     if fovy <= 0.0:
         fovy = 45.0
 
-    height = np.tan(fovy / 360.0 * np.pi) * znear
+    height = np.tan((fovy * 0.5) / 180.0 * np.pi) * znear
     width = height * aspect
     depth = zfar - znear
 
