@@ -522,7 +522,7 @@ def compute_tangent(positions, texcoords, normals, indices):
         # binormal = normalize(binormal)
 
         # invalid tangent
-        if all(x == 0.0 for x in tangent):
+        if 0.0 == np.dot(tangent, tangent):
             avg_normal = normalize(normals[i1] + normals[i2] + normals[i3])
             tangent = np.cross(avg_normal, WORLD_UP)
 
