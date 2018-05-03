@@ -8,7 +8,7 @@ import numpy as np
 
 from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
-from Object import RenderInfo, cone_sphere_culling, always_pass
+from Object import RenderInfo, view_frustum_culling, cone_sphere_culling, always_pass
 from Object import Atmosphere, Ocean
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
@@ -371,7 +371,7 @@ class SceneManager(Singleton):
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(culling_func=cone_sphere_culling,
+        RenderInfo.gather_render_infos(culling_func=view_frustum_culling,
                                        camera=self.main_camera,
                                        actor_list=self.static_actors,
                                        solid_render_infos=self.static_solid_render_infos,
@@ -391,7 +391,7 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(culling_func=cone_sphere_culling,
+        RenderInfo.gather_render_infos(culling_func=view_frustum_culling,
                                        camera=self.main_camera,
                                        actor_list=self.skeleton_actors,
                                        solid_render_infos=self.skeleton_solid_render_infos,

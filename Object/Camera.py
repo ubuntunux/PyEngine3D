@@ -27,7 +27,9 @@ class Camera(StaticActor):
         self.move_speed = object_data.get('move_speed', 0.0)
         self.pan_speed = object_data.get('pan_speed', 0.0)
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
+
         self.half_cone = 0.0  # view frustum cone half radian
+        self.frustum_planes = np.zeros(24, dtype=np.float32).reshape(6, 4)
 
         self.projection = Matrix4()
         self.projection_offset = Float2()
@@ -105,7 +107,7 @@ class Camera(StaticActor):
 
         if force_update or need_to_update:
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
-            self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
+            # self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
 
     def update(self, force_update=False):
         updated = self.transform.updateTransform(update_view_transform=True, force_update=force_update)
@@ -128,3 +130,5 @@ class Camera(StaticActor):
 
         self.view_projection[...] = np.dot(self.view, self.projection)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
+
+        self.frustum_planes[...] = get_frustum_planes(self.view_projection)

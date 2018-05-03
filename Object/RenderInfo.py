@@ -2,7 +2,7 @@ import math
 from Utilities import *
 
 
-def always_pass(camera, actor):
+def always_pass(*args):
     return False
 
 
@@ -20,6 +20,27 @@ def cone_sphere_culling(camera, actor):
         return True
     elif HALF_PI < rad and radius < dist:
         return True
+    return False
+
+
+def view_frustum_culling(camera, actor):
+    to_actor = actor.transform.pos - camera.transform.pos
+    radius = actor.model.mesh.radius * max(actor.transform.scale)
+    for i in range(6):
+        d = np.dot(to_actor, camera.frustum_planes[i][0:3])
+        if camera.frustum_planes[i][3] < d - radius:
+            return True
+    return False
+
+
+def view_frustum_culling_geomtry(camera, actor, geometry):
+    to_geometry = np.array([geometry.boundCenter[0], geometry.boundCenter[1], geometry.boundCenter[2], 1.0])
+    to_geometry = np.dot(to_geometry, actor.transform.matrix)[0:3] - camera.transform.pos
+    radius = geometry.radius * max(actor.transform.scale)
+    for i in range(6):
+        d = np.dot(to_geometry, camera.frustum_planes[i][0:3])
+        if camera.frustum_planes[i][3] < d - radius:
+            return True
     return False
 
 

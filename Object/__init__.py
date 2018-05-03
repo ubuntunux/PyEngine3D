@@ -1,4 +1,4 @@
-from .RenderInfo import RenderInfo, RenderInstanceInfo, cone_sphere_culling, always_pass
+from .RenderInfo import RenderInfo, RenderInstanceInfo, view_frustum_culling, cone_sphere_culling, always_pass
 from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
 from .RenderTarget import RenderTargets, RenderTargetManager
 

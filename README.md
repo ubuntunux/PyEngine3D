@@ -25,7 +25,6 @@
 
 ## TODO
 * Job
-    - wrong tangent_to_world matrix bug
     - view frustum culling
     - point light culling
 * Optimize
