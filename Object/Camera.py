@@ -131,4 +131,5 @@ class Camera(StaticActor):
         self.view_projection[...] = np.dot(self.view, self.projection)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
 
-        self.frustum_planes[...] = get_frustum_planes(self.view_projection)
+        # update frustum planes
+        self.frustum_planes[...] = get_frustum_planes(self.view_origin_projection)

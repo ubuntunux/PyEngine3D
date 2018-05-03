@@ -23,23 +23,40 @@ def cone_sphere_culling(camera, actor):
     return False
 
 
-def view_frustum_culling(camera, actor):
+def view_frustum_culling_actor(camera, actor):
     to_actor = actor.transform.pos - camera.transform.pos
     radius = actor.model.mesh.radius * max(actor.transform.scale)
-    for i in range(6):
-        d = np.dot(to_actor, camera.frustum_planes[i][0:3])
-        if camera.frustum_planes[i][3] < d - radius:
+    for i in range(4):
+        if i == 0 or i == 1:
+            right = np.cross(np.array([0,1,0], dtype=np.float32), camera.frustum_planes[i][0:3])
+        elif i == 2 or i == 3:
+            right = np.cross(-camera.transform.left, camera.frustum_planes[i][0:3])
+
+        if i == 0 or i == 3:
+            right = -right
+
+        d = np.dot(right, to_actor)
+        if radius < d:
             return True
     return False
 
 
-def view_frustum_culling_geomtry(camera, actor, geometry):
+def view_frustum_culling_geometry(camera, actor, geometry):
     to_geometry = np.array([geometry.boundCenter[0], geometry.boundCenter[1], geometry.boundCenter[2], 1.0])
     to_geometry = np.dot(to_geometry, actor.transform.matrix)[0:3] - camera.transform.pos
     radius = geometry.radius * max(actor.transform.scale)
-    for i in range(6):
-        d = np.dot(to_geometry, camera.frustum_planes[i][0:3])
-        if camera.frustum_planes[i][3] < d - radius:
+
+    for i in range(4):
+        if i == 0 or i == 1:
+            right = np.cross(np.array([0,1,0], dtype=np.float32), camera.frustum_planes[i][0:3])
+        elif i == 2 or i == 3:
+            right = np.cross(-camera.transform.left, camera.frustum_planes[i][0:3])
+
+        if i == 0 or i == 3:
+            right = -right
+
+        d = np.dot(right, to_geometry)
+        if radius < d:
             return True
     return False
 
@@ -69,7 +86,6 @@ class RenderInfo:
                         translucent_render_infos.append(render_info)
                 elif solid_render_infos is not None:
                         solid_render_infos.append(render_info)
-
 
 class RenderInstanceInfo:
     def __init__(self):
