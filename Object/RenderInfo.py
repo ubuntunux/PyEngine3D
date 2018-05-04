@@ -23,7 +23,7 @@ def cone_sphere_culling(camera, actor):
     return False
 
 
-def view_frustum_culling_actor(camera, actor):
+def view_frustum_culling(camera, actor):
     to_actor = actor.transform.pos - camera.transform.pos
     radius = actor.model.mesh.radius * max(actor.transform.scale)
     for i in range(4):
