@@ -6,7 +6,7 @@ def always_pass(*args):
     return False
 
 
-def cone_sphere_culling(camera, actor):
+def cone_sphere_culling_actor(camera, actor):
     to_actor = actor.transform.pos - camera.transform.pos
 
     dist = magnitude(to_actor)
@@ -23,19 +23,11 @@ def cone_sphere_culling(camera, actor):
     return False
 
 
-def view_frustum_culling(camera, actor):
+def view_frustum_culling_actor(camera, actor):
     to_actor = actor.transform.pos - camera.transform.pos
     radius = actor.model.mesh.radius * max(actor.transform.scale)
     for i in range(4):
-        if i == 0 or i == 1:
-            right = np.cross(np.array([0,1,0], dtype=np.float32), camera.frustum_planes[i][0:3])
-        elif i == 2 or i == 3:
-            right = np.cross(-camera.transform.left, camera.frustum_planes[i][0:3])
-
-        if i == 0 or i == 3:
-            right = -right
-
-        d = np.dot(right, to_actor)
+        d = np.dot(camera.frustum_vectors[i], to_actor)
         if radius < d:
             return True
     return False
@@ -47,15 +39,7 @@ def view_frustum_culling_geometry(camera, actor, geometry):
     radius = geometry.radius * max(actor.transform.scale)
 
     for i in range(4):
-        if i == 0 or i == 1:
-            right = np.cross(np.array([0,1,0], dtype=np.float32), camera.frustum_planes[i][0:3])
-        elif i == 2 or i == 3:
-            right = np.cross(-camera.transform.left, camera.frustum_planes[i][0:3])
-
-        if i == 0 or i == 3:
-            right = -right
-
-        d = np.dot(right, to_geometry)
+        d = np.dot(camera.frustum_vectors[i], to_geometry)
         if radius < d:
             return True
     return False
@@ -71,10 +55,10 @@ class RenderInfo:
     @staticmethod
     def gather_render_infos(culling_func, camera, actor_list, solid_render_infos, translucent_render_infos):
         for actor in actor_list:
-            if culling_func(camera, actor):
-                continue
-
             for geometry in actor.get_geometries():
+                if culling_func(camera, actor, geometry):
+                    continue
+
                 material_instance = actor.get_material_instance(geometry.index)
                 render_info = RenderInfo()
                 render_info.actor = actor
@@ -86,6 +70,7 @@ class RenderInfo:
                         translucent_render_infos.append(render_info)
                 elif solid_render_infos is not None:
                         solid_render_infos.append(render_info)
+
 
 class RenderInstanceInfo:
     def __init__(self):
@@ -105,10 +90,10 @@ class RenderInstanceInfo:
         render_info = None
         new_render_info = True
         for actor in actor_list:
-            if culling_func(camera, actor):
-                continue
-
             for geometry in actor.get_geometries():
+                if culling_func(camera, actor, geometry):
+                    continue
+
                 material_instance = actor.get_material_instance(geometry.index)
                 if last_geometry != geometry:
                     new_render_info = True

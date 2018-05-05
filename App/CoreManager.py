@@ -571,6 +571,12 @@ class CoreManager(Singleton):
         self.font_manager.log("Render : %.2f ms" % self.avg_renderTime)
         self.font_manager.log("Present : %.2f ms" % self.avg_presentTime)
 
+        render_count = len(self.scene_manager.skeleton_solid_render_infos)
+        render_count += len(self.scene_manager.skeleton_translucent_render_infos)
+        render_count += len(self.scene_manager.static_solid_render_infos)
+        render_count += len(self.scene_manager.static_translucent_render_infos)
+        self.font_manager.log("Render Count : %d" % render_count)
+
         # selected object transform info
         selected_object = self.scene_manager.getSelectedObject()
         if selected_object:

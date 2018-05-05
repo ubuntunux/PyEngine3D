@@ -486,51 +486,6 @@ def perspective(fovy, aspect, znear, zfar):
     return M
 
 
-def get_frustum_planes(view_projection):
-    frustum = np.zeros(24, dtype=np.float32).reshape(6, 4)
-
-    # Left plane
-    frustum[0][0] = view_projection[0][3] + view_projection[0][0]
-    frustum[0][1] = view_projection[1][3] + view_projection[1][0]
-    frustum[0][2] = view_projection[2][3] + view_projection[2][0]
-    frustum[0][3] = view_projection[3][3] + view_projection[3][0]
-
-    # Right plane
-    frustum[1][0] = view_projection[0][3] - view_projection[0][0]
-    frustum[1][1] = view_projection[1][3] - view_projection[1][0]
-    frustum[1][2] = view_projection[2][3] - view_projection[2][0]
-    frustum[1][3] = view_projection[3][3] - view_projection[3][0]
-
-    # Top plane
-    frustum[2][0] = view_projection[0][3] - view_projection[0][1]
-    frustum[2][1] = view_projection[1][3] - view_projection[1][1]
-    frustum[2][2] = view_projection[2][3] - view_projection[2][1]
-    frustum[2][3] = view_projection[3][3] - view_projection[3][1]
-
-    # Bottom plane
-    frustum[3][0] = view_projection[0][3] + view_projection[0][1]
-    frustum[3][1] = view_projection[1][3] + view_projection[1][1]
-    frustum[3][2] = view_projection[2][3] + view_projection[2][1]
-    frustum[3][3] = view_projection[3][3] + view_projection[3][1]
-
-    # Near plane
-    frustum[4][0] = view_projection[0][2]
-    frustum[4][1] = view_projection[1][2]
-    frustum[4][2] = view_projection[2][2]
-    frustum[4][3] = view_projection[3][2]
-
-    # Far plane
-    frustum[5][0] = view_projection[0][3] - view_projection[0][2]
-    frustum[5][1] = view_projection[1][3] - view_projection[1][2]
-    frustum[5][2] = view_projection[2][3] - view_projection[2][2]
-    frustum[5][3] = view_projection[3][3] - view_projection[3][2]
-
-    for i in range(6):
-        frustum[i][0:3] = normalize(frustum[i][0:3])
-
-    return frustum
-
-
 def convert_triangulate(polygon, vcount, stride=1):
     indices_list = [polygon[i * stride:i * stride + stride] for i in range(int(len(polygon) / stride))]
     triangulated_list = []

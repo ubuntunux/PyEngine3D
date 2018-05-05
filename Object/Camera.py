@@ -29,7 +29,7 @@ class Camera(StaticActor):
         self.rotation_speed = object_data.get('rotation_speed', 0.0)
 
         self.half_cone = 0.0  # view frustum cone half radian
-        self.frustum_planes = np.zeros(24, dtype=np.float32).reshape(6, 4)
+        self.frustum_vectors = np.zeros(12, dtype=np.float32).reshape(4, 3)
 
         self.projection = Matrix4()
         self.projection_offset = Float2()
@@ -132,4 +132,34 @@ class Camera(StaticActor):
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
 
         # update frustum planes
-        self.frustum_planes[...] = get_frustum_planes(self.view_origin_projection)
+        if updated or force_update:
+            frustum_vectors = self.frustum_vectors
+            view_projection = self.view_origin_projection
+
+            # Left
+            frustum_vectors[0][0] = view_projection[0][3] + view_projection[0][0]
+            frustum_vectors[0][1] = view_projection[1][3] + view_projection[1][0]
+            frustum_vectors[0][2] = view_projection[2][3] + view_projection[2][0]
+
+            # Right
+            frustum_vectors[1][0] = view_projection[0][3] - view_projection[0][0]
+            frustum_vectors[1][1] = view_projection[1][3] - view_projection[1][0]
+            frustum_vectors[1][2] = view_projection[2][3] - view_projection[2][0]
+
+            # Top
+            frustum_vectors[2][0] = view_projection[0][3] - view_projection[0][1]
+            frustum_vectors[2][1] = view_projection[1][3] - view_projection[1][1]
+            frustum_vectors[2][2] = view_projection[2][3] - view_projection[2][1]
+
+            # Bottom
+            frustum_vectors[3][0] = view_projection[0][3] + view_projection[0][1]
+            frustum_vectors[3][1] = view_projection[1][3] + view_projection[1][1]
+            frustum_vectors[3][2] = view_projection[2][3] + view_projection[2][1]
+
+            for i in range(4):
+                frustum_vectors[i][...] = normalize(frustum_vectors[i])
+
+            frustum_vectors[0][...] = -np.cross(self.transform.up, frustum_vectors[0])
+            frustum_vectors[1][...] = np.cross(self.transform.up, frustum_vectors[1])
+            frustum_vectors[2][...] = np.cross(-self.transform.left, frustum_vectors[2])
+            frustum_vectors[3][...] = -np.cross(-self.transform.left, frustum_vectors[3])
