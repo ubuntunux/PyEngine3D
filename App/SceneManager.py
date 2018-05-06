@@ -8,7 +8,7 @@ import numpy as np
 
 from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
-from Object import RenderInfo, view_frustum_culling_geometry, always_pass
+from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
@@ -42,6 +42,10 @@ class SceneManager(Singleton):
         self.objectMap = {}  # All of objects
 
         # render group
+        self.max_point_lights = 10
+        self.point_light_count = 0
+        self.point_light_uniform_blocks = np.zeros(8 * self.max_point_lights, dtype=np.float32).reshape(
+            self.max_point_lights, 8)
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
@@ -406,10 +410,30 @@ class SceneManager(Singleton):
         self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
 
-    def update_scene(self, dt):
-        self.update_static_render_info()
-        self.update_skeleton_render_info()
+    def update_light_render_infos(self):
+        self.point_light_count = 0
+        for point_light in self.point_lights:
+            to_light = point_light.transform.pos - self.main_camera.transform.pos
+            for i in range(4):
+                d = np.dot(self.main_camera.frustum_vectors[i], to_light)
+                if point_light.light_radius < d:
+                    # culling
+                    break
+            else:
+                # pass culling
+                point_light_uniform_block = self.point_light_uniform_blocks[self.point_light_count]
+                point_light_uniform_block[0:3][...] = point_light.light_color  # color
+                point_light_uniform_block[3] = point_light.light_radius  # radius
+                point_light_uniform_block[4:7][...] = point_light.transform.pos  # pos
+                point_light_uniform_block[7] = 1.0  # render
+                self.point_light_count += 1
+            if self.max_point_lights <= self.point_light_count:
+                break
 
+        if 0 == self.point_light_count:
+            self.point_light_uniform_blocks.fill(0.0)
+
+    def update_scene(self, dt):
         self.renderer.postprocess.update()
 
         for camera in self.cameras:
@@ -420,6 +444,11 @@ class SceneManager(Singleton):
 
         for light in self.point_lights:
             light.update()
+
+        # culling
+        self.update_static_render_info()
+        self.update_skeleton_render_info()
+        self.update_light_render_infos()
 
         for static_actor in self.static_actors:
             static_actor.update(dt)

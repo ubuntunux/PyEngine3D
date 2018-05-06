@@ -576,6 +576,7 @@ class CoreManager(Singleton):
         render_count += len(self.scene_manager.static_solid_render_infos)
         render_count += len(self.scene_manager.static_translucent_render_infos)
         self.font_manager.log("Render Count : %d" % render_count)
+        self.font_manager.log("Render Point Lights : %d" % self.scene_manager.point_light_count)
 
         # selected object transform info
         selected_object = self.scene_manager.getSelectedObject()

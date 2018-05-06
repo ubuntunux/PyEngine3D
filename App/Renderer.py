@@ -54,6 +54,7 @@ class Renderer(Singleton):
         self.uniformViewConstants = None
         self.uniformViewProjection = None
         self.uniformLightConstants = None
+        self.uniformPointLightConstants = None
 
         # material instances
         self.scene_constants_material = None
@@ -138,16 +139,10 @@ class Renderer(Singleton):
                                                   [FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
                                                    FLOAT4_ZERO,
-                                                   MATRIX4_IDENTITY,
-                                                   FLOAT3_ZERO,
-                                                   FLOAT_ZERO,
-                                                   FLOAT3_ZERO,
-                                                   FLOAT_ZERO,
-                                                   FLOAT3_ZERO,
-                                                   FLOAT_ZERO,
-                                                   FLOAT3_ZERO,
-                                                   FLOAT_ZERO
-                                                   ])
+                                                   MATRIX4_IDENTITY])
+
+        self.uniformPointLightConstants = UniformBlock("pointLightConstants", program, 4,
+                                                       [self.scene_manager.point_light_uniform_blocks, ])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -276,16 +271,10 @@ class Renderer(Singleton):
             main_light.transform.getPos(), FLOAT_ZERO,
             main_light.transform.front, FLOAT_ZERO,
             main_light.light_color,
-            main_light.shadow_view_projection,
-            point_light.light_color if point_light is not None else FLOAT3_ZERO,
-            Float(point_light.light_radius) if point_light is not None else FLOAT_ZERO,
-            point_light.transform.getPos() if point_light is not None else FLOAT3_ZERO,
-            FLOAT_ZERO,
-            point_light2.light_color if point_light2 is not None else FLOAT3_ZERO,
-            Float(point_light2.light_radius) if point_light2 is not None else FLOAT_ZERO,
-            point_light2.transform.getPos() if point_light2 is not None else FLOAT3_ZERO,
-            FLOAT_ZERO,
+            main_light.shadow_view_projection
         )
+
+        self.uniformPointLightConstants.bind_uniform_block(self.scene_manager.point_light_uniform_blocks, )
 
     def renderScene(self):
         startTime = timeModule.perf_counter()

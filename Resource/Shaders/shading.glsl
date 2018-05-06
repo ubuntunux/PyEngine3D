@@ -242,16 +242,28 @@ vec4 surface_shading(vec4 base_color,
         specular_light += cooktorrance_specular(fresnel, NdL, NdV, NdH, roughness) * NdL * light_color;
 
 
-        for(int i=0; i<max_point_lights; ++i)
+        for(int i=0; i<MAX_POINT_LIGHTS; ++i)
         {
-            float point_light_radius = point_lights[i].RADIUS;
-            vec3 point_light_dir = point_lights[i].POS.xyz - world_position;
+            if(1.0 != POINT_LIGHTS[i].render)
+            {
+                break;
+            }
+
+            float point_light_radius = POINT_LIGHTS[i].radius;
+            vec3 point_light_dir = POINT_LIGHTS[i].pos.xyz - world_position;
             float point_light_dist = length(point_light_dir);
+
+            if(point_light_radius < point_light_dist)
+            {
+                continue;
+            }
+
             point_light_dir /= point_light_dist;
 
             vec3 point_light_half = normalize(V + point_light_dir);
-            float point_light_attenuation = clamp(1.0 - sqrt(point_light_dist) / point_light_radius, 0.0, 1.0);
-            vec3 point_light_color = point_lights[i].COLOR.xyz * point_light_attenuation;
+            float point_light_attenuation = clamp(1.0 - point_light_dist / point_light_radius, 0.0, 1.0);
+            point_light_attenuation *= point_light_attenuation;
+            vec3 point_light_color = POINT_LIGHTS[i].color.xyz * point_light_attenuation;
 
             float point_light_NdL = max(0.01, dot(N, point_light_dir));
             float point_light_NdH = max(0.01, dot(N, point_light_half));

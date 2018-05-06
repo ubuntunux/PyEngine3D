@@ -24,9 +24,6 @@
  - pygame
 
 ## TODO
-* Job
-    - view frustum culling
-    - point light culling
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
@@ -84,7 +81,6 @@
     - View Mode
         - Wire, Solid, Lighting, Color
     - Culling
-        - view frustum culling
         - occlusion culling
         - distance culling
     - Coarse Shading, Checkboard rendering
