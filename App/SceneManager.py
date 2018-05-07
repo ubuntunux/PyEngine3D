@@ -412,6 +412,8 @@ class SceneManager(Singleton):
 
     def update_light_render_infos(self):
         self.point_light_count = 0
+        self.point_light_uniform_blocks.fill(0.0)
+
         for point_light in self.point_lights:
             to_light = point_light.transform.pos - self.main_camera.transform.pos
             for i in range(4):
@@ -429,9 +431,6 @@ class SceneManager(Singleton):
                 self.point_light_count += 1
             if self.max_point_lights <= self.point_light_count:
                 break
-
-        if 0 == self.point_light_count:
-            self.point_light_uniform_blocks.fill(0.0)
 
     def update_scene(self, dt):
         self.renderer.postprocess.update()
