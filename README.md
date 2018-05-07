@@ -31,9 +31,9 @@
     - Tree, Foliage actor
     - Landscape
     - Wind
-    - River
-    - Probe
-    - Particles
+    - River
+    - Probe
+    - Particles
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
