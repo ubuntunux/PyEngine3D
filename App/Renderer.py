@@ -240,8 +240,6 @@ class Renderer(Singleton):
     def bind_uniform_blocks(self):
         camera = self.scene_manager.main_camera
         main_light = self.scene_manager.main_light
-        point_light = self.scene_manager.point_lights[0] if 0 < len(self.scene_manager.point_lights) else None
-        point_light2 = self.scene_manager.point_lights[1] if 1 < len(self.scene_manager.point_lights) else None
 
         if not camera or not main_light:
             return
