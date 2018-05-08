@@ -74,7 +74,7 @@
 * Rendering
     - Light Probe lod convolution
     - Hierachical-Z depth
-    - Animation calculation in gpu
+    - Animation calculation in gpu
     - Multisample texture - glTexImage2DMultisample
         - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
     - View Mode
