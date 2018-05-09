@@ -80,6 +80,7 @@ class PostProcess:
         self.tonemapping = None
 
         self.linear_depth = None
+        self.generate_max_z = None
         self.blur = None
         self.circle_blur = None
         self.gaussian_blur = None
@@ -141,6 +142,7 @@ class PostProcess:
         self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
         self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
+        self.generate_max_z = self.resource_manager.getMaterialInstance("generate_max_z")
         self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
         self.copy_texture_mi = self.resource_manager.getMaterialInstance("copy_texture")
         self.render_texture_mi = self.resource_manager.getMaterialInstance("render_texture")
@@ -398,11 +400,29 @@ class PostProcess:
 
         self.renderer.restore_blend_state_prev()
 
-    def render_linear_depth(self, texture_depth):
+    def render_linear_depth(self, texture_depth, texture_linear_depth):
         self.linear_depth.use_program()
         self.linear_depth.bind_material_instance()
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad_geometry.draw_elements()
+
+        texture_linear_depth.generate_mipmap()
+
+        # temp_depth = self.rendertarget_manager.get_temporary('temp_linear_depth', texture_linear_depth)
+        # temp_depth.generate_mipmap()
+        #
+        # lod_count = texture_linear_depth.get_mipmap_count()
+        # for lod in range(lod_count - 1):
+        #     self.framebuffer_manager.bind_framebuffer(temp_depth, target_level=lod)
+        #     glClear(GL_COLOR_BUFFER_BIT)
+        #     self.copy_texture(texture_linear_depth, target_level=float(lod))
+        #
+        #     self.framebuffer_manager.bind_framebuffer(texture_linear_depth, target_level=lod+1)
+        #     glClear(GL_COLOR_BUFFER_BIT)
+        #     self.generate_max_z.use_program()
+        #     self.generate_max_z.bind_uniform_data("target_level", float(lod))
+        #     self.generate_max_z.bind_uniform_data("texture_source", texture_linear_depth)
+        #     self.quad_geometry.draw_elements()
 
     def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()

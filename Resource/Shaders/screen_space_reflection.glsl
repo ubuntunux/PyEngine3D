@@ -122,6 +122,7 @@ void main() {
     //const int NumRays = 12;
 
     vec2 HitSampleUV = vec2(-1.0, -1.0);
+    float hit_count = 0.0;
 
     for (int i = 0; i < NumRays; i++)
     {
@@ -152,12 +153,12 @@ void main() {
             vec4 SampleColor = SampleScreenColor(texture_diffuse, HitSampleUV);
             SampleColor.rgb /= 1 + get_linear_luminance(SampleColor.rgb);
             fs_output += SampleColor;
+            hit_count += 1.0;
         }
     }
 
-    fs_output /= NumRays;
+    fs_output /= max(hit_count, 1.0);
     fs_output.rgb /= 1 - get_linear_luminance(fs_output.rgb);
-
     fs_output.w *= RoughnessFade;
 }
 

@@ -81,8 +81,8 @@ class FrameBuffer:
     def set_viewport(self, x, y, width, height, scale):
         self.width = width
         self.height = height
-        self.viewport_width = int(width * scale)
-        self.viewport_height = int(height * scale)
+        self.viewport_width = max(1, int(width * scale))
+        self.viewport_height = max(1, int(height * scale))
         self.viewport_scale = scale
         glViewport(x, y, self.viewport_width, self.viewport_height)
 

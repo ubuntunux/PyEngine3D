@@ -51,10 +51,10 @@ class Atmosphere:
         self.atmosphere_exposure = 0.0001
 
         # cloud constants
-        self.cloud_altitude = 500.0
+        self.cloud_altitude = 100.0
         self.cloud_height = 500.0
         self.cloud_speed = 0.01
-        self.cloud_absorption = 0.3
+        self.cloud_absorption = 0.15
 
         self.cloud_contrast = 2.0
         self.cloud_coverage = 0.9
@@ -262,7 +262,7 @@ class Atmosphere:
         self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
         self.atmosphere_material_instance.bind_material_instance()
-        self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
+        # self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.atmosphere_material_instance.bind_uniform_data("texture_shadow", texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
         self.atmosphere_material_instance.bind_uniform_data("render_sun", render_sun)

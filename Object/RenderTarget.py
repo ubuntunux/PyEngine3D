@@ -24,7 +24,9 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
+    HDR_COPY_SMALL = None
     LIGHT_PROBE_ATMOSPHERE = None
+    ATMOSPHERE = None
     TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
@@ -225,6 +227,20 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
+        RenderTargets.HDR_COPY_SMALL = self.create_rendertarget(
+            "HDR Copy Small",
+            texture_type=Texture2D,
+            option=Option.MSAA | Option.SSAA,
+            width=halfsize_x,
+            height=halfsize_y,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP
+        )
+
         RenderTargets.LIGHT_PROBE_ATMOSPHERE = self.create_rendertarget(
             "LIGHT_PROBE_ATMOSPHERE",
             texture_type=TextureCube,
@@ -233,6 +249,19 @@ class RenderTargetManager(Singleton):
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR_MIPMAP_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP_TO_EDGE
+        )
+
+        RenderTargets.ATMOSPHERE = self.create_rendertarget(
+            "ATMOSPHERE",
+            texture_type=Texture2D,
+            width=quatersize_x,
+            height=quatersize_y,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
             wrap=GL_CLAMP_TO_EDGE
@@ -303,8 +332,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_DEPTH_COMPONENT32,
             texture_format=GL_DEPTH_COMPONENT,
             data_type=GL_FLOAT,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 
@@ -317,8 +346,8 @@ class RenderTargetManager(Singleton):
             internal_format=GL_R32F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,
-            min_filter=GL_LINEAR_MIPMAP_NEAREST,
-            mag_filter=GL_LINEAR,
+            min_filter=GL_NEAREST_MIPMAP_NEAREST,
+            mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
 

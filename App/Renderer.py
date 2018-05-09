@@ -325,8 +325,7 @@ class Renderer(Singleton):
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.bind_quad()
-            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
-            RenderTargets.LINEAR_DEPTH.generate_mipmap()
+            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -366,13 +365,36 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 glDisable(GL_DEPTH_TEST)
+                prev_framebuffer = self.framebuffer_manager.current_framebuffer
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
                                                                             not RenderOption.RENDER_LIGHT_PROBE)
 
-            # blend state
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                # set blend state
+                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+                prev_framebuffer.run_bind_framebuffer()
+                self.postprocess.bind_quad()
+                composite_atmosphere = self.resource_manager.getMaterialInstance(
+                    "precomputed_atmosphere.composite_atmosphere")
+                composite_atmosphere.use_program()
+                composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
+                composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
+                self.postprocess.draw_elements()
+
+            # copy HDR Target
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+            dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_COPY_SMALL)
+            glClear(GL_COLOR_BUFFER_BIT)
+            dst_framebuffer.copy_framebuffer(src_framebuffer)
+            src_framebuffer.run_bind_framebuffer()
+
+            # set blend state
+            if not self.blend_enable:
+                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            # render ocean
             if self.scene_manager.ocean.is_render_ocean:
                 glEnable(GL_DEPTH_TEST)
                 glDisable(GL_CULL_FACE)
@@ -642,9 +664,9 @@ class Renderer(Singleton):
 
         # Linear depth
         self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL)
-        RenderTargets.LINEAR_DEPTH.generate_mipmap()
+        self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
 
         # Screen Space Reflection
         if self.postprocess.is_render_ssr:
