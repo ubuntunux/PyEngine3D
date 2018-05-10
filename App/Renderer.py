@@ -383,15 +383,16 @@ class Renderer(Singleton):
                 composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
                 self.postprocess.draw_elements()
 
-                # restore blend state
-                self.restore_blend_state_prev()
-
             # copy HDR Target
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
             dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_COPY_SMALL)
             glClear(GL_COLOR_BUFFER_BIT)
             dst_framebuffer.copy_framebuffer(src_framebuffer)
             src_framebuffer.run_bind_framebuffer()
+
+            # set blend state
+            if not self.blend_enable:
+                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
             # render ocean
             if self.scene_manager.ocean.is_render_ocean:
@@ -403,10 +404,6 @@ class Renderer(Singleton):
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)
                 glEnable(GL_CULL_FACE)
-
-            # set blend state
-            if not self.blend_enable:
-                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
             # render translucent
             glEnable(GL_DEPTH_TEST)

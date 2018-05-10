@@ -207,7 +207,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
-    light_color = light_color * scene_sun_irradiance * shadow_factor;
+    light_color = light_color * scene_sun_irradiance;// * shadow_factor;
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
@@ -302,7 +302,7 @@ vec4 surface_shading(vec4 base_color,
     diffuse_light *= base_color.xyz * clamp((vec3(1.0) - fresnel) * (1.0 - metallic), 0.0, 1.0);
     specular_light = mix(specular_light, specular_light * base_color.xyz, vec3(metallic));
 
-    result = diffuse_light + specular_light;
+    result = (diffuse_light + specular_light) * shadow_factor;
     // result += scene_in_scatter;
 
     // SSAO
