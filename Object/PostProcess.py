@@ -50,7 +50,7 @@ class PostProcess:
         self.bloom_highlight = None
         self.bloom_downsampling = None
         self.bloom_intensity = 1.0
-        self.bloom_threshold_min = 0.75
+        self.bloom_threshold_min = 1.0
         self.bloom_threshold_max = 10.0
         self.bloom_scale = 1.0
 
