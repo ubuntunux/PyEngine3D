@@ -25,7 +25,7 @@ layout (location = 3) out vec2 fs_velocity;
 void main()
 {
     vec2 screen_tex_coord = vs_output.projection_pos.xy / vs_output.projection_pos.w * 0.5 + 0.5;
-    float depth = texture(texture_depth, screen_tex_coord).x;
+    float depth = texture2D(texture_depth, screen_tex_coord).x;
     vec4 base_color = get_base_color(vs_output.tex_coord.xy);
 
 #if TRANSPARENT_MATERIAL == 1
@@ -69,8 +69,8 @@ void main()
                         metalicness,
                         get_roughness(),
                         reflectance,
-                        texture(texture_ssao, screen_tex_coord).x,
-                        texture(texture_scene_reflect, screen_tex_coord),
+                        texture2D(texture_ssao, screen_tex_coord).x,
+                        texture2D(texture_scene_reflect, screen_tex_coord),
                         texture_probe,
                         texture_shadow,
                         screen_tex_coord,

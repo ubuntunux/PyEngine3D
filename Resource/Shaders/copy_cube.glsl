@@ -16,6 +16,6 @@ void main() {
     normal.z = 1.0;
     normal = normalize(normal);
     normal = (vec4(normal, 0.0) * face_matrix).xyz;
-    fs_output = texture( texture_environment, normal, lod );
+    fs_output = textureCube( texture_environment, normal, lod );
 }
 #endif // GL_FRAGMENT_SHADER

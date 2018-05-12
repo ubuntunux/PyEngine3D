@@ -81,7 +81,7 @@ void main() {
             texture_uv.x = texture_uv.x - texture_uv.y;
             texture_uv.y /= texture_size.y;
 
-            sphere = texture(texture_random, texture_uv);
+            sphere = texture2D(texture_random, texture_uv);
             sphere.w = mix(0.7, 1.0, sphere.w) * acc_scale;
 
             // find nearest sphere for outside sphere of uvw.

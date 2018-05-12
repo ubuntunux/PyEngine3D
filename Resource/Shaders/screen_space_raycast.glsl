@@ -1,4 +1,4 @@
-vec4 SampleDepthTexture(sampler2D texDepth, vec4 SampleUV0, vec4 SampleUV1)
+vec4 SampleDepthtexture2D(sampler2D texDepth, vec4 SampleUV0, vec4 SampleUV1)
 {  
     vec4 SampleDepth;
     SampleDepth.x = textureLod(texDepth, SampleUV0.xy, 0.0).x;
@@ -75,7 +75,7 @@ vec4 RayCast(
         vec4 SampleZ = RayUVz.zzzz + RayStepUVz.zzzz * vec4(1, 2, 3, 4);
  
         // Use lower res for farther samples
-        vec4 SampleDepth = SampleDepthTexture(texDepthRaw, SampleUV0, SampleUV1);
+        vec4 SampleDepth = SampleDepthtexture2D(texDepthRaw, SampleUV0, SampleUV1);
 
         vec4 DepthDiff = SampleZ - SampleDepth;
  

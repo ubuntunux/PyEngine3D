@@ -13,7 +13,7 @@ uniform int layer;
 
 void main()
 {
-    ComputeSingleScatteringTexture(
+    ComputeSingleScatteringtexture2D(
         ATMOSPHERE, transmittance_texture, vec3(gl_FragCoord.xy, layer + 0.5),
         delta_rayleigh, delta_mie);
     scattering = vec4(luminance_from_radiance * delta_rayleigh.rgb, (luminance_from_radiance * delta_mie).r);

@@ -10,7 +10,7 @@ uniform int scattering_order;
 
 void main()
 {
-    delta_irradiance = ComputeIndirectIrradianceTexture(
+    delta_irradiance = ComputeIndirectIrradiancetexture2D(
         ATMOSPHERE, single_rayleigh_scattering_texture,
         single_mie_scattering_texture, multiple_scattering_texture,
         gl_FragCoord.xy, scattering_order);

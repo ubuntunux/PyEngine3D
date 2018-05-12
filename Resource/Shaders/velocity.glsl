@@ -10,7 +10,7 @@ layout (location = 0) out vec2 fs_output;
 
 void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
-    float depth = texture(texture_depth, tex_coord).x;
+    float depth = texture2D(texture_depth, tex_coord).x;
 
     vec4 clip_coord = vec4(tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 world_pos = INV_VIEW * INV_PROJECTION * clip_coord;

@@ -24,7 +24,7 @@ vec4 get_emissive_color()
 
 vec4 get_base_color(vec2 tex_coord)
 {
-    vec4 color = texture(texture_diffuse, tex_coord);
+    vec4 color = texture2D(texture_diffuse, tex_coord);
     // gamma correction
     color.xyz = pow(color.xyz, vec3(2.2));
     color.xyz = color.xyz * brightness * diffuse_color.xyz * diffuse_color.a;
@@ -54,7 +54,7 @@ float get_sss_scale()
 vec3 get_normal(vec2 tex_coord)
 {
     // Y-Up
-    vec3 normal = texture(texture_normal, tex_coord).xzy * 2.0 - 1.0;
+    vec3 normal = texture2D(texture_normal, tex_coord).xzy * 2.0 - 1.0;
     return normalize(normal);
 }
 

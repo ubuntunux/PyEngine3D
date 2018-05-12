@@ -95,7 +95,7 @@ out vec4 fs_output;
 void main() {
     fs_output = vec4(0.0);
     vec2 tex_coord = vs_output.tex_coord.xy;
-    float depth = texture(texture_depth, tex_coord).x;
+    float depth = texture2D(texture_depth, tex_coord).x;
 
     if(depth >= 1.0)
     {
@@ -110,7 +110,7 @@ void main() {
     relative_pos.xyz /= relative_pos.w;
 
     vec3 V = normalize(-relative_pos.xyz);
-    vec3 N = normalize(texture(texture_normal, vs_output.tex_coord.xy).xyz * 2.0 - 1.0);
+    vec3 N = normalize(texture2D(texture_normal, vs_output.tex_coord.xy).xyz * 2.0 - 1.0);
 
 
     float Roughness = 0.0;
@@ -149,7 +149,7 @@ void main() {
         // if there was a hit
         if (HitUVzTime.w < 1)
         {
-            HitSampleUV = HitUVzTime.xy - texture(texture_velocity, HitUVzTime.xy).xy;
+            HitSampleUV = HitUVzTime.xy - texture2D(texture_velocity, HitUVzTime.xy).xy;
             vec4 SampleColor = SampleScreenColor(texture_diffuse, HitSampleUV);
             SampleColor.rgb /= 1 + get_linear_luminance(SampleColor.rgb);
             fs_output += SampleColor;

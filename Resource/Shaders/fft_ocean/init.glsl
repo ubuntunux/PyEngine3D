@@ -43,10 +43,10 @@ void main()
     float x = uv.x > 0.5 ? st.x - 1.0 : st.x;
     float y = uv.y > 0.5 ? st.y - 1.0 : st.y;
 
-    vec4 s12 = texture(spectrum_1_2_Sampler, uv, 0.0);
-    vec4 s34 = texture(spectrum_3_4_Sampler, uv, 0.0);
-    vec4 s12c = texture(spectrum_1_2_Sampler, vec2(1.0 + 0.5 / FFT_SIZE) - st, 0.0);
-    vec4 s34c = texture(spectrum_3_4_Sampler, vec2(1.0 + 0.5 / FFT_SIZE) - st, 0.0);
+    vec4 s12 = texture2D(spectrum_1_2_Sampler, uv, 0.0);
+    vec4 s34 = texture2D(spectrum_3_4_Sampler, uv, 0.0);
+    vec4 s12c = texture2D(spectrum_1_2_Sampler, vec2(1.0 + 0.5 / FFT_SIZE) - st, 0.0);
+    vec4 s34c = texture2D(spectrum_3_4_Sampler, vec2(1.0 + 0.5 / FFT_SIZE) - st, 0.0);
 
     vec2 k1 = vec2(x, y) * INVERSE_GRID_SIZES.x;
     vec2 k2 = vec2(x, y) * INVERSE_GRID_SIZES.y;

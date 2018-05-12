@@ -58,8 +58,8 @@ void main()
             int j = y >= (FFT_SIZE / 2) ? y - FFT_SIZE : y;
             vec2 k = 2.0 * PI * vec2(i, j);
 
-            spectrum12 = texture(spectrum_1_2_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
-            spectrum34 = texture(spectrum_3_4_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
+            spectrum12 = texture2D(spectrum_1_2_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
+            spectrum34 = texture2D(spectrum_3_4_Sampler, vec2(float(x) + 0.5, float(y) + 0.5) / float(FFT_SIZE));
 
             slopeVariances += getSlopeVariances(k / GRID_SIZES.x, A, B, C, spectrum12.xy) * 100.0;
             slopeVariances += getSlopeVariances(k / GRID_SIZES.y, A, B, C, spectrum12.zw) * 100.0;

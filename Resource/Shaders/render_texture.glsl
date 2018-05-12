@@ -33,7 +33,7 @@ vec4 get_texture_2d_array(sampler2DArray texture_source)
         return vec4(0.0, 0.0, 0.0, 0.0);
     }
     vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
-    return texture(texture_source, texcoord, debug_mipmap);
+    return texture2DArray(texture_source, texcoord, debug_mipmap);
 }
 
 vec4 get_texture_3d(sampler3D texture_source)
@@ -48,7 +48,7 @@ vec4 get_texture_3d(sampler3D texture_source)
     }
     depth /= texture_size.z;
     vec3 texcoord = vec3(fract(vs_output.tex_coord.x * width), fract(vs_output.tex_coord.y * height), depth);
-    return texture(texture_source, texcoord, debug_mipmap);
+    return texture3D(texture_source, texcoord, debug_mipmap);
 }
 
 void main()
@@ -56,7 +56,7 @@ void main()
     if(GL_TEXTURE_2D == debug_target)
     {
         vec2 texcoord = vs_output.tex_coord.xy;
-        fs_output = texture(texture_source_2d, texcoord, debug_mipmap);
+        fs_output = texture2D(texture_source_2d, texcoord, debug_mipmap);
     }
     else if(GL_TEXTURE_2D_ARRAY == debug_target)
     {
@@ -72,7 +72,7 @@ void main()
         position = INV_VIEW_ORIGIN * INV_PROJECTION * position;
         position.xyz /= position.w;
         position.y = -position.y;
-        fs_output = texture(texture_source_cube, normalize(position.xyz), debug_mipmap);
+        fs_output = textureCube(texture_source_cube, normalize(position.xyz), debug_mipmap);
     }
 
     if(debug_absolute)

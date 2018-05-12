@@ -176,13 +176,13 @@ void main()
     vec2 screen_tex_coord = (vs_output.proj_pos.xy / vs_output.proj_pos.w) * 0.5 + 0.5;
     vec3 relative_pos = CAMERA_POSITION.xyz - vs_output.world_pos.xyz;
     float scene_linear_depth = dot(relative_pos.xyz, vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z));
-    float bg_linear_depth = texture(texture_linear_depth, screen_tex_coord).x;
+    float bg_linear_depth = texture2D(texture_linear_depth, screen_tex_coord).x;
     float roughness = 0.1;
 
-    vec2 slopes = textureLod(fftWavesSampler, vec3(uv / simulation_size.x, 1.0), 0.0).xy;
-    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw;
-    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.z, 2.0), 0.0).xy;
-    slopes += textureLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw;
+    vec2 slopes = texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.x, 1.0), 0.0).xy;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.z, 2.0), 0.0).xy;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw;
 
     float dist = length(relative_pos);
     float distance_fade = clamp(1.0 - dist * 0.005, 0.0, 1.0);
@@ -220,7 +220,7 @@ void main()
     float ua = pow(A / SCALE, 0.25);
     float ub = 0.5 + 0.5 * B / sqrt(A * C);
     float uc = pow(C / SCALE, 0.25);
-    vec2 sigmaSq = texture(slopeVarianceSampler, vec3(ua, ub, uc)).xw;
+    vec2 sigmaSq = texture3D(slopeVarianceSampler, vec3(ua, ub, uc)).xw;
 
     sigmaSq = max(sigmaSq, 2e-5);
 
@@ -252,7 +252,7 @@ void main()
     vec3 light_color = LIGHT_COLOR.xyz * scene_sun_irradiance;
 
     const float foam_sharpen = 1.0;
-    vec3 foam = texture(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
+    vec3 foam = texture2D(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
     float lum = get_luminance(foam);
     foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak;
 
@@ -270,8 +270,8 @@ void main()
     vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
     float shValue = fresnel * envBRDF.x + envBRDF.y;
 
-    vec3 ibl_diffuse_color = textureLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
-    vec3 ibl_specular_color = textureLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
+    vec3 ibl_diffuse_color = textureCubeLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
+    vec3 ibl_specular_color = textureCubeLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
 
     diffuse_light += shValue * ibl_diffuse_color;
     specular_lighting += shValue * ibl_specular_color;

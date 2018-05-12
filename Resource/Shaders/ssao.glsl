@@ -31,10 +31,10 @@ void main() {
     }*/
 
     vec4 relative_pos = linear_depth_to_relative_world(tex_coord, linear_depth);
-    vec3 normal = texture(texture_normal, tex_coord).xyz * 2.0 - 1.0;
+    vec3 normal = texture2D(texture_normal, tex_coord).xyz * 2.0 - 1.0;
     vec2 noise_size = textureSize(texture_noise, 0);
 
-    vec3 randomVec = texture(texture_noise, tex_coord * texture_size / noise_size).xyz;
+    vec3 randomVec = texture2D(texture_noise, tex_coord * texture_size / noise_size).xyz;
 
     vec3 tangent   = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);

@@ -204,7 +204,7 @@ vec3 Reproject(vec2 texCoord)
 
     if(DilationMode == DilationModes_CenterAverage)
     {
-        velocity += texture(texture_velocity, texCoord).xy;
+        velocity += texture2D(texture_velocity, texCoord).xy;
     }
     else if(DilationMode == DilationModes_DilateNearestDepth)
     {
@@ -214,7 +214,7 @@ vec3 Reproject(vec2 texCoord)
         {
             for(int vx = -1; vx <= 1; ++vx)
             {
-                vec2 neighborVelocity = texture(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
+                vec2 neighborVelocity = texture2D(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
                 float neighborDepth = textureLod(texture_linear_depth, texCoord + vec2(vx, vy) * inv_depth_tex_size, 0.0).x;
                 if(neighborDepth < closestDepth)
                 {
@@ -231,7 +231,7 @@ vec3 Reproject(vec2 texCoord)
         {
             for(int vx = -1; vx <= 1; ++vx)
             {
-                vec2 neighborVelocity = texture(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
+                vec2 neighborVelocity = texture2D(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
                 float neighborVelocityMag = dot(neighborVelocity, neighborVelocity).x;
                 if(dot(neighborVelocity, neighborVelocity) > greatestVelocity)
                 {
@@ -248,7 +248,7 @@ vec3 Reproject(vec2 texCoord)
 
     if(UseStandardReprojection)
     {
-        return texture(texture_prev, reprojectedUV).xyz;
+        return texture2D(texture_prev, reprojectedUV).xyz;
     }
 
     vec3 sum = vec3(0.0f);
@@ -259,7 +259,7 @@ vec3 Reproject(vec2 texCoord)
         for(int tx = -1; tx <= 2; ++tx)
         {
             vec2 samplePos = floor(reprojectedPos + vec2(tx, ty)) + 0.5f;
-            vec3 reprojectedSample = texture(texture_prev, samplePos / texture_prev_size).xyz;
+            vec3 reprojectedSample = texture2D(texture_prev, samplePos / texture_prev_size).xyz;
 
             vec2 sampleDist = abs(samplePos - reprojectedPos);
             float filterWeight = Filter(sampleDist.x, ReprojectionFilter, 1.0f, false) *
@@ -306,7 +306,7 @@ vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)
             vec2 sampleUV = texCoord + sampleOffset / texture_input_size;
             sampleUV = clamp(sampleUV, 0.0, 1.0);
 
-            vec3 sample_color = texture(texture_input, sampleUV).xyz;
+            vec3 sample_color = texture2D(texture_input, sampleUV).xyz;
 
             vec2 sampleDist = abs(sampleOffset) / (ResolveFilterDiameter / 2.0f);
 
@@ -334,7 +334,7 @@ vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)
         }
     }
 
-    vec4 result = texture(texture_input, texCoord);
+    vec4 result = texture2D(texture_input, texCoord);
 
     vec3 currColor = result.xyz;
     vec3 prevColor = Reproject(texCoord);

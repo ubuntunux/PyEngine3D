@@ -190,7 +190,7 @@ void GetRMuFromTransmittanceTextureUv(const in AtmosphereParameters atmosphere,
 }
 
 
-vec3 ComputeTransmittanceToTopAtmosphereBoundaryTexture(
+vec3 ComputeTransmittanceToTopAtmosphereBoundarytexture2D(
     const in AtmosphereParameters atmosphere,
     const in vec2 gl_frag_coord)
 {
@@ -208,7 +208,7 @@ vec3 GetTransmittanceToTopAtmosphereBoundary(
     float r, float mu)
 {
     vec2 uv = GetTransmittanceTextureUvFromRMu(atmosphere, r, mu);
-    return vec3(texture(transmittance_texture, uv));
+    return vec3(texture2D(transmittance_texture, uv));
 }
 
 
@@ -444,7 +444,7 @@ void GetRMuMuSNuFromScatteringTextureFragCoord(
 }
 
 
-void ComputeSingleScatteringTexture(
+void ComputeSingleScatteringtexture2D(
     const in AtmosphereParameters atmosphere,
     const in sampler2D transmittance_texture,
     const in vec3 gl_frag_coord,
@@ -475,7 +475,7 @@ vec3 GetScattering(
     vec3 uvw0 = vec3((tex_x + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE), uvwz.z, uvwz.w);
     vec3 uvw1 = vec3((tex_x + 1.0 + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE), uvwz.z, uvwz.w);
     return vec3(
-        texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp);
+        texture3D(scattering_texture, uvw0) * (1.0 - lerp) + texture3D(scattering_texture, uvw1) * lerp);
 }
 
 vec3 GetScattering(
@@ -603,7 +603,7 @@ vec3 ComputeMultipleScattering(
 }
 
 
-vec3 ComputeScatteringDensityTexture(
+vec3 ComputeScatteringDensitytexture2D(
     const in AtmosphereParameters atmosphere,
     const in sampler2D transmittance_texture,
     const in sampler3D single_rayleigh_scattering_texture,
@@ -625,7 +625,7 @@ vec3 ComputeScatteringDensityTexture(
 }
 
 
-vec3 ComputeMultipleScatteringTexture(
+vec3 ComputeMultipleScatteringtexture2D(
     const in AtmosphereParameters atmosphere,
     const in sampler2D transmittance_texture,
     const in sampler3D scattering_density_texture,
@@ -721,7 +721,7 @@ void GetRMuSFromIrradianceTextureUv(const in AtmosphereParameters atmosphere,
     mu_s = ClampCosine(2.0 * x_mu_s - 1.0);
 }
 
-vec3 ComputeDirectIrradianceTexture(
+vec3 ComputeDirectIrradiancetexture2D(
     const in AtmosphereParameters atmosphere,
     const in sampler2D transmittance_texture,
     const in vec2 gl_frag_coord)
@@ -733,7 +733,7 @@ vec3 ComputeDirectIrradianceTexture(
 }
 
 
-vec3 ComputeIndirectIrradianceTexture(
+vec3 ComputeIndirectIrradiancetexture2D(
     const in AtmosphereParameters atmosphere,
     const in sampler3D single_rayleigh_scattering_texture,
     const in sampler3D single_mie_scattering_texture,
@@ -755,7 +755,7 @@ vec3 GetIrradiance(
     float mu_s)
 {
     vec2 uv = GetIrradianceTextureUvFromRMuS(atmosphere, r, mu_s);
-    return vec3(texture(irradiance_texture, uv));
+    return vec3(texture2D(irradiance_texture, uv));
 }
 
 
@@ -789,15 +789,15 @@ vec3 GetCombinedScattering(
     vec3 uvw1 = vec3((tex_x + 1.0 + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE), uvwz.z, uvwz.w);
 #if COMBINED_SCATTERING_TEXTURES == 1
     vec4 combined_scattering =
-        texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp;
+        texture3D(scattering_texture, uvw0) * (1.0 - lerp) + texture3D(scattering_texture, uvw1) * lerp;
     vec3 scattering = vec3(combined_scattering.xyz);
     single_mie_scattering = GetExtrapolatedSingleMieScattering(atmosphere, combined_scattering);
 #else
     vec3 scattering = vec3(
-        texture(scattering_texture, uvw0) * (1.0 - lerp) + texture(scattering_texture, uvw1) * lerp);
+        texture3D(scattering_texture, uvw0) * (1.0 - lerp) + texture3D(scattering_texture, uvw1) * lerp);
     single_mie_scattering = vec3(
-        texture(single_mie_scattering_texture, uvw0) * (1.0 - lerp) +
-        texture(single_mie_scattering_texture, uvw1) * lerp);
+        texture3D(single_mie_scattering_texture, uvw0) * (1.0 - lerp) +
+        texture3D(single_mie_scattering_texture, uvw1) * lerp);
 #endif
     return scattering;
 }
@@ -1057,7 +1057,7 @@ float GetSceneShadowLength(float scene_linear_depth, vec3 view_direction, sample
         vec4 shadow_uv = SHADOW_MATRIX * vec4(world_pos, 1.0);
         shadow_uv.xyz /= shadow_uv.w;
         shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-        float shadow_depth = texture(texture_shadow, shadow_uv.xy, 0).x;
+        float shadow_depth = texture2D(texture_shadow, shadow_uv.xy, 0).x;
 
         if(shadow_uv.x < 0.0 || 1.0 < shadow_uv.x || shadow_uv.y < 0.0 || 1.0 < shadow_uv.y)
         {

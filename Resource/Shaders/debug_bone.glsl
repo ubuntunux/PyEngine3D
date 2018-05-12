@@ -2,8 +2,8 @@
 
 #include "scene_constants.glsl"
 
-uniform mat4 mat1;
-uniform mat4 mat2;
+uniform mat4 matrix1;
+uniform mat4 matrix2;
 
 struct VERTEX_OUTPUT
 {
@@ -33,11 +33,11 @@ void main() {
     vec3 local_pos = vs_in_position.xyz * vec3(0.1, 0.1, 0.1);
     if(vs_in_position.y > 0.0)
     {
-        vs_output.world_position = (mat2 * vec4(local_pos, 1.0)).xyz;
+        vs_output.world_position = (matrix2 * vec4(local_pos, 1.0)).xyz;
     }
     else
     {
-        vs_output.world_position = (mat1 * vec4(local_pos, 1.0)).xyz;
+        vs_output.world_position = (matrix1 * vec4(local_pos, 1.0)).xyz;
     }
 
 #if SKELETAL

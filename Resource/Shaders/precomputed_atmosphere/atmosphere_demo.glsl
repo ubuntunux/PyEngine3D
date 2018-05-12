@@ -33,7 +33,7 @@ void main()
     // Scene
     float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
     vec3 scene_point = view_direction * scene_linear_depth * atmosphere_ratio;
-    vec3 normal = normalize(texture(texture_normal, uv).xyz * 2.0 - 1.0);
+    vec3 normal = normalize(texture2D(texture_normal, uv).xyz * 2.0 - 1.0);
     float scene_shadow_length;
     vec3 scene_radiance;
     vec3 scene_sun_irradiance;
@@ -68,7 +68,7 @@ void main()
             vec4 shadow_uv = SHADOW_MATRIX * vec4(point, 1.0);
             shadow_uv.xyz /= shadow_uv.w;
             shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-            float scene_shadow = texture(texture_shadow, shadow_uv.xy, 0).x < shadow_uv.z ? 0.0 : 1.0;
+            float scene_shadow = texture2D(texture_shadow, shadow_uv.xy, 0).x < shadow_uv.z ? 0.0 : 1.0;
 
             vec3 sky_irradiance;
             vec3 sun_irradiance = GetSunAndSkyIrradiance(
@@ -105,7 +105,7 @@ void main()
             vec4 shadow_uv = SHADOW_MATRIX * vec4(point, 1.0);
             shadow_uv.xyz /= shadow_uv.w;
             shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-            float scene_shadow = texture(texture_shadow, shadow_uv.xy, 0).x < shadow_uv.z ? 0.0 : 1.0;
+            float scene_shadow = texture2D(texture_shadow, shadow_uv.xy, 0).x < shadow_uv.z ? 0.0 : 1.0;
 
             vec3 sky_irradiance;
             vec3 sun_irradiance = GetSunAndSkyIrradiance(

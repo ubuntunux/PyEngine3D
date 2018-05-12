@@ -55,10 +55,10 @@ float get_cloud_density(vec3 cloud_scale, vec3 noise_scale, vec3 uvw, vec3 speed
 {
     uvw.xy += CAMERA_POSITION.xz;
 
-    float cloud = texture(texture_cloud, uvw * cloud_scale + speed * cloud_tiling / noise_tiling).x;
+    float cloud = texture3D(texture_cloud, uvw * cloud_scale + speed * cloud_tiling / noise_tiling).x;
     cloud = saturate(Contrast((cloud - 1.0 + cloud_coverage), cloud_contrast));
 
-    float noise = texture(texture_noise, uvw * noise_scale + speed * 0.3).x;
+    float noise = texture3D(texture_noise, uvw * noise_scale + speed * 0.3).x;
     noise = saturate(Contrast((noise - 1.0 + noise_coverage) * weight, noise_contrast));
 
     // Remap is very important!!

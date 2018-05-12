@@ -21,7 +21,7 @@ layout (location = 0) out vec4 fs_output;
 void main() {
     vec2 screen_tex_coord = vs_output.tex_coord.xy;
 
-    float depth = texture(texture_depth, screen_tex_coord).x;
+    float depth = texture2D(texture_depth, screen_tex_coord).x;
 
     if(depth == 1.0)
     {
@@ -29,12 +29,12 @@ void main() {
         return;
     }
 
-    vec4 base_color = texture(texture_diffuse, screen_tex_coord);
+    vec4 base_color = texture2D(texture_diffuse, screen_tex_coord);
     // decoding
     base_color.w *= 10.0;
 
-    vec4 material = texture(texture_material, screen_tex_coord);
-    vec3 N = normalize(texture(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
+    vec4 material = texture2D(texture_material, screen_tex_coord);
+    vec3 N = normalize(texture2D(texture_normal, screen_tex_coord).xyz * 2.0 - 1.0);
 
     vec4 world_position = vec4(screen_tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     world_position = INV_VIEW * INV_PROJECTION * world_position;
@@ -53,8 +53,8 @@ void main() {
                     metalicness,
                     roughness,
                     reflectance,
-                    texture(texture_ssao, screen_tex_coord).x,
-                    texture(texture_scene_reflect, screen_tex_coord),
+                    texture2D(texture_ssao, screen_tex_coord).x,
+                    texture2D(texture_scene_reflect, screen_tex_coord),
                     texture_probe,
                     texture_shadow,
                     screen_tex_coord,

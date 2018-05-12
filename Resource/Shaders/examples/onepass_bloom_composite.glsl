@@ -10,7 +10,7 @@ layout (location = 0) out vec4 fs_output;
 
 vec3 bloomTile(float lod, vec2 offset, vec2 uv)
 {
-    return texture(texture_bloom, uv / exp2(lod) + offset).rgb;
+    return texture2D(texture_bloom, uv / exp2(lod) + offset).rgb;
 }
 
 vec3 getBloom(vec2 uv)

@@ -16,11 +16,11 @@ void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
 
     fs_output = vec4(0.0, 0.0, 0.0, 1.0);
-    fs_output.xyz += texture(texture_bloom0, tex_coord).xyz;
-    fs_output.xyz += texture(texture_bloom1, tex_coord).xyz;
-    fs_output.xyz += texture(texture_bloom2, tex_coord).xyz;
-    fs_output.xyz += texture(texture_bloom3, tex_coord).xyz;
-    fs_output.xyz += texture(texture_bloom4, tex_coord).xyz;
+    fs_output.xyz += texture2D(texture_bloom0, tex_coord).xyz;
+    fs_output.xyz += texture2D(texture_bloom1, tex_coord).xyz;
+    fs_output.xyz += texture2D(texture_bloom2, tex_coord).xyz;
+    fs_output.xyz += texture2D(texture_bloom3, tex_coord).xyz;
+    fs_output.xyz += texture2D(texture_bloom4, tex_coord).xyz;
     fs_output.xyz *= bloom_intensity;
 }
 #endif // GL_FRAGMENT_SHADER

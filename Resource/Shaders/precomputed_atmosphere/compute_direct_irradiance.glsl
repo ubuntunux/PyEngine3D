@@ -7,7 +7,7 @@ layout(location = 1) out vec3 irradiance;
 
 void main()
 {
-    delta_irradiance = ComputeDirectIrradianceTexture(ATMOSPHERE, transmittance_texture, gl_FragCoord.xy);
+    delta_irradiance = ComputeDirectIrradiancetexture2D(ATMOSPHERE, transmittance_texture, gl_FragCoord.xy);
     irradiance = vec3(0.0);
 }
 #endif

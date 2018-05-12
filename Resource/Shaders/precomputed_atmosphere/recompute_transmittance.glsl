@@ -4,7 +4,7 @@
 #ifdef GL_FRAGMENT_SHADER
 layout(location = 0) out vec3 transmittance;
 void main() {
-  transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
+  transmittance = ComputeTransmittanceToTopAtmosphereBoundarytexture2D(
       ATMOSPHERE, gl_FragCoord.xy);
 }
 #endif

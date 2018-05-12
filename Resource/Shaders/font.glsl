@@ -32,7 +32,7 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     fs_output.xyz = vec3(1.0);
-    fs_output.w = 2.0 * texture(texture_font, vs_output.font_offset.zw + vs_output.tex_coord).x;
+    fs_output.w = 2.0 * texture2D(texture_font, vs_output.font_offset.zw + vs_output.tex_coord).x;
     //fs_output = vec4(smoothstep(0.99, 1.0, fs_output.x));
 }
 #endif

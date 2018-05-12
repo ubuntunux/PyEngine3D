@@ -40,7 +40,7 @@ void main() {
     for( int i = 0; i < 7; i++ )
 	{
 	    vec2 uv = vec2(tex_coord.x + gaussFilter[i].x * scale.x, tex_coord.y + gaussFilter[i].x * scale.y);
-		fs_output += texture(texture_diffuse, uv) * gaussFilter[i].yyyy;
+		fs_output += texture2D(texture_diffuse, uv) * gaussFilter[i].yyyy;
 	}
 }
 #endif // GL_FRAGMENT_SHADER

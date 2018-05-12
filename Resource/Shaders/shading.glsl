@@ -278,8 +278,8 @@ vec4 surface_shading(vec4 base_color,
         const vec2 env_size = textureSize(texture_probe, 0);
         const float max_env_mipmap = 5.0; // log2(max(env_size.x, env_size.y));
 
-        vec3 ibl_diffuse_light = textureLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
-        vec3 ibl_specular_light = textureLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
+        vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
+        vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
 
         // Note : because texture_probe is HDR and not sRGB.
         //ibl_diffuse_light = pow(ibl_diffuse_light, vec3(2.2));

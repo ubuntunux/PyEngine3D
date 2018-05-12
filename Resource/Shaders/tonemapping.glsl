@@ -53,7 +53,7 @@ float vignetting(vec2 uv, float inner_value, float outter_value)
 }
 
 void main() {
-    vec3 texColor = texture(texture_diffuse, vs_output.tex_coord.xy).xyz;
+    vec3 texColor = texture2D(texture_diffuse, vs_output.tex_coord.xy).xyz;
 
     if(is_render_tonemapping)
     {

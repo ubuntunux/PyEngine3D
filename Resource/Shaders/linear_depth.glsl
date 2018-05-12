@@ -10,7 +10,7 @@ layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
 void main() {
-    float depth = texture(texture_depth, vs_output.tex_coord.xy).x;
+    float depth = texture2D(texture_depth, vs_output.tex_coord.xy).x;
     fs_output = vec4(depth_to_linear_depth(depth));
 }
 #endif // GL_FRAGMENT_SHADER

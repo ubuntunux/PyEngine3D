@@ -24,7 +24,7 @@ void main() {
         for( float x = -blur_kernel_radius; x <= blur_kernel_radius; x++ )
         {
             float wg = pow(1.0 - length(vec2(x, y)) / radius, 3.0);
-            fs_output += texture(texture_diffuse, tex_coord + vec2(x, y) * scale) * wg;
+            fs_output += texture2D(texture_diffuse, tex_coord + vec2(x, y) * scale) * wg;
             weight += wg;
         }
     }

@@ -9,7 +9,7 @@ uniform int layer;
 
 void main()
 {
-    scattering_density = ComputeScatteringDensityTexture(
+    scattering_density = ComputeScatteringDensitytexture2D(
         ATMOSPHERE, transmittance_texture, single_rayleigh_scattering_texture,
         single_mie_scattering_texture, multiple_scattering_texture,
         irradiance_texture, vec3(gl_FragCoord.xy, layer + 0.5),

@@ -43,7 +43,7 @@ void main()
             vec3 temp = right * c_phi + up * s_phi;
             vec3 sampleVector = normal * c_theta + temp * s_theta;
 
-            sampledColour += texture( texture_environment, sampleVector ).rgb * c_theta;
+            sampledColour += textureCube( texture_environment, sampleVector ).rgb * c_theta;
             total_weight += c_theta;
         }
     }

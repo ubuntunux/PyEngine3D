@@ -29,7 +29,7 @@ vec3 makeBloom(float lod, vec2 offset, vec2 bCoord, vec2 pixelSize){
         for (int j = -5; j < 5; j++)
         {
             float wg = pow(1.0 - length(vec2(i,j)) * 0.125, 6.0);
-            vec3 color = texture(texture_diffuse,coord + vec2(i,j) * scale + lodFactor * pixelSize, lod).rgb;
+            vec3 color = texture2D(texture_diffuse,coord + vec2(i,j) * scale + lodFactor * pixelSize, lod).rgb;
 
             float luminance = max(0.01, get_luminance(color));
             color = color * min(bloom_threshold_max, max(0.0, luminance - bloom_threshold_min)) / luminance;
