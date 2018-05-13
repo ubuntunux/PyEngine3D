@@ -27,6 +27,10 @@ reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro typ
 
 shader_types = [GL_VERTEX_SHADER, GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER]
 shader_type_names = [shader_type.name for shader_type in shader_types]
+texture_targets = ["texture2D", "texture2DLod", "texture2DGrad",
+                   "texture2DArray", "texture2DArrayLod", "texture2DArrayGrad",
+                   "texture3D", "texture3DLod", "texture3DGrad",
+                   "textureCube", "textureCubeLod", "textureCubeGrad"]
 
 
 def parsing_macros(shader_code_list):
@@ -65,6 +69,10 @@ def parsing_macros(shader_code_list):
 
     final_macros = {}
     for macro in macros:
+        # ignore reserved words
+        if macro in texture_targets:
+            continue
+
         if macro in all_variables:
             final_macros[macro] = macros[macro]
     return final_macros
@@ -179,9 +187,6 @@ class Shader:
                 combined_macros[macro] = external_macros[macro]
 
         # global texture function
-        texture_targets = ["texture2D", "texture2DLod", "texture2DArray", "texture2DArrayLod", "texture3D",
-                           "texture3DLod", "textureCube", "textureCubeLod"]
-
         if 1 == combined_macros["USE_GLOBAL_TEXTURE_FUNCTION"]:
             for texture_target in texture_targets:
                 if "Lod" in texture_target:
