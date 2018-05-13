@@ -1,5 +1,3 @@
-#extension GL_EXT_texture_array : enable
-
 uniform sampler2D butterflySampler;
 uniform sampler2DArray imgSampler; // 2 complex inputs (= 4 values) per layer
 uniform float pass;

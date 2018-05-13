@@ -181,6 +181,16 @@ class Shader:
         # insert shader version - ex) #version 430 core
         final_code_lines = [shader_version, ]
 
+        # insert extension
+        final_code_lines.append("# extension GL_EXT_texture_array : enable")
+
+        # replace api
+        texture_targets = ["texture2D", "texture2DLod", "texture2DArray", "texture2DArrayLod", "texture3D",
+                           "texture3DLod", "textureCube", "textureCubeLod"]
+
+        for texture_target in texture_targets:
+            final_code_lines.append("#define %s texture" % texture_target)
+
         # insert defines to final code
         for macro in combined_macros:
             final_code_lines.append("#define %s %s" % (macro, str(combined_macros[macro])))

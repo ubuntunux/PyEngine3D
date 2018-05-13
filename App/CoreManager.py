@@ -118,11 +118,14 @@ class CoreManager(Singleton):
         self.scene_manager = SceneManager.instance()
         self.projectManager = ProjectManager.instance()
 
-        # check innvalid project
+        # check invalid project
         if not self.projectManager.initialize(self, project_filename):
             self.valid = False
             self.exit()
             return False
+
+        # display_gl_info
+        self.renderer.display_gl_info()
 
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.projectManager.config.Screen.size

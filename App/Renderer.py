@@ -67,27 +67,26 @@ class Renderer(Singleton):
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
 
+    @staticmethod
+    def display_gl_info():
+        logger.info("=" * 30)
+
+        infos = [GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION]
+        for info in infos:
+            logger.info("%s : %s" % (info.name, glGetString(info).decode('utf-8')))
+
+        infos = [GL_MAX_VERTEX_ATTRIBS, GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_UNIFORM_COMPONENTS,
+                 GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, GL_MAX_FRAGMENT_UNIFORM_BLOCKS,
+                 GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
+                 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_COORDS,
+                 GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VARYING_FLOATS]
+        for info in infos:
+            logger.info("%s : %s" % (info.name, glGetIntegerv(info)))
+
+        logger.info("=" * 30)
+
     def initialize(self, core_manager):
-        logger.info("=" * 30)
         logger.info("Initialize Renderer")
-
-        logger.info("GL_MAX_VERTEX_ATTRIBS: %d" % glGetIntegerv(GL_MAX_VERTEX_ATTRIBS))
-        logger.info("GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS))
-        logger.info("GL_MAX_VERTEX_UNIFORM_COMPONENTS: %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS))
-        logger.info("GL_MAX_VERTEX_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_VERTEX_UNIFORM_BLOCKS))
-        logger.info("GL_MAX_GEOMETRY_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_GEOMETRY_UNIFORM_BLOCKS))
-        logger.info("GL_MAX_FRAGMENT_UNIFORM_BLOCKS : %d" % glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS))
-        logger.info("GL_MAX_FRAGMENT_UNIFORM_COMPONENTS: %d" % glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS))
-        logger.info("GL_MAX_UNIFORM_BLOCK_SIZE : %d" % glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE))
-        logger.info("GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT : %d" % glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT))
-        logger.info("GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS))
-        logger.info("GL_MAX_DRAW_BUFFERS: %d" % glGetIntegerv(GL_MAX_DRAW_BUFFERS))
-        logger.info("GL_MAX_TEXTURE_COORDS: %d" % glGetIntegerv(GL_MAX_TEXTURE_COORDS))
-        logger.info("GL_MAX_TEXTURE_IMAGE_UNITS: %d" % glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS))
-        logger.info("GL_MAX_VARYING_FLOATS: %d" % glGetIntegerv(GL_MAX_VARYING_FLOATS))
-
-        logger.info("=" * 30)
-
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
         self.render_option_manager = core_manager.render_option_manager

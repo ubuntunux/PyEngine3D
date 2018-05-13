@@ -1,5 +1,3 @@
-#extension GL_EXT_texture_array : enable
-
 #include "scene_constants.glsl"
 #include "utility.glsl"
 #include "shading.glsl"
