@@ -610,7 +610,8 @@ class MaterialLoader(ResourceLoader):
                 if generate_new_material:
                     shader_name = material_datas.get('shader_name')
                     macros = material_datas.get('macros', {})
-                    self.generate_new_material(resource.name, shader_name, macros)
+                    compile_option = {}
+                    self.generate_new_material(resource.name, shader_name, compile_option, macros)
                 else:
                     material = Material(resource.name, material_datas)
                     resource.set_data(material)
@@ -625,13 +626,13 @@ class MaterialLoader(ResourceLoader):
             shader_name = shader_name + "_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, "_".join(add_name))).replace("-", "_")
         return shader_name
 
-    def generate_new_material(self, material_name, shader_name, macros={}):
+    def generate_new_material(self, material_name, shader_name, compile_option, macros={}):
         logger.info("Generate new material : %s" % material_name)
         shader = self.resource_manager.getShader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
 
         if shader:
-            shader_codes = shader.generate_shader_codes(shader_version, macros)
+            shader_codes = shader.generate_shader_codes(shader_version, compile_option, macros)
             if shader_codes is not None:
                 shader_code_list = shader_codes.values()
                 final_macros = parsing_macros(shader_code_list)
@@ -693,8 +694,11 @@ class MaterialLoader(ResourceLoader):
                         global_texture_function_error = """'texture' : no matching overloaded function found (using implicit conversion)"""
                         if global_texture_function_error in material.compile_message:
                             logger.error("Recompile %s material cause global_texture_function_error." % material_name)
-                            macros["USE_GLOBAL_TEXTURE_FUNCTION"] = 0
-                            self.generate_new_material(material_name, shader_name, macros=macros)
+                            compile_option = dict(USE_GLOBAL_TEXTURE_FUNCTION=1)
+                            self.generate_new_material(material_name,
+                                                       shader_name,
+                                                       compile_option=compile_option,
+                                                       macros=macros)
         logger.error("Failed to generate_new_material %s." % material_name)
         return None
 
@@ -710,7 +714,8 @@ class MaterialLoader(ResourceLoader):
 
         material = self.getResourceData(material_name)
         if material is None:
-            material = self.generate_new_material(material_name, shader_name, macros)
+            compile_option = {}
+            material = self.generate_new_material(material_name, shader_name, compile_option, macros)
         return material
 
 

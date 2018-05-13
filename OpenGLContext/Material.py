@@ -7,12 +7,11 @@ from collections import OrderedDict
 from OpenGL.GL import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.shaders import glDeleteShader
-from OpenGL.arrays import GLbyteArray
 
 import numpy as np
 
 from Common import logger
-from Utilities import GetClassName, Attributes, Logger
+from Utilities import Attributes, Logger
 from .UniformBuffer import CreateUniformBuffer, UniformTextureBase
 from App import CoreManager
 

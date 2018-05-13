@@ -67,7 +67,7 @@ def parsing_macros(shader_code_list):
     for shader_code in shader_code_list:
         all_variables.extend(re.findall(reVariable, re.sub(reDefineMacro, '', shader_code)))
 
-    final_macros = {}
+    final_macros = OrderedDict()
     for macro in macros:
         # ignore reserved words
         if macro in texture_targets:
@@ -146,12 +146,12 @@ class Shader:
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
-        return self.attribute
+        return self.attributecompile_option
 
-    def generate_shader_codes(self, shader_version, external_macros={}):
+    def generate_shader_codes(self, shader_version, compile_option, external_macros={}):
         shader_codes = {}
         for shader_type in shader_types:
-            shader_code = self.__parsing_final_code__(shader_type.name, shader_version, external_macros)
+            shader_code = self.__parsing_final_code__(shader_type.name, shader_version, compile_option, external_macros)
             # If it is not a vertex shader or fragment shader, you must have a main function.
             if shader_type in (GL_VERTEX_SHADER, GL_FRAGMENT_SHADER) or re.search(reVoidMain, shader_code) is not None:
                 shader_codes[shader_type] = shader_code
@@ -160,7 +160,7 @@ class Shader:
             return None
         return shader_codes
 
-    def __parsing_final_code__(self, shader_type_name, shader_version, external_macros={}):
+    def __parsing_final_code__(self, shader_type_name, shader_version, compile_option, external_macros={}):
         if self.shader_code == "" or self.shader_code is None:
             return ""
 
@@ -187,7 +187,7 @@ class Shader:
                 combined_macros[macro] = external_macros[macro]
 
         # global texture function
-        if 1 == combined_macros["USE_GLOBAL_TEXTURE_FUNCTION"]:
+        if "USE_GLOBAL_TEXTURE_FUNCTION" in compile_option:
             for texture_target in texture_targets:
                 if "Lod" in texture_target:
                     combined_macros[texture_target] = "textureLod"
