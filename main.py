@@ -43,6 +43,7 @@ from Utilities import AutoEnum
 class GUIEditor(AutoEnum):
     CLIENT_MODE = ()
     QT = ()
+    TKINTER = ()
     KIVY = ()
 
 
@@ -61,12 +62,12 @@ def run(editor=GUIEditor.QT, project_filename=""):
         # Select GUI backend
         if editor == GUIEditor.QT:
             from UI.QT.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
-            editor_process.start()
+        elif editor == GUIEditor.TKINTER:
+            from UI.TKInter.MainWindow import run_editor
         elif editor == GUIEditor.KIVY:
             from UI.Kivy.MainWindow import run_editor
-            editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
-            editor_process.start()
+        editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
+        editor_process.start()
 
     # Client process
     coreManager = CoreManager.instance()
