@@ -124,7 +124,7 @@ def parsing_material_components(shader_code_list):
 
 
 class Shader:
-    default_macros = dict(MATERIAL_COMPONENTS=1)
+    default_macros = dict(MATERIAL_COMPONENTS=1, USE_GLOBAL_TEXTURE_FUNCTION=1)
 
     def __init__(self, shader_name, shader_code):
         logger.info("Load " + GetClassName(self) + " : " + shader_name)
@@ -178,18 +178,21 @@ class Shader:
             else:
                 combined_macros[macro] = external_macros[macro]
 
-        # insert shader version - ex) #version 430 core
-        final_code_lines = [shader_version, ]
-
-        # insert extension
-        final_code_lines.append("# extension GL_EXT_texture_array : enable")
-
-        # replace api
+        # global texture function
         texture_targets = ["texture2D", "texture2DLod", "texture2DArray", "texture2DArrayLod", "texture3D",
                            "texture3DLod", "textureCube", "textureCubeLod"]
 
-        for texture_target in texture_targets:
-            final_code_lines.append("#define %s texture" % texture_target)
+        if 1 == combined_macros["USE_GLOBAL_TEXTURE_FUNCTION"]:
+            for texture_target in texture_targets:
+                combined_macros[texture_target] = "texture"
+        else:
+            for texture_target in texture_targets:
+                if texture_target in combined_macros:
+                    combined_macros.pop(texture_target)
+        combined_macros.pop("USE_GLOBAL_TEXTURE_FUNCTION")
+
+        # insert shader version - ex) #version 430 core
+        final_code_lines = [shader_version, "# extension GL_EXT_texture_array : enable"]
 
         # insert defines to final code
         for macro in combined_macros:

@@ -494,7 +494,7 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
-    resource_version = 0.0
+    resource_version = 0.6
     fileExt = '.glsl'
     shader_version = "#version 430 core"
 
@@ -629,6 +629,7 @@ class MaterialLoader(ResourceLoader):
         logger.info("Generate new material : %s" % material_name)
         shader = self.resource_manager.getShader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
+
         if shader:
             shader_codes = shader.generate_shader_codes(shader_version, macros)
             if shader_codes is not None:
@@ -662,31 +663,38 @@ class MaterialLoader(ResourceLoader):
                 # create material
                 material = Material(final_material_name, material_datas)
 
-                if material and material.valid:
-                    resource = self.getResource(final_material_name, noWarn=True)
-                    if resource is None:
-                        resource = self.create_resource(final_material_name)
+                if material:
+                    if material.valid:
+                        resource = self.getResource(final_material_name, noWarn=True)
+                        if resource is None:
+                            resource = self.create_resource(final_material_name)
 
-                    # set include files meta datas
-                    resource.meta_data.include_files = material_datas.get('include_files', {})
+                        # set include files meta datas
+                        resource.meta_data.include_files = material_datas.get('include_files', {})
 
-                    # write material to file, and regist to resource manager
-                    shader_meta_data = self.resource_manager.shader_loader.getMetaData(shader_name)
-                    if shader_meta_data:
-                        source_filepath = shader_meta_data.resource_filepath
+                        # write material to file, and regist to resource manager
+                        shader_meta_data = self.resource_manager.shader_loader.getMetaData(shader_name)
+                        if shader_meta_data:
+                            source_filepath = shader_meta_data.resource_filepath
+                        else:
+                            source_filepath = ""
+
+                        # save binary data of shader.
+                        binary_format, binary_data = material.save_to_binary()
+                        if binary_format is not None and binary_data is not None:
+                            material_datas['binary_format'] = binary_format
+                            material_datas['binary_data'] = binary_data
+
+                        # Done : save material data
+                        self.save_resource_data(resource, material_datas, source_filepath)
+                        resource.set_data(material)
+                        return material
                     else:
-                        source_filepath = ""
-
-                    # save binary data of shader.
-                    binary_format, binary_data = material.save_to_binary()
-                    if binary_format is not None and binary_data is not None:
-                        material_datas['binary_format'] = binary_format
-                        material_datas['binary_data'] = binary_data
-
-                    # Done : save material data
-                    self.save_resource_data(resource, material_datas, source_filepath)
-                    resource.set_data(material)
-                    return material
+                        global_texture_function_error = """'texture' : no matching overloaded function found (using implicit conversion)"""
+                        if global_texture_function_error in material.compile_message:
+                            logger.error("Recompile %s material cause global_texture_function_error." % material_name)
+                            macros["USE_GLOBAL_TEXTURE_FUNCTION"] = 0
+                            self.generate_new_material(material_name, shader_name, macros=macros)
         logger.error("Failed to generate_new_material %s." % material_name)
         return None
 

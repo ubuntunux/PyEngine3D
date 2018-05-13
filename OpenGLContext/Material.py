@@ -43,6 +43,8 @@ class Material:
             if not self.valid:
                 logger.error("%s material has been failed to compile from binary" % self.name)
 
+        self.compile_message = ""
+
         if not self.valid:
             self.compile_from_source(shader_codes)
             self.valid = self.check_validate() and self.check_linked()
@@ -145,12 +147,15 @@ class Material:
             shader = glCreateShader(shaderType)
             glShaderSource(shader, shader_code)
             glCompileShader(shader)
-            if glGetShaderiv(shader, GL_COMPILE_STATUS) != 1 or True:
+            compile_status = glGetShaderiv(shader, GL_COMPILE_STATUS)
+            if compile_status != 1:
                 infoLogs = glGetShaderInfoLog(shader)
                 if infoLogs:
-                    shader_code_lines = shader_code.split('\n')
                     if type(infoLogs) == bytes:
                         infoLogs = infoLogs.decode("utf-8")
+
+                    infoLogs = ("GL_COMPILE_STATUS : %d\n" % compile_status) + infoLogs
+                    shader_code_lines = shader_code.split('\n')
 
                     infoLogs = infoLogs.split('\n')
                     for i, infoLog in enumerate(infoLogs):
@@ -164,11 +169,14 @@ class Material:
                             infoLogs[i] += "\n\t--> %s" % (shader_code_lines[error_line])
 
                     infoLogs = "\n".join(infoLogs)
+
+                    self.compile_message = "\n".join([self.compile_message, infoLogs])
+
                     logger.error("%s %s shader compile error.\n%s" % (self.name, shaderType.name, infoLogs))
-                else:
-                    # complete
-                    logger.log(Logger.MINOR_INFO, "Complete %s %s compile." % (self.name, shaderType.name))
-                    return shader
+            else:
+                # complete
+                logger.log(Logger.MINOR_INFO, "Complete %s %s compile." % (self.name, shaderType.name))
+                return shader
         except:
             logger.error(traceback.format_exc())
         return None
