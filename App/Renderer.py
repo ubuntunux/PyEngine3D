@@ -71,9 +71,12 @@ class Renderer(Singleton):
     def display_gl_info():
         logger.info("=" * 30)
 
-        infos = [GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION]
+        infos = [GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION]
         for info in infos:
-            logger.info("%s : %s" % (info.name, glGetString(info).decode('utf-8')))
+            info_string = glGetString(info)
+            if type(info_string) == bytes:
+                info_string = info_string.decode("utf-8")
+            logger.info("%s : %s" % (info.name, info_string))
 
         infos = [GL_MAX_VERTEX_ATTRIBS, GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_UNIFORM_COMPONENTS,
                  GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, GL_MAX_FRAGMENT_UNIFORM_BLOCKS,
