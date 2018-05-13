@@ -184,7 +184,10 @@ class Shader:
 
         if 1 == combined_macros["USE_GLOBAL_TEXTURE_FUNCTION"]:
             for texture_target in texture_targets:
-                combined_macros[texture_target] = "texture"
+                if "Lod" in texture_target:
+                    combined_macros[texture_target] = "textureLod"
+                else:
+                    combined_macros[texture_target] = "texture"
         else:
             for texture_target in texture_targets:
                 if texture_target in combined_macros:
