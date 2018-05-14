@@ -305,8 +305,6 @@ class Renderer(Singleton):
 
         if self.postprocess.is_render_shader() and not RenderOption.RENDER_LIGHT_PROBE:
             """ debug shader """
-            glDisable(GL_DEPTH_TEST)
-            glDisable(GL_CULL_FACE)
             self.set_blend_state(False)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
@@ -332,7 +330,6 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClearColor(0.0, 0.0, 0.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
-            glDisable(GL_DEPTH_TEST)
 
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
@@ -349,24 +346,22 @@ class Renderer(Singleton):
             else:
                 self.render_pre_pass()
 
-            glDisable(GL_DEPTH_TEST)
             self.render_preprocess()
 
             glFrontFace(GL_CW)
-            glEnable(GL_DEPTH_TEST)
+
             self.render_shadow()
 
             glFrontFace(GL_CCW)
             glDepthMask(False)  # cause depth prepass and gbuffer
+
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            # render solid
             self.render_solid()
 
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
-                glDisable(GL_DEPTH_TEST)
                 prev_framebuffer = self.framebuffer_manager.current_framebuffer
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
@@ -385,6 +380,8 @@ class Renderer(Singleton):
                 composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
                 self.postprocess.draw_elements()
 
+                self.restore_blend_state_prev()
+
             # copy HDR Target
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
             dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_COPY_SMALL)
@@ -392,17 +389,12 @@ class Renderer(Singleton):
             dst_framebuffer.copy_framebuffer(src_framebuffer)
             src_framebuffer.run_bind_framebuffer()
 
-            # set blend state
-            if not self.blend_enable:
-                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
             # bind HDR framebuffer
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR,
                                                       depth_texture=RenderTargets.DEPTHSTENCIL)
 
             # render ocean
             if self.scene_manager.ocean.is_render_ocean:
-                glEnable(GL_DEPTH_TEST)
                 glDisable(GL_CULL_FACE)
 
                 self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
@@ -410,8 +402,9 @@ class Renderer(Singleton):
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)
 
-            # render translucent
-            glEnable(GL_DEPTH_TEST)
+            # set blend state
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
             glEnable(GL_CULL_FACE)
 
             self.render_translucent()
@@ -420,8 +413,6 @@ class Renderer(Singleton):
                 return end_render_scene()
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            glDisable(GL_DEPTH_TEST)
-            glDisable(GL_CULL_FACE)
 
             self.set_blend_state(False)
 
@@ -701,13 +692,11 @@ class Renderer(Singleton):
 
         # render solid
         if RenderingType.DEFERRED_RENDERING == self.render_option_manager.rendering_type:
-            glDisable(GL_DEPTH_TEST)
             self.postprocess.bind_quad()
             # render deferred
             self.postprocess.render_deferred_shading(self.scene_manager.get_light_probe_texture(),
                                                      self.scene_manager.atmosphere)
         elif RenderingType.FORWARD_RENDERING == self.render_option_manager.rendering_type:
-            glEnable(GL_DEPTH_TEST)
             # render forward
             self.render_actors(RenderGroup.STATIC_ACTOR,
                                RenderMode.SHADING,
