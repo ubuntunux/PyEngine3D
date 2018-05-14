@@ -398,6 +398,7 @@ class Renderer(Singleton):
                 glDisable(GL_CULL_FACE)
 
                 self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
+                                                      texture_scene=RenderTargets.HDR_COPY_SMALL,
                                                       texture_linear_depth=RenderTargets.LINEAR_DEPTH,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)

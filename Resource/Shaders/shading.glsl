@@ -207,7 +207,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
-    light_color = light_color * scene_sun_irradiance;// * shadow_factor;
+    light_color = light_color * scene_sun_irradiance;
 
     // safe roughness
     roughness = clamp(roughness, 0.05, 1.0);
@@ -225,9 +225,10 @@ vec4 surface_shading(vec4 base_color,
     float opacity = base_color.w;
 
     vec3 F0 = vec3(0.04);
-    F0 = mix(max(vec3(0.04), reflectance), base_color.xyz, metallic);
+    F0 = mix(max(F0, reflectance), base_color.xyz, metallic);
 
     vec3 fresnel = fresnelSchlick(HdV, F0);
+
     vec3 diffuse_light = vec3(0.0, 0.0, 0.0);
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
 
@@ -240,7 +241,6 @@ vec4 surface_shading(vec4 base_color,
     {
         diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * NdL * light_color;
         specular_light += cooktorrance_specular(fresnel, NdL, NdV, NdH, roughness) * NdL * light_color;
-
 
         for(int i=0; i<MAX_POINT_LIGHTS; ++i)
         {
@@ -280,10 +280,6 @@ vec4 surface_shading(vec4 base_color,
 
         vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
-
-        // Note : because texture_probe is HDR and not sRGB.
-        //ibl_diffuse_light = pow(ibl_diffuse_light, vec3(2.2));
-        //ibl_specular_light = pow(ibl_specular_light, vec3(2.2));
 
         // mix scene reflection
         if(RENDER_SSR == 1.0f)

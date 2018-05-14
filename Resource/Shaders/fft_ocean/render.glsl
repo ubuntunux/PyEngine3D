@@ -9,6 +9,7 @@ uniform vec2 cell_size;
 
 uniform sampler2DArray fftWavesSampler;
 uniform sampler3D slopeVarianceSampler;
+uniform sampler2D texture_scene;
 uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_shadow;
 uniform samplerCube texture_probe;
@@ -23,7 +24,7 @@ struct VERTEX_OUTPUT
 {
     vec2 uv;
     vec3 wave_offset;
-    vec3 world_pos;
+    vec3 relative_pos;
     vec4 proj_pos;
 };
 
@@ -90,7 +91,7 @@ void main()
 
     vs_output.uv = u;
     vs_output.wave_offset = dP;
-    vs_output.world_pos = world_pos;
+    vs_output.relative_pos = world_pos - CAMERA_POSITION.xyz;
     vs_output.proj_pos = proj_pos;
     gl_Position = proj_pos;
 }
@@ -112,8 +113,39 @@ float Lambda(float cosTheta, float sigmaSq)
     return max(0.0, (exp(-v * v) - v * sqrt(PI) * erfc(v)) / (2.0 * v * sqrt(PI)));
 }
 
-float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Tz, vec2 sigmaSq)
+float meanFresnel(float cosThetaV, float sigmaV)
 {
+	return pow(1.0 - cosThetaV, 5.0 * exp(-2.69 * sigmaV)) / (1.0 + 22.7 * pow(sigmaV, 1.5));
+}
+
+float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq)
+{
+    vec2 v = V.xy;
+    vec2 t = v * v / (1.0 - V.z * V.z);
+    float sigmaV2 = dot(t, sigmaSq);
+    return meanFresnel(dot(V, N), sqrt(sigmaV2));
+}
+
+float reflectedSunRadiance(vec2 uv, vec3 L, vec3 V, vec3 N)
+{
+    float Jxx = dFdx(uv.x);
+    float Jxy = dFdy(uv.x);
+    float Jyx = dFdx(uv.y);
+    float Jyy = dFdy(uv.y);
+    float A = Jxx * Jxx + Jyx * Jyx;
+    float B = Jxx * Jxy + Jyx * Jyy;
+    float C = Jxy * Jxy + Jyy * Jyy;
+    const float SCALE = 10.0;
+    float ua = pow(A / SCALE, 0.25);
+    float ub = 0.5 + 0.5 * B / sqrt(A * C);
+    float uc = pow(C / SCALE, 0.25);
+    vec2 sigmaSq = texture3D(slopeVarianceSampler, vec3(ua, ub, uc)).xw;
+
+    sigmaSq = max(sigmaSq, 2e-5);
+
+    vec3 Tz = normalize(vec3(0.0, N.z, -N.y));
+    vec3 Tx = cross(Tz, N);
+
     vec3 H = normalize(L + V);
     float zetax = dot(H, Tx) / dot(H, N);
     float zetay = dot(H, Tz) / dot(H, N);
@@ -133,7 +165,8 @@ float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Tz, vec2 sigmaS
     float cosL2 = 1.0 / (1.0 + tanL * tanL);
     float sigmaL2 = sigmaSq.x * cosL2 + sigmaSq.y * (1.0 - cosL2);
 
-    float fresnel = 0.02 + 0.98 * pow(1.0 - dot(V, H), 5.0);
+    // float fresnel = 0.02 + 0.98 * pow(1.0 - dot(V, H), 5.0);
+    float fresnel = clamp(0.02 + 0.98 * meanFresnel(V, N, sigmaSq), 0.0, 1.0);
 
     zL = max(zL, 0.01);
     zV = max(zV, 0.01);
@@ -141,41 +174,16 @@ float reflectedSunRadiance(vec3 L, vec3 V, vec3 N, vec3 Tx, vec3 Tz, vec2 sigmaS
     return fresnel * p / ((1.0 + Lambda(zL, sigmaL2) + Lambda(zV, sigmaV2)) * zV * zH2 * zH2 * 4.0);
 }
 
-float meanFresnel(float cosThetaV, float sigmaV)
-{
-	return pow(1.0 - cosThetaV, 5.0 * exp(-2.69 * sigmaV)) / (1.0 + 22.7 * pow(sigmaV, 1.5));
-}
-
-float meanFresnel(vec3 V, vec3 N, vec2 sigmaSq)
-{
-    vec2 v = V.xy;
-    vec2 t = v * v / (1.0 - V.z * V.z);
-    float sigmaV2 = dot(t, sigmaSq);
-    return meanFresnel(dot(V, N), sqrt(sigmaV2));
-}
-
-float erf(float x)
-{
-	float a  = 0.140012;
-	float x2 = x * x;
-	float ax2 = a * x2;
-	return sign(x) * sqrt(1.0 - exp(-x2 * (4.0 / PI + ax2) / (1.0 + ax2)));
-}
-
-float whitecapCoverage(float epsilon, float mu, float sigma2)
-{
-	return 0.5 * erf((0.5 * sqrt(2.0) * (epsilon - mu) * inversesqrt(sigma2))) + 0.5;
-}
-
 
 void main()
 {
     vec2 uv = vs_output.uv;
     vec2 screen_tex_coord = (vs_output.proj_pos.xy / vs_output.proj_pos.w) * 0.5 + 0.5;
-    vec3 relative_pos = CAMERA_POSITION.xyz - vs_output.world_pos.xyz;
-    float scene_linear_depth = dot(relative_pos.xyz, vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z));
-    float bg_linear_depth = texture2D(texture_linear_depth, screen_tex_coord).x;
-    float roughness = 0.1;
+    vec3 relative_pos = vs_output.relative_pos;
+    vec3 world_pos = relative_pos + CAMERA_POSITION.xyz;
+    float linear_depth = dot(relative_pos.xyz, vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z));
+    float depth = linear_depth_to_depth(linear_depth);
+    float scene_linear_depth = texture2D(texture_linear_depth, screen_tex_coord).x;
 
     vec2 slopes = texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.x, 1.0), 0.0).xy;
     slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw;
@@ -183,18 +191,13 @@ void main()
     slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw;
 
     float dist = length(relative_pos);
-    float distance_fade = clamp(1.0 - dist * 0.005, 0.0, 1.0);
-    vec3 V = relative_pos / dist;
+    vec3 V = -relative_pos / dist;
 
     vec3 vertex_normal = normalize(vec3(-vs_output.wave_offset.x, vs_output.wave_offset.y, -vs_output.wave_offset.z));
     vertex_normal.y = 0.5 - vertex_normal.y * 0.5;
     vertex_normal = normalize(vertex_normal);
 
     vec3 N = normalize(vec3(-slopes.x, 1.0, -slopes.y) + vertex_normal * 0.2);
-    if (dot(V, N) < 0.0)
-    {
-        N = reflect(N, V); // reflects backfacing normals
-    }
 
     vec3 L = LIGHT_DIRECTION.xyz;
     vec3 H = normalize(V + L);
@@ -207,82 +210,33 @@ void main()
     float HdV = max(0.0, dot(H, V));
     float LdV = max(0.0, dot(L, V));
 
-    float Jxx = dFdx(uv.x);
-    float Jxy = dFdy(uv.x);
-    float Jyx = dFdx(uv.y);
-    float Jyy = dFdy(uv.y);
-    float A = Jxx * Jxx + Jyx * Jyx;
-    float B = Jxx * Jxy + Jyx * Jyy;
-    float C = Jxy * Jxy + Jyy * Jyy;
-    const float SCALE = 10.0;
-    float ua = pow(A / SCALE, 0.25);
-    float ub = 0.5 + 0.5 * B / sqrt(A * C);
-    float uc = pow(C / SCALE, 0.25);
-    vec2 sigmaSq = texture3D(slopeVarianceSampler, vec3(ua, ub, uc)).xw;
+    // original fft specualr function
+    // float specular_intensity = reflectedSunRadiance(uv, L, V, N);
 
-    sigmaSq = max(sigmaSq, 2e-5);
-
-    vec3 Tz = normalize(vec3(0.0, N.z, -N.y));
-    vec3 Tx = cross(Tz, N);
-
-    // float specular_intensity = reflectedSunRadiance(L, V, N, Tx, Tz, sigmaSq);
-
-    // Atmosphere
-    vec3 scene_in_scatter;
-    vec3 scene_sun_irradiance;
-    vec3 scene_sky_irradiance;
-    float scene_shadow_length;
-
-    {
-        GetSceneRadiance(
-            ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
-            scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-    }
-
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, vs_output.world_pos.xyz, texture_shadow) );
-    shadow_factor = max(shadow_factor, scene_sky_irradiance);
-
-    float fresnel = clamp(0.02 + 0.98 * meanFresnel(V, N, sigmaSq), 0.0, 1.0);
-    float wave_peak = pow(1.0 - vertex_normal.y, 4.0) + pow(1.0 - N.y, 2.0) * 30.0;
-    wave_peak = clamp(wave_peak * simulation_amplitude, 0.0, 1.0);
+    float roughness = 0.1;
 
     vec3 seaColor = vec3(1.0, 1.0, 1.0);
-    vec3 light_color = LIGHT_COLOR.xyz * scene_sun_irradiance;
+    vec3 light_color = LIGHT_COLOR.xyz;
+    vec4 scene_reflect_color = vec4(0.0, 0.0, 0.0, 0.0);
 
-    const float foam_sharpen = 1.0;
-    vec3 foam = texture2D(texture_foam, uv * uv_tiling + N.xz * 0.05).xyz;
-    float lum = get_luminance(foam);
-    foam = foam * mix(lum, clamp((lum - 1.0 + wave_peak) / wave_peak, 0.0, 1.0), foam_sharpen) * wave_peak;
-
-    // diffuse
-    vec3 diffuse_light = NdL * seaColor.xyz * (1.0 - fresnel) * light_color;
-
-    const float specular_power = 60.0;    
-    vec3 specular_lighting = vec3(pow(NdH, specular_power) * (specular_power + 2.0) / 8.0);   // specular normalization
-    specular_lighting *= light_color;
-
-    // Image based lighting
-    const vec2 env_size = textureSize(texture_probe, 0);
-    const float env_mipmap_count = log2(min(env_size.x, env_size.y));
-
-    vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-    float shValue = fresnel * envBRDF.x + envBRDF.y;
-
-    vec3 ibl_diffuse_color = textureCubeLod(texture_probe, invert_y(N), env_mipmap_count - 1.0).xyz;
-    vec3 ibl_specular_color = textureCubeLod(texture_probe, invert_y(R), env_mipmap_count * roughness).xyz;
-
-    diffuse_light += shValue * ibl_diffuse_color;
-    specular_lighting += shValue * ibl_specular_color;
-
-    // final result
-    vec3 result = (foam * diffuse_light + specular_lighting) * shadow_factor + scene_in_scatter;
-
-    float depth_diff = bg_linear_depth - scene_linear_depth;
-    float opacity = pow(fresnel, 0.5) + get_luminance(specular_lighting.xyz) + depth_diff * depth_diff * 0.02;
-
-    opacity = clamp(opacity, 0.0, 1.0) * pow(clamp(depth_diff * 0.5, 0.0, 1.0), 20.0) * distance_fade;
+    vec3 result = surface_shading(vec4(seaColor, 1.0),
+                                vec3(0.0),
+                                0.0,
+                                0.1,
+                                1.0,
+                                1.0,
+                                scene_reflect_color,
+                                texture_probe,
+                                texture_shadow,
+                                screen_tex_coord,
+                                world_pos,
+                                light_color,
+                                N,
+                                V,
+                                L,
+                                depth).xyz;
 
     fs_output.xyz = result;
-    fs_output.w = clamp(opacity, 0.0, 1.0);
+    fs_output.w = 1.0;
 }
 #endif

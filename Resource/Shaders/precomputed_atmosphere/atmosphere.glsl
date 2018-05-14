@@ -31,7 +31,7 @@ layout(location = 0) out vec4 color;
 
 
 void GetCloudRadiance(
-    const in AtmosphereParameters atmosphere,
+    const in AtmosphereParameters atmosphere, float cloud_altitude,
     float dist, vec3 eye_direction, vec3 N, float scene_shadow_length,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter)
 {
@@ -125,7 +125,6 @@ void main()
         else
         {
             // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-
             vec3 to_origin = vec3(0.0, CAMERA_POSITION.y, 0.0) - earth_center_pos;
             float c = pow(dot(eye_direction, to_origin), 2.0) - dot(to_origin, to_origin);
 
@@ -172,7 +171,7 @@ void main()
             float scene_shadow_length = 0.0;
             // NOTE : 0.1 is more colorful scattering cloud.
             float dist_to_point = hit_dist * (above_the_cloud ? 1.0 : 0.01);
-            GetCloudRadiance(ATMOSPHERE, dist_to_point, eye_direction, N, scene_shadow_length,
+            GetCloudRadiance(ATMOSPHERE, cloud_altitude, dist_to_point, eye_direction, N, scene_shadow_length,
                 cloud_sun_irradiance, cloud_sky_irradiance, cloud_in_scatter);
 
             if(in_the_cloud || above_the_cloud)
@@ -274,8 +273,8 @@ void main()
                 }
             }
 
-            // smooth horizontal line
-            cloud.w *= pow(abs(N.y), 0.1);
+            float horizontal_line = pow(saturate(((N.y * 0.5 + 0.5) - 0.49) * 30.0), 0.1);
+            cloud.w *= horizontal_line;
 
             // ambient lighting
             cloud.xyz += cloud_in_scatter * pow(1.0 - cloud_absorption, 2.0);

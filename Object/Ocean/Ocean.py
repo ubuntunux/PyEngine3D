@@ -440,7 +440,7 @@ class Ocean:
 
         RenderTargets.FFT_A.generate_mipmap()
 
-    def render_ocean(self, atmosphere, texture_linear_depth, texture_probe, texture_shadow):
+    def render_ocean(self, atmosphere, texture_scene, texture_linear_depth, texture_probe, texture_shadow):
         self.fft_render.use_program()
         self.fft_render.bind_material_instance()
         self.fft_render.bind_uniform_data("height", self.height)
@@ -451,6 +451,7 @@ class Ocean:
 
         self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
         self.fft_render.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)
+        self.fft_render.bind_uniform_data('texture_scene', texture_scene)
         self.fft_render.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.fft_render.bind_uniform_data('texture_probe', texture_probe)
         self.fft_render.bind_uniform_data('texture_shadow', texture_shadow)
