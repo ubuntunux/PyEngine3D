@@ -396,6 +396,10 @@ class Renderer(Singleton):
             if not self.blend_enable:
                 self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+            # bind HDR framebuffer
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR,
+                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
+
             # render ocean
             if self.scene_manager.ocean.is_render_ocean:
                 glEnable(GL_DEPTH_TEST)
@@ -405,10 +409,11 @@ class Renderer(Singleton):
                                                       texture_linear_depth=RenderTargets.LINEAR_DEPTH,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)
-                glEnable(GL_CULL_FACE)
 
             # render translucent
             glEnable(GL_DEPTH_TEST)
+            glEnable(GL_CULL_FACE)
+
             self.render_translucent()
 
             if RenderOption.RENDER_LIGHT_PROBE:
@@ -417,7 +422,9 @@ class Renderer(Singleton):
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_CULL_FACE)
+
             self.set_blend_state(False)
+
             self.render_postprocess()
 
         # debug render target

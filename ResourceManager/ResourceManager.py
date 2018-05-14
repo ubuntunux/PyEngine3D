@@ -26,7 +26,8 @@ from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
-from OpenGLContext import Shader, parsing_macros, parsing_uniforms, parsing_material_components
+from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
+from OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS, generate_font_data, TextureGenerator
@@ -564,8 +565,8 @@ class MaterialLoader(ResourceLoader):
         material = self.getResourceData(resource_name)
         if material:
             self.resource_manager.material_instance_loader.create_material_instance(resource_name=material.shader_name,
-                                                                                  shader_name=material.shader_name,
-                                                                                  macros=material.macros)
+                                                                                    shader_name=material.shader_name,
+                                                                                    macros=material.macros)
 
     def reload_materials(self, shader_filepath):
         reload_shader_names = []
@@ -610,8 +611,7 @@ class MaterialLoader(ResourceLoader):
                 if generate_new_material:
                     shader_name = material_datas.get('shader_name')
                     macros = material_datas.get('macros', {})
-                    compile_option = {}
-                    self.generate_new_material(resource.name, shader_name, compile_option, macros)
+                    self.generate_new_material(resource.name, shader_name, default_compile_option, macros)
                 else:
                     material = Material(resource.name, material_datas)
                     resource.set_data(material)
@@ -691,14 +691,10 @@ class MaterialLoader(ResourceLoader):
                         resource.set_data(material)
                         return material
                     else:
-                        global_texture_function_error = """'texture' : no matching overloaded function found (using implicit conversion)"""
-                        if global_texture_function_error in material.compile_message:
+                        if ShaderCompileMessage.TEXTURE_NO_MATCHING_OVERLOADED_FUNCTION in material.compile_message:
                             logger.error("Recompile %s material cause global_texture_function_error." % material_name)
-                            compile_option = dict(USE_GLOBAL_TEXTURE_FUNCTION=1)
-                            self.generate_new_material(material_name,
-                                                       shader_name,
-                                                       compile_option=compile_option,
-                                                       macros=macros)
+                            compile_option = []  # pop USE_GLOBAL_TEXTURE_FUNCTION compile option.
+                            self.generate_new_material(material_name, shader_name, compile_option, macros=macros)
         logger.error("Failed to generate_new_material %s." % material_name)
         return None
 
@@ -714,8 +710,7 @@ class MaterialLoader(ResourceLoader):
 
         material = self.getResourceData(material_name)
         if material is None:
-            compile_option = {}
-            material = self.generate_new_material(material_name, shader_name, compile_option, macros)
+            material = self.generate_new_material(material_name, shader_name, default_compile_option, macros=macros)
         return material
 
 

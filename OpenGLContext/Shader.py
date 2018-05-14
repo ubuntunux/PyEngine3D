@@ -11,7 +11,7 @@ import uuid
 from OpenGL.GL import *
 
 from Common import logger
-from Utilities import GetClassName, Attributes, Logger
+from Utilities import GetClassName, Attributes, Logger, AutoEnum
 from App import CoreManager
 
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]
@@ -27,10 +27,22 @@ reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro typ
 
 shader_types = [GL_VERTEX_SHADER, GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER]
 shader_type_names = [shader_type.name for shader_type in shader_types]
+
 texture_targets = ["texture2D", "texture2DLod", "texture2DGrad",
                    "texture2DArray", "texture2DArrayLod", "texture2DArrayGrad",
                    "texture3D", "texture3DLod", "texture3DGrad",
                    "textureCube", "textureCubeLod", "textureCubeGrad"]
+
+
+class ShaderCompileOption(AutoEnum):
+    USE_GLOBAL_TEXTURE_FUNCTION = ()
+
+
+class ShaderCompileMessage:
+    TEXTURE_NO_MATCHING_OVERLOADED_FUNCTION = """'texture' : no matching overloaded function found"""
+
+
+default_compile_option = [ShaderCompileOption.USE_GLOBAL_TEXTURE_FUNCTION, ]
 
 
 def parsing_macros(shader_code_list):
@@ -132,7 +144,7 @@ def parsing_material_components(shader_code_list):
 
 
 class Shader:
-    default_macros = dict(MATERIAL_COMPONENTS=1, USE_GLOBAL_TEXTURE_FUNCTION=1)
+    default_macros = dict(MATERIAL_COMPONENTS=1)
 
     def __init__(self, shader_name, shader_code):
         logger.info("Load " + GetClassName(self) + " : " + shader_name)
@@ -146,7 +158,7 @@ class Shader:
 
     def getAttribute(self):
         self.attribute.setAttribute("name", self.name)
-        return self.attributecompile_option
+        return self.attribute
 
     def generate_shader_codes(self, shader_version, compile_option, external_macros={}):
         shader_codes = {}
@@ -186,25 +198,23 @@ class Shader:
             else:
                 combined_macros[macro] = external_macros[macro]
 
-        # global texture function
-        if "USE_GLOBAL_TEXTURE_FUNCTION" in compile_option:
-            for texture_target in texture_targets:
-                if "Lod" in texture_target:
-                    combined_macros[texture_target] = "textureLod"
-                else:
-                    combined_macros[texture_target] = "texture"
-        else:
-            for texture_target in texture_targets:
-                if texture_target in combined_macros:
-                    combined_macros.pop(texture_target)
-        combined_macros.pop("USE_GLOBAL_TEXTURE_FUNCTION")
-
         # insert shader version - ex) #version 430 core
         final_code_lines = [shader_version, "# extension GL_EXT_texture_array : enable"]
 
         # insert defines to final code
         for macro in combined_macros:
             final_code_lines.append("#define %s %s" % (macro, str(combined_macros[macro])))
+
+        # global texture function
+        if ShaderCompileOption.USE_GLOBAL_TEXTURE_FUNCTION in compile_option:
+            # ex) replace texture2D -> texutre, textureCubeLod -> textureLod
+            for texture_target in texture_targets:
+                if "Lod" in texture_target:
+                    final_code_lines.append("#define %s textureLod" % texture_target)
+                elif "Grad" in texture_target:
+                    final_code_lines.append("#define %s textureGrad" % texture_target)
+                else:
+                    final_code_lines.append("#define %s texture" % texture_target)
 
         # insert version as comment
         include_files = dict()  # { 'filename': uuid }
