@@ -1119,7 +1119,9 @@ void GetSceneRadiance(
     relative_camera_pos.y = max(0.0, relative_camera_pos.y);
     relative_point.y = max(0.0, relative_point.y);
 
-    scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
+    //scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
+    // 0.0 is for off screen light shaft
+    scene_shadow_length = 0.0;
 
     sun_irradiance = GetSunAndSkyIrradiance(
             atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
