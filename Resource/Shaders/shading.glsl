@@ -3,52 +3,55 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 
 
-float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
+float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope, sampler2D texture_shadow)
 {
-    const float shadow_bias = 0.001;
+    vec2 shadow_size = textureSize(texture_shadow, 0);
+    vec2 shadow_texel_size = 1.0 / shadow_size;
+    vec4 shadow_proj = SHADOW_MATRIX * vec4(world_position, 1.0);
+    shadow_proj.xyz /= shadow_proj.w;
+    shadow_proj.xyz = shadow_proj.xyz * 0.5 + 0.5;
+    float shadow_depth = shadow_proj.z;
+    float depth_bias = mix(-0.01, 0.01, sqrt(slope));
+    vec2 offsets[4] = {
+        vec2(0.0, 0.0),
+        vec2(shadow_texel_size.x, 0.0),
+        vec2(0.0, shadow_texel_size.y),
+        vec2(shadow_texel_size.x, shadow_texel_size.y),
+    };
+
     float shadow_factor = 0.0;
-    vec4 shadow_uv = SHADOW_MATRIX * vec4(world_position, 1.0);
-    shadow_uv.xyz /= shadow_uv.w;
-    shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
-    float shadow_depth = shadow_uv.z;
+    int loop_count = 8;
 
-    //float slope = min(1.0, abs(depth + (dFdx(depth) + dFdy(depth)) / 3.0) * 0.01);
-    //float slope_bias = mix(shadow_bias, -0.001, slope);
-
-    vec2 uv = shadow_uv.xy;
-    float depth = textureLod(texture_shadow, uv, 0.0).x;;
-
-    if(0.0 <= uv.x && uv.x <= 1.0 && 0.0 <= uv.y && uv.y <= 1.0 && depth < 1.0)
+    for(int n=0; n<loop_count; ++n)
     {
-        shadow_factor = (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
-    }
-    else
-    {
-        shadow_factor = 1.0;
-    }
+        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 8.0;
 
-    const int loop_count = 16;
-    float texel_radius = 0.5 / length(textureSize(texture_shadow, 0));
-    float rad_step = TWO_PI / float(loop_count);
-    float rad = 0.0;
+        vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
+        vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
+        vec2 uv = pixel_pos * shadow_texel_size;
 
-    for(int i=0; i<loop_count; ++i)
-    {
-        rad += rad_step;
-        uv = shadow_uv.xy + vec2(sin(rad), cos(rad)) * texel_radius * 2.0 + vec2(texel_radius);
+        vec4 shadow_factors;
 
-        if(0.0 <= uv.x && uv.x <= 1.0 && 0.0 <= uv.y && uv.y <= 1.0 && depth < 1.0)
+        for(int i=0; i<4; ++i)
         {
-            depth = textureLod(texture_shadow, uv, 0.0).x;
-            shadow_factor += (shadow_depth + shadow_bias <= depth) ? 1.0 : 0.0;
+            vec2 shadow_uv = uv + offsets[i];
+            shadow_factors[i] = textureLod(texture_shadow, shadow_uv, 0.0).x;
+            if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
+            {
+                shadow_factors[i] = (shadow_depth < shadow_factors[i] + depth_bias) ? 1.0 : 0.0;
+            }
+            else
+            {
+                shadow_factors[i] = 1.0;
+            }
         }
-        else
-        {
-            shadow_factor += 1.0;
-        }
+
+        shadow_factor += mix(
+            mix(shadow_factors.x, shadow_factors.y, pixel_ratio.x),
+            mix(shadow_factors.z, shadow_factors.w, pixel_ratio.x), pixel_ratio.y);
     }
-    shadow_factor /= float(loop_count + 1);
-    return shadow_factor;
+
+    return clamp(shadow_factor / float(loop_count), 0.0, 1.0);
 }
 
 
@@ -204,9 +207,6 @@ vec4 surface_shading(vec4 base_color,
             scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
     }
 
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
-    shadow_factor = max(shadow_factor, scene_sky_irradiance);
-
     light_color = light_color * scene_sun_irradiance;
 
     // safe roughness
@@ -215,11 +215,18 @@ vec4 surface_shading(vec4 base_color,
     // compute material reflectance
     vec3 R = reflect(-V, N);
     vec3 H = normalize(V + L);
-    float NdL = max(0.0, dot(N, L));
+
+    float NdL = dot(N, L);
+    float half_lambert = NdL * 0.5 + 0.5;
+    NdL = max(0.0, NdL);
+
     float NdV = max(0.001, dot(N, V));
     float NdH = max(0.001, dot(N, H));
     float HdV = max(0.001, dot(H, V));
     float LdV = max(0.001, dot(L, V));
+
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, half_lambert, texture_shadow) );
+    shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
     vec3 result = vec3(0.0, 0.0, 0.0);
     float opacity = base_color.w;

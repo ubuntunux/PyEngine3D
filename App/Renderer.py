@@ -348,11 +348,8 @@ class Renderer(Singleton):
 
             self.render_preprocess()
 
-            glFrontFace(GL_CW)
-
             self.render_shadow()
 
-            glFrontFace(GL_CCW)
             glDepthMask(False)  # cause depth prepass and gbuffer
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
