@@ -20,11 +20,11 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope,
     };
 
     float shadow_factor = 0.0;
-    int loop_count = 8;
+    int loop_count = 4;
 
     for(int n=0; n<loop_count; ++n)
     {
-        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 8.0;
+        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 4.0;
 
         vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
         vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
