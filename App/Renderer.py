@@ -360,7 +360,8 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 prev_framebuffer = self.framebuffer_manager.current_framebuffer
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE)
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE,
+                                                          RenderTargets.ATMOSPHERE_LIGHTSHAFT)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
                                                                             not RenderOption.RENDER_LIGHT_PROBE)
@@ -369,6 +370,7 @@ class Renderer(Singleton):
                 self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
                 prev_framebuffer.run_bind_framebuffer()
+
                 self.postprocess.bind_quad()
                 composite_atmosphere = self.resource_manager.getMaterialInstance(
                     "precomputed_atmosphere.composite_atmosphere")
@@ -377,7 +379,16 @@ class Renderer(Singleton):
                 composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
                 self.postprocess.draw_elements()
 
-                self.restore_blend_state_prev()
+                self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
+
+                self.postprocess.bind_quad()
+                composite_atmosphere = self.resource_manager.getMaterialInstance(
+                    "precomputed_atmosphere.composite_lightshaft")
+                composite_atmosphere.use_program()
+                composite_atmosphere.bind_uniform_data("texture_lightshaft", RenderTargets.ATMOSPHERE_LIGHTSHAFT)
+                self.postprocess.draw_elements()
+
+            self.set_blend_state(False)
 
             # copy HDR Target
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)

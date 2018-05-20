@@ -27,6 +27,7 @@ class RenderTargets:
     HDR_COPY_SMALL = None
     LIGHT_PROBE_ATMOSPHERE = None
     ATMOSPHERE = None
+    ATMOSPHERE_LIGHTSHAFT = None
     TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
@@ -256,6 +257,19 @@ class RenderTargetManager(Singleton):
 
         RenderTargets.ATMOSPHERE = self.create_rendertarget(
             "ATMOSPHERE",
+            texture_type=Texture2D,
+            width=quatersize_x,
+            height=quatersize_y,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP_TO_EDGE
+        )
+
+        RenderTargets.ATMOSPHERE_LIGHTSHAFT= self.create_rendertarget(
+            "ATMOSPHERE_LIGHTSHAFT",
             texture_type=Texture2D,
             width=quatersize_x,
             height=quatersize_y,
