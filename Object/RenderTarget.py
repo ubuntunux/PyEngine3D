@@ -24,7 +24,6 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
-    HDR_COPY_SMALL = None
     LIGHT_PROBE_ATMOSPHERE = None
     ATMOSPHERE = None
     ATMOSPHERE_LIGHTSHAFT = None
@@ -220,20 +219,6 @@ class RenderTargetManager(Singleton):
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,
             height=fullsize_y,
-            internal_format=hdr_internal_format,
-            texture_format=GL_RGBA,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            data_type=hdr_data_type,
-            wrap=GL_CLAMP
-        )
-
-        RenderTargets.HDR_COPY_SMALL = self.create_rendertarget(
-            "HDR Copy Small",
-            texture_type=Texture2D,
-            option=Option.MSAA | Option.SSAA,
-            width=halfsize_x,
-            height=halfsize_y,
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,

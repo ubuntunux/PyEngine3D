@@ -49,8 +49,8 @@ class PostProcess:
         self.bloom = None
         self.bloom_highlight = None
         self.bloom_downsampling = None
-        self.bloom_intensity = 1.0
-        self.bloom_threshold_min = 1.0
+        self.bloom_intensity = 0.25
+        self.bloom_threshold_min = 1.25
         self.bloom_threshold_max = 10.0
         self.bloom_scale = 1.0
 
@@ -76,7 +76,7 @@ class PostProcess:
 
         self.is_render_tonemapping = True
         self.exposure = 1.0
-        self.contrast = 1.0
+        self.contrast = 1.1
         self.tonemapping = None
 
         self.linear_depth = None

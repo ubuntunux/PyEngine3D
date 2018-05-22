@@ -87,6 +87,8 @@ class SceneManager(Singleton):
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
 
+        self.renderer.set_debug_texture(None)
+
         # delete empty scene
         # resource = self.resource_manager.scene_loader.getResource(self.__current_scene_name)
         # if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):

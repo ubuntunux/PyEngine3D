@@ -11,7 +11,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope,
     shadow_proj.xyz /= shadow_proj.w;
     shadow_proj.xyz = shadow_proj.xyz * 0.5 + 0.5;
     float shadow_depth = shadow_proj.z;
-    float depth_bias = mix(-0.01, 0.01, sqrt(slope));
+    float depth_bias = -0.001;
     vec2 offsets[4] = {
         vec2(0.0, 0.0),
         vec2(shadow_texel_size.x, 0.0),
@@ -24,7 +24,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope,
 
     for(int n=0; n<loop_count; ++n)
     {
-        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 4.0;
+        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 2.0;
 
         vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
         vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
@@ -217,7 +217,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 H = normalize(V + L);
 
     float NdL = dot(N, L);
-    float half_lambert = NdL * 0.5 + 0.5;
+    float slope = abs(NdL);
     NdL = max(0.0, NdL);
 
     float NdV = max(0.001, dot(N, V));
@@ -225,7 +225,7 @@ vec4 surface_shading(vec4 base_color,
     float HdV = max(0.001, dot(H, V));
     float LdV = max(0.001, dot(L, V));
 
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, half_lambert, texture_shadow) );
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, slope, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
     vec3 result = vec3(0.0, 0.0, 0.0);
