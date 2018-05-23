@@ -93,7 +93,7 @@ void main()
         ATMOSPHERE, camera - earth_center, eye_direction, scene_shadow_length, sun_direction, transmittance);
 
     // Sun
-    if (render_sun && dot(eye_direction, sun_direction) > sun_size.y)
+    if (render_sun && sun_size.y < dot(eye_direction, sun_direction))
     {
         radiance += transmittance * GetSolarRadiance(ATMOSPHERE);
     }
@@ -179,11 +179,9 @@ void main()
                 scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
 
             vec3 light_shaft = vec3(0.0);
-            float EdotL = clamp(dot(eye_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0);
-            float VdotL = clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0);
-            EdotL = pow(EdotL, 4.0);
-            VdotL = pow(VdotL, 4.0);
-            vec3 light_shaft_color = EdotL * VdotL * (view_point_sun_irradiance + view_point_sky_irradiance);
+            float EdotL = pow(clamp(dot(eye_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 4.0);
+            float VdotL = pow(clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 2.0);
+            vec3 light_shaft_color = EdotL * VdotL * (view_point_sun_irradiance + view_point_sky_irradiance) * 0.5;
             light_shaft_color *= LIGHT_COLOR.xyz;
 
             const float shadow_depth_bias = -0.0025;
@@ -206,7 +204,6 @@ void main()
             }
 
             out_lightshaft.xyz = light_shaft / float(count);
-
 
             if(render_cloud)
             {

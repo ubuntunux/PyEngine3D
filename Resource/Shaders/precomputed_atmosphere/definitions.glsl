@@ -949,7 +949,7 @@ vec3 ComputeSunAndSkyIrradiance(
 vec3 GetSolarRadiance(const in AtmosphereParameters atmosphere)
 {
     return atmosphere.solar_irradiance /
-        (PI * atmosphere.sun_angular_radius * atmosphere.sun_angular_radius) * SUN_RADIANCE_TO_LUMINANCE;
+        (PI * atmosphere.sun_angular_radius * atmosphere.sun_angular_radius) * SUN_RADIANCE_TO_LUMINANCE * atmosphere_exposure;
 }
 
 vec3 GetSkyRadiance(
