@@ -457,7 +457,7 @@ class Ocean:
         self.fft_render.bind_uniform_data('texture_shadow', texture_shadow)
 
         # Bind Atmosphere
-        atmosphere.bind_precomputed_atmosphere(material_instance=self.fft_render)
+        atmosphere.bind_precomputed_atmosphere(self.fft_render)
 
         self.geometry.bind_vertex_buffer()
         self.geometry.draw_elements()

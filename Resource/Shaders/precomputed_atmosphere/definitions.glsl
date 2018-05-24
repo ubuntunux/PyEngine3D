@@ -1116,6 +1116,34 @@ float GetSceneShadowLength(float scene_dist, vec3 view_direction, sampler2D text
 
 void GetSceneRadiance(
     const in AtmosphereParameters atmosphere,
+    float scene_linear_depth, vec3 eye_direction, vec3 normal,
+    out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter)
+{
+    vec3 sun_direction = LIGHT_DIRECTION.xyz;
+    vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
+    vec3 relative_point = relative_camera_pos + eye_direction * scene_linear_depth * atmosphere_ratio;
+
+    // Avoid brightening
+    relative_camera_pos.y = max(0.0, relative_camera_pos.y);
+    relative_point.y = max(0.0, relative_point.y);
+
+    // 0.0 is for off screen light shaft
+    float scene_shadow_length = 0.0;
+
+    sun_irradiance = GetSunAndSkyIrradiance(
+            atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);
+
+    vec3 transmittance;
+    in_scatter = GetSkyRadianceToPoint(atmosphere, relative_camera_pos - earth_center,
+        relative_point.xyz - earth_center, scene_shadow_length, sun_direction, transmittance);
+
+    sun_irradiance *= transmittance / PI;
+    sky_irradiance *= transmittance / PI;
+}
+
+
+void GetSceneRadianceWithShadow(
+    const in AtmosphereParameters atmosphere,
     float scene_linear_depth, vec3 eye_direction, vec3 normal, sampler2D texture_shadow,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 in_scatter, out float scene_shadow_length)
 {
@@ -1127,9 +1155,7 @@ void GetSceneRadiance(
     relative_camera_pos.y = max(0.0, relative_camera_pos.y);
     relative_point.y = max(0.0, relative_point.y);
 
-    //scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
-    // 0.0 is for off screen light shaft
-    scene_shadow_length = 0.0;
+    scene_shadow_length = GetSceneShadowLength(scene_linear_depth, eye_direction, texture_shadow);
 
     sun_irradiance = GetSunAndSkyIrradiance(
             atmosphere, relative_point.xyz - earth_center, normal, sun_direction, sky_irradiance);

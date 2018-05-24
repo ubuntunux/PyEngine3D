@@ -15,25 +15,25 @@ float get_linear_luminance(vec3 LinearColor)
     return dot(LinearColor, vec3(0.3, 0.59, 0.11));
 }
 
-/* non-linear depth to linear depth */
+// non-linear depth to linear depth
 float depth_to_linear_depth(float depth)
 {
     const float zNear = NEAR_FAR.x;
     const float zFar = NEAR_FAR.y;
-    /* depth [0, 1] to NDC Z [-1, 1] */
+    // depth [0, 1] to NDC Z [-1, 1]
     depth = depth * 2.0 - 1.0;
-    /* NDC Z to distance[near, far] */
+    // NDC Z to distance[near, far]
     return 2.0 * zNear * zFar / (zFar + zNear - depth * (zFar - zNear));
 }
 
-/* linear depth to non-linear depth */
+// linear depth to non-linear depth
 float linear_depth_to_depth(float linear_depth)
 {
     const float zNear = NEAR_FAR.x;
     const float zFar = NEAR_FAR.y;
-    /* linear_depth to NDC Z [-1, 1] */
+    // linear_depth to NDC Z [-1, 1]
     float depth = (zFar + zNear - 2.0 * zNear * zFar / linear_depth) / (zFar - zNear);
-    /* NDC Z [-1, 1] to depth [0, 1] */
+    // NDC Z [-1, 1] to depth [0, 1]
     return depth * 0.5 + 0.5;
 }
 
@@ -89,4 +89,10 @@ vec3 invert_y(vec3 vector)
 float safe_atan(float y, float x)
 {
     return mod(atan(y, x), TWO_PI);
+}
+
+vec3 safe_normalize(vec3 vector)
+{
+    float dist = length(vector);
+    return vector / (dist == 0.0 ? 1.0 : dist);
 }

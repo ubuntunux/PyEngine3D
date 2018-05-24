@@ -180,7 +180,7 @@ void main()
 
             vec3 light_shaft = vec3(0.0);
             float EdotL = pow(clamp(dot(eye_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 4.0);
-            float VdotL = pow(clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 2.0);
+            float VdotL = pow(clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 4.0);
             vec3 light_shaft_color = EdotL * VdotL * (view_point_sun_irradiance + view_point_sky_irradiance) * 0.5;
             light_shaft_color *= LIGHT_COLOR.xyz;
 

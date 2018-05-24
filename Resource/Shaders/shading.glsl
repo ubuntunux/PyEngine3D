@@ -3,7 +3,7 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 
 
-float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope, sampler2D texture_shadow)
+float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
 {
     vec2 shadow_size = textureSize(texture_shadow, 0);
     vec2 shadow_texel_size = 1.0 / shadow_size;
@@ -25,7 +25,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float slope,
 
     for(int n=0; n<loop_count; ++n)
     {
-        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 3.0;
+        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 4.0;
 
         vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
         vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
@@ -200,13 +200,8 @@ vec4 surface_shading(vec4 base_color,
     vec3 scene_sun_irradiance;
     vec3 scene_sky_irradiance;
     float scene_shadow_length;
-    {
-        float scene_linear_depth = depth_to_linear_depth(depth);
-
-        GetSceneRadiance(
-            ATMOSPHERE, scene_linear_depth, -V, N, texture_shadow,
-            scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
-    }
+    float scene_linear_depth = depth_to_linear_depth(depth);
+    GetSceneRadiance(ATMOSPHERE, scene_linear_depth, -V, N, scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
 
     light_color = light_color * scene_sun_irradiance;
 
@@ -218,7 +213,6 @@ vec4 surface_shading(vec4 base_color,
     vec3 H = normalize(V + L);
 
     float NdL = dot(N, L);
-    float slope = abs(NdL);
     NdL = max(0.0, NdL);
 
     float NdV = max(0.001, dot(N, V));
@@ -226,7 +220,7 @@ vec4 surface_shading(vec4 base_color,
     float HdV = max(0.001, dot(H, V));
     float LdV = max(0.001, dot(L, V));
 
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, slope, texture_shadow) );
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
     shadow_factor = max(shadow_factor, scene_sky_irradiance);
 
     vec3 result = vec3(0.0, 0.0, 0.0);
@@ -234,8 +228,7 @@ vec4 surface_shading(vec4 base_color,
 
     vec3 F0 = vec3(0.04);
     F0 = mix(max(F0, reflectance), base_color.xyz, metallic);
-
-    vec3 fresnel = fresnelSchlick(HdV, F0);
+    vec3 fresnel = fresnelSchlick(NdV, F0);
 
     vec3 diffuse_light = vec3(0.0, 0.0, 0.0);
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
@@ -245,11 +238,15 @@ vec4 surface_shading(vec4 base_color,
     opacity = clamp(base_color.w + base_color.w * reflectivity, 0.0, 1.0);
 #endif
 
-    // Directional lighting
+    // Dynamic Light
     {
-        diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * NdL * light_color;
-        specular_light += cooktorrance_specular(fresnel, NdL, NdV, NdH, roughness) * NdL * light_color;
+        vec3 light_fresnel = fresnelSchlick(HdV, F0);
 
+        // Directional Light
+        diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * NdL * light_color * shadow_factor;
+        specular_light += cooktorrance_specular(light_fresnel, NdL, NdV, NdH, roughness) * NdL * light_color * shadow_factor;
+
+        // Point Lights
         for(int i=0; i<MAX_POINT_LIGHTS; ++i)
         {
             if(1.0 != POINT_LIGHTS[i].render)
@@ -277,7 +274,7 @@ vec4 surface_shading(vec4 base_color,
             float point_light_NdH = max(0.01, dot(N, point_light_half));
 
             diffuse_light += oren_nayar(roughness, point_light_NdL, NdV, N, V, point_light_dir) / PI * point_light_NdL * point_light_color;
-            specular_light += cooktorrance_specular(fresnel, point_light_NdL, NdV, point_light_NdH, roughness) * point_light_NdL * point_light_color;
+            specular_light += cooktorrance_specular(light_fresnel, point_light_NdL, NdV, point_light_NdH, roughness) * point_light_NdL * point_light_color;
         }
     }
 
@@ -296,18 +293,17 @@ vec4 surface_shading(vec4 base_color,
         }
 
         vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-        vec3 shValue = fresnelSchlick(NdV, F0) * envBRDF.x + envBRDF.y;
+        vec3 shValue = fresnel * envBRDF.x + envBRDF.y;
 
-        diffuse_light += ibl_diffuse_light * shValue;
-        specular_light += ibl_specular_light * shValue;
+        diffuse_light += ibl_diffuse_light * shValue * shadow_factor;
+        specular_light += ibl_specular_light * shValue * shadow_factor;
     }
 
     // final result
     diffuse_light *= base_color.xyz * clamp((vec3(1.0) - fresnel) * (1.0 - metallic), 0.0, 1.0);
     specular_light = mix(specular_light, specular_light * base_color.xyz, vec3(metallic));
 
-    result = (diffuse_light + specular_light) * shadow_factor;
-    // result += scene_in_scatter;
+    result = diffuse_light + specular_light;
 
     // SSAO
     if(RENDER_SSAO == 1.0f)

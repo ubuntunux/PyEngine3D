@@ -224,7 +224,7 @@ class Atmosphere:
 
         self.sun_direction[...] = main_light.transform.front
 
-    def bind_precomputed_atmosphere(self, material_instance, render_object=True):
+    def bind_precomputed_atmosphere(self, material_instance):
         material_instance.bind_uniform_data("transmittance_texture", self.transmittance_texture)
         material_instance.bind_uniform_data("scattering_texture", self.scattering_texture)
         material_instance.bind_uniform_data("irradiance_texture", self.irradiance_texture)
@@ -239,6 +239,7 @@ class Atmosphere:
         material_instance.bind_uniform_data("atmosphere_exposure", self.atmosphere_exposure)
         material_instance.bind_uniform_data("earth_center", self.earth_center)
 
+    def bind_cloud(self, material_instance):
         material_instance.bind_uniform_data("texture_cloud", self.cloud_texture)
         material_instance.bind_uniform_data("texture_noise", self.noise_texture)
 
@@ -266,5 +267,6 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("texture_shadow", texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
         self.atmosphere_material_instance.bind_uniform_data("render_sun", render_sun)
-        self.bind_precomputed_atmosphere(self.atmosphere_material_instance, render_object=False)
+        self.bind_precomputed_atmosphere(self.atmosphere_material_instance)
+        self.bind_cloud(self.atmosphere_material_instance)
         self.quad.draw_elements()

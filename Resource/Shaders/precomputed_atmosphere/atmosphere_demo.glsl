@@ -39,7 +39,7 @@ void main()
     vec3 scene_sun_irradiance;
     vec3 scene_sky_irradiance;
     vec3 scene_in_scatter;
-    GetSceneRadiance(
+    GetSceneRadianceWithShadow(
         ATMOSPHERE, scene_linear_depth, view_direction, normal, texture_shadow,
         scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter, scene_shadow_length);
     scene_radiance = scene_sun_irradiance + scene_sky_irradiance + scene_in_scatter;
