@@ -3,6 +3,56 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 
 
+float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
+{
+    vec2 shadow_size = textureSize(texture_shadow, 0);
+    vec2 shadow_texel_size = 1.0 / shadow_size;
+    vec4 shadow_proj = SHADOW_MATRIX * vec4(world_position, 1.0);
+    shadow_proj.xyz /= shadow_proj.w;
+    shadow_proj.xyz = shadow_proj.xyz * 0.5 + 0.5;
+    float shadow_depth = shadow_proj.z;
+    vec2 offsets[4] = {
+        vec2(0.0, 0.0),
+        vec2(shadow_texel_size.x, 0.0),
+        vec2(0.0, shadow_texel_size.y),
+        vec2(shadow_texel_size.x, shadow_texel_size.y),
+    };
+
+    float shadow_factor = 0.0;
+    int loop_count = 4;
+    const float c = 1000.0;
+    float depth_bias = 0.002;
+
+    vec2 shadow_uv = shadow_proj.xy;
+
+    vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
+    vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
+    vec2 uv = pixel_pos * shadow_texel_size;
+
+    vec4 shadow_factors;
+
+    for(int i=0; i<4; ++i)
+    {
+        vec2 shadow_uv = uv + offsets[i];
+        shadow_factors[i] = textureLod(texture_shadow, shadow_uv, 0.0).x;
+        if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
+        {
+            shadow_factors[i] = saturate(exp( -c * (shadow_depth - shadow_factors[i] + depth_bias)));
+        }
+        else
+        {
+            shadow_factors[i] = 1.0;
+        }
+    }
+
+    shadow_factor += mix(
+        mix(shadow_factors.x, shadow_factors.y, pixel_ratio.x),
+        mix(shadow_factors.z, shadow_factors.w, pixel_ratio.x), pixel_ratio.y);
+
+    return clamp(shadow_factor, 0.0, 1.0);
+}
+
+
 float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
 {
     vec2 shadow_size = textureSize(texture_shadow, 0);

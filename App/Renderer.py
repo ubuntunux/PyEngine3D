@@ -337,7 +337,7 @@ class Renderer(Singleton):
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
-                                                                            not RenderOption.RENDER_LIGHT_PROBE)
+                                                                            RenderOption.RENDER_LIGHT_PROBE)
             return end_render_scene()
         else:
             """ render normal scene """
@@ -398,7 +398,7 @@ class Renderer(Singleton):
                                                           RenderTargets.ATMOSPHERE_LIGHTSHAFT)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
-                                                                            not RenderOption.RENDER_LIGHT_PROBE)
+                                                                            RenderOption.RENDER_LIGHT_PROBE)
 
             glEnable(GL_CULL_FACE)
             glEnable(GL_DEPTH_TEST)

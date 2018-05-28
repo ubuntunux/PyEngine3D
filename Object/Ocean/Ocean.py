@@ -93,6 +93,21 @@ class Ocean:
                     self.texture_butterfly):
             self.generate_texture()
 
+        self.caustic_index = 0
+        self.texture_caustics = []
+        i = 0
+        while True:
+            resource_name = "water.caustic_%02d" % i
+            if self.resource_manager.texture_loader.hasResource(resource_name):
+                self.texture_caustics.append(self.resource_manager.getTexture(resource_name))
+                i += 1
+                continue
+            break
+
+        self.texture_foam = self.resource_manager.getTexture("water.water_foam")
+
+        self.texture_noise = self.resource_manager.getTexture("noise.noise")
+
         # self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
         #                                                    layout_location=5,
         #                                                    element_data=FLOAT2_ZERO)
@@ -382,6 +397,7 @@ class Ocean:
 
     def update(self, delta):
         self.acc_time += delta
+        self.caustic_index = int(self.acc_time % len(self.texture_caustics))
 
     def simulateFFTWaves(self):
         framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
@@ -448,13 +464,19 @@ class Ocean:
         self.fft_render.bind_uniform_data("simulation_amplitude", self.simulation_amplitude)
         self.fft_render.bind_uniform_data("simulation_size", self.simulation_size)
         self.fft_render.bind_uniform_data("cell_size", self.cell_size)
+        self.fft_render.bind_uniform_data("t", self.acc_time * self.simulation_wind)
 
         self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
         self.fft_render.bind_uniform_data("slopeVarianceSampler", self.texture_slope_variance)
+
         self.fft_render.bind_uniform_data('texture_scene', texture_scene)
         self.fft_render.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.fft_render.bind_uniform_data('texture_probe', texture_probe)
         self.fft_render.bind_uniform_data('texture_shadow', texture_shadow)
+
+        self.fft_render.bind_uniform_data('texture_noise', self.texture_noise)
+        self.fft_render.bind_uniform_data('texture_caustic', self.texture_caustics[self.caustic_index])
+        self.fft_render.bind_uniform_data('texture_foam', self.texture_foam)
 
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.fft_render)

@@ -256,7 +256,7 @@ class Atmosphere:
         material_instance.bind_uniform_data('noise_contrast', self.noise_contrast)
         material_instance.bind_uniform_data('noise_coverage', self.noise_coverage)
 
-    def render_precomputed_atmosphere(self, texture_linear_depth, texture_shadow, render_sun):
+    def render_precomputed_atmosphere(self, texture_linear_depth, texture_shadow, render_light_probe_mode):
         if not self.is_render_atmosphere:
             return
 
@@ -266,7 +266,7 @@ class Atmosphere:
         self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.atmosphere_material_instance.bind_uniform_data("texture_shadow", texture_shadow)
         self.atmosphere_material_instance.bind_uniform_data("sun_size", self.sun_size)
-        self.atmosphere_material_instance.bind_uniform_data("render_sun", render_sun)
+        self.atmosphere_material_instance.bind_uniform_data("render_light_probe_mode", render_light_probe_mode)
         self.bind_precomputed_atmosphere(self.atmosphere_material_instance)
         self.bind_cloud(self.atmosphere_material_instance)
         self.quad.draw_elements()

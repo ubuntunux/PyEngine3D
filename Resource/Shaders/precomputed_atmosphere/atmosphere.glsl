@@ -93,7 +93,7 @@ void main()
         ATMOSPHERE, camera - earth_center, eye_direction, scene_shadow_length, sun_direction, transmittance);
 
     // Sun
-    if (render_sun && sun_size.y < dot(eye_direction, sun_direction))
+    if (!render_light_probe_mode && sun_size.y < dot(eye_direction, sun_direction))
     {
         radiance += transmittance * GetSolarRadiance(ATMOSPHERE);
     }
@@ -160,7 +160,7 @@ void main()
         vec3 N = normalize(ray_start_pos.xyz);
 
         float altitude_ratio = saturate(CAMERA_POSITION.y / (cloud_altitude + cloud_height));
-        float atmosphere_lighting = max(0.05, pow(saturate(dot(N, sun_direction) * 0.5 + 0.5), 1.0));
+        float atmosphere_lighting = max(0.2, pow(saturate(dot(N, sun_direction) * 0.5 + 0.5), 1.0));
 
         // Light Shaft
         {
@@ -179,14 +179,16 @@ void main()
                 scene_sun_irradiance, scene_sky_irradiance, scene_in_scatter);
 
             vec3 light_shaft = vec3(0.0);
-            float EdotL = pow(clamp(dot(eye_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 4.0);
-            float VdotL = pow(clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 4.0);
+            float EdotL = pow(clamp(dot(eye_direction, sun_direction) * 0.5 + 0.5, 0.0, 1.0), 16.0);
+            float VdotL = clamp(dot(screen_center_ray, sun_direction) * 0.5 + 0.5, 0.0, 1.0);
             vec3 light_shaft_color = EdotL * VdotL * (view_point_sun_irradiance + view_point_sky_irradiance) * 0.5;
             light_shaft_color *= LIGHT_COLOR.xyz;
 
-            const float shadow_depth_bias = -0.0025;
+            const float shadow_depth_bias = 0.0025;
             int count = 128;
             float march_step = min(NEAR_FAR.y, scene_dist) / float(count);
+            float c = min(1.0, march_step * 10.0);
+
             for(int i=0; i<count; ++i)
             {
                 float march_dist = march_step * float(i + 1);
@@ -195,11 +197,14 @@ void main()
                 shadow_uv.xyz /= shadow_uv.w;
                 shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
 
-                float shadow_depth = texture2D(texture_shadow, shadow_uv.xy, 0).x + shadow_depth_bias;
+                float shadow_depth = texture2D(texture_shadow, shadow_uv.xy, 0).x;
 
-                if(shadow_uv.z <= shadow_depth || shadow_uv.x < 0.0 || 1.0 < shadow_uv.x || shadow_uv.y < 0.0 || 1.0 < shadow_uv.y)
+                if(shadow_uv.x < 0.0 || 1.0 < shadow_uv.x ||
+                    shadow_uv.y < 0.0 || 1.0 < shadow_uv.y ||
+                    shadow_uv.z < 0.0 || 1.0 < shadow_uv.z ||
+                    shadow_uv.z <= shadow_depth - shadow_depth_bias)
                 {
-                    light_shaft += light_shaft_color;
+                    light_shaft += light_shaft_color * c;
                 }
             }
 
@@ -208,6 +213,11 @@ void main()
             if(render_cloud)
             {
                 out_lightshaft.xyz += scene_in_scatter;
+            }
+
+            if(render_light_probe_mode)
+            {
+                out_color.xyz += scene_in_scatter;
             }
 
             out_lightshaft.w = 1.0;
@@ -330,7 +340,7 @@ void main()
         }
     }
 
-    out_color.xyz = max(vec3(0.0), mix(radiance, cloud.xyz, cloud.w));
+    out_color.xyz += max(vec3(0.0), mix(radiance, cloud.xyz, cloud.w));
     out_color.w = clamp(cloud.w, 0.0, 1.0);
 }
 #endif
