@@ -1050,6 +1050,7 @@ float GetSceneShadowLength(float scene_dist, vec3 view_direction, sampler2D text
     float shadow_length = 0.0;
     const int LOOP = 64;
     float d = min(NEAR_FAR.y * 0.01, scene_dist) / float(LOOP);
+    float enter_count = 0.0;
 
     for(int i=0; i<LOOP; ++i)
     {
@@ -1088,6 +1089,11 @@ float GetSceneShadowLength(float scene_dist, vec3 view_direction, sampler2D text
             continue;
         }
 
+        if(shadow_enter)
+        {
+            enter_count += 1.0;
+        }
+
         if(do_exit || i == (LOOP-1))
         {
             if(shadow_enter)
@@ -1106,11 +1112,13 @@ float GetSceneShadowLength(float scene_dist, vec3 view_direction, sampler2D text
         }
     }
 
+    shadow_length = enter_count / float(LOOP);
+
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 relative_camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
     float lightshaft_fadein_hack = smoothstep(0.02, 0.04, dot(normalize(relative_camera_pos - earth_center), sun_direction));
 
-    return max(0.0, shadow_length);// * lightshaft_fadein_hack * 2.0;
+    return max(0.0, shadow_length) * lightshaft_fadein_hack * 2.0;
 }
 
 

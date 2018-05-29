@@ -65,7 +65,9 @@ vec3 oceanWorldPos(vec4 vertex)
 
     dist = min(far_dist, dist);
 
-    return CAMERA_POSITION.xyz + dist * worldDir + vec3(0.0, height, 0.0);
+    vec3 world_pos = vec3(0.0, height, 0.0);
+    world_pos.xz += CAMERA_POSITION.xz + dist * worldDir.xz;
+    return world_pos;
 }
 
 void main()
@@ -114,7 +116,7 @@ void main()
 
     vec2 screen_coord = (proj_pos.xy / proj_pos.w) * 0.5 + 0.5;
 
-    float vertex_noise = texture2DLod(texture_noise, screen_coord, 0.0).x;
+    float vertex_noise = texture2DLod(texture_noise, world_pos.xz * 0.005, 0.0).x;
     float shadow_factor = get_shadow_factor(screen_coord, world_pos, texture_shadow);
 
     vec3 in_scatter;
@@ -159,8 +161,7 @@ void main()
     float view_ray_angle = dot(view_center_ray, V);
 
     float scene_dist = texture2D(texture_linear_depth, screen_tex_coord).x / view_ray_angle;
-    float vertex_noise = vs_output.vertex_noise * 0.0;
-    float normalized_vertex_noise = vertex_noise - 0.5;
+    float vertex_noise = vs_output.vertex_noise;
 
     // fix scene_depth
     vec3 tempPos = -V * scene_dist;
@@ -172,9 +173,9 @@ void main()
     vec3 shadow_factor = max(sky_irradiance, vec3(vs_output.shadow_factor));
 
     vec2 slopes = texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.x, 1.0), 0.0).xy;
-    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw;
-    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.z, 2.0), 0.0).xy;
-    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.y, 1.0), 0.0).zw * 0.9;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.z, 2.0), 0.0).xy * 0.7;
+    slopes += texture2DArrayLod(fftWavesSampler, vec3(uv / simulation_size.w, 2.0), 0.0).zw * 0.5;
 
     vec3 vertex_normal = normalize(vs_output.vertex_normal);
     vec3 N = normalize(vec3(-slopes.x, 1.0, -slopes.y) + vertex_normal * 0.5);
@@ -182,19 +183,18 @@ void main()
 
     vec3 L = LIGHT_DIRECTION.xyz;
     vec3 H = normalize(V + L);
-    vec3 R = reflect(-V, smooth_normal);
 
     float NdL = max(0.0, dot(N, L));
-    float NdV = max(0.0, dot(smooth_normal, V));
+    float NdV = max(0.0, dot(N, V));
     float NdH = max(0.0, dot(N, H));
     float HdV = max(0.0, dot(H, V));
     float LdV = max(0.0, dot(L, V));
 
     vec3 F0 = vec3(0.04);
-    vec3 fresnel = fresnelSchlick(NdV, F0);
+    vec3 fresnel = fresnelSchlick(max(0.0, dot(smooth_normal, V)), F0);
 
     // refract
-    vec2 reflected_screen_uv = screen_tex_coord + N.xz * 0.1f;
+    vec2 reflected_screen_uv = screen_tex_coord + N.xz * 0.05f;
     float refracted_scene_dist = texture2D(texture_linear_depth, reflected_screen_uv).x / view_ray_angle;
     float refracted_scene_dist_origin = refracted_scene_dist;
 
@@ -206,9 +206,9 @@ void main()
     float dist_diff = max(0.0f, max(scene_dist, refracted_scene_dist) - dist);
 
     // groud pos
-    vec3 groundPos = world_pos - V * dist_diff + vec3(N.x, 0.0f, N.z) * 200.0f;
+    vec3 groundPos = world_pos - V * dist_diff + vec3(N.x, 0.0f, N.z) * 0.5f;
 
-    float opacity = sqrt(saturate(dist_diff * 0.5f)) * screen_fade;
+    float opacity = sqrt(saturate(dist_diff * 0.1f)) * screen_fade;
     float invOpacity = 1.0f - opacity;
     vec4 outColor = vec4(1.0f);
 
@@ -220,26 +220,28 @@ void main()
     vec3 sea_color_far = vec3(58.0, 47.0, 99.0) / 255.0;
     vec3 water_color;
     {
-        water_color = mix(sea_color_near, sea_color_mid, saturate(dist_diff * 0.001));
-        water_color = mix(water_color, sea_color_far, saturate(dist_diff * 0.001));
+        water_color = mix(sea_color_near, sea_color_mid, sqrt(saturate(dist * 0.1)));
+        water_color = mix(water_color, sea_color_far, sqrt(saturate(dist * 0.01)));
     }
 
+    // Reflection
+    vec3 R = reflect(-V, smooth_normal);
     vec3 scene_reflect_color = textureCubeLod(texture_probe, invert_y(R), 0.0).xyz;
 
-    // under water
+    // Under Water
     vec3 under_water_color = texture2D(texture_scene, (refracted_scene_dist <= dist) ? screen_tex_coord : reflected_screen_uv, 0.0).xyz;
     {
         // Under Water Caustic
         float under_water_shadow = get_shadow_factor_simple(screen_tex_coord, world_pos, texture_shadow);
 
-        const float chromaSeperation = (world_pos - groundPos).y * 0.00004f * sin(t * 3.5f);
-        vec2 caustic_uv = (groundPos + L * dist_diff).xz * 0.0025f;
+        const float chromaSeperation = sin(t * 3.5f) * 0.005;
+        vec2 caustic_uv = (groundPos + L * dist_diff).xz * 0.25f;
 
         vec3 caustic_color;
-        caustic_color.r = texture2D(texture_caustic, caustic_uv + vec2(0.0f, chromaSeperation) + vertex_noise).r;
-        caustic_color.g = texture2D(texture_caustic, caustic_uv + vec2(chromaSeperation, 0.0f) + vertex_noise).g;
-        caustic_color.b = texture2D(texture_caustic, caustic_uv - vec2(chromaSeperation, chromaSeperation) + vertex_noise).b;
-        caustic_color *= under_water_shadow * normalized_vertex_noise * screen_fade * 1.5f;
+        caustic_color.r = texture2D(texture_caustic, caustic_uv + vec2(0.0f, chromaSeperation)).r;
+        caustic_color.g = texture2D(texture_caustic, caustic_uv + vec2(chromaSeperation, 0.0f)).g;
+        caustic_color.b = texture2D(texture_caustic, caustic_uv - vec2(chromaSeperation, chromaSeperation)).b;
+        caustic_color *= under_water_shadow * screen_fade * 1.5f;
 
         // apply caustic
         under_water_color += caustic_color * sun_irradiance * max(0.5f, under_water_shadow) * saturate(1.0f - dist_diff * 0.01);
@@ -247,13 +249,12 @@ void main()
         float fog_ratio = saturate(refracted_scene_dist_origin * 0.00005f);
         vec3 fog_color = mix(under_water_color, sea_color_far, fog_ratio * fog_ratio) * 0.3f;
 
-        under_water_color = mix(under_water_color, water_color * under_water_color, opacity) * invOpacity;
-        under_water_color = mix(fog_color, under_water_color, screen_fade);
+        //under_water_color = mix(under_water_color, water_color * under_water_color, opacity) * invOpacity;
+        //under_water_color = max(vec3(0.0), mix(fog_color, under_water_color, screen_fade));
     }
 
     fs_output.xyz = mix(water_color * NdL * light_color, scene_reflect_color, fresnel) * shadow_factor;
-    //fs_output.xyz = mix(under_water_color.xyz, fs_output.xyz, opacity);
-    fs_output.xyz = scene_reflect_color;
+    fs_output.xyz = mix(under_water_color.xyz, fs_output.xyz, opacity);
 
     fs_output.w = 1.0;
 }

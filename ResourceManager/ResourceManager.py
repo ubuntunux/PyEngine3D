@@ -917,7 +917,7 @@ class TextureLoader(ResourceLoader):
                     image = image.resize((width2, height2), Image.ANTIALIAS)
                     width, height = width2, height2
 
-            if image.mode == 'L' or image.mode == 'LA':
+            if image.mode == 'L' or image.mode == 'LA' or image.mode == 'P' or image.mode == 'R':
                 rgbimg = Image.new("RGBA", image.size)
                 rgbimg.paste(image)
                 image = rgbimg

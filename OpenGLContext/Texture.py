@@ -44,7 +44,7 @@ def get_internal_format(str_image_mode):
         return GL_RGBA
     elif str_image_mode == "RGB":
         return GL_RGB
-    elif str_image_mode == "L":
+    elif str_image_mode == "L" or str_image_mode == "P" or str_image_mode == "R":
         return GL_LUMINANCE
     else:
         logger.error("get_internal_format::unknown image mode ( %s )" % str_image_mode)
@@ -57,8 +57,8 @@ def get_texture_format(str_image_mode):
         return GL_RGBA  # GL_BGRA
     elif str_image_mode == "RGB":
         return GL_RGB
-    elif str_image_mode == "L":
-        return GL_LUMINANCE
+    elif str_image_mode == "L" or str_image_mode == "P" or str_image_mode == "R":
+        return GL_RED
     else:
         logger.error("get_texture_format::unknown image mode ( %s )" % str_image_mode)
     return GL_RGBA

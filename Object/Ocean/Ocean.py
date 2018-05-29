@@ -397,7 +397,7 @@ class Ocean:
 
     def update(self, delta):
         self.acc_time += delta
-        self.caustic_index = int(self.acc_time % len(self.texture_caustics))
+        self.caustic_index = int((self.acc_time * 20.0) % len(self.texture_caustics))
 
     def simulateFFTWaves(self):
         framebuffer_manager = CoreManager.instance().renderer.framebuffer_manager
