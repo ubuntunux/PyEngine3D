@@ -7,7 +7,7 @@ km = 370.0
 
 WIND = 5.0
 OMEGA = 0.84
-AMPLITUDE = 1.0
+AMPLITUDE = 0.5
 
 CHOPPY_FACTOR = np.array([2.3, 2.1, 1.3, 0.9], dtype=np.float32)
 
