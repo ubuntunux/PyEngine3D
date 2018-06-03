@@ -1217,6 +1217,24 @@ class FontLoader(ResourceLoader):
 
 
 # -----------------------#
+# CLASS : ParticleLoader
+# -----------------------#
+class ParticleLoader(ResourceLoader):
+    name = "ParticleLoader"
+    resource_dir_name = 'Particles'
+    fileExt = '.particle'
+
+
+# -----------------------#
+# CLASS : SoundLoader
+# -----------------------#
+class SoundLoader(ResourceLoader):
+    name = "SoundLoader"
+    resource_dir_name = 'Sounds'
+    fileExt = '.sound'
+
+
+# -----------------------#
 # CLASS : ScriptLoader
 # -----------------------#
 class ScriptLoader(ResourceLoader):
@@ -1245,6 +1263,8 @@ class ResourceManager(Singleton):
         self.material_instance_loader = None
         self.mesh_loader = None
         self.scene_loader = None
+        self.particle_loader = None
+        self.sound_loader = None
         self.script_loader = None
         self.model_loader = None
         self.procedural_texture_loader = None
@@ -1269,6 +1289,8 @@ class ResourceManager(Singleton):
         self.material_instance_loader = self.regist_loader(MaterialInstanceLoader)
         self.mesh_loader = self.regist_loader(MeshLoader)
         self.scene_loader = self.regist_loader(SceneLoader)
+        self.particle_loader = self.regist_loader(ParticleLoader)
+        self.sound_loader = self.regist_loader(SoundLoader)
         self.script_loader = self.regist_loader(ScriptLoader)
         self.model_loader = self.regist_loader(ModelLoader)
         self.procedural_texture_loader = self.regist_loader(ProceduralTextureLoader)
