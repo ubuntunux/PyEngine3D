@@ -1,5 +1,3 @@
-
-
 #include "quad.glsl"
 
 uniform vec2 blur_scale;
