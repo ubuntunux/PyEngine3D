@@ -39,7 +39,6 @@
 * Debug
     - performance profiler
     - debug info print
-    - render target viewer
 * Editor
     - Tab based panel
     - Snap to window rect
@@ -52,12 +51,10 @@
     - progress bar
     - button
 * Light
-    - Dominant Directional Light, Spot, point, area light
-    - SkyLight, AmbientLight, Spherical Harmonic Light
+    - Spot, area light
 * Object
     - Select, Move, Modify
     - Gizmo
-    - View Frustum Culling
     - VTF Skinning
 * Particle System
     - runtime particles
@@ -72,7 +69,6 @@
     - Color Correction
     - Color Grading
 * Rendering
-    - Light Probe lod convolution
     - Hierachical-Z depth
     - Animation calculation in gpu
     - Multisample texture - glTexImage2DMultisample
