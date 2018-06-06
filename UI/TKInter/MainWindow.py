@@ -67,7 +67,7 @@ class MessageThread(Thread):
                         command()
 
 
-class MainWindow(tk.Frame):
+class MainWindow(tk.PanedWindow):
     def __init__(self, project_filename, cmdQueue, appCmdQueue, cmdPipe):
         logger.info("Create MainWindow.")
         self.root = tk.Tk()
@@ -85,7 +85,7 @@ class MainWindow(tk.Frame):
         y = (screen_height / 2) - (height / 2)
         self.root.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
-        super(MainWindow, self).__init__(self.root, background="#FFF0C1", relief="sunken")
+        super(MainWindow, self).__init__(self.root, orient=tk.HORIZONTAL, sashrelief=tk.RAISED)
         self.pack(fill="both", expand=True)
 
         self.project_filename = project_filename
@@ -132,47 +132,99 @@ class MainWindow(tk.Frame):
 
         self.root.config(menu=menubar)
 
-        # layout
-        command_frame = tk.Frame(self)
-        w = tk.Label(command_frame, text="command_frame")
-        w.pack()
+        # command layout
+        command_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
 
         variable = tk.StringVar()
-        values = ("a", "b", "c", "hello")
+        values = ("pyglet", "pygame")
         combobox = ttk.Combobox(command_frame, values=values, textvariable=variable)
         combobox.bind("<<ComboboxSelected>>", donothing, "+")
-        combobox.pack(fill="y", side="top")
-        # Test
-        combobox.current(3)
-        print(variable.get())
-        command_frame.pack(fill="both", side="left", expand=True)
+        combobox.pack(fill="x", side="top")
+        combobox.current(0)
 
-        resource_frame = tk.Frame(self)
-        w = tk.Label(resource_frame, text="resource_frame")
-        w.pack()
-        resource_frame.pack(fill="both", side="left", expand=True)
+        separator = ttk.Separator(command_frame, orient='horizontal')
+        separator.pack(fill="x", side="top", pady=10)
 
-        object_frame = tk.Frame(self)
+        button = tk.Button(command_frame, text="Add Camera")
+        button.pack(fill="x", side="top")
+
+        button = tk.Button(command_frame, text="Add Light")
+        button.pack(fill="x", side="top")
+
+        label_frame = ttk.LabelFrame(command_frame, text='Resolution')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        frame = tk.Frame(label_frame, relief="sunken", padx=5)
+        frame.pack(fill="x", side="top")
+        label = tk.Label(frame, text="Width", width=1)
+        label.pack(fill="x", side="left", expand=True)
+
+        spinbox = tk.Spinbox(frame, from_=0, to=9999, width=1)
+        spinbox.pack(fill="x", side="left", expand=True)
+
+        frame = tk.Frame(label_frame, relief="sunken", padx=5)
+        frame.pack(fill="x", side="top")
+        label = tk.Label(frame, text="Height", width=1)
+        label.pack(fill="x", side="left", expand=True)
+        spinbox = tk.Spinbox(frame, from_=0, to=9999, width=1)
+        spinbox.pack(fill="x", side="left", expand=True)
+
+        variable = tk.IntVar()
+        check_button = tk.Checkbutton(label_frame, text="Full Screen", variable=variable)
+        check_button.pack(fill="x", side="top")
+
+        button = tk.Button(label_frame, text="Change Resolution")
+        button.pack(fill="x", side="top")
+
+        combobox = ttk.Combobox(command_frame)
+        combobox.bind("<<ComboboxSelected>>", donothing, "+")
+        combobox.pack(fill="x", side="top")
+
+        combobox = ttk.Combobox(command_frame)
+        combobox.bind("<<ComboboxSelected>>", donothing, "+")
+        combobox.pack(fill="x", side="top")
+
+        combobox = ttk.Combobox(command_frame)
+        combobox.bind("<<ComboboxSelected>>", donothing, "+")
+        combobox.pack(fill="x", side="top")
+
+        # resource layout
+        resource_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
+        tree_view = ttk.Treeview(resource_frame)
+        tree_view["columns"] = ("one", "two")
+
+        tree_view.column("#0", width=100)
+        tree_view.column("one", width=100)
+        tree_view.column("two", width=100)
+
+        tree_view.heading("#0", text="Name")
+        tree_view.heading("one", text="coulmn A")
+        tree_view.heading("two", text="column B")
+
+        tree_view.insert("", 0, text="Line 1", values=("1A", "1b"))
+
+        id2 = tree_view.insert("", 1, "dir2", text="Dir 2")
+        tree_view.insert(id2, "end", "dir 2", text="sub dir 2", values=("2A", "2B"))
+
+        tree_view.insert("", 3, "dir3", text="Dir 3")
+        tree_view.insert("dir3", 3, text=" sub dir 3", values=("3A", " 3B"))
+
+        tree_view.pack(fill="both", side="top", expand=True)
+
+        # object layout
+        object_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
         w = tk.Label(object_frame, text="object_frame")
         w.pack()
-        object_frame.pack(fill="both", side="left", expand=True)
 
-        attribute_frame = tk.Frame(self)
+        # attribute layout
+        attribute_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
         w = tk.Label(attribute_frame, text="attribute_frame")
         w.pack()
-        attribute_frame.pack(fill="both", side="left", expand=True)
 
-        # tk.Label(self, text="First", bg="RED").grid(row=0, sticky=tk.W)
-        # tk.Label(self, text="Second").grid(row=1, sticky=tk.W)
-        #
-        # e1 = tk.Entry(self)
-        # e2 = tk.Entry(self)
-        #
-        # e1.grid(row=0, column=1, sticky=tk.E)
-        # e2.grid(row=1, column=1, sticky=tk.E)
-        #
-        # self.grid_columnconfigure(0, weight=3)
-        # self.grid_columnconfigure(1, weight=1)
+        self.add(command_frame, stretch="always", width=int(width * 1/4))
+        self.add(resource_frame, stretch="always", width=int(width * 1/4))
+        self.add(object_frame, stretch="always", width=int(width * 1/4))
+        self.add(attribute_frame, stretch="always", width=int(width * 1/4))
 
         # wait a UI_RUN message, and send success message
         # if self.cmdPipe:
