@@ -3,7 +3,9 @@ import traceback
 import os
 import time
 from threading import Thread
+
 import tkinter as tk
+import tkinter.ttk as ttk
 
 import numpy
 
@@ -83,8 +85,8 @@ class MainWindow(tk.Frame):
         y = (screen_height / 2) - (height / 2)
         self.root.geometry('%dx%d+%d+%d' % (width, height, x, y))
 
-        super(MainWindow, self).__init__(self.root)
-        self.pack()
+        super(MainWindow, self).__init__(self.root, background="#FFF0C1", relief="sunken")
+        self.pack(fill="both", expand=True)
 
         self.project_filename = project_filename
         self.cmdQueue = cmdQueue
@@ -101,7 +103,7 @@ class MainWindow(tk.Frame):
         self.message_thread.connect(get_command_name(COMMAND.CLOSE_UI), self.exit)
 
         # Menu
-        def donothing():
+        def donothing(*args):
             pass
 
         menubar = tk.Menu(self.root)
@@ -134,26 +136,47 @@ class MainWindow(tk.Frame):
         command_frame = tk.Frame(self)
         w = tk.Label(command_frame, text="command_frame")
         w.pack()
-        command_frame.pack(fill=tk.X, side=tk.LEFT)
+
+        variable = tk.StringVar()
+        values = ("a", "b", "c", "hello")
+        combobox = ttk.Combobox(command_frame, values=values, textvariable=variable)
+        combobox.bind("<<ComboboxSelected>>", donothing, "+")
+        combobox.pack(fill="y", side="top")
+        # Test
+        combobox.current(3)
+        print(variable.get())
+        command_frame.pack(fill="both", side="left", expand=True)
 
         resource_frame = tk.Frame(self)
         w = tk.Label(resource_frame, text="resource_frame")
         w.pack()
-        resource_frame.pack(fill=tk.X, side=tk.LEFT)
+        resource_frame.pack(fill="both", side="left", expand=True)
 
         object_frame = tk.Frame(self)
         w = tk.Label(object_frame, text="object_frame")
         w.pack()
-        object_frame.pack(fill=tk.X, side=tk.LEFT)
+        object_frame.pack(fill="both", side="left", expand=True)
 
         attribute_frame = tk.Frame(self)
         w = tk.Label(attribute_frame, text="attribute_frame")
-        w.pack(fill=tk.X)
-        attribute_frame.pack(fill=tk.X, side=tk.LEFT)
+        w.pack()
+        attribute_frame.pack(fill="both", side="left", expand=True)
+
+        # tk.Label(self, text="First", bg="RED").grid(row=0, sticky=tk.W)
+        # tk.Label(self, text="Second").grid(row=1, sticky=tk.W)
+        #
+        # e1 = tk.Entry(self)
+        # e2 = tk.Entry(self)
+        #
+        # e1.grid(row=0, column=1, sticky=tk.E)
+        # e2.grid(row=1, column=1, sticky=tk.E)
+        #
+        # self.grid_columnconfigure(0, weight=3)
+        # self.grid_columnconfigure(1, weight=1)
 
         # wait a UI_RUN message, and send success message
-        if self.cmdPipe:
-            self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
+        # if self.cmdPipe:
+        #     self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
     def exit(self, *args):
         self.root.withdraw()
