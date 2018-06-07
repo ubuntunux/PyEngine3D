@@ -88,6 +88,8 @@ class MainWindow(tk.PanedWindow):
         super(MainWindow, self).__init__(self.root, orient=tk.HORIZONTAL, sashrelief=tk.RAISED)
         self.pack(fill="both", expand=True)
 
+        self.notebook = ttk.Notebook(self)
+
         self.project_filename = project_filename
         self.cmdQueue = cmdQueue
         self.appCmdQueue = appCmdQueue
@@ -133,7 +135,7 @@ class MainWindow(tk.PanedWindow):
         self.root.config(menu=menubar)
 
         # command layout
-        command_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
+        command_frame = tk.Frame(self.notebook, relief="sunken", padx=10, pady=10)
 
         variable = tk.StringVar()
         values = ("pyglet", "pygame")
@@ -189,7 +191,7 @@ class MainWindow(tk.PanedWindow):
         combobox.pack(fill="x", side="top")
 
         # resource layout
-        resource_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
+        resource_frame = tk.Frame(self.notebook, relief="sunken", padx=10, pady=10)
         tree_view = ttk.Treeview(resource_frame)
         tree_view["columns"] = ("one", "two")
 
@@ -201,7 +203,15 @@ class MainWindow(tk.PanedWindow):
         tree_view.heading("one", text="coulmn A")
         tree_view.heading("two", text="column B")
 
+        def selectItem(a):
+            curItem = tree_view.focus()
+            print(type(tree_view.item(curItem)))
+        tree_view.bind('<ButtonRelease-1>', selectItem)
+
         tree_view.insert("", 0, text="Line 1", values=("1A", "1b"))
+        # t.font = ("Times 20 bold")
+        print(tree_view.get_children(0))
+
 
         id2 = tree_view.insert("", 1, "dir2", text="Dir 2")
         tree_view.insert(id2, "end", "dir 2", text="sub dir 2", values=("2A", "2B"))
@@ -212,7 +222,7 @@ class MainWindow(tk.PanedWindow):
         tree_view.pack(fill="both", side="top", expand=True)
 
         # object layout
-        object_frame = tk.Frame(self, relief="sunken", padx=10, pady=10)
+        object_frame = tk.Frame(self.notebook, relief="sunken", padx=10, pady=10)
         w = tk.Label(object_frame, text="object_frame")
         w.pack()
 
@@ -221,17 +231,18 @@ class MainWindow(tk.PanedWindow):
         w = tk.Label(attribute_frame, text="attribute_frame")
         w.pack()
 
-        self.add(command_frame, stretch="always", width=int(width * 1/4))
-        self.add(resource_frame, stretch="always", width=int(width * 1/4))
-        self.add(object_frame, stretch="always", width=int(width * 1/4))
-        self.add(attribute_frame, stretch="always", width=int(width * 1/4))
+        self.notebook.add(command_frame,text="Tag1")
+        self.notebook.add(resource_frame,text="Tag2")
+        self.notebook.add(object_frame,text="Tag3")
+        self.add(self.notebook, width=width * 1 / 2)
+        self.add(attribute_frame, width=width * 1 / 2)
 
         # wait a UI_RUN message, and send success message
         # if self.cmdPipe:
         #     self.cmdPipe.RecvAndSend(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
     def exit(self, *args):
-        self.root.withdraw()
+        self.root.destroy()
         self.appCmdQueue.put(COMMAND.CLOSE_APP)
         sys.exit()
 
@@ -248,6 +259,7 @@ class MainWindow(tk.PanedWindow):
 
     def show(self):
         self.mainloop()
+        self.root.destroy()
 
     def setWindowTitle(self, title):
         self.root.title(title)
