@@ -15,6 +15,10 @@ from UI import logger
 from Common.Command import *
 
 
+TAG_NORMAL = 'normal'
+TAG_LOADED = 'loaded'
+
+
 def addDirtyMark(text):
     if not text.startswith('*'):
         return '*' + text
@@ -25,6 +29,18 @@ def removeDirtyMark(text):
     if text.startswith('*'):
         return text[1:]
     return text
+
+
+def get_name(item):
+    return item['text']
+
+
+def get_value(item):
+    return item['values'][0]
+
+
+def get_tag(item):
+    return item['tag'][0] if 'tag' in item and 0 < len(item['tag']) else ''
 
 
 class MessageThread(Thread):
@@ -88,8 +104,8 @@ class MainWindow:
         self.message_thread.connect(get_command_name(COMMAND.SORT_UI_ITEMS), self.sort_items)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_LIST), self.addResourceList)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_INFO), self.setResourceInfo)
-        # self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE), self.fillResourceAttribute)
-        # self.message_thread.connect(get_command_name(COMMAND.DELETE_RESOURCE_INFO), self.delete_resource_info)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE), self.fillResourceAttribute)
+        self.message_thread.connect(get_command_name(COMMAND.DELETE_RESOURCE_INFO), self.delete_resource_info)
 
         width = 600
         height = 800
@@ -113,10 +129,6 @@ class MainWindow:
 
         def donothing(*args):
             pass
-
-        def sort_treeview(tv, col, reverse):
-            for k in tv.get_children(''):
-                print(k)
 
         # Menu
         menubar = tk.Menu(root)
@@ -209,53 +221,58 @@ class MainWindow:
         self.resource_menu.add_command(label="Delete", command=self.deleteResource)
         self.resource_menu.bind("<FocusOut>", self.resource_menu.unpost)
 
-        resource_frame = tk.Frame(main_tab, relief="sunken", padx=10, pady=10)
-        self.resource_treeview = ttk.Treeview(resource_frame)
+        self.resource_treeview = ttk.Treeview(main_tab)
         self.resource_treeview["columns"] = ("#1", )
         self.resource_treeview.column("#0", width=property_width)
         self.resource_treeview.column("#1", width=property_width)
         self.resource_treeview.heading("#0", text="Resource Name",
-                                       command=lambda: sort_treeview(self.resource_treeview, "#0", False))
+                                       command=lambda: self.sort_treeview(self.resource_treeview, 0))
         self.resource_treeview.heading("#1", text="Resource Type",
-                                       command=lambda: sort_treeview(self.resource_treeview, "#1", False))
+                                       command=lambda: self.sort_treeview(self.resource_treeview, 1))
 
-        self.resource_treeview.bind("<Button-1>", self.selectResource)
+        self.resource_treeview.bind("<<TreeviewSelect>>", self.selectResource)
+        # self.resource_treeview.bind("<Button-1>", self.selectResource)
         self.resource_treeview.bind("<Double-1>", lambda event: self.loadResource())
         self.resource_treeview.bind("<Button-3>", lambda event: self.resource_menu.post(event.x_root, event.y_root))
-        self.resource_treeview.pack(fill="both", side="top", expand=True)
+
+        vsb = ttk.Scrollbar(self.resource_treeview, orient="vertical", command=self.resource_treeview.yview)
+        vsb.pack(side='right', fill='y')
+        self.resource_treeview.configure(yscrollcommand=vsb.set)
 
         # object layout
-        object_frame = tk.Frame(main_tab, relief="sunken", padx=10, pady=10)
+        self.object_treeview = ttk.Treeview(main_tab)
+        self.object_treeview["columns"] = ("#1",)
+        self.object_treeview.column("#0", width=property_width)
+        self.object_treeview.column("#1", width=property_width)
+        self.object_treeview.heading("#0", text="Object Name",
+                                     command=lambda: self.sort_treeview(self.object_treeview, 0))
+        self.object_treeview.heading("#1", text="Object Type",
+                                     command=lambda: self.sort_treeview(self.object_treeview, 1))
 
-        treeview = ttk.Treeview(object_frame)
-        treeview["columns"] = ("#1",)
-        treeview.column("#0", width=property_width)
-        treeview.column("#1", width=property_width)
-        treeview.heading("#0", text="Object Name")
-        treeview.heading("#1", text="Object Type")
-        treeview.pack(fill="both", side="top", expand=True)
+        vsb = ttk.Scrollbar(self.object_treeview, orient="vertical", command=self.object_treeview.yview)
+        vsb.pack(side='right', fill='y')
+        self.object_treeview.configure(yscrollcommand=vsb.set)
 
         # attribute layout
         attribute_frame = tk.Frame(main_frame, relief="sunken", padx=10, pady=10)
+        self.attribute_treeview = ttk.Treeview(attribute_frame)
+        self.attribute_treeview["columns"] = ("#1",)
+        self.attribute_treeview.column("#0", width=property_width)
+        self.attribute_treeview.column("#1", width=property_width)
+        self.attribute_treeview.heading("#0", text="Attribute",
+                                        command=lambda: self.sort_treeview(self.attribute_treeview, 0))
+        self.attribute_treeview.heading("#1", text="Value",
+                                        command=lambda: self.sort_treeview(self.attribute_treeview, 1))
+        self.attribute_treeview.pack(fill='both', side='left', expand=True)
 
-        treeview = ttk.Treeview(attribute_frame)
-        treeview["columns"] = ("#1",)
-        treeview.column("#0", width=property_width)
-        treeview.column("#1", width=property_width)
-        treeview.heading("#0", text="Attribute", command=lambda :sort_treeview(treeview, "Attribute", False))
-        treeview.heading("#1", text="Value", command=lambda :sort_treeview(treeview, "#1", False))
-        treeview.pack(fill="both", side="top", expand=True)
-
-        treeview.insert("", 0, text="Line 1", values=("1A",))
-        id2 = treeview.insert("", 1, "dir2", text="Dir 2")
-        treeview.insert(id2, "end", "dir 2", text="sub dir 2", values=("2A",))
-        treeview.insert("", 3, "dir3", text="Dir 3")
-        treeview.insert("dir3", 3, text=" sub dir 3", values=("3A",))
+        vsb = ttk.Scrollbar(self.attribute_treeview, orient="vertical", command=self.attribute_treeview.yview)
+        vsb.pack(side='right', fill='y')
+        self.attribute_treeview.configure(yscrollcommand=vsb.set)
 
         # tabs
         main_tab.add(command_frame, text="Application")
-        main_tab.add(resource_frame, text="Resource List")
-        main_tab.add(object_frame, text="Object List")
+        main_tab.add(self.resource_treeview, text="Resource List")
+        main_tab.add(self.object_treeview, text="Object List")
         main_frame.add(main_tab, width=frame_width)
         main_frame.add(attribute_frame, width=frame_width)
 
@@ -288,12 +305,31 @@ class MainWindow:
     # ------------------------- #
     # Menu
     # ------------------------- #
+    def sort_treeview(self, treeview, column_index):
+        if not hasattr(treeview, 'orders'):
+            treeview.orders = {}
+
+        if column_index not in treeview.orders:
+            treeview.orders[column_index] = True
+        else:
+            treeview.orders[column_index] = not treeview.orders[column_index]
+
+        def sort_func(item_id):
+            item = treeview.item(item_id)
+            if 0 == column_index:
+                return item['text']
+            else:
+                return item['values'][column_index - 1]
+
+        items = list(treeview.get_children(''))
+        items.sort(key=sort_func, reverse=treeview.orders[column_index])
+
+        for i, item in enumerate(items):
+            treeview.move(item, '', i)
+
     def sort_items(self):
-        logger.info("sort_items")
-        # self.resourceListWidget.sortItems(0, 0)
-        # self.resourceListWidget.sortItems(1, 0)
-        # self.objectList.sortItems(0, 0)
-        # self.objectList.sortItems(1, 0)
+        self.sort_treeview(self.resource_treeview, 0)
+        self.sort_treeview(self.resource_treeview, 1)
 
     def new_project(self):
         filename = filedialog.asksaveasfilename(initialdir=".",
@@ -475,7 +511,8 @@ class MainWindow:
         self.fillAttribute(attributes)
 
     def clearAttribute(self):
-        self.attributeTree.clear()  # clear
+        for item in self.attribute_treeview.get_children():
+            self.attribute_treeview.delete(item)
 
     def fillAttribute(self, attributes):
         # lock edit attribute ui
@@ -500,7 +537,7 @@ class MainWindow:
     # Widget - Resource List
     # ------------------------- #
     def getSelectedResource(self):
-        return self.resourceListWidget.selectedItems()
+        return [self.resource_treeview.item(item_id) for item_id in self.resource_treeview.selection()]
 
     def addResourceList(self, resourceList):
         for resName, resType in resourceList:
@@ -509,35 +546,33 @@ class MainWindow:
     def setResourceInfo(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
 
-        self.resource_treeview.tag_configure('normal', foreground="gray")
-        self.resource_treeview.tag_configure('loaded', foreground="black")
-        tag = 'loaded' if is_loaded else 'normal'
+        self.resource_treeview.tag_configure(TAG_NORMAL, foreground="gray")
+        self.resource_treeview.tag_configure(TAG_LOADED, foreground="black")
+        tag = TAG_LOADED if is_loaded else TAG_NORMAL
 
         for item_id in self.resource_treeview.get_children(''):
             item = self.resource_treeview.item(item_id)
             # edit item
-            if item['text'] == resource_type:
-                self.resource_treeview.set_children(item, text=resource_name, values=(resource_type,), tags=(tag, ))
+            if item['text'] == resource_name and item['values'][0] == resource_type:
+                self.resource_treeview.item(item_id, text=resource_name, values=(resource_type,), tags=(tag, ))
         else:
             # insert item
-            self.resource_treeview.insert("", 'end', text=resource_name, values=(resource_type,), tags=(tag,))
+            self.resource_treeview.insert("", 'end', text=resource_name, values=(resource_type,), tags=(tag, ))
 
-    def selectResource(self):
-        rowitem = self.resource_treeview.identify('item', event.x, event.y)
-        # curItem = self.resource_treeview.focus()
-        # self.resource_treeview.item(curItem)
+    def selectResource(self, event):
+        item = self.resource_treeview.identify('item', event.x, event.y)
 
-        if rowitem:
+        if item == '':
             self.resource_menu.unpost()
-            self.selectResource()
-        else:
-            # Clicked an empty space
-            pass
 
         items = self.getSelectedResource()
+
+        for item in items:
+            print(get_name(item))
+
         if items and len(items) > 0:
-            if items[0].is_loaded:
-                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (items[0].text(0), items[0].text(1)))
+            if TAG_LOADED == get_tag(items[0]):
+                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (get_name(items[0]), get_value(items[0])))
             else:
                 self.clearAttribute()
 
