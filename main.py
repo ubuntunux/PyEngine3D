@@ -86,7 +86,7 @@ def run(editor=GUIEditor.QT, project_filename=""):
 
 
 if __name__ == "__main__":
-    editor = GUIEditor.QT
+    editor = GUIEditor.TKINTER
 
     # run program!!
     project_filename = sys.argv[1] if len(sys.argv) > 1 else ""
