@@ -43,6 +43,22 @@ def get_tag(item):
     return item['tag'][0] if 'tag' in item and 0 < len(item['tag']) else ''
 
 
+def combobox_add_item(combobox, value):
+    values = combobox['values']
+    if values:
+        values += (value,)
+    else:
+        values = (value,)
+    combobox.configure(values=values)
+
+    if 1 == len(values):
+        combobox.current(0)
+
+
+def combobox_clear(combobox):
+    combobox.configure(values=())
+
+
 class MessageThread(Thread):
     def __init__(self, cmdQueue):
         Thread.__init__(self)
@@ -100,6 +116,14 @@ class MainWindow:
         # MessageThread
         self.message_thread = MessageThread(self.cmdQueue)
         self.message_thread.start()
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_SCREEN_INFO), self.setScreenInfo)
+        self.message_thread.connect(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST), self.clearRenderTargetList)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO), self.addRenderTarget)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RENDERING_TYPE_LIST), self.add_rendering_type)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_ANTIALIASING_LIST), self.add_anti_aliasing)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_GAME_BACKEND_LIST), self.add_game_backend)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_GAME_BACKEND_INDEX), self.set_game_backend_index)
+
         self.message_thread.connect(get_command_name(COMMAND.CLOSE_UI), self.exit)
         self.message_thread.connect(get_command_name(COMMAND.SORT_UI_ITEMS), self.sort_items)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_LIST), self.addResourceList)
@@ -160,11 +184,9 @@ class MainWindow:
         command_frame = tk.Frame(main_tab, relief="sunken", padx=10, pady=10)
 
         variable = tk.StringVar()
-        values = ("pyglet", "pygame")
-        combobox = ttk.Combobox(command_frame, values=values, textvariable=variable)
-        combobox.bind("<<ComboboxSelected>>", donothing, "+")
-        combobox.pack(fill="x", side="top")
-        combobox.current(0)
+        self.comboGameBackend = ttk.Combobox(command_frame, textvariable=variable)
+        self.comboGameBackend.bind("<<ComboboxSelected>>", self.change_game_backend, "+")
+        self.comboGameBackend.pack(fill="x", side="top")
 
         separator = ttk.Separator(command_frame, orient='horizontal')
         separator.pack(fill="x", side="top", pady=10)
@@ -183,34 +205,44 @@ class MainWindow:
         label = tk.Label(frame, text="Width", width=1)
         label.pack(fill="x", side="left", expand=True)
 
-        spinbox = tk.Spinbox(frame, from_=0, to=9999, width=1)
+        self.spinWidth = tk.IntVar()
+        self.spinWidth.set(10)
+        spinbox = tk.Spinbox(frame, from_=0, to=9999, textvariable=self.spinWidth, width=1)
         spinbox.pack(fill="x", side="left", expand=True)
 
         frame = tk.Frame(label_frame, relief="sunken", padx=5)
         frame.pack(fill="x", side="top")
         label = tk.Label(frame, text="Height", width=1)
         label.pack(fill="x", side="left", expand=True)
-        spinbox = tk.Spinbox(frame, from_=0, to=9999, width=1)
+
+        self.spinHeight = tk.IntVar()
+        self.spinHeight.set(0)
+        spinbox = tk.Spinbox(frame, from_=0, to=9999, textvariable=self.spinHeight, width=1)
         spinbox.pack(fill="x", side="left", expand=True)
 
-        variable = tk.IntVar()
-        check_button = tk.Checkbutton(label_frame, text="Full Screen", variable=variable)
-        check_button.pack(fill="x", side="top")
+        self.checkFullScreen = tk.IntVar()
+        self.checkFullScreen.set(0)
+        checkbutton = tk.Checkbutton(label_frame, text="Full Screen", variable=self.checkFullScreen)
+        checkbutton.pack(fill="x", side="top")
 
         button = tk.Button(label_frame, text="Change Resolution")
         button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.changeResolution)
 
-        combobox = ttk.Combobox(command_frame)
-        combobox.bind("<<ComboboxSelected>>", donothing, "+")
-        combobox.pack(fill="x", side="top")
+        self.comboRenderingType = ttk.Combobox(command_frame)
+        self.comboRenderingType.bind("<<ComboboxSelected>>", donothing, "+")
+        self.comboRenderingType.pack(fill="x", side="top")
+        self.comboRenderingType.bind("<<ComboboxSelected>>", self.set_rendering_type, "+")
 
-        combobox = ttk.Combobox(command_frame)
-        combobox.bind("<<ComboboxSelected>>", donothing, "+")
-        combobox.pack(fill="x", side="top")
+        self.comboAntiAliasing = ttk.Combobox(command_frame)
+        self.comboAntiAliasing.bind("<<ComboboxSelected>>", donothing, "+")
+        self.comboAntiAliasing.pack(fill="x", side="top")
+        self.comboAntiAliasing.bind("<<ComboboxSelected>>", self.set_anti_aliasing, "+")
 
-        combobox = ttk.Combobox(command_frame)
-        combobox.bind("<<ComboboxSelected>>", donothing, "+")
-        combobox.pack(fill="x", side="top")
+        self.comboRenderTargets = ttk.Combobox(command_frame)
+        self.comboRenderTargets.bind("<<ComboboxSelected>>", donothing, "+")
+        self.comboRenderTargets.pack(fill="x", side="top")
+        self.comboRenderTargets.bind("<<ComboboxSelected>>", self.view_rendertarget, "+")
 
         # resource layout
         self.resource_menu = tk.Menu(root, tearoff=0)
@@ -358,28 +390,28 @@ class MainWindow:
 
     def setScreenInfo(self, screen_info):
         width, height, full_screen = screen_info
-        self.spinWidth.setValue(width)
-        self.spinHeight.setValue(height)
-        self.checkFullScreen.setChecked(full_screen or False)
+        self.spinWidth.set(width)
+        self.spinHeight.set(height)
+        self.checkFullScreen.set(1 if full_screen else 0)
 
     def clearRenderTargetList(self):
-        self.comboRenderTargets.clear()
+        combobox_clear(self.comboRenderTargets)
 
     # Game Backend
     def add_game_backend(self, game_backend_list):
         for game_backend_name in game_backend_list:
-            self.comboGameBackend.addItem(game_backend_name)
+            combobox_add_item(self.comboGameBackend, game_backend_name)
 
     def change_game_backend(self, game_backend_index):
         self.appCmdQueue.put(COMMAND.CHANGE_GAME_BACKEND, game_backend_index)
 
     def set_game_backend_index(self, game_backend_index):
-        self.comboGameBackend.setCurrentIndex(game_backend_index)
+        self.comboGameBackend.current(game_backend_index)
 
     # Rendering Type
     def add_rendering_type(self, rendering_type_list):
         for rendering_type_name in rendering_type_list:
-            self.comboRenderingType.addItem(rendering_type_name)
+            combobox_add_item(self.comboRenderingType, rendering_type_name)
 
     def set_rendering_type(self, rendering_type_index):
         self.appCmdQueue.put(COMMAND.SET_RENDERING_TYPE, rendering_type_index)
@@ -387,14 +419,14 @@ class MainWindow:
     # Anti Aliasing
     def add_anti_aliasing(self, anti_aliasing_list):
         for anti_aliasing_name in anti_aliasing_list:
-            self.comboAntiAliasing.addItem(anti_aliasing_name)
+            combobox_add_item(self.comboAntiAliasing, anti_aliasing_name)
 
     def set_anti_aliasing(self, anti_aliasing_index):
         self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, anti_aliasing_index)
 
     # Render Target
     def addRenderTarget(self, rendertarget_name):
-        self.comboRenderTargets.addItem(rendertarget_name)
+        combobox_add_item(self.comboRenderTargets, rendertarget_name)
 
     def view_rendertarget(self, rendertarget_index):
         rendertarget_name = self.comboRenderTargets.itemText(rendertarget_index)
@@ -568,9 +600,6 @@ class MainWindow:
             self.resource_menu.unpost()
 
         items = self.getSelectedResource()
-
-        for item in items:
-            print(get_name(item))
 
         if items and len(items) > 0:
             if TAG_LOADED == get_tag(items[0]):
