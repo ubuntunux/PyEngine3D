@@ -35,8 +35,8 @@ def get_name(item):
     return item['text']
 
 
-def get_value(item):
-    return item['values'][0]
+def get_value(item, index=0):
+    return item['values'][index]
 
 
 def get_tag(item):
@@ -291,10 +291,11 @@ class MainWindow:
         pass
 
     def save_config(self):
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
+        pass
+        # x = self.root.winfo_rootx()
+        # y = self.root.winfo_rooty()
+        # width = self.root.winfo_width()
+        # height = self.root.winfo_height()
 
     def show(self):
         self.root.mainloop()
@@ -310,16 +311,16 @@ class MainWindow:
             treeview.orders = {}
 
         if column_index not in treeview.orders:
-            treeview.orders[column_index] = True
+            treeview.orders[column_index] = False
         else:
             treeview.orders[column_index] = not treeview.orders[column_index]
 
         def sort_func(item_id):
             item = treeview.item(item_id)
             if 0 == column_index:
-                return item['text']
+                return get_name(item)
             else:
-                return item['values'][column_index - 1]
+                return get_value(item, column_index - 1)
 
         items = list(treeview.get_children(''))
         items.sort(key=sort_func, reverse=treeview.orders[column_index])
@@ -553,8 +554,9 @@ class MainWindow:
         for item_id in self.resource_treeview.get_children(''):
             item = self.resource_treeview.item(item_id)
             # edit item
-            if item['text'] == resource_name and item['values'][0] == resource_type:
+            if get_name(item) == resource_name and get_value(item) == resource_type:
                 self.resource_treeview.item(item_id, text=resource_name, values=(resource_type,), tags=(tag, ))
+                break
         else:
             # insert item
             self.resource_treeview.insert("", 'end', text=resource_name, values=(resource_type,), tags=(tag, ))
