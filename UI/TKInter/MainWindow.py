@@ -40,7 +40,7 @@ def get_value(item, index=0):
 
 
 def get_tag(item):
-    return item['tag'][0] if 'tag' in item and 0 < len(item['tag']) else ''
+    return item['tags'][0] if 'tags' in item and 0 < len(item['tags']) else ''
 
 
 def combobox_add_item(combobox, value):
@@ -130,6 +130,11 @@ class MainWindow:
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_INFO), self.setResourceInfo)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE), self.fillResourceAttribute)
         self.message_thread.connect(get_command_name(COMMAND.DELETE_RESOURCE_INFO), self.delete_resource_info)
+
+        self.message_thread.connect(get_command_name(COMMAND.DELETE_OBJECT_INFO), self.deleteObjectInfo)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_INFO), self.addObjectInfo)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE), self.fillObjectAttribute)
+        self.message_thread.connect(get_command_name(COMMAND.CLEAR_OBJECT_LIST), self.clearObjectList)
 
         width = 600
         height = 800
@@ -247,7 +252,7 @@ class MainWindow:
         # resource layout
         self.resource_menu = tk.Menu(root, tearoff=0)
         self.resource_menu.add_command(label="Load", command=self.loadResource)
-        self.resource_menu.add_command(label="Open", command=self.openResource)
+        self.resource_menu.add_command(label="Action", command=self.actionResource)
         self.resource_menu.add_command(label="Duplicate", command=self.duplicateResource)
         self.resource_menu.add_command(label="Save", command=self.saveResource)
         self.resource_menu.add_command(label="Delete", command=self.deleteResource)
@@ -363,6 +368,8 @@ class MainWindow:
     def sort_items(self):
         self.sort_treeview(self.resource_treeview, 0)
         self.sort_treeview(self.resource_treeview, 1)
+        self.sort_treeview(self.object_treeview, 0)
+        self.sort_treeview(self.object_treeview, 1)
 
     def new_project(self):
         filename = filedialog.asksaveasfilename(initialdir=".",
@@ -440,10 +447,10 @@ class MainWindow:
         self.appCmdQueue.put(COMMAND.CHANGE_RESOLUTION, screen_info)
 
     def openResourceMenu(self, position):
-        self.self.resource_menu.exec_(self.resourceListWidget.viewport().mapToGlobal(position))
+        self.self.resource_menu.exec_(self.resource_treeview.viewport().mapToGlobal(position))
 
     def openObjectMenu(self, position):
-        self.object_menu.exec_(self.objectList.viewport().mapToGlobal(position))
+        self.object_menu.exec_(self.object_treeview.viewport().mapToGlobal(position))
 
     # ------------------------- #
     # Widget - Propery Tree
@@ -464,9 +471,9 @@ class MainWindow:
         if not self.isFillAttributeTree and self.selected_item:
             try:
                 # check value chaned
-                if item.oldValue == item.text(1):
+                if item.oldValue == get_value(item):
                     return
-                item.oldValue = item.text(1)
+                item.oldValue = get_value(item)
                 index = item.index
                 # check array type, then combine components
                 parent = item.parent()
@@ -483,25 +490,25 @@ class MainWindow:
                     else:
                         value = parent.dataType(value)
                 else:
-                    attributeName = item.text(0)
+                    attributeName = get_name(item)
                     if item.dataType == bool:
-                        value = item.dataType(item.text(1) == "True")
+                        value = item.dataType(get_value(item) == "True")
                     else:
-                        value = item.dataType(item.text(1))
+                        value = item.dataType(get_value(item))
 
                 selectedItems = []
                 command = None
                 if self.selected_item_categoty == 'Object':
                     command = COMMAND.SET_OBJECT_ATTRIBUTE
-                    selectedItems = self.objectList.selectedItems()
+                    selectedItems = self.object_treeview.selectedItems()
 
                 elif self.selected_item_categoty == 'Resource':
                     command = COMMAND.SET_RESOURCE_ATTRIBUTE
-                    selectedItems = self.resourceListWidget.selectedItems()
+                    selectedItems = self.resource_treeview.selectedItems()
 
                 for selectedItem in selectedItems:
-                    selected_item_name = selectedItem.text(0)
-                    selected_item_type = selectedItem.text(1)
+                    selected_item_name = selectedget_name(item)
+                    selected_item_type = selectedget_value(item)
                     # send changed data
                     self.appCmdQueue.put(command,
                                          (selected_item_name, selected_item_type, attributeName, value, index))
@@ -531,15 +538,15 @@ class MainWindow:
                 self.addAttribute(item, "[%d]" % i, itemValue, depth + 1, i)
         else:  # set general type value - int, float, string
             item.setText(1, str(value))
-        item.oldValue = item.text(1)  # set old value
+        item.oldValue = get_value(item)  # set old value
 
     def fillResourceAttribute(self, attributes):
-        self.selected_item = self.resourceListWidget.currentItem()
+        self.selected_item = self.resource_treeview.currentItem()
         self.selected_item_categoty = 'Resource'
         self.fillAttribute(attributes)
 
     def fillObjectAttribute(self, attributes):
-        self.selected_item = self.objectList.currentItem()
+        self.selected_item = self.object_treeview.currentItem()
         self.selected_item_categoty = 'Object'
         self.fillAttribute(attributes)
 
@@ -564,7 +571,7 @@ class MainWindow:
 
     def showProperties(self):
         for item in self.attributeTree.findItems("", QtCore.Qt.MatchExactly | QtCore.Qt.MatchRecursive):
-            print(item.text(0), item.text(1))
+            print(get_name(item), get_value(item))
 
     # ------------------------- #
     # Widget - Resource List
@@ -594,58 +601,56 @@ class MainWindow:
             self.resource_treeview.insert("", 'end', text=resource_name, values=(resource_type,), tags=(tag, ))
 
     def selectResource(self, event):
-        item = self.resource_treeview.identify('item', event.x, event.y)
-
-        if item == '':
-            self.resource_menu.unpost()
+        # item = self.resource_treeview.identify('item', event.x, event.y)
+        # if item == '':
+        #     self.resource_menu.unpost()
 
         items = self.getSelectedResource()
 
         if items and len(items) > 0:
-            if TAG_LOADED == get_tag(items[0]):
-                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (get_name(items[0]), get_value(items[0])))
+            item = items[0]
+            if TAG_LOADED == get_tag(item):
+                self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (get_name(item), get_value(item)))
             else:
                 self.clearAttribute()
 
     def loadResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (get_name(item), get_value(item)))
 
-    def openResource(self, item=None):
+    def actionResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (get_name(item), get_value(item)))
 
     def duplicateResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.DUPLICATE_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.DUPLICATE_RESOURCE, (get_name(item), get_value(item)))
 
     def saveResource(self, item=None):
         items = self.getSelectedResource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (get_name(item), get_value(item)))
 
     def deleteResource(self, item=None):
         items = self.getSelectedResource()
 
         if items and len(items) > 0:
-            contents = "\n".join(["%s : %s" % (item.text(1), item.text(0)) for item in items])
+            contents = "\n".join(["%s : %s" % (get_value(item), get_name(item)) for item in items])
             choice = QtGui.QMessageBox.question(self, 'Delete resource.',
                                                 "Are you sure you want to delete the\n%s?" % contents,
                                                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             if choice == QtGui.QMessageBox.Yes:
                 for item in items:
-                    self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (item.text(0), item.text(1)))
+                    self.appCmdQueue.put(COMMAND.DELETE_RESOURCE, (get_name(item), get_value(item)))
 
     def delete_resource_info(self, resource_info):
         resource_name, resource_type_name, is_loaded = resource_info
-        items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchExactly, column=0)
-        for item in items:
-            if item.text(1) == resource_type_name:
-                index = self.resourceListWidget.indexOfTopLevelItem(item)
-                self.resourceListWidget.takeTopLevelItem(index)
+        for item in self.resource_treeview.get_children():
+            if get_name(item) == resource_name and get_value(item) == resource_type_name:
+                self.resource_treeview.delete(item)
 
     # ------------------------- #
     # Widget - Object List
@@ -653,44 +658,51 @@ class MainWindow:
     def addLight(self):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
 
+    def getSelectedObject(self):
+        return [self.object_treeview.item(item_id) for item_id in self.object_treeview.selection()]
+
     def addObjectInfo(self, object_info):
         object_name, object_type = object_info
-        item = QtGui.QTreeWidgetItem(self.objectList)
-        item.setText(0, object_name)
-        item.setText(1, object_type)
+        for item_id in self.object_treeview.get_children():
+            item = self.object_treeview.item(item_id)
+            if get_name(item) == object_name and get_value(item) == object_type:
+                self.object_treeview.item(item_id, text=object_name, values=(object_type, ))
+                break
+        else:
+            self.object_treeview.insert("", 'end', text=object_name, values=(object_type,))
 
     def actionObject(self, *args):
-        selectedItems = self.objectList.selectedItems()
+        selectedItems = self.object_treeview.getSelectedObject()
         for selectedItem in selectedItems:
-            self.appCmdQueue.put(COMMAND.ACTION_OBJECT, selectedItem.text(0))
+            self.appCmdQueue.put(COMMAND.ACTION_OBJECT, get_name(selectedItem))
 
     def deleteObject(self, *args):
-        selectedItems = self.objectList.selectedItems()
+        selectedItems = self.object_treeview.getSelectedObject()
         for selectedItem in selectedItems:
-            self.appCmdQueue.put(COMMAND.DELETE_OBJECT, selectedItem.text(0))
+            self.appCmdQueue.put(COMMAND.DELETE_OBJECT, get_name(selectedItem))
 
     def deleteObjectInfo(self, objName):
-        items = self.objectList.findItems(objName, QtCore.Qt.MatchExactly, column=0)
-        for item in items:
-            index = self.objectList.indexOfTopLevelItem(item)
-            self.objectList.takeTopLevelItem(index)
+        for item in self.object_treeview.get_children():
+            if objName == get_name(item):
+                self.object_treeview.delete(item)
 
     def clearObjectList(self, *args):
-        self.objectList.clear()
+        for item in self.object_treeview.get_children():
+            self.object_treeview.delete(item)
 
     def selectObject(self):
-        selectedItems = self.objectList.selectedItems()
+        selectedItems = self.object_treeview.getSelectedObject()
         if selectedItems:
             item = selectedItems[0]
-            selected_objectName = item.text(0)
-            selected_objectTypeName = item.text(1)
+            selected_objectName = get_name(item)
+            selected_objectTypeName = get_value(item)
             # request selected object infomation to fill attribute widget
             self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selected_objectName)
             self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, (selected_objectName, selected_objectTypeName))
 
     def focusObject(self, item=None):
         if item:
-            selected_objectName = item.text(0)
+            selected_objectName = get_name(item)
             self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selected_objectName)
 
 
