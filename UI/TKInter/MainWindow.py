@@ -14,6 +14,264 @@ from Utilities import Singleton, Attribute, Attributes
 from UI import logger
 from Common.Command import *
 
+import functools
+
+
+class EditableTreeview(ttk.Treeview):
+    """A simple editable treeview
+
+    It uses the following events from Treeview:
+        <<TreviewSelect>>
+        <4>
+        <5>
+        <KeyRelease>
+        <Home>
+        <End>
+        <Configure>
+        <Button-1>
+        <ButtonRelease-1>
+        <Motion>
+    If you need them use add=True when calling bind method.
+
+    It Generates two virtual events:
+        <<TreeviewInplaceEdit>>
+        <<TreeviewCellEdited>>
+    The first is used to configure cell editors.
+    The second is called after a cell was changed.
+    You can know wich cell is being configured or edited, using:
+        get_event_info()
+    """
+
+    def __init__(self, master=None, **kw):
+        ttk.Treeview.__init__(self, master, **kw)
+
+        self._curfocus = None
+        self._inplace_widgets = {}
+        self._inplace_widgets_show = {}
+        self._inplace_vars = {}
+        self._header_clicked = False
+        self._header_dragged = False
+
+        # Wheel events?
+        self.bind('<<TreeviewSelect>>', self.check_focus)
+        self.bind('<4>', lambda e: self.after_idle(self.__updateWnds))
+        self.bind('<5>', lambda e: self.after_idle(self.__updateWnds))
+        self.bind('<KeyRelease>', self.check_focus)
+        self.bind('<Home>', functools.partial(self.__on_key_press, 'Home'))
+        self.bind('<End>', functools.partial(self.__on_key_press, 'End'))
+        self.bind('<Button-1>', self.__on_button1)
+        self.bind('<ButtonRelease-1>', self.__on_button1_release)
+        self.bind('<Motion>', self.__on_mouse_motion)
+        self.bind('<Configure>', lambda e: self.after_idle(self.__updateWnds))
+
+    def __on_button1(self, event):
+        r = event.widget.identify_region(event.x, event.y)
+        if r in ('separator', 'header'):
+            self._header_clicked = True
+
+    def __on_mouse_motion(self, event):
+        if self._header_clicked:
+            self._header_dragged = True
+
+    def __on_button1_release(self, event):
+        if self._header_dragged:
+            self.after_idle(self.__updateWnds)
+        self._header_clicked = False
+        self._header_dragged = False
+
+    def __on_key_press(self, key, event):
+        if key == 'Home':
+            self.selection_set("")
+            self.focus(self.get_children()[0])
+        if key == 'End':
+            self.selection_set("")
+            self.focus(self.get_children()[-1])
+
+    def delete(self, *items):
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.delete(self, *items)
+
+    def yview(self, *args):
+        """Update inplace widgets position when doing vertical scroll"""
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.yview(self, *args)
+
+    def yview_scroll(self, number, what):
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.yview_scroll(self, number, what)
+
+    def yview_moveto(self, fraction):
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.yview_moveto(self, fraction)
+
+    def xview(self, *args):
+        """Update inplace widgets position when doing horizontal scroll"""
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.xview(self, *args)
+
+    def xview_scroll(self, number, what):
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.xview_scroll(self, number, what)
+
+    def xview_moveto(self, fraction):
+        self.after_idle(self.__updateWnds)
+        ttk.Treeview.xview_moveto(self, fraction)
+
+    def check_focus(self, event):
+        """Checks if the focus has changed"""
+
+        changed = False
+        if not self._curfocus:
+            changed = True
+        elif self._curfocus != self.focus():
+            self.__clear_inplace_widgets()
+            changed = True
+        newfocus = self.focus()
+        if changed:
+            if newfocus:
+                self._curfocus = newfocus
+                self.__focus(newfocus)
+            self.__updateWnds()
+
+    def __focus(self, item):
+        """Called when focus item has changed"""
+        cols = self.__get_display_columns()
+        for col in cols:
+            self.__event_info = (col, item)
+            self.event_generate('<<TreeviewInplaceEdit>>')
+            if col in self._inplace_widgets:
+                w = self._inplace_widgets[col]
+                w.bind('<Key-Tab>', lambda e: w.tk_focusNext().focus_set())
+                w.bind('<Shift-Key-Tab>', lambda e: w.tk_focusPrev().focus_set())
+
+    def __updateWnds(self, event=None):
+        if not self._curfocus:
+            return
+
+        item = self._curfocus
+        cols = self.__get_display_columns()
+        for col in cols:
+            if col in self._inplace_widgets:
+                wnd = self._inplace_widgets[col]
+                if self.exists(item):
+                    bbox = self.bbox(item, column=col)
+                    # if col in self._inplace_widgets_show:
+                    wnd.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+                else:
+                    wnd.place_forget()
+
+    def __clear_inplace_widgets(self):
+        """Remove all inplace edit widgets."""
+        cols = self.__get_display_columns()
+        # print('Clear:', cols)
+        for c in cols:
+            if c in self._inplace_widgets:
+                widget = self._inplace_widgets[c]
+                widget.place_forget()
+                self._inplace_widgets_show.pop(c, None)
+
+    def __get_display_columns(self):
+        cols = self.cget('displaycolumns')
+        show = (str(s) for s in self.cget('show'))
+        if '#all' in cols:
+            cols = self.cget('columns') + ('#0',)
+        elif 'tree' in show:
+            cols = cols + ('#0',)
+        return cols
+
+    def get_event_info(self):
+        return self.__event_info;
+
+    def __get_value(self, col, item):
+        if col == '#0':
+            return self.item(item, 'text')
+        else:
+            return self.set(item, col)
+
+    def __set_value(self, col, item, value):
+        if col == '#0':
+            self.item(item, text=value)
+        else:
+            self.set(item, col, value)
+        self.__event_info = (col, item)
+        self.event_generate('<<TreeviewCellEdited>>')
+
+    def __update_value(self, col, item):
+        if not self.exists(item):
+            return
+        value = self.__get_value(col, item)
+        newvalue = self._inplace_vars[col].get()
+        if value != newvalue:
+            self.__set_value(col, item, newvalue)
+
+    def inplace_entry(self, col, item):
+        if col not in self._inplace_vars:
+            self._inplace_vars[col] = tk.StringVar()
+        svar = self._inplace_vars[col]
+        svar.set(self.__get_value(col, item))
+        if col not in self._inplace_widgets:
+            self._inplace_widgets[col] = ttk.Entry(self, textvariable=svar)
+        entry = self._inplace_widgets[col]
+        entry.bind('<Return>', lambda e: self.__update_value(col, item))
+        entry.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        entry.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        self._inplace_widgets_show[col] = True
+
+    def inplace_checkbutton(self, col, item, onvalue='True', offvalue='False'):
+        if col not in self._inplace_vars:
+            self._inplace_vars[col] = tk.StringVar()
+        svar = self._inplace_vars[col]
+        svar.set(self.__get_value(col, item))
+        if col not in self._inplace_widgets:
+            self._inplace_widgets[col] = ttk.Checkbutton(self,
+                                                         textvariable=svar, variable=svar, onvalue=onvalue,
+                                                         offvalue=offvalue)
+        cb = self._inplace_widgets[col]
+        cb.bind('<Return>', lambda e: self.__update_value(col, item))
+        cb.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        self._inplace_widgets_show[col] = True
+
+    def inplace_combobox(self, col, item, values, readonly=True):
+        state = 'readonly' if readonly else 'normal'
+        if col not in self._inplace_vars:
+            self._inplace_vars[col] = tk.StringVar()
+        svar = self._inplace_vars[col]
+        svar.set(self.__get_value(col, item))
+        if col not in self._inplace_widgets:
+            self._inplace_widgets[col] = ttk.Combobox(self,
+                                                      textvariable=svar, values=values, state=state)
+        cb = self._inplace_widgets[col]
+        cb.bind('<Return>', lambda e: self.__update_value(col, item))
+        cb.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        self._inplace_widgets_show[col] = True
+
+    def inplace_spinbox(self, col, item, min, max, step):
+        if col not in self._inplace_vars:
+            self._inplace_vars[col] = tk.StringVar()
+        svar = self._inplace_vars[col]
+        svar.set(self.__get_value(col, item))
+        if col not in self._inplace_widgets:
+            self._inplace_widgets[col] = tk.Spinbox(self,
+                                                    textvariable=svar, from_=min, to=max, increment=step)
+        sb = self._inplace_widgets[col]
+        sb.bind('<Return>', lambda e: self.__update_value(col, item))
+        sb.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        self._inplace_widgets_show[col] = True
+
+    def inplace_custom(self, col, item, widget):
+        if col not in self._inplace_vars:
+            self._inplace_vars[col] = tk.StringVar()
+        svar = self._inplace_vars[col]
+        svar.set(self.__get_value(col, item))
+        self._inplace_widgets[col] = widget
+        widget.bind('<Return>', lambda e: self.__update_value(col, item))
+        widget.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        widget.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        self._inplace_widgets_show[col] = True
+
 
 TAG_NORMAL = 'normal'
 TAG_LOADED = 'loaded'
@@ -277,6 +535,12 @@ class MainWindow:
         self.resource_treeview.configure(yscrollcommand=vsb.set)
 
         # object layout
+        self.object_menu = tk.Menu(root, tearoff=0)
+        self.object_menu.add_command(label="Action", command=self.actionObject)
+        self.object_menu.add_command(label="Focus", command=self.focusObject)
+        self.object_menu.add_command(label="Delete", command=self.deleteObject)
+        self.object_menu.bind("<FocusOut>", self.object_menu.unpost)
+
         self.object_treeview = ttk.Treeview(main_tab)
         self.object_treeview["columns"] = ("#1",)
         self.object_treeview.column("#0", width=property_width)
@@ -286,13 +550,18 @@ class MainWindow:
         self.object_treeview.heading("#1", text="Object Type",
                                      command=lambda: self.sort_treeview(self.object_treeview, 1))
 
+        self.object_treeview.bind("<<TreeviewSelect>>", lambda event: self.selectObject)
+        self.object_treeview.bind("<Double-1>", lambda event: self.focusObject())
+        self.object_treeview.bind("<Button-3>", lambda event: self.object_menu.post(event.x_root, event.y_root))
+
         vsb = ttk.Scrollbar(self.object_treeview, orient="vertical", command=self.object_treeview.yview)
         vsb.pack(side='right', fill='y')
         self.object_treeview.configure(yscrollcommand=vsb.set)
 
         # attribute layout
         attribute_frame = tk.Frame(main_frame, relief="sunken", padx=10, pady=10)
-        self.attribute_treeview = ttk.Treeview(attribute_frame)
+        self.attribute_treeview = EditableTreeview(attribute_frame)
+        self.attribute_treeview.item_infos = dict()
         self.attribute_treeview["columns"] = ("#1",)
         self.attribute_treeview.column("#0", width=property_width)
         self.attribute_treeview.column("#1", width=property_width)
@@ -300,6 +569,8 @@ class MainWindow:
                                         command=lambda: self.sort_treeview(self.attribute_treeview, 0))
         self.attribute_treeview.heading("#1", text="Value",
                                         command=lambda: self.sort_treeview(self.attribute_treeview, 1))
+
+        self.attribute_treeview.bind("<<TreeviewSelect>>", self.selectAttribute)
         self.attribute_treeview.pack(fill='both', side='left', expand=True)
 
         vsb = ttk.Scrollbar(self.attribute_treeview, orient="vertical", command=self.attribute_treeview.yview)
@@ -517,38 +788,49 @@ class MainWindow:
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
+    def selectAttribute(self, event):
+        for item_id in self.attribute_treeview.selection():
+            item_info = self.attribute_treeview.item_infos[item_id]
+            if bool == item_info['dataType']:
+                self.attribute_treeview.inplace_checkbutton('#1', item_id)
+            else:
+                self.attribute_treeview.inplace_entry('#1', item_id)
+            self.attribute_treeview.check_focus(event)
+
     def addAttribute(self, parent, attributeName, value, depth=0, index=0):
-        item = QtGui.QTreeWidgetItem(parent)
-        item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
-        item.setExpanded(True)
-        # attribute name and type
-        item.setText(0, attributeName)
-        item.dataType = type(value)
-        item.remove = False  # this is flag for remove item when Layout Refresh
-        item.depth = depth
-        item.index = index
+        dataType = type(value)
+
+        item_id = self.attribute_treeview.insert(parent, 'end', text=attributeName, open=True)
+
+        self.attribute_treeview.item_infos[item_id] = dict(
+            oldValue=value,
+            dataType=dataType,
+            remove=False,  # this is flag for remove item when Layout Refresh
+            depth=depth,
+            index=index
+        )
 
         # set value
-        if item.dataType == bool:  # bool type
-            item.setCheckState(1, QtCore.Qt.Checked if value else QtCore.Qt.Unchecked)
-            item.setText(1, "True" if item.checkState(1) == QtCore.Qt.Checked else "False")
-        elif item.dataType in (tuple, list, numpy.ndarray):  # set list type
-            item.setText(1, "")  # set value to None
+        if dataType in (tuple, list, numpy.ndarray):  # set list type
             for i, itemValue in enumerate(value):  # add child component
-                self.addAttribute(item, "[%d]" % i, itemValue, depth + 1, i)
-        else:  # set general type value - int, float, string
-            item.setText(1, str(value))
-        item.oldValue = get_value(item)  # set old value
+                self.addAttribute(item_id, "[%d]" % i, itemValue, depth + 1, i)
+        else:
+            # set general type value - int, float, string
+            self.attribute_treeview.item(item_id, text=attributeName, values=(value,))
 
     def fillResourceAttribute(self, attributes):
-        self.selected_item = self.resource_treeview.currentItem()
-        self.selected_item_categoty = 'Resource'
-        self.fillAttribute(attributes)
+        selected_items = self.getSelectedResource()
+        if 0 < len(selected_items):
+            self.selected_item = selected_items[0]
+            self.selected_item_categoty = 'Resource'
+            self.fillAttribute(attributes)
 
     def fillObjectAttribute(self, attributes):
-        self.selected_item = self.object_treeview.currentItem()
-        self.selected_item_categoty = 'Object'
-        self.fillAttribute(attributes)
+        selected_items = self.getSelectedObject()
+        if 0 < len(selected_items):
+            self.selected_item = selected_items[0]
+            self.selected_item_categoty = 'Object'
+            self.fillAttribute(attributes)
 
     def clearAttribute(self):
         for item in self.attribute_treeview.get_children():
@@ -564,7 +846,7 @@ class MainWindow:
         attribute_values = list(attributes.getAttributes())
         attribute_values.sort(key=lambda x: x.name)
         for attribute in attribute_values:
-            self.addAttribute(self.attributeTree, attribute.name, attribute.value)
+            self.addAttribute("", attribute.name, attribute.value)
 
         # unlock edit attribute ui
         self.isFillAttributeTree = False
@@ -672,12 +954,12 @@ class MainWindow:
             self.object_treeview.insert("", 'end', text=object_name, values=(object_type,))
 
     def actionObject(self, *args):
-        selectedItems = self.object_treeview.getSelectedObject()
+        selectedItems = self.getSelectedObject()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.ACTION_OBJECT, get_name(selectedItem))
 
     def deleteObject(self, *args):
-        selectedItems = self.object_treeview.getSelectedObject()
+        selectedItems = self.getSelectedObject()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.DELETE_OBJECT, get_name(selectedItem))
 
@@ -691,7 +973,7 @@ class MainWindow:
             self.object_treeview.delete(item)
 
     def selectObject(self):
-        selectedItems = self.object_treeview.getSelectedObject()
+        selectedItems = self.getSelectedObject()
         if selectedItems:
             item = selectedItems[0]
             selected_objectName = get_name(item)
