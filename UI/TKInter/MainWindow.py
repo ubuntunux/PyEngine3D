@@ -550,7 +550,7 @@ class MainWindow:
         self.object_treeview.heading("#1", text="Object Type",
                                      command=lambda: self.sort_treeview(self.object_treeview, 1))
 
-        self.object_treeview.bind("<<TreeviewSelect>>", lambda event: self.selectObject)
+        self.object_treeview.bind("<<TreeviewSelect>>", lambda event: self.selectObject())
         self.object_treeview.bind("<Double-1>", lambda event: self.focusObject())
         self.object_treeview.bind("<Button-3>", lambda event: self.object_menu.post(event.x_root, event.y_root))
 
