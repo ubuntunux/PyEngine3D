@@ -71,6 +71,9 @@ class COMMAND(AutoEnum):
     # light
     ADD_LIGHT = ()
 
+    # particle
+    ADD_PARTICLE = ()
+
     # object
     CLEAR_OBJECT_LIST = ()
     REQUEST_OBJECT_LIST = ()

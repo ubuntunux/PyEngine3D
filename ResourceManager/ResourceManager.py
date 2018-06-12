@@ -24,6 +24,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
+from Object import Particle, Emitter
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
@@ -1222,7 +1223,35 @@ class FontLoader(ResourceLoader):
 class ParticleLoader(ResourceLoader):
     name = "ParticleLoader"
     resource_dir_name = 'Particles'
+    resource_type_name = 'Particle'
     fileExt = '.particle'
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def create_particle(self, particle):
+        resource = self.create_resource(particle.name)
+        particle = Particle(name=resource.name)
+        resource.set_data(particle)
+        self.save_resource(resource.name)
+
+    def load_resource(self, resource_name):
+        resource = self.getResource(resource_name)
+        if resource:
+            particles_data = self.load_resource_data(resource)
+            if particles_data is not None:
+                # mesh = self.resource_manager.getMesh(object_data.get('mesh'))
+                # material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
+                #                       for material_instance_name in object_data.get('material_instances', [])]
+                particle = Particle(name=resource.name, **particle_data)
+                resource.set_data(particle)
+                return True
+        logger.error('%s failed to load %s' % (self.name, resource_name))
+        return False
+
+    def open_resource(self, resource_name):
+        pass
+        # model = self.getResourceData(resource_name)
+        # if model:
+        #     self.scene_manager.addObjectHere(model)
 
 
 # -----------------------#

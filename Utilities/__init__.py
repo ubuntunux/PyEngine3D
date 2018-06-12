@@ -3,7 +3,7 @@ from .Graphics import *
 from .ImageProcessing import *
 from .Logger import *
 from .Transform import *
-from .Vector import Vector
+from .RangeVariable import RangeVariable
 from .Singleton import Singleton
 from .AutoEnum import AutoEnum
 from .Attribute import Attribute, Attributes

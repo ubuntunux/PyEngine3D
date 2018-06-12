@@ -214,6 +214,10 @@ class MainWindow:
         button.pack(fill="x", side="top")
         button.bind("<Button-1>", self.addLight)
 
+        button = tk.Button(command_frame, text="Add Particle")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.add_particle)
+
         label_frame = ttk.LabelFrame(command_frame, text='Resolution')
         label_frame.pack(fill="x", side="top", pady=10)
 
@@ -690,6 +694,9 @@ class MainWindow:
     # ------------------------- #
     def addLight(self, event):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
+
+    def add_particle(self, event):
+        self.appCmdQueue.put(COMMAND.ADD_PARTICLE)
 
     def open_object_menu(self, event):
         item_id = self.object_treeview.identify('item', event.x, event.y)

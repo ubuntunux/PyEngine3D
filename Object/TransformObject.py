@@ -122,6 +122,12 @@ class TransformObject:
             roll %= TWO_PI
         self.rot[2] = roll
 
+    def rotation(self, rot):
+        self.rotated = True
+        self.rotationPitch(rot[0])
+        self.rotationYaw(rot[1])
+        self.rotationRoll(rot[2])
+
     def rotationPitch(self, delta=0.0):
         self.rotated = True
         self.rot[0] += delta
@@ -159,6 +165,10 @@ class TransformObject:
     def setScaleZ(self, z):
         self.scaled = True
         self.scale[2] = z
+
+    def scaling(self, vScale):
+        self.scaled = True
+        self.scale[...] = self.scale + vScale
 
     # update Transform
     def updateTransform(self, update_view_transform=False, force_update=False):
