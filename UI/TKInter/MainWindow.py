@@ -11,7 +11,6 @@ from tkinter import messagebox
 
 import numpy
 
-from Utilities import Singleton, Attribute, Attributes
 from UI import logger
 from Common.Command import *
 from .EditableTreeview import SimpleEditableTreeview
@@ -209,6 +208,7 @@ class MainWindow:
 
         button = tk.Button(command_frame, text="Add Camera")
         button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.addCamera)
 
         button = tk.Button(command_frame, text="Add Light")
         button.pack(fill="x", side="top")
@@ -692,6 +692,9 @@ class MainWindow:
     # ------------------------- #
     # Widget - Object List
     # ------------------------- #
+    def addCamera(self, event):
+        self.appCmdQueue.put(COMMAND.ADD_CAMERA)
+
     def addLight(self, event):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
 

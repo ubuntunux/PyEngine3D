@@ -68,10 +68,9 @@ class COMMAND(AutoEnum):
     TRANS_RESOURCE_ATTRIBUTE = ()
     SET_RESOURCE_ATTRIBUTE = ()
 
-    # light
+    # add object
+    ADD_CAMERA = ()
     ADD_LIGHT = ()
-
-    # particle
     ADD_PARTICLE = ()
 
     # object
