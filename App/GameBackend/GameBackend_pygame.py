@@ -246,7 +246,7 @@ class PyGame(GameBackend):
 
         if resize_scene:
             self.core_manager.renderer.resizeScene(self.width, self.height)
-        self.core_manager.notifyChangeResolution((self.width, self.height, self.full_screen))
+        self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos

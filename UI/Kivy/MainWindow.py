@@ -51,7 +51,7 @@ class MainApp(Singleton):
         self.view_mode_dropdown = self.app.DropDown()
 
         def set_view_mode(view_mode):
-            self.setViewMode(view_mode)
+            self.set_view_mode(view_mode)
             self.view_mode_dropdown.dismiss()
 
         btn = self.app.Button(text='Wireframe', size_hint_y=None, height=self.default_height,
@@ -86,18 +86,18 @@ class MainApp(Singleton):
         # # Resource list
         # self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         # self.resourceListWidget.itemDoubleClicked.connect(self.addResource)
-        # self.resourceListWidget.itemClicked.connect(self.selectResource)
+        # self.resourceListWidget.itemClicked.connect(self.select_resource)
         # self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
-        #              self.fillAttribute)
+        #              self.fill_attribute)
         #
         # # Object list
         # self.objectList = self.findChild(QtGui.QListWidget, "objectList")
-        # self.objectList.itemClicked.connect(self.selectObject)
-        # self.objectList.itemActivated.connect(self.selectObject)
-        # self.objectList.itemDoubleClicked.connect(self.focusObject)
+        # self.objectList.itemClicked.connect(self.select_object)
+        # self.objectList.itemActivated.connect(self.select_object)
+        # self.objectList.itemDoubleClicked.connect(self.focus_object)
         # self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_NAME)), self.deleteObjectName)
         # self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_NAME)), self.addObjectName)
-        # self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)), self.fillAttribute)
+        # self.connect(self.uiThread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)), self.fill_attribute)
 
         # wait a UI_RUN message, and send success message
         if self.cmdPipe:
@@ -114,10 +114,10 @@ class MainApp(Singleton):
         else:
             self.app.popup("Exit?", "", self.app.exit, None)
 
-    def setViewMode(self, mode):
+    def set_view_mode(self, mode):
         self.appCmdQueue.put(mode)
 
-    def addResourceList(self, resourceList):
+    def add_resource_list(self, resourceList):
         for resName, resType in resourceList:
             btn = self.app.Button(text='%s [ %s ]' % (resName, resType), size_hint_y=None, height=self.default_height,
                                   font_size = self.default_font_size)
@@ -144,7 +144,7 @@ class MainApp(Singleton):
             if cmd == COMMAND.CLOSE_UI:
                 self.exit(True)
             elif cmd == COMMAND.TRANS_RESOURCE_LIST:
-                self.addResourceList(value)
+                self.add_resource_list(value)
             elif cmd == COMMAND.TRANS_OBJECT_NAME:
                 self.addObjectName(value)
 

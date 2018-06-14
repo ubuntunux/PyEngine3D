@@ -11,7 +11,7 @@ from Common.Constants import *
 from App import CoreManager
 
 
-class ParticleManager:
+class ParticleManager(Singleton):
     def __init__(self):
         self.active = True
         self.particles = []
@@ -39,17 +39,21 @@ class ParticleManager:
 
 
 class Particle:
-    def __init__(self, particle_infos):
+    def __init__(self, name, emitters_infos=[]):
         self.emitters_list = []
 
-        for emitter_info in particle_infos:
+        for emitters_info in emitters_infos:
             count = emitter_info.get('count', 1)
             emitter_list = []
             self.emitters_list.append(emitter_list)
 
             for i in range(count):
-                emitter = Emitter(emitter_info)
+                emitter = Emitter(emitters_info)
                 emitter_list.append(emitter)
+
+    def get_save_data(self):
+        save_data = [emitter.get_save_data() for emitter in self.emitters_list]
+        return save_data
 
     def play(self):
         for emitter_list in self.emitters_list:
@@ -137,14 +141,14 @@ class Emitter:
         )
         return save_data
 
-    def getAttribute(self):
+    def get_attribute(self):
         attributes = self.get_save_data()
-        self.attributes.setAttribute('name', self.name)
+        self.attributes.set_attribute('name', self.name)
         for key in attributes:
-            self.attributes.setAttribute(key, attributes[key])
+            self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, "variance_" + attributeName):
             variance_value = getattr("variance_" + attributeName)
             variance_value.set_value(*attributeValue)
@@ -162,9 +166,9 @@ class Emitter:
         self.rotation_velocity[...] = self.variance_rotation_velocity.get_value()
         self.scale_velocity[...] = self.variance_scale_velocity.get_value()
 
-        self.transform.setPos(self.variance_position.get_value())
-        self.transform.setRot(self.variance_rotation.get_value())
-        self.transform.setScale(self.variance_scale.get_value())
+        self.transform.set_pos(self.variance_position.get_value())
+        self.transform.set_rotation(self.variance_rotation.get_value())
+        self.transform.set_scale(self.variance_scale.get_value())
 
         self.has_velocity = any([v != 0.0 for v in self.velocity])
         self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
@@ -185,7 +189,7 @@ class Emitter:
     def destroy(self):
         self.alive = False
 
-    def updateSequence(self, life_ratio):
+    def update_sequence(self, life_ratio):
         if self.total_cell_count > 1 and self.play_speed > 0:
             ratio = (life_ratio * self.play_speed) % 1.0
             index = min(self.total_cell_count, int(math.floor((self.total_cell_count - 1) * ratio)))
@@ -226,7 +230,7 @@ class Emitter:
         if 0.0 < self.life_time:
             life_ratio = self.elapsed_time / self.life_time
 
-        self.updateSequence(life_ratio)
+        self.update_sequence(life_ratio)
 
         if 0.0 != self.gravity:
             self.velocity[1] -= self.gravity * dt

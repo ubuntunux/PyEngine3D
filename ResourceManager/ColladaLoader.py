@@ -132,11 +132,11 @@ class ColladaNode:
                 if len(rotation) == 4:
                     axis = get_xml_attrib(xml_rotate, 'sid')
                     if axis == 'rotationX':
-                        matrix_rotateX(self.matrix, rotation[3])
+                        matrix_rotate_x(self.matrix, rotation[3])
                     elif axis == 'rotationY':
-                        matrix_rotateY(self.matrix, rotation[3])
+                        matrix_rotate_y(self.matrix, rotation[3])
                     elif axis == 'rotationZ':
-                        matrix_rotateZ(self.matrix, rotation[3])
+                        matrix_rotate_z(self.matrix, rotation[3])
                     else:
                         logger.error('%s node has a invalid rotate.' % self.name)
             xml_scale = xml_node.find('scale')

@@ -40,7 +40,7 @@ class NoiseTexture3D:
             wrap=GL_REPEAT,
         )
 
-        resource = resource_manager.texture_loader.getResource(self.texture_name)
+        resource = resource_manager.texture_loader.get_resource(self.texture_name)
         if resource is None:
             resource = resource_manager.texture_loader.create_resource(self.texture_name, texture)
             resource_manager.texture_loader.save_resource(resource.name)
@@ -65,7 +65,7 @@ class NoiseTexture3D:
 
         renderer.postprocess.bind_quad()
 
-        mat = resource_manager.getMaterialInstance('procedural.noise_3d')
+        mat = resource_manager.get_material_instance('procedural.noise_3d')
         mat.use_program()
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)
         mat.bind_uniform_data('noise_scale', self.noise_scale)
@@ -90,16 +90,16 @@ class NoiseTexture3D:
         )
         return save_data
 
-    def getAttribute(self):
-        self.attribute.setAttribute("texture_name", self.texture_name)
-        self.attribute.setAttribute("noise_width", self.noise_width)
-        self.attribute.setAttribute("noise_height", self.noise_height)
-        self.attribute.setAttribute("noise_depth", self.noise_depth)
-        self.attribute.setAttribute("noise_persistance", self.noise_persistance)
-        self.attribute.setAttribute("noise_scale", self.noise_scale)
+    def get_attribute(self):
+        self.attribute.set_attribute("texture_name", self.texture_name)
+        self.attribute.set_attribute("noise_width", self.noise_width)
+        self.attribute.set_attribute("noise_height", self.noise_height)
+        self.attribute.set_attribute("noise_depth", self.noise_depth)
+        self.attribute.set_attribute("noise_persistance", self.noise_persistance)
+        self.attribute.set_attribute("noise_scale", self.noise_scale)
         return self.attribute
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
         return self.attribute

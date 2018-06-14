@@ -66,13 +66,13 @@ class Ocean:
         self.scene_manager = CoreManager.instance().scene_manager
         self.resource_manager = CoreManager.instance().resource_manager
 
-        self.fft_init = self.resource_manager.getMaterialInstance('fft_ocean.init')
-        self.fft_x = self.resource_manager.getMaterialInstance('fft_ocean.fft_x')
-        self.fft_y = self.resource_manager.getMaterialInstance('fft_ocean.fft_y')
-        self.fft_render = self.resource_manager.getMaterialInstance('fft_ocean.render')
-        self.fft_variance = self.resource_manager.getMaterialInstance('fft_ocean.fft_variance')
+        self.fft_init = self.resource_manager.get_material_instance('fft_ocean.init')
+        self.fft_x = self.resource_manager.get_material_instance('fft_ocean.fft_x')
+        self.fft_y = self.resource_manager.get_material_instance('fft_ocean.fft_y')
+        self.fft_render = self.resource_manager.get_material_instance('fft_ocean.render')
+        self.fft_variance = self.resource_manager.get_material_instance('fft_ocean.fft_variance')
 
-        self.quad = self.resource_manager.getMesh("Quad")
+        self.quad = self.resource_manager.get_mesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
         self.grid_size = 200
@@ -82,10 +82,10 @@ class Ocean:
         self.mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
         self.geometry = self.mesh.get_geometry()
 
-        self.texture_spectrum_1_2 = self.resource_manager.getTexture("fft_ocean.spectrum_1_2")
-        self.texture_spectrum_3_4 = self.resource_manager.getTexture("fft_ocean.spectrum_3_4")
-        self.texture_slope_variance = self.resource_manager.getTexture("fft_ocean.slope_variance")
-        self.texture_butterfly = self.resource_manager.getTexture("fft_ocean.butterfly")
+        self.texture_spectrum_1_2 = self.resource_manager.get_texture("fft_ocean.spectrum_1_2")
+        self.texture_spectrum_3_4 = self.resource_manager.get_texture("fft_ocean.spectrum_3_4")
+        self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance")
+        self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly")
 
         if None in (self.texture_spectrum_1_2,
                     self.texture_spectrum_3_4,
@@ -99,14 +99,14 @@ class Ocean:
         while True:
             resource_name = "water.caustic_%02d" % i
             if self.resource_manager.texture_loader.hasResource(resource_name):
-                self.texture_caustics.append(self.resource_manager.getTexture(resource_name))
+                self.texture_caustics.append(self.resource_manager.get_texture(resource_name))
                 i += 1
                 continue
             break
 
-        self.texture_foam = self.resource_manager.getTexture("water.water_foam")
+        self.texture_foam = self.resource_manager.get_texture("water.water_foam")
 
-        self.texture_noise = self.resource_manager.getTexture("noise.noise")
+        self.texture_noise = self.resource_manager.get_texture("noise.noise")
 
         # self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
         #                                                    layout_location=5,
@@ -119,18 +119,18 @@ class Ocean:
         #     [Float2(i % self.grid_count, i // self.grid_count) for i in range(self.grid_count * self.grid_count)],
         #     dtype=np.float32)
 
-    def getAttribute(self):
-        self.attributes.setAttribute('is_render_ocean', self.is_render_ocean)
-        self.attributes.setAttribute('height', self.height)
-        self.attributes.setAttribute('wind', self.wind)
-        self.attributes.setAttribute('omega', self.omega)
-        self.attributes.setAttribute('amplitude', self.amplitude)
-        self.attributes.setAttribute('simulation_wind', self.simulation_wind)
-        self.attributes.setAttribute('simulation_amplitude', self.simulation_amplitude)
-        self.attributes.setAttribute('simulation_scale', self.simulation_scale)
+    def get_attribute(self):
+        self.attributes.set_attribute('is_render_ocean', self.is_render_ocean)
+        self.attributes.set_attribute('height', self.height)
+        self.attributes.set_attribute('wind', self.wind)
+        self.attributes.set_attribute('omega', self.omega)
+        self.attributes.set_attribute('amplitude', self.amplitude)
+        self.attributes.set_attribute('simulation_wind', self.simulation_wind)
+        self.attributes.set_attribute('simulation_amplitude', self.simulation_amplitude)
+        self.attributes.set_attribute('simulation_scale', self.simulation_scale)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
             # recreate resources
@@ -300,7 +300,7 @@ class Ocean:
             self.quad_geometry.draw_elements()
 
     def save_texture(self, texture):
-        resource = self.resource_manager.texture_loader.getResource(texture.name)
+        resource = self.resource_manager.texture_loader.get_resource(texture.name)
         if resource is None:
             resource = self.resource_manager.texture_loader.create_resource(texture.name, texture)
             self.resource_manager.texture_loader.save_resource(resource.name)

@@ -10,6 +10,7 @@ from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
+from Object import ParticleManager, Particle
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
 from OpenGLContext import UniformBlock
@@ -71,7 +72,7 @@ class SceneManager(Singleton):
         self.core_manager.set_window_title(scene_name)
 
     def clear_scene(self):
-        self.core_manager.notifyClearScene()
+        self.core_manager.notify_clear_scene()
         self.main_camera = None
         self.main_light = None
         self.main_light_probe = None
@@ -90,7 +91,7 @@ class SceneManager(Singleton):
         self.renderer.set_debug_texture(None)
 
         # delete empty scene
-        # resource = self.resource_manager.scene_loader.getResource(self.__current_scene_name)
+        # resource = self.resource_manager.scene_loader.get_resource(self.__current_scene_name)
         # if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
         #     self.resource_manager.scene_loader.delete_resource(self.__current_scene_name)
 
@@ -102,11 +103,11 @@ class SceneManager(Singleton):
         self.clear_scene()
 
         # add scene objects
-        self.main_camera = self.addCamera()
-        self.main_light = self.addMainLight()
-        self.main_light_probe = self.addLightProbe()
-        self.atmosphere = self.addAtmosphere()
-        self.ocean = self.addOcean()
+        self.main_camera = self.add_camera()
+        self.main_light = self.add_main_light()
+        self.main_light_probe = self.add_light_probe()
+        self.atmosphere = self.add_atmosphere()
+        self.ocean = self.add_ocean()
 
         self.set_current_scene_name(self.resource_manager.scene_loader.get_new_resource_name("new_scene"))
 
@@ -125,38 +126,38 @@ class SceneManager(Singleton):
 
         camera_datas = scene_data.get('cameras', [])
         for camera_data in camera_datas:
-            self.addCamera(**camera_data)
+            self.add_camera(**camera_data)
         self.main_camera = self.cameras[0] if 0 < len(self.cameras) else None
 
         main_light_data = scene_data.get('main_light', None)
         if main_light_data is not None:
-            self.main_light = self.addMainLight(**main_light_data)
+            self.main_light = self.add_main_light(**main_light_data)
         else:
-            self.main_light = self.addMainLight()
+            self.main_light = self.add_main_light()
 
         light_datas = scene_data.get('lights', [])
         for light_data in light_datas:
-            self.addLight(**light_data)
+            self.add_light(**light_data)
 
         light_probe_datas = scene_data.get('light_probes', [])
         if light_probe_datas:
             for light_probe_data in light_probe_datas:
-                self.addLightProbe(**light_probe_data)
+                self.add_light_probe(**light_probe_data)
         else:
-            self.addLightProbe()
+            self.add_light_probe()
         self.main_light_probe = self.light_probes[0] if 0 < len(self.light_probes) else None
 
         atmosphere_data = scene_data.get('atmosphere', {})
-        self.atmosphere = self.addAtmosphere(**atmosphere_data)
+        self.atmosphere = self.add_atmosphere(**atmosphere_data)
 
         ocean_data = scene_data.get('ocean', {})
-        self.ocean = self.addOcean(**ocean_data)
+        self.ocean = self.add_ocean(**ocean_data)
 
         for object_data in scene_data.get('static_actors', []):
-            self.addObject(**object_data)
+            self.add_object(**object_data)
 
         for object_data in scene_data.get('skeleton_actors', []):
-            self.addObject(**object_data)
+            self.add_object(**object_data)
 
         self.post_open_scene()
 
@@ -178,7 +179,7 @@ class SceneManager(Singleton):
         )
         return scene_data
 
-    def generateObjectName(self, currName):
+    def generate_object_name(self, currName):
         index = 0
         if currName in self.objectMap:
             while True:
@@ -202,83 +203,85 @@ class SceneManager(Singleton):
         return None
 
     def regist_object(self, object):
-        if object and object.name not in self.objectMap:
+        if object is not None and object.name not in self.objectMap:
             object_type = type(object)
             object_list = self.get_object_list(object_type)
             if object_list is not None:
                 object_list.append(object)
             self.objectMap[object.name] = object
-            self.update_render_info(object_type)
-            self.core_manager.sendObjectInfo(object)
+            self.core_manager.send_object_info(object)
         else:
             logger.error("SceneManager::regist_object error. %s" % object.name if object else 'None')
 
     def unregist_resource(self, object):
-        if object and object.name in self.objectMap:
+        if object is not None and object.name in self.objectMap:
             object_type = type(object)
             object_list = self.get_object_list(object_type)
             if object_list is not None:
                 object_list.remove(object)
             self.objectMap.pop(object.name)
-            self.update_render_info(object_type)
-            self.core_manager.notifyDeleteObject(object.name)
+            self.core_manager.notify_delete_object(object.name)
 
             if hasattr(object, 'delete'):
                 object.delete()
         else:
             logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
 
-    def addCamera(self, **camera_data):
-        camera_data['name'] = self.generateObjectName(camera_data.get('name', 'camera'))
-        camera_data['model'] = self.resource_manager.getModel('Cube')
+    def add_camera(self, **camera_data):
+        camera_data['name'] = self.generate_object_name(camera_data.get('name', 'camera'))
+        camera_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add Camera : %s" % camera_data['name'])
         camera = Camera(scene_manager=self, **camera_data)
         camera.initialize()
         self.regist_object(camera)
         return camera
 
-    def addMainLight(self, **light_data):
-        light_data['name'] = self.generateObjectName(light_data.get('name', 'main_light'))
-        light_data['model'] = self.resource_manager.getModel('Cube')
+    def add_main_light(self, **light_data):
+        light_data['name'] = self.generate_object_name(light_data.get('name', 'main_light'))
+        light_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add MainLight : %s" % light_data['name'])
         light = MainLight(**light_data)
         self.regist_object(light)
         return light
 
-    def addLight(self, **light_data):
-        light_data['name'] = self.generateObjectName(light_data.get('name', 'light'))
-        light_data['model'] = self.resource_manager.getModel('Cube')
+    def add_light(self, **light_data):
+        light_data['name'] = self.generate_object_name(light_data.get('name', 'light'))
+        light_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add Light : %s" % light_data['name'])
         light = PointLight(**light_data)
         self.regist_object(light)
         return light
 
-    def addLightProbe(self, **light_probe_data):
-        light_probe_data['name'] = self.generateObjectName(light_probe_data.get('name', 'light_probe'))
-        light_probe_data['model'] = self.resource_manager.getModel('sphere')
+    def add_light_probe(self, **light_probe_data):
+        light_probe_data['name'] = self.generate_object_name(light_probe_data.get('name', 'light_probe'))
+        light_probe_data['model'] = self.resource_manager.get_model('sphere')
         logger.info("add Light Probe : %s" % light_probe_data['name'])
         light_probe = LightProbe(**light_probe_data)
         self.regist_object(light_probe)
         return light_probe
 
-    def addAtmosphere(self, **atmosphere_data):
-        atmosphere_data['name'] = self.generateObjectName(atmosphere_data.get('name', 'atmosphere'))
+    def add_particle(self, **particle_data):
+        logger.error("add_particle is not implemented.")
+        return None
+
+    def add_atmosphere(self, **atmosphere_data):
+        atmosphere_data['name'] = self.generate_object_name(atmosphere_data.get('name', 'atmosphere'))
         logger.info("add Atmosphere : %s" % atmosphere_data['name'])
         atmosphere = Atmosphere(**atmosphere_data)
         self.regist_object(atmosphere)
         return atmosphere
 
-    def addOcean(self, **object_data):
-        object_data['name'] = self.generateObjectName(object_data.get('name', 'ocean'))
+    def add_ocean(self, **object_data):
+        object_data['name'] = self.generate_object_name(object_data.get('name', 'ocean'))
         logger.info("add Ocean : %s" % object_data['name'])
         ocean = Ocean(**object_data)
         self.regist_object(ocean)
         return ocean
 
-    def addObject(self, **object_data):
+    def add_object(self, **object_data):
         model = object_data.get('model')
         if model:
-            object_data['name'] = self.generateObjectName(object_data.get('name', model.name))
+            object_data['name'] = self.generate_object_name(object_data.get('name', model.name))
             objType = GetClassName(model)
             logger.info("add %s : %s" % (objType, object_data['name']))
 
@@ -291,11 +294,11 @@ class SceneManager(Singleton):
             return obj_instance
         return None
 
-    def addObjectHere(self, model):
+    def add_object_here(self, model):
         pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
-        return self.addObject(model=model, pos=pos)
+        return self.add_object(model=model, pos=pos)
 
-    def clearObjects(self):
+    def clear_objects(self):
         self.cameras = []
         self.point_lights = []
         self.static_actors = []
@@ -304,28 +307,28 @@ class SceneManager(Singleton):
 
     def clear_actors(self):
         for obj_name in list(self.objectMap.keys()):
-            self.deleteObject(obj_name)
+            self.delete_object(obj_name)
 
-    def actionObject(self, objectName):
-        obj = self.getObject(objectName)
+    def action_object(self, objectName):
+        obj = self.get_object(objectName)
         if obj is not None:
             object_type = type(obj)
             if LightProbe == object_type:
                 self.renderer.set_debug_texture(obj.texture_probe)
-                self.core_manager.sendObjectAttribute(obj.texture_probe.getAttribute())
+                self.core_manager.send_object_attribute(obj.texture_probe.get_attribute())
 
-    def deleteObject(self, objectName):
-        obj = self.getObject(objectName)
+    def delete_object(self, objectName):
+        obj = self.get_object(objectName)
         if obj and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
-    def getObject(self, objectName):
+    def get_object(self, objectName):
         return self.objectMap[objectName] if objectName in self.objectMap else None
 
-    def getObjectNames(self):
+    def get_object_names(self):
         return self.objectMap.keys()
 
-    def getObjects(self):
+    def get_objects(self):
         return self.objectMap.values()
 
     def get_light_probe_texture(self):
@@ -337,19 +340,19 @@ class SceneManager(Singleton):
         for light_probe in self.light_probes:
             light_probe.isRendered = False
 
-    def getObjectAttribute(self, objectName, objectTypeName):
-        obj = self.getObject(objectName)
-        return obj.getAttribute() if obj else None
+    def get_object_attribute(self, objectName, objectTypeName):
+        obj = self.get_object(objectName)
+        return obj.get_attribute() if obj else None
 
-    def setObjectAttribute(self, objectName, objectTypeName, attributeName, attributeValue, attribute_index):
-        obj = self.getObject(objectName)
-        obj and obj.setAttribute(attributeName, attributeValue, attribute_index)
+    def set_object_attribute(self, objectName, objectTypeName, attributeName, attributeValue, attribute_index):
+        obj = self.get_object(objectName)
+        obj and obj.set_attribute(attributeName, attributeValue, attribute_index)
 
-    def getSelectedObject(self):
+    def get_selected_object(self):
         return self.selected_object
 
-    def setSelectedObject(self, objectName):
-        selected_object = self.getObject(objectName)
+    def set_selected_object(self, objectName):
+        selected_object = self.get_object(objectName)
         if self.selected_object is not selected_object:
             if self.selected_object and hasattr(self.selected_object, "setSelected"):
                 self.selected_object.setSelected(False)
@@ -357,20 +360,14 @@ class SceneManager(Singleton):
             if selected_object and hasattr(selected_object, "setSelected"):
                 selected_object.setSelected(True)
 
-    def setObjectFocus(self, objectName):
-        obj = self.getObject(objectName)
+    def set_object_focus(self, objectName):
+        obj = self.get_object(objectName)
         if obj and obj != self.main_camera:
-            self.main_camera.transform.setPos(obj.transform.pos - self.main_camera.transform.front * 2.0)
+            self.main_camera.transform.set_pos(obj.transform.pos - self.main_camera.transform.front * 2.0)
 
     def update_camera_projection_matrix(self, fov=0.0, aspect=0.0):
         for camera in self.cameras:
             camera.update_projection(fov, aspect)
-
-    def update_render_info(self, object_type):
-        if StaticActor == object_type:
-            self.update_static_render_info()
-        elif SkeletonActor == object_type:
-            self.update_skeleton_render_info()
 
     def update_static_render_info(self):
         self.static_solid_render_infos = []

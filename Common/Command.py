@@ -29,6 +29,8 @@ def getTraceCallStack():
 class COMMAND(AutoEnum):
     UI_RUN = ()
     UI_RUN_OK = ()
+    SHOW_UI = ()
+    HIDE_UI = ()
     FAIL = ()
     CLOSE_APP = ()
     CLOSE_UI = ()
@@ -56,7 +58,7 @@ class COMMAND(AutoEnum):
 
     # resource
     LOAD_RESOURCE = ()
-    OPEN_RESOURCE = ()
+    ACTION_RESOURCE = ()
     DUPLICATE_RESOURCE = ()
     SAVE_RESOURCE = ()
     DELETE_RESOURCE = ()
@@ -68,10 +70,12 @@ class COMMAND(AutoEnum):
     TRANS_RESOURCE_ATTRIBUTE = ()
     SET_RESOURCE_ATTRIBUTE = ()
 
-    # add object
+    # add to scene
     ADD_CAMERA = ()
     ADD_LIGHT = ()
-    ADD_PARTICLE = ()
+
+    # create
+    CREATE_PARTICLE = ()
 
     # object
     CLEAR_OBJECT_LIST = ()

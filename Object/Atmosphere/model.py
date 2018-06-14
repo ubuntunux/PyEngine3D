@@ -141,7 +141,7 @@ class Model:
         resource_manager = CoreManager.instance().resource_manager
         shaderLoader = resource_manager.shader_loader
         shader_name = 'precomputed_atmosphere.atmosphere_predefine'
-        recompute_atmosphere_predefine = resource_manager.getShader(shader_name)
+        recompute_atmosphere_predefine = resource_manager.get_shader(shader_name)
         recompute_atmosphere_predefine.shader_code = self.glsl_header_factory([kLambdaR, kLambdaG, kLambdaB])
         shaderLoader.save_resource(shader_name)
         shaderLoader.load_resource(shader_name)
@@ -370,7 +370,7 @@ class Model:
         # Note : recompute compute_transmittance
         framebuffer_manager.bind_framebuffer(self.transmittance_texture)
 
-        recompute_transmittance_mi = resource_manager.getMaterialInstance(
+        recompute_transmittance_mi = resource_manager.get_material_instance(
             'precomputed_atmosphere.recompute_transmittance',
             macros=self.material_instance_macros)
         recompute_transmittance_mi.use_program()
@@ -379,7 +379,7 @@ class Model:
 
         # save textures
         def save_texture(texture):
-            resource = resource_manager.texture_loader.getResource(texture.name)
+            resource = resource_manager.texture_loader.get_resource(texture.name)
             if resource is None:
                 resource = resource_manager.texture_loader.create_resource(texture.name, texture)
                 resource_manager.texture_loader.save_resource(resource.name)
@@ -406,7 +406,7 @@ class Model:
         shaderLoader = resource_manager.shader_loader
 
         shader_name = 'precomputed_atmosphere.compute_atmosphere_predefine'
-        compute_atmosphere_predefine = resource_manager.getShader(shader_name)
+        compute_atmosphere_predefine = resource_manager.get_shader(shader_name)
         compute_atmosphere_predefine.shader_code = self.glsl_header_factory(lambdas)
         shaderLoader.save_resource(shader_name)
         shaderLoader.load_resource(shader_name)
@@ -422,7 +422,7 @@ class Model:
 
         glDisablei(GL_BLEND, 0)
 
-        compute_transmittance_mi = resource_manager.getMaterialInstance(
+        compute_transmittance_mi = resource_manager.get_material_instance(
             'precomputed_atmosphere.compute_transmittance',
             macros=self.material_instance_macros)
         compute_transmittance_mi.use_program()
@@ -437,7 +437,7 @@ class Model:
         else:
             glDisablei(GL_BLEND, 1)
 
-        compute_direct_irradiance_mi = resource_manager.getMaterialInstance(
+        compute_direct_irradiance_mi = resource_manager.get_material_instance(
             'precomputed_atmosphere.compute_direct_irradiance',
             macros=self.material_instance_macros)
         compute_direct_irradiance_mi.use_program()
@@ -455,7 +455,7 @@ class Model:
                                                                        self.scattering_texture,
                                                                        self.optional_single_mie_scattering_texture)
 
-        compute_single_scattering_mi = resource_manager.getMaterialInstance(
+        compute_single_scattering_mi = resource_manager.get_material_instance(
             'precomputed_atmosphere.compute_single_scattering',
             macros=self.material_instance_macros)
         compute_single_scattering_mi.use_program()
@@ -481,7 +481,7 @@ class Model:
             framebuffer = framebuffer_manager.get_framebuffer(self.delta_scattering_density_texture)
             glDisablei(GL_BLEND, 0)
 
-            compute_scattering_density_mi = resource_manager.getMaterialInstance(
+            compute_scattering_density_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_scattering_density',
                 macros=self.material_instance_macros)
             compute_scattering_density_mi.use_program()
@@ -506,7 +506,7 @@ class Model:
             glDisablei(GL_BLEND, 0)
             glEnablei(GL_BLEND, 1)
 
-            compute_indirect_irradiance_mi = resource_manager.getMaterialInstance(
+            compute_indirect_irradiance_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_indirect_irradiance',
                 macros=self.material_instance_macros)
             compute_indirect_irradiance_mi.use_program()
@@ -526,7 +526,7 @@ class Model:
             glDisablei(GL_BLEND, 0)
             glEnablei(GL_BLEND, 1)
 
-            compute_multiple_scattering_mi = resource_manager.getMaterialInstance(
+            compute_multiple_scattering_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_multiple_scattering',
                 macros=self.material_instance_macros)
             compute_multiple_scattering_mi.use_program()

@@ -142,31 +142,31 @@ class MaterialInstance:
     def use_program(self):
         self.material.use_program()
 
-    def getAttribute(self):
-        self.Attributes.setAttribute('name', self.name)
-        self.Attributes.setAttribute('shader_name', self.shader_name)
-        self.Attributes.setAttribute('material_name', self.material_name)
+    def get_attribute(self):
+        self.Attributes.set_attribute('name', self.name)
+        self.Attributes.set_attribute('shader_name', self.shader_name)
+        self.Attributes.set_attribute('material_name', self.material_name)
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
-            self.Attributes.setAttribute(uniform_buffer.name, uniform_data)
+            self.Attributes.set_attribute(uniform_buffer.name, uniform_data)
         for key in self.macros:
-            self.Attributes.setAttribute(key, self.macros[key])
+            self.Attributes.set_attribute(key, self.macros[key])
         return self.Attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'shader_name':
             if attributeValue != self.shader_name:
-                material = CoreManager.instance().resource_manager.getMaterial(attributeValue, self.macros)
+                material = CoreManager.instance().resource_manager.get_material(attributeValue, self.macros)
                 self.set_material(material)
         elif attributeName in 'material_name':
             if self.material:
-                material = CoreManager.instance().resource_manager.getMaterial(self.material.shader_name)
+                material = CoreManager.instance().resource_manager.get_material(self.material.shader_name)
                 self.set_material(material)
         elif attributeName in self.linked_material_component_map:
             self.set_uniform_data_from_string(attributeName, attributeValue)
         elif attributeName in self.macros:
             if self.macros[attributeName] != attributeValue:
                 self.macros[attributeName] = attributeValue
-                material = CoreManager.instance().resource_manager.getMaterial(self.material.shader_name,
+                material = CoreManager.instance().resource_manager.get_material(self.material.shader_name,
                                                                                self.macros)
                 self.set_material(material)
         return self.Attributes

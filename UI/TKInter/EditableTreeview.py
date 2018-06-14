@@ -9,15 +9,17 @@ class SimpleEditableTreeview(ttk.Treeview):
         ttk.Treeview.__init__(self, master, **kw)
         self._inplace_widget = None
         self._inplace_var = None
+        self._inplace_item = ''
 
     def get_event_info(self):
         return self.__event_info
 
     def __get_value(self, col, item):
         if col == '#0':
-            return self.item(item, 'text')
+            value = self.item(item, 'text')
         else:
-            return self.set(item, col)
+            value = self.set(item, col)
+        return value
 
     def __set_value(self, col, item, value):
         if col == '#0':
@@ -28,21 +30,22 @@ class SimpleEditableTreeview(ttk.Treeview):
         self.event_generate('<<TreeviewCellEdited>>')
 
     def __update_value(self, col, item):
-        if not self.exists(item) or self._inplace_var is None:
+        if not self.exists(item) or item != self._inplace_item:
             return
 
         value = self.__get_value(col, item)
         newvalue = self._inplace_var.get()
+
         if value != newvalue:
             self.__set_value(col, item, newvalue)
         self.__clear_inplace_widgets()
-        self.next(item)
 
     def __clear_inplace_widgets(self):
         if self._inplace_widget is not None:
             self._inplace_widget.place_forget()
             self._inplace_widget = None
             self._inplace_var = None
+            self._inplace_item = ''
 
     def __updateWnds(self, col, item, widget):
         bbox = self.bbox(item, column=col)
@@ -50,6 +53,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def inplace_entry(self, col, item):
         self.__clear_inplace_widgets()
+        self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
         svar.set(self.__get_value(col, item))
@@ -64,6 +68,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def inplace_checkbutton(self, col, item, onvalue='True', offvalue='False'):
         self.__clear_inplace_widgets()
+        self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
         svar.set(self.__get_value(col, item))
@@ -73,6 +78,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def inplace_combobox(self, col, item, values, readonly=True):
         self.__clear_inplace_widgets()
+        self._inplace_item = item
         state = 'readonly' if readonly else 'normal'
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
@@ -86,6 +92,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def inplace_spinbox(self, col, item, min, max, step):
         self.__clear_inplace_widgets()
+        self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
         svar.set(self.__get_value(col, item))
@@ -98,6 +105,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def inplace_custom(self, col, item, widget):
         self.__clear_inplace_widgets()
+        self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
         svar.set(self.__get_value(col, item))

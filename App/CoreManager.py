@@ -98,7 +98,7 @@ class CoreManager(Singleton):
 
         self.config = Config("config.ini", log_level)
 
-        self.registCommand()
+        self.regist_command()
 
         # ready to launch - send message to ui
         if self.cmdPipe:
@@ -141,10 +141,10 @@ class CoreManager(Singleton):
             self.last_game_backend = PyGlet.__name__
         self.game_backend.change_resolution(width, height, full_screen, resize_scene=False)
 
-        self.sendGameBackendList(self.game_backend_list)
+        self.send_game_backend_list(self.game_backend_list)
         index = self.game_backend_list.index(
             self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
-        self.sendCurrentGameBackendIndex(index)
+        self.send_current_game_backend_index(index)
 
         if not self.game_backend.valid:
             self.error('game_backend initializing failed')
@@ -219,54 +219,54 @@ class CoreManager(Singleton):
         if self.cmdQueue:
             self.cmdQueue.put(*args)
 
-    def sendObjectAttribute(self, attribute):
+    def send_object_attribute(self, attribute):
         self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
 
-    def sendResourceInfo(self, resource_info):
+    def send_resource_info(self, resource_info):
         self.send(COMMAND.TRANS_RESOURCE_INFO, resource_info)
 
-    def notifyDeleteResource(self, resource_info):
+    def notify_delete_resource(self, resource_info):
         self.send(COMMAND.DELETE_RESOURCE_INFO, resource_info)
 
-    def sendObjectInfo(self, obj):
+    def send_object_info(self, obj):
         object_name = obj.name if hasattr(obj, 'name') else str(obj)
         object_class_name = GetClassName(obj)
         self.send(COMMAND.TRANS_OBJECT_INFO, (object_name, object_class_name))
 
-    def sendObjectList(self):
-        obj_names = self.scene_manager.getObjectNames()
+    def send_object_list(self):
+        obj_names = self.scene_manager.get_object_names()
         for obj_name in obj_names:
-            obj = self.scene_manager.getObject(obj_name)
-            self.sendObjectInfo(obj)
+            obj = self.scene_manager.get_object(obj_name)
+            self.send_object_info(obj)
 
-    def notifyChangeResolution(self, screen_info):
+    def notify_change_resolution(self, screen_info):
         self.send(COMMAND.TRANS_SCREEN_INFO, screen_info)
 
-    def notifyClearScene(self):
+    def notify_clear_scene(self):
         self.send(COMMAND.CLEAR_OBJECT_LIST)
 
-    def notifyDeleteObject(self, obj_name):
+    def notify_delete_object(self, obj_name):
         self.send(COMMAND.DELETE_OBJECT_INFO, obj_name)
 
-    def clearRenderTargetList(self):
+    def clear_render_target_list(self):
         self.send(COMMAND.CLEAR_RENDERTARGET_LIST)
 
-    def sendRenderTargetInfo(self, rendertarget_info):
+    def send_render_target_info(self, rendertarget_info):
         self.send(COMMAND.TRANS_RENDERTARGET_INFO, rendertarget_info)
 
-    def sendAntiAliasingList(self, antialiasing_list):
+    def send_anti_aliasing_list(self, antialiasing_list):
         self.send(COMMAND.TRANS_ANTIALIASING_LIST, antialiasing_list)
 
-    def sendRenderingTypeList(self, rendering_type_list):
+    def send_rendering_type_list(self, rendering_type_list):
         self.send(COMMAND.TRANS_RENDERING_TYPE_LIST, rendering_type_list)
 
-    def sendCurrentGameBackendIndex(self, game_backend_index):
+    def send_current_game_backend_index(self, game_backend_index):
         self.send(COMMAND.TRANS_GAME_BACKEND_INDEX, game_backend_index)
 
-    def sendGameBackendList(self, game_backend_list):
+    def send_game_backend_list(self, game_backend_list):
         self.send(COMMAND.TRANS_GAME_BACKEND_LIST, game_backend_list)
 
-    def registCommand(self):
+    def regist_command(self):
         def nothing(cmd_enum, value):
             logger.warn("Nothing to do for %s(%d)" % (str(cmd_enum), cmd_enum.value))
 
@@ -284,9 +284,9 @@ class CoreManager(Singleton):
         self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.scene_manager.new_scene()
         self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.scene_manager.save_scene()
         # view mode
-        self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.setViewMode(
+        self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.set_view_mode(
             COMMAND.VIEWMODE_WIREFRAME)
-        self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.setViewMode(
+        self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.set_view_mode(
             COMMAND.VIEWMODE_SHADING)
 
         # screen
@@ -301,10 +301,10 @@ class CoreManager(Singleton):
             self.resource_manager.load_resource(resName, resTypeName)
         self.commands[COMMAND.LOAD_RESOURCE.value] = cmd_load_resource
 
-        def cmd_open_resource(value):
+        def cmd_action_resource(value):
             resName, resTypeName = value
-            self.resource_manager.open_resource(resName, resTypeName)
-        self.commands[COMMAND.OPEN_RESOURCE.value] = cmd_open_resource
+            self.resource_manager.action_resource(resName, resTypeName)
+        self.commands[COMMAND.ACTION_RESOURCE.value] = cmd_action_resource
 
         def cmd_duplicate_resource(value):
             resName, resTypeName = value
@@ -322,46 +322,48 @@ class CoreManager(Singleton):
         self.commands[COMMAND.DELETE_RESOURCE.value] = cmd_delete_resource
 
         def cmd_request_resource_list(value):
-            resourceList = self.resource_manager.getResourceNameAndTypeList()
+            resourceList = self.resource_manager.get_resource_name_and_type_list()
             self.send(COMMAND.TRANS_RESOURCE_LIST, resourceList)
         self.commands[COMMAND.REQUEST_RESOURCE_LIST.value] = cmd_request_resource_list
 
         def cmd_request_resource_attribute(value):
             resName, resTypeName = value
-            attribute = self.resource_manager.getResourceAttribute(resName, resTypeName)
+            attribute = self.resource_manager.get_resource_attribute(resName, resTypeName)
             if attribute:
                 self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
 
         def cmd_set_resource_attribute(value):
             resourceName, resourceType, attributeName, attributeValue, attribute_index = value
-            self.resource_manager.setResourceAttribute(resourceName, resourceType, attributeName, attributeValue,
-                                                      attribute_index)
+            self.resource_manager.set_resource_attribute(resourceName, resourceType, attributeName, attributeValue,
+                                                         attribute_index)
         self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
 
-        # Scene object commands
-        self.commands[COMMAND.ADD_CAMERA.value] = lambda value: self.scene_manager.addCamera()
-        self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.addLight()
-        self.commands[COMMAND.ADD_PARTICLE.value] = lambda value: self.scene_manager.addLight()
+        # add to scene
+        self.commands[COMMAND.ADD_CAMERA.value] = lambda value: self.scene_manager.add_camera()
+        self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.add_light()
 
-        self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.sendObjectList()
-        self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.actionObject(value)
-        self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.deleteObject(value)
+        # create resource
+        self.commands[COMMAND.CREATE_PARTICLE.value] = lambda value: self.resource_manager.particle_loader.create_particle()
+
+        self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()
+        self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.action_object(value)
+        self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.delete_object(value)
 
         def cmd_request_object_attribute(value):
             objName, objTypeName = value
-            attribute = self.scene_manager.getObjectAttribute(objName, objTypeName)
+            attribute = self.scene_manager.get_object_attribute(objName, objTypeName)
             if attribute:
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
             objectName, objectType, attributeName, attributeValue, attribute_index = value
-            self.scene_manager.setObjectAttribute(objectName, objectType, attributeName, attributeValue, attribute_index)
+            self.scene_manager.set_object_attribute(objectName, objectType, attributeName, attributeValue, attribute_index)
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
 
-        self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.scene_manager.setSelectedObject(value)
-        self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.scene_manager.setObjectFocus(value)
+        self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.scene_manager.set_selected_object(value)
+        self.commands[COMMAND.SET_OBJECT_FOCUS.value] = lambda value: self.scene_manager.set_object_focus(value)
 
         def cmd_set_anti_aliasing(anti_aliasing_index):
             self.renderer.postprocess.set_anti_aliasing(anti_aliasing_index)
@@ -386,23 +388,23 @@ class CoreManager(Singleton):
             texture = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
             self.renderer.set_debug_texture(texture)
             if self.renderer.debug_texture:
-                attribute = self.renderer.debug_texture.getAttribute()
+                attribute = self.renderer.debug_texture.get_attribute()
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget
 
         def cmd_view_texture(value):
-            texture = self.resource_manager.getTexture(value)
+            texture = self.resource_manager.get_texture(value)
             self.renderer.set_debug_texture(texture)
             if texture is not None:
-                attribute = texture.getAttribute()
+                attribute = texture.get_attribute()
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_TEXTURE.value] = cmd_view_texture
 
         def cmd_view_material_instance(value):
-            material_instance = self.resource_manager.getMaterialInstance(value)
+            material_instance = self.resource_manager.get_material_instance(value)
             if material_instance is not None and value == material_instance.name:
                 self.renderer.postprocess.set_render_material_instance(material_instance)
-                attribute = material_instance.getAttribute()
+                attribute = material_instance.get_attribute()
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_MATERIAL_INSTANCE.value] = cmd_view_material_instance
 
@@ -422,7 +424,7 @@ class CoreManager(Singleton):
         if Event.QUIT == event_type:
             self.close()
         elif Event.VIDEORESIZE == event_type:
-            self.notifyChangeResolution(event_value)
+            self.notify_change_resolution(event_value)
         elif Event.KEYDOWN == event_type:
             key_pressed = self.game_backend.get_keyboard_pressed()
             subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
@@ -432,30 +434,28 @@ class CoreManager(Singleton):
                 else:
                     self.close()
             elif Keyboard._1 == event_value:
-                object_name_list = self.resource_manager.getModelNameList()
-                sphere = self.resource_manager.getModel('sphere')
-                if object_name_list:
+                models = self.resource_manager.model_loader.get_resource_list()
+                if models:
                     for i in range(20):
                         pos = [np.random.uniform(-10, 10) for x in range(3)]
-                        objName = np.random.choice(object_name_list)
-                        model = self.resource_manager.getModel(objName)
-                        obj_instance = self.scene_manager.addObject(model=sphere, pos=pos)
+                        model = np.random.choice(models)
+                        obj_instance = self.scene_manager.add_object(model=model, pos=pos)
                         if obj_instance:
-                            self.sendObjectInfo(obj_instance)
+                            self.send_object_info(obj_instance)
             elif Keyboard._2 == event_value:
                 self.scene_manager.reset_light_probe()
             elif Keyboard._3 == event_value:
                 self.gc_collect()
             elif Keyboard.DELETE == event_value:
                 # Test Code
-                obj_names = set(self.scene_manager.getObjectNames())
+                obj_names = set(self.scene_manager.get_object_names())
                 # clear static mesh
                 self.scene_manager.clear_actors()
-                current_obj_names = set(self.scene_manager.getObjectNames())
+                current_obj_names = set(self.scene_manager.get_object_names())
                 for obj_name in (obj_names - current_obj_names):
-                    self.notifyDeleteObject(obj_name)
+                    self.notify_delete_object(obj_name)
 
-    def updateCamera(self):
+    def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
         mouse_delta = self.game_backend.mouse_delta
         btnL, btnM, btnR = self.game_backend.get_mouse_pressed()
@@ -473,39 +473,39 @@ class CoreManager(Singleton):
 
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.moveToLeft(-mouse_delta[0] * pan_speed)
-            cameraTransform.moveToUp(-mouse_delta[1] * pan_speed)
+            cameraTransform.move_to_left(-mouse_delta[0] * pan_speed)
+            cameraTransform.move_to_up(-mouse_delta[1] * pan_speed)
 
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotationPitch(mouse_delta[1] * rotation_speed)
-            cameraTransform.rotationYaw(-mouse_delta[0] * rotation_speed)
+            cameraTransform.rotation_pitch(mouse_delta[1] * rotation_speed)
+            cameraTransform.rotation_yaw(-mouse_delta[0] * rotation_speed)
 
         if keydown[Keyboard.Z]:
-            cameraTransform.rotationRoll(-rotation_speed * 10.0)
+            cameraTransform.rotation_roll(-rotation_speed * 10.0)
         elif keydown[Keyboard.C]:
-            cameraTransform.rotationRoll(rotation_speed * 10.0)
+            cameraTransform.rotation_roll(rotation_speed * 10.0)
 
         # move to view direction ( inverse front of camera matrix )
         if keydown[Keyboard.W] or self.game_backend.wheel_up:
-            cameraTransform.moveToFront(-move_speed)
+            cameraTransform.move_to_front(-move_speed)
         elif keydown[Keyboard.S] or self.game_backend.wheel_down:
-            cameraTransform.moveToFront(move_speed)
+            cameraTransform.move_to_front(move_speed)
 
         # move to side
         if keydown[Keyboard.A]:
-            cameraTransform.moveToLeft(-move_speed)
+            cameraTransform.move_to_left(-move_speed)
         elif keydown[Keyboard.D]:
-            cameraTransform.moveToLeft(move_speed)
+            cameraTransform.move_to_left(move_speed)
 
         # move to up
         if keydown[Keyboard.Q]:
-            cameraTransform.moveToUp(move_speed)
+            cameraTransform.move_to_up(move_speed)
         elif keydown[Keyboard.E]:
-            cameraTransform.moveToUp(-move_speed)
+            cameraTransform.move_to_up(-move_speed)
 
         if keydown[Keyboard.SPACE]:
-            cameraTransform.resetTransform()
+            cameraTransform.reset_transform()
 
     def update(self):
         currentTime = time.perf_counter()
@@ -528,7 +528,7 @@ class CoreManager(Singleton):
 
         startTime = time.perf_counter()
         self.updateCommand()
-        self.updateCamera()
+        self.update_camera()
 
         # update actors
         self.scene_manager.update_scene(delta)
@@ -584,11 +584,11 @@ class CoreManager(Singleton):
         self.font_manager.log("Render Point Lights : %d" % self.scene_manager.point_light_count)
 
         # selected object transform info
-        selected_object = self.scene_manager.getSelectedObject()
+        selected_object = self.scene_manager.get_selected_object()
         if selected_object:
             self.font_manager.log("Selected Object : %s" % selected_object.name)
             if hasattr(selected_object, 'transform'):
-                self.font_manager.log(selected_object.transform.getTransformInfos())
+                self.font_manager.log(selected_object.transform.get_transform_infos())
         self.gpuTime = (time.perf_counter() - startTime) * 1000.0
 
         if self.need_to_gc_collect:

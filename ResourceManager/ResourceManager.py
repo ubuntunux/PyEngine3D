@@ -166,7 +166,7 @@ class Resource:
                 self.data.__dict__ = data.__dict__
 
         # Notify that data has been loaded.
-        ResourceManager.instance().core_manager.sendResourceInfo(self.get_resource_info())
+        ResourceManager.instance().core_manager.send_resource_info(self.get_resource_info())
 
     def delete_data(self):
         if self.data is not None and hasattr(self.data, 'delete'):
@@ -181,14 +181,14 @@ class Resource:
             ResourceManager.instance().load_resource(self.name, self.type_name)
         return self.data
 
-    def getAttribute(self):
-        if self.data and hasattr(self.data, 'getAttribute'):
-            return self.data.getAttribute()
+    def get_attribute(self):
+        if self.data and hasattr(self.data, 'get_attribute'):
+            return self.data.get_attribute()
         return None
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
-        if self.data and hasattr(self.data, 'setAttribute'):
-            self.data.setAttribute(attributeName, attributeValue, attribute_index)
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
+        if self.data and hasattr(self.data, 'set_attribute'):
+            self.data.set_attribute(attributeName, attributeValue, attribute_index)
 
 
 # -----------------------#
@@ -223,7 +223,7 @@ class ResourceLoader(object):
         self.metaDatas = {}
 
     @staticmethod
-    def getResourceName(resource_path, filepath, make_lower=True):
+    def get_resource_name(resource_path, filepath, make_lower=True):
         resourceName = os.path.splitext(os.path.relpath(filepath, resource_path))[0]
         resourceName = resourceName.replace(os.sep, ".")
         return resourceName if make_lower else resourceName
@@ -246,7 +246,7 @@ class ResourceLoader(object):
                 fileExt = os.path.splitext(filename)[1]
                 if ".*" == self.fileExt or fileExt == self.fileExt:
                     filepath = os.path.join(dirname, filename)
-                    resource_name = self.getResourceName(self.resource_path, filepath)
+                    resource_name = self.get_resource_name(self.resource_path, filepath)
                     self.create_resource(resource_name=resource_name, resource_data=None, resource_filepath=filepath)
 
         # If you use external files, will convert the resources.
@@ -260,9 +260,9 @@ class ResourceLoader(object):
 
                 # convert external file to rsource file.
                 for source_filepath in self.externalFileList:
-                    resource_name = self.getResourceName(external_path, source_filepath)
-                    resource = self.getResource(resource_name, noWarn=True)
-                    meta_data = self.getMetaData(resource_name, noWarn=True)
+                    resource_name = self.get_resource_name(external_path, source_filepath)
+                    resource = self.get_resource(resource_name, noWarn=True)
+                    meta_data = self.get_meta_data(resource_name, noWarn=True)
                     # Create the new resource from exterial file.
                     if resource is None:
                         logger.info("Create the new resource from %s." % source_filepath)
@@ -280,9 +280,9 @@ class ResourceLoader(object):
                 file_ext = os.path.splitext(filename)[1]
                 if file_ext == '.meta':
                     filepath = os.path.join(dirname, filename)
-                    resource_name = self.getResourceName(self.resource_path, filepath)
-                    resource = self.getResource(resource_name, noWarn=True)
-                    meta_data = self.getMetaData(resource_name, noWarn=True)
+                    resource_name = self.get_resource_name(self.resource_path, filepath)
+                    resource = self.get_resource(resource_name, noWarn=True)
+                    meta_data = self.get_meta_data(resource_name, noWarn=True)
                     if resource is None:
                         if meta_data:
                             meta_data.delete_meta_file()
@@ -314,40 +314,40 @@ class ResourceLoader(object):
     def hasResource(self, resourceName):
         return resourceName in self.resources
 
-    def getResource(self, resourceName, noWarn=False):
+    def get_resource(self, resourceName, noWarn=False):
         if resourceName in self.resources:
             return self.resources[resourceName]
         if not noWarn and resourceName:
             logger.error("%s cannot found %s resource." % (self.name, resourceName))
         return None
 
-    def getResourceData(self, resourceName, noWarn=False):
-        resource = self.getResource(resourceName, noWarn)
+    def get_resource_data(self, resourceName, noWarn=False):
+        resource = self.get_resource(resourceName, noWarn)
         return resource.get_data() if resource else None
 
-    def getResourceList(self):
+    def get_resource_list(self):
         return list(self.resources.values())
 
-    def getResourceNameList(self):
+    def get_resource_name_list(self):
         return list(self.resources.keys())
 
-    def getResourceAttribute(self, resource_name):
-        resource = self.getResource(resource_name)
+    def get_resource_attribute(self, resource_name):
+        resource = self.get_resource(resource_name)
         if resource:
-            return resource.getAttribute()
+            return resource.get_attribute()
         return None
 
-    def setResourceAttribute(self, resource_name, attribute_name, attribute_value, attribute_index):
+    def set_resource_attribute(self, resource_name, attribute_name, attribute_value, attribute_index):
         # rename resource
         if attribute_name == 'name':
             self.rename_resource(resource_name, attribute_value)
         else:
             # set other attributes
-            resource = self.getResource(resource_name)
+            resource = self.get_resource(resource_name)
             if resource:
-                resource.setAttribute(attribute_name, attribute_value, attribute_index)
+                resource.set_attribute(attribute_name, attribute_value, attribute_index)
 
-    def getMetaData(self, resource_name, noWarn=False):
+    def get_meta_data(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
             return self.metaDatas[resource_name]
         if not noWarn:
@@ -375,7 +375,7 @@ class ResourceLoader(object):
             resource.meta_data = meta_data
         # The new resource registered.
         if resource:
-            self.core_manager.sendResourceInfo(resource.get_resource_info())
+            self.core_manager.send_resource_info(resource.get_resource_info())
 
     def unregist_resource(self, resource):
         if resource:
@@ -383,11 +383,11 @@ class ResourceLoader(object):
                 self.metaDatas.pop(resource.name)
             if resource.name in self.resources:
                 self.resources.pop(resource.name)
-            self.core_manager.notifyDeleteResource(resource.get_resource_info())
+            self.core_manager.notify_delete_resource(resource.get_resource_info())
 
     def rename_resource(self, resource_name, new_name):
         if new_name and resource_name != new_name:
-            resource_data = self.getResourceData(resource_name)
+            resource_data = self.get_resource_data(resource_name)
             resource = self.create_resource(new_name, resource_data)
             if resource:
                 if resource_data and hasattr(resource_data, 'name'):
@@ -400,14 +400,14 @@ class ResourceLoader(object):
     def load_resource(self, resource_name):
         logger.warn("load_resource is not implemented in %s." % self.name)
 
-    def open_resource(self, resource_name):
-        logger.warn("open_resource is not implemented in %s." % self.name)
+    def action_resource(self, resource_name):
+        logger.warn("action_resource is not implemented in %s." % self.name)
 
     def duplicate_resource(self, resource_name):
         logger.warn("duplicate_resource is not implemented in %s." % self.name)
-        # meta_data = self.getMetaData(resource_name)
+        # meta_data = self.get_meta_data(resource_name)
         # new_resource = self.create_resource(resource_name)
-        # new_meta_data = self.getMetaData(new_resource.name)
+        # new_meta_data = self.get_meta_data(new_resource.name)
         #
         # if os.path.exists(meta_data.source_filepath) and not os.path.exists(new_meta_data.source_filepath):
         #     shutil.copy(meta_data.source_filepath, new_meta_data.source_filepath)
@@ -415,9 +415,9 @@ class ResourceLoader(object):
         #     logger.info("duplicate_resource : %s to %s" % (resource_name, new_resource_name))
 
     def save_resource(self, resource_name):
-        resource = self.getResource(resource_name)
-        resource_data = self.getResourceData(resource_name)
-        if resource  is not None and resource_data is not None:
+        resource = self.get_resource(resource_name)
+        resource_data = self.get_resource_data(resource_name)
+        if resource is not None and resource_data is not None:
             if hasattr(resource_data, 'get_save_data'):
                 save_data = resource_data.get_save_data()
                 self.save_resource_data(resource, save_data)
@@ -477,7 +477,7 @@ class ResourceLoader(object):
         return False
 
     def delete_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource is not None:
             logger.info("Deleted the %s." % resource.name)
             if resource.name in self.metaDatas:
@@ -504,7 +504,7 @@ class ShaderLoader(ResourceLoader):
         return self.shader_version
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             if resource.is_need_to_load():
                 file_path = resource.meta_data.resource_filepath
@@ -528,12 +528,12 @@ class ShaderLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
-        shader = self.getResourceData(resource_name)
+    def action_resource(self, resource_name):
+        shader = self.get_resource_data(resource_name)
         if shader:
             self.resource_manager.material_instance_loader.create_material_instance(resource_name=resource_name,
-                                                                                  shader_name=resource_name,
-                                                                                  macros={})
+                                                                                    shader_name=resource_name,
+                                                                                    macros={})
 
     def save_data_to_file(self, save_filepath, save_data):
         logger.info("Save : %s" % save_filepath)
@@ -562,8 +562,8 @@ class MaterialLoader(ResourceLoader):
         ResourceLoader.__init__(self, core_manager, root_path)
         self.linked_material_map = {}
 
-    def open_resource(self, resource_name):
-        material = self.getResourceData(resource_name)
+    def action_resource(self, resource_name):
+        material = self.get_resource_data(resource_name)
         if material:
             self.resource_manager.material_instance_loader.create_material_instance(resource_name=material.shader_name,
                                                                                     shader_name=material.shader_name,
@@ -585,7 +585,7 @@ class MaterialLoader(ResourceLoader):
                             break
             if reload:
                 self.load_resource(resourceName)
-                material = self.getResourceData(resourceName)
+                material = self.get_resource_data(resourceName)
                 if material and material.shader_name not in reload_shader_names:
                     reload_shader_names.append(material.shader_name)
 
@@ -593,7 +593,7 @@ class MaterialLoader(ResourceLoader):
             self.resource_manager.material_instance_loader.reload_material_instances(shader_name)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             material_datas = self.load_resource_data(resource)
             if material_datas:
@@ -629,7 +629,7 @@ class MaterialLoader(ResourceLoader):
 
     def generate_new_material(self, material_name, shader_name, compile_option, macros={}):
         logger.info("Generate new material : %s" % material_name)
-        shader = self.resource_manager.getShader(shader_name)
+        shader = self.resource_manager.get_shader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
 
         if shader:
@@ -667,7 +667,7 @@ class MaterialLoader(ResourceLoader):
 
                 if material:
                     if material.valid:
-                        resource = self.getResource(final_material_name, noWarn=True)
+                        resource = self.get_resource(final_material_name, noWarn=True)
                         if resource is None:
                             resource = self.create_resource(final_material_name)
 
@@ -675,7 +675,7 @@ class MaterialLoader(ResourceLoader):
                         resource.meta_data.include_files = material_datas.get('include_files', {})
 
                         # write material to file, and regist to resource manager
-                        shader_meta_data = self.resource_manager.shader_loader.getMetaData(shader_name)
+                        shader_meta_data = self.resource_manager.shader_loader.get_meta_data(shader_name)
                         if shader_meta_data:
                             source_filepath = shader_meta_data.resource_filepath
                         else:
@@ -699,7 +699,7 @@ class MaterialLoader(ResourceLoader):
         logger.error("Failed to generate_new_material %s." % material_name)
         return None
 
-    def getMaterial(self, shader_name, macros={}):
+    def get_material(self, shader_name, macros={}):
         if shader_name == '':
             logger.error("Error : Cannot create material. Because material name is empty.")
             return None
@@ -709,7 +709,7 @@ class MaterialLoader(ResourceLoader):
         if material_name in self.linked_material_map:
             material_name = self.linked_material_map[material_name]
 
-        material = self.getResourceData(material_name)
+        material = self.get_resource_data(material_name)
         if material is None:
             material = self.generate_new_material(material_name, shader_name, default_compile_option, macros=macros)
         return material
@@ -726,13 +726,13 @@ class MaterialInstanceLoader(ResourceLoader):
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             material_instance_data = self.load_resource_data(resource)
             if material_instance_data:
                 shader_name = material_instance_data.get('shader_name', 'default')
                 macros = material_instance_data.get('macros', {})
-                material = self.resource_manager.getMaterial(shader_name, macros)
+                material = self.resource_manager.get_material(shader_name, macros)
                 material_instance_data['material'] = material
 
                 material_instance = MaterialInstance(resource.name, **material_instance_data)
@@ -745,7 +745,7 @@ class MaterialInstanceLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
+    def action_resource(self, resource_name):
         self.core_manager.request(COMMAND.VIEW_MATERIAL_INSTANCE, resource_name)
 
     def reload_material_instances(self, shader_name):
@@ -765,7 +765,7 @@ class MaterialInstanceLoader(ResourceLoader):
 
         if shader_name:
             resource_name = self.get_new_resource_name(resource_name)
-            material = self.resource_manager.getMaterial(shader_name, macros)
+            material = self.resource_manager.get_material(shader_name, macros)
             material_instance = MaterialInstance(resource_name, material=material, shader_name=shader_name,
                                                  macros=macros)
             if material_instance.valid:
@@ -776,19 +776,19 @@ class MaterialInstanceLoader(ResourceLoader):
         logger.error('Failed to %s material instance.' % resource_name)
         return False
 
-    def getMaterialInstance(self, name, shader_name='', macros={}):
-        material_instance = self.getResourceData(name)
+    def get_material_instance(self, name, shader_name='', macros={}):
+        material_instance = self.get_resource_data(name)
         if material_instance is None:
             if self.create_material_instance(resource_name=name,
                                              shader_name=shader_name,
                                              macros=macros):
-                material_instance = self.getResourceData(name)
+                material_instance = self.get_resource_data(name)
             else:
-                material_instance = self.getResourceData('default')
+                material_instance = self.get_resource_data('default')
         else:
             for macro, value in macros.items():
                 if macro not in material_instance.macros or value != material_instance.macros[macro]:
-                    material = self.resource_manager.getMaterial(material_instance.shader_name, macros)
+                    material = self.resource_manager.get_material(material_instance.shader_name, macros)
                     material_instance.set_material(material)
             return material_instance
         return material_instance
@@ -819,11 +819,11 @@ class TextureLoader(ResourceLoader):
         # generate common textures
         TextureGenerator.generate_common_textures(self)
 
-    def open_resource(self, resource_name):
+    def action_resource(self, resource_name):
         self.core_manager.request(COMMAND.VIEW_TEXTURE, resource_name)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             meta_data = resource.meta_data
             if self.is_new_external_data(meta_data, meta_data.source_filepath):
@@ -833,18 +833,18 @@ class TextureLoader(ResourceLoader):
             if texture_datas:
                 texture_type = texture_datas.get('texture_type')
                 if TextureCube == texture_type or TextureCube.__name__ == texture_type:
-                    gray_texture = self.getResourceData('common.flat_gray')
-                    texture_datas['texture_positive_x'] = self.getResourceData(
+                    gray_texture = self.get_resource_data('common.flat_gray')
+                    texture_datas['texture_positive_x'] = self.get_resource_data(
                         texture_datas['texture_positive_x']) or gray_texture
-                    texture_datas['texture_negative_x'] = self.getResourceData(
+                    texture_datas['texture_negative_x'] = self.get_resource_data(
                         texture_datas['texture_negative_x']) or gray_texture
-                    texture_datas['texture_positive_y'] = self.getResourceData(
+                    texture_datas['texture_positive_y'] = self.get_resource_data(
                         texture_datas['texture_positive_y']) or gray_texture
-                    texture_datas['texture_negative_y'] = self.getResourceData(
+                    texture_datas['texture_negative_y'] = self.get_resource_data(
                         texture_datas['texture_negative_y']) or gray_texture
-                    texture_datas['texture_positive_z'] = self.getResourceData(
+                    texture_datas['texture_positive_z'] = self.get_resource_data(
                         texture_datas['texture_positive_z']) or gray_texture
-                    texture_datas['texture_negative_z'] = self.getResourceData(
+                    texture_datas['texture_negative_z'] = self.get_resource_data(
                         texture_datas['texture_negative_z']) or gray_texture
 
                 texture = CreateTexture(name=resource.name, **texture_datas)
@@ -872,13 +872,13 @@ class TextureLoader(ResourceLoader):
             cube_faces = cube_texutre_map[cube_texture_name]
             if len(cube_faces) == 6:
                 isCreateCube = any([cube_face in self.new_texture_list for cube_face in cube_faces])
-                cube_resource = self.getResource(cube_texture_name, noWarn=True)
+                cube_resource = self.get_resource(cube_texture_name, noWarn=True)
                 if cube_resource is None:
                     cube_resource = self.create_resource(cube_texture_name)
                     isCreateCube = True
 
                 if isCreateCube:
-                    gray_texture = self.getResourceData('common.flat_gray')
+                    gray_texture = self.get_resource_data('common.flat_gray')
                     texture_right = cube_faces['right'].get_data() or gray_texture
                     texture_left = cube_faces['left'].get_data() or gray_texture
                     texture_top = cube_faces['top'].get_data() or gray_texture
@@ -978,7 +978,7 @@ class ProceduralTextureLoader(ResourceLoader):
             self.save_resource(resource_name)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             data = self.load_resource_data(resource)
             if data is not None:
@@ -988,8 +988,8 @@ class ProceduralTextureLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
-        texture = self.getResourceData(resource_name)
+    def action_resource(self, resource_name):
+        texture = self.get_resource_data(resource_name)
         if texture is not None:
             texture.generate_texture()
 
@@ -1018,7 +1018,7 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Plane", Plane(width=4, height=4, xz_plane=True))
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             mesh_data = self.load_resource_data(resource)
             if mesh_data:
@@ -1046,8 +1046,8 @@ class MeshLoader(ResourceLoader):
             resoure.set_data(mesh)
             self.save_resource_data(resoure, mesh_data, source_filepath)
 
-    def open_resource(self, resource_name):
-        mesh = self.getResourceData(resource_name)
+    def action_resource(self, resource_name):
+        mesh = self.get_resource_data(resource_name)
         if mesh:
             self.resource_manager.model_loader.create_model(mesh)
 
@@ -1068,8 +1068,8 @@ class ModelLoader(ResourceLoader):
         super(ModelLoader, self).initialize()
 
         # Regist basic meshs
-        self.create_resource("Triangle", Model("Triangle", mesh=self.resource_manager.getMesh('Triangle')))
-        self.create_resource("Quad", Model("Quad", mesh=self.resource_manager.getMesh('Quad')))
+        self.create_resource("Triangle", Model("Triangle", mesh=self.resource_manager.get_mesh('Triangle')))
+        self.create_resource("Quad", Model("Quad", mesh=self.resource_manager.get_mesh('Quad')))
 
     def create_model(self, mesh):
         resource = self.create_resource(mesh.name)
@@ -1078,12 +1078,12 @@ class ModelLoader(ResourceLoader):
         self.save_resource(resource.name)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             object_data = self.load_resource_data(resource)
             if object_data:
-                mesh = self.resource_manager.getMesh(object_data.get('mesh'))
-                material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
+                mesh = self.resource_manager.get_mesh(object_data.get('mesh'))
+                material_instances = [self.resource_manager.get_material_instance(material_instance_name)
                                       for material_instance_name in object_data.get('material_instances', [])]
                 obj = Model(resource.name, mesh=mesh, material_instances=material_instances)
                 resource.set_data(obj)
@@ -1091,10 +1091,10 @@ class ModelLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
-        model = self.getResourceData(resource_name)
+    def action_resource(self, resource_name):
+        model = self.get_resource_data(resource_name)
         if model:
-            self.scene_manager.addObjectHere(model)
+            self.scene_manager.add_object_here(model)
 
 
 # -----------------------#
@@ -1108,15 +1108,15 @@ class SceneLoader(ResourceLoader):
     USE_FILE_COMPRESS_TO_SAVE = False
 
     def save_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource and resource_name == self.scene_manager.get_current_scene_name():
             scene_data = self.scene_manager.get_save_data()
             self.save_resource_data(resource, scene_data)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
-            meta_data = self.getMetaData(resource_name)
+            meta_data = self.get_meta_data(resource_name)
             if resource and meta_data:
                 if os.path.exists(meta_data.resource_filepath):
                     scene_datas = self.load_resource_data(resource)
@@ -1125,10 +1125,10 @@ class SceneLoader(ResourceLoader):
 
                 if scene_datas:
                     for object_data in scene_datas.get('static_actors', []):
-                        object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
+                        object_data['model'] = self.resource_manager.get_model(object_data.get('model'))
 
                     for object_data in scene_datas.get('skeleton_actors', []):
-                        object_data['model'] = self.resource_manager.getModel(object_data.get('model'))
+                        object_data['model'] = self.resource_manager.get_model(object_data.get('model'))
 
                     self.scene_manager.open_scene(resource_name, scene_datas)
                     resource.set_data(scene_datas)
@@ -1136,7 +1136,7 @@ class SceneLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
+    def action_resource(self, resource_name):
         self.load_resource(resource_name)
 
 
@@ -1187,7 +1187,7 @@ class FontLoader(ResourceLoader):
         self.check_font_data(font_datas, resoure, source_filepath)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
             meta_data = resource.meta_data
             font_datas = self.load_resource_data(resource)
@@ -1227,31 +1227,30 @@ class ParticleLoader(ResourceLoader):
     fileExt = '.particle'
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def create_particle(self, particle):
-        resource = self.create_resource(particle.name)
+    def create_particle(self):
+        resource = self.create_resource('particle')
         particle = Particle(name=resource.name)
         resource.set_data(particle)
         self.save_resource(resource.name)
 
     def load_resource(self, resource_name):
-        resource = self.getResource(resource_name)
+        resource = self.get_resource(resource_name)
         if resource:
-            particles_data = self.load_resource_data(resource)
-            if particles_data is not None:
-                # mesh = self.resource_manager.getMesh(object_data.get('mesh'))
-                # material_instances = [self.resource_manager.getMaterialInstance(material_instance_name)
+            emitter_infos = self.load_resource_data(resource)
+            if emitter_infos is not None:
+                # mesh = self.resource_manager.get_mesh(object_data.get('mesh'))
+                # material_instances = [self.resource_manager.get_material_instance(material_instance_name)
                 #                       for material_instance_name in object_data.get('material_instances', [])]
-                particle = Particle(name=resource.name, **particle_data)
+                particle = Particle(resource.name, emitter_infos)
                 resource.set_data(particle)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def open_resource(self, resource_name):
-        pass
-        # model = self.getResourceData(resource_name)
-        # if model:
-        #     self.scene_manager.addObjectHere(model)
+    def action_resource(self, resource_name):
+        particle = self.get_resource_data(resource_name)
+        if model is not None:
+            self.scene_manager.add_particle(particle)
 
 
 # -----------------------#
@@ -1337,38 +1336,38 @@ class ResourceManager(Singleton):
         check_directory_and_mkdir(new_project_dir)
         copy_tree(self.PathResources, new_project_dir)
 
-    def getResourceNameAndTypeList(self):
+    def get_resource_name_and_type_list(self):
         """
         :return [(resource name, resource type)]:
         """
         result = []
         for resource_loader in self.resource_loaders:
             result += [(resName, resource_loader.resource_type_name) for resName in
-                       resource_loader.getResourceNameList()]
+                       resource_loader.get_resource_name_list()]
         return
 
-    def setResourceAttribute(self, resource_name, resource_type_name, attribute_name, attribute_value, attribute_index):
+    def set_resource_attribute(self, resource_name, resource_type_name, attribute_name, attribute_value, attribute_index):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.setResourceAttribute(resource_name, attribute_name, attribute_value, attribute_index)
+            return resource_loader.set_resource_attribute(resource_name, attribute_name, attribute_value, attribute_index)
         return None
 
-    def getResourceAttribute(self, resource_name, resource_type_name):
+    def get_resource_attribute(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.getResourceAttribute(resource_name)
+            return resource_loader.get_resource_attribute(resource_name)
         return None
 
-    def getResourceData(self, resource_name, resource_type_name):
+    def get_resource_data(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.getResourceData(resource_name)
+            return resource_loader.get_resource_data(resource_name)
         return None
 
-    def getMetaData(self, resource_name, resource_type_name):
+    def get_meta_data(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.getMetaData(resource_name)
+            return resource_loader.get_meta_data(resource_name)
         return None
 
     def load_resource(self, resource_name, resource_type_name):
@@ -1376,10 +1375,10 @@ class ResourceManager(Singleton):
         if resource_loader:
             resource_loader.load_resource(resource_name)
 
-    def open_resource(self, resource_name, resource_type_name):
+    def action_resource(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            resource_loader.open_resource(resource_name)
+            resource_loader.action_resource(resource_name)
 
     def duplicate_resource(self, resource_name, resource_type_name):
         resource_loader = self.find_resource_loader(resource_type_name)
@@ -1410,11 +1409,8 @@ class ResourceManager(Singleton):
 
     # FUNCTIONS : Font
 
-    def getFont(self, fontName):
-        return self.font_loader.getResourceData(fontName)
-
-    def getFontNameList(self):
-        return self.font_loader.getResourceNameList()
+    def get_font(self, fontName):
+        return self.font_loader.get_resource_data(fontName)
 
     def get_default_font_file(self):
         return os.path.join(self.root_path, 'Externals', 'Fonts', 'NanumGothic_Coding.ttf')
@@ -1423,68 +1419,35 @@ class ResourceManager(Singleton):
     def get_shader_version(self):
         return self.shader_loader.get_shader_version()
 
-    def getShader(self, shaderName):
-        return self.shader_loader.getResourceData(shaderName)
+    def get_shader(self, shaderName):
+        return self.shader_loader.get_resource_data(shaderName)
 
-    def getShaderNameList(self):
-        return self.shader_loader.getResourceNameList()
+    def get_material(self, shader_name, macros={}):
+        return self.material_loader.get_material(shader_name, macros)
 
-    # FUNCTIONS : Material
+    def get_material_instance(self, name, shader_name='', macros={}):
+        return self.material_instance_loader.get_material_instance(name, shader_name=shader_name, macros=macros)
 
-    def getMaterialNameList(self):
-        return self.material_loader.getResourceNameList()
-
-    def getMaterial(self, shader_name, macros={}):
-        return self.material_loader.getMaterial(shader_name, macros)
-
-    # FUNCTIONS : MaterialInstance
-
-    def getMaterialInstanceNameList(self):
-        return self.material_instance_loader.getResourceNameList()
-
-    def getMaterialInstance(self, name, shader_name='', macros={}):
-        return self.material_instance_loader.getMaterialInstance(name, shader_name=shader_name, macros=macros)
-
-    def getDefaultMaterialInstance(self, skeletal=False):
+    def get_default_material_instance(self, skeletal=False):
         if skeletal:
-            return self.material_instance_loader.getMaterialInstance(name='default_skeletal',
-                                                                   shader_name='default',
-                                                                   macros={'SKELETAL': 1})
-        return self.material_instance_loader.getMaterialInstance('default')
+            return self.material_instance_loader.get_material_instance(name='default_skeletal',
+                                                                       shader_name='default',
+                                                                       macros={'SKELETAL': 1})
+        return self.material_instance_loader.get_material_instance('default')
 
-    # FUNCTIONS : Mesh
-
-    def getMeshNameList(self):
-        return self.mesh_loader.getResourceNameList()
-
-    def getMesh(self, meshName):
-        return self.mesh_loader.getResourceData(meshName)
+    def get_mesh(self, meshName):
+        return self.mesh_loader.get_resource_data(meshName)
 
     # FUNCTIONS : Procedural Texture
 
-    def getProceduralTexture(self, textureName):
-        return self.procedural_texture_loader.getResourceData(textureName)
+    def get_procedural_texture(self, textureName):
+        return self.procedural_texture_loader.get_resource_data(textureName)
 
-    # FUNCTIONS : ProTexture
+    def get_texture(self, textureName):
+        return self.texture_loader.get_resource_data(textureName)
 
-    def getTextureNameList(self):
-        return self.texture_loader.getResourceNameList()
+    def get_model(self, modelName):
+        return self.model_loader.get_resource_data(modelName)
 
-    def getTexture(self, textureName):
-        return self.texture_loader.getResourceData(textureName)
-
-    # FUNCTIONS
-
-    def getModelNameList(self):
-        return self.model_loader.getResourceNameList()
-
-    def getModel(self, modelName):
-        return self.model_loader.getResourceData(modelName)
-
-    # FUNCTIONS : Scene
-
-    def getSceneNameList(self):
-        return self.scene_loader.getResourceNameList()
-
-    def getScene(self, SceneName):
-        return self.scene_loader.getResourceData(SceneName)
+    def get_scene(self, SceneName):
+        return self.scene_loader.get_resource_data(SceneName)

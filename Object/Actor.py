@@ -19,9 +19,9 @@ class StaticActor:
 
         # transform
         self.transform = TransformObject()
-        self.transform.setPos(object_data.get('pos', [0, 0, 0]))
-        self.transform.setRot(object_data.get('rot', [0, 0, 0]))
-        self.transform.setScale(object_data.get('scale', [1, 1, 1]))
+        self.transform.set_pos(object_data.get('pos', [0, 0, 0]))
+        self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
+        self.transform.set_scale(object_data.get('scale', [1, 1, 1]))
 
         self.set_model(object_data.get('model'))
 
@@ -42,21 +42,21 @@ class StaticActor:
         )
         return save_data
 
-    def getAttribute(self):
-        self.attributes.setAttribute('name', self.name)
-        self.attributes.setAttribute('pos', self.transform.pos)
-        self.attributes.setAttribute('rot', self.transform.rot)
-        self.attributes.setAttribute('scale', self.transform.scale)
-        self.attributes.setAttribute('model', self.model.name if self.model else '')
+    def get_attribute(self):
+        self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('pos', self.transform.pos)
+        self.attributes.set_attribute('rot', self.transform.rot)
+        self.attributes.set_attribute('scale', self.transform.scale)
+        self.attributes.set_attribute('model', self.model.name if self.model else '')
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'pos':
-            self.transform.setPos(attributeValue)
+            self.transform.set_pos(attributeValue)
         elif attributeName == 'rot':
-            self.transform.setRot(attributeValue)
+            self.transform.set_rotation(attributeValue)
         elif attributeName == 'scale':
-            self.transform.setScale(attributeValue)
+            self.transform.set_scale(attributeValue)
 
     def get_mesh(self):
         return self.model.mesh if self.has_mesh else None
@@ -71,7 +71,7 @@ class StaticActor:
         self.selected = selected
 
     def update(self, dt):
-        self.transform.updateTransform()
+        self.transform.update_transform()
 
 
 class SkeletonActor(StaticActor):
@@ -98,12 +98,12 @@ class SkeletonActor(StaticActor):
 
     def update(self, dt):
         # TEST_CODE
-        # self.transform.setPitch((time.time() * 0.3) % (math.pi * 2.0))
-        # self.transform.setYaw((time.time() * 0.4) % (math.pi * 2.0))
-        # self.transform.setRoll((time.time() * 0.5) % (math.pi * 2.0))
+        # self.transform.set_pitch((time.time() * 0.3) % (math.pi * 2.0))
+        # self.transform.set_yaw((time.time() * 0.4) % (math.pi * 2.0))
+        # self.transform.set_roll((time.time() * 0.5) % (math.pi * 2.0))
 
         # update
-        self.transform.updateTransform()
+        self.transform.update_transform()
 
         # update animation
         if self.has_mesh:

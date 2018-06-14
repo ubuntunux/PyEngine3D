@@ -23,7 +23,7 @@ class Model:
     def set_mesh(self, mesh):
         if mesh:
             self.mesh = mesh
-            default_material_instance = CoreManager.instance().resource_manager.getDefaultMaterialInstance(
+            default_material_instance = CoreManager.instance().resource_manager.get_default_material_instance(
                 skeletal=mesh.has_bone())
             material_instances = [default_material_instance, ] * len(mesh.geometries)
             for i in range(min(len(self.material_instances), len(material_instances))):
@@ -55,18 +55,18 @@ class Model:
         if attribute_index < len(self.material_instances):
             self.material_instances[attribute_index] = material_instance
 
-    def getAttribute(self):
-        self.attributes.setAttribute('name', self.name)
-        self.attributes.setAttribute('mesh', self.mesh)
-        self.attributes.setAttribute('material_instances', self.get_material_instance_names())
+    def get_attribute(self):
+        self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('mesh', self.mesh)
+        self.attributes.set_attribute('material_instances', self.get_material_instance_names())
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'mesh':
-            mesh = CoreManager.instance().resource_manager.getMesh(attributeValue)
+            mesh = CoreManager.instance().resource_manager.get_mesh(attributeValue)
             if mesh and self.mesh != mesh:
                 self.set_mesh(mesh)
         elif attributeName == 'material_instances':
-            material_instance = CoreManager.instance().resource_manager.getMaterialInstance(
+            material_instance = CoreManager.instance().resource_manager.get_material_instance(
                 attributeValue[attribute_index])
             self.set_material_instance(material_instance, attribute_index)

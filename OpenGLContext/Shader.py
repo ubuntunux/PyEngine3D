@@ -156,8 +156,8 @@ class Shader:
     def get_save_data(self):
         return self.shader_code
 
-    def getAttribute(self):
-        self.attribute.setAttribute("name", self.name)
+    def get_attribute(self):
+        self.attribute.set_attribute("name", self.name)
         return self.attribute
 
     def generate_shader_codes(self, shader_version, compile_option, external_macros={}):

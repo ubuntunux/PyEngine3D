@@ -12,7 +12,7 @@ from PyQt4.Qt import *
 class PopupBase(QtGui.QDialog):
     def __init__(self, parent=None, title="", size=[300, 200]):
         super(PopupBase, self).__init__(parent)
-        self.setWindowTitle(title)
+        self.set_window_title(title)
         self.resize(*size)
 
     def showEvent(self, event):
@@ -51,7 +51,7 @@ class InputDialogDemo(PopupBase):
         layout.addRow(self.btn2, self.le2)
 
         self.setLayout(layout)
-        self.setWindowTitle("Input Dialog demo")
+        self.set_window_title("Input Dialog demo")
 
     def getItem(self):
         items = ("C", "C++", "Java", "Python")

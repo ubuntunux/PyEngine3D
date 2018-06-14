@@ -244,26 +244,26 @@ class Texture:
     def set_attachment(self, attachment):
         self.attachment = attachment
 
-    def getAttribute(self):
-        self.attribute.setAttribute("name", self.name)
-        self.attribute.setAttribute("target", self.target)
-        self.attribute.setAttribute("width", self.width)
-        self.attribute.setAttribute("height", self.height)
-        self.attribute.setAttribute("depth", self.depth)
-        self.attribute.setAttribute("image_mode", self.image_mode)
-        self.attribute.setAttribute("internal_format", self.internal_format)
-        self.attribute.setAttribute("texture_format", self.texture_format)
-        self.attribute.setAttribute("data_type", self.data_type)
-        self.attribute.setAttribute("min_filter", self.min_filter)
-        self.attribute.setAttribute("mag_filter", self.mag_filter)
-        self.attribute.setAttribute("multisample_count", self.multisample_count)
-        self.attribute.setAttribute("wrap", self.wrap)
-        self.attribute.setAttribute("wrap_s", self.wrap_s)
-        self.attribute.setAttribute("wrap_t", self.wrap_t)
-        self.attribute.setAttribute("wrap_r", self.wrap_r)
+    def get_attribute(self):
+        self.attribute.set_attribute("name", self.name)
+        self.attribute.set_attribute("target", self.target)
+        self.attribute.set_attribute("width", self.width)
+        self.attribute.set_attribute("height", self.height)
+        self.attribute.set_attribute("depth", self.depth)
+        self.attribute.set_attribute("image_mode", self.image_mode)
+        self.attribute.set_attribute("internal_format", self.internal_format)
+        self.attribute.set_attribute("texture_format", self.texture_format)
+        self.attribute.set_attribute("data_type", self.data_type)
+        self.attribute.set_attribute("min_filter", self.min_filter)
+        self.attribute.set_attribute("mag_filter", self.mag_filter)
+        self.attribute.set_attribute("multisample_count", self.multisample_count)
+        self.attribute.set_attribute("wrap", self.wrap)
+        self.attribute.set_attribute("wrap_s", self.wrap_s)
+        self.attribute.set_attribute("wrap_t", self.wrap_t)
+        self.attribute.set_attribute("wrap_r", self.wrap_r)
         return self.attribute
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName) and "" != attributeValue:
             setattr(self, attributeName, eval(attributeValue))
 
@@ -475,12 +475,12 @@ class TextureCube(Texture):
         save_data['texture_negative_z'] = self.texture_negative_z.name
         return save_data
 
-    def getAttribute(self):
-        Texture.getAttribute(self)
-        self.attribute.setAttribute("texture_positive_x", self.texture_positive_x.name)
-        self.attribute.setAttribute("texture_negative_x", self.texture_negative_x.name)
-        self.attribute.setAttribute("texture_positive_y", self.texture_positive_y.name)
-        self.attribute.setAttribute("texture_negative_y", self.texture_negative_y.name)
-        self.attribute.setAttribute("texture_positive_z", self.texture_positive_z.name)
-        self.attribute.setAttribute("texture_negative_z", self.texture_negative_z.name)
+    def get_attribute(self):
+        Texture.get_attribute(self)
+        self.attribute.set_attribute("texture_positive_x", self.texture_positive_x.name)
+        self.attribute.set_attribute("texture_negative_x", self.texture_negative_x.name)
+        self.attribute.set_attribute("texture_positive_y", self.texture_positive_y.name)
+        self.attribute.set_attribute("texture_negative_y", self.texture_negative_y.name)
+        self.attribute.set_attribute("texture_positive_z", self.texture_positive_z.name)
+        self.attribute.set_attribute("texture_negative_z", self.texture_negative_z.name)
         return self.attribute

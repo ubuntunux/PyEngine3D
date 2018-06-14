@@ -38,9 +38,9 @@ class FontManager(Singleton):
     def initialize(self, core_manager):
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
-        self.font_shader = self.resource_manager.getMaterialInstance("font")
+        self.font_shader = self.resource_manager.get_material_instance("font")
 
-        font_datas = self.resource_manager.getFont('NanumBarunGothic')
+        font_datas = self.resource_manager.get_font('NanumBarunGothic')
         ascii_data = font_datas['ascii']
         self.ascii = FontData(ascii_data)
 

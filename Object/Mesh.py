@@ -140,12 +140,12 @@ class Mesh:
     def get_animation_count(self):
         return len(self.animations)
 
-    def getAttribute(self):
-        self.attributes.setAttribute("name", self.name)
-        self.attributes.setAttribute("geometries", [geometry.name for geometry in self.geometries])
+    def get_attribute(self):
+        self.attributes.set_attribute("name", self.name)
+        self.attributes.set_attribute("geometries", [geometry.name for geometry in self.geometries])
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         pass
 
 

@@ -244,14 +244,14 @@ def slerp(quaternion1, quaternion2, amount):
     return (num3 * quaternion1) + (num2 * quaternion2)
 
 
-def setIdentityMatrix(M):
+def set_identity_matrix(M):
     M[...] = [[1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0]]
 
 
-def getTranslateMatrix(x, y, z):
+def get_translate_matrix(x, y, z):
     T = [[1, 0, 0, 0],
          [0, 1, 0, 0],
          [0, 0, 1, 0],
@@ -259,7 +259,7 @@ def getTranslateMatrix(x, y, z):
     return np.array(T, dtype=np.float32)
 
 
-def setTranslateMatrix(M, x, y, z):
+def set_translate_matrix(M, x, y, z):
     M[:] = [[1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
@@ -275,7 +275,7 @@ def matrix_translate(M, x, y, z):
     M[...] = np.dot(M, T)
 
 
-def getScaleMatrix(x, y, z):
+def get_scale_matrix(x, y, z):
     S = [[x, 0, 0, 0],
          [0, y, 0, 0],
          [0, 0, z, 0],
@@ -283,7 +283,7 @@ def getScaleMatrix(x, y, z):
     return np.array(S, dtype=np.float32)
 
 
-def setScaleMatrix(M, x, y, z):
+def set_scale_matrix(M, x, y, z):
     M[:] = [[x, 0, 0, 0],
             [0, y, 0, 0],
             [0, 0, z, 0],
@@ -299,7 +299,7 @@ def matrix_scale(M, x, y, z):
     M[...] = np.dot(M, S)
 
 
-def getRotationMatrixX(radian):
+def get_rotation_matrix_x(radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -310,7 +310,7 @@ def getRotationMatrixX(radian):
     return R
 
 
-def getRotationMatrixY(radian):
+def get_rotation_matrix_y(radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -321,7 +321,7 @@ def getRotationMatrixY(radian):
     return R
 
 
-def getRotationMatrixZ(radian):
+def get_rotation_matrix_z(radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -332,7 +332,7 @@ def getRotationMatrixZ(radian):
     return R
 
 
-def matrix_rotateX(M, radian):
+def matrix_rotate_x(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -343,7 +343,7 @@ def matrix_rotateX(M, radian):
     M[...] = np.dot(M, R)
 
 
-def matrix_rotateY(M, radian):
+def matrix_rotate_y(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -354,7 +354,7 @@ def matrix_rotateY(M, radian):
     M[...] = np.dot(M, R)
 
 
-def matrix_rotateZ(M, radian):
+def matrix_rotate_z(M, radian):
     cosT = math.cos(radian)
     sinT = math.sin(radian)
     R = np.array(
@@ -384,9 +384,9 @@ def swap_up_axis_matrix(matrix, transpose, isInverseMatrix, up_axis):
         matrix = matrix.T
     if up_axis == 'Z_UP':
         if isInverseMatrix:
-            return np.dot(getRotationMatrixX(HALF_PI), matrix)
+            return np.dot(get_rotation_matrix_x(HALF_PI), matrix)
         else:
-            return np.dot(matrix, getRotationMatrixX(-HALF_PI))
+            return np.dot(matrix, get_rotation_matrix_x(-HALF_PI))
     return matrix
 
 

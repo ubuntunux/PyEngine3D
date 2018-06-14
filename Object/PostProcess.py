@@ -112,18 +112,18 @@ class PostProcess:
         self.rendertarget_manager = self.core_manager.rendertarget_manager
         self.framebuffer_manager = FrameBufferManager.instance()
 
-        self.quad = self.resource_manager.getMesh("Quad")
+        self.quad = self.resource_manager.get_mesh("Quad")
         self.quad_geometry = self.quad.get_geometry()
 
-        self.bloom = self.resource_manager.getMaterialInstance("bloom")
-        self.bloom_highlight = self.resource_manager.getMaterialInstance("bloom_highlight")
-        self.bloom_downsampling = self.resource_manager.getMaterialInstance("bloom_downsampling")
+        self.bloom = self.resource_manager.get_material_instance("bloom")
+        self.bloom_highlight = self.resource_manager.get_material_instance("bloom_highlight")
+        self.bloom_downsampling = self.resource_manager.get_material_instance("bloom_downsampling")
 
-        self.onepass_bloom = self.resource_manager.getMaterialInstance("examples.onepass_bloom")
-        self.onepass_bloom_composite = self.resource_manager.getMaterialInstance("examples.onepass_bloom_composite")
+        self.onepass_bloom = self.resource_manager.get_material_instance("examples.onepass_bloom")
+        self.onepass_bloom_composite = self.resource_manager.get_material_instance("examples.onepass_bloom_composite")
 
         # SSAO
-        self.ssao = self.resource_manager.getMaterialInstance("ssao")
+        self.ssao = self.resource_manager.get_material_instance("ssao")
         for i in range(self.ssao_kernel_size):
             scale = float(i) / float(self.ssao_kernel_size)
             scale = min(max(0.1, scale * scale), 1.0)
@@ -131,24 +131,24 @@ class PostProcess:
             self.ssao_kernel[i][1] = random.uniform(0.5, 1.0)
             self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
-        self.ssao_random_texture = self.resource_manager.getTexture('common.random_normal')
+        self.ssao_random_texture = self.resource_manager.get_texture('common.random_normal')
 
-        self.velocity = self.resource_manager.getMaterialInstance("velocity")
+        self.velocity = self.resource_manager.get_material_instance("velocity")
 
-        self.tonemapping = self.resource_manager.getMaterialInstance("tonemapping")
-        self.blur = self.resource_manager.getMaterialInstance("blur")
-        self.circle_blur = self.resource_manager.getMaterialInstance("circle_blur")
-        self.gaussian_blur = self.resource_manager.getMaterialInstance("gaussian_blur")
-        self.motion_blur = self.resource_manager.getMaterialInstance("motion_blur")
-        self.screeen_space_reflection = self.resource_manager.getMaterialInstance("screen_space_reflection")
-        self.linear_depth = self.resource_manager.getMaterialInstance("linear_depth")
-        self.generate_max_z = self.resource_manager.getMaterialInstance("generate_max_z")
-        self.deferred_shading = self.resource_manager.getMaterialInstance("deferred_shading")
-        self.copy_texture_mi = self.resource_manager.getMaterialInstance("copy_texture")
-        self.render_texture_mi = self.resource_manager.getMaterialInstance("render_texture")
+        self.tonemapping = self.resource_manager.get_material_instance("tonemapping")
+        self.blur = self.resource_manager.get_material_instance("blur")
+        self.circle_blur = self.resource_manager.get_material_instance("circle_blur")
+        self.gaussian_blur = self.resource_manager.get_material_instance("gaussian_blur")
+        self.motion_blur = self.resource_manager.get_material_instance("motion_blur")
+        self.screeen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
+        self.linear_depth = self.resource_manager.get_material_instance("linear_depth")
+        self.generate_max_z = self.resource_manager.get_material_instance("generate_max_z")
+        self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
+        self.copy_texture_mi = self.resource_manager.get_material_instance("copy_texture")
+        self.render_texture_mi = self.resource_manager.get_material_instance("render_texture")
 
         # TAA
-        self.temporal_antialiasing = self.resource_manager.getMaterialInstance("temporal_antialiasing")
+        self.temporal_antialiasing = self.resource_manager.get_material_instance("temporal_antialiasing")
 
         def get_anti_aliasing_name(anti_aliasing):
             anti_aliasing = str(anti_aliasing)
@@ -157,43 +157,43 @@ class PostProcess:
         anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x))
                               for x in range(AntiAliasing.COUNT.value)]
         # Send to GUI
-        self.core_manager.sendAntiAliasingList(anti_aliasing_list)
+        self.core_manager.send_anti_aliasing_list(anti_aliasing_list)
 
-    def getAttribute(self):
-        self.Attributes.setAttribute('is_render_bloom', self.is_render_bloom)
-        self.Attributes.setAttribute('bloom_intensity', self.bloom_intensity)
-        self.Attributes.setAttribute('bloom_threshold_min', self.bloom_threshold_min)
-        self.Attributes.setAttribute('bloom_threshold_max', self.bloom_threshold_max)
-        self.Attributes.setAttribute('bloom_scale', self.bloom_scale)
-        self.Attributes.setAttribute('msaa_multisample_count', self.msaa_multisample_count)
-        self.Attributes.setAttribute('motion_blur_scale', self.motion_blur_scale)
+    def get_attribute(self):
+        self.Attributes.set_attribute('is_render_bloom', self.is_render_bloom)
+        self.Attributes.set_attribute('bloom_intensity', self.bloom_intensity)
+        self.Attributes.set_attribute('bloom_threshold_min', self.bloom_threshold_min)
+        self.Attributes.set_attribute('bloom_threshold_max', self.bloom_threshold_max)
+        self.Attributes.set_attribute('bloom_scale', self.bloom_scale)
+        self.Attributes.set_attribute('msaa_multisample_count', self.msaa_multisample_count)
+        self.Attributes.set_attribute('motion_blur_scale', self.motion_blur_scale)
 
-        self.Attributes.setAttribute('is_render_ssao', self.is_render_ssao)
-        self.Attributes.setAttribute('ssao_radius_min_max', self.ssao_radius_min_max)
-        self.Attributes.setAttribute('ssao_blur_radius', self.ssao_blur_radius)
+        self.Attributes.set_attribute('is_render_ssao', self.is_render_ssao)
+        self.Attributes.set_attribute('ssao_radius_min_max', self.ssao_radius_min_max)
+        self.Attributes.set_attribute('ssao_blur_radius', self.ssao_blur_radius)
 
-        self.Attributes.setAttribute('is_render_ssr', self.is_render_ssr)
-        self.Attributes.setAttribute('is_render_motion_blur', self.is_render_motion_blur)
+        self.Attributes.set_attribute('is_render_ssr', self.is_render_ssr)
+        self.Attributes.set_attribute('is_render_motion_blur', self.is_render_motion_blur)
 
-        self.Attributes.setAttribute('is_render_tonemapping', self.is_render_tonemapping)
-        self.Attributes.setAttribute('exposure', self.exposure)
-        self.Attributes.setAttribute('contrast', self.contrast)
+        self.Attributes.set_attribute('is_render_tonemapping', self.is_render_tonemapping)
+        self.Attributes.set_attribute('exposure', self.exposure)
+        self.Attributes.set_attribute('contrast', self.contrast)
 
-        self.Attributes.setAttribute('debug_absolute', self.debug_absolute)
-        self.Attributes.setAttribute('debug_mipmap', self.debug_mipmap)
-        self.Attributes.setAttribute('debug_intensity_min', self.debug_intensity_min)
-        self.Attributes.setAttribute('debug_intensity_max', self.debug_intensity_max)
+        self.Attributes.set_attribute('debug_absolute', self.debug_absolute)
+        self.Attributes.set_attribute('debug_mipmap', self.debug_mipmap)
+        self.Attributes.set_attribute('debug_intensity_min', self.debug_intensity_min)
+        self.Attributes.set_attribute('debug_intensity_max', self.debug_intensity_max)
 
-        self.Attributes.setAttribute('is_render_material_instance', self.is_render_material_instance)
-        self.Attributes.setAttribute('render_material_instance', self.target_material_instance)
+        self.Attributes.set_attribute('is_render_material_instance', self.is_render_material_instance)
+        self.Attributes.set_attribute('render_material_instance', self.target_material_instance)
         return self.Attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if attributeName == 'msaa_multisample_count':
             self.msaa_multisample_count = attributeValue
             self.set_anti_aliasing(self.anti_aliasing.value, force=True)
         elif attributeName == 'render_material_instance':
-            target_material_instance = self.resource_manager.getMaterialInstance(attributeValue)
+            target_material_instance = self.resource_manager.get_material_instance(attributeValue)
             if target_material_instance is not None and attributeValue == target_material_instance.name:
                 self.target_material_instance = target_material_instance
             else:

@@ -117,7 +117,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         uic.loadUi(UI_FILENAME, self)
 
         # set windows title
-        self.setWindowTitle(project_filename if project_filename else "Default Project")
+        self.set_window_title(project_filename if project_filename else "Default Project")
 
         # exit
         actionExit = self.findChild(QtGui.QAction, "actionExit")
@@ -139,9 +139,9 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         actionWireframe = self.findChild(QtGui.QAction, "actionWireframe")
         actionShading = self.findChild(QtGui.QAction, "actionShading")
         QtCore.QObject.connect(actionWireframe, QtCore.SIGNAL("triggered()"),
-                               lambda: self.setViewMode(COMMAND.VIEWMODE_WIREFRAME))
+                               lambda: self.set_view_mode(COMMAND.VIEWMODE_WIREFRAME))
         QtCore.QObject.connect(actionShading, QtCore.SIGNAL("triggered()"),
-                               lambda: self.setViewMode(COMMAND.VIEWMODE_SHADING))
+                               lambda: self.set_view_mode(COMMAND.VIEWMODE_SHADING))
 
         # sort ui items
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.SORT_UI_ITEMS)), self.sort_items)
@@ -149,25 +149,25 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Resource list
         self.resourceListWidget = self.findChild(QtGui.QTreeWidget, "resourceListWidget")
         self.resource_menu = QMenu()
-        self.resource_menu.addAction(self.tr("Load"), self.loadResource)
+        self.resource_menu.addAction(self.tr("Load"), self.load_resource)
         self.resource_menu.addAction(self.tr("Open"), self.openResource)
-        self.resource_menu.addAction(self.tr("Duplicate"), self.duplicateResource)
-        self.resource_menu.addAction(self.tr("Save"), self.saveResource)
-        self.resource_menu.addAction(self.tr("Delete"), self.deleteResource)
+        self.resource_menu.addAction(self.tr("Duplicate"), self.duplicate_resource)
+        self.resource_menu.addAction(self.tr("Save"), self.save_resource)
+        self.resource_menu.addAction(self.tr("Delete"), self.delete_resource)
         self.resourceListWidget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.resourceListWidget.customContextMenuRequested.connect(self.openResourceMenu)
         self.resourceListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.resourceListWidget.setSortingEnabled(True)
         self.resourceListWidget.sortItems(0, 0)
         self.resourceListWidget.sortItems(1, 0)
-        self.resourceListWidget.itemDoubleClicked.connect(self.loadResource)
-        self.resourceListWidget.itemClicked.connect(self.selectResource)
+        self.resourceListWidget.itemDoubleClicked.connect(self.load_resource)
+        self.resourceListWidget.itemClicked.connect(self.select_resource)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_LIST)),
-                     self.addResourceList)
+                     self.add_resource_list)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_INFO)),
-                     self.setResourceInfo)
+                     self.set_resource_info)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE)),
-                     self.fillResourceAttribute)
+                     self.fill_resource_attribute)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_RESOURCE_INFO)),
                      self.delete_resource_info)
 
@@ -175,34 +175,34 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         btn.clicked.connect(self.openResource)
 
         btn = self.findChild(QtGui.QPushButton, "btnSaveResource")
-        btn.clicked.connect(self.saveResource)
+        btn.clicked.connect(self.save_resource)
 
         btn = self.findChild(QtGui.QPushButton, "btnDeleteResource")
-        btn.clicked.connect(self.deleteResource)
+        btn.clicked.connect(self.delete_resource)
 
         btn = self.findChild(QtGui.QPushButton, "btnTest")
         btn.clicked.connect(self.test)
 
         btn = self.findChild(QtGui.QPushButton, "btnAddLight")
-        btn.clicked.connect(self.addLight)
+        btn.clicked.connect(self.add_light)
 
         # screen
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_SCREEN_INFO)),
-                     self.setScreenInfo)
+                     self.set_screen_info)
         self.spinWidth = self.findChild(QtGui.QSpinBox, "spinWidth")
         self.spinHeight = self.findChild(QtGui.QSpinBox, "spinHeight")
         self.checkFullScreen = self.findChild(QtGui.QCheckBox, "checkFullScreen")
 
         btn = self.findChild(QtGui.QPushButton, "btnChangeResolution")
-        btn.clicked.connect(self.changeResolution)
+        btn.clicked.connect(self.change_resolution)
 
         # render targets
         self.comboRenderTargets = self.findChild(QtGui.QComboBox, "comboRenderTargets")
         self.comboRenderTargets.activated.connect(self.view_rendertarget)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST)),
-                     self.clearRenderTargetList)
+                     self.clear_render_target_list)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO)),
-                     self.addRenderTarget)
+                     self.add_render_target)
 
         # rendering type
         self.comboRenderingType = self.findChild(QtGui.QComboBox, "comboRenderingType")
@@ -228,35 +228,35 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
-        self.object_menu.addAction(self.tr("Action"), self.actionObject)
-        self.object_menu.addAction(self.tr("Remove"), self.deleteObject)
+        self.object_menu.addAction(self.tr("Action"), self.action_object)
+        self.object_menu.addAction(self.tr("Remove"), self.delete_object)
         self.objectList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.objectList.customContextMenuRequested.connect(self.openObjectMenu)
         self.objectList.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.objectList.setSortingEnabled(True)
         self.objectList.sortItems(0, 0)
         self.objectList.sortItems(1, 0)
-        self.objectList.itemClicked.connect(self.selectObject)
-        self.objectList.itemActivated.connect(self.selectObject)
-        self.objectList.itemDoubleClicked.connect(self.focusObject)
+        self.objectList.itemClicked.connect(self.select_object)
+        self.objectList.itemActivated.connect(self.select_object)
+        self.objectList.itemDoubleClicked.connect(self.focus_object)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.DELETE_OBJECT_INFO)),
-                     self.deleteObjectInfo)
+                     self.delete_object_info)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_INFO)),
-                     self.addObjectInfo)
+                     self.add_object_info)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE)),
-                     self.fillObjectAttribute)
+                     self.fill_object_attribute)
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.CLEAR_OBJECT_LIST)),
-                     self.clearObjectList)
+                     self.clear_object_list)
 
         btn = self.findChild(QtGui.QPushButton, "btnRemoveObject")
-        btn.clicked.connect(self.deleteObject)
+        btn.clicked.connect(self.delete_object)
 
         # Object attribute tree
         self.attributeTree = self.findChild(QtGui.QTreeWidget, "attributeTree")
         self.attributeTree.setEditTriggers(self.attributeTree.NoEditTriggers) # hook editable event
         self.attributeTree.itemSelectionChanged.connect(self.checkEditable)
         self.attributeTree.itemClicked.connect(self.checkEditable)
-        self.attributeTree.itemChanged.connect(self.attributeChanged)
+        self.attributeTree.itemChanged.connect(self.attribute_changed)
 
         # wait a UI_RUN message, and send success message
         if self.cmdPipe:
@@ -307,16 +307,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     def save_scene(self):
         self.appCmdQueue.put(COMMAND.SAVE_SCENE)
 
-    def setViewMode(self, mode):
+    def set_view_mode(self, mode):
         self.appCmdQueue.put(mode)
 
-    def setScreenInfo(self, screen_info):
+    def set_screen_info(self, screen_info):
         width, height, full_screen = screen_info
         self.spinWidth.setValue(width)
         self.spinHeight.setValue(height)
         self.checkFullScreen.setChecked(full_screen or False)
 
-    def clearRenderTargetList(self):
+    def clear_render_target_list(self):
         self.comboRenderTargets.clear()
 
     # Game Backend
@@ -347,14 +347,14 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, anti_aliasing_index)
 
     # Render Target
-    def addRenderTarget(self, rendertarget_name):
+    def add_render_target(self, rendertarget_name):
         self.comboRenderTargets.addItem(rendertarget_name)
 
     def view_rendertarget(self, rendertarget_index):
         rendertarget_name = self.comboRenderTargets.itemText(rendertarget_index)
         self.appCmdQueue.put(COMMAND.VIEW_RENDERTARGET, (rendertarget_index, rendertarget_name))
 
-    def changeResolution(self):
+    def change_resolution(self):
         width = self.spinWidth.value()
         height = self.spinHeight.value()
         full_screen = self.checkFullScreen.isChecked()
@@ -382,7 +382,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 item.setText(1, "True" if item.checkState(1) == QtCore.Qt.Checked else "False")
             self.attributeTree.editItem(item, column)
 
-    def attributeChanged(self, item):
+    def attribute_changed(self, item):
         if not self.isFillAttributeTree and self.selected_item:
             try:
                 # check value chaned
@@ -431,7 +431,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
-    def addAttribute(self, parent, attributeName, value, depth=0, index=0):
+    def add_attribute(self, parent, attributeName, value, depth=0, index=0):
         item = QtGui.QTreeWidgetItem(parent)
         item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
         item.setExpanded(True)
@@ -449,35 +449,35 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         elif item.dataType in (tuple, list, numpy.ndarray):  # set list type
             item.setText(1, "")  # set value to None
             for i, itemValue in enumerate(value):  # add child component
-                self.addAttribute(item, "[%d]" % i, itemValue, depth + 1, i)
+                self.add_attribute(item, "[%d]" % i, itemValue, depth + 1, i)
         else:  # set general type value - int, float, string
             item.setText(1, str(value))
         item.oldValue = item.text(1)  # set old value
 
-    def fillResourceAttribute(self, attributes):
+    def fill_resource_attribute(self, attributes):
         self.selected_item = self.resourceListWidget.currentItem()
         self.selected_item_categoty = 'Resource'
-        self.fillAttribute(attributes)
+        self.fill_attribute(attributes)
 
-    def fillObjectAttribute(self, attributes):
+    def fill_object_attribute(self, attributes):
         self.selected_item = self.objectList.currentItem()
         self.selected_item_categoty = 'Object'
-        self.fillAttribute(attributes)
+        self.fill_attribute(attributes)
 
-    def clearAttribute(self):
+    def clear_attribute(self):
         self.attributeTree.clear()  # clear
 
-    def fillAttribute(self, attributes):
+    def fill_attribute(self, attributes):
         # lock edit attribute ui
         self.isFillAttributeTree = True
 
-        self.clearAttribute()
+        self.clear_attribute()
 
         # fill properties of selected object
-        attribute_values = list(attributes.getAttributes())
+        attribute_values = list(attributes.get_attributes())
         attribute_values.sort(key=lambda x: x.name)
         for attribute in attribute_values:
-            self.addAttribute(self.attributeTree, attribute.name, attribute.value)
+            self.add_attribute(self.attributeTree, attribute.name, attribute.value)
 
         # self.showProperties()
 
@@ -491,16 +491,16 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # ------------------------- #
     # Widget - Resource List
     # ------------------------- #
-    def getSelectedResource(self):
+    def get_selected_resource(self):
         return self.resourceListWidget.selectedItems()
 
-    def addResourceList(self, resourceList):
+    def add_resource_list(self, resourceList):
         for resName, resType in resourceList:
             item = QtGui.QTreeWidgetItem(self.resourceListWidget)
             item.setText(0, resName)
             item.setText(1, resType)
 
-    def setResourceInfo(self, resource_info):
+    def set_resource_info(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
         items = self.resourceListWidget.findItems(resource_name, QtCore.Qt.MatchExactly, column=0)
         for item in items:
@@ -516,36 +516,36 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         item.setText(0, resource_name)
         item.setText(1, resource_type)
 
-    def selectResource(self):
-        items = self.getSelectedResource()
+    def select_resource(self):
+        items = self.get_selected_resource()
         if items and len(items) > 0:
             if items[0].is_loaded:
                 self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (items[0].text(0), items[0].text(1)))
             else:
-                self.clearAttribute()
+                self.clear_attribute()
 
-    def loadResource(self, item=None):
-        items = self.getSelectedResource()
+    def load_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (item.text(0), item.text(1)))
 
     def openResource(self, item=None):
-        items = self.getSelectedResource()
+        items = self.get_selected_resource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (item.text(0), item.text(1)))
+            self.appCmdQueue.put(COMMAND.ACTION_RESOURCE, (item.text(0), item.text(1)))
 
-    def duplicateResource(self, item=None):
-        items = self.getSelectedResource()
+    def duplicate_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.DUPLICATE_RESOURCE, (item.text(0), item.text(1)))
 
-    def saveResource(self, item=None):
-        items = self.getSelectedResource()
+    def save_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (item.text(0), item.text(1)))
 
-    def deleteResource(self, item=None):
-        items = self.getSelectedResource()
+    def delete_resource(self, item=None):
+        items = self.get_selected_resource()
 
         if items and len(items) > 0:
             contents = "\n".join(["%s : %s" % (item.text(1), item.text(0)) for item in items])
@@ -571,35 +571,35 @@ class MainWindow(QtGui.QMainWindow, Singleton):
     # ------------------------- #
     # Widget - Object List
     # ------------------------- #
-    def addLight(self):
+    def add_light(self):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
 
-    def addObjectInfo(self, object_info):
+    def add_object_info(self, object_info):
         object_name, object_type = object_info
         item = QtGui.QTreeWidgetItem(self.objectList)
         item.setText(0, object_name)
         item.setText(1, object_type)
 
-    def actionObject(self, *args):
+    def action_object(self, *args):
         selectedItems = self.objectList.selectedItems()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.ACTION_OBJECT, selectedItem.text(0))
 
-    def deleteObject(self, *args):
+    def delete_object(self, *args):
         selectedItems = self.objectList.selectedItems()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.DELETE_OBJECT, selectedItem.text(0))
 
-    def deleteObjectInfo(self, objName):
+    def delete_object_info(self, objName):
         items = self.objectList.findItems(objName, QtCore.Qt.MatchExactly, column=0)
         for item in items:
             index = self.objectList.indexOfTopLevelItem(item)
             self.objectList.takeTopLevelItem(index)
 
-    def clearObjectList(self, *args):
+    def clear_object_list(self, *args):
         self.objectList.clear()
 
-    def selectObject(self):
+    def select_object(self):
         selectedItems = self.objectList.selectedItems()
         if selectedItems:
             item = selectedItems[0]
@@ -609,7 +609,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
             self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selected_objectName)
             self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, (selected_objectName, selected_objectTypeName))
 
-    def focusObject(self, item=None):
+    def focus_object(self, item=None):
         if item:
             selected_objectName = item.text(0)
             self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, selected_objectName)

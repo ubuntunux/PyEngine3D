@@ -102,14 +102,14 @@ class Renderer(Singleton):
         self.framebuffer_manager = FrameBufferManager.instance()
 
         # material instances
-        self.scene_constants_material = self.resource_manager.getMaterialInstance('scene_constants')
-        self.debug_bone_material = self.resource_manager.getMaterialInstance("debug_bone")
-        self.pre_pass_material = self.resource_manager.getMaterialInstance("pre_pass")
-        self.pre_pass_skeletal_material = self.resource_manager.getMaterialInstance(name="pre_pass_skeletal",
+        self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants')
+        self.debug_bone_material = self.resource_manager.get_material_instance("debug_bone")
+        self.pre_pass_material = self.resource_manager.get_material_instance("pre_pass")
+        self.pre_pass_skeletal_material = self.resource_manager.get_material_instance(name="pre_pass_skeletal",
                                                                                     shader_name="pre_pass",
                                                                                     macros={"SKELETAL": 1})
-        self.shadowmap_material = self.resource_manager.getMaterialInstance("shadowmap")
-        self.shadowmap_skeletal_material = self.resource_manager.getMaterialInstance(name="shadowmap_skeletal",
+        self.shadowmap_material = self.resource_manager.get_material_instance("shadowmap")
+        self.shadowmap_skeletal_material = self.resource_manager.get_material_instance(name="shadowmap_skeletal",
                                                                                      shader_name="shadowmap",
                                                                                      macros={"SKELETAL": 1})
 
@@ -156,7 +156,7 @@ class Renderer(Singleton):
         rendering_type_list = [get_rendering_type_name(RenderingType.convert_index_to_enum(x)) for x in
                                range(RenderingType.COUNT.value)]
         # Send to GUI
-        self.core_manager.sendRenderingTypeList(rendering_type_list)
+        self.core_manager.send_rendering_type_list(rendering_type_list)
 
     def close(self):
         pass
@@ -185,7 +185,7 @@ class Renderer(Singleton):
                              self.blend_func_src_prev,
                              self.blend_func_dst_prev)
 
-    def setViewMode(self, viewMode):
+    def set_view_mode(self, viewMode):
         if viewMode == COMMAND.VIEWMODE_WIREFRAME:
             self.viewMode = GL_LINE
         elif viewMode == COMMAND.VIEWMODE_SHADING:
@@ -261,14 +261,14 @@ class Renderer(Singleton):
                                                      np.linalg.inv(camera.view_origin),
                                                      camera.projection,
                                                      np.linalg.inv(camera.projection),
-                                                     camera.transform.getPos(), FLOAT_ZERO,
+                                                     camera.transform.get_pos(), FLOAT_ZERO,
                                                      Float2(camera.near, camera.far),
                                                      self.postprocess.jitter_delta,
                                                      self.postprocess.jitter)
 
-        # light.transform.setPos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
+        # light.transform.set_pos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
         self.uniformLightConstants.bind_uniform_block(
-            main_light.transform.getPos(), FLOAT_ZERO,
+            main_light.transform.get_pos(), FLOAT_ZERO,
             main_light.transform.front, FLOAT_ZERO,
             main_light.light_color,
             main_light.shadow_view_projection
@@ -412,10 +412,10 @@ class Renderer(Singleton):
                 self.postprocess.bind_quad()
                 self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-                composite_atmosphere = self.resource_manager.getMaterialInstance(
+                composite_atmosphere = self.resource_manager.get_material_instance(
                     "precomputed_atmosphere.composite_atmosphere")
                 composite_atmosphere.use_program()
-                above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.getPos()[1]
+                above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
                 composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
                 composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
                 composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
@@ -424,7 +424,7 @@ class Renderer(Singleton):
                 # composite light shaft
                 self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
 
-                composite_lightshaft = self.resource_manager.getMaterialInstance(
+                composite_lightshaft = self.resource_manager.get_material_instance(
                     "precomputed_atmosphere.composite_lightshaft")
                 composite_lightshaft.use_program()
                 composite_lightshaft.bind_uniform_data("texture_lightshaft", RenderTargets.ATMOSPHERE_LIGHTSHAFT)
@@ -489,8 +489,8 @@ class Renderer(Singleton):
         light_probe.isRendered = True
 
         camera = self.scene_manager.main_camera
-        old_pos = camera.transform.getPos().copy()
-        old_rot = camera.transform.getRot().copy()
+        old_pos = camera.transform.get_pos().copy()
+        old_rot = camera.transform.get_rotation().copy()
         old_fov = camera.fov
         old_aspect = camera.aspect
         old_render_font = RenderOption.RENDER_FONT
@@ -513,8 +513,8 @@ class Renderer(Singleton):
         camera.update_projection(fov=90.0, aspect=1.0)
 
         def render_cube_face(dst_texture, target_face, pos, rotation):
-            camera.transform.setPos(pos)
-            camera.transform.setRot(rotation)
+            camera.transform.set_pos(pos)
+            camera.transform.set_rotation(rotation)
             camera.update(force_update=True)
 
             # render
@@ -536,7 +536,7 @@ class Renderer(Singleton):
                         GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
                         GL_TEXTURE_CUBE_MAP_NEGATIVE_Z]
 
-        pos = light_probe.transform.getPos()
+        pos = light_probe.transform.get_pos()
 
         camera_rotations = [[0.0, math.pi * 1.5, 0.0],
                             [0.0, math.pi * 0.5, 0.0],
@@ -574,7 +574,7 @@ class Renderer(Singleton):
 
         self.postprocess.bind_quad()
 
-        convolve_environment = self.resource_manager.getMaterialInstance('convolve_environment')
+        convolve_environment = self.resource_manager.get_material_instance('convolve_environment')
         convolve_environment.use_program()
 
         for i in range(6):
@@ -604,8 +604,8 @@ class Renderer(Singleton):
 
         camera.update_projection(old_fov, old_aspect)
 
-        camera.transform.setPos(old_pos)
-        camera.transform.setRot(old_rot)
+        camera.transform.set_pos(old_pos)
+        camera.transform.set_rotation(old_rot)
         camera.update(force_update=True)
 
     def render_pre_pass(self):
@@ -812,7 +812,7 @@ class Renderer(Singleton):
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
-        mesh = self.resource_manager.getMesh("Cube")
+        mesh = self.resource_manager.get_mesh("Cube")
         static_actors = self.scene_manager.static_actors[:]
 
         if mesh and self.debug_bone_material:

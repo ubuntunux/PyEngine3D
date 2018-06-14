@@ -83,7 +83,7 @@ class AnimationNode:
             frame = int(frame) % self.frame_count
             next_frame = (frame + 1) % self.frame_count
             
-            setIdentityMatrix(self.transform)
+            set_identity_matrix(self.transform)
             if frame < self.frame_count:
                 rotation = slerp(self.rotations[frame], self.rotations[next_frame], rate)
                 # rotation = normalize(lerp(self.rotations[frame], self.rotations[next_frame], rate))

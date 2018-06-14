@@ -17,7 +17,7 @@ class Camera(StaticActor):
         self.scene_manager = scene_manager
         self.postprocess = self.scene_manager.renderer.postprocess
 
-        self.transform.setPos([0.0, 1.0, 0.0])
+        self.transform.set_pos([0.0, 1.0, 0.0])
 
         self.meter_per_unit = object_data.get('meter_per_unit', 1.0)
         self.aspect = object_data.get('aspect', 0.0)
@@ -76,18 +76,18 @@ class Camera(StaticActor):
         config.setValue("Camera", "pan_speed", self.pan_speed)
         config.setValue("Camera", "rotation_speed", self.rotation_speed)
 
-    def getAttribute(self):
-        StaticActor.getAttribute(self)
-        self.attributes.setAttribute('fov', self.fov)
-        self.attributes.setAttribute('near', self.near)
-        self.attributes.setAttribute('far', self.far)
-        self.attributes.setAttribute('move_speed', self.move_speed)
-        self.attributes.setAttribute('pan_speed', self.pan_speed)
-        self.attributes.setAttribute('rotation_speed', self.rotation_speed)
+    def get_attribute(self):
+        StaticActor.get_attribute(self)
+        self.attributes.set_attribute('fov', self.fov)
+        self.attributes.set_attribute('near', self.near)
+        self.attributes.set_attribute('far', self.far)
+        self.attributes.set_attribute('move_speed', self.move_speed)
+        self.attributes.set_attribute('pan_speed', self.pan_speed)
+        self.attributes.set_attribute('rotation_speed', self.rotation_speed)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
-        StaticActor.setAttribute(self, attributeName, attributeValue, attribute_index)
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
+        StaticActor.set_attribute(self, attributeName, attributeValue, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
             if "fov" == attributeName:
@@ -110,7 +110,7 @@ class Camera(StaticActor):
             # self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
 
     def update(self, force_update=False):
-        updated = self.transform.updateTransform(update_view_transform=True, force_update=force_update)
+        updated = self.transform.update_transform(update_view_transform=True, force_update=force_update)
 
         if updated or force_update:
             self.prev_view = self.transform.prev_inverse_matrix

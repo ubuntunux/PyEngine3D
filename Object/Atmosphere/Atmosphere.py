@@ -89,26 +89,26 @@ class Atmosphere:
 
         self.initialize()
 
-    def getAttribute(self):
-        self.attributes.setAttribute('is_render_atmosphere', self.is_render_atmosphere)
+    def get_attribute(self):
+        self.attributes.set_attribute('is_render_atmosphere', self.is_render_atmosphere)
 
-        self.attributes.setAttribute('atmosphere_exposure', self.atmosphere_exposure)
+        self.attributes.set_attribute('atmosphere_exposure', self.atmosphere_exposure)
 
-        self.attributes.setAttribute('cloud_altitude', self.cloud_altitude)
-        self.attributes.setAttribute('cloud_height', self.cloud_height)
-        self.attributes.setAttribute('cloud_tiling', self.cloud_tiling)
-        self.attributes.setAttribute('cloud_speed', self.cloud_speed)
+        self.attributes.set_attribute('cloud_altitude', self.cloud_altitude)
+        self.attributes.set_attribute('cloud_height', self.cloud_height)
+        self.attributes.set_attribute('cloud_tiling', self.cloud_tiling)
+        self.attributes.set_attribute('cloud_speed', self.cloud_speed)
 
-        self.attributes.setAttribute('cloud_contrast', self.cloud_contrast)
-        self.attributes.setAttribute('cloud_coverage', self.cloud_coverage)
-        self.attributes.setAttribute('cloud_absorption', self.cloud_absorption)
+        self.attributes.set_attribute('cloud_contrast', self.cloud_contrast)
+        self.attributes.set_attribute('cloud_coverage', self.cloud_coverage)
+        self.attributes.set_attribute('cloud_absorption', self.cloud_absorption)
 
-        self.attributes.setAttribute('noise_tiling', self.noise_tiling)
-        self.attributes.setAttribute('noise_contrast', self.noise_contrast)
-        self.attributes.setAttribute('noise_coverage', self.noise_coverage)
+        self.attributes.set_attribute('noise_tiling', self.noise_tiling)
+        self.attributes.set_attribute('noise_contrast', self.noise_contrast)
+        self.attributes.set_attribute('noise_coverage', self.noise_coverage)
         return self.attributes
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
@@ -119,8 +119,8 @@ class Atmosphere:
 
     def get_save_data(self):
         save_data = {}
-        for attribute in self.attributes.getAttributeNames():
-            save_data[attribute] = self.attributes.getAttribute(attribute).value
+        for attribute in self.attributes.get_attributeNames():
+            save_data[attribute] = self.attributes.get_attribute(attribute).value
         return save_data
 
     def initialize(self):
@@ -131,10 +131,10 @@ class Atmosphere:
             'USE_LUMINANCE': 1 if self.luminance_type else 0,
             'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
         }
-        self.atmosphere_material_instance = resource_manager.getMaterialInstance(
+        self.atmosphere_material_instance = resource_manager.get_material_instance(
             'precomputed_atmosphere.atmosphere', macros=macros)
 
-        self.atmosphere_demo_material_instance = resource_manager.getMaterialInstance(
+        self.atmosphere_demo_material_instance = resource_manager.get_material_instance(
             'precomputed_atmosphere.atmosphere_demo', macros=macros)
 
         # precompute constants
@@ -207,16 +207,16 @@ class Atmosphere:
                           self.use_combined_textures)
             model.generate()
 
-        self.transmittance_texture = resource_manager.getTexture('precomputed_atmosphere.transmittance')
-        self.scattering_texture = resource_manager.getTexture('precomputed_atmosphere.scattering')
-        self.irradiance_texture = resource_manager.getTexture('precomputed_atmosphere.irradiance')
+        self.transmittance_texture = resource_manager.get_texture('precomputed_atmosphere.transmittance')
+        self.scattering_texture = resource_manager.get_texture('precomputed_atmosphere.scattering')
+        self.irradiance_texture = resource_manager.get_texture('precomputed_atmosphere.irradiance')
 
         if not self.use_combined_textures:
-            self.optional_single_mie_scattering_texture = resource_manager.getTexture(
+            self.optional_single_mie_scattering_texture = resource_manager.get_texture(
                 'precomputed_atmosphere.optional_single_mie_scattering')
 
-        self.cloud_texture = resource_manager.getTexture('precomputed_atmosphere.cloud_3d')
-        self.noise_texture = resource_manager.getTexture('precomputed_atmosphere.noise_3d')
+        self.cloud_texture = resource_manager.get_texture('precomputed_atmosphere.cloud_3d')
+        self.noise_texture = resource_manager.get_texture('precomputed_atmosphere.noise_3d')
 
     def update(self, main_light):
         if not self.is_render_atmosphere:

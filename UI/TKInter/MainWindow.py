@@ -126,9 +126,12 @@ class MainWindow:
         # MessageThread
         self.message_thread = MessageThread(self.cmdQueue)
         self.message_thread.start()
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_SCREEN_INFO), self.setScreenInfo)
-        self.message_thread.connect(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST), self.clearRenderTargetList)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO), self.addRenderTarget)
+        self.message_thread.connect(get_command_name(COMMAND.SHOW_UI), self.show)
+        self.message_thread.connect(get_command_name(COMMAND.HIDE_UI), self.hide)
+
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_SCREEN_INFO), self.set_screen_info)
+        self.message_thread.connect(get_command_name(COMMAND.CLEAR_RENDERTARGET_LIST), self.clear_render_target_list)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RENDERTARGET_INFO), self.add_render_target)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_RENDERING_TYPE_LIST), self.add_rendering_type)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_ANTIALIASING_LIST), self.add_anti_aliasing)
         self.message_thread.connect(get_command_name(COMMAND.TRANS_GAME_BACKEND_LIST), self.add_game_backend)
@@ -136,15 +139,15 @@ class MainWindow:
 
         self.message_thread.connect(get_command_name(COMMAND.CLOSE_UI), self.exit)
         self.message_thread.connect(get_command_name(COMMAND.SORT_UI_ITEMS), self.sort_items)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_LIST), self.addResourceList)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_INFO), self.setResourceInfo)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE), self.fillResourceAttribute)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_LIST), self.add_resource_list)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_INFO), self.set_resource_info)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_RESOURCE_ATTRIBUTE), self.fill_resource_attribute)
         self.message_thread.connect(get_command_name(COMMAND.DELETE_RESOURCE_INFO), self.delete_resource_info)
 
-        self.message_thread.connect(get_command_name(COMMAND.DELETE_OBJECT_INFO), self.deleteObjectInfo)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_INFO), self.addObjectInfo)
-        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE), self.fillObjectAttribute)
-        self.message_thread.connect(get_command_name(COMMAND.CLEAR_OBJECT_LIST), self.clearObjectList)
+        self.message_thread.connect(get_command_name(COMMAND.DELETE_OBJECT_INFO), self.delete_object_info)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_INFO), self.add_object_info)
+        self.message_thread.connect(get_command_name(COMMAND.TRANS_OBJECT_ATTRIBUTE), self.fill_object_attribute)
+        self.message_thread.connect(get_command_name(COMMAND.CLEAR_OBJECT_LIST), self.clear_object_list)
 
         width = 600
         height = 800
@@ -164,7 +167,7 @@ class MainWindow:
         main_tab = ttk.Notebook(main_frame)
 
         # set windows title
-        self.setWindowTitle(project_filename if project_filename else "Default Project")
+        self.set_window_title(project_filename if project_filename else "Default Project")
 
         def donothing(*args):
             pass
@@ -185,8 +188,8 @@ class MainWindow:
         menubar.add_cascade(label="Menu", menu=menu)
 
         view_mode_menu = tk.Menu(menubar, tearoff=0)
-        view_mode_menu.add_command(label="Wireframe", command=lambda: self.setViewMode(COMMAND.VIEWMODE_WIREFRAME))
-        view_mode_menu.add_command(label="Shading", command=lambda: self.setViewMode(COMMAND.VIEWMODE_SHADING))
+        view_mode_menu.add_command(label="Wireframe", command=lambda: self.set_view_mode(COMMAND.VIEWMODE_WIREFRAME))
+        view_mode_menu.add_command(label="Shading", command=lambda: self.set_view_mode(COMMAND.VIEWMODE_SHADING))
         view_mode_menu.add_separator()
         menubar.add_cascade(label="View Mode", menu=view_mode_menu)
 
@@ -208,15 +211,15 @@ class MainWindow:
 
         button = tk.Button(command_frame, text="Add Camera")
         button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.addCamera)
+        button.bind("<Button-1>", self.add_camera)
 
         button = tk.Button(command_frame, text="Add Light")
         button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.addLight)
+        button.bind("<Button-1>", self.add_light)
 
-        button = tk.Button(command_frame, text="Add Particle")
+        button = tk.Button(command_frame, text="Create Particle")
         button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.add_particle)
+        button.bind("<Button-1>", self.create_particle)
 
         label_frame = ttk.LabelFrame(command_frame, text='Resolution')
         label_frame.pack(fill="x", side="top", pady=10)
@@ -248,7 +251,7 @@ class MainWindow:
 
         button = tk.Button(label_frame, text="Change Resolution")
         button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.changeResolution)
+        button.bind("<Button-1>", self.change_resolution)
 
         self.comboRenderingType = ttk.Combobox(command_frame)
         self.comboRenderingType.bind("<<ComboboxSelected>>", donothing, "+")
@@ -267,11 +270,11 @@ class MainWindow:
 
         # resource layout
         self.resource_menu = tk.Menu(root, tearoff=0)
-        self.resource_menu.add_command(label="Load", command=self.loadResource)
-        self.resource_menu.add_command(label="Action", command=self.actionResource)
-        self.resource_menu.add_command(label="Duplicate", command=self.duplicateResource)
-        self.resource_menu.add_command(label="Save", command=self.saveResource)
-        self.resource_menu.add_command(label="Delete", command=self.deleteResource)
+        self.resource_menu.add_command(label="Load", command=self.load_resource)
+        self.resource_menu.add_command(label="Action", command=self.action_resource)
+        self.resource_menu.add_command(label="Duplicate", command=self.duplicate_resource)
+        self.resource_menu.add_command(label="Save", command=self.save_resource)
+        self.resource_menu.add_command(label="Delete", command=self.delete_resource)
         # self.resource_menu.bind("<FocusOut>", self.resource_menu.unpost)
 
         self.resource_treeview = ttk.Treeview(main_tab)
@@ -283,9 +286,9 @@ class MainWindow:
         self.resource_treeview.heading("#1", text="Resource Type",
                                        command=lambda: self.sort_treeview(self.resource_treeview, 1))
 
-        self.resource_treeview.bind("<<TreeviewSelect>>", self.selectResource)
+        self.resource_treeview.bind("<<TreeviewSelect>>", self.select_resource)
         self.resource_treeview.bind("<Button-1>", lambda event: self.resource_menu.unpost())
-        self.resource_treeview.bind("<Double-1>", lambda event: self.loadResource())
+        self.resource_treeview.bind("<Double-1>", lambda event: self.load_resource())
         self.resource_treeview.bind("<Button-3>", self.open_resource_menu)
         self.resource_treeview.bind("<FocusOut>", lambda event: self.resource_menu.unpost())
 
@@ -295,9 +298,9 @@ class MainWindow:
 
         # object layout
         self.object_menu = tk.Menu(root, tearoff=0)
-        self.object_menu.add_command(label="Action", command=self.actionObject)
-        self.object_menu.add_command(label="Focus", command=self.focusObject)
-        self.object_menu.add_command(label="Delete", command=self.deleteObject)
+        self.object_menu.add_command(label="Action", command=self.action_object)
+        self.object_menu.add_command(label="Focus", command=self.focus_object)
+        self.object_menu.add_command(label="Delete", command=self.delete_object)
         self.object_menu.bind("<FocusOut>", self.object_menu.unpost)
 
         self.object_treeview = ttk.Treeview(main_tab)
@@ -309,9 +312,9 @@ class MainWindow:
         self.object_treeview.heading("#1", text="Object Type",
                                      command=lambda: self.sort_treeview(self.object_treeview, 1))
 
-        self.object_treeview.bind("<<TreeviewSelect>>", lambda event: self.selectObject())
+        self.object_treeview.bind("<<TreeviewSelect>>", lambda event: self.select_object())
         self.object_treeview.bind("<Button-1>", lambda event: self.object_menu.unpost())
-        self.object_treeview.bind("<Double-1>", lambda event: self.focusObject())
+        self.object_treeview.bind("<Double-1>", lambda event: self.focus_object())
         self.object_treeview.bind("<Button-3>", self.open_object_menu)
         self.object_treeview.bind("<FocusOut>", lambda event: self.object_menu.unpost())
 
@@ -331,8 +334,8 @@ class MainWindow:
         self.attribute_treeview.heading("#1", text="Value",
                                         command=lambda: self.sort_treeview(self.attribute_treeview, 1))
 
-        self.attribute_treeview.bind("<<TreeviewSelect>>", self.selectAttribute)
-        self.attribute_treeview.bind("<<TreeviewCellEdited>>", self.attributeChanged)
+        self.attribute_treeview.bind("<<TreeviewSelect>>", self.select_attribute)
+        self.attribute_treeview.bind("<<TreeviewCellEdited>>", self.attribute_changed)
         self.attribute_treeview.pack(fill='both', side='left', expand=True)
 
         vsb = ttk.Scrollbar(self.attribute_treeview, orient="vertical", command=self.attribute_treeview.yview)
@@ -368,9 +371,13 @@ class MainWindow:
         # height = self.root.winfo_height()
 
     def show(self):
-        self.root.mainloop()
+        self.root.update()
+        self.root.deiconify()
 
-    def setWindowTitle(self, title):
+    def hide(self):
+        self.root.withdraw()
+
+    def set_window_title(self, title):
         self.root.title(title)
 
     # ------------------------- #
@@ -425,16 +432,16 @@ class MainWindow:
     def save_scene(self):
         self.appCmdQueue.put(COMMAND.SAVE_SCENE)
 
-    def setViewMode(self, mode):
+    def set_view_mode(self, mode):
         self.appCmdQueue.put(mode)
 
-    def setScreenInfo(self, screen_info):
+    def set_screen_info(self, screen_info):
         width, height, full_screen = screen_info
         self.spinWidth.set(width)
         self.spinHeight.set(height)
         self.checkFullScreen.set(1 if full_screen else 0)
 
-    def clearRenderTargetList(self):
+    def clear_render_target_list(self):
         combobox_clear(self.comboRenderTargets)
 
     # Game Backend
@@ -468,7 +475,7 @@ class MainWindow:
         self.appCmdQueue.put(COMMAND.SET_ANTIALIASING, anti_aliasing_index)
 
     # Render Target
-    def addRenderTarget(self, rendertarget_name):
+    def add_render_target(self, rendertarget_name):
         combobox_add_item(self.comboRenderTargets, rendertarget_name)
 
     def view_rendertarget(self, event):
@@ -476,7 +483,7 @@ class MainWindow:
         rendertarget_name = self.comboRenderTargets.get()
         self.appCmdQueue.put(COMMAND.VIEW_RENDERTARGET, (rendertarget_index, rendertarget_name))
 
-    def changeResolution(self, event):
+    def change_resolution(self, event):
         width = self.spinWidth.get()
         height = self.spinHeight.get()
         full_screen = False if 0 == self.checkFullScreen.get() else True
@@ -486,9 +493,14 @@ class MainWindow:
     # ------------------------- #
     # Widget - Propery Tree
     # ------------------------- #
-    def attributeChanged(self, event):
+    def attribute_changed(self, event):
         if not self.isFillAttributeTree and self.selected_item is not None:
+            # item_id = self.attribute_treeview.identify('item', event.x, event.y)
             column, item_id = self.attribute_treeview.get_event_info()
+
+            if item_id == '':
+                return
+
             item = self.attribute_treeview.item(item_id)
             item_info = self.attribute_treeview.item_infos[item_id]
 
@@ -534,14 +546,15 @@ class MainWindow:
                 command = None
                 if self.selected_item_categoty == 'Object':
                     command = COMMAND.SET_OBJECT_ATTRIBUTE
-                    selectedItems = self.getSelectedObject()
+                    selectedItems = self.get_selected_object()
                 elif self.selected_item_categoty == 'Resource':
                     command = COMMAND.SET_RESOURCE_ATTRIBUTE
-                    selectedItems = self.getSelectedResource()
+                    selectedItems = self.get_selected_resource()
 
                 for selected_item in selectedItems:
                     selected_item_name = get_name(selected_item)
                     selected_item_type = get_value(selected_item)
+
                     # send changed data
                     self.appCmdQueue.put(
                         command, (selected_item_name, selected_item_type, attributeName, value, item_info.index)
@@ -549,9 +562,9 @@ class MainWindow:
             except BaseException:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
-                item.setText(1, item.oldValue)
+                self.attribute_treeview.set(item_id, '#1', item_info.oldValue)
 
-    def selectAttribute(self, event):
+    def select_attribute(self, event):
         for item_id in self.attribute_treeview.selection():
             item_info = self.attribute_treeview.item_infos[item_id]
             if bool == item_info.dataType:
@@ -559,7 +572,7 @@ class MainWindow:
             else:
                 self.attribute_treeview.inplace_entry('#1', item_id)
 
-    def addAttribute(self, parent, attributeName, value, depth=0, index=0):
+    def add_attribute(self, parent, attributeName, value, depth=0, index=0):
         dataType = type(value)
         item_id = self.attribute_treeview.insert(parent, 'end', text=attributeName, open=True)
 
@@ -571,40 +584,40 @@ class MainWindow:
         # set value
         if dataType in (tuple, list, numpy.ndarray):  # set list type
             for i, itemValue in enumerate(value):  # add child component
-                self.addAttribute(item_id, "[%d]" % i, itemValue, depth + 1, i)
+                self.add_attribute(item_id, "[%d]" % i, itemValue, depth + 1, i)
         else:
             # set general type value - int, float, string
             self.attribute_treeview.item(item_id, text=attributeName, values=(value,))
 
-    def fillResourceAttribute(self, attributes):
-        selected_items = self.getSelectedResource()
+    def fill_resource_attribute(self, attributes):
+        selected_items = self.get_selected_resource()
         if 0 < len(selected_items):
             self.selected_item = selected_items[0]
             self.selected_item_categoty = 'Resource'
-            self.fillAttribute(attributes)
+            self.fill_attribute(attributes)
 
-    def fillObjectAttribute(self, attributes):
-        selected_items = self.getSelectedObject()
+    def fill_object_attribute(self, attributes):
+        selected_items = self.get_selected_object()
         if 0 < len(selected_items):
             self.selected_item = selected_items[0]
             self.selected_item_categoty = 'Object'
-            self.fillAttribute(attributes)
+            self.fill_attribute(attributes)
 
-    def clearAttribute(self):
+    def clear_attribute(self):
         for item in self.attribute_treeview.get_children():
             self.attribute_treeview.delete(item)
 
-    def fillAttribute(self, attributes):
+    def fill_attribute(self, attributes):
         # lock edit attribute ui
         self.isFillAttributeTree = True
 
-        self.clearAttribute()
+        self.clear_attribute()
 
         # fill properties of selected object
-        attribute_values = list(attributes.getAttributes())
+        attribute_values = list(attributes.get_attributes())
         attribute_values.sort(key=lambda x: x.name)
         for attribute in attribute_values:
-            self.addAttribute("", attribute.name, attribute.value)
+            self.add_attribute("", attribute.name, attribute.value)
 
         # unlock edit attribute ui
         self.isFillAttributeTree = False
@@ -612,14 +625,14 @@ class MainWindow:
     # ------------------------- #
     # Widget - Resource List
     # ------------------------- #
-    def getSelectedResource(self):
+    def get_selected_resource(self):
         return [self.resource_treeview.item(item_id) for item_id in self.resource_treeview.selection()]
 
-    def addResourceList(self, resourceList):
+    def add_resource_list(self, resourceList):
         for resName, resType in resourceList:
             self.resource_treeview.insert("", 'end', text=resName, values=(resType,))
 
-    def setResourceInfo(self, resource_info):
+    def set_resource_info(self, resource_info):
         resource_name, resource_type, is_loaded = resource_info
 
         self.resource_treeview.tag_configure(TAG_NORMAL, foreground="gray")
@@ -636,45 +649,45 @@ class MainWindow:
             # insert item
             self.resource_treeview.insert("", 'end', text=resource_name, values=(resource_type,), tags=(tag, ))
 
-    def selectResource(self, event):
-        items = self.getSelectedResource()
+    def select_resource(self, event):
+        items = self.get_selected_resource()
 
         if items and len(items) > 0:
             item = items[0]
             if TAG_LOADED == get_tag(item):
                 self.appCmdQueue.put(COMMAND.REQUEST_RESOURCE_ATTRIBUTE, (get_name(item), get_value(item)))
             else:
-                self.clearAttribute()
+                self.clear_attribute()
 
     def open_resource_menu(self, event):
         item_id = self.resource_treeview.identify('item', event.x, event.y)
         item = self.resource_treeview.item(item_id)
-        if item not in self.getSelectedResource():
+        if item not in self.get_selected_resource():
             self.resource_treeview.selection_set((item_id, ))
         self.resource_menu.post(event.x_root, event.y_root)
 
-    def loadResource(self, item=None):
-        items = self.getSelectedResource()
+    def load_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.LOAD_RESOURCE, (get_name(item), get_value(item)))
 
-    def actionResource(self, item=None):
-        items = self.getSelectedResource()
+    def action_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
-            self.appCmdQueue.put(COMMAND.OPEN_RESOURCE, (get_name(item), get_value(item)))
+            self.appCmdQueue.put(COMMAND.ACTION_RESOURCE, (get_name(item), get_value(item)))
 
-    def duplicateResource(self, item=None):
-        items = self.getSelectedResource()
+    def duplicate_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.DUPLICATE_RESOURCE, (get_name(item), get_value(item)))
 
-    def saveResource(self, item=None):
-        items = self.getSelectedResource()
+    def save_resource(self, item=None):
+        items = self.get_selected_resource()
         for item in items:
             self.appCmdQueue.put(COMMAND.SAVE_RESOURCE, (get_name(item), get_value(item)))
 
-    def deleteResource(self, item=None):
-        items = self.getSelectedResource()
+    def delete_resource(self, item=None):
+        items = self.get_selected_resource()
         if 0 < len(items):
             contents = "\n".join(["%s : %s" % (get_value(item), get_name(item)) for item in items])
             choice = messagebox.askyesno('Delete resource', 'Are you sure you want to delete the\n%s?' % contents)
@@ -692,26 +705,26 @@ class MainWindow:
     # ------------------------- #
     # Widget - Object List
     # ------------------------- #
-    def addCamera(self, event):
+    def add_camera(self, event):
         self.appCmdQueue.put(COMMAND.ADD_CAMERA)
 
-    def addLight(self, event):
+    def add_light(self, event):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
 
-    def add_particle(self, event):
-        self.appCmdQueue.put(COMMAND.ADD_PARTICLE)
+    def create_particle(self, event):
+        self.appCmdQueue.put(COMMAND.CREATE_PARTICLE)
 
     def open_object_menu(self, event):
         item_id = self.object_treeview.identify('item', event.x, event.y)
         item = self.object_treeview.item(item_id)
-        if item not in self.getSelectedObject():
+        if item not in self.get_selected_object():
             self.object_treeview.selection_set((item_id, ))
         self.object_menu.post(event.x_root, event.y_root)
 
-    def getSelectedObject(self):
+    def get_selected_object(self):
         return [self.object_treeview.item(item_id) for item_id in self.object_treeview.selection()]
 
-    def addObjectInfo(self, object_info):
+    def add_object_info(self, object_info):
         object_name, object_type = object_info
         for item_id in self.object_treeview.get_children():
             item = self.object_treeview.item(item_id)
@@ -721,28 +734,28 @@ class MainWindow:
         else:
             self.object_treeview.insert("", 'end', text=object_name, values=(object_type,))
 
-    def actionObject(self, *args):
-        selectedItems = self.getSelectedObject()
+    def action_object(self, *args):
+        selectedItems = self.get_selected_object()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.ACTION_OBJECT, get_name(selectedItem))
 
-    def deleteObject(self, *args):
-        selectedItems = self.getSelectedObject()
+    def delete_object(self, *args):
+        selectedItems = self.get_selected_object()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.DELETE_OBJECT, get_name(selectedItem))
 
-    def deleteObjectInfo(self, objName):
+    def delete_object_info(self, objName):
         for item_id in self.object_treeview.get_children():
             item = self.object_treeview.item(item_id)
             if objName == get_name(item):
                 self.object_treeview.delete(item_id)
 
-    def clearObjectList(self, *args):
+    def clear_object_list(self, *args):
         for item in self.object_treeview.get_children():
             self.object_treeview.delete(item)
 
-    def selectObject(self):
-        selectedItems = self.getSelectedObject()
+    def select_object(self):
+        selectedItems = self.get_selected_object()
         if selectedItems:
             item = selectedItems[0]
             selected_objectName = get_name(item)
@@ -751,8 +764,8 @@ class MainWindow:
             self.appCmdQueue.put(COMMAND.SET_OBJECT_SELECT, selected_objectName)
             self.appCmdQueue.put(COMMAND.REQUEST_OBJECT_ATTRIBUTE, (selected_objectName, selected_objectTypeName))
 
-    def focusObject(self, *args):
-        selectedItems = self.getSelectedObject()
+    def focus_object(self, *args):
+        selectedItems = self.get_selected_object()
         for selectedItem in selectedItems:
             self.appCmdQueue.put(COMMAND.SET_OBJECT_FOCUS, get_name(selectedItem))
             break
@@ -760,6 +773,6 @@ class MainWindow:
 
 def run_editor(project_filename, cmdQueue, appCmdQueue, cmdPipe):
     root = tk.Tk()
-    main_window = MainWindow(root, project_filename, cmdQueue, appCmdQueue, cmdPipe)
-    main_window.show()
+    MainWindow(root, project_filename, cmdQueue, appCmdQueue, cmdPipe)
+    root.mainloop()
     sys.exit()

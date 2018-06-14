@@ -42,7 +42,7 @@ class CloudTexture3D:
             wrap=GL_REPEAT,
         )
 
-        resource = resource_manager.texture_loader.getResource(self.texture_name)
+        resource = resource_manager.texture_loader.get_resource(self.texture_name)
         if resource is None:
             resource = resource_manager.texture_loader.create_resource(self.texture_name, texture)
             resource_manager.texture_loader.save_resource(resource.name)
@@ -67,9 +67,9 @@ class CloudTexture3D:
 
         renderer.postprocess.bind_quad()
 
-        mat = resource_manager.getMaterialInstance('procedural.cloud_noise_3d')
+        mat = resource_manager.get_material_instance('procedural.cloud_noise_3d')
         mat.use_program()
-        mat.bind_uniform_data('texture_random', resource_manager.getTexture("common.random"))
+        mat.bind_uniform_data('texture_random', resource_manager.get_texture("common.random"))
         mat.bind_uniform_data('random_seed', random.random())
         mat.bind_uniform_data('sphere_count', self.sphere_count)
         mat.bind_uniform_data('sphere_scale', self.sphere_scale)
@@ -97,18 +97,18 @@ class CloudTexture3D:
         )
         return save_data
 
-    def getAttribute(self):
-        self.attribute.setAttribute("texture_name", self.texture_name)
-        self.attribute.setAttribute("width", self.width)
-        self.attribute.setAttribute("height", self.height)
-        self.attribute.setAttribute("depth", self.depth)
-        self.attribute.setAttribute("sphere_scale", self.sphere_scale)
-        self.attribute.setAttribute("sphere_count", self.sphere_count)
-        self.attribute.setAttribute("noise_persistance", self.noise_persistance)
-        self.attribute.setAttribute("noise_scale", self.noise_scale)
+    def get_attribute(self):
+        self.attribute.set_attribute("texture_name", self.texture_name)
+        self.attribute.set_attribute("width", self.width)
+        self.attribute.set_attribute("height", self.height)
+        self.attribute.set_attribute("depth", self.depth)
+        self.attribute.set_attribute("sphere_scale", self.sphere_scale)
+        self.attribute.set_attribute("sphere_count", self.sphere_count)
+        self.attribute.set_attribute("noise_persistance", self.noise_persistance)
+        self.attribute.set_attribute("noise_scale", self.noise_scale)
         return self.attribute
 
-    def setAttribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
         return self.attribute

@@ -102,7 +102,7 @@ class RenderTargetManager(Singleton):
             if temp_rendertarget:
                 self.temp_rendertargets[rendertarget_name] = temp_rendertarget
                 # send rendertarget info to GUI
-                self.core_manager.sendRenderTargetInfo(temp_rendertarget.name)
+                self.core_manager.send_render_target_info(temp_rendertarget.name)
 
         if temp_rendertarget is None:
             logger.warn("Failed to get temporary %s render target." % rendertarget_name)
@@ -132,7 +132,7 @@ class RenderTargetManager(Singleton):
             if rendertarget_name not in self.rendertargets:
                 self.rendertargets[rendertarget_name] = rendertarget
                 # send rendertarget info to GUI
-                self.core_manager.sendRenderTargetInfo(rendertarget_name)
+                self.core_manager.send_render_target_info(rendertarget_name)
             else:
                 # overwrite
                 self.rendertargets[rendertarget_name].delete()
@@ -142,13 +142,13 @@ class RenderTargetManager(Singleton):
         return rendertarget
 
     def recreate_rendertargets(self):
-        self.core_manager.clearRenderTargetList()
+        self.core_manager.clear_render_target_list()
 
         for rendertarget_name in self.rendertargets:
             rendertarget = self.rendertargets[rendertarget_name]
             datas = rendertarget.get_texture_info()
             self.create_rendertarget(rendertarget_name, **datas)
-            self.core_manager.sendRenderTargetInfo(rendertarget_name)
+            self.core_manager.send_render_target_info(rendertarget_name)
 
         self.clear_temp_rendertargets()
         self.core_manager.gc_collect()
@@ -157,7 +157,7 @@ class RenderTargetManager(Singleton):
         self.clear()
 
         # Note : # clear rendertarget infos in GUI
-        self.core_manager.clearRenderTargetList()
+        self.core_manager.clear_render_target_list()
 
         width = self.renderer.width
         height = self.renderer.height

@@ -16,16 +16,16 @@ class Attributes:
     def clear(self):
         self.attributeMap = OrderedDict()
 
-    def getAttribute(self, attrname):
+    def get_attribute(self, attrname):
         return self.attributeMap[attrname] if attrname in self.attributeMap else None
 
-    def getAttributes(self):
+    def get_attributes(self):
         return self.attributeMap.values()
 
-    def getAttributeNames(self):
+    def get_attributeNames(self):
         return self.attributeMap.keys()
 
-    def setAttribute(self, attrName, attrValue, isReadOnly=False):
+    def set_attribute(self, attrName, attrValue, isReadOnly=False):
         if attrValue is None:
             attrValue = ""
             attrType = None

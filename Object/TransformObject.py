@@ -36,35 +36,35 @@ class TransformObject:
         self.prev_matrix = Matrix4()
         self.prev_inverse_matrix = Matrix4()
 
-        self.updateTransform(True)
+        self.update_transform(True)
 
-    def resetTransform(self):
+    def reset_transform(self):
         self.moved = True
         self.rotated = True
         self.scaled = True
         self.updated = True
-        self.setPos(Float3())
-        self.setRot(Float3())
-        self.setScale(Float3(1, 1, 1))
-        self.updateTransform(True)
+        self.set_pos(Float3())
+        self.set_rotation(Float3())
+        self.set_scale(Float3(1, 1, 1))
+        self.update_transform(True)
 
     # Translate
-    def getPos(self):
+    def get_pos(self):
         return self.pos
 
-    def setPos(self, pos):
+    def set_pos(self, pos):
         self.moved = True
         self.pos[...] = pos
 
-    def setPosX(self, x):
+    def set_pos_x(self, x):
         self.moved = True
         self.pos[0] = x
 
-    def setPosY(self, y):
+    def set_pos_y(self, y):
         self.moved = True
         self.pos[1] = y
 
-    def setPosZ(self, z):
+    def set_pos_z(self, z):
         self.moved = True
         self.pos[2] = z
 
@@ -72,51 +72,51 @@ class TransformObject:
         self.moved = True
         self.pos[...] = self.pos + vDelta
 
-    def moveToFront(self, delta):
+    def move_to_front(self, delta):
         self.moved = True
         self.pos[...] = self.pos + self.front * delta
 
-    def moveToLeft(self, delta):
+    def move_to_left(self, delta):
         self.moved = True
         self.pos[...] = self.pos + self.left * delta
 
-    def moveToUp(self, delta):
+    def move_to_up(self, delta):
         self.moved = True
         self.pos[...] = self.pos + self.up * delta
 
-    def moveX(self, delta):
+    def move_x(self, delta):
         self.moved = True
         self.pos[0] += delta
 
-    def moveY(self, delta):
+    def move_y(self, delta):
         self.moved = True
         self.pos[1] += delta
 
-    def moveZ(self, delta):
+    def move_z(self, delta):
         self.moved = True
         self.pos[2] += delta
 
     # Rotation
-    def getRot(self):
+    def get_rotation(self):
         return self.rot
 
-    def setRot(self, rot):
+    def set_rotation(self, rot):
         self.rotated = True
         self.rot[...] = rot
 
-    def setPitch(self, pitch):
+    def set_pitch(self, pitch):
         self.rotated = True
         if pitch > TWO_PI or pitch < 0.0:
             pitch %= TWO_PI
         self.rot[0] = pitch
 
-    def setYaw(self, yaw):
+    def set_yaw(self, yaw):
         self.rotated = True
         if yaw > TWO_PI or yaw < 0.0:
             yaw %= TWO_PI
         self.rot[1] = yaw
 
-    def setRoll(self, roll):
+    def set_roll(self, roll):
         self.rotated = True
         if roll > TWO_PI or roll < 0.0:
             roll %= TWO_PI
@@ -124,45 +124,45 @@ class TransformObject:
 
     def rotation(self, rot):
         self.rotated = True
-        self.rotationPitch(rot[0])
-        self.rotationYaw(rot[1])
-        self.rotationRoll(rot[2])
+        self.rotation_pitch(rot[0])
+        self.rotation_yaw(rot[1])
+        self.rotation_roll(rot[2])
 
-    def rotationPitch(self, delta=0.0):
+    def rotation_pitch(self, delta=0.0):
         self.rotated = True
         self.rot[0] += delta
         if self.rot[0] > TWO_PI or self.rot[0] < 0.0:
             self.rot[0] %= TWO_PI
 
-    def rotationYaw(self, delta=0.0):
+    def rotation_yaw(self, delta=0.0):
         self.rotated = True
         self.rot[1] += delta
         if self.rot[1] > TWO_PI or self.rot[1] < 0.0:
             self.rot[1] %= TWO_PI
 
-    def rotationRoll(self, delta=0.0):
+    def rotation_roll(self, delta=0.0):
         self.rotated = True
         self.rot[2] += delta
         if self.rot[2] > TWO_PI or self.rot[2] < 0.0:
             self.rot[2] %= TWO_PI
 
     # Scale
-    def getScale(self):
+    def get_scale(self):
         return self.scale
 
-    def setScale(self, vScale):
+    def set_scale(self, vScale):
         self.scaled = True
         self.scale[...] = vScale
 
-    def setScaleX(self, x):
+    def set_scale_x(self, x):
         self.scaled = True
         self.scale[0] = x
 
-    def setScaleY(self, y):
+    def set_scale_y(self, y):
         self.scaled = True
         self.scale[1] = y
 
-    def setScaleZ(self, z):
+    def set_scale_z(self, z):
         self.scaled = True
         self.scale[2] = z
 
@@ -171,13 +171,13 @@ class TransformObject:
         self.scale[...] = self.scale + vScale
 
     # update Transform
-    def updateTransform(self, update_view_transform=False, force_update=False):
+    def update_transform(self, update_view_transform=False, force_update=False):
         prev_updated = self.updated
         self.updated = False
 
         if self.moved and any(self.prev_Pos != self.pos) or force_update:
             self.prev_Pos[...] = self.pos
-            setTranslateMatrix(self.translateMatrix, self.pos[0], self.pos[1], self.pos[2])
+            set_translate_matrix(self.translateMatrix, self.pos[0], self.pos[1], self.pos[2])
             self.moved = False
             self.updated = True
 
@@ -191,9 +191,9 @@ class TransformObject:
             matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
 
             # Euler Rotation - slow
-            # p = getRotationMatrixX(self.rot[0])
-            # y = getRotationMatrixY(self.rot[1])
-            # r = getRotationMatrixZ(self.rot[2])
+            # p = get_rotation_matrix_x(self.rot[0])
+            # y = get_rotation_matrix_y(self.rot[1])
+            # r = get_rotation_matrix_z(self.rot[2])
             # self.rotationMatrix = np.dot(p, np.dot(y, r))
             # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
 
@@ -204,7 +204,7 @@ class TransformObject:
 
         if self.scaled and any(self.prev_Scale != self.scale) or force_update:
             self.prev_Scale[...] = self.scale
-            setScaleMatrix(self.scaleMatrix, self.scale[0], self.scale[1], self.scale[2])
+            set_scale_matrix(self.scaleMatrix, self.scale[0], self.scale[1], self.scale[2])
             self.scaled = False
             self.updated = True
 
@@ -219,7 +219,7 @@ class TransformObject:
                 self.inverse_matrix[...] = np.linalg.inv(self.matrix)
         return self.updated
 
-    def getTransformInfos(self):
+    def get_transform_infos(self):
         text = "\tPosition : " + " ".join(["%2.2f" % i for i in self.pos])
         text += "\n\tRotation : " + " ".join(["%2.2f" % i for i in self.rot])
         text += "\n\tFront : " + " ".join(["%2.2f" % i for i in self.front])
