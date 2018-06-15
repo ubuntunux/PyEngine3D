@@ -73,40 +73,16 @@ class Particle:
 
 
 class EmitterInstance:
-    def __init__(self, **emitter_info):
-        self.name = emitter_info.get('name', 'Emitter')
+    def __init__(self, emitter_info):
+        self.emitter_info = emitter_info
         self.first_time = True
         self.alive = False
         self.elapsed_time = 0.0
-        self.has_velocity = False
-        self.has_rotation_velocity = False
-        self.has_scale_velocity = False
-        self.billboard = emitter_info.get('billboard', True)
-        self.mesh = None
-        self.material_instance = None
-        self.transform = TransformObject()
-        self.fade = emitter_info.get('fade', 0.0)  # negative is fade out, 0.0 is none, positive is fade in
-
+        
         # sequence
-        self.loop = emitter_info.get('loop', 1)  # -1 is infinite
-        self.loop_remain = self.loop
-        self.cell_count = emitter_info.get('cell_count', [1, 1])
-        self.total_cell_count = self.cell_count[0] * self.cell_count[1]
+        self.loop_remain = 0
         self.current_sequence = [1, 1]
         self.prev_sequence_index = -1
-
-        # variance
-        self.variance_delay = RangeVariable(emitter_info.get('delay', 0.0))
-        self.variance_life_time = RangeVariable(emitter_info.get('life_time', 0.0))
-        self.variance_play_speed = RangeVariable(emitter_info.get('play_speed', 0.0))
-        self.variance_gravity = RangeVariable(emitter_info.get('gravity', 0.0))
-        self.variance_opacity = RangeVariable(emitter_info.get('opacity', 1.0))
-        self.variance_velocity = RangeVariable(emitter_info.get('velocity', FLOAT3_ZERO))
-        self.variance_rotation_velocity = RangeVariable(emitter_info.get('rotation_velocity', FLOAT3_ZERO))
-        self.variance_scale_velocity = RangeVariable(emitter_info.get('scale_velocity', FLOAT3_ZERO))
-        self.variance_position = RangeVariable(emitter_info.get('position', FLOAT3_ZERO))
-        self.variance_rotation = RangeVariable(emitter_info.get('rotation', FLOAT3_ZERO))
-        self.variance_scale = RangeVariable(emitter_info.get('scale', Float3(1.0, 1.0, 1.0)))
 
         self.delay = 0.0
         self.life_time = 0.0
@@ -116,48 +92,15 @@ class EmitterInstance:
         self.velocity = Float3()
         self.rotation_velocity = Float3()
         self.scale_velocity = Float3()
-
-        self.attributes = Attributes()
-
-    def get_save_data(self):
-        save_data = dict(
-            billboard=self.billboard,
-            mesh=self.mesh.name if self.mesh is not None else '',
-            material_instance=self.material_instance.name if self.material_instance is not None else '',
-            fade=self.fade,
-            loop=self.loop,
-            cell_count=self.cell_count,
-            delay=self.variance_delay.get_save_data(),
-            life_time=self.variance_life_time.get_save_data(),
-            play_speed=self.variance_play_speed.get_save_data(),
-            gravity=self.variance_gravity.get_save_data(),
-            opacity=self.variance_opacity.get_save_data(),
-            velocity=self.variance_velocity.get_save_data(),
-            rotation_velocity=self.variance_rotation_velocity.get_save_data(),
-            scale_velocity=self.variance_scale_velocity.get_save_data(),
-            position=self.variance_position.get_save_data(),
-            rotation=self.variance_rotation.get_save_data(),
-            scale=self.variance_scale.get_save_data(),
-        )
-        return save_data
-
-    def get_attribute(self):
-        attributes = self.get_save_data()
-        self.attributes.set_attribute('name', self.name)
-        for key in attributes:
-            self.attributes.set_attribute(key, attributes[key])
-        return self.attributes
-
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
-        if hasattr(self, "variance_" + attributeName):
-            variance_value = getattr("variance_" + attributeName)
-            variance_value.set_value(*attributeValue)
-        elif hasattr(self, attributeName):
-            setattr(self, attributeName, attributeValue)
-        self.play()
-        
+        self.has_velocity = False
+        self.has_rotation_velocity = False
+        self.has_scale_velocity = False
+        self.transform = TransformObject()
+    
     def refresh(self):
-        self.delay = self.variance_delay.get_value()
+        self.loop_remain = self.emitter_info.loop
+        
+        self.delay = self.emitter_info.delay.get_value()
         self.life_time = self.variance_life_time.get_value()
         self.play_speed = self.variance_play_speed.get_value()
         self.gravity = self.variance_gravity.get_value()
