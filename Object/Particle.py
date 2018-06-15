@@ -196,6 +196,7 @@ class EmitterInstance:
 class EmitterInfo:
     def __init__(self, **emitter_info):
         self.name = emitter_info.get('name', 'Emitter')
+        self.enable = emitter_info.get('enable', True)
         self.billboard = emitter_info.get('billboard', True)
         self.mesh = emitter_info.get('mesh', None)
         self.material_instance = emitter_info.get('material_instance', None)
@@ -222,6 +223,7 @@ class EmitterInfo:
 
     def get_save_data(self):
         save_data = dict(
+            enable=self.enable,
             billboard=self.billboard,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
