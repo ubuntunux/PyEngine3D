@@ -40,6 +40,7 @@ class SceneManager(Singleton):
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
+        self.particles = []
         self.objectMap = {}  # All of objects
 
         # render group
@@ -81,6 +82,7 @@ class SceneManager(Singleton):
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
+        self.particles = []
         self.objectMap = {}
 
         self.static_solid_render_infos = []
@@ -200,6 +202,8 @@ class SceneManager(Singleton):
             return self.static_actors
         elif SkeletonActor == object_type:
             return self.skeleton_actors
+        elif Particle == object_type:
+            return self.particles
         return None
 
     def regist_object(self, object):
@@ -228,41 +232,44 @@ class SceneManager(Singleton):
             logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
 
     def add_camera(self, **camera_data):
-        camera_data['name'] = self.generate_object_name(camera_data.get('name', 'camera'))
-        camera_data['model'] = self.resource_manager.get_model('Cube')
-        logger.info("add Camera : %s" % camera_data['name'])
-        camera = Camera(scene_manager=self, **camera_data)
+        name = self.generate_object_name(camera_data.get('name', 'camera'))
+        model = self.resource_manager.get_model('Cube')
+        logger.info("add Camera : %s" % name)
+        camera = Camera(scene_manager=self, name=name, model=model, **camera_data)
         camera.initialize()
         self.regist_object(camera)
         return camera
 
     def add_main_light(self, **light_data):
-        light_data['name'] = self.generate_object_name(light_data.get('name', 'main_light'))
-        light_data['model'] = self.resource_manager.get_model('Cube')
-        logger.info("add MainLight : %s" % light_data['name'])
-        light = MainLight(**light_data)
+        name = self.generate_object_name(light_data.get('name', 'main_light'))
+        model = self.resource_manager.get_model('Cube')
+        logger.info("add MainLight : %s" % name)
+        light = MainLight(name=name, model=model, **light_data)
         self.regist_object(light)
         return light
 
     def add_light(self, **light_data):
-        light_data['name'] = self.generate_object_name(light_data.get('name', 'light'))
-        light_data['model'] = self.resource_manager.get_model('Cube')
-        logger.info("add Light : %s" % light_data['name'])
-        light = PointLight(**light_data)
+        name = self.generate_object_name(light_data.get('name', 'light'))
+        model = self.resource_manager.get_model('Cube')
+        logger.info("add Light : %s" % name)
+        light = PointLight(name=name, model=model, **light_data)
         self.regist_object(light)
         return light
 
     def add_light_probe(self, **light_probe_data):
-        light_probe_data['name'] = self.generate_object_name(light_probe_data.get('name', 'light_probe'))
-        light_probe_data['model'] = self.resource_manager.get_model('sphere')
-        logger.info("add Light Probe : %s" % light_probe_data['name'])
-        light_probe = LightProbe(**light_probe_data)
+        name = self.generate_object_name(light_probe_data.get('name', 'light_probe'))
+        model = self.resource_manager.get_model('sphere')
+        logger.info("add Light Probe : %s" % name)
+        light_probe = LightProbe(name=name, model=model, **light_probe_data)
         self.regist_object(light_probe)
         return light_probe
 
     def add_particle(self, **particle_data):
-        logger.error("add_particle is not implemented.")
-        return None
+        name = self.generate_object_name(particle_data.get('name', 'particle'))
+        logger.info("add Particle : %s" % name)
+        particle = Particle(name=name, **particle_data)
+        self.regist_object(particle)
+        return particle
 
     def add_atmosphere(self, **atmosphere_data):
         atmosphere_data['name'] = self.generate_object_name(atmosphere_data.get('name', 'atmosphere'))
@@ -457,3 +464,6 @@ class SceneManager(Singleton):
         self.atmosphere.update(self.main_light)
 
         self.ocean.update(dt)
+
+        for particle in self.particles:
+            particle.update(dt)

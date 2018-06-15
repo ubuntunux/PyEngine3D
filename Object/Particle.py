@@ -39,40 +39,36 @@ class ParticleManager(Singleton):
 
 
 class Particle:
-    def __init__(self, name, emitters_infos=[]):
+    def __init__(self, name, particle_info):
         self.emitters_list = []
 
-        for emitters_info in emitters_infos:
-            count = emitter_info.get('count', 1)
+        for emitter_info in particle_info.emitter_infos:
             emitter_list = []
             self.emitters_list.append(emitter_list)
 
+            count = 1
             for i in range(count):
-                emitter = Emitter(emitters_info)
+                emitter = Emitter(emitter_info)
                 emitter_list.append(emitter)
 
-    def get_save_data(self):
-        save_data = [emitter.get_save_data() for emitter in self.emitters_list]
-        return save_data
-
     def play(self):
-        for emitter_list in self.emitters_list:
-            for emitter in emitter_list:
+        for emitters in self.emitters_list:
+            for emitter in emitters:
                 emitter.play()
 
     def destroy(self):
-        for emitter_list in self.emitters_list:
-            for emitter in emitter_list:
+        for emitters in self.emitters_list:
+            for emitter in emitters:
                 emitter.destroy()
         self.emitters_list = []
 
     def update(self, dt):
-        for emitter_list in self.emitters_list:
-            for emitter in emitter_list:
+        for emitters in self.emitters_list:
+            for emitter in emitters:
                 emitter.update(dt)
 
 
-class EmitterInstance:
+class Emitter:
     def __init__(self, emitter_info):
         self.emitter_info = emitter_info
         self.first_time = True
@@ -123,10 +119,8 @@ class EmitterInstance:
             return
 
         self.alive = True
-        self.loop_remain = self.loop
         self.elapsed_time = 0.0
         self.prev_sequence_index = -1
-        self.total_cell_count = self.cell_count[0] * self.cell_count[1]
         self.refresh()
 
     def destroy(self):
@@ -192,14 +186,26 @@ class EmitterInstance:
             opacity = life_ratio if 0.0 < self.fade else (1.0 - life_ratio)
             self.opacity = math.pow(opacity, abs(self.fade))
 
-            
+
+class ParticleInfo:
+    def __init__(self, name, emitter_infos):
+        self.name = name
+        self.emitter_infos = []
+
+        for emitter_info in emitter_infos:
+            self.add_emiter(**emitter_info)
+
+    def add_emiter(self, **emitter_info):
+        self.emitter_infos.append(EmitterInfo(**emitter_info))
+
+
 class EmitterInfo:
     def __init__(self, **emitter_info):
         self.name = emitter_info.get('name', 'Emitter')
         self.enable = emitter_info.get('enable', True)
         self.billboard = emitter_info.get('billboard', True)
-        self.mesh = emitter_info.get('mesh', None)
-        self.material_instance = emitter_info.get('material_instance', None)
+        self.mesh = emitter_info.get('mesh')
+        self.material_instance = emitter_info.get('material_instance')
         self.fade = emitter_info.get('fade', 0.0)  # negative is fade out, 0.0 is none, positive is fade in
 
         # sequence

@@ -24,7 +24,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from Object import Particle, Emitter
+from Object import ParticleInfo
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
@@ -1229,7 +1229,7 @@ class ParticleLoader(ResourceLoader):
 
     def create_particle(self):
         resource = self.create_resource('particle')
-        particle = Particle(name=resource.name)
+        particle = ParticleInfo(name=resource.name, [])
         resource.set_data(particle)
         self.save_resource(resource.name)
 
@@ -1238,19 +1238,22 @@ class ParticleLoader(ResourceLoader):
         if resource:
             emitter_infos = self.load_resource_data(resource)
             if emitter_infos is not None:
-                # mesh = self.resource_manager.get_mesh(object_data.get('mesh'))
-                # material_instances = [self.resource_manager.get_material_instance(material_instance_name)
-                #                       for material_instance_name in object_data.get('material_instances', [])]
-                particle = Particle(resource.name, emitter_infos)
-                resource.set_data(particle)
+                default_mesh = self.resource_manager.get_default_mesh()
+                default_material_instance = self.resource_manager.get_default_material_instance()
+                for emitter_info in emitter_infos:
+                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh']) or default_mesh
+                    emitter_info['material_instance'] = self.resource_manager.get_material_instance(
+                        emitter_info['material_instance']) or default_material_instance
+                particle_info = ParticleInfo(resource_name, emitter_infos)
+                resource.set_data(particle_info)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
     def action_resource(self, resource_name):
-        particle = self.get_resource_data(resource_name)
-        if model is not None:
-            self.scene_manager.add_particle(particle)
+        particle_info = self.get_resource_data(resource_name)
+        if particle_info is not None:
+            self.scene_manager.add_particle(particle_info)
 
 
 # -----------------------#
@@ -1438,7 +1441,8 @@ class ResourceManager(Singleton):
     def get_mesh(self, meshName):
         return self.mesh_loader.get_resource_data(meshName)
 
-    # FUNCTIONS : Procedural Texture
+    def get_default_mesh(self):
+        return self.material_instance_loader.get_material_instance('Quad')
 
     def get_procedural_texture(self, textureName):
         return self.procedural_texture_loader.get_resource_data(textureName)
