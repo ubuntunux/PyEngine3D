@@ -72,7 +72,7 @@ class Particle:
                 emitter.update(dt)
 
 
-class Emitter:
+class EmitterInstance:
     def __init__(self, **emitter_info):
         self.name = emitter_info.get('name', 'Emitter')
         self.first_time = True
@@ -248,3 +248,64 @@ class Emitter:
         if 0.0 != self.fade:
             opacity = life_ratio if 0.0 < self.fade else (1.0 - life_ratio)
             self.opacity = math.pow(opacity, abs(self.fade))
+
+            
+class EmitterInfo:
+    def __init__(self, **emitter_info):
+        self.name = emitter_info.get('name', 'Emitter')
+        self.billboard = emitter_info.get('billboard', True)
+        self.mesh = emitter_info.get('mesh', None)
+        self.material_instance = emitter_info.get('material_instance', None)
+        self.fade = emitter_info.get('fade', 0.0)  # negative is fade out, 0.0 is none, positive is fade in
+
+        # sequence
+        self.loop = emitter_info.get('loop', 1)  # -1 is infinite
+        self.cell_count = emitter_info.get('cell_count', [1, 1])
+        self.total_cell_count = self.cell_count[0] * self.cell_count[1]
+
+        # variance
+        self.delay = RangeVariable(emitter_info.get('delay', 0.0))
+        self.life_time = RangeVariable(emitter_info.get('life_time', 0.0))
+        self.play_speed = RangeVariable(emitter_info.get('play_speed', 0.0))
+        self.gravity = RangeVariable(emitter_info.get('gravity', 0.0))
+        self.opacity = RangeVariable(emitter_info.get('opacity', 1.0))
+        self.velocity = RangeVariable(emitter_info.get('velocity', FLOAT3_ZERO))
+        self.rotation_velocity = RangeVariable(emitter_info.get('rotation_velocity', FLOAT3_ZERO))
+        self.scale_velocity = RangeVariable(emitter_info.get('scale_velocity', FLOAT3_ZERO))
+        self.position = RangeVariable(emitter_info.get('position', FLOAT3_ZERO))
+        self.rotation = RangeVariable(emitter_info.get('rotation', FLOAT3_ZERO))
+        self.scale = RangeVariable(emitter_info.get('scale', Float3(1.0, 1.0, 1.0)))
+        self.attributes = Attributes()
+
+    def get_save_data(self):
+        save_data = dict(
+            billboard=self.billboard,
+            mesh=self.mesh.name if self.mesh is not None else '',
+            material_instance=self.material_instance.name if self.material_instance is not None else '',
+            fade=self.fade,
+            loop=self.loop,
+            cell_count=self.cell_count,
+            delay=self.variance_delay.get_save_data(),
+            life_time=self.variance_life_time.get_save_data(),
+            play_speed=self.variance_play_speed.get_save_data(),
+            gravity=self.variance_gravity.get_save_data(),
+            opacity=self.variance_opacity.get_save_data(),
+            velocity=self.variance_velocity.get_save_data(),
+            rotation_velocity=self.variance_rotation_velocity.get_save_data(),
+            scale_velocity=self.variance_scale_velocity.get_save_data(),
+            position=self.variance_position.get_save_data(),
+            rotation=self.variance_rotation.get_save_data(),
+            scale=self.variance_scale.get_save_data(),
+        )
+        return save_data
+
+    def get_attribute(self):
+        attributes = self.get_save_data()
+        self.attributes.set_attribute('name', self.name)
+        for key in attributes:
+            self.attributes.set_attribute(key, attributes[key])
+        return self.attributes
+
+    def set_attribute(self, attributeName, attributeValue, attribute_index):
+        if hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
