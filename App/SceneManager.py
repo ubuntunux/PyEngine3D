@@ -264,10 +264,10 @@ class SceneManager(Singleton):
         self.regist_object(light_probe)
         return light_probe
 
-    def add_particle(self, **particle_data):
-        name = self.generate_object_name(particle_data.get('name', 'particle'))
+    def add_particle(self, name, particle_info):
+        name = self.generate_object_name(name)
         logger.info("add Particle : %s" % name)
-        particle = Particle(name=name, **particle_data)
+        particle = Particle(name, particle_info)
         self.regist_object(particle)
         return particle
 

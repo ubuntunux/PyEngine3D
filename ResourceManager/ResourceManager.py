@@ -1254,7 +1254,7 @@ class ParticleLoader(ResourceLoader):
     def action_resource(self, resource_name):
         particle_info = self.get_resource_data(resource_name)
         if particle_info is not None:
-            self.scene_manager.add_particle(particle_info)
+            self.scene_manager.add_particle(resource_name, particle_info)
 
 
 # -----------------------#
