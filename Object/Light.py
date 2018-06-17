@@ -17,8 +17,8 @@ class MainLight(StaticActor):
         self.attributes.set_attribute('light_color', self.light_color)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
-        super().set_attribute(attributeName, attributeValue, attribute_index)
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+        super().set_attribute(attributeName, attributeValue, parent_info, attribute_index)
         if attributeName == 'light_color':
             self.light_color[:] = attributeValue[:]
 
@@ -51,8 +51,8 @@ class PointLight(StaticActor):
         self.attributes.set_attribute('light_radius', self.light_radius)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
-        super().set_attribute(attributeName, attributeValue, attribute_index)
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+        super().set_attribute(attributeName, attributeValue, parent_info, attribute_index)
         if attributeName == 'light_color':
             self.light_color[:] = attributeValue[:]
         elif hasattr(self, attributeName):

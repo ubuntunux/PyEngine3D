@@ -86,8 +86,8 @@ class Camera(StaticActor):
         self.attributes.set_attribute('rotation_speed', self.rotation_speed)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
-        StaticActor.set_attribute(self, attributeName, attributeValue, attribute_index)
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+        StaticActor.set_attribute(self, attributeName, attributeValue, parent_info, attribute_index)
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
             if "fov" == attributeName:

@@ -145,7 +145,7 @@ class Mesh:
         self.attributes.set_attribute("geometries", [geometry.name for geometry in self.geometries])
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         pass
 
 

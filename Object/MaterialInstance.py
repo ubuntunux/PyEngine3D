@@ -152,7 +152,7 @@ class MaterialInstance:
             self.Attributes.set_attribute(key, self.macros[key])
         return self.Attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if attributeName == 'shader_name':
             if attributeValue != self.shader_name:
                 material = CoreManager.instance().resource_manager.get_material(attributeValue, self.macros)

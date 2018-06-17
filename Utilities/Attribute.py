@@ -11,19 +11,25 @@ class Attribute:
 
 class Attributes:
     def __init__(self):
-        self.attributeMap = OrderedDict()
+        self.attribute_map = OrderedDict()
 
     def clear(self):
-        self.attributeMap = OrderedDict()
+        self.attribute_map = OrderedDict()
 
-    def get_attribute(self, attrname):
-        return self.attributeMap[attrname] if attrname in self.attributeMap else None
+    def get_attribute_map(self):
+        return self.attribute_map
 
     def get_attributes(self):
-        return self.attributeMap.values()
+        return self.attribute_map.values()
 
-    def get_attributeNames(self):
-        return self.attributeMap.keys()
+    def get_attribute_names(self):
+        return self.attribute_map.keys()
+
+    def has_attribute(self, attrname):
+        return attrname in self.attribute_map
+
+    def get_attribute(self, attrname):
+        return self.attribute_map[attrname] if attrname in self.attribute_map else None
 
     def set_attribute(self, attrName, attrValue, isReadOnly=False):
         if attrValue is None:
@@ -35,4 +41,4 @@ class Attributes:
             # class object use name as attrValue.
             if hasattr(attrValue, "name"):
                 attrValue = attrValue.name
-        self.attributeMap[attrName] = Attribute(attrName, attrValue, attrType, isReadOnly)
+        self.attribute_map[attrName] = Attribute(attrName, attrValue, attrType, isReadOnly)

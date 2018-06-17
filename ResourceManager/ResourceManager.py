@@ -186,9 +186,9 @@ class Resource:
             return self.data.get_attribute()
         return None
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if self.data and hasattr(self.data, 'set_attribute'):
-            self.data.set_attribute(attributeName, attributeValue, attribute_index)
+            self.data.set_attribute(attributeName, attributeValue, parent_info, attribute_index)
 
 
 # -----------------------#
@@ -337,15 +337,15 @@ class ResourceLoader(object):
             return resource.get_attribute()
         return None
 
-    def set_resource_attribute(self, resource_name, attribute_name, attribute_value, attribute_index):
+    def set_resource_attribute(self, resource_name, attribute_name, attribute_value, parent_info, attribute_index):
         # rename resource
-        if attribute_name == 'name':
+        if attribute_name == 'name' and parent_info == 0:
             self.rename_resource(resource_name, attribute_value)
         else:
             # set other attributes
             resource = self.get_resource(resource_name)
             if resource:
-                resource.set_attribute(attribute_name, attribute_value, attribute_index)
+                resource.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
 
     def get_meta_data(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
@@ -1350,10 +1350,12 @@ class ResourceManager(Singleton):
                        resource_loader.get_resource_name_list()]
         return
 
-    def set_resource_attribute(self, resource_name, resource_type_name, attribute_name, attribute_value, attribute_index):
+    def set_resource_attribute(self, resource_name, resource_type_name, attribute_name, attribute_value,
+                               parent_info, attribute_index):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
-            return resource_loader.set_resource_attribute(resource_name, attribute_name, attribute_value, attribute_index)
+            return resource_loader.set_resource_attribute(resource_name, attribute_name, attribute_value,
+                                                          parent_info, attribute_index)
         return None
 
     def get_resource_attribute(self, resource_name, resource_type_name):

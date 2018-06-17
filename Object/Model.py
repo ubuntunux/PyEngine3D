@@ -61,7 +61,7 @@ class Model:
         self.attributes.set_attribute('material_instances', self.get_material_instance_names())
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if attributeName == 'mesh':
             mesh = CoreManager.instance().resource_manager.get_mesh(attributeValue)
             if mesh and self.mesh != mesh:

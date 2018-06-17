@@ -108,7 +108,7 @@ class Atmosphere:
         self.attributes.set_attribute('noise_coverage', self.noise_coverage)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
@@ -119,7 +119,7 @@ class Atmosphere:
 
     def get_save_data(self):
         save_data = {}
-        for attribute in self.attributes.get_attributeNames():
+        for attribute in self.attributes.get_attribute_names():
             save_data[attribute] = self.attributes.get_attribute(attribute).value
         return save_data
 

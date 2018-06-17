@@ -130,7 +130,7 @@ class Ocean:
         self.attributes.set_attribute('simulation_scale', self.simulation_scale)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
             # recreate resources

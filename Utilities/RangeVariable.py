@@ -4,15 +4,14 @@ import numpy as np
 
 
 class RangeVariable:
-    def __init__(self, v1, v2=None):
+    def __init__(self, values):
         self.is_array = False
-        self.v1 = None
-        self.v2 = None
+        self.v1, self.v2 = values
         self.range = None
         self.min = None
         self.max = None
 
-        self.set_value(v1, v2)
+        self.set_value(self.v1, self.v2)
 
     def set_value(self, v1, v2=None):
         self.is_array = hasattr(v1, '__len__')
@@ -32,11 +31,10 @@ class RangeVariable:
             self.max = max(self.v1, self.v2)
 
         if self.is_array:
-            if any(v1 != v2):
+            if any([x != y for x, y in zip(v1, v2)]):
                 self.get_value = self.get_random_array
-        else:
-            if v1 != v2:
-                self.get_value = self.get_random
+        elif v1 != v2:
+            self.get_value = self.get_random
 
     def get_value(self):
         return self.v1

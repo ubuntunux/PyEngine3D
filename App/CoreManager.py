@@ -334,8 +334,12 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
 
         def cmd_set_resource_attribute(value):
-            resourceName, resourceType, attributeName, attributeValue, attribute_index = value
-            self.resource_manager.set_resource_attribute(resourceName, resourceType, attributeName, attributeValue,
+            resourceName, resourceType, attributeName, attributeValue, parent_info, attribute_index = value
+            self.resource_manager.set_resource_attribute(resourceName,
+                                                         resourceType,
+                                                         attributeName,
+                                                         attributeValue,
+                                                         parent_info,
                                                          attribute_index)
         self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
 
@@ -358,8 +362,9 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
-            objectName, objectType, attributeName, attributeValue, attribute_index = value
-            self.scene_manager.set_object_attribute(objectName, objectType, attributeName, attributeValue, attribute_index)
+            objectName, objectType, attributeName, attributeValue, parent_info, attribute_index = value
+            self.scene_manager.set_object_attribute(objectName, objectType, attributeName, attributeValue,
+                                                    parent_info, attribute_index)
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
 
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.scene_manager.set_selected_object(value)

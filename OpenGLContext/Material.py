@@ -60,7 +60,7 @@ class Material:
             self.Attributes.set_attribute(key, self.macros[key])
         return self.Attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if attributeName in self.macros and self.macros[attributeName] != attributeValue:
             new_macros = copy.deepcopy(self.macros)
             new_macros[attributeName] = attributeValue

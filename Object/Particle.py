@@ -195,6 +195,8 @@ class ParticleInfo:
         for emitter_info in emitter_infos:
             self.add_emiter(**emitter_info)
 
+        self.attributes = Attributes()
+
     def add_emiter(self, **emitter_info):
         self.emitter_infos.append(EmitterInfo(**emitter_info))
 
@@ -204,9 +206,35 @@ class ParticleInfo:
             save_data.append(emitter_info.get_save_data())
         return save_data
 
+    def get_attribute(self):
+        self.attributes.set_attribute('name', self.name)
+        if self.emitter_infos:
+            attributes = []
+            for emitter_info in self.emitter_infos:
+                attributes.append(emitter_info.get_attribute())
+            self.attributes.set_attribute('emitter_infos', attributes)
+        self.attributes.set_attribute('emitter_name', '')
+        return self.attributes
+
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+        print(attributeName, attributeValue, parent_info, attribute_index)
+        history = []
+        while parent_info is not None:
+            history.append(parent_info)
+            parent_info = parent_info.parent_info
+
+        for h in history:
+            print(h.__dict__)
+
+        if 'emitter_name' == attributeName and '' != attributeValue:
+            self.add_emiter(name=attributeValue)
+        elif hasattr(self, attributeName):
+            setattr(self, attributeName, attributeValue)
+
 
 class EmitterInfo:
     def __init__(self, **emitter_info):
+        self.emitter_info = emitter_info
         self.name = emitter_info.get('name', 'Emitter')
         self.enable = emitter_info.get('enable', True)
         self.billboard = emitter_info.get('billboard', True)
@@ -220,17 +248,17 @@ class EmitterInfo:
         self.total_cell_count = self.cell_count[0] * self.cell_count[1]
 
         # variance
-        self.delay = RangeVariable(emitter_info.get('delay', 0.0))
-        self.life_time = RangeVariable(emitter_info.get('life_time', 0.0))
-        self.play_speed = RangeVariable(emitter_info.get('play_speed', 0.0))
-        self.gravity = RangeVariable(emitter_info.get('gravity', 0.0))
-        self.opacity = RangeVariable(emitter_info.get('opacity', 1.0))
-        self.velocity = RangeVariable(emitter_info.get('velocity', FLOAT3_ZERO))
-        self.rotation_velocity = RangeVariable(emitter_info.get('rotation_velocity', FLOAT3_ZERO))
-        self.scale_velocity = RangeVariable(emitter_info.get('scale_velocity', FLOAT3_ZERO))
-        self.position = RangeVariable(emitter_info.get('position', FLOAT3_ZERO))
-        self.rotation = RangeVariable(emitter_info.get('rotation', FLOAT3_ZERO))
-        self.scale = RangeVariable(emitter_info.get('scale', Float3(1.0, 1.0, 1.0)))
+        self.delay = RangeVariable(emitter_info.get('delay', (0.0, 0.0)))
+        self.life_time = RangeVariable(emitter_info.get('life_time', (0.0, 0.0)))
+        self.play_speed = RangeVariable(emitter_info.get('play_speed', (0.0, 0.0)))
+        self.gravity = RangeVariable(emitter_info.get('gravity', (0.0, 0.0)))
+        self.opacity = RangeVariable(emitter_info.get('opacity', (1.0, 1.0)))
+        self.velocity = RangeVariable(emitter_info.get('velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
+        self.rotation_velocity = RangeVariable(emitter_info.get('rotation_velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
+        self.scale_velocity = RangeVariable(emitter_info.get('scale_velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
+        self.position = RangeVariable(emitter_info.get('position', (FLOAT3_ZERO, FLOAT3_ZERO)))
+        self.rotation = RangeVariable(emitter_info.get('rotation', (FLOAT3_ZERO, FLOAT3_ZERO)))
+        self.scale = RangeVariable(emitter_info.get('scale', (Float3(1.0, 1.0, 1.0), Float3(1.0, 1.0, 1.0))))
         self.attributes = Attributes()
 
     def get_save_data(self):
@@ -242,17 +270,17 @@ class EmitterInfo:
             fade=self.fade,
             loop=self.loop,
             cell_count=self.cell_count,
-            delay=self.variance_delay.get_save_data(),
-            life_time=self.variance_life_time.get_save_data(),
-            play_speed=self.variance_play_speed.get_save_data(),
-            gravity=self.variance_gravity.get_save_data(),
-            opacity=self.variance_opacity.get_save_data(),
-            velocity=self.variance_velocity.get_save_data(),
-            rotation_velocity=self.variance_rotation_velocity.get_save_data(),
-            scale_velocity=self.variance_scale_velocity.get_save_data(),
-            position=self.variance_position.get_save_data(),
-            rotation=self.variance_rotation.get_save_data(),
-            scale=self.variance_scale.get_save_data(),
+            delay=self.delay.get_save_data(),
+            life_time=self.life_time.get_save_data(),
+            play_speed=self.play_speed.get_save_data(),
+            gravity=self.gravity.get_save_data(),
+            opacity=self.opacity.get_save_data(),
+            velocity=self.velocity.get_save_data(),
+            rotation_velocity=self.rotation_velocity.get_save_data(),
+            scale_velocity=self.scale_velocity.get_save_data(),
+            position=self.position.get_save_data(),
+            rotation=self.rotation.get_save_data(),
+            scale=self.scale.get_save_data(),
         )
         return save_data
 
@@ -263,6 +291,6 @@ class EmitterInfo:
             self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)

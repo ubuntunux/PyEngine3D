@@ -50,7 +50,7 @@ class StaticActor:
         self.attributes.set_attribute('model', self.model.name if self.model else '')
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if attributeName == 'pos':
             self.transform.set_pos(attributeValue)
         elif attributeName == 'rot':

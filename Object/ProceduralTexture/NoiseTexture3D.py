@@ -99,7 +99,7 @@ class NoiseTexture3D:
         self.attribute.set_attribute("noise_scale", self.noise_scale)
         return self.attribute
 
-    def set_attribute(self, attributeName, attributeValue, attribute_index):
+    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
         if hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
         return self.attribute

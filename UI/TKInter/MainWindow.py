@@ -3,6 +3,7 @@ import traceback
 import os
 import time
 from threading import Thread
+from collections import OrderedDict
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -13,6 +14,7 @@ import numpy
 
 from UI import logger
 from Common.Command import *
+from Utilities import Attributes, Attribute
 from .EditableTreeview import SimpleEditableTreeview
 
 
@@ -61,12 +63,16 @@ def combobox_clear(combobox):
 
 
 class ItemInfo:
-    def __init__(self, value, dataType, depth, index):
-        self.oldValue = value
+    def __init__(self, attribute_name, dataType, parent_info, index):
         self.dataType = dataType
-        self.depth = depth
+        self.attribute_name = attribute_name
+        self.parent_info = parent_info
         self.index = index
         self.remove = False
+        self.oldValue = None
+
+    def set_old_value(self, value):
+        self.oldValue = value
 
 
 class MessageThread(Thread):
@@ -525,6 +531,10 @@ class MainWindow:
             item = self.attribute_treeview.item(item_id)
             item_info = self.attribute_treeview.item_infos[item_id]
 
+            if item_info.dataType in (tuple, list, numpy.ndarray, Attributes):
+                self.attribute_treeview.set(item_id, '#1', '')
+                return
+
             try:
                 # check value chaned
                 new_value = get_value(item)
@@ -577,9 +587,13 @@ class MainWindow:
                     selected_item_type = get_value(selected_item)
 
                     # send changed data
-                    self.appCmdQueue.put(
-                        command, (selected_item_name, selected_item_type, attributeName, value, item_info.index)
-                    )
+                    self.appCmdQueue.put(command,
+                                         (selected_item_name,
+                                          selected_item_type,
+                                          attributeName,
+                                          value,
+                                          item_info.parent_info,
+                                          item_info.index))
             except BaseException:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
@@ -593,22 +607,28 @@ class MainWindow:
             else:
                 self.attribute_treeview.inplace_entry('#1', item_id)
 
-    def add_attribute(self, parent, attributeName, value, depth=0, index=0):
+    def add_attribute(self, parent, attribute_name, value, parent_info=None, index=0):
         dataType = type(value)
-        item_id = self.attribute_treeview.insert(parent, 'end', text=attributeName, open=True)
+        item_id = self.attribute_treeview.insert(parent, 'end', text=attribute_name, open=True)
+        item_info = ItemInfo(attribute_name=attribute_name,
+                             dataType=dataType,
+                             parent_info=parent_info,
+                             index=index)
+        self.attribute_treeview.item_infos[item_id] = item_info
 
-        self.attribute_treeview.item_infos[item_id] = ItemInfo(value=value,
-                                                               dataType=dataType,
-                                                               depth=depth,
-                                                               index=index)
-
-        # set value
-        if dataType in (tuple, list, numpy.ndarray):  # set list type
-            for i, itemValue in enumerate(value):  # add child component
-                self.add_attribute(item_id, "[%d]" % i, itemValue, depth + 1, i)
+        if dataType in (tuple, list, numpy.ndarray):
+            for i, item_value in enumerate(value):
+                self.add_attribute(item_id, "[%d]" % i, item_value, item_info, i)
+        elif dataType in (dict, OrderedDict):
+            for i, item_key in enumerate(value):
+                self.add_attribute(item_id, item_key, value[item_key], item_info, item_key)
+        elif dataType is Attributes:
+            for i, attribute in enumerate(value.get_attributes()):
+                self.add_attribute(item_id, attribute.name, attribute.value, item_info, attribute.name)
         else:
-            # set general type value - int, float, string
-            self.attribute_treeview.item(item_id, text=attributeName, values=(value,))
+            # set value - int, float, string
+            self.attribute_treeview.item(item_id, text=attribute_name, values=(value,))
+            item_info.set_old_value(value)
 
     def fill_resource_attribute(self, attributes):
         selected_items = self.get_selected_resource()
@@ -635,9 +655,7 @@ class MainWindow:
         self.clear_attribute()
 
         # fill properties of selected object
-        attribute_values = list(attributes.get_attributes())
-        attribute_values.sort(key=lambda x: x.name)
-        for attribute in attribute_values:
+        for attribute in attributes.get_attributes():
             self.add_attribute("", attribute.name, attribute.value)
 
         # unlock edit attribute ui
