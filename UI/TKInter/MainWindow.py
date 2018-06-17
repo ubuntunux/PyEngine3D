@@ -3,7 +3,6 @@ import traceback
 import os
 import time
 from threading import Thread
-from collections import OrderedDict
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -619,9 +618,6 @@ class MainWindow:
         if dataType in (tuple, list, numpy.ndarray):
             for i, item_value in enumerate(value):
                 self.add_attribute(item_id, "[%d]" % i, item_value, item_info, i)
-        elif dataType in (dict, OrderedDict):
-            for i, item_key in enumerate(value):
-                self.add_attribute(item_id, item_key, value[item_key], item_info, item_key)
         elif dataType is Attributes:
             for i, attribute in enumerate(value.get_attributes()):
                 self.add_attribute(item_id, attribute.name, attribute.value, item_info, attribute.name)
