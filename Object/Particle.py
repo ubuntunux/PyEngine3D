@@ -198,6 +198,12 @@ class ParticleInfo:
     def add_emiter(self, **emitter_info):
         self.emitter_infos.append(EmitterInfo(**emitter_info))
 
+    def get_save_data(self):
+        save_data = []
+        for emitter_info in self.emitter_infos:
+            save_data.append(emitter_info.get_save_data())
+        return save_data
+
 
 class EmitterInfo:
     def __init__(self, **emitter_info):

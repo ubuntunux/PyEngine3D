@@ -209,18 +209,6 @@ class MainWindow:
         separator = ttk.Separator(command_frame, orient='horizontal')
         separator.pack(fill="x", side="top", pady=10)
 
-        button = tk.Button(command_frame, text="Add Camera")
-        button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.add_camera)
-
-        button = tk.Button(command_frame, text="Add Light")
-        button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.add_light)
-
-        button = tk.Button(command_frame, text="Create Particle")
-        button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.create_particle)
-
         label_frame = ttk.LabelFrame(command_frame, text='Resolution')
         label_frame.pack(fill="x", side="top", pady=10)
 
@@ -253,22 +241,40 @@ class MainWindow:
         button.pack(fill="x", side="top")
         button.bind("<Button-1>", self.change_resolution)
 
-        self.comboRenderingType = ttk.Combobox(command_frame)
+        label_frame = ttk.LabelFrame(command_frame, text='Rendering Type')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        self.comboRenderingType = ttk.Combobox(label_frame)
         self.comboRenderingType.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboRenderingType.pack(fill="x", side="top")
         self.comboRenderingType.bind("<<ComboboxSelected>>", self.set_rendering_type, "+")
 
-        self.comboAntiAliasing = ttk.Combobox(command_frame)
+        label_frame = ttk.LabelFrame(command_frame, text='Anti Aliasing')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        self.comboAntiAliasing = ttk.Combobox(label_frame)
         self.comboAntiAliasing.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboAntiAliasing.pack(fill="x", side="top")
         self.comboAntiAliasing.bind("<<ComboboxSelected>>", self.set_anti_aliasing, "+")
 
-        self.comboRenderTargets = ttk.Combobox(command_frame)
+        label_frame = ttk.LabelFrame(command_frame, text='Render Target')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        self.comboRenderTargets = ttk.Combobox(label_frame)
         self.comboRenderTargets.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboRenderTargets.pack(fill="x", side="top")
         self.comboRenderTargets.bind("<<ComboboxSelected>>", self.view_rendertarget, "+")
 
         # resource layout
+        resource_frame = tk.Frame(main_tab, relief="sunken", padx=10, pady=10)
+
+        label_frame = ttk.LabelFrame(resource_frame, text='Create Resource')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        button = tk.Button(label_frame, text="Create Particle")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.create_particle)
+
         self.resource_menu = tk.Menu(root, tearoff=0)
         self.resource_menu.add_command(label="Load", command=self.load_resource)
         self.resource_menu.add_command(label="Action", command=self.action_resource)
@@ -277,7 +283,7 @@ class MainWindow:
         self.resource_menu.add_command(label="Delete", command=self.delete_resource)
         # self.resource_menu.bind("<FocusOut>", self.resource_menu.unpost)
 
-        self.resource_treeview = ttk.Treeview(main_tab)
+        self.resource_treeview = ttk.Treeview(resource_frame)
         self.resource_treeview["columns"] = ("#1", )
         self.resource_treeview.column("#0", width=property_width)
         self.resource_treeview.column("#1", width=property_width)
@@ -295,15 +301,29 @@ class MainWindow:
         vsb = ttk.Scrollbar(self.resource_treeview, orient="vertical", command=self.resource_treeview.yview)
         vsb.pack(side='right', fill='y')
         self.resource_treeview.configure(yscrollcommand=vsb.set)
+        self.resource_treeview.pack(fill='both', expand=True)
 
         # object layout
+        object_frame = tk.Frame(main_tab, relief="sunken", padx=10, pady=10)
+
+        label_frame = ttk.LabelFrame(object_frame, text='Add Object')
+        label_frame.pack(fill="x", side="top", pady=10)
+
+        button = tk.Button(label_frame, text="Add Camera")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.add_camera)
+
+        button = tk.Button(label_frame, text="Add Light")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.add_light)
+
         self.object_menu = tk.Menu(root, tearoff=0)
         self.object_menu.add_command(label="Action", command=self.action_object)
         self.object_menu.add_command(label="Focus", command=self.focus_object)
         self.object_menu.add_command(label="Delete", command=self.delete_object)
         self.object_menu.bind("<FocusOut>", self.object_menu.unpost)
 
-        self.object_treeview = ttk.Treeview(main_tab)
+        self.object_treeview = ttk.Treeview(object_frame)
         self.object_treeview["columns"] = ("#1",)
         self.object_treeview.column("#0", width=property_width)
         self.object_treeview.column("#1", width=property_width)
@@ -321,6 +341,7 @@ class MainWindow:
         vsb = ttk.Scrollbar(self.object_treeview, orient="vertical", command=self.object_treeview.yview)
         vsb.pack(side='right', fill='y')
         self.object_treeview.configure(yscrollcommand=vsb.set)
+        self.object_treeview.pack(fill='both', expand=True)
 
         # attribute layout
         attribute_frame = tk.Frame(main_frame, relief="sunken", padx=10, pady=10)
@@ -344,8 +365,8 @@ class MainWindow:
 
         # tabs
         main_tab.add(command_frame, text="Application")
-        main_tab.add(self.resource_treeview, text="Resource List")
-        main_tab.add(self.object_treeview, text="Object List")
+        main_tab.add(resource_frame, text="Resource List")
+        main_tab.add(object_frame, text="Object List")
         main_frame.add(main_tab, width=frame_width)
         main_frame.add(attribute_frame, width=frame_width)
 

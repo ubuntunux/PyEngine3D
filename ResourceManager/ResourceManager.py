@@ -425,7 +425,8 @@ class ResourceLoader(object):
         logger.warn("save_resource is not implemented in %s." % self.name)
         return False
 
-    def load_resource_data(self, resource):
+    @staticmethod
+    def load_resource_data(resource):
         filePath = ''
         if resource is not None:
             filePath = resource.meta_data.resource_filepath
@@ -1229,7 +1230,7 @@ class ParticleLoader(ResourceLoader):
 
     def create_particle(self):
         resource = self.create_resource('particle')
-        particle = ParticleInfo(name=resource.name, [])
+        particle = ParticleInfo(resource.name, [])
         resource.set_data(particle)
         self.save_resource(resource.name)
 
