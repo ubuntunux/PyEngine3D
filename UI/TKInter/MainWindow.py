@@ -3,6 +3,7 @@ import traceback
 import os
 import time
 from threading import Thread
+from collections import OrderedDict
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -67,7 +68,6 @@ class ItemInfo:
         self.attribute_name = attribute_name
         self.parent_info = parent_info
         self.index = index
-        self.remove = False
         self.oldValue = None
 
     def set_old_value(self, value):
@@ -618,8 +618,11 @@ class MainWindow:
         if dataType in (tuple, list, numpy.ndarray):
             for i, item_value in enumerate(value):
                 self.add_attribute(item_id, "[%d]" % i, item_value, item_info, i)
+        elif dataType in (dict, OrderedDict):
+            for key in value:
+                self.add_attribute(item_id, key, value[key], item_info, key)
         elif dataType is Attributes:
-            for i, attribute in enumerate(value.get_attributes()):
+            for attribute in value.get_attributes():
                 self.add_attribute(item_id, attribute.name, attribute.value, item_info, attribute.name)
         else:
             # set value - int, float, string

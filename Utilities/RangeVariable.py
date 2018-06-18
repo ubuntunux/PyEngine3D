@@ -4,49 +4,51 @@ import numpy as np
 
 
 class RangeVariable:
-    def __init__(self, values):
+    def __init__(self, min_value, max_value):
         self.is_array = False
-        self.v1, self.v2 = values
-        self.range = None
-        self.min = None
-        self.max = None
+        self.min_value = None
+        self.max_value = None
 
-        self.set_value(self.v1, self.v2)
+        self.set_range(min_value, max_value)
 
-    def set_value(self, v1, v2=None):
-        self.is_array = hasattr(v1, '__len__')
+    def set_range(self, min_value, max_value):
+        self.is_array = hasattr(min_value, '__len__')
 
         # list or tuple or array
         if self.is_array:
-            self.v1 = np.array(v1, dtype=np.float32)
-            self.v2 = self.v1.copy() if v2 is None else np.array(v2, dtype=np.float32)
-            self.range = range(len(v1))
-            self.min = np.minimum(self.v1, self.v2)
-            self.max = np.maximum(self.v1, self.v2)
+            min_value = np.array(min_value, dtype=np.float32)
+            max_value = min_value.copy() if max_value is None else np.array(max_value, dtype=np.float32)
+            self.min_value = np.minimum(min_value, max_value)
+            self.max_value = np.maximum(min_value, max_value)
         else:
-            self.v1 = float(v1)
-            self.v2 = float(v1 if v2 is None else v2)
-            self.range = range(1)
-            self.min = min(self.v1, self.v2)
-            self.max = max(self.v1, self.v2)
+            min_value = float(min_value)
+            max_value = float(min_value if max_value is None else max_value)
+            self.min_value = min(min_value, max_value)
+            self.max_value = max(min_value, max_value)
 
         if self.is_array:
-            if any([x != y for x, y in zip(v1, v2)]):
+            if any([x != y for x, y in zip(self.min_value, self.max_value)]):
                 self.get_value = self.get_random_array
-        elif v1 != v2:
+        elif min_value != max_value:
             self.get_value = self.get_random
 
     def get_value(self):
-        return self.v1
+        return self.min_value
 
     def get_random(self):
-        return random.uniform(self.v1, self.v2)
+        return random.uniform(self.min_value, self.max_value)
 
     def get_random_array(self):
-        return [random.uniform(self.v1[i], self.v2[i]) for i in self.range]
+        return [random.uniform(x, y) for x, y in zip(self.min_value, self.max_value)]
 
     def get_save_data(self):
+        save_data = dict()
+
         if self.is_array:
-            return self.min.tolist(), self.max.tolist()
+            save_data['min_value'] = self.min_value.tolist()
+            save_data['max_value'] = self.max_value.tolist()
+            return save_data
         else:
-            return self.min, self.max
+            save_data['min_value'] = self.min_value
+            save_data['max_value'] = self.max_value
+            return save_data

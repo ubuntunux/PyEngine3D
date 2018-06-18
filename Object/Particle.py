@@ -8,6 +8,7 @@ from Common import logger
 from Object import TransformObject, Model
 from Utilities import *
 from Common.Constants import *
+from Common import logger, log_level, COMMAND
 from App import CoreManager
 
 
@@ -40,6 +41,8 @@ class ParticleManager(Singleton):
 
 class Particle:
     def __init__(self, name, particle_info):
+        self.name = name
+
         self.emitters_list = []
 
         for emitter_info in particle_info.emitter_infos:
@@ -217,17 +220,29 @@ class ParticleInfo:
         return self.attributes
 
     def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        print(attributeName, attributeValue, parent_info, attribute_index)
-        history = []
+        item_info_history = []
         while parent_info is not None:
-            history.append(parent_info)
+            item_info_history.insert(0, parent_info)
             parent_info = parent_info.parent_info
 
-        for h in history:
-            print(h.__dict__)
-
-        if 'emitter_name' == attributeName and '' != attributeValue:
+        if 1 < len(item_info_history) and 'emitter_infos' == item_info_history[0].attribute_name:
+            emitter_index = item_info_history[1].index
+            emitter_info = self.emitter_infos[emitter_index]
+            count = len(item_info_history)
+            if 2 == count:
+                setattr(emitter_info, attributeName, attributeValue)
+            else:
+                emitter_attribute = getattr(emitter_info, item_info_history[2].attribute_name)
+                if type(emitter_attribute) in (tuple, list, np.ndarray):
+                    setattr(emitter_info, attributeName, attributeValue)
+                elif isinstance(emitter_attribute, RangeVariable):
+                    if 'min_value' == attributeName:
+                        emitter_attribute.set_range(attributeValue, emitter_attribute.max_value)
+                    elif 'max_value' == attributeName:
+                        emitter_attribute.set_range(emitter_attribute.min_value, attributeValue)
+        elif 'emitter_name' == attributeName and '' != attributeValue:
             self.add_emiter(name=attributeValue)
+            CoreManager.instance().send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, self.get_attribute())
         elif hasattr(self, attributeName):
             setattr(self, attributeName, attributeValue)
 
@@ -248,17 +263,23 @@ class EmitterInfo:
         self.total_cell_count = self.cell_count[0] * self.cell_count[1]
 
         # variance
-        self.delay = RangeVariable(emitter_info.get('delay', (0.0, 0.0)))
-        self.life_time = RangeVariable(emitter_info.get('life_time', (0.0, 0.0)))
-        self.play_speed = RangeVariable(emitter_info.get('play_speed', (0.0, 0.0)))
-        self.gravity = RangeVariable(emitter_info.get('gravity', (0.0, 0.0)))
-        self.opacity = RangeVariable(emitter_info.get('opacity', (1.0, 1.0)))
-        self.velocity = RangeVariable(emitter_info.get('velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
-        self.rotation_velocity = RangeVariable(emitter_info.get('rotation_velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
-        self.scale_velocity = RangeVariable(emitter_info.get('scale_velocity', (FLOAT3_ZERO, FLOAT3_ZERO)))
-        self.position = RangeVariable(emitter_info.get('position', (FLOAT3_ZERO, FLOAT3_ZERO)))
-        self.rotation = RangeVariable(emitter_info.get('rotation', (FLOAT3_ZERO, FLOAT3_ZERO)))
-        self.scale = RangeVariable(emitter_info.get('scale', (Float3(1.0, 1.0, 1.0), Float3(1.0, 1.0, 1.0))))
+        self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
+        self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=0.0, max_value=0.0)))
+        self.play_speed = RangeVariable(**emitter_info.get('play_speed', dict(min_value=0.0, max_value=0.0)))
+        self.gravity = RangeVariable(**emitter_info.get('gravity', dict(min_value=0.0, max_value=0.0)))
+        self.opacity = RangeVariable(**emitter_info.get('opacity', dict(min_value=1.0, max_value=1.0)))
+        self.velocity = RangeVariable(
+            **emitter_info.get('velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
+        self.rotation_velocity = RangeVariable(
+            **emitter_info.get('rotation_velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
+        self.scale_velocity = RangeVariable(
+            **emitter_info.get('scale_velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
+        self.position = RangeVariable(
+            **emitter_info.get('position', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
+        self.rotation = RangeVariable(
+            **emitter_info.get('rotation', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
+        self.scale = RangeVariable(
+            **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
         self.attributes = Attributes()
 
     def get_save_data(self):
@@ -285,12 +306,12 @@ class EmitterInfo:
         return save_data
 
     def get_attribute(self):
-        attributes = self.get_save_data()
         self.attributes.set_attribute('name', self.name)
-        for key in attributes:
+
+        attributes = self.get_save_data()
+        keys = list(attributes.keys())
+        keys.sort()
+        for key in keys:
             self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if hasattr(self, attributeName):
-            setattr(self, attributeName, attributeValue)

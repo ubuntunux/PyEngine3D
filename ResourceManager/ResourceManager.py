@@ -48,6 +48,7 @@ class MetaData:
         self.resource_filepath = resource_filepath
         self.resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.source_filepath = ""
+        self.source_filepath = ""
         self.source_modify_time = ""
         self.version_updated = False
         self.changed = False
