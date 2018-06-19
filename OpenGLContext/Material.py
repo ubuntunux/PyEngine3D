@@ -60,10 +60,10 @@ class Material:
             self.Attributes.set_attribute(key, self.macros[key])
         return self.Attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if attributeName in self.macros and self.macros[attributeName] != attributeValue:
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name in self.macros and self.macros[attribute_name] != attribute_value:
             new_macros = copy.deepcopy(self.macros)
-            new_macros[attributeName] = attributeValue
+            new_macros[attribute_name] = attribute_value
             # if macro was changed then create a new material.
             CoreManager.instance().resource_manager.get_material(self.shader_name, new_macros)
 

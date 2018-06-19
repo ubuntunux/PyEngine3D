@@ -50,13 +50,13 @@ class StaticActor:
         self.attributes.set_attribute('model', self.model.name if self.model else '')
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if attributeName == 'pos':
-            self.transform.set_pos(attributeValue)
-        elif attributeName == 'rot':
-            self.transform.set_rotation(attributeValue)
-        elif attributeName == 'scale':
-            self.transform.set_scale(attributeValue)
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name == 'pos':
+            self.transform.set_pos(attribute_value)
+        elif attribute_name == 'rot':
+            self.transform.set_rotation(attribute_value)
+        elif attribute_name == 'scale':
+            self.transform.set_scale(attribute_value)
 
     def get_mesh(self):
         return self.model.mesh if self.has_mesh else None

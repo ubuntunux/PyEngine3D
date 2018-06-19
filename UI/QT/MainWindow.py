@@ -393,7 +393,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                 # check array type, then combine components
                 parent = item.parent()
                 if type(parent) == QtGui.QTreeWidgetItem and parent.dataType in (tuple, list, numpy.ndarray):
-                    attributeName = parent.text(0)
+                    attribute_name = parent.text(0)
                     value = []
                     for i in range(parent.childCount()):
                         child = parent.child(i)
@@ -405,7 +405,7 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     else:
                         value = parent.dataType(value)
                 else:
-                    attributeName = item.text(0)
+                    attribute_name = item.text(0)
                     if item.dataType == bool:
                         value = item.dataType(item.text(1) == "True")
                     else:
@@ -425,18 +425,18 @@ class MainWindow(QtGui.QMainWindow, Singleton):
                     selected_item_name = selectedItem.text(0)
                     selected_item_type = selectedItem.text(1)
                     # send changed data
-                    self.appCmdQueue.put(command, (selected_item_name, selected_item_type, attributeName, value, index))
+                    self.appCmdQueue.put(command, (selected_item_name, selected_item_type, attribute_name, value, index))
             except:
                 logger.error(traceback.format_exc())
                 # failed to convert string to dataType, so restore to old value
                 item.setText(1, item.oldValue)
 
-    def add_attribute(self, parent, attributeName, value, depth=0, index=0):
+    def add_attribute(self, parent, attribute_name, value, depth=0, index=0):
         item = QtGui.QTreeWidgetItem(parent)
         item.setFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable)
         item.setExpanded(True)
         # attribute name and type
-        item.setText(0, attributeName)
+        item.setText(0, attribute_name)
         item.dataType = type(value)
         item.remove = False  # this is flag for remove item when Layout Refresh
         item.depth = depth

@@ -349,6 +349,11 @@ class MainWindow:
         self.object_treeview.pack(fill='both', expand=True)
 
         # attribute layout
+        self.attribute_menu = tk.Menu(root, tearoff=0)
+        self.attribute_menu.add_command(label="Add", command=self.add_attribute_component)
+        self.attribute_menu.add_command(label="Delete", command=self.delete_attribute_component)
+        self.object_menu.bind("<FocusOut>", self.attribute_menu.unpost)
+
         attribute_frame = tk.Frame(main_frame, relief="sunken", padx=10, pady=10)
         self.attribute_treeview = SimpleEditableTreeview(attribute_frame)
         self.attribute_treeview.item_infos = dict()
@@ -362,6 +367,9 @@ class MainWindow:
 
         self.attribute_treeview.bind("<<TreeviewSelect>>", self.select_attribute)
         self.attribute_treeview.bind("<<TreeviewCellEdited>>", self.attribute_changed)
+        self.attribute_treeview.bind("<Button-1>", lambda event: self.attribute_menu.unpost())
+        self.attribute_treeview.bind("<Button-3>", self.open_attribute_menu)
+
         self.attribute_treeview.pack(fill='both', side='left', expand=True)
 
         vsb = ttk.Scrollbar(self.attribute_treeview, orient="vertical", command=self.attribute_treeview.yview)
@@ -547,10 +555,10 @@ class MainWindow:
                 parent = self.attribute_treeview.item(parent_id)
                 parent_info = self.attribute_treeview.item_infos.get(parent_id)
                 value = None
-                attributeName = ''
+                attribute_name = ''
 
                 if parent_info is not None and parent_info.dataType in (tuple, list, numpy.ndarray):
-                    attributeName = get_name(parent)
+                    attribute_name = get_name(parent)
                     values = []
                     for child_id in self.attribute_treeview.get_children(parent_id):
                         child = self.attribute_treeview.item(child_id)
@@ -564,7 +572,7 @@ class MainWindow:
                         # list or tuple
                         value = parent_info.dataType(values)
                 else:
-                    attributeName = get_name(item)
+                    attribute_name = get_name(item)
                     if bool == item_info.dataType:
                         # evaluate boolean
                         value = item_info.dataType(get_value(item) == "True")
@@ -589,7 +597,7 @@ class MainWindow:
                     self.appCmdQueue.put(command,
                                          (selected_item_name,
                                           selected_item_type,
-                                          attributeName,
+                                          attribute_name,
                                           value,
                                           item_info.parent_info,
                                           item_info.index))
@@ -605,6 +613,9 @@ class MainWindow:
                 self.attribute_treeview.inplace_checkbutton('#1', item_id)
             else:
                 self.attribute_treeview.inplace_entry('#1', item_id)
+
+    def get_selected_attribute(self):
+        return [self.attribute_treeview.item(item_id) for item_id in self.attribute_treeview.selection()]
 
     def add_attribute(self, parent, attribute_name, value, parent_info=None, index=0):
         dataType = type(value)
@@ -628,6 +639,46 @@ class MainWindow:
             # set value - int, float, string
             self.attribute_treeview.item(item_id, text=attribute_name, values=(value,))
             item_info.set_old_value(value)
+
+    def open_attribute_menu(self, event):
+        item_id = self.attribute_treeview.identify('item', event.x, event.y)
+        item = self.attribute_treeview.item(item_id)
+        if item not in self.get_selected_attribute():
+            self.attribute_treeview.selection_set((item_id, ))
+        self.attribute_menu.post(event.x_root, event.y_root)
+
+    def add_attribute_component(self, *args):
+        if self.selected_item is None or '' == self.selected_item_categoty:
+            return
+
+        if 'Resource' == self.selected_item_categoty:
+            self.attribute_component_menu(COMMAND.ADD_RESOURCE_COMPONENT)
+        elif 'Object' == self.selected_item_categoty:
+            self.attribute_component_menu(COMMAND.ADD_OBJECT_COMPONENT)
+
+    def delete_attribute_component(self, *args):
+        if self.selected_item is None or '' == self.selected_item_categoty:
+            return
+
+        if 'Resource' == self.selected_item_categoty:
+            self.attribute_component_menu(COMMAND.DELETE_RESOURCE_COMPONENT)
+        elif 'Object' == self.selected_item_categoty:
+            self.attribute_component_menu(COMMAND.DELETE_OBJECT_COMPONENT)
+
+    def attribute_component_menu(self, command):
+        selected_item_name = get_name(self.selected_item)
+        selected_item_type = get_value(self.selected_item)
+
+        for item_id in self.attribute_treeview.selection():
+            item = self.attribute_treeview.item(item_id)
+            item_info = self.attribute_treeview.item_infos[item_id]
+            self.appCmdQueue.put(command,
+                                 (selected_item_name,
+                                  selected_item_type,
+                                  item_info.attribute_name,
+                                  item_info.parent_info,
+                                  item_info.index))
+            return
 
     def fill_resource_attribute(self, attributes):
         selected_items = self.get_selected_resource()

@@ -187,9 +187,17 @@ class Resource:
             return self.data.get_attribute()
         return None
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
         if self.data and hasattr(self.data, 'set_attribute'):
-            self.data.set_attribute(attributeName, attributeValue, parent_info, attribute_index)
+            self.data.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+
+    def add_component(self, attribute_name, parent_info, attribute_index):
+        if self.data and hasattr(self.data, 'add_component'):
+            self.data.add_component(attribute_name, parent_info, attribute_index)
+
+    def delete_component(self, attribute_name, parent_info, attribute_index):
+        if self.data and hasattr(self.data, 'delete_component'):
+            self.data.delete_component(attribute_name, parent_info, attribute_index)
 
 
 # -----------------------#
@@ -225,9 +233,9 @@ class ResourceLoader(object):
 
     @staticmethod
     def get_resource_name(resource_path, filepath, make_lower=True):
-        resourceName = os.path.splitext(os.path.relpath(filepath, resource_path))[0]
-        resourceName = resourceName.replace(os.sep, ".")
-        return resourceName if make_lower else resourceName
+        resource_name = os.path.splitext(os.path.relpath(filepath, resource_path))[0]
+        resource_name = resource_name.replace(os.sep, ".")
+        return resource_name if make_lower else resource_name
 
     def is_new_external_data(self, meta_data, source_filepath):
         if os.path.exists(source_filepath):
@@ -312,18 +320,18 @@ class ResourceLoader(object):
     def convert_resource(self, resource, source_filepath):
         logger.warn("convert_resource is not implemented in %s." % self.name)
 
-    def hasResource(self, resourceName):
-        return resourceName in self.resources
+    def hasResource(self, resource_name):
+        return resource_name in self.resources
 
-    def get_resource(self, resourceName, noWarn=False):
-        if resourceName in self.resources:
-            return self.resources[resourceName]
-        if not noWarn and resourceName:
-            logger.error("%s cannot found %s resource." % (self.name, resourceName))
+    def get_resource(self, resource_name, noWarn=False):
+        if resource_name in self.resources:
+            return self.resources[resource_name]
+        if not noWarn and resource_name:
+            logger.error("%s cannot found %s resource." % (self.name, resource_name))
         return None
 
-    def get_resource_data(self, resourceName, noWarn=False):
-        resource = self.get_resource(resourceName, noWarn)
+    def get_resource_data(self, resource_name, noWarn=False):
+        resource = self.get_resource(resource_name, noWarn)
         return resource.get_data() if resource else None
 
     def get_resource_list(self):
@@ -340,13 +348,23 @@ class ResourceLoader(object):
 
     def set_resource_attribute(self, resource_name, attribute_name, attribute_value, parent_info, attribute_index):
         # rename resource
-        if attribute_name == 'name' and parent_info == 0:
+        if attribute_name == 'name' and parent_info is None:
             self.rename_resource(resource_name, attribute_value)
         else:
             # set other attributes
             resource = self.get_resource(resource_name)
             if resource:
                 resource.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+
+    def add_resource_component(self, resource_name, attribute_name, parent_info, attribute_index):
+        resource = self.get_resource(resource_name)
+        if resource:
+            resource.add_component(attribute_name, parent_info, attribute_index)
+
+    def delete_resource_component(self, resource_name, attribute_name, parent_info, attribute_index):
+        resource = self.get_resource(resource_name)
+        if resource:
+            resource.delete_component(attribute_name, parent_info, attribute_index)
 
     def get_meta_data(self, resource_name, noWarn=False):
         if resource_name in self.metaDatas:
@@ -574,9 +592,9 @@ class MaterialLoader(ResourceLoader):
     def reload_materials(self, shader_filepath):
         reload_shader_names = []
         resource_names = list(self.resources.keys())
-        for resourceName in resource_names:
+        for resource_name in resource_names:
             reload = False
-            meta_data = self.resources[resourceName].meta_data
+            meta_data = self.resources[resource_name].meta_data
             if meta_data:
                 if shader_filepath == meta_data.source_filepath:
                     reload = True
@@ -586,8 +604,8 @@ class MaterialLoader(ResourceLoader):
                             reload = True
                             break
             if reload:
-                self.load_resource(resourceName)
-                material = self.get_resource_data(resourceName)
+                self.load_resource(resource_name)
+                material = self.get_resource_data(resource_name)
                 if material and material.shader_name not in reload_shader_names:
                     reload_shader_names.append(material.shader_name)
 
@@ -1369,6 +1387,18 @@ class ResourceManager(Singleton):
         resource_loader = self.find_resource_loader(resource_type_name)
         if resource_loader:
             return resource_loader.get_resource_data(resource_name)
+        return None
+
+    def add_resource_component(self, resource_name, resource_type_name, attribute_name, parent_info, attribute_index):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.add_resource_component(resource_name, attribute_name, parent_info, attribute_index)
+        return None
+
+    def delete_resource_component(self, resource_name, resource_type_name, attribute_name, parent_info, attribute_index):
+        resource_loader = self.find_resource_loader(resource_type_name)
+        if resource_loader:
+            return resource_loader.delete_resource_component(resource_name, attribute_name, parent_info, attribute_index)
         return None
 
     def get_meta_data(self, resource_name, resource_type_name):

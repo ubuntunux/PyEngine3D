@@ -17,10 +17,10 @@ class MainLight(StaticActor):
         self.attributes.set_attribute('light_color', self.light_color)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        super().set_attribute(attributeName, attributeValue, parent_info, attribute_index)
-        if attributeName == 'light_color':
-            self.light_color[:] = attributeValue[:]
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        super().set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+        if attribute_name == 'light_color':
+            self.light_color[:] = attribute_value[:]
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)
@@ -51,12 +51,12 @@ class PointLight(StaticActor):
         self.attributes.set_attribute('light_radius', self.light_radius)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        super().set_attribute(attributeName, attributeValue, parent_info, attribute_index)
-        if attributeName == 'light_color':
-            self.light_color[:] = attributeValue[:]
-        elif hasattr(self, attributeName):
-            setattr(self, attributeName, attributeValue)
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        super().set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+        if attribute_name == 'light_color':
+            self.light_color[:] = attribute_value[:]
+        elif hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)

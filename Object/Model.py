@@ -61,12 +61,12 @@ class Model:
         self.attributes.set_attribute('material_instances', self.get_material_instance_names())
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if attributeName == 'mesh':
-            mesh = CoreManager.instance().resource_manager.get_mesh(attributeValue)
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name == 'mesh':
+            mesh = CoreManager.instance().resource_manager.get_mesh(attribute_value)
             if mesh and self.mesh != mesh:
                 self.set_mesh(mesh)
-        elif attributeName == 'material_instances':
+        elif attribute_name == 'material_instances':
             material_instance = CoreManager.instance().resource_manager.get_material_instance(
-                attributeValue[attribute_index])
+                attribute_value[attribute_index])
             self.set_material_instance(material_instance, attribute_index)

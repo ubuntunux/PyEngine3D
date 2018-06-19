@@ -130,13 +130,13 @@ class Ocean:
         self.attributes.set_attribute('simulation_scale', self.simulation_scale)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if hasattr(self, attributeName):
-            setattr(self, attributeName, attributeValue)
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
             # recreate resources
-            if attributeName in ('amplitude', 'wind', 'omega'):
+            if attribute_name in ('amplitude', 'wind', 'omega'):
                 self.generate_texture()
-            elif attributeName == 'simulation_scale':
+            elif attribute_name == 'simulation_scale':
                 self.simulation_size = GRID_SIZES * self.simulation_scale
         return self.attributes
 

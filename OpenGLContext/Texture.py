@@ -263,11 +263,11 @@ class Texture:
         self.attribute.set_attribute("wrap_r", self.wrap_r)
         return self.attribute
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if hasattr(self, attributeName) and "" != attributeValue:
-            setattr(self, attributeName, eval(attributeValue))
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if hasattr(self, attribute_name) and "" != attribute_value:
+            setattr(self, attribute_name, eval(attribute_value))
 
-        if 'wrap' in attributeName:
+        if 'wrap' in attribute_name:
             glBindTexture(self.target, self.buffer)
             glTexParameteri(self.target, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
             glTexParameteri(self.target, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)

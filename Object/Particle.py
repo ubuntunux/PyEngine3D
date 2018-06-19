@@ -42,31 +42,56 @@ class ParticleManager(Singleton):
 class Particle:
     def __init__(self, name, particle_info):
         self.name = name
-
-        self.emitters_list = []
+        self.transform = TransformObject()
+        self.emitters_group = []
+        self.attributes = Attributes()
 
         for emitter_info in particle_info.emitter_infos:
-            emitter_list = []
-            self.emitters_list.append(emitter_list)
+            emitters = []
+            self.emitters_group.append(emitters)
 
             count = 1
             for i in range(count):
                 emitter = Emitter(emitter_info)
-                emitter_list.append(emitter)
+                emitters.append(emitter)
+
+    def get_save_data(self):
+        save_data = dict(
+            name=self.name,
+            pos=self.transform.pos.tolist(),
+            rot=self.transform.rot.tolist(),
+            scale=self.transform.scale.tolist()
+        )
+        return save_data
+
+    def get_attribute(self):
+        self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('pos', self.transform.pos)
+        self.attributes.set_attribute('rot', self.transform.rot)
+        self.attributes.set_attribute('scale', self.transform.scale)
+        return self.attributes
+
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name == 'pos':
+            self.transform.set_pos(attribute_value)
+        elif attribute_name == 'rot':
+            self.transform.set_rotation(attribute_value)
+        elif attribute_name == 'scale':
+            self.transform.set_scale(attribute_value)
 
     def play(self):
-        for emitters in self.emitters_list:
+        for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.play()
 
     def destroy(self):
-        for emitters in self.emitters_list:
+        for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.destroy()
-        self.emitters_list = []
+        self.emitters_group = []
 
     def update(self, dt):
-        for emitters in self.emitters_list:
+        for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.update(dt)
 
@@ -203,6 +228,10 @@ class ParticleInfo:
     def add_emiter(self, **emitter_info):
         self.emitter_infos.append(EmitterInfo(**emitter_info))
 
+    def delete_emiter(self, index):
+        if index < len(self.emitter_infos):
+            self.emitter_infos.pop(index)
+
     def get_save_data(self):
         save_data = []
         for emitter_info in self.emitter_infos:
@@ -211,15 +240,13 @@ class ParticleInfo:
 
     def get_attribute(self):
         self.attributes.set_attribute('name', self.name)
-        if self.emitter_infos:
-            attributes = []
-            for emitter_info in self.emitter_infos:
-                attributes.append(emitter_info.get_attribute())
-            self.attributes.set_attribute('emitter_infos', attributes)
-        self.attributes.set_attribute('emitter_name', '')
+        attributes = []
+        for emitter_info in self.emitter_infos:
+            attributes.append(emitter_info.get_attribute())
+        self.attributes.set_attribute('emitter_infos', attributes)
         return self.attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
         item_info_history = []
         while parent_info is not None:
             item_info_history.insert(0, parent_info)
@@ -230,21 +257,31 @@ class ParticleInfo:
             emitter_info = self.emitter_infos[emitter_index]
             count = len(item_info_history)
             if 2 == count:
-                setattr(emitter_info, attributeName, attributeValue)
+                setattr(emitter_info, attribute_name, attribute_value)
             else:
                 emitter_attribute = getattr(emitter_info, item_info_history[2].attribute_name)
                 if type(emitter_attribute) in (tuple, list, np.ndarray):
-                    setattr(emitter_info, attributeName, attributeValue)
+                    setattr(emitter_info, attribute_name, attribute_value)
                 elif isinstance(emitter_attribute, RangeVariable):
-                    if 'min_value' == attributeName:
-                        emitter_attribute.set_range(attributeValue, emitter_attribute.max_value)
-                    elif 'max_value' == attributeName:
-                        emitter_attribute.set_range(emitter_attribute.min_value, attributeValue)
-        elif 'emitter_name' == attributeName and '' != attributeValue:
-            self.add_emiter(name=attributeValue)
-            CoreManager.instance().send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, self.get_attribute())
-        elif hasattr(self, attributeName):
-            setattr(self, attributeName, attributeValue)
+                    if 'min_value' == attribute_name:
+                        emitter_attribute.set_range(attribute_value, emitter_attribute.max_value)
+                    elif 'max_value' == attribute_name:
+                        emitter_attribute.set_range(emitter_attribute.min_value, attribute_value)
+        elif hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
+
+    def refresh_attribute_info(self):
+        CoreManager.instance().send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, self.get_attribute())
+
+    def add_component(self, attribute_name, parent_info, attribute_index):
+        if 'emitter_infos' == attribute_name:
+            self.add_emiter()
+            self.refresh_attribute_info()
+
+    def delete_component(self, attribute_name, parent_info, attribute_index):
+        if parent_info is not None and 'emitter_infos' == parent_info.attribute_name:
+            self.delete_emiter(attribute_index)
+            self.refresh_attribute_info()
 
 
 class EmitterInfo:

@@ -152,20 +152,20 @@ class MaterialInstance:
             self.Attributes.set_attribute(key, self.macros[key])
         return self.Attributes
 
-    def set_attribute(self, attributeName, attributeValue, parent_info, attribute_index):
-        if attributeName == 'shader_name':
-            if attributeValue != self.shader_name:
-                material = CoreManager.instance().resource_manager.get_material(attributeValue, self.macros)
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name == 'shader_name':
+            if attribute_value != self.shader_name:
+                material = CoreManager.instance().resource_manager.get_material(attribute_value, self.macros)
                 self.set_material(material)
-        elif attributeName in 'material_name':
+        elif attribute_name in 'material_name':
             if self.material:
                 material = CoreManager.instance().resource_manager.get_material(self.material.shader_name)
                 self.set_material(material)
-        elif attributeName in self.linked_material_component_map:
-            self.set_uniform_data_from_string(attributeName, attributeValue)
-        elif attributeName in self.macros:
-            if self.macros[attributeName] != attributeValue:
-                self.macros[attributeName] = attributeValue
+        elif attribute_name in self.linked_material_component_map:
+            self.set_uniform_data_from_string(attribute_name, attribute_value)
+        elif attribute_name in self.macros:
+            if self.macros[attribute_name] != attribute_value:
+                self.macros[attribute_name] = attribute_value
                 material = CoreManager.instance().resource_manager.get_material(self.material.shader_name,
                                                                                self.macros)
                 self.set_material(material)

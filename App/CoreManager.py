@@ -334,14 +334,32 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
 
         def cmd_set_resource_attribute(value):
-            resourceName, resourceType, attributeName, attributeValue, parent_info, attribute_index = value
-            self.resource_manager.set_resource_attribute(resourceName,
-                                                         resourceType,
-                                                         attributeName,
-                                                         attributeValue,
+            resource_name, resource_type, attribute_name, attribute_value, parent_info, attribute_index = value
+            self.resource_manager.set_resource_attribute(resource_name,
+                                                         resource_type,
+                                                         attribute_name,
+                                                         attribute_value,
                                                          parent_info,
                                                          attribute_index)
         self.commands[COMMAND.SET_RESOURCE_ATTRIBUTE.value] = cmd_set_resource_attribute
+
+        def cmd_add_resource_component(value):
+            resource_name, resource_type, attribute_name, parent_info, attribute_index = value
+            self.resource_manager.add_resource_component(resource_name,
+                                                         resource_type,
+                                                         attribute_name,
+                                                         parent_info,
+                                                         attribute_index)
+        self.commands[COMMAND.ADD_RESOURCE_COMPONENT.value] = cmd_add_resource_component
+
+        def cmd_delete_resource_component(value):
+            resource_name, resource_type, attribute_name, parent_info, attribute_index = value
+            self.resource_manager.delete_resource_component(resource_name,
+                                                            resource_type,
+                                                            attribute_name,
+                                                            parent_info,
+                                                            attribute_index)
+        self.commands[COMMAND.DELETE_RESOURCE_COMPONENT.value] = cmd_delete_resource_component
 
         # add to scene
         self.commands[COMMAND.ADD_CAMERA.value] = lambda value: self.scene_manager.add_camera()
@@ -362,8 +380,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
-            objectName, objectType, attributeName, attributeValue, parent_info, attribute_index = value
-            self.scene_manager.set_object_attribute(objectName, objectType, attributeName, attributeValue,
+            objectName, objectType, attribute_name, attribute_value, parent_info, attribute_index = value
+            self.scene_manager.set_object_attribute(objectName, objectType, attribute_name, attribute_value,
                                                     parent_info, attribute_index)
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
 

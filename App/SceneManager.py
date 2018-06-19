@@ -233,34 +233,38 @@ class SceneManager(Singleton):
 
     def add_camera(self, **camera_data):
         name = self.generate_object_name(camera_data.get('name', 'camera'))
-        model = self.resource_manager.get_model('Cube')
+        camera_data['name'] = name
+        camera_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add Camera : %s" % name)
-        camera = Camera(scene_manager=self, name=name, model=model, **camera_data)
+        camera = Camera(scene_manager=self, **camera_data)
         camera.initialize()
         self.regist_object(camera)
         return camera
 
     def add_main_light(self, **light_data):
         name = self.generate_object_name(light_data.get('name', 'main_light'))
-        model = self.resource_manager.get_model('Cube')
+        light_data['name'] = name
+        light_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add MainLight : %s" % name)
-        light = MainLight(name=name, model=model, **light_data)
+        light = MainLight(**light_data)
         self.regist_object(light)
         return light
 
     def add_light(self, **light_data):
         name = self.generate_object_name(light_data.get('name', 'light'))
-        model = self.resource_manager.get_model('Cube')
+        light_data['name'] = name
+        light_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add Light : %s" % name)
-        light = PointLight(name=name, model=model, **light_data)
+        light = PointLight(**light_data)
         self.regist_object(light)
         return light
 
     def add_light_probe(self, **light_probe_data):
         name = self.generate_object_name(light_probe_data.get('name', 'light_probe'))
-        model = self.resource_manager.get_model('sphere')
+        light_probe_data['name'] = name
+        light_probe_data['model'] = self.resource_manager.get_model('Cube')
         logger.info("add Light Probe : %s" % name)
-        light_probe = LightProbe(name=name, model=model, **light_probe_data)
+        light_probe = LightProbe(**light_probe_data)
         self.regist_object(light_probe)
         return light_probe
 
@@ -351,10 +355,10 @@ class SceneManager(Singleton):
         obj = self.get_object(objectName)
         return obj.get_attribute() if obj else None
 
-    def set_object_attribute(self, objectName, objectTypeName, attributeName, attributeValue, parent_info,
+    def set_object_attribute(self, objectName, objectTypeName, attribute_name, attribute_value, parent_info,
                              attribute_index):
         obj = self.get_object(objectName)
-        obj and obj.set_attribute(attributeName, attributeValue, parent_info, attribute_index)
+        obj and obj.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
 
     def get_selected_object(self):
         return self.selected_object
