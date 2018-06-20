@@ -12,46 +12,15 @@ from Common import logger, log_level, COMMAND
 from App import CoreManager
 
 
-class ParticleManager(Singleton):
-    def __init__(self):
-        self.active = True
-        self.particles = []
-        self.active_particles = []
-
-    def clear(self):
-        for particle in self.active_particles:
-            particle.destroy()
-
-        self.particles = []
-        self.active_particles = []
-
-    def create_particle(self, particle_infos):
-        particle = Particle(particle_infos)
-        self.particles.append(particle)
-        particle.play()
-
-    def destroy_particle(self, particle):
-        particle.destroy()
-        self.active_particles.remove(particle)
-
-    def update(self, dt):
-        for particle in self.active_particles:
-            particle.update(dt)
-
-
 class Particle:
     def __init__(self, name, particle_info):
         self.name = name
+        self.particle_info = particle_info
         self.transform = TransformObject()
         self.emitters_group = []
         self.attributes = Attributes()
 
-        for emitter_info in particle_info.emitter_infos:
-            emitters = []
-            for i in range(emitter_info.spawn_count):
-                emitter = Emitter(emitter_info)
-                emitters.append(emitter)
-            self.emitters_group.append(emitters)
+        self.play()
 
     def get_save_data(self):
         save_data = dict(
@@ -77,7 +46,19 @@ class Particle:
         elif attribute_name == 'scale':
             self.transform.set_scale(attribute_value)
 
+        # replay particle
+        self.play()
+
     def play(self):
+        self.destroy()
+
+        for emitter_info in self.particle_info.emitter_infos:
+            emitters = []
+            for i in range(emitter_info.spawn_count):
+                emitter = Emitter(emitter_info)
+                emitters.append(emitter)
+            self.emitters_group.append(emitters)
+
         for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.play()
@@ -89,9 +70,11 @@ class Particle:
         self.emitters_group = []
 
     def update(self, dt):
+        self.transform.update_transform()
+
         for emitters in self.emitters_group:
             for emitter in emitters:
-                emitter.update(dt)
+                emitter.update(self.transform, dt)
 
 
 class Emitter:
@@ -103,6 +86,7 @@ class Emitter:
         
         # sequence
         self.loop_remain = 0
+        self.total_cell_count = 0
         self.current_sequence = [1, 1]
         self.prev_sequence_index = -1
 
@@ -118,36 +102,39 @@ class Emitter:
         self.has_rotation_velocity = False
         self.has_scale_velocity = False
         self.transform = TransformObject()
+        self.model_matrix = MATRIX4_IDENTITY.copy()
     
     def refresh(self):
         self.loop_remain = self.emitter_info.loop
+        self.total_cell_count = self.emitter_info.total_cell_count
         
         self.delay = self.emitter_info.delay.get_value()
-        self.life_time = self.variance_life_time.get_value()
-        self.play_speed = self.variance_play_speed.get_value()
-        self.gravity = self.variance_gravity.get_value()
-        self.opacity = self.variance_opacity.get_value()
-        self.velocity[...] = self.variance_velocity.get_value()
-        self.rotation_velocity[...] = self.variance_rotation_velocity.get_value()
-        self.scale_velocity[...] = self.variance_scale_velocity.get_value()
+        self.life_time = self.emitter_info.life_time.get_value()
+        self.play_speed = self.emitter_info.play_speed.get_value()
+        self.gravity = self.emitter_info.gravity.get_value()
+        self.opacity = self.emitter_info.opacity.get_value()
+        self.velocity[...] = self.emitter_info.velocity.get_value()
+        self.rotation_velocity[...] = self.emitter_info.rotation_velocity.get_value()
+        self.scale_velocity[...] = self.emitter_info.scale_velocity.get_value()
 
-        self.transform.set_pos(self.variance_position.get_value())
-        self.transform.set_rotation(self.variance_rotation.get_value())
-        self.transform.set_scale(self.variance_scale.get_value())
+        self.transform.set_pos(self.emitter_info.position.get_value())
+        self.transform.set_rotation(self.emitter_info.rotation.get_value())
+        self.transform.set_scale(self.emitter_info.scale.get_value())
 
         self.has_velocity = any([v != 0.0 for v in self.velocity])
         self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
         self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
 
     def play(self):
-        if 0.0 == self.life_time or 0 == self.loop:
+        self.refresh()
+
+        if 0.0 == self.life_time or 0 == self.loop_remain:
             self.alive = False
             return
 
         self.alive = True
         self.elapsed_time = 0.0
         self.prev_sequence_index = -1
-        self.refresh()
 
     def destroy(self):
         self.alive = False
@@ -164,7 +151,7 @@ class Emitter:
             self.current_sequence[0] = index % self.cell_count[0]
             self.current_sequence[1] = self.cell_count[1] - int(index / self.cell_count[0]) - 1
 
-    def update(self, dt):
+    def update(self, parent_transform, dt):
         if not self.alive:
             return
 
@@ -208,9 +195,13 @@ class Emitter:
         if self.has_scale_velocity:
             self.transform.scaling(self.scale_velocity * dt)
 
-        if 0.0 != self.fade:
-            opacity = life_ratio if 0.0 < self.fade else (1.0 - life_ratio)
-            self.opacity = math.pow(opacity, abs(self.fade))
+        self.transform.update_transform()
+
+        self.model_matrix[...] = np.dot(self.transform.matrix, parent_transform.matrix)
+
+        if 0.0 != self.emitter_info.fade:
+            opacity = life_ratio if 0.0 < self.emitter_info.fade else (1.0 - life_ratio)
+            self.opacity = math.pow(opacity, abs(self.emitter_info.fade))
 
 
 class ParticleInfo:
@@ -255,11 +246,11 @@ class ParticleInfo:
             emitter_info = self.emitter_infos[emitter_index]
             count = len(item_info_history)
             if 2 == count:
-                setattr(emitter_info, attribute_name, attribute_value)
+                emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
             else:
                 emitter_attribute = getattr(emitter_info, item_info_history[2].attribute_name)
                 if type(emitter_attribute) in (tuple, list, np.ndarray):
-                    setattr(emitter_info, attribute_name, attribute_value)
+                    emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
                 elif isinstance(emitter_attribute, RangeVariable):
                     if 'min_value' == attribute_name:
                         emitter_attribute.set_range(attribute_value, emitter_attribute.max_value)
@@ -294,13 +285,13 @@ class EmitterInfo:
         self.fade = emitter_info.get('fade', 0.0)  # negative is fade out, 0.0 is none, positive is fade in
 
         # sequence
-        self.loop = emitter_info.get('loop', 1)  # -1 is infinite
+        self.loop = emitter_info.get('loop', -1)  # -1 is infinite
         self.cell_count = emitter_info.get('cell_count', [1, 1])
         self.total_cell_count = self.cell_count[0] * self.cell_count[1]
 
         # variance
         self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
-        self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=0.0, max_value=0.0)))
+        self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=1.0, max_value=5.0)))
         self.play_speed = RangeVariable(**emitter_info.get('play_speed', dict(min_value=0.0, max_value=0.0)))
         self.gravity = RangeVariable(**emitter_info.get('gravity', dict(min_value=0.0, max_value=0.0)))
         self.opacity = RangeVariable(**emitter_info.get('opacity', dict(min_value=1.0, max_value=1.0)))
@@ -352,3 +343,11 @@ class EmitterInfo:
             self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
+
+            if 'mesh' == attribute_name:
+                self.mesh = CoreManager.instance().resource_manager.get_mesh(attribute_value)
+            elif 'material_instance' == attribute_name:
+                self.material_instance = CoreManager.instance().resource_manager.get_material_instance (attribute_value)

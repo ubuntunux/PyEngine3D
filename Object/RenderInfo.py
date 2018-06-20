@@ -81,8 +81,8 @@ class RenderInstanceInfo:
         self.model_instance_location = -1
 
     @staticmethod
-    def gather_render_infos(culling_func, camera, actor_list, check_actor_change, model_instance_location,
-                            solid_render_infos, translucent_render_infos):
+    def gather_render_infos(culling_func, camera, actor_list, solid_render_infos, translucent_render_infos,
+                            model_instance_location):
         last_actor = None
         last_geometry = None
         last_material_instance = None
@@ -99,7 +99,7 @@ class RenderInstanceInfo:
                     new_render_info = True
                 elif last_material_instance != material_instance:
                     new_render_info = True
-                elif check_actor_change and last_actor != actor:
+                elif last_actor != actor:
                     new_render_info = True
 
                 if new_render_info and geometry  is not None and material_instance is not None:

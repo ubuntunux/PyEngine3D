@@ -10,7 +10,7 @@ from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
-from Object import ParticleManager, Particle
+from Object import Particle
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
 from OpenGLContext import UniformBlock
@@ -48,12 +48,15 @@ class SceneManager(Singleton):
         self.point_light_count = 0
         self.point_light_uniform_blocks = np.zeros(8 * self.max_point_lights, dtype=np.float32).reshape(
             self.max_point_lights, 8)
+
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
+
+        self.particle_render_infos = []
 
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
@@ -90,12 +93,9 @@ class SceneManager(Singleton):
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
 
-        self.renderer.set_debug_texture(None)
+        self.particle_render_infos = []
 
-        # delete empty scene
-        # resource = self.resource_manager.scene_loader.get_resource(self.__current_scene_name)
-        # if resource is not None and not os.path.exists(resource.meta_data.resource_filepath):
-        #     self.resource_manager.scene_loader.delete_resource(self.__current_scene_name)
+        self.renderer.set_debug_texture(None)
 
     def post_open_scene(self):
         self.renderer.resizeScene(clear_rendertarget=True)
@@ -442,6 +442,9 @@ class SceneManager(Singleton):
                 self.point_light_count += 1
             if self.max_point_lights <= self.point_light_count:
                 break
+
+    def update_particle_render_info(self):
+        self.particle_render_infos = []
 
     def update_scene(self, dt):
         self.renderer.postprocess.update()
