@@ -48,12 +48,10 @@ class Particle:
 
         for emitter_info in particle_info.emitter_infos:
             emitters = []
-            self.emitters_group.append(emitters)
-
-            count = 1
-            for i in range(count):
+            for i in range(emitter_info.spawn_count):
                 emitter = Emitter(emitter_info)
                 emitters.append(emitter)
+            self.emitters_group.append(emitters)
 
     def get_save_data(self):
         save_data = dict(
@@ -289,6 +287,7 @@ class EmitterInfo:
         self.emitter_info = emitter_info
         self.name = emitter_info.get('name', 'Emitter')
         self.enable = emitter_info.get('enable', True)
+        self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
         self.mesh = emitter_info.get('mesh')
         self.material_instance = emitter_info.get('material_instance')
@@ -322,6 +321,7 @@ class EmitterInfo:
     def get_save_data(self):
         save_data = dict(
             enable=self.enable,
+            spawn_count=self.spawn_count,
             billboard=self.billboard,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
