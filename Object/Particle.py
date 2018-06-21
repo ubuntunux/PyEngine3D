@@ -12,15 +12,79 @@ from Common import logger, log_level, COMMAND
 from App import CoreManager
 
 
+class ParticleManager(Singleton):
+    def __init__(self):
+        self.particles = []
+        self.active_particles = []
+
+    def clear(self):
+        for particle in self.particles:
+            particle.destroy()
+
+        self.particles = []
+        self.active_particles = []
+
+    def add_particle(self, name, particle_info):
+        particle = Particle(name, particle_info)
+        self.particles.append(particle)
+        self.play_particle(particle)
+        return particle
+
+    def remove_particle(self, particle):
+        self.particles.pop(particle)
+
+    def play_particle(self, particle):
+        if particle not in self.active_particles:
+            self.active_particles.append(particle)
+        particle.play()
+
+    def destroy_particle(self, particle):
+        if particle in self.active_particles:
+            self.active_particles.pop(particle)
+        particle.destroy()
+
+    def notify_particle_info_changed(self, particle_info):
+        for particle in self.particles:
+            if particle_info == particle.particle_info:
+                self.play_particle(particle)
+
+    def render(self):
+        for particle in self.active_particles:
+            for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
+                if not emitter_info.enable:
+                    continue
+
+                emiiters = particle.emitters_group[i]
+
+                geometry = emitter_info.mesh.get_geometry()
+                geometry.bind_vertex_buffer()
+
+                material_instance = emitter_info.material_instance
+                material_instance.use_program()
+                material_instance.bind_material_instance()
+                material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
+                for emiiter in emiiters:
+                    if emiiter.is_renderable():
+                        material_instance.bind_uniform_data('model', emiiter.transform.matrix)
+                        material_instance.bind_uniform_data('opacity', emiiter.final_opacity)
+                        geometry.draw_elements()
+
+    def update(self, dt):
+        for particle in self.active_particles:
+            particle.update(dt)
+
+            if not particle.alive:
+                self.destroy_particle(particle)
+
+
 class Particle:
     def __init__(self, name, particle_info):
         self.name = name
         self.particle_info = particle_info
         self.transform = TransformObject()
+        self.alive = False
         self.emitters_group = []
         self.attributes = Attributes()
-
-        self.play()
 
     def get_save_data(self):
         save_data = dict(
@@ -52,6 +116,8 @@ class Particle:
     def play(self):
         self.destroy()
 
+        self.alive = True
+
         for emitter_info in self.particle_info.emitter_infos:
             emitters = []
             for i in range(emitter_info.spawn_count):
@@ -64,23 +130,33 @@ class Particle:
                 emitter.play()
 
     def destroy(self):
+        self.alive = False
+
         for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.destroy()
         self.emitters_group = []
 
     def update(self, dt):
+        if not self.alive:
+            return
+
         self.transform.update_transform()
+
+        is_alive = self.alive
 
         for emitters in self.emitters_group:
             for emitter in emitters:
-                emitter.update(self.transform, dt)
+                emitter.update(dt)
+                is_alive = is_alive or emitter.alive
+
+        if not is_alive:
+            self.destroy()
 
 
 class Emitter:
     def __init__(self, emitter_info):
         self.emitter_info = emitter_info
-        self.first_time = True
         self.alive = False
         self.elapsed_time = 0.0
         
@@ -98,14 +174,14 @@ class Emitter:
         self.velocity = Float3()
         self.rotation_velocity = Float3()
         self.scale_velocity = Float3()
+
+        self.transform = TransformObject()
         self.has_velocity = False
         self.has_rotation_velocity = False
         self.has_scale_velocity = False
-        self.transform = TransformObject()
-        self.model_matrix = MATRIX4_IDENTITY.copy()
+        self.final_opacity = 1.0
     
     def refresh(self):
-        self.loop_remain = self.emitter_info.loop
         self.total_cell_count = self.emitter_info.total_cell_count
         
         self.delay = self.emitter_info.delay.get_value()
@@ -124,20 +200,25 @@ class Emitter:
         self.has_velocity = any([v != 0.0 for v in self.velocity])
         self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
         self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
+        self.final_opacity = self.opacity
 
     def play(self):
         self.refresh()
 
-        if 0.0 == self.life_time or 0 == self.loop_remain:
+        if 0.0 == self.life_time:
             self.alive = False
             return
 
         self.alive = True
+        self.loop_remain = self.emitter_info.loop
         self.elapsed_time = 0.0
         self.prev_sequence_index = -1
 
     def destroy(self):
         self.alive = False
+
+    def is_renderable(self):
+        return self.alive and (0.0 == self.delay)
 
     def update_sequence(self, life_ratio):
         if self.total_cell_count > 1 and self.play_speed > 0:
@@ -151,7 +232,7 @@ class Emitter:
             self.current_sequence[0] = index % self.cell_count[0]
             self.current_sequence[1] = self.cell_count[1] - int(index / self.cell_count[0]) - 1
 
-    def update(self, parent_transform, dt):
+    def update(self, dt):
         if not self.alive:
             return
 
@@ -167,10 +248,10 @@ class Emitter:
         if self.life_time < self.elapsed_time:
             self.elapsed_time %= self.life_time
 
-            if self.loop_remain > 0:
+            if 0 < self.loop_remain:
                 self.loop_remain -= 1
 
-            if self.loop_remain == 0:
+            if 0 == self.loop_remain:
                 self.destroy()
                 return
 
@@ -197,11 +278,10 @@ class Emitter:
 
         self.transform.update_transform()
 
-        self.model_matrix[...] = np.dot(self.transform.matrix, parent_transform.matrix)
-
-        if 0.0 != self.emitter_info.fade:
-            opacity = life_ratio if 0.0 < self.emitter_info.fade else (1.0 - life_ratio)
-            self.opacity = math.pow(opacity, abs(self.emitter_info.fade))
+        if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
+            fade_in = math.pow(life_ratio, self.emitter_info.fade_in)
+            fade_out = math.pow(1.0 - life_ratio, self.emitter_info.fade_out)
+            self.final_opacity = (fade_in * (1.0 - life_ratio) + fade_out * life_ratio) * self.opacity
 
 
 class ParticleInfo:
@@ -259,6 +339,8 @@ class ParticleInfo:
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
 
+        ParticleManager.instance().notify_particle_info_changed(self)
+
     def refresh_attribute_info(self):
         CoreManager.instance().send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, self.get_attribute())
 
@@ -280,9 +362,14 @@ class EmitterInfo:
         self.enable = emitter_info.get('enable', True)
         self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
-        self.mesh = emitter_info.get('mesh')
-        self.material_instance = emitter_info.get('material_instance')
-        self.fade = emitter_info.get('fade', 0.0)  # negative is fade out, 0.0 is none, positive is fade in
+        self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
+        self.fade_out = emitter_info.get('fade_out', 0.0)
+
+        resource_manager = CoreManager.instance().resource_manager
+        default_mesh = resource_manager.get_default_mesh()
+        default_material_instance = resource_manager.get_default_effect_material_instance()
+        self.mesh = emitter_info.get('mesh') or default_mesh
+        self.material_instance = emitter_info.get('material_instance') or default_material_instance
 
         # sequence
         self.loop = emitter_info.get('loop', -1)  # -1 is infinite
@@ -316,7 +403,8 @@ class EmitterInfo:
             billboard=self.billboard,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
-            fade=self.fade,
+            fade_in=self.fade_in,
+            fade_out=self.fade_out,
             loop=self.loop,
             cell_count=self.cell_count,
             delay=self.delay.get_save_data(),
@@ -345,9 +433,13 @@ class EmitterInfo:
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
         if hasattr(self, attribute_name):
-            setattr(self, attribute_name, attribute_value)
-
             if 'mesh' == attribute_name:
-                self.mesh = CoreManager.instance().resource_manager.get_mesh(attribute_value)
+                mesh = CoreManager.instance().resource_manager.get_mesh(attribute_value)
+                if mesh is not None:
+                    self.mesh = mesh
             elif 'material_instance' == attribute_name:
-                self.material_instance = CoreManager.instance().resource_manager.get_material_instance (attribute_value)
+                material_instance = CoreManager.instance().resource_manager.get_material_instance(attribute_value)
+                if material_instance is not None:
+                    self.material_instance = material_instance
+            else:
+                setattr(self, attribute_name, attribute_value)

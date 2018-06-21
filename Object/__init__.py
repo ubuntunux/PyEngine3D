@@ -14,7 +14,7 @@ from .Model import Model
 
 from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from .Actor import SkeletonActor, StaticActor
-from .Particle import Particle, Emitter, ParticleInfo, EmitterInfo
+from .Particle import ParticleManager, Particle, Emitter, ParticleInfo, EmitterInfo
 from .Camera import Camera
 from .Light import MainLight, PointLight
 from .LightProbe import LightProbe

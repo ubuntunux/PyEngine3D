@@ -38,9 +38,9 @@ class SimpleEditableTreeview(ttk.Treeview):
 
         if value != newvalue:
             self.__set_value(col, item, newvalue)
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
 
-    def __clear_inplace_widgets(self):
+    def clear_inplace_widgets(self):
         if self._inplace_widget is not None:
             self._inplace_widget.place_forget()
             self._inplace_widget = None
@@ -52,7 +52,7 @@ class SimpleEditableTreeview(ttk.Treeview):
         widget.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
 
     def inplace_entry(self, col, item):
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
         self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
@@ -67,7 +67,7 @@ class SimpleEditableTreeview(ttk.Treeview):
         self.__updateWnds(col, item, entry)
 
     def inplace_checkbutton(self, col, item, onvalue='True', offvalue='False'):
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
         self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
@@ -77,7 +77,7 @@ class SimpleEditableTreeview(ttk.Treeview):
         self.__updateWnds(col, item, self._inplace_widget)
 
     def inplace_combobox(self, col, item, values, readonly=True):
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
         self._inplace_item = item
         state = 'readonly' if readonly else 'normal'
         self._inplace_var = tk.StringVar()
@@ -91,7 +91,7 @@ class SimpleEditableTreeview(ttk.Treeview):
         self.__updateWnds(col, item, cb)
 
     def inplace_spinbox(self, col, item, min, max, step):
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
         self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
@@ -104,7 +104,7 @@ class SimpleEditableTreeview(ttk.Treeview):
         self.__updateWnds(col, item, sb)
 
     def inplace_custom(self, col, item, widget):
-        self.__clear_inplace_widgets()
+        self.clear_inplace_widgets()
         self._inplace_item = item
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
@@ -223,7 +223,7 @@ class EditableTreeview(ttk.Treeview):
         if not self._curfocus:
             changed = True
         elif self._curfocus != self.focus():
-            self.__clear_inplace_widgets()
+            self.clear_inplace_widgets()
             changed = True
         newfocus = self.focus()
         if changed:
@@ -259,7 +259,7 @@ class EditableTreeview(ttk.Treeview):
                 else:
                     wnd.place_forget()
 
-    def __clear_inplace_widgets(self):
+    def clear_inplace_widgets(self):
         """Remove all inplace edit widgets."""
         cols = self.__get_display_columns()
         # print('Clear:', cols)

@@ -302,6 +302,9 @@ class MainWindow:
         self.resource_treeview.bind("<Double-1>", lambda event: self.load_resource())
         self.resource_treeview.bind("<Button-3>", self.open_resource_menu)
         self.resource_treeview.bind("<FocusOut>", lambda event: self.resource_menu.unpost())
+        self.resource_treeview.bind("<4>", lambda event: self.resource_menu.unpost())
+        self.resource_treeview.bind("<5>", lambda event: self.resource_menu.unpost())
+        self.resource_treeview.bind("<MouseWheel>", lambda event: self.resource_menu.unpost())
 
         vsb = ttk.Scrollbar(self.resource_treeview, orient="vertical", command=self.resource_treeview.yview)
         vsb.pack(side='right', fill='y')
@@ -342,6 +345,9 @@ class MainWindow:
         self.object_treeview.bind("<Double-1>", lambda event: self.focus_object())
         self.object_treeview.bind("<Button-3>", self.open_object_menu)
         self.object_treeview.bind("<FocusOut>", lambda event: self.object_menu.unpost())
+        self.object_treeview.bind("<4>", lambda event: self.object_menu.unpost())
+        self.object_treeview.bind("<5>", lambda event: self.object_menu.unpost())
+        self.object_treeview.bind("<MouseWheel>", lambda event: self.object_menu.unpost())
 
         vsb = ttk.Scrollbar(self.object_treeview, orient="vertical", command=self.object_treeview.yview)
         vsb.pack(side='right', fill='y')
@@ -369,6 +375,14 @@ class MainWindow:
         self.attribute_treeview.bind("<<TreeviewCellEdited>>", self.attribute_changed)
         self.attribute_treeview.bind("<Button-1>", lambda event: self.attribute_menu.unpost())
         self.attribute_treeview.bind("<Button-3>", self.open_attribute_menu)
+
+        def attribute_treeview_on_mouse_wheel(event):
+            self.attribute_menu.unpost()
+            self.attribute_treeview.clear_inplace_widgets()
+        # mouse wheel up, down, click
+        self.attribute_treeview.bind("<4>", attribute_treeview_on_mouse_wheel)
+        self.attribute_treeview.bind("<5>", attribute_treeview_on_mouse_wheel)
+        self.attribute_treeview.bind("<MouseWheel>", attribute_treeview_on_mouse_wheel)
 
         self.attribute_treeview.pack(fill='both', side='left', expand=True)
 

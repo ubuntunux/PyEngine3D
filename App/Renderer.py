@@ -438,7 +438,9 @@ class Renderer(Singleton):
 
             self.render_translucent()
 
+            glDisable(GL_CULL_FACE)
             self.render_particle()
+            glEnable(GL_CULL_FACE)
 
             if RenderOption.RENDER_LIGHT_PROBE:
                 return end_render_scene()
@@ -742,21 +744,7 @@ class Renderer(Singleton):
                            self.scene_manager.skeleton_translucent_render_infos)
 
     def render_particle(self):
-        for particle in self.scene_manager.particles:
-            for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
-                if not emitter_info.enable:
-                    continue
-
-                emiiters = particle.emitters_group[i]
-
-                material_instance = emitter_info.material_instance
-                geometry = emitter_info.mesh.get_geometry()
-                material_instance.use_program()
-                material_instance.bind_material_instance()
-                geometry.bind_vertex_buffer()
-                for emiiter in emiiters:
-                    material_instance.bind_uniform_data('model', emiiter.model_matrix)
-                    geometry.draw_elements()
+        self.scene_manager.particle_manager.render()
 
     def render_actors(self, render_group, render_mode, render_infos, scene_material_instance=None):
         if len(render_infos) < 1:

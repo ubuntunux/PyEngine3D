@@ -10,7 +10,6 @@ from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
-from Object import Particle
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
 from OpenGLContext import UniformBlock
@@ -23,6 +22,7 @@ class SceneManager(Singleton):
         self.resource_manager = None
         self.scene_loader = None
         self.renderer = None
+        self.particle_manager = None
         self.__current_scene_name = ""
 
         # Scene Objects
@@ -40,7 +40,6 @@ class SceneManager(Singleton):
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
-        self.particles = []
         self.objectMap = {}  # All of objects
 
         # render group
@@ -64,6 +63,7 @@ class SceneManager(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.scene_loader = self.resource_manager.scene_loader
         self.renderer = core_manager.renderer
+        self.particle_manager = core_manager.particle_manager
 
         # new scene
         self.new_scene()
@@ -77,6 +77,7 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notify_clear_scene()
+        self.particle_manager.clear()
         self.main_camera = None
         self.main_light = None
         self.main_light_probe = None
@@ -85,7 +86,6 @@ class SceneManager(Singleton):
         self.light_probes = []
         self.static_actors = []
         self.skeleton_actors = []
-        self.particles = []
         self.objectMap = {}
 
         self.static_solid_render_infos = []
@@ -202,8 +202,6 @@ class SceneManager(Singleton):
             return self.static_actors
         elif SkeletonActor == object_type:
             return self.skeleton_actors
-        elif Particle == object_type:
-            return self.particles
         return None
 
     def regist_object(self, object):
@@ -271,7 +269,7 @@ class SceneManager(Singleton):
     def add_particle(self, name, particle_info):
         name = self.generate_object_name(name)
         logger.info("add Particle : %s" % name)
-        particle = Particle(name, particle_info)
+        particle = self.particle_manager.add_particle(name, particle_info)
         self.regist_object(particle)
         return particle
 
@@ -473,5 +471,4 @@ class SceneManager(Singleton):
 
         self.ocean.update(dt)
 
-        for particle in self.particles:
-            particle.update(dt)
+        self.particle_manager.update(dt)

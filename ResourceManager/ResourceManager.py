@@ -1258,12 +1258,10 @@ class ParticleLoader(ResourceLoader):
         if resource:
             emitter_infos = self.load_resource_data(resource)
             if emitter_infos is not None:
-                default_mesh = self.resource_manager.get_default_mesh()
-                default_material_instance = self.resource_manager.get_material_instance('effect')
                 for emitter_info in emitter_infos:
-                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh']) or default_mesh
+                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh'])
                     emitter_info['material_instance'] = self.resource_manager.get_material_instance(
-                        emitter_info['material_instance']) or default_material_instance
+                        emitter_info['material_instance'])
                 particle_info = ParticleInfo(resource_name, emitter_infos)
                 resource.set_data(particle_info)
                 return True
@@ -1471,6 +1469,9 @@ class ResourceManager(Singleton):
                                                                        shader_name='default',
                                                                        macros={'SKELETAL': 1})
         return self.material_instance_loader.get_material_instance('default')
+
+    def get_default_effect_material_instance(self):
+        return self.material_instance_loader.get_material_instance('effect')
 
     def get_mesh(self, meshName):
         return self.mesh_loader.get_resource_data(meshName)

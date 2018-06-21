@@ -76,6 +76,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.font_manager = None
         self.scene_manager = None
+        self.particle_manager = None
         self.projectManager = None
         self.config = None
 
@@ -105,7 +106,7 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from ResourceManager import ResourceManager
-        from Object import RenderTargetManager, FontManager, RenderOptionManager
+        from Object import RenderTargetManager, FontManager, RenderOptionManager, ParticleManager
         from .Renderer import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
@@ -116,6 +117,7 @@ class CoreManager(Singleton):
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
         self.scene_manager = SceneManager.instance()
+        self.particle_manager = ParticleManager.instance()
         self.projectManager = ProjectManager.instance()
 
         # check invalid project
