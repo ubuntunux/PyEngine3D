@@ -30,7 +30,7 @@ class InstanceBuffer:
     def bind_instance_buffer(self, instance_data, divisor=1):
         glBindVertexArray(self.instance_array)
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-        glBufferData(GL_ARRAY_BUFFER, instance_data, GL_DYNAMIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, instance_data, GL_STATIC_DRAW)
 
         component_count = len(instance_data[0])
         size_of_data = instance_data[0].nbytes
