@@ -1,7 +1,6 @@
 #include "scene_constants.glsl"
 
 uniform mat4 particle_matrix;
-uniform mat4 model;
 
 struct VERTEX_OUTPUT
 {
@@ -21,6 +20,7 @@ layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;
 layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
+layout (location = 5) in mat4 model;
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 

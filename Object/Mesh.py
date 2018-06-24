@@ -34,20 +34,14 @@ class Geometry:
         self.boundCenter = (self.boundMin + self.boundMax) * 0.5
         self.radius = geometry_data.get('radius', 0.0)
 
-    def create_instance_buffer(self, instance_name, layout_location, element_data):
-        self.vertex_buffer.create_instance_buffer(instance_name, layout_location, element_data)
-
-    def bind_instance_buffer(self, instance_name, instance_data, divisor):
-        self.vertex_buffer.bind_instance_buffer(instance_name, instance_data, divisor)
-
     def bind_vertex_buffer(self):
         self.vertex_buffer.bind_vertex_buffer()
 
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
 
-    def draw_elements_instanced(self, count):
-        self.vertex_buffer.draw_elements_instanced(count)
+    def draw_elements_instanced(self, count, *instance_buffers):
+        self.vertex_buffer.draw_elements_instanced(count, *instance_buffers)
 
 
 class Mesh:

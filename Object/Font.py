@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from App import CoreManager
-from OpenGLContext import VertexArrayBuffer
+from OpenGLContext import VertexArrayBuffer, InstanceBuffer
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from .RenderOptions import RenderOption
@@ -26,6 +26,7 @@ class FontManager(Singleton):
         self.resource_manager = None
         self.font_shader = None
         self.quad = None
+        self.instance_buffer = None
         self.ascii = None
         self.show = True
 
@@ -55,7 +56,9 @@ class FontManager(Singleton):
         )
 
         # layout(location=1) vec4 font_offset;
-        self.quad.create_instance_buffer(instance_name="font_offset", layout_location=1, element_data=FLOAT4_ZERO)
+        self.instance_buffer = InstanceBuffer(name="font_offset",
+                                              layout_location=1,
+                                              element_data=FLOAT4_ZERO)
 
     def clear_logs(self, screen_width, screen_height):
         self.pos_x = 0
@@ -105,7 +108,8 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.quad.bind_instance_buffer(instance_name="font_offset", instance_data=render_queue, divisor=1)
+            self.instance_buffer.bind_instance_buffer(instance_data=render_queue,
+                                                      divisor=1)
             self.quad.bind_vertex_buffer()
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
@@ -113,5 +117,5 @@ class FontManager(Singleton):
             self.font_shader.bind_uniform_data("font_size", self.font_size)
             self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
             self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
-            self.quad.draw_elements_instanced(count=len(self.render_queues))
+            self.quad.draw_elements_instanced(len(self.render_queues), self.instance_buffer)
         self.clear_logs(screen_width, screen_height)

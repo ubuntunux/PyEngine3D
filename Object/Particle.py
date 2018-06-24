@@ -6,6 +6,7 @@ import numpy as np
 
 from Common import logger
 from Object import TransformObject, Model
+from OpenGLContext import InstanceBuffer
 from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
@@ -54,20 +55,28 @@ class ParticleManager(Singleton):
                 if not emitter_info.enable:
                     continue
 
-                emiiters = particle.emitters_group[i]
-
-                geometry = emitter_info.mesh.get_geometry()
-                geometry.bind_vertex_buffer()
-
                 material_instance = emitter_info.material_instance
                 material_instance.use_program()
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
+
+                material_instance.bind_uniform_data('opacity', 1.0)
+
+                instance_data_model = []
+                emiiters = particle.emitters_group[i]
                 for emiiter in emiiters:
                     if emiiter.is_renderable():
-                        material_instance.bind_uniform_data('model', emiiter.transform.matrix)
-                        material_instance.bind_uniform_data('opacity', emiiter.final_opacity)
-                        geometry.draw_elements()
+                        instance_data_model.append(emiiter.transform.matrix)
+
+                instance_data_model = np.array(instance_data_model, dtype=np.float32)
+
+                emitter_info.instance_buffer_model.bind_instance_buffer(instance_data=instance_data_model,
+                                                                        divisor=1)
+
+                geometry = emitter_info.mesh.get_geometry()
+                geometry.bind_vertex_buffer()
+                geometry.draw_elements_instanced(len(instance_data_model),
+                                                 emitter_info.instance_buffer_model)
 
     def update(self, dt):
         for particle in self.active_particles:
@@ -394,6 +403,15 @@ class EmitterInfo:
             **emitter_info.get('rotation', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
         self.scale = RangeVariable(
             **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
+
+        self.instance_buffer_model = InstanceBuffer(name="model",
+                                                    layout_location=5,
+                                                    element_data=np.zeros(16, dtype=np.float32))
+
+        # self.instance_buffer_opacity = InstanceBuffer(name="opacity",
+        #                                               layout_location=9,
+        #                                               element_data=FLOAT4_ZERO)
+
         self.attributes = Attributes()
 
     def get_save_data(self):
