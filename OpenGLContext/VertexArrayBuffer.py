@@ -8,7 +8,7 @@ from OpenGL.GL import *
 from Common import logger
 from Utilities import compute_tangent
 
-// Reference : https://learnopengl.com/Advanced-OpenGL/Instancing
+# Reference : https://learnopengl.com/Advanced-OpenGL/Instancing
 class InstanceBuffer:
     def __init__(self, name, layout_location, element_data):
         self.name = name
