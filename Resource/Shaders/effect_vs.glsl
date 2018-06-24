@@ -11,6 +11,7 @@ struct VERTEX_OUTPUT
     mat4 tangent_to_world;
     vec4 projection_pos;
     vec4 prev_projection_pos;
+    float opacity;
 };
 
 
@@ -21,6 +22,8 @@ layout (location = 2) in vec3 vs_in_normal;
 layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
 layout (location = 5) in mat4 model;
+layout (location = 9) in vec4 opacity;
+
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
@@ -56,6 +59,7 @@ void main() {
 
     vs_output.projection_pos = position;
     vs_output.prev_projection_pos = prev_position;
+    vs_output.opacity = opacity.x;
 
     gl_Position = position;
 }

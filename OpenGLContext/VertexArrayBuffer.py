@@ -15,9 +15,6 @@ class InstanceBuffer:
         self.name = name
         self.layout_location = layout_location
 
-        self.instance_array = glGenVertexArrays(1)
-        glBindVertexArray(self.instance_array)
-
         self.instance_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
 
@@ -29,7 +26,6 @@ class InstanceBuffer:
         self.size_of_data = element_data.nbytes
 
     def bind_instance_buffer(self, instance_data, divisor=1):
-        glBindVertexArray(self.instance_array)
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
         glBufferData(GL_ARRAY_BUFFER, instance_data, GL_STATIC_DRAW)
 
@@ -152,13 +148,5 @@ class VertexArrayBuffer:
     def draw_elements(self):
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
-    def draw_elements_instanced(self, count, *instance_buffers):
+    def draw_elements_instanced(self, count):
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
-
-        if len(instance_buffers) < 1:
-            raise BaseException(
-                "instance_buffers is None. You must release instance buffer after draw_elements_instanced.")
-
-        # important : After the object is drawn You need to execute glDisableVertexAttribArray.
-        for instance_buffer in instance_buffers:
-            glVertexAttribDivisor(instance_buffer.layout_location, 0)
