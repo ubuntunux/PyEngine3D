@@ -1,6 +1,6 @@
 from .RenderInfo import RenderInfo, RenderInstanceInfo
 from .RenderInfo import view_frustum_culling_geometry, view_frustum_culling_actor, cone_sphere_culling_actor, always_pass
-from .RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
+from .RenderOptions import BlendMode, RenderOption, RenderingType, RenderGroup, RenderMode, RenderOptionManager
 from .RenderTarget import RenderTargets, RenderTargetManager
 
 from .MaterialInstance import MaterialInstance

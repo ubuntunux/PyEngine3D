@@ -215,7 +215,7 @@ vec3 Reproject(vec2 texCoord)
             for(int vx = -1; vx <= 1; ++vx)
             {
                 vec2 neighborVelocity = texture2D(texture_velocity, texCoord + vec2(vx, vy) * inv_velocity_tex_size).xy;
-                float neighborDepth = textureLod(texture_linear_depth, texCoord + vec2(vx, vy) * inv_depth_tex_size, 0.0).x;
+                float neighborDepth = texture2DLod(texture_linear_depth, texCoord + vec2(vx, vy) * inv_depth_tex_size, 0.0).x;
                 if(neighborDepth < closestDepth)
                 {
                     velocity = neighborVelocity;

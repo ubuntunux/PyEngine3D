@@ -4,6 +4,7 @@ import os
 import time
 from threading import Thread
 from collections import OrderedDict
+from enum import Enum
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -250,7 +251,6 @@ class MainWindow:
         label_frame.pack(fill="x", side="top", pady=10)
 
         self.comboRenderingType = ttk.Combobox(label_frame)
-        self.comboRenderingType.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboRenderingType.pack(fill="x", side="top")
         self.comboRenderingType.bind("<<ComboboxSelected>>", self.set_rendering_type, "+")
 
@@ -258,7 +258,6 @@ class MainWindow:
         label_frame.pack(fill="x", side="top", pady=10)
 
         self.comboAntiAliasing = ttk.Combobox(label_frame)
-        self.comboAntiAliasing.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboAntiAliasing.pack(fill="x", side="top")
         self.comboAntiAliasing.bind("<<ComboboxSelected>>", self.set_anti_aliasing, "+")
 
@@ -266,7 +265,6 @@ class MainWindow:
         label_frame.pack(fill="x", side="top", pady=10)
 
         self.comboRenderTargets = ttk.Combobox(label_frame)
-        self.comboRenderTargets.bind("<<ComboboxSelected>>", donothing, "+")
         self.comboRenderTargets.pack(fill="x", side="top")
         self.comboRenderTargets.bind("<<ComboboxSelected>>", self.view_rendertarget, "+")
 
@@ -587,12 +585,16 @@ class MainWindow:
                         value = parent_info.dataType(values)
                 else:
                     attribute_name = get_name(item)
-                    if bool == item_info.dataType:
+                    dataType = item_info.dataType
+                    if bool == dataType:
                         # evaluate boolean
-                        value = item_info.dataType(get_value(item) == "True")
+                        value = dataType(get_value(item) == "True")
+                    elif type(dataType) == type(Enum):
+                        index = [dataType(i).name for i in range(len(dataType))].index(get_value(item))
+                        value = dataType(index)
                     else:
                         # evaluate int, float, string
-                        value = item_info.dataType(get_value(item))
+                        value = dataType(get_value(item))
 
                 selectedItems = []
                 command = None
@@ -625,14 +627,17 @@ class MainWindow:
             item_info = self.attribute_treeview.item_infos[item_id]
             if bool == item_info.dataType:
                 self.attribute_treeview.inplace_checkbutton('#1', item_id)
+            elif type(item_info.dataType) == type(Enum):
+                dataType = item_info.dataType
+                values = [dataType(i).name for i in range(len(dataType))]
+                self.attribute_treeview.inplace_combobox('#1', item_id, values, readonly=False)
             else:
                 self.attribute_treeview.inplace_entry('#1', item_id)
 
     def get_selected_attribute(self):
         return [self.attribute_treeview.item(item_id) for item_id in self.attribute_treeview.selection()]
 
-    def add_attribute(self, parent, attribute_name, value, parent_info=None, index=0):
-        dataType = type(value)
+    def add_attribute(self, parent, attribute_name, value, dataType, parent_info=None, index=0):
         item_id = self.attribute_treeview.insert(parent, 'end', text=attribute_name, open=True)
         item_info = ItemInfo(attribute_name=attribute_name,
                              dataType=dataType,
@@ -642,13 +647,13 @@ class MainWindow:
 
         if dataType in (tuple, list, numpy.ndarray):
             for i, item_value in enumerate(value):
-                self.add_attribute(item_id, "[%d]" % i, item_value, item_info, i)
+                self.add_attribute(item_id, "[%d]" % i, item_value, type(item_value), item_info, i)
         elif dataType in (dict, OrderedDict):
             for key in value:
-                self.add_attribute(item_id, key, value[key], item_info, key)
+                self.add_attribute(item_id, key, value[key], type(value[key]), item_info, key)
         elif dataType is Attributes:
             for attribute in value.get_attributes():
-                self.add_attribute(item_id, attribute.name, attribute.value, item_info, attribute.name)
+                self.add_attribute(item_id, attribute.name, attribute.value, attribute.type, item_info, attribute.name)
         else:
             # set value - int, float, string
             self.attribute_treeview.item(item_id, text=attribute_name, values=(value,))
@@ -720,7 +725,7 @@ class MainWindow:
 
         # fill properties of selected object
         for attribute in attributes.get_attributes():
-            self.add_attribute("", attribute.name, attribute.value)
+            self.add_attribute("", attribute.name, attribute.value, attribute.type)
 
         # unlock edit attribute ui
         self.isFillAttributeTree = False

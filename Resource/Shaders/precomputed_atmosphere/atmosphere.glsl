@@ -83,7 +83,7 @@ void main()
     vec3 eye_direction = normalize(eye_ray);
     vec3 screen_center_ray = -vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
 
-    float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
+    float scene_linear_depth = texture2DLod(texture_linear_depth, uv, 0.0).x;
     float scene_dist = clamp(scene_linear_depth / dot(screen_center_ray, eye_direction), 0.0, NEAR_FAR.y);
     float scene_shadow_length = GetSceneShadowLength(scene_dist, eye_direction, texture_shadow);
 

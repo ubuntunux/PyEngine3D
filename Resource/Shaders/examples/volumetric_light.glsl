@@ -47,10 +47,10 @@ vec3 LCOL()
 float displacementSimple( vec2 p )
 {
     float f;
-    f  = 0.5000* textureLod( texture_noise, p, 0.0 ).x; p = p*2.0;
-    f += 0.2500* textureLod( texture_noise, p, 0.0 ).x; p = p*2.0;
-    f += 0.1250* textureLod( texture_noise, p, 0.0 ).x; p = p*2.0;
-    f += 0.0625* textureLod( texture_noise, p, 0.0 ).x; p = p*2.0;
+    f  = 0.5000* texture2DLod( texture_noise, p, 0.0 ).x; p = p*2.0;
+    f += 0.2500* texture2DLod( texture_noise, p, 0.0 ).x; p = p*2.0;
+    f += 0.1250* texture2DLod( texture_noise, p, 0.0 ).x; p = p*2.0;
+    f += 0.0625* texture2DLod( texture_noise, p, 0.0 ).x; p = p*2.0;
 
     return f;
 }

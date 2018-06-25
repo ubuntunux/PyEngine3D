@@ -70,7 +70,7 @@ vec3 TangentToWorld(vec3 vector, vec3 TangentY)
 vec4 SampleScreenColor(sampler2D texPrevSceneColor, vec2 UV)
 {
     vec4 OutColor;
-    OutColor.xyz = textureLod(texPrevSceneColor, UV, 0.0).xyz;
+    OutColor.xyz = texture2DLod(texPrevSceneColor, UV, 0.0).xyz;
     OutColor.w = 1;
 
     // Off screen masking

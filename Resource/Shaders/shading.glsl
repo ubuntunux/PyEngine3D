@@ -34,7 +34,7 @@ float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampl
     for(int i=0; i<4; ++i)
     {
         vec2 shadow_uv = uv + offsets[i];
-        shadow_factors[i] = textureLod(texture_shadow, shadow_uv, 0.0).x;
+        shadow_factors[i] = texture2DLod(texture_shadow, shadow_uv, 0.0).x;
         if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
         {
             shadow_factors[i] = saturate(exp( -c * (shadow_depth - shadow_factors[i] + depth_bias)));
@@ -86,7 +86,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
         for(int i=0; i<4; ++i)
         {
             vec2 shadow_uv = uv + offsets[i];
-            shadow_factors[i] = textureLod(texture_shadow, shadow_uv, 0.0).x;
+            shadow_factors[i] = texture2DLod(texture_shadow, shadow_uv, 0.0).x;
             if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
             {
                 shadow_factors[i] = saturate(exp( -c * (shadow_depth - shadow_factors[i] + depth_bias)));

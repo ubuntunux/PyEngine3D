@@ -1,10 +1,10 @@
 vec4 SampleDepthtexture2D(sampler2D texDepth, vec4 SampleUV0, vec4 SampleUV1)
 {  
     vec4 SampleDepth;
-    SampleDepth.x = textureLod(texDepth, SampleUV0.xy, 0.0).x;
-    SampleDepth.y = textureLod(texDepth, SampleUV0.zw, 0.0).x;
-    SampleDepth.z = textureLod(texDepth, SampleUV1.xy, 0.0).x;
-    SampleDepth.w = textureLod(texDepth, SampleUV1.zw, 0.0).x;
+    SampleDepth.x = texture2DLod(texDepth, SampleUV0.xy, 0.0).x;
+    SampleDepth.y = texture2DLod(texDepth, SampleUV0.zw, 0.0).x;
+    SampleDepth.z = texture2DLod(texDepth, SampleUV1.xy, 0.0).x;
+    SampleDepth.w = texture2DLod(texDepth, SampleUV1.zw, 0.0).x;
     return SampleDepth;
 }
  

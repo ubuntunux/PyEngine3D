@@ -22,7 +22,7 @@ void main() {
     vec2 tex_coord = vs_output.tex_coord.xy;
     vec2 texel_size = 1.0 / texture_size;
 
-    float linear_depth = textureLod(texture_linear_depth, tex_coord, texture_lod).x;
+    float linear_depth = texture2DLod(texture_linear_depth, tex_coord, texture_lod).x;
 
     /*if(linear_depth >= NEAR_FAR.y)
     {
@@ -57,7 +57,7 @@ void main() {
             continue;
         }
 
-        float sampleDepth = textureLod(texture_linear_depth, offset.xy, texture_lod).x;
+        float sampleDepth = texture2DLod(texture_linear_depth, offset.xy, texture_lod).x;
         sampleDepth = linear_depth - sampleDepth;
         if(radius_min_max.x <= sampleDepth && sampleDepth <= radius_min_max.y)
         {

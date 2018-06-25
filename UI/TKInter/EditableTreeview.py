@@ -49,7 +49,7 @@ class SimpleEditableTreeview(ttk.Treeview):
 
     def __updateWnds(self, col, item, widget):
         bbox = self.bbox(item, column=col)
-        widget.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+        widget.place(x=bbox[0], y=bbox[1], width=max(10, bbox[2] - 20), height=bbox[3])
 
     def inplace_entry(self, col, item):
         self.clear_inplace_widgets()
@@ -83,11 +83,14 @@ class SimpleEditableTreeview(ttk.Treeview):
         self._inplace_var = tk.StringVar()
         svar = self._inplace_var
         svar.set(self.__get_value(col, item))
-        self._inplace_widget = ttk.Combobox(self, textvariable=svar, values=values, state=state)
+        self._inplace_widget = ttk.Combobox(self, textvariable=svar, state=state)
+        self._inplace_widget.configure(values=values)
         cb = self._inplace_widget
-        cb.bind('<Return>', lambda e: self.__update_value(col, item))
-        cb.bind('<Unmap>', lambda e: self.__update_value(col, item))
-        cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        # cb.bind('<Return>', lambda e: self.__update_value(col, item))
+        # cb.bind('<Unmap>', lambda e: self.__update_value(col, item))
+        # cb.bind('<FocusOut>', lambda e: self.__update_value(col, item))
+        cb.bind("<<ComboboxSelected>>", lambda e: self.__update_value(col, item), "+")
+
         self.__updateWnds(col, item, cb)
 
     def inplace_spinbox(self, col, item, min, max, step):

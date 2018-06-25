@@ -3,6 +3,8 @@ import time
 import math
 
 import numpy as np
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
@@ -11,6 +13,7 @@ from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
 from App import CoreManager
+from .RenderOptions import BlendMode
 
 
 class ParticleManager(Singleton):
@@ -50,38 +53,50 @@ class ParticleManager(Singleton):
                 self.play_particle(particle)
 
     def render(self):
+        glEnable(GL_BLEND)
+
         for particle in self.active_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
                 if not emitter_info.enable:
                     continue
+
+                # set blend mode
+                if emitter_info.blend_mode is BlendMode.BLEND:
+                    glBlendEquation(GL_FUNC_ADD)
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                elif emitter_info.blend_mode is BlendMode.ADDITIVE:
+                    glBlendEquation(GL_FUNC_ADD)
+                    glBlendFunc(GL_ONE, GL_ONE)
+                elif emitter_info.blend_mode is BlendMode.MULTIPLY:
+                    glBlendEquation(GL_FUNC_ADD)
+                    glBlendFunc(GL_DST_COLOR, GL_ZERO)
+                elif emitter_info.blend_mode is BlendMode.MULTIPLY:
+                    glBlendEquation(GL_FUNC_SUBTRACT)
+                    glBlendFunc(GL_ONE, GL_ONE)
 
                 material_instance = emitter_info.material_instance
                 material_instance.use_program()
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
+                material_instance.bind_uniform_data('color', emitter_info.color)
 
                 geometry = emitter_info.mesh.get_geometry()
                 geometry.bind_vertex_buffer()
 
-                instance_data_model = []
-                instance_data_opacity = []
-                emiiters = particle.emitters_group[i]
-                for emiiter in emiiters:
+                draw_count = 0
+                for emiiter in particle.emitters_group[i]:
                     if emiiter.is_renderable():
-                        instance_data_model.append(emiiter.transform.matrix)
-                        instance_data_opacity.append([emiiter.final_opacity, 0.0, 0.0, 0.0])
+                        emitter_info.instance_data_model[draw_count][...] = emiiter.transform.matrix
+                        emitter_info.instance_data_opacity[draw_count][...] = [emiiter.final_opacity, 0.0, 0.0, 0.0]
+                        draw_count += 1
 
-                instance_data_model = np.array(instance_data_model, dtype=np.float32)
-                instance_data_opacity = np.array(instance_data_opacity, dtype=np.float32)
-
-                emitter_info.instance_buffer_model.bind_instance_buffer(instance_data=instance_data_model,
-                                                                        divisor=1)
-
-                emitter_info.instance_buffer_opacity.bind_instance_buffer(instance_data=instance_data_opacity,
-                                                                          divisor=1)
-
-                geometry.draw_elements_instanced(len(instance_data_model))
+                if 0 < draw_count:
+                    emitter_info.instance_buffer_model.bind_instance_buffer(
+                        instance_data=emitter_info.instance_data_model[:draw_count], divisor=1)
+                    emitter_info.instance_buffer_opacity.bind_instance_buffer(
+                        instance_data=emitter_info.instance_data_opacity[:draw_count], divisor=1)
+                    geometry.draw_elements_instanced(draw_count)
 
     def update(self, dt):
         for particle in self.active_particles:
@@ -177,7 +192,7 @@ class Emitter:
         # sequence
         self.loop_remain = 0
         self.total_cell_count = 0
-        self.current_sequence = [1, 1]
+        self.current_sequence = [0, 0]
         self.prev_sequence_index = -1
 
         self.delay = 0.0
@@ -242,9 +257,10 @@ class Emitter:
             if index == self.prev_sequence_index:
                 return
 
+            cell_count = self.emitter_info.cell_count
             self.prev_sequence_index = index
-            self.current_sequence[0] = index % self.cell_count[0]
-            self.current_sequence[1] = self.cell_count[1] - int(index / self.cell_count[0]) - 1
+            self.current_sequence[0] = index % cell_count[0]
+            self.current_sequence[1] = cell_count[1] - int(index / cell_count[0]) - 1
 
     def update(self, dt):
         if not self.alive:
@@ -373,9 +389,11 @@ class EmitterInfo:
     def __init__(self, **emitter_info):
         self.emitter_info = emitter_info
         self.name = emitter_info.get('name', 'Emitter')
+        self.blend_mode = BlendMode(emitter_info.get('blend_mode', 0))
         self.enable = emitter_info.get('enable', True)
         self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
+        self.color = emitter_info.get('color', Float3(1.0, 1.0, 1.0))
         self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
         self.fade_out = emitter_info.get('fade_out', 0.0)
 
@@ -409,19 +427,31 @@ class EmitterInfo:
 
         self.instance_buffer_model = InstanceBuffer(name="model",
                                                     layout_location=5,
-                                                    element_data=np.zeros(16, dtype=np.float32))
+                                                    element_data=MATRIX4_IDENTITY)
 
         self.instance_buffer_opacity = InstanceBuffer(name="opacity",
                                                       layout_location=9,
                                                       element_data=FLOAT4_ZERO)
 
+        self.instance_data_model = None
+        self.instance_data_opacity = None
+
         self.attributes = Attributes()
+
+        self.set_spawn_count(self.spawn_count)
+
+    def set_spawn_count(self, spawn_count):
+        self.spawn_count = spawn_count
+        self.instance_data_model = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
+        self.instance_data_opacity = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
 
     def get_save_data(self):
         save_data = dict(
             enable=self.enable,
+            blend_mode=self.blend_mode.value,
             spawn_count=self.spawn_count,
             billboard=self.billboard,
+            color=self.color,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
             texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',
@@ -450,7 +480,10 @@ class EmitterInfo:
         keys = list(attributes.keys())
         keys.sort()
         for key in keys:
-            self.attributes.set_attribute(key, attributes[key])
+            if 'blend_mode' == key:
+                self.attributes.set_attribute(key, BlendMode(self.blend_mode.value))
+            else:
+                self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
@@ -468,5 +501,7 @@ class EmitterInfo:
                 texture_diffuse = resource_manager.get_texture(attribute_value)
                 if texture_diffuse is not None:
                     self.texture_diffuse = texture_diffuse
+            elif 'spawn_count' == attribute_name:
+                self.set_spawn_count(attribute_value)
             else:
                 setattr(self, attribute_name, attribute_value)

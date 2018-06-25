@@ -17,7 +17,7 @@ mat2 mm2(in float a)
 float noise(float t)
 {
     vec2 texture_size = textureSize(texture_noise, 0);
-    return textureLod(texture_noise, vec2(t, 0.0) / texture_size.xy,0.0).x;
+    return texture2DLod(texture_noise, vec2(t, 0.0) / texture_size.xy,0.0).x;
 }
 
 float moy = 0.;
@@ -28,7 +28,7 @@ float noise(in vec3 x) //3d noise from iq
     vec3 f = fract(x);
 	f = f*f*(3.0-2.0*f);
 	vec2 uv = (p.xy+vec2(37.0,17.0)*p.z) + f.xy;
-	vec2 rg = textureLod( texture_noise, (uv+ 0.5)/256.0, 0.0 ).yx;
+	vec2 rg = texture2DLod( texture_noise, (uv+ 0.5)/256.0, 0.0 ).yx;
 	return mix( rg.x, rg.y, f.z );
 }
 

@@ -31,7 +31,7 @@ void main()
     float sphere_shadow_out = 0.0;
 
     // Scene
-    float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
+    float scene_linear_depth = texture2DLod(texture_linear_depth, uv, 0.0).x;
     vec3 scene_point = view_direction * scene_linear_depth * atmosphere_ratio;
     vec3 normal = normalize(texture2D(texture_normal, uv).xyz * 2.0 - 1.0);
     float scene_shadow_length;

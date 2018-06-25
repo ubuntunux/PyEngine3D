@@ -26,6 +26,7 @@ from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from Object import ParticleInfo
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
+from Object import ParticleInfo
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
 from OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
@@ -1263,11 +1264,11 @@ class ParticleLoader(ResourceLoader):
                 texture_white = self.resource_manager.get_texture('common.flat_white')
                 
                 for emitter_info in emitter_infos:
-                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh']) or default_mesh
+                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info.get('mesh')) or default_mesh
                     emitter_info['material_instance'] = self.resource_manager.get_material_instance(
-                        emitter_info['material_instance']) or default_material_instance
+                        emitter_info.get('material_instance')) or default_material_instance
                     emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
-                        emitter_info['texture_diffuse']) or texture_white
+                        emitter_info.get('texture_diffuse')) or texture_white
                 particle_info = ParticleInfo(resource_name, emitter_infos)
                 resource.set_data(particle_info)
                 return True

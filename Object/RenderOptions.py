@@ -1,5 +1,14 @@
+from enum import Enum
+
 from Common import logger
 from Utilities import *
+
+
+class BlendMode(Enum):
+    BLEND = 0
+    ADDITIVE = 1
+    MULTIPLY = 2
+    SUBTRACT = 3
 
 
 class RenderOption:

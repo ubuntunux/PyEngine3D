@@ -20,7 +20,7 @@ float noise( in vec3 x )
 
 	vec2 uv = (p.xy + vec2(37.0,17.0) * p.z) + f.xy;
 	vec2 texture_size = textureSize(texture_noise, 0);
-    vec2 rg = textureLod( texture_noise, (uv + 0.5) / texture_size, 0.0).yx;
+    vec2 rg = texture2DLod( texture_noise, (uv + 0.5) / texture_size, 0.0).yx;
 
 	return -1.0 + 2.0 * mix( rg.x, rg.y, f.z );
 }
