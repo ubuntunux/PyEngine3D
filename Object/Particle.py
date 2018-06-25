@@ -71,7 +71,7 @@ class ParticleManager(Singleton):
                 for emiiter in emiiters:
                     if emiiter.is_renderable():
                         instance_data_model.append(emiiter.transform.matrix)
-                        instance_data_opacity.append([emiiter.opacity, 0.0, 0.0, 0.0])
+                        instance_data_opacity.append([emiiter.final_opacity, 0.0, 0.0, 0.0])
 
                 instance_data_model = np.array(instance_data_model, dtype=np.float32)
                 instance_data_opacity = np.array(instance_data_opacity, dtype=np.float32)
