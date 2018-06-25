@@ -60,8 +60,6 @@ class ParticleManager(Singleton):
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
 
-                material_instance.bind_uniform_data('opacity', 1.0)
-
                 geometry = emitter_info.mesh.get_geometry()
                 geometry.bind_vertex_buffer()
 
