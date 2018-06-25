@@ -59,6 +59,7 @@ class ParticleManager(Singleton):
                 material_instance.use_program()
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
+                material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
 
                 geometry = emitter_info.mesh.get_geometry()
                 geometry.bind_vertex_buffer()
@@ -378,11 +379,9 @@ class EmitterInfo:
         self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
         self.fade_out = emitter_info.get('fade_out', 0.0)
 
-        resource_manager = CoreManager.instance().resource_manager
-        default_mesh = resource_manager.get_default_mesh()
-        default_material_instance = resource_manager.get_default_effect_material_instance()
-        self.mesh = emitter_info.get('mesh') or default_mesh
-        self.material_instance = emitter_info.get('material_instance') or default_material_instance
+        self.mesh = emitter_info.get('mesh')
+        self.material_instance = emitter_info.get('material_instance')
+        self.texture_diffuse = emitter_info.get('texture_diffuse')
 
         # sequence
         self.loop = emitter_info.get('loop', -1)  # -1 is infinite
@@ -425,6 +424,7 @@ class EmitterInfo:
             billboard=self.billboard,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
+            texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',
             fade_in=self.fade_in,
             fade_out=self.fade_out,
             loop=self.loop,
@@ -455,13 +455,18 @@ class EmitterInfo:
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
         if hasattr(self, attribute_name):
+            resource_manager = CoreManager.instance().resource_manager
             if 'mesh' == attribute_name:
-                mesh = CoreManager.instance().resource_manager.get_mesh(attribute_value)
+                mesh = resource_manager.get_mesh(attribute_value)
                 if mesh is not None:
                     self.mesh = mesh
             elif 'material_instance' == attribute_name:
-                material_instance = CoreManager.instance().resource_manager.get_material_instance(attribute_value)
+                material_instance = resource_manager.get_material_instance(attribute_value)
                 if material_instance is not None:
                     self.material_instance = material_instance
+            elif 'texture_diffuse' == attribute_name:
+                texture_diffuse = resource_manager.get_texture(attribute_value)
+                if texture_diffuse is not None:
+                    self.texture_diffuse = texture_diffuse
             else:
                 setattr(self, attribute_name, attribute_value)

@@ -1258,10 +1258,16 @@ class ParticleLoader(ResourceLoader):
         if resource:
             emitter_infos = self.load_resource_data(resource)
             if emitter_infos is not None:
+                default_mesh = self.resource_manager.get_default_mesh()
+                default_material_instance = self.resource_manager.get_default_effect_material_instance()
+                texture_white = self.resource_manager.get_texture('common.flat_white')
+                
                 for emitter_info in emitter_infos:
-                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh'])
+                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info['mesh']) or default_mesh
                     emitter_info['material_instance'] = self.resource_manager.get_material_instance(
-                        emitter_info['material_instance'])
+                        emitter_info['material_instance']) or default_material_instance
+                    emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
+                        emitter_info['texture_diffuse']) or texture_white
                 particle_info = ParticleInfo(resource_name, emitter_infos)
                 resource.set_data(particle_info)
                 return True
