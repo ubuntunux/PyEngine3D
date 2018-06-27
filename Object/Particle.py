@@ -80,6 +80,7 @@ class ParticleManager(Singleton):
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
                 material_instance.bind_uniform_data('color', emitter_info.color)
+                material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
 
                 geometry = emitter_info.mesh.get_geometry()
                 geometry.bind_vertex_buffer()
