@@ -40,8 +40,8 @@ class Geometry:
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
 
-    def draw_elements_instanced(self, count):
-        self.vertex_buffer.draw_elements_instanced(count)
+    def draw_elements_instanced(self, count, *instance_buffers):
+        self.vertex_buffer.draw_elements_instanced(count, *instance_buffers)
 
 
 class Mesh:

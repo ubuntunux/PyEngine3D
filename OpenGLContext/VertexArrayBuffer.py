@@ -148,5 +148,13 @@ class VertexArrayBuffer:
     def draw_elements(self):
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
-    def draw_elements_instanced(self, count):
+    def draw_elements_instanced(self, count, *instance_buffers):
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
+
+        if len(instance_buffers) < 1:
+            raise BaseException(
+                "instance_buffers is None. You must release instance buffer after draw_elements_instanced.")
+
+        # important : After the object is drawn You need to execute glDisableVertexAttribArray.
+        for instance_buffer in instance_buffers:
+            glVertexAttribDivisor(instance_buffer.layout_location, 0)

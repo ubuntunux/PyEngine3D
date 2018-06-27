@@ -10,6 +10,7 @@ from Common import logger
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
+from Object import Particle
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
 from OpenGLContext import UniformBlock
@@ -161,6 +162,9 @@ class SceneManager(Singleton):
         for object_data in scene_data.get('skeleton_actors', []):
             self.add_object(**object_data)
 
+        for particle_data in scene_data.get('particles', []):
+            self.add_particle(**particle_data)
+
         self.post_open_scene()
 
     def save_scene(self):
@@ -178,6 +182,7 @@ class SceneManager(Singleton):
             ocean=self.ocean.get_save_data(),
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
+            particles=self.particle_manager.get_save_data()
         )
         return scene_data
 
@@ -204,30 +209,34 @@ class SceneManager(Singleton):
             return self.skeleton_actors
         return None
 
-    def regist_object(self, object):
-        if object is not None and object.name not in self.objectMap:
-            object_type = type(object)
+    def regist_object(self, obj):
+        if obj is not None and obj.name not in self.objectMap:
+            object_type = type(obj)
             object_list = self.get_object_list(object_type)
             if object_list is not None:
-                object_list.append(object)
-            self.objectMap[object.name] = object
-            self.core_manager.send_object_info(object)
+                object_list.append(obj)
+            elif object_type is Particle:
+                self.particle_manager.add_particle(obj)
+            self.objectMap[obj.name] = obj
+            self.core_manager.send_object_info(obj)
         else:
-            logger.error("SceneManager::regist_object error. %s" % object.name if object else 'None')
+            logger.error("SceneManager::regist_object error. %s" % obj.name if obj else 'None')
 
-    def unregist_resource(self, object):
-        if object is not None and object.name in self.objectMap:
-            object_type = type(object)
+    def unregist_resource(self, obj):
+        if obj is not None and obj.name in self.objectMap:
+            object_type = type(obj)
             object_list = self.get_object_list(object_type)
             if object_list is not None:
-                object_list.remove(object)
-            self.objectMap.pop(object.name)
-            self.core_manager.notify_delete_object(object.name)
+                object_list.remove(obj)
+            elif object_type is Particle:
+                self.particle_manager.delete_particle(obj)
+            self.objectMap.pop(obj.name)
+            self.core_manager.notify_delete_object(obj.name)
 
-            if hasattr(object, 'delete'):
-                object.delete()
+            if hasattr(obj, 'delete'):
+                obj.delete()
         else:
-            logger.error("SceneManager::unregist_resource error. %s" % object.name if object else 'None')
+            logger.error("SceneManager::unregist_resource error. %s" % obj.name if obj else 'None')
 
     def add_camera(self, **camera_data):
         name = self.generate_object_name(camera_data.get('name', 'camera'))
@@ -266,10 +275,12 @@ class SceneManager(Singleton):
         self.regist_object(light_probe)
         return light_probe
 
-    def add_particle(self, name, particle_info):
-        name = self.generate_object_name(name)
+    def add_particle(self, **particle_data):
+        name = self.generate_object_name(particle_data.get('name', 'particle'))
+        particle_data['name'] = name
+        particle_data['particle_info'] = self.resource_manager.get_particle(particle_data.get('particle_info', ''))
         logger.info("add Particle : %s" % name)
-        particle = self.particle_manager.add_particle(name, particle_info)
+        particle = Particle(**particle_data)
         self.regist_object(particle)
         return particle
 
@@ -328,7 +339,7 @@ class SceneManager(Singleton):
 
     def delete_object(self, objectName):
         obj = self.get_object(objectName)
-        if obj and obj not in (self.main_camera, self.main_light, self.main_light_probe):
+        if obj is not None and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
     def get_object(self, objectName):

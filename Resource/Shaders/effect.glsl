@@ -2,15 +2,6 @@
 #include "utility.glsl"
 #include "effect_vs.glsl"
 
-// referene : RenderOptions.py
-#define BLEND 0
-#define ADDITIVE 1
-#define MULTIPLY 2
-#define SUBTRACT 3
-
-uniform sampler2D texture_diffuse;
-uniform vec3 color;
-uniform int blend_mode;
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -18,7 +9,13 @@ layout (location = 0) out vec4 ps_output;
 
 void main()
 {
-    vec4 diffuse = texture2D(texture_diffuse, vs_output.tex_coord);
+    vec4 diffuse = texture2D(texture_diffuse, vs_output.uv);
+
+    if(vs_output.uv.x != vs_output.next_uv.x || vs_output.uv.y != vs_output.next_uv.y)
+    {
+        diffuse = mix(diffuse, texture2D(texture_diffuse, vs_output.next_uv), vs_output.sequence_ratio);
+    }
+
     ps_output.xyz = pow(diffuse.xyz, vec3(2.2)) * color.xyz;
     ps_output.w = diffuse.w * vs_output.opacity;
 

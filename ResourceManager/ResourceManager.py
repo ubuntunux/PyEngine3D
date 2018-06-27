@@ -1259,16 +1259,12 @@ class ParticleLoader(ResourceLoader):
         if resource:
             emitter_infos = self.load_resource_data(resource)
             if emitter_infos is not None:
-                default_mesh = self.resource_manager.get_default_mesh()
-                default_material_instance = self.resource_manager.get_default_effect_material_instance()
-                texture_white = self.resource_manager.get_texture('common.flat_white')
-                
                 for emitter_info in emitter_infos:
-                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info.get('mesh')) or default_mesh
+                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info.get('mesh'))
                     emitter_info['material_instance'] = self.resource_manager.get_material_instance(
-                        emitter_info.get('material_instance')) or default_material_instance
+                        emitter_info.get('material_instance'))
                     emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
-                        emitter_info.get('texture_diffuse')) or texture_white
+                        emitter_info.get('texture_diffuse'))
                 particle_info = ParticleInfo(resource_name, emitter_infos)
                 resource.set_data(particle_info)
                 return True
@@ -1276,9 +1272,7 @@ class ParticleLoader(ResourceLoader):
         return False
 
     def action_resource(self, resource_name):
-        particle_info = self.get_resource_data(resource_name)
-        if particle_info is not None:
-            self.scene_manager.add_particle(resource_name, particle_info)
+        self.scene_manager.add_particle(name=resource_name, particle_info=resource_name)
 
 
 # -----------------------#
@@ -1467,9 +1461,6 @@ class ResourceManager(Singleton):
     def get_material(self, shader_name, macros={}):
         return self.material_loader.get_material(shader_name, macros)
 
-    def get_material_instance(self, name, shader_name='', macros={}):
-        return self.material_instance_loader.get_material_instance(name, shader_name=shader_name, macros=macros)
-
     def get_default_material_instance(self, skeletal=False):
         if skeletal:
             return self.material_instance_loader.get_material_instance(name='default_skeletal',
@@ -1477,23 +1468,38 @@ class ResourceManager(Singleton):
                                                                        macros={'SKELETAL': 1})
         return self.material_instance_loader.get_material_instance('default')
 
+    def get_material_instance(self, name, shader_name='', macros={}):
+        return self.material_instance_loader.get_material_instance(name,
+                                                                   shader_name=shader_name,
+                                                                   macros=macros) or \
+               self.get_default_material_instance(skeletal=(True if 1 == macros.get('SKELETAL', 0) else 0))
+
     def get_default_effect_material_instance(self):
         return self.material_instance_loader.get_material_instance('effect')
-
-    def get_mesh(self, meshName):
-        return self.mesh_loader.get_resource_data(meshName)
 
     def get_default_mesh(self):
         return self.get_mesh('Quad')
 
-    def get_procedural_texture(self, textureName):
-        return self.procedural_texture_loader.get_resource_data(textureName)
+    def get_mesh(self, mesh_name):
+        return self.mesh_loader.get_resource_data(mesh_name) or self.get_default_mesh()
 
-    def get_texture(self, textureName):
-        return self.texture_loader.get_resource_data(textureName)
+    def get_procedural_texture(self, texture_name):
+        return self.procedural_texture_loader.get_resource_data(texture_name)
 
-    def get_model(self, modelName):
-        return self.model_loader.get_resource_data(modelName)
+    def get_default_texture(self):
+        return self.texture_loader.get_resource_data('common.flat_white')
 
-    def get_scene(self, SceneName):
-        return self.scene_loader.get_resource_data(SceneName)
+    def get_texture(self, texture_name):
+        return self.texture_loader.get_resource_data(texture_name) or self.get_default_texture()
+
+    def get_model(self, model_name):
+        return self.model_loader.get_resource_data(model_name)
+
+    def get_scene(self, scene_name):
+        return self.scene_loader.get_resource_data(scene_name)
+
+    def get_default_particle(self):
+        return self.particle_loader.get_resource_data('default_particle')
+
+    def get_particle(self, particle_name):
+        return self.particle_loader.get_resource_data(particle_name) or self.get_default_particle()

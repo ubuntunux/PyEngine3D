@@ -21,6 +21,9 @@ class ParticleManager(Singleton):
         self.particles = []
         self.active_particles = []
 
+    def get_save_data(self):
+        return [particle.get_save_data() for particle in self.particles]
+
     def clear(self):
         for particle in self.particles:
             particle.destroy()
@@ -28,14 +31,14 @@ class ParticleManager(Singleton):
         self.particles = []
         self.active_particles = []
 
-    def add_particle(self, name, particle_info):
-        particle = Particle(name, particle_info)
+    def add_particle(self, particle):
         self.particles.append(particle)
         self.play_particle(particle)
         return particle
 
-    def remove_particle(self, particle):
-        self.particles.pop(particle)
+    def delete_particle(self, particle):
+        self.destroy_particle(particle)
+        self.particles.remove(particle)
 
     def play_particle(self, particle):
         if particle not in self.active_particles:
@@ -44,7 +47,7 @@ class ParticleManager(Singleton):
 
     def destroy_particle(self, particle):
         if particle in self.active_particles:
-            self.active_particles.pop(particle)
+            self.active_particles.remove(particle)
         particle.destroy()
 
     def notify_particle_info_changed(self, particle_info):
@@ -81,23 +84,33 @@ class ParticleManager(Singleton):
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
                 material_instance.bind_uniform_data('color', emitter_info.color)
                 material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
+                material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
+                material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
 
                 geometry = emitter_info.mesh.get_geometry()
                 geometry.bind_vertex_buffer()
 
                 draw_count = 0
-                for emiiter in particle.emitters_group[i]:
-                    if emiiter.is_renderable():
-                        emitter_info.instance_data_model[draw_count][...] = emiiter.transform.matrix
-                        emitter_info.instance_data_opacity[draw_count][...] = [emiiter.final_opacity, 0.0, 0.0, 0.0]
+                for emitter in particle.emitters_group[i]:
+                    if emitter.is_renderable():
+                        emitter_info.instance_data_0[draw_count][...] = emitter.transform.matrix
+                        emitter_info.instance_data_1[draw_count][0:2] = emitter.sequence_uv
+                        emitter_info.instance_data_1[draw_count][2:4] = emitter.next_sequence_uv
+                        emitter_info.instance_data_2[draw_count][0] = emitter.sequence_ratio
+                        emitter_info.instance_data_2[draw_count][1] = emitter.final_opacity
                         draw_count += 1
 
                 if 0 < draw_count:
-                    emitter_info.instance_buffer_model.bind_instance_buffer(
-                        instance_data=emitter_info.instance_data_model[:draw_count], divisor=1)
-                    emitter_info.instance_buffer_opacity.bind_instance_buffer(
-                        instance_data=emitter_info.instance_data_opacity[:draw_count], divisor=1)
-                    geometry.draw_elements_instanced(draw_count)
+                    emitter_info.instance_buffer_0.bind_instance_buffer(
+                        instance_data=emitter_info.instance_data_0[:draw_count], divisor=1)
+                    emitter_info.instance_buffer_1.bind_instance_buffer(
+                        instance_data=emitter_info.instance_data_1[:draw_count], divisor=1)
+                    emitter_info.instance_buffer_2.bind_instance_buffer(
+                        instance_data=emitter_info.instance_data_2[:draw_count], divisor=1)
+                    geometry.draw_elements_instanced(draw_count,
+                                                     emitter_info.instance_buffer_0,
+                                                     emitter_info.instance_buffer_1,
+                                                     emitter_info.instance_buffer_2)
 
     def update(self, dt):
         for particle in self.active_particles:
@@ -108,10 +121,15 @@ class ParticleManager(Singleton):
 
 
 class Particle:
-    def __init__(self, name, particle_info):
-        self.name = name
-        self.particle_info = particle_info
+    def __init__(self, **particle_data):
+        self.name = particle_data.get('name', 'particle')
+        self.particle_info = particle_data.get('particle_info')
+
         self.transform = TransformObject()
+        self.transform.set_pos(particle_data.get('pos', (0.0, 0.0, 0.0)))
+        self.transform.set_rotation(particle_data.get('rot', (0.0, 0.0, 0.0)))
+        self.transform.set_scale(particle_data.get('scale', (1.0, 1.0, 1.0)))
+
         self.alive = False
         self.emitters_group = []
         self.attributes = Attributes()
@@ -121,7 +139,8 @@ class Particle:
             name=self.name,
             pos=self.transform.pos.tolist(),
             rot=self.transform.rot.tolist(),
-            scale=self.transform.scale.tolist()
+            scale=self.transform.scale.tolist(),
+            particle_info=self.particle_info.name if self.particle_info is not None else ''
         )
         return save_data
 
@@ -130,6 +149,8 @@ class Particle:
         self.attributes.set_attribute('pos', self.transform.pos)
         self.attributes.set_attribute('rot', self.transform.rot)
         self.attributes.set_attribute('scale', self.transform.scale)
+        self.attributes.set_attribute('particle_info',
+                                      self.particle_info.name if self.particle_info is not None else '')
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
@@ -193,8 +214,11 @@ class Emitter:
         # sequence
         self.loop_remain = 0
         self.total_cell_count = 0
-        self.current_sequence = [0, 0]
-        self.prev_sequence_index = -1
+        self.sequence_uv = [0.0, 0.0]
+        self.next_sequence_uv = [0.0, 0.0]
+        self.sequence_ratio = 0.0
+        self.sequence_index = 0
+        self.next_sequence_index = 0
 
         self.delay = 0.0
         self.life_time = 0.0
@@ -212,7 +236,7 @@ class Emitter:
         self.final_opacity = 1.0
     
     def refresh(self):
-        self.total_cell_count = self.emitter_info.total_cell_count
+        self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
         
         self.delay = self.emitter_info.delay.get_value()
         self.life_time = self.emitter_info.life_time.get_value()
@@ -242,7 +266,9 @@ class Emitter:
         self.alive = True
         self.loop_remain = self.emitter_info.loop
         self.elapsed_time = 0.0
-        self.prev_sequence_index = -1
+        self.sequence_ratio = 0.0
+        self.sequence_index = 0
+        self.next_sequence_index = 0
 
     def destroy(self):
         self.alive = False
@@ -251,17 +277,23 @@ class Emitter:
         return self.alive and (0.0 == self.delay)
 
     def update_sequence(self, life_ratio):
-        if self.total_cell_count > 1 and self.play_speed > 0:
-            ratio = (life_ratio * self.play_speed) % 1.0
-            index = min(self.total_cell_count, int(math.floor((self.total_cell_count - 1) * ratio)))
+        if 1 < self.total_cell_count and 0 < self.play_speed:
+            ratio = life_ratio * self.play_speed
+            ratio = self.total_cell_count * (ratio - math.floor(ratio))
+            index = math.floor(ratio)
+            next_index = (index + 1) % self.total_cell_count
+            self.sequence_ratio = ratio - index
 
-            if index == self.prev_sequence_index:
+            if next_index == self.next_sequence_index:
                 return
 
             cell_count = self.emitter_info.cell_count
-            self.prev_sequence_index = index
-            self.current_sequence[0] = index % cell_count[0]
-            self.current_sequence[1] = cell_count[1] - int(index / cell_count[0]) - 1
+            self.sequence_index = self.next_sequence_index
+            self.sequence_uv[0] = self.next_sequence_uv[0]
+            self.sequence_uv[1] = self.next_sequence_uv[1]
+            self.next_sequence_index = next_index
+            self.next_sequence_uv[0] = (next_index % cell_count[0]) / cell_count[0]
+            self.next_sequence_uv[1] = (cell_count[1] - 1 - int(math.floor(next_index / cell_count[0]))) / cell_count[1]
 
     def update(self, dt):
         if not self.alive:
@@ -327,10 +359,14 @@ class ParticleInfo:
 
     def add_emiter(self, **emitter_info):
         self.emitter_infos.append(EmitterInfo(**emitter_info))
+        # refresh
+        ParticleManager.instance().notify_particle_info_changed(self)
 
     def delete_emiter(self, index):
         if index < len(self.emitter_infos):
             self.emitter_infos.pop(index)
+        # refresh
+        ParticleManager.instance().notify_particle_info_changed(self)
 
     def get_save_data(self):
         save_data = []
@@ -369,7 +405,7 @@ class ParticleInfo:
                         emitter_attribute.set_range(emitter_attribute.min_value, attribute_value)
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
-
+        # refresh
         ParticleManager.instance().notify_particle_info_changed(self)
 
     def refresh_attribute_info(self):
@@ -398,14 +434,18 @@ class EmitterInfo:
         self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
         self.fade_out = emitter_info.get('fade_out', 0.0)
 
-        self.mesh = emitter_info.get('mesh')
-        self.material_instance = emitter_info.get('material_instance')
-        self.texture_diffuse = emitter_info.get('texture_diffuse')
+        resource_manager = CoreManager.instance().resource_manager
+        default_mesh = resource_manager.get_default_mesh()
+        default_material_instance = resource_manager.get_default_effect_material_instance()
+        texture_white = resource_manager.get_texture('common.flat_white')
+
+        self.mesh = emitter_info.get('mesh') or default_mesh
+        self.material_instance = emitter_info.get('material_instance') or default_material_instance
+        self.texture_diffuse = emitter_info.get('texture_diffuse') or texture_white
 
         # sequence
         self.loop = emitter_info.get('loop', -1)  # -1 is infinite
         self.cell_count = emitter_info.get('cell_count', [1, 1])
-        self.total_cell_count = self.cell_count[0] * self.cell_count[1]
 
         # variance
         self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
@@ -426,16 +466,19 @@ class EmitterInfo:
         self.scale = RangeVariable(
             **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
 
-        self.instance_buffer_model = InstanceBuffer(name="model",
-                                                    layout_location=5,
-                                                    element_data=MATRIX4_IDENTITY)
-
-        self.instance_buffer_opacity = InstanceBuffer(name="opacity",
-                                                      layout_location=9,
-                                                      element_data=FLOAT4_ZERO)
-
-        self.instance_data_model = None
-        self.instance_data_opacity = None
+        # instance data
+        self.instance_buffer_0 = InstanceBuffer(name="model",
+                                                layout_location=5,
+                                                element_data=MATRIX4_IDENTITY)
+        self.instance_buffer_1 = InstanceBuffer(name="uvs",
+                                                layout_location=9,
+                                                element_data=FLOAT4_ZERO)
+        self.instance_buffer_2 = InstanceBuffer(name="opacity_sequence",
+                                                layout_location=10,
+                                                element_data=FLOAT4_ZERO)
+        self.instance_data_0 = None
+        self.instance_data_1 = None
+        self.instance_data_2 = None
 
         self.attributes = Attributes()
 
@@ -443,8 +486,9 @@ class EmitterInfo:
 
     def set_spawn_count(self, spawn_count):
         self.spawn_count = spawn_count
-        self.instance_data_model = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
-        self.instance_data_opacity = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
+        self.instance_data_0 = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
+        self.instance_data_1 = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
+        self.instance_data_2 = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
 
     def get_save_data(self):
         save_data = dict(
@@ -504,5 +548,7 @@ class EmitterInfo:
                     self.texture_diffuse = texture_diffuse
             elif 'spawn_count' == attribute_name:
                 self.set_spawn_count(attribute_value)
+            elif 'cell_count' == attribute_name:
+                self.cell_count = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)
