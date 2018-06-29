@@ -82,6 +82,8 @@ class ParticleManager(Singleton):
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
+
+                material_instance.bind_uniform_data('billboard', emitter_info.billboard)
                 material_instance.bind_uniform_data('color', emitter_info.color)
                 material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
                 material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])

@@ -27,6 +27,7 @@
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
+    - Particle uniform block
 * Actors
     - Tree, Foliage actor
     - Landscape
