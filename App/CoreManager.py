@@ -1,3 +1,4 @@
+import importlib
 import gc
 import os
 import platform as platformModule
@@ -36,6 +37,8 @@ class CoreManager(Singleton):
         self.cmdPipe = None
 
         self.need_to_gc_collect = False
+
+        self.is_play_mode = False
 
         # timer
         self.fps = 0.0
@@ -106,19 +109,13 @@ class CoreManager(Singleton):
         if self.cmdPipe:
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
-        if "" != project_filename:
-            sys.path.append(os.path.split(project_filename)[0])
-            from Scripts import ScriptManager
-        else:
-            from Resource.Scripts import ScriptManager
-
         from ResourceManager import ResourceManager
         from Object import RenderTargetManager, FontManager, RenderOptionManager, ParticleManager
         from .Renderer import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        self.script_manager = ScriptManager.instance()
+        self.script_manager = self.get_script_manager_instance(project_filename)
         self.resource_manager = ResourceManager.instance()
         self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
@@ -171,6 +168,17 @@ class CoreManager(Singleton):
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
+
+    def get_script_manager_instance(self, project_filename):
+        if "" != project_filename:
+            sys.path.append(os.path.split(project_filename)[0])
+            import Scripts
+            # importlib.reload(Scripts)
+            return Scripts.ScriptManager.instance()
+        else:
+            import Resource.Scripts as Scripts
+            # importlib.reload(Scripts)
+            return Scripts.ScriptManager.instance()
 
     def set_window_title(self, title):
         self.game_backend.set_window_title(self.last_game_backend + " - " + title)
@@ -287,6 +295,19 @@ class CoreManager(Singleton):
 
         # exit
         self.commands[COMMAND.CLOSE_APP.value] = lambda value: self.close()
+
+        # play mode
+        def cmd_play(value):
+            self.is_play_mode = True
+            # self.script_manager = self.get_script_manager_instance(self.project_manager.project_filename)
+            # self.script_manager.initialize(self)
+        self.commands[COMMAND.PLAY.value] = cmd_play
+
+        def cmd_stop(value):
+            self.is_play_mode = False
+            self.script_manager.exit()
+        self.commands[COMMAND.STOP.value] = cmd_stop
+
         # project
         self.commands[COMMAND.NEW_PROJECT.value] = lambda value: self.project_manager.new_project(value)
         self.commands[COMMAND.OPEN_PROJECT.value] = lambda value: self.project_manager.open_project_next_time(value)
@@ -562,9 +583,11 @@ class CoreManager(Singleton):
 
         startTime = time.perf_counter()
         self.updateCommand()
-        self.update_camera()
 
-        self.script_manager.update(delta)
+        if self.is_play_mode:
+            self.script_manager.update(delta)
+        else:
+            self.update_camera()
 
         # update actors
         self.scene_manager.update_scene(delta)

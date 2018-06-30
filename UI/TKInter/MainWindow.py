@@ -215,6 +215,10 @@ class MainWindow:
         separator = ttk.Separator(command_frame, orient='horizontal')
         separator.pack(fill="x", side="top", pady=10)
 
+        self.play_button = tk.Button(command_frame, text="Play")
+        self.play_button.pack(fill="x", side="top")
+        self.play_button.bind("<Button-1>", self.toggle_play)
+
         label_frame = ttk.LabelFrame(command_frame, text='Resolution')
         label_frame.pack(fill="x", side="top", pady=10)
 
@@ -477,6 +481,14 @@ class MainWindow:
 
     def save_scene(self):
         self.appCmdQueue.put(COMMAND.SAVE_SCENE)
+
+    def toggle_play(self, event):
+        if "Play" == self.play_button['text']:
+            self.play_button['text'] = "Stop"
+            self.appCmdQueue.put(COMMAND.PLAY)
+        else:
+            self.play_button['text'] = "Play"
+            self.appCmdQueue.put(COMMAND.STOP)
 
     def set_view_mode(self, mode):
         self.appCmdQueue.put(mode)

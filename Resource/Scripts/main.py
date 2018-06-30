@@ -9,6 +9,9 @@ class BaseScriptManager(Singleton):
     def initialize(self, core_manager):
         self.core_manager = core_manager
 
+    def exit(self):
+        pass
+
     def update(self, dt):
         pass
 
@@ -19,6 +22,9 @@ class ScriptManager(BaseScriptManager):
 
     def initialize(self, core_manager):
         super().initialize(core_manager)
+
+    def exit(self):
+        super().exit()
 
     def update(self, dt):
         pass

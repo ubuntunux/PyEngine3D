@@ -48,6 +48,9 @@ class COMMAND(AutoEnum):
     NEW_SCENE = ()
     SAVE_SCENE = ()
 
+    PLAY = ()
+    STOP = ()
+
     # view mode
     VIEWMODE_WIREFRAME = ()
     VIEWMODE_SHADING = ()
