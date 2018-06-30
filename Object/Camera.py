@@ -45,7 +45,7 @@ class Camera(StaticActor):
         self.prev_view_origin_projection = Matrix4()
 
     def initialize(self):
-        config = CoreManager.instance().projectManager.config
+        config = CoreManager.instance().project_manager.config
         # get properties
         self.fov = config.Camera.fov
         self.near = config.Camera.near

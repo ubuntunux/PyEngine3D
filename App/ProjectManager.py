@@ -1,4 +1,5 @@
 import os
+import sys
 import traceback
 import configparser
 
@@ -47,7 +48,7 @@ class ProjectManager(Singleton):
             self.config.setDefaultValue("Camera", "move_speed", meter_per_unit)
             self.config.setDefaultValue("Camera", "pan_speed", meter_per_unit)
             self.config.setDefaultValue("Camera", "rotation_speed", 0.3)
-        except:
+        except BaseException:
             logger.info("Cannot open %s : %s" % (GetClassName(self), project_filename))
             return False
         return True
@@ -71,7 +72,7 @@ class ProjectManager(Singleton):
                     config.save()
 
                 self.open_project_next_time(project_filename)
-        except:
+        except BaseException:
             logger.error(traceback.format_exc())
 
     def open_project_next_time(self, project_filename):
@@ -81,7 +82,7 @@ class ProjectManager(Singleton):
                 self.next_open_project_filename = project_filename
                 self.core_manager.close()
                 return
-        except:
+        except BaseException:
             logger.error(traceback.format_exc())
         if project_filename:
             logger.error("Failed open %s." % project_filename)
@@ -94,7 +95,7 @@ class ProjectManager(Singleton):
                     main_camera.write_to_config(self.config)
                 self.config.save()
             return
-        except:
+        except BaseException:
             logger.error(traceback.format_exc())
         if self.project_filename:
             logger.error("Failed save %s." % self.project_filename)

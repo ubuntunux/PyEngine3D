@@ -451,6 +451,7 @@ class EmitterInfo:
         self.name = emitter_info.get('name', 'Emitter')
         self.blend_mode = BlendMode(emitter_info.get('blend_mode', 0))
         self.enable = emitter_info.get('enable', True)
+        self.gpu_particle = emitter_info.get('gpu_particle', False)
         self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
         self.color = emitter_info.get('color', Float3(1.0, 1.0, 1.0))

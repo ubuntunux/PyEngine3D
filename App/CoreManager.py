@@ -69,6 +69,7 @@ class CoreManager(Singleton):
         self.acc_presentTime = 0.0
 
         # managers
+        self.script_manager = None
         self.game_backend = None
         self.resource_manager = None
         self.render_option_manager = None
@@ -77,7 +78,7 @@ class CoreManager(Singleton):
         self.font_manager = None
         self.scene_manager = None
         self.particle_manager = None
-        self.projectManager = None
+        self.project_manager = None
         self.config = None
 
         self.last_game_backend = PyGlet.__name__
@@ -105,12 +106,19 @@ class CoreManager(Singleton):
         if self.cmdPipe:
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
+        if "" != project_filename:
+            sys.path.append(os.path.split(project_filename)[0])
+            from Scripts import ScriptManager
+        else:
+            from Resource.Scripts import ScriptManager
+
         from ResourceManager import ResourceManager
         from Object import RenderTargetManager, FontManager, RenderOptionManager, ParticleManager
         from .Renderer import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
+        self.script_manager = ScriptManager.instance()
         self.resource_manager = ResourceManager.instance()
         self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
@@ -118,10 +126,10 @@ class CoreManager(Singleton):
         self.renderer = Renderer.instance()
         self.scene_manager = SceneManager.instance()
         self.particle_manager = ParticleManager.instance()
-        self.projectManager = ProjectManager.instance()
+        self.project_manager = ProjectManager.instance()
 
         # check invalid project
-        if not self.projectManager.initialize(self, project_filename):
+        if not self.project_manager.initialize(self, project_filename):
             self.valid = False
             self.exit()
             return False
@@ -130,8 +138,8 @@ class CoreManager(Singleton):
         self.renderer.display_gl_info()
 
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
-        width, height = self.projectManager.config.Screen.size
-        full_screen = self.projectManager.config.Screen.full_screen
+        width, height = self.project_manager.config.Screen.size
+        full_screen = self.project_manager.config.Screen.full_screen
 
         if self.config.hasValue('Project', 'game_backend'):
             self.last_game_backend = self.config.getValue('Project', 'game_backend')
@@ -152,13 +160,14 @@ class CoreManager(Singleton):
             self.error('game_backend initializing failed')
 
         # initalize managers
-        self.resource_manager.initialize(self, self.projectManager.project_dir)
+        self.resource_manager.initialize(self, self.project_manager.project_dir)
         self.render_option_manager.initialize(self)
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.renderer.resizeScene(width, height)
         self.scene_manager.initialize(self)
+        self.script_manager.initialize(self)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
@@ -167,7 +176,7 @@ class CoreManager(Singleton):
         self.game_backend.set_window_title(self.last_game_backend + " - " + title)
 
     def get_next_open_project_filename(self):
-        return self.projectManager.next_open_project_filename
+        return self.project_manager.next_open_project_filename
 
     def run(self):
         self.game_backend.run()
@@ -180,12 +189,12 @@ class CoreManager(Singleton):
 
         # write config
         if self.valid:
-            self.config.setValue("Project", "recent", self.projectManager.project_filename)
+            self.config.setValue("Project", "recent", self.project_manager.project_filename)
             self.config.setValue("Project", "game_backend", self.last_game_backend)
             self.config.save()  # save config
 
         # save project
-        self.projectManager.close_project()
+        self.project_manager.close_project()
 
         self.renderer.close()
         self.resource_manager.close()
@@ -279,9 +288,9 @@ class CoreManager(Singleton):
         # exit
         self.commands[COMMAND.CLOSE_APP.value] = lambda value: self.close()
         # project
-        self.commands[COMMAND.NEW_PROJECT.value] = lambda value: self.projectManager.new_project(value)
-        self.commands[COMMAND.OPEN_PROJECT.value] = lambda value: self.projectManager.open_project_next_time(value)
-        self.commands[COMMAND.SAVE_PROJECT.value] = lambda value: self.projectManager.save_project()
+        self.commands[COMMAND.NEW_PROJECT.value] = lambda value: self.project_manager.new_project(value)
+        self.commands[COMMAND.OPEN_PROJECT.value] = lambda value: self.project_manager.open_project_next_time(value)
+        self.commands[COMMAND.SAVE_PROJECT.value] = lambda value: self.project_manager.save_project()
         # scene
         self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.scene_manager.new_scene()
         self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.scene_manager.save_scene()
@@ -464,7 +473,7 @@ class CoreManager(Singleton):
                     for i in range(20):
                         pos = [np.random.uniform(-10, 10) for x in range(3)]
                         model = np.random.choice(models)
-                        obj_instance = self.scene_manager.add_object(model=model, pos=pos)
+                        obj_instance = self.scene_manager.add_object(model=model.get_data(), pos=pos)
                         if obj_instance:
                             self.send_object_info(obj_instance)
             elif Keyboard._2 == event_value:
@@ -554,6 +563,8 @@ class CoreManager(Singleton):
         startTime = time.perf_counter()
         self.updateCommand()
         self.update_camera()
+
+        self.script_manager.update(delta)
 
         # update actors
         self.scene_manager.update_scene(delta)

@@ -1285,15 +1285,6 @@ class SoundLoader(ResourceLoader):
 
 
 # -----------------------#
-# CLASS : ScriptLoader
-# -----------------------#
-class ScriptLoader(ResourceLoader):
-    name = "ScriptLoader"
-    resource_dir_name = 'Scripts'
-    fileExt = '.py'
-
-
-# -----------------------#
 # CLASS : ResourceManager
 # -----------------------#
 class ResourceManager(Singleton):
@@ -1315,7 +1306,6 @@ class ResourceManager(Singleton):
         self.scene_loader = None
         self.particle_loader = None
         self.sound_loader = None
-        self.script_loader = None
         self.model_loader = None
         self.procedural_texture_loader = None
 
@@ -1341,7 +1331,6 @@ class ResourceManager(Singleton):
         self.scene_loader = self.regist_loader(SceneLoader)
         self.particle_loader = self.regist_loader(ParticleLoader)
         self.sound_loader = self.regist_loader(SoundLoader)
-        self.script_loader = self.regist_loader(ScriptLoader)
         self.model_loader = self.regist_loader(ModelLoader)
         self.procedural_texture_loader = self.regist_loader(ProceduralTextureLoader)
 

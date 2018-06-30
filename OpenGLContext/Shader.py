@@ -25,7 +25,13 @@ reVoidMain = re.compile('void\s+main\s*\(')
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
 
-shader_types = [GL_VERTEX_SHADER, GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER]
+shader_types = [GL_VERTEX_SHADER,
+                GL_GEOMETRY_SHADER,
+                GL_FRAGMENT_SHADER,
+                GL_TESS_CONTROL_SHADER,
+                GL_TESS_EVALUATION_SHADER,
+                GL_COMPUTE_SHADER]
+
 shader_type_names = [shader_type.name for shader_type in shader_types]
 
 texture_targets = ["texture2D", "texture2DLod", "texture2DGrad",
