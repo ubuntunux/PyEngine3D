@@ -49,7 +49,8 @@ class Animation:
         if self.last_frame == frame:
             return self.animation_transforms
         else:
-            self.animation_transforms[...] = [node.get_transform(frame) for node in self.nodes]
+            for i, node in enumerate(self.nodes):
+                self.animation_transforms[i][...] = node.get_transform(frame)
             return self.animation_transforms
 
 

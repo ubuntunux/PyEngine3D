@@ -1257,15 +1257,15 @@ class ParticleLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
         if resource:
-            emitter_infos = self.load_resource_data(resource)
-            if emitter_infos is not None:
-                for emitter_info in emitter_infos:
+            particle_info = self.load_resource_data(resource)
+            if particle_info is not None:
+                for emitter_info in particle_info.get('emitter_infos', []):
                     emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info.get('mesh'))
                     emitter_info['material_instance'] = self.resource_manager.get_material_instance(
                         emitter_info.get('material_instance'))
                     emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
                         emitter_info.get('texture_diffuse'))
-                particle_info = ParticleInfo(resource_name, emitter_infos)
+                particle_info = ParticleInfo(resource_name, particle_info)
                 resource.set_data(particle_info)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))

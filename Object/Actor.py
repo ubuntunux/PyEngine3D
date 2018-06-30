@@ -97,12 +97,6 @@ class SkeletonActor(StaticActor):
         return self.animation_buffers[index]
 
     def update(self, dt):
-        # TEST_CODE
-        # self.transform.set_pitch((time.time() * 0.3) % (math.pi * 2.0))
-        # self.transform.set_yaw((time.time() * 0.4) % (math.pi * 2.0))
-        # self.transform.set_roll((time.time() * 0.5) % (math.pi * 2.0))
-
-        # update
         self.transform.update_transform()
 
         # update animation

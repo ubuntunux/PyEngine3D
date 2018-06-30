@@ -20,6 +20,7 @@ class ParticleManager(Singleton):
     def __init__(self):
         self.particles = []
         self.active_particles = []
+        self.render_particles = []
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
@@ -58,7 +59,7 @@ class ParticleManager(Singleton):
     def render(self):
         glEnable(GL_BLEND)
 
-        for particle in self.active_particles:
+        for particle in self.render_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
                 if not emitter_info.enable:
                     continue
@@ -80,9 +81,9 @@ class ParticleManager(Singleton):
                 material_instance = emitter_info.material_instance
                 material_instance.use_program()
                 material_instance.bind_material_instance()
-                material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
 
+                material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('billboard', emitter_info.billboard)
                 material_instance.bind_uniform_data('color', emitter_info.color)
                 material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
@@ -114,11 +115,26 @@ class ParticleManager(Singleton):
                                                      emitter_info.instance_buffer_1,
                                                      emitter_info.instance_buffer_2)
 
+    def view_frustum_culling_particle(self, camera, particle):
+        to_particle = particle.transform.pos - camera.transform.pos
+        radius = particle.particle_info.radius * max(particle.transform.scale)
+        for i in range(4):
+            d = np.dot(camera.frustum_vectors[i], to_particle)
+            if radius < d:
+                return True
+        return False
+
     def update(self, dt):
+        main_camera = CoreManager.instance().scene_manager.main_camera
+        self.render_particles = []
+
         for particle in self.active_particles:
             particle.update(dt)
 
-            if not particle.alive:
+            if particle.alive:
+                if not self.view_frustum_culling_particle(main_camera, particle):
+                    self.render_particles.append(particle)
+            else:
                 self.destroy_particle(particle)
 
 
@@ -350,11 +366,13 @@ class Emitter:
 
 
 class ParticleInfo:
-    def __init__(self, name, emitter_infos):
+    def __init__(self, name, particle_info):
         self.name = name
+        self.radius = particle_info.get('radius', 1.0)
+
         self.emitter_infos = []
 
-        for emitter_info in emitter_infos:
+        for emitter_info in particle_info.get('emitter_infos', []):
             self.add_emiter(**emitter_info)
 
         self.attributes = Attributes()
@@ -371,13 +389,16 @@ class ParticleInfo:
         ParticleManager.instance().notify_particle_info_changed(self)
 
     def get_save_data(self):
-        save_data = []
+        save_data = dict(radius=self.radius,
+                         emitter_infos=[])
+
         for emitter_info in self.emitter_infos:
-            save_data.append(emitter_info.get_save_data())
+            save_data['emitter_infos'].append(emitter_info.get_save_data())
         return save_data
 
     def get_attribute(self):
         self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('radius', self.radius)
         attributes = []
         for emitter_info in self.emitter_infos:
             attributes.append(emitter_info.get_attribute())
