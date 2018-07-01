@@ -1,3 +1,6 @@
+import importlib
+from importlib.machinery import SourceFileLoader
+import types
 import codecs
 import math
 import copy
@@ -11,6 +14,7 @@ import pprint
 import re
 import pickle
 import gzip
+import sys
 from ctypes import *
 from collections import OrderedDict
 from distutils.dir_util import copy_tree
@@ -162,7 +166,7 @@ class Resource:
             self.data = data
         else:
             # copy of data
-            if type(data) is dict:
+            if type(data) in (dict, types.ModuleType):
                 self.data = data
             else:
                 self.data.__dict__ = data.__dict__
@@ -563,7 +567,7 @@ class ShaderLoader(ResourceLoader):
             with open(save_filepath, 'w') as f:
                 f.write(save_data)
             return True
-        except:
+        except BaseException:
             logger.error(traceback.format_exc())
         return False
 
@@ -1250,7 +1254,7 @@ class ParticleLoader(ResourceLoader):
 
     def create_particle(self):
         resource = self.create_resource('particle')
-        particle = ParticleInfo(resource.name, [])
+        particle = ParticleInfo(resource.name)
         resource.set_data(particle)
         self.save_resource(resource.name)
 
@@ -1265,7 +1269,7 @@ class ParticleLoader(ResourceLoader):
                         emitter_info.get('material_instance'))
                     emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
                         emitter_info.get('texture_diffuse'))
-                particle_info = ParticleInfo(resource_name, particle_info)
+                particle_info = ParticleInfo(resource_name, **particle_info)
                 resource.set_data(particle_info)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
@@ -1281,7 +1285,41 @@ class ParticleLoader(ResourceLoader):
 class SoundLoader(ResourceLoader):
     name = "SoundLoader"
     resource_dir_name = 'Sounds'
+    resource_type_name = 'Sound'
     fileExt = '.sound'
+
+
+# -----------------------#
+# CLASS : ScriptLoader
+# -----------------------#
+class ScriptLoader(ResourceLoader):
+    name = "ScriptLoader"
+    resource_dir_name = 'Scripts'
+    resource_type_name = 'Script'
+    fileExt = '.py'
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def load_resource(self, resource_name):
+        resource = self.get_resource(resource_name)
+        if resource:
+            module = SourceFileLoader("module.name", resource.meta_data.resource_filepath).load_module()
+            resource.set_data(module)
+            return True
+        return False
+
+    def reload(self):
+        for resource in self.resources.values():
+            module = SourceFileLoader("module.name", resource.meta_data.resource_filepath).load_module()
+            resource.set_data(module)
+
+            # recursive reload sub modules
+            def reload_module(module):
+                for attribute_name in dir(module):
+                    sub_module = getattr(module, attribute_name)
+                    if types.ModuleType is type(sub_module):
+                        importlib.reload(sub_module)
+                        reload_module(sub_module)
+            reload_module(module)
 
 
 # -----------------------#
@@ -1306,8 +1344,11 @@ class ResourceManager(Singleton):
         self.scene_loader = None
         self.particle_loader = None
         self.sound_loader = None
+        self.script_loader = None
         self.model_loader = None
         self.procedural_texture_loader = None
+
+        sys.path.append(os.path.join(self.PathResources, ScriptLoader.resource_dir_name))
 
     def regist_loader(self, resource_loader_class):
         resource_loader = resource_loader_class(self.core_manager, self.root_path)
@@ -1331,6 +1372,7 @@ class ResourceManager(Singleton):
         self.scene_loader = self.regist_loader(SceneLoader)
         self.particle_loader = self.regist_loader(ParticleLoader)
         self.sound_loader = self.regist_loader(SoundLoader)
+        self.script_loader = self.regist_loader(ScriptLoader)
         self.model_loader = self.regist_loader(ModelLoader)
         self.procedural_texture_loader = self.regist_loader(ProceduralTextureLoader)
 
@@ -1492,3 +1534,6 @@ class ResourceManager(Singleton):
 
     def get_particle(self, particle_name):
         return self.particle_loader.get_resource_data(particle_name) or self.get_default_particle()
+
+    def get_script(self, script_name):
+        return self.script_loader.get_resource_data(script_name)

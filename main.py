@@ -27,7 +27,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = 0.5
+__version__ = 0.9
 """
 
 import sys
@@ -37,7 +37,7 @@ from multiprocessing import Process
 
 from Common.Command import CustomQueue, CustomPipe
 from App.CoreManager import CoreManager
-from Utilities import AutoEnum
+from Utilities import AutoEnum, Config
 
 
 class GUIEditor(AutoEnum):
@@ -53,7 +53,15 @@ def run(editor=GUIEditor.QT, project_filename=""):
     pipe1, pipe2 = None, None
     editor_process = None
 
-    # other process - GUIEditor ( QT, Kivy )
+    config = Config("config.ini")
+
+    # load last project file
+    if "" == project_filename and config.hasValue('Project', 'recent'):
+        last_project = config.getValue('Project', 'recent')
+        if os.path.exists(last_project):
+            project_filename = last_project
+
+    # other process - GUIEditor ( TKINTER, QT, Kivy )
     if editor != GUIEditor.CLIENT_MODE:
         appCmdQueue = CustomQueue()
         uiCmdQueue = CustomQueue()

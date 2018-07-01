@@ -2,7 +2,7 @@ from Common import logger
 from Utilities import Singleton
 
 
-class BaseScriptManager(Singleton):
+class ScriptManager(Singleton):
     def __init__(self):
         self.core_manager = None
 
@@ -11,20 +11,6 @@ class BaseScriptManager(Singleton):
 
     def exit(self):
         pass
-
-    def update(self, dt):
-        pass
-
-
-class ScriptManager(BaseScriptManager):
-    def __init__(self):
-        super().__init__()
-
-    def initialize(self, core_manager):
-        super().initialize(core_manager)
-
-    def exit(self):
-        super().exit()
 
     def update(self, dt):
         pass

@@ -366,7 +366,7 @@ class Emitter:
 
 
 class ParticleInfo:
-    def __init__(self, name, particle_info):
+    def __init__(self, name, **particle_info):
         self.name = name
         self.radius = particle_info.get('radius', 1.0)
 

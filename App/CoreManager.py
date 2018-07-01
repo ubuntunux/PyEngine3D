@@ -115,7 +115,6 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        self.script_manager = self.get_script_manager_instance(project_filename)
         self.resource_manager = ResourceManager.instance()
         self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
@@ -164,21 +163,13 @@ class CoreManager(Singleton):
         self.renderer.initialize(self)
         self.renderer.resizeScene(width, height)
         self.scene_manager.initialize(self)
+
+        main_script = self.script_manager = self.resource_manager.get_script('main')
+        self.script_manager = main_script.ScriptManager.instance()
         self.script_manager.initialize(self)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
-
-    def get_script_manager_instance(self, project_filename):
-        if "" != project_filename:
-            sys.path.append(os.path.split(project_filename)[0])
-            import Scripts
-            # importlib.reload(Scripts)
-            return Scripts.ScriptManager.instance()
-        else:
-            import Resource.Scripts as Scripts
-            # importlib.reload(Scripts)
-            return Scripts.ScriptManager.instance()
 
     def set_window_title(self, title):
         self.game_backend.set_window_title(self.last_game_backend + " - " + title)
@@ -299,8 +290,10 @@ class CoreManager(Singleton):
         # play mode
         def cmd_play(value):
             self.is_play_mode = True
-            # self.script_manager = self.get_script_manager_instance(self.project_manager.project_filename)
-            # self.script_manager.initialize(self)
+            self.resource_manager.script_loader.reload()
+            main_script = self.resource_manager.get_script('main')
+            self.script_manager = main_script.ScriptManager.instance()
+            self.script_manager.initialize(self)
         self.commands[COMMAND.PLAY.value] = cmd_play
 
         def cmd_stop(value):
