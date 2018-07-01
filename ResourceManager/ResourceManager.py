@@ -188,8 +188,19 @@ class Resource:
         return self.data
 
     def get_attribute(self):
-        if self.data and hasattr(self.data, 'get_attribute'):
-            return self.data.get_attribute()
+        if self.data is not None:
+            if hasattr(self.data, 'get_attribute'):
+                return self.data.get_attribute()
+            elif type(self.data) is dict:
+                new_attributes = Attributes()
+                new_attributes.set_attribute('name', self.name)
+
+                # dict to attribute
+                # attribute_names = list(self.data.keys())
+                # attribute_names.sort()
+                # for attribute_name in attribute_names:
+                #     new_attributes.set_attribute(attribute_name, self.data[attribute_name])
+                return new_attributes
         return None
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
@@ -1388,6 +1399,9 @@ class ResourceManager(Singleton):
     def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)
         copy_tree(self.PathResources, new_project_dir)
+        default_project_file = os.path.join(new_project_dir, 'defualt.project')
+        if os.path.exists(default_project_file):
+            os.remove(default_project_file)
 
     def get_resource_name_and_type_list(self):
         """

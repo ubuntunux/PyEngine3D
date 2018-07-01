@@ -56,7 +56,7 @@ class Ocean:
         self.simulation_amplitude = object_data.get('simulation_amplitude', 3.0)
         self.simulation_scale = object_data.get('simulation_scale', 1.0)
 
-        self.is_render_ocean = True
+        self.is_render_ocean = object_data.get('is_render_ocean', True)
         self.attributes = Attributes()
 
         self.acc_time = 0.0
@@ -142,6 +142,7 @@ class Ocean:
 
     def get_save_data(self):
         save_data = dict(
+            is_render_ocean=self.is_render_ocean,
             texture_type=self.__class__.__name__,
             height=self.height,
             wind=self.wind,

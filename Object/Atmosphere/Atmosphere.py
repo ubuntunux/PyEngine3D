@@ -26,7 +26,7 @@ class Atmosphere:
     def __init__(self, **object_data):
         self.name = object_data.get('name', 'atmosphere')
         self.attributes = Attributes()
-        self.is_render_atmosphere = True
+        self.is_render_atmosphere = object_data.get('is_render_atmosphere', True)
         self.use_constant_solar_spectrum = False
         self.use_ozone = True
         self.use_combined_textures = True
@@ -90,22 +90,13 @@ class Atmosphere:
         self.initialize()
 
     def get_attribute(self):
-        self.attributes.set_attribute('is_render_atmosphere', self.is_render_atmosphere)
+        save_data = self.get_save_data()
+        attribute_names = list(save_data.keys())
+        attribute_names.sort()
 
-        self.attributes.set_attribute('atmosphere_exposure', self.atmosphere_exposure)
+        for attribute_name in attribute_names:
+            self.attributes.set_attribute(attribute_name, save_data[attribute_name])
 
-        self.attributes.set_attribute('cloud_altitude', self.cloud_altitude)
-        self.attributes.set_attribute('cloud_height', self.cloud_height)
-        self.attributes.set_attribute('cloud_tiling', self.cloud_tiling)
-        self.attributes.set_attribute('cloud_speed', self.cloud_speed)
-
-        self.attributes.set_attribute('cloud_contrast', self.cloud_contrast)
-        self.attributes.set_attribute('cloud_coverage', self.cloud_coverage)
-        self.attributes.set_attribute('cloud_absorption', self.cloud_absorption)
-
-        self.attributes.set_attribute('noise_tiling', self.noise_tiling)
-        self.attributes.set_attribute('noise_contrast', self.noise_contrast)
-        self.attributes.set_attribute('noise_coverage', self.noise_coverage)
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
@@ -118,9 +109,20 @@ class Atmosphere:
                 setattr(self, key, value)
 
     def get_save_data(self):
-        save_data = {}
-        for attribute in self.attributes.get_attribute_names():
-            save_data[attribute] = self.attributes.get_attribute(attribute).value
+        save_data = dict(
+            is_render_atmosphere=self.is_render_atmosphere,
+            atmosphere_exposure=self.atmosphere_exposure,
+            cloud_altitude=self.cloud_altitude,
+            cloud_height=self.cloud_height,
+            cloud_tiling=self.cloud_tiling,
+            cloud_speed=self.cloud_speed,
+            cloud_contrast=self.cloud_contrast,
+            cloud_coverage=self.cloud_coverage,
+            cloud_absorption=self.cloud_absorption,
+            noise_tiling=self.noise_tiling,
+            noise_contrast=self.noise_contrast,
+            noise_coverage=self.noise_coverage,
+        )
         return save_data
 
     def initialize(self):
