@@ -10,7 +10,7 @@ struct VERTEX_OUTPUT
 };
 
 #ifdef GL_VERTEX_SHADER
-layout (location = 0) in vec3 vs_in_position;
+layout (location = 0) in vec4 vs_in_position;
 layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;

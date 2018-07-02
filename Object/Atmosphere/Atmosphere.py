@@ -9,8 +9,7 @@ import numpy as np
 
 from Common import logger
 from App import CoreManager
-from OpenGLContext import VertexArrayBuffer
-
+from Object import ScreenQuad
 from Utilities import Attributes
 from .constants import *
 from .model import *
@@ -76,14 +75,7 @@ class Atmosphere:
         self.cloud_texture = None
         self.noise_texture = None
 
-        positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
-        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
-        self.quad = VertexArrayBuffer(
-            name='atmosphere quad',
-            datas=[positions, ],
-            index_data=indices,
-            dtype=np.float32
-        )
+        self.quad = ScreenQuad.get_vertex_array_buffer()
 
         self.load_data(object_data)
 

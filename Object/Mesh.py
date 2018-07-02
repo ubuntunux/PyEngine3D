@@ -5,7 +5,7 @@ import numpy as np
 
 from Common import logger
 from App import CoreManager
-from OpenGLContext import CreateVertexArrayBuffer, UniformMatrix4
+from OpenGLContext import CreateVertexArrayBuffer, VertexArrayBuffer, UniformMatrix4
 from Utilities import *
 from .Skeleton import Skeleton
 from .Animation import Animation
@@ -306,3 +306,21 @@ class DebugLine:
         # glVertex3f(*self.pos1)
         # glVertex3f(*self.pos2)
         # glEnd()
+
+
+# ------------------------------#
+# CLASS : Screen Quad
+# ------------------------------#
+class ScreenQuad:
+    vertex_array_buffer = None
+
+    @staticmethod
+    def get_vertex_array_buffer():
+        if ScreenQuad.vertex_array_buffer is None:
+            positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
+            indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+            ScreenQuad.vertex_array_buffer = VertexArrayBuffer(name='screen quad',
+                                                               datas=[positions, ],
+                                                               index_data=indices,
+                                                               dtype=np.float32)
+        return ScreenQuad.vertex_array_buffer

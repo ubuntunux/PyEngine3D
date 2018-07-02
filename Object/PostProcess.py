@@ -9,8 +9,9 @@ from OpenGL.GLU import *
 
 from App import CoreManager
 from Common import logger, log_level, COMMAND
-from Utilities import *
 from OpenGLContext import FrameBufferManager
+from Utilities import *
+from .Mesh import ScreenQuad
 from .RenderTarget import RenderTargets
 from .RenderOptions import RenderOption
 
@@ -108,7 +109,7 @@ class PostProcess:
         self.rendertarget_manager = self.core_manager.rendertarget_manager
         self.framebuffer_manager = FrameBufferManager.instance()
 
-        self.quad = self.resource_manager.get_mesh("Quad").get_geometry()
+        self.quad = ScreenQuad.get_vertex_array_buffer()
 
         self.bloom = self.resource_manager.get_material_instance("bloom")
         self.bloom_highlight = self.resource_manager.get_material_instance("bloom_highlight")

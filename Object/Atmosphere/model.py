@@ -5,7 +5,8 @@ from OpenGL.GL import *
 
 from Utilities import *
 from App import CoreManager
-from OpenGLContext import CreateTexture, Texture2D, Texture3D, VertexArrayBuffer, FrameBuffer
+from OpenGLContext import CreateTexture, Texture2D, Texture3D, FrameBuffer
+from Object import ScreenQuad
 
 from .constants import *
 
@@ -259,15 +260,7 @@ class Model:
 
         self.delta_multiple_scattering_texture = self.delta_rayleigh_scattering_texture
 
-        positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
-        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
-
-        self.quad = VertexArrayBuffer(
-            name='precomputed atmosphere quad',
-            datas=[positions, ],
-            index_data=indices,
-            dtype=np.float32
-        )
+        self.quad = ScreenQuad.get_vertex_array_buffer()
 
     def glsl_header_factory(self, lambdas):
         def to_string(v, lambdas, scale):

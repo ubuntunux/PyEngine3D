@@ -5,8 +5,8 @@ from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
-from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, VertexArrayBuffer, FrameBuffer
-from Object import RenderTarget
+from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, FrameBuffer
+from Object import RenderTarget, ScreenQuad
 from Utilities import *
 from .Constants import *
 
@@ -76,7 +76,7 @@ class Ocean:
         self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance")
         self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly")
 
-        self.quad = self.resource_manager.get_mesh("Quad").get_geometry()
+        self.quad = ScreenQuad.get_vertex_array_buffer()
         self.fft_grid = self.resource_manager.get_mesh("FFT_Grid").get_geometry()
 
         self.simulation_size = GRID_SIZES * self.simulation_scale

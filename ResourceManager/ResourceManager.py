@@ -1,25 +1,27 @@
-import importlib
-from importlib.machinery import SourceFileLoader
-import types
 import codecs
-import math
-import copy
-import os
-import glob
 import configparser
-import time
-import traceback
+import copy
 import datetime
+import glob
+import gzip
+import importlib
+import math
+import os
+import pickle
 import pprint
 import re
-import pickle
-import gzip
-import sys
-from ctypes import *
-from collections import OrderedDict
-from distutils.dir_util import copy_tree
 import shutil
+import sys
+import types
+import time
+import traceback
 import uuid
+
+from collections import OrderedDict
+from ctypes import *
+from distutils.dir_util import copy_tree
+from importlib.machinery import SourceFileLoader
+from threading import Thread
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
@@ -555,7 +557,7 @@ class ShaderLoader(ResourceLoader):
                         resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
                         self.resource_manager.material_loader.reload_materials(resource.meta_data.resource_filepath)
                         return True
-                    except:
+                    except BaseException:
                         logger.error(traceback.format_exc())
                         logger.error("Failed %s file open" % file_path)
             else:

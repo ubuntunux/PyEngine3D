@@ -3,7 +3,8 @@ import math
 import numpy as np
 
 from App import CoreManager
-from OpenGLContext import VertexArrayBuffer, InstanceBuffer
+from Object import ScreenQuad
+from OpenGLContext import InstanceBuffer
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from .RenderOptions import RenderOption
@@ -45,15 +46,7 @@ class FontManager(Singleton):
         ascii_data = font_datas['ascii']
         self.ascii = FontData(ascii_data)
 
-        positions = np.array([(-1, 1, 0), (-1, -1, 0), (1, -1, 0), (1, 1, 0)], dtype=np.float32)
-        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
-
-        self.quad = VertexArrayBuffer(
-            name='font quad',
-            datas=[positions, ],
-            index_data=indices,
-            dtype=np.float32
-        )
+        self.quad = ScreenQuad.get_vertex_array_buffer()
 
         # layout(location=1) vec4 font_offset;
         self.instance_buffer = InstanceBuffer(name="font_offset",
