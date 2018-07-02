@@ -317,7 +317,7 @@ class Shader:
             # find include block
             m = re.search(reInclude, code)
             if m is not None:
-                valid = True
+                valid = False
                 include_file = os.path.join(shader_file_dir, m.groups()[0])
 
                 # insert include code
@@ -329,9 +329,9 @@ class Shader:
                         include_source = re.sub(reComment, "", include_source)
                         include_code_lines = include_source.splitlines()
                         f.close()
-                    except:
+                        valid = True
+                    except BaseException:
                         logger.error(traceback.format_exc())
-                        valid = False
 
                     if valid:
                         if include_file in include_files:
@@ -350,8 +350,9 @@ class Shader:
                         include_code_lines.append("#endif /* %s */" % unique_id)
                         code_lines = include_code_lines + code_lines[line_num:]
                         line_num = 0
+
                 if not valid:
-                    logger.error("Cannot open %s file." % include_file)
+                    logger.error("Shader parsing error.\n\t--> Cannot open %s file." % include_file)
                 continue
             # append code block
             final_code_lines.append(code)

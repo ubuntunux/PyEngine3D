@@ -1,6 +1,6 @@
 #include "scene_constants.glsl"
 #include "utility.glsl"
-#include "effect_vs.glsl"
+#include "particle_vs.glsl"
 
 
 #ifdef GL_FRAGMENT_SHADER

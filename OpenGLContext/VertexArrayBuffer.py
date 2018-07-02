@@ -47,7 +47,7 @@ class InstanceBuffer:
 
 
 def CreateVertexArrayBuffer(geometry_data):
-    geometry_name = geometry_data.get('name', '')
+    geometry_name = geometry_data.get('name', 'VertexArrayBuffer')
     logger.info("Load %s geometry." % geometry_name)
 
     vertex_count = len(geometry_data.get('positions', []))
@@ -124,16 +124,10 @@ class VertexArrayBuffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
 
-        self.instance_buffer_map = {}  # { layout_location : (instance_array, instance_buffer) }
-
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
-
-        for instance_array, instance_buffer in self.instance_buffer_map.values():
-            glDeleteVertexArrays(1, instance_array)
-            glDeleteBuffers(1, instance_buffer)
 
     def bind_vertex_buffer(self):
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)

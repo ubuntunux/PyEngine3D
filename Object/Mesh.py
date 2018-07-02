@@ -73,6 +73,9 @@ class Mesh:
 
         self.geometries = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
+            if 'name' not in geometry_data:
+                geometry_data['name'] = "%s_%d" % (mesh_name, i)
+
             vertex_buffer = CreateVertexArrayBuffer(geometry_data)
             if vertex_buffer is not None:
                 # find skeleton of geometry
@@ -109,6 +112,14 @@ class Mesh:
 
         self.attributes = Attributes()
 
+    def get_attribute(self):
+        self.attributes.set_attribute("name", self.name)
+        self.attributes.set_attribute("geometries", [geometry.name for geometry in self.geometries])
+        return self.attributes
+
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        pass
+
     def get_save_data(self):
         save_data = dict(
             geometry_datas=self.get_geometry_datas()
@@ -134,22 +145,14 @@ class Mesh:
     def get_animation_count(self):
         return len(self.animations)
 
-    def get_attribute(self):
-        self.attributes.set_attribute("name", self.name)
-        self.attributes.set_attribute("geometries", [geometry.name for geometry in self.geometries])
-        return self.attributes
-
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        pass
-
 
 # ------------------------------#
 # CLASS : Triangle
 # ------------------------------#
 class Triangle(Mesh):
-    def __init__(self):
+    def __init__(self, mesh_name):
         geometry_datas = self.get_geometry_datas()
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        Mesh.__init__(self, mesh_name, geometry_datas=geometry_datas)
 
     def get_geometry_datas(self):
         geometry_data = dict(
@@ -165,9 +168,9 @@ class Triangle(Mesh):
 # CLASS : Quad
 # ------------------------------#
 class Quad(Mesh):
-    def __init__(self):
+    def __init__(self, mesh_name):
         geometry_datas = self.get_geometry_datas()
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        Mesh.__init__(self, mesh_name, geometry_datas=geometry_datas)
 
     def get_geometry_datas(self):
         geometry_data = dict(
@@ -184,9 +187,9 @@ class Quad(Mesh):
 # CLASS : Cube
 # ------------------------------#
 class Cube(Mesh):
-    def __init__(self):
+    def __init__(self, mesh_name):
         geometry_datas = self.get_geometry_datas()
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        Mesh.__init__(self, mesh_name, geometry_datas=geometry_datas)
 
     def get_geometry_datas(self):
         geometry_data = dict(
@@ -237,12 +240,12 @@ class Cube(Mesh):
 # CLASS : Plane
 # ------------------------------#
 class Plane(Mesh):
-    def __init__(self, width=4, height=4, xz_plane=True):
+    def __init__(self, mesh_name, width=4, height=4, xz_plane=True):
         self.width = width
         self.height = height
         self.xz_plane = xz_plane
         geometry_datas = self.get_geometry_datas()
-        Mesh.__init__(self, GetClassName(self), geometry_datas=geometry_datas)
+        Mesh.__init__(self, mesh_name, geometry_datas=geometry_datas)
 
     def get_geometry_datas(self):
         width_points = self.width + 1

@@ -1048,11 +1048,12 @@ class MeshLoader(ResourceLoader):
         super(MeshLoader, self).initialize()
 
         # Regist basic meshs
-        self.create_resource("Triangle", Triangle())
-        self.create_resource("Quad", Quad())
-        self.create_resource("Cube", Cube())
-        self.create_resource("Plane", Plane(width=4, height=4, xz_plane=True))
-        self.create_resource("FFT_Grid", Plane(width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
+        self.create_resource("Triangle", Triangle("Triangle"))
+        self.create_resource("Quad", Quad("Quad"))
+        self.create_resource("Cube", Cube("Cube"))
+        self.create_resource("Plane", Plane("Plane", width=4, height=4, xz_plane=True))
+        self.create_resource("FFT_Grid",
+                             Plane("FFT_Grid", width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
@@ -1105,8 +1106,8 @@ class ModelLoader(ResourceLoader):
         super(ModelLoader, self).initialize()
 
         # Regist basic meshs
-        self.create_resource("Triangle", Model("Triangle", mesh=self.resource_manager.get_mesh('Triangle')))
-        self.create_resource("Quad", Model("Quad", mesh=self.resource_manager.get_mesh('Quad')))
+        for mesh_name in ("Triangle", "Quad", "Cube"):
+            self.create_resource(mesh_name, Model(mesh_name, mesh=self.resource_manager.get_mesh(mesh_name)))
 
     def create_model(self, mesh):
         resource = self.create_resource(mesh.name)
@@ -1520,8 +1521,8 @@ class ResourceManager(Singleton):
                                                                    macros=macros) or \
                self.get_default_material_instance(skeletal=(True if 1 == macros.get('SKELETAL', 0) else 0))
 
-    def get_default_effect_material_instance(self):
-        return self.material_instance_loader.get_material_instance('effect')
+    def get_default_particle_material_instance(self):
+        return self.material_instance_loader.get_material_instance('particle')
 
     def get_default_mesh(self):
         return self.get_mesh('Quad')

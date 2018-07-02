@@ -6,9 +6,8 @@ from OpenGL.GL import *
 from Common import logger
 from App import CoreManager
 from OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, VertexArrayBuffer, FrameBuffer
-from Utilities import *
-from Object.Mesh import Plane
 from Object import RenderTarget
+from Utilities import *
 from .Constants import *
 
 
@@ -77,11 +76,8 @@ class Ocean:
         self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance")
         self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly")
 
-        self.quad = self.resource_manager.get_mesh("Quad")
-        self.quad_geometry = self.quad.get_geometry()
-
-        self.grid_mesh = self.resource_manager.get_mesh("FFT_Grid")
-        self.grid_geometry = self.grid_mesh.get_geometry()
+        self.quad = self.resource_manager.get_mesh("Quad").get_geometry()
+        self.fft_grid = self.resource_manager.get_mesh("FFT_Grid").get_geometry()
 
         self.simulation_size = GRID_SIZES * self.simulation_scale
 
@@ -279,12 +275,12 @@ class Ocean:
         self.fft_variance.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
         self.fft_variance.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
         self.fft_variance.bind_uniform_data("FFT_SIZE", FFT_SIZE)
-        self.quad_geometry.bind_vertex_buffer()
+        self.quad.bind_vertex_buffer()
 
         for layer in range(N_SLOPE_VARIANCE):
             self.renderer.framebuffer_manager.bind_framebuffer(self.texture_slope_variance, target_layer=layer)
             self.fft_variance.bind_uniform_data("c", layer)
-            self.quad_geometry.draw_elements()
+            self.quad.draw_elements()
 
     def save_texture(self, texture):
         resource = self.resource_manager.texture_loader.get_resource(texture.name)
@@ -413,8 +409,8 @@ class Ocean:
         self.fft_init.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
         self.fft_init.bind_uniform_data("t", self.acc_time * self.simulation_wind)
 
-        self.quad_geometry.bind_vertex_buffer()
-        self.quad_geometry.draw_elements()
+        self.quad.bind_vertex_buffer()
+        self.quad.draw_elements()
 
         # # fft passes
         self.fft_x.use_program()
@@ -427,7 +423,7 @@ class Ocean:
             else:
                 self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
                 fft_a_framebuffer.run_bind_framebuffer()
-            self.quad_geometry.draw_elements()
+            self.quad.draw_elements()
 
         self.fft_y.use_program()
         self.fft_y.bind_uniform_data("butterflySampler", self.texture_butterfly)
@@ -439,7 +435,7 @@ class Ocean:
             else:
                 self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
                 fft_a_framebuffer.run_bind_framebuffer()
-            self.quad_geometry.draw_elements()
+            self.quad.draw_elements()
 
         RenderTargets.FFT_A.generate_mipmap()
 
@@ -468,13 +464,5 @@ class Ocean:
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.fft_render)
 
-        self.grid_geometry.bind_vertex_buffer()
-        self.grid_geometry.draw_elements()
-
-        # instanced grid
-        # self.material_instance.bind_uniform_data('grid_size', FFT_VERTEX_COUNT)
-        # self.grid_geometry.bind_instance_buffer(instance_name="offset",
-        #                                    instance_data=self.offsets,
-        #                                    divisor=1)
-        # self.grid_geometry.bind_vertex_buffer()
-        # self.grid_geometry.draw_elements_instanced(len(self.offsets))
+        self.fft_grid.bind_vertex_buffer()
+        self.fft_grid.draw_elements()

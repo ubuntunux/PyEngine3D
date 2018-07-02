@@ -460,7 +460,7 @@ class EmitterInfo:
 
         resource_manager = CoreManager.instance().resource_manager
         default_mesh = resource_manager.get_default_mesh()
-        default_material_instance = resource_manager.get_default_effect_material_instance()
+        default_material_instance = resource_manager.get_default_particle_material_instance()
         texture_white = resource_manager.get_texture('common.flat_white')
 
         self.mesh = emitter_info.get('mesh') or default_mesh
