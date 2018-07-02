@@ -9,6 +9,7 @@ import math
 import os
 import pickle
 import pprint
+import queue
 import re
 import shutil
 import sys
@@ -39,6 +40,35 @@ from OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_com
 from Utilities import Attributes, Singleton, Config, Logger, Profiler
 from Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS, generate_font_data, TextureGenerator
+
+
+class LoadingThread(Thread):
+    def __init__(self, resource_manager):
+        Thread.__init__(self)
+        self.resource_manager = resource_manager
+        self.running = True
+        self.loading_queue = queue.Queue()
+        self.complete_queue = queue.Queue()
+
+    def push_loading(self, resource_name):
+        self.loading_queue.put(resource_name)
+
+    def run(self):
+        while self.running:
+            time.sleep(0.001)
+
+            if not self.loading_queue.empty():
+                resource_name = self.loading_queue.get()
+                resource = self.resource_manager.mesh_loader.get_resource(resource_name)
+                data = self.resource_manager.mesh_loader.load_resource_data(resource)
+                if data is not None:
+                    self.complete_queue.put((resource_name, data))
+
+    def set_data(self):
+        while not self.complete_queue.empty():
+            resource_name, data = self.complete_queue.get()
+            resource = self.resource_manager.mesh_loader.get_resource(resource_name)
+            resource.set_data(data)
 
 
 # -----------------------#
@@ -1362,6 +1392,7 @@ class ResourceManager(Singleton):
         self.script_loader = None
         self.model_loader = None
         self.procedural_texture_loader = None
+        self.loading_thread = LoadingThread(self)
 
         sys.path.append(os.path.join(self.PathResources, ScriptLoader.resource_dir_name))
 
@@ -1391,11 +1422,17 @@ class ResourceManager(Singleton):
         self.model_loader = self.regist_loader(ModelLoader)
         self.procedural_texture_loader = self.regist_loader(ProceduralTextureLoader)
 
+        # start loading thread
+        self.loading_thread.start()
+
         # initialize
         for resource_loader in self.resource_loaders:
             resource_loader.initialize()
 
         logger.info("Resource register done.")
+
+    def update(self):
+        self.loading_thread.set_data()
 
     def close(self):
         pass

@@ -582,6 +582,8 @@ class CoreManager(Singleton):
         else:
             self.update_camera()
 
+        self.resource_manager.update()
+
         # update actors
         self.scene_manager.update_scene(delta)
         self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
