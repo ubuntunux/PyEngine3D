@@ -1392,7 +1392,7 @@ class ResourceManager(Singleton):
         self.script_loader = None
         self.model_loader = None
         self.procedural_texture_loader = None
-        self.loading_thread = LoadingThread(self)
+        # self.loading_thread = LoadingThread(self)
 
         sys.path.append(os.path.join(self.PathResources, ScriptLoader.resource_dir_name))
 
@@ -1423,7 +1423,7 @@ class ResourceManager(Singleton):
         self.procedural_texture_loader = self.regist_loader(ProceduralTextureLoader)
 
         # start loading thread
-        self.loading_thread.start()
+        # self.loading_thread.start()
 
         # initialize
         for resource_loader in self.resource_loaders:
@@ -1432,7 +1432,8 @@ class ResourceManager(Singleton):
         logger.info("Resource register done.")
 
     def update(self):
-        self.loading_thread.set_data()
+        pass
+        # self.loading_thread.set_data()
 
     def close(self):
         pass
