@@ -28,9 +28,9 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from Object import ParticleInfo
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
 from Object import ParticleInfo
+from Object.Ocean.Constants import GRID_VERTEX_COUNT
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
 from OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
@@ -1052,6 +1052,7 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Quad", Quad())
         self.create_resource("Cube", Cube())
         self.create_resource("Plane", Plane(width=4, height=4, xz_plane=True))
+        self.create_resource("FFT_Grid", Plane(width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
@@ -1493,8 +1494,8 @@ class ResourceManager(Singleton):
     def get_font(self, fontName):
         return self.font_loader.get_resource_data(fontName)
 
-    def get_default_font_file(self):
-        return os.path.join(self.root_path, 'Externals', 'Fonts', 'NanumGothic_Coding.ttf')
+    def get_default_font(self):
+        return self.font_loader.get_resource_data('NanumBarunGothic')
 
     # FUNCTIONS : Shader
     def get_shader_version(self):

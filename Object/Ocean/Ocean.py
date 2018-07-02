@@ -71,21 +71,19 @@ class Ocean:
         self.fft_y = self.resource_manager.get_material_instance('fft_ocean.fft_y')
         self.fft_render = self.resource_manager.get_material_instance('fft_ocean.render')
         self.fft_variance = self.resource_manager.get_material_instance('fft_ocean.fft_variance')
-
-        self.quad = self.resource_manager.get_mesh("Quad")
-        self.quad_geometry = self.quad.get_geometry()
-
-        self.grid_size = 200
-        self.cell_size = np.array([1.0 / float(self.grid_size), 1.0 / float(self.grid_size)], dtype=np.float32)
-        self.simulation_size = GRID_SIZES * self.simulation_scale
-
-        self.mesh = Plane(width=self.grid_size, height=self.grid_size, xz_plane=False)
-        self.geometry = self.mesh.get_geometry()
-
+        
         self.texture_spectrum_1_2 = self.resource_manager.get_texture("fft_ocean.spectrum_1_2")
         self.texture_spectrum_3_4 = self.resource_manager.get_texture("fft_ocean.spectrum_3_4")
         self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance")
         self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly")
+
+        self.quad = self.resource_manager.get_mesh("Quad")
+        self.quad_geometry = self.quad.get_geometry()
+
+        self.grid_mesh = self.resource_manager.get_mesh("FFT_Grid")
+        self.grid_geometry = self.grid_mesh.get_geometry()
+
+        self.simulation_size = GRID_SIZES * self.simulation_scale
 
         if None in (self.texture_spectrum_1_2,
                     self.texture_spectrum_3_4,
@@ -97,27 +95,15 @@ class Ocean:
         self.texture_caustics = []
         i = 0
         while True:
-            resource_name = "water.caustic_%02d" % i
+            resource_name = "common.water_caustic_%02d" % i
             if self.resource_manager.texture_loader.hasResource(resource_name):
                 self.texture_caustics.append(self.resource_manager.get_texture(resource_name))
                 i += 1
                 continue
             break
 
-        self.texture_foam = self.resource_manager.get_texture("water.water_foam")
-
-        self.texture_noise = self.resource_manager.get_texture("noise.noise")
-
-        # self.geometry.vertex_buffer.create_instance_buffer(instance_name="offset",
-        #                                                    layout_location=5,
-        #                                                    element_data=FLOAT2_ZERO)
-
-        # instanced grid
-        # self.grid_size = Float2(100.0, 100.0)
-        # self.grid_count = 1
-        # self.offsets = np.array(
-        #     [Float2(i % self.grid_count, i // self.grid_count) for i in range(self.grid_count * self.grid_count)],
-        #     dtype=np.float32)
+        self.texture_foam = self.resource_manager.get_texture("common.water_foam")
+        self.texture_noise = self.resource_manager.get_texture("common.noise")
 
     def get_attribute(self):
         self.attributes.set_attribute('is_render_ocean', self.is_render_ocean)
@@ -464,7 +450,7 @@ class Ocean:
         self.fft_render.bind_uniform_data("simulation_wind", self.simulation_wind)
         self.fft_render.bind_uniform_data("simulation_amplitude", self.simulation_amplitude)
         self.fft_render.bind_uniform_data("simulation_size", self.simulation_size)
-        self.fft_render.bind_uniform_data("cell_size", self.cell_size)
+        self.fft_render.bind_uniform_data("cell_size", GRID_CELL_SIZE)
         self.fft_render.bind_uniform_data("t", self.acc_time * self.simulation_wind)
 
         self.fft_render.bind_uniform_data("fftWavesSampler", RenderTarget.RenderTargets.FFT_A)
@@ -482,13 +468,13 @@ class Ocean:
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.fft_render)
 
-        self.geometry.bind_vertex_buffer()
-        self.geometry.draw_elements()
+        self.grid_geometry.bind_vertex_buffer()
+        self.grid_geometry.draw_elements()
 
         # instanced grid
-        # self.material_instance.bind_uniform_data('grid_size', self.grid_size)
-        # self.geometry.bind_instance_buffer(instance_name="offset",
+        # self.material_instance.bind_uniform_data('grid_size', FFT_VERTEX_COUNT)
+        # self.grid_geometry.bind_instance_buffer(instance_name="offset",
         #                                    instance_data=self.offsets,
         #                                    divisor=1)
-        # self.geometry.bind_vertex_buffer()
-        # self.geometry.draw_elements_instanced(len(self.offsets))
+        # self.grid_geometry.bind_vertex_buffer()
+        # self.grid_geometry.draw_elements_instanced(len(self.offsets))

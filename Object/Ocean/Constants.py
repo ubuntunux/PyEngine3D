@@ -24,3 +24,7 @@ INVERSE_GRID_SIZES = np.array([2.0 * pi * FFT_SIZE / GRID1_SIZE,
                                2.0 * pi * FFT_SIZE / GRID2_SIZE,
                                2.0 * pi * FFT_SIZE / GRID3_SIZE,
                                2.0 * pi * FFT_SIZE / GRID4_SIZE], dtype=np.float32)
+
+
+GRID_VERTEX_COUNT = 200
+GRID_CELL_SIZE = np.array([1.0 / float(GRID_VERTEX_COUNT), 1.0 / float(GRID_VERTEX_COUNT)], dtype=np.float32)
