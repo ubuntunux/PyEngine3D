@@ -46,7 +46,7 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = model * particle_matrix;
+    mat4 world_matrix = particle_matrix * model;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     if(billboard)
