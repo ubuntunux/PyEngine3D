@@ -233,10 +233,13 @@ class Texture:
             logger.warn("%s texture is invalid." % self.name)
             return
         glBindTexture(self.target, self.buffer)
-        # if self.attachment:
-        #     error_msg = "%s can not bind to a texture because it is attached to a frame buffer.." % self.name
-        #     logger.error(error_msg)
-        #     raise BaseException(error_msg)
+
+    def bind_image(self, access=GL_READ_WRITE):
+        if self.buffer == -1:
+            logger.warn("%s texture is invalid." % self.name)
+            return
+        # flag : GL_READ_WRITE, GL_WRITE_ONLY, GL_READ_ONLY
+        glBindImageTexture(0, self.target, 0, GL_FALSE, 0, access, self.internal_format)
 
     def is_attached(self):
         return self.attachment
@@ -301,7 +304,7 @@ class Texture2D(Texture):
             glGenerateMipmap(GL_TEXTURE_2D)
             # create indivisual mipmapThis creates a texture with a single mipmap level.
             # You will also need separate glTexSubImage2D calls to upload each mipmap
-            # glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height)
+            # glTexStorage2D(GL_TEXTURE_2D, self.get_mipmap_count(), GL_RGBA8, self.width, self.height)
             # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)

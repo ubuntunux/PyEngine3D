@@ -93,9 +93,6 @@ class Material:
         glProgramBinary(self.program, binary_format.value, binary_data, len(binary_data))
 
     def compile_from_source(self, shader_codes: dict):
-        """
-        :param shader_codes: {GL_VERTEX_SHADER:code_string, GL_FRAGMENT_SHADER:code_string, }
-        """
         shaders = []
         for shader_type in shader_codes:
             shader = self.compile(shader_type, shader_codes[shader_type])
@@ -176,7 +173,7 @@ class Material:
                 # complete
                 logger.log(Logger.MINOR_INFO, "Complete %s %s compile." % (self.name, shaderType.name))
                 return shader
-        except:
+        except BaseException:
             logger.error(traceback.format_exc())
         return None
 

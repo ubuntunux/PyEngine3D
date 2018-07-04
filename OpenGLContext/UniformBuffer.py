@@ -13,10 +13,11 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
         UniformBool, UniformInt, UniformFloat,
         UniformVector2, UniformVector3, UniformVector4,
         UniformMatrix2, UniformMatrix3, UniformMatrix4,
-        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube
+        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube,
+        UniformImage2D, UniformImage3D
     ]
     for uniform_class in uniform_classes:
-        if uniform_class.uniform_type == uniform_type:
+        if uniform_type == uniform_class.uniform_type:
             uniform_buffer = uniform_class(program, uniform_name)
             return uniform_buffer if uniform_buffer.valid else None
     else:
@@ -58,7 +59,7 @@ def CreateUniformDataFromString(data_type, strValue=None):
                 raise ValueError
         else:
             return np.eye(componentCount, dtype=np.float32)
-    elif data_type == 'sampler2D':
+    elif data_type in ('sampler2D', 'image2D'):
         texture = CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_gray')
         return texture
     elif data_type == 'sampler2DMS':
@@ -66,7 +67,7 @@ def CreateUniformDataFromString(data_type, strValue=None):
         return CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_gray')
     elif data_type == 'sampler2DArray':
         return CoreManager.instance().resource_manager.get_texture(strValue or 'common.default_2d_array')
-    elif data_type == 'sampler3D':
+    elif data_type in ('sampler3D', 'image3D'):
         return CoreManager.instance().resource_manager.get_texture(strValue or 'common.default_3d')
     elif data_type == 'samplerCube':
         texture = CoreManager.instance().resource_manager.get_texture(strValue or 'common.default_cube')
@@ -91,7 +92,7 @@ class UniformVariable:
             self.valid = False
             # logger.warn("%s location is -1" % variable_name)
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         raise BaseException("You must implement bind function.")
 
 
@@ -103,63 +104,63 @@ class UniformArray(UniformVariable):
 class UniformBool(UniformVariable):
     uniform_type = "bool"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform1i(self.location, value)
 
 
 class UniformInt(UniformVariable):
     uniform_type = "int"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform1i(self.location, value)
 
 
 class UniformFloat(UniformVariable):
     uniform_type = "float"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform1f(self.location, value)
 
 
 class UniformVector2(UniformVariable):
     uniform_type = "vec2"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform2fv(self.location, num, value)
 
 
 class UniformVector3(UniformVariable):
     uniform_type = "vec3"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform3fv(self.location, num, value)
 
 
 class UniformVector4(UniformVariable):
     uniform_type = "vec4"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniform4fv(self.location, num, value)
 
 
 class UniformMatrix2(UniformVariable):
     uniform_type = "mat2"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniformMatrix2fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformMatrix3(UniformVariable):
     uniform_type = "mat3"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniformMatrix3fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformMatrix4(UniformVariable):
     uniform_type = "mat4"
 
-    def bind_uniform(self, value, num=1, transpose=False):
+    def bind_uniform(self, value, num=1, transpose=False, access=GL_READ_WRITE):
         glUniformMatrix4fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
@@ -174,7 +175,7 @@ class UniformTextureBase(UniformVariable):
     def set_texture_index(self, textureIndex):
         self.textureIndex = textureIndex + self.texture_offset
 
-    def bind_uniform(self, texture, num=1, transpose=False):
+    def bind_uniform(self, texture, num=1, transpose=False, access=GL_READ_WRITE):
         if texture is not None:
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
             texture.bind_texture()
@@ -207,3 +208,26 @@ class UniformTexture3D(UniformTextureBase):
 class UniformTextureCube(UniformTextureBase):
     uniform_type = "samplerCube"
     texture_offset = 64
+
+
+class UniformImageBase(UniformTextureBase):
+    uniform_type = "UniformImageBase"
+
+    def bind_uniform(self, texture, num=1, transpose=False, access=GL_READ_WRITE):
+        if texture is not None:
+            glActiveTexture(GL_TEXTURE0 + self.textureIndex)
+            texture.bind_image(access)
+            glUniform1i(self.location, self.textureIndex)
+        elif self.show_message:
+            self.show_message = False
+            logger.error("%s %s is None" % (self.name, self.__class__.__name__))
+
+
+class UniformImage2D(UniformImageBase):
+    uniform_type = "image2D"
+    texture_offset = 0
+
+
+class UniformImage3D(UniformImageBase):
+    uniform_type = "image3D"
+    texture_offset = 48

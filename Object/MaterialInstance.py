@@ -7,6 +7,7 @@ import copy
 
 import numpy as np
 from numpy import array, float32
+from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
@@ -107,10 +108,10 @@ class MaterialInstance:
         for uniform_buffer, uniform_data in self.linked_material_component_map.values():
             uniform_buffer.bind_uniform(uniform_data)
 
-    def bind_uniform_data(self, uniform_name, uniform_data, num=1, transpose=False):
+    def bind_uniform_data(self, uniform_name, uniform_data, num=1, transpose=False, access=GL_READ_WRITE):
         uniform = self.linked_uniform_map.get(uniform_name)
         if uniform:
-            uniform[0].bind_uniform(uniform_data, num, transpose)
+            uniform[0].bind_uniform(uniform_data, num, transpose, access)
         elif uniform_name not in self.show_message or self.show_message[uniform_name]:
             self.show_message[uniform_name] = False
             logger.error('%s material instance has no %s uniform variable.' % (self.name, uniform_name))

@@ -1,3 +1,4 @@
+from .OpenGLContext import OpenGLContext
 from .FrameBuffer import FrameBuffer, FrameBufferManager
 from .GLUtil import IsExtensionSupported
 from .RenderBuffer import RenderBuffer

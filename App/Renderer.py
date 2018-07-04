@@ -67,27 +67,6 @@ class Renderer(Singleton):
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
 
-    @staticmethod
-    def display_gl_info():
-        logger.info("=" * 30)
-
-        infos = [GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION]
-        for info in infos:
-            info_string = glGetString(info)
-            if type(info_string) == bytes:
-                info_string = info_string.decode("utf-8")
-            logger.info("%s : %s" % (info.name, info_string))
-
-        infos = [GL_MAX_VERTEX_ATTRIBS, GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_UNIFORM_COMPONENTS,
-                 GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, GL_MAX_FRAGMENT_UNIFORM_BLOCKS,
-                 GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
-                 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_COORDS,
-                 GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VARYING_FLOATS]
-        for info in infos:
-            logger.info("%s : %s" % (info.name, glGetIntegerv(info)))
-
-        logger.info("=" * 30)
-
     def initialize(self, core_manager):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager
@@ -450,6 +429,13 @@ class Renderer(Singleton):
             self.set_blend_state(False)
 
             self.render_postprocess()
+
+        # s = self.resource_manager.get_material_instance('examples.compute_shader')
+        # t = self.resource_manager.get_texture('common.flat_gray')
+        # s.use_program()
+        # s.bind_material_instance()
+        # glDispatchCompute(t.width, t.height, 1)
+        # glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 
         # debug render target
         if self.debug_texture is not None and self.debug_texture is not RenderTargets.BACKBUFFER and \

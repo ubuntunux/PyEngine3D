@@ -170,8 +170,9 @@ class Shader:
         shader_codes = {}
         for shader_type in shader_types:
             shader_code = self.__parsing_final_code__(shader_type.name, shader_version, compile_option, external_macros)
-            # if shader_type in (GL_VERTEX_SHADER, GL_FRAGMENT_SHADER) or re.search(reVoidMain, shader_code) is not None:
-            shader_codes[shader_type] = shader_code
+            # check void main
+            if re.search(reVoidMain, shader_code) is not None:
+                shader_codes[shader_type] = shader_code
         return shader_codes
 
     def __parsing_final_code__(self, shader_type_name, shader_version, compile_option, external_macros={}):
