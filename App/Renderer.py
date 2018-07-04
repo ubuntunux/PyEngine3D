@@ -431,10 +431,10 @@ class Renderer(Singleton):
             self.render_postprocess()
 
         # s = self.resource_manager.get_material_instance('examples.compute_shader')
-        # t = self.resource_manager.get_texture('common.flat_gray')
         # s.use_program()
-        # s.bind_material_instance()
-        # glDispatchCompute(t.width, t.height, 1)
+        # # use bind_texture or bind_image
+        # s.bind_uniform_data('img_output', RenderTargets.HDR)
+        # glDispatchCompute(RenderTargets.HDR.width, RenderTargets.HDR.height, 1)
         # glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 
         # debug render target
