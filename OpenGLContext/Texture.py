@@ -92,6 +92,7 @@ def CreateTexture(**texture_datas):
 class Texture:
     target = GL_TEXTURE_2D
     default_wrap = GL_REPEAT
+    use_glTexStorage = False
 
     def __init__(self, **texture_data):
         self.name = texture_data.get('name')
@@ -138,7 +139,13 @@ class Texture:
         self.wrap_s = texture_data.get('wrap_s')
         self.wrap_t = texture_data.get('wrap_t')
         self.wrap_r = texture_data.get('wrap_r')
-        self.buffer = None
+        self.buffer = -1
+        self.sampler_handle = -1
+
+        # texture parameter overwrite
+        # self.sampler_handle = glGenSamplers(1)
+        # glSamplerParameteri(self.sampler_handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        # glBindSampler(0, self.sampler_handle)
 
         logger.info("Create %s : %s %dx%dx%d %s mipmap(%s)." % (
             GetClassName(self), self.name, self.width, self.height, self.depth, str(self.internal_format),
@@ -244,7 +251,7 @@ class Texture:
             logger.warn("%s texture is invalid." % self.name)
             return
         # flag : GL_READ_WRITE, GL_WRITE_ONLY, GL_READ_ONLY
-        glBindImageTexture(image_unit, self.target, 0, GL_FALSE, 0, access, self.internal_format)
+        glBindImageTexture(image_unit, self.buffer, 0, GL_FALSE, 0, access, self.internal_format)
 
     def is_attached(self):
         return self.attachment
@@ -291,23 +298,35 @@ class Texture2D(Texture):
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)
 
-        data = texture_data.get('data', c_void_p(0))
+        data = texture_data.get('data')
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.buffer)
 
-        # glTexStorage2D(GL_TEXTURE_2D, self.get_mipmap_count(), self.internal_format, self.width, self.height)
-        # glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.width, self.height, self.texture_format, self.data_type, data)
+        if self.use_glTexStorage:
+            glTexStorage2D(GL_TEXTURE_2D,
+                           self.get_mipmap_count(),
+                           self.internal_format,
+                           self.width, self.height)
 
-        glTexImage2D(GL_TEXTURE_2D,
-                     0,
-                     self.internal_format,
-                     self.width,
-                     self.height,
-                     0,
-                     self.texture_format,
-                     self.data_type,
-                     data)
+            if data is not None:
+                glTexSubImage2D(GL_TEXTURE_2D,
+                                0,
+                                0, 0,
+                                self.width, self.height,
+                                self.texture_format,
+                                self.data_type,
+                                data)
+        else:
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         self.internal_format,
+                         self.width,
+                         self.height,
+                         0,
+                         self.texture_format,
+                         self.data_type,
+                         data)
 
         if self.enable_mipmap:
             glGenerateMipmap(GL_TEXTURE_2D)
@@ -317,6 +336,7 @@ class Texture2D(Texture):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
+
 
 class Texture2DArray(Texture):
     target = GL_TEXTURE_2D_ARRAY
@@ -328,23 +348,34 @@ class Texture2DArray(Texture):
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D_ARRAY, self.buffer)
-        glTexImage3D(GL_TEXTURE_2D_ARRAY,
-                     0,
-                     self.internal_format,
-                     self.width,
-                     self.height,
-                     self.depth,
-                     0,
-                     self.texture_format,
-                     self.data_type,
-                     data)
+
+        if self.use_glTexStorage:
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+                           self.get_mipmap_count(),
+                           self.internal_format,
+                           self.width, self.height, self.depth)
+            if data is not None:
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                                0,
+                                0, 0, 0,
+                                self.width, self.height, self.depth,
+                                self.texture_format,
+                                self.data_type,
+                                data)
+        else:
+            glTexImage3D(GL_TEXTURE_2D_ARRAY,
+                         0,
+                         self.internal_format,
+                         self.width,
+                         self.height,
+                         self.depth,
+                         0,
+                         self.texture_format,
+                         self.data_type,
+                         data)
 
         if self.enable_mipmap:
             glGenerateMipmap(GL_TEXTURE_2D_ARRAY)
-            # create indivisual mipmapThis creates a texture with a single mipmap level.
-            # You will also need separate glTexSubImage2D calls to upload each mipmap
-            # glTexStorage2D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height)
-            # glTexSubImage2D(GL_TEXTURE_3D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
@@ -363,23 +394,34 @@ class Texture3D(Texture):
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_3D, self.buffer)
-        glTexImage3D(GL_TEXTURE_3D,
-                     0,
-                     self.internal_format,
-                     self.width,
-                     self.height,
-                     self.depth,
-                     0,
-                     self.texture_format,
-                     self.data_type,
-                     data)
+
+        if self.use_glTexStorage:
+            glTexStorage3D(GL_TEXTURE_3D,
+                           self.get_mipmap_count(),
+                           self.internal_format,
+                           self.width, self.height, self.depth)
+            if data is not None:
+                glTexSubImage3D(GL_TEXTURE_3D,
+                                0,
+                                0, 0, 0,
+                                self.width, self.height, self.depth,
+                                self.texture_format,
+                                self.data_type,
+                                data)
+        else:
+            glTexImage3D(GL_TEXTURE_3D,
+                         0,
+                         self.internal_format,
+                         self.width,
+                         self.height,
+                         self.depth,
+                         0,
+                         self.texture_format,
+                         self.data_type,
+                         data)
 
         if self.enable_mipmap:
             glGenerateMipmap(GL_TEXTURE_3D)
-            # create indivisual mipmapThis creates a texture with a single mipmap level.
-            # You will also need separate glTexSubImage2D calls to upload each mipmap
-            # glTexStorage2D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height)
-            # glTexSubImage2D(GL_TEXTURE_3D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
@@ -400,12 +442,22 @@ class Texture2DMultiSample(Texture):
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.buffer)
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
-                                self.multisample_count,
-                                self.internal_format,
-                                self.width,
-                                self.height,
-                                GL_TRUE)
+
+        if self.use_glTexStorage:
+            glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                      self.multisample_count,
+                                      self.internal_format,
+                                      self.width,
+                                      self.height,
+                                      GL_TRUE)
+        else:
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+                                    self.multisample_count,
+                                    self.internal_format,
+                                    self.width,
+                                    self.height,
+                                    GL_TRUE)
+
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0)
 
 
@@ -437,31 +489,53 @@ class TextureCube(Texture):
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_CUBE_MAP, self.buffer)
 
-        def createTexImage2D(target_face, texture):
-            glTexImage2D(target_face,
-                         0,
-                         texture.internal_format,
-                         texture.width,
-                         texture.height,
-                         0,
-                         texture.texture_format,
-                         texture.data_type,
-                         texture.get_image_data())
+        if self.use_glTexStorage:
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, self.get_mipmap_count(), self.internal_format, self.width, self.height)
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, self.texture_positive_x)  # Right
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, self.texture_negative_x)  # Left
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, self.texture_positive_y)  # Top
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, self.texture_negative_y)  # Bottom
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, self.texture_positive_z)  # Front
+            self.createTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)  # Back
+        else:
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, self.texture_positive_x)  # Right
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, self.texture_negative_x)  # Left
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, self.texture_positive_y)  # Top
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, self.texture_negative_y)  # Bottom
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, self.texture_positive_z)  # Front
+            self.createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)  # Back
 
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, self.texture_positive_x)  # Right
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, self.texture_negative_x)  # Left
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, self.texture_positive_y)  # Top
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, self.texture_negative_y)  # Bottom
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, self.texture_positive_z)  # Front
-        createTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, self.texture_negative_z)  # Back
+        if self.enable_mipmap:
+            glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
 
-        glGenerateMipmap(GL_TEXTURE_CUBE_MAP)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, self.wrap_r or self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0)
+
+    @staticmethod
+    def createTexImage2D(target_face, texture):
+        glTexImage2D(target_face,
+                     0,
+                     texture.internal_format,
+                     texture.width,
+                     texture.height,
+                     0,
+                     texture.texture_format,
+                     texture.data_type,
+                     texture.get_image_data())
+
+    @staticmethod
+    def createTexSubImage2D(target_face, texture):
+        glTexSubImage2D(target_face,
+                        0,
+                        0, 0,
+                        texture.width, texture.height,
+                        texture.texture_format,
+                        texture.data_type,
+                        texture.get_image_data())
 
     def delete(self):
         super(TextureCube, self).delete()

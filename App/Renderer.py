@@ -276,6 +276,7 @@ class Renderer(Singleton):
         glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
         # glEnable(GL_FRAMEBUFFER_SRGB)
         glEnable(GL_MULTISAMPLE)
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
         glFrontFace(GL_CCW)

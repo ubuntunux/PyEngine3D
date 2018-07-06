@@ -213,10 +213,13 @@ class UniformTextureCube(UniformTextureBase):
 class UniformImageBase(UniformTextureBase):
     uniform_type = "UniformImageBase"
 
+    def set_texture_index(self, textureIndex):
+        self.textureIndex = textureIndex
+
     def bind_uniform(self, texture, num=1, transpose=False, access=GL_READ_WRITE):
         if texture is not None:
-            texture.bind_image(GL_TEXTURE0 + self.textureIndex, access)
-            glUniform1i(self.location, self.textureIndex)
+            texture.bind_image(self.textureIndex, access)
+            # glUniform1i(self.location, self.textureIndex)
         elif self.show_message:
             self.show_message = False
             logger.error("%s %s is None" % (self.name, self.__class__.__name__))
