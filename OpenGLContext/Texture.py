@@ -41,14 +41,14 @@ def get_numpy_dtype(data_type):
 
 def get_internal_format(str_image_mode):
     if str_image_mode == "RGBA":
-        return GL_RGBA
+        return GL_RGBA8
     elif str_image_mode == "RGB":
-        return GL_RGB
+        return GL_RGB8
     elif str_image_mode == "L" or str_image_mode == "P" or str_image_mode == "R":
-        return GL_LUMINANCE
+        return GL_R8
     else:
         logger.error("get_internal_format::unknown image mode ( %s )" % str_image_mode)
-    return GL_RGBA
+    return GL_RGBA8
 
 
 def get_texture_format(str_image_mode):
@@ -112,9 +112,14 @@ class Texture:
         # Convert to sRGB
         if self.sRGB:
             if self.internal_format == GL_RGB:
-                self.internal_format = GL_SRGB
+                self.internal_format = GL_SRGB8
             elif self.internal_format == GL_RGBA:
-                self.internal_format = GL_SRGB_ALPHA
+                self.internal_format = GL_SRGB8_ALPHA8
+
+        if GL_RGBA == self.internal_format:
+            self.internal_format = GL_RGBA8
+        if GL_RGB == self.internal_format:
+            self.internal_format = GL_RGB8
 
         self.width = texture_data.get('width', 0)
         self.height = texture_data.get('height', 0)
@@ -234,12 +239,12 @@ class Texture:
             return
         glBindTexture(self.target, self.buffer)
 
-    def bind_image(self, access=GL_READ_WRITE):
+    def bind_image(self, image_unit, access=GL_READ_WRITE):
         if self.buffer == -1:
             logger.warn("%s texture is invalid." % self.name)
             return
         # flag : GL_READ_WRITE, GL_WRITE_ONLY, GL_READ_ONLY
-        glBindImageTexture(0, self.target, 0, GL_FALSE, 0, access, self.internal_format)
+        glBindImageTexture(image_unit, self.target, 0, GL_FALSE, 0, access, self.internal_format)
 
     def is_attached(self):
         return self.attachment
@@ -290,6 +295,10 @@ class Texture2D(Texture):
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, self.buffer)
+
+        # glTexStorage2D(GL_TEXTURE_2D, self.get_mipmap_count(), self.internal_format, self.width, self.height)
+        # glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self.width, self.height, self.texture_format, self.data_type, data)
+
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      self.internal_format,
@@ -302,17 +311,12 @@ class Texture2D(Texture):
 
         if self.enable_mipmap:
             glGenerateMipmap(GL_TEXTURE_2D)
-            # create indivisual mipmapThis creates a texture with a single mipmap level.
-            # You will also need separate glTexSubImage2D calls to upload each mipmap
-            # glTexStorage2D(GL_TEXTURE_2D, self.get_mipmap_count(), GL_RGBA8, self.width, self.height)
-            # glTexSubImage2D(GL_TEXTURE_2D, 0​, 0, 0, width​, height​, GL_BGRA, GL_UNSIGNED_BYTE, pixels)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, self.wrap_s or self.wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         glBindTexture(GL_TEXTURE_2D, 0)
-
 
 class Texture2DArray(Texture):
     target = GL_TEXTURE_2D_ARRAY

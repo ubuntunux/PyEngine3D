@@ -215,8 +215,7 @@ class UniformImageBase(UniformTextureBase):
 
     def bind_uniform(self, texture, num=1, transpose=False, access=GL_READ_WRITE):
         if texture is not None:
-            glActiveTexture(GL_TEXTURE0 + self.textureIndex)
-            texture.bind_image(access)
+            texture.bind_image(GL_TEXTURE0 + self.textureIndex, access)
             glUniform1i(self.location, self.textureIndex)
         elif self.show_message:
             self.show_message = False

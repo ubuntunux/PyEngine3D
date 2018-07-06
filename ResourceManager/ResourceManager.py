@@ -901,19 +901,19 @@ class TextureLoader(ResourceLoader):
             if texture_datas:
                 texture_type = texture_datas.get('texture_type')
                 if TextureCube == texture_type or TextureCube.__name__ == texture_type:
-                    gray_texture = self.get_resource_data('common.flat_gray')
+                    default_texture = self.resource_manager.get_default_texture()
                     texture_datas['texture_positive_x'] = self.get_resource_data(
-                        texture_datas['texture_positive_x']) or gray_texture
+                        texture_datas['texture_positive_x']) or default_texture
                     texture_datas['texture_negative_x'] = self.get_resource_data(
-                        texture_datas['texture_negative_x']) or gray_texture
+                        texture_datas['texture_negative_x']) or default_texture
                     texture_datas['texture_positive_y'] = self.get_resource_data(
-                        texture_datas['texture_positive_y']) or gray_texture
+                        texture_datas['texture_positive_y']) or default_texture
                     texture_datas['texture_negative_y'] = self.get_resource_data(
-                        texture_datas['texture_negative_y']) or gray_texture
+                        texture_datas['texture_negative_y']) or default_texture
                     texture_datas['texture_positive_z'] = self.get_resource_data(
-                        texture_datas['texture_positive_z']) or gray_texture
+                        texture_datas['texture_positive_z']) or default_texture
                     texture_datas['texture_negative_z'] = self.get_resource_data(
-                        texture_datas['texture_negative_z']) or gray_texture
+                        texture_datas['texture_negative_z']) or default_texture
 
                 texture = CreateTexture(name=resource.name, **texture_datas)
                 resource.set_data(texture)
@@ -946,13 +946,13 @@ class TextureLoader(ResourceLoader):
                     isCreateCube = True
 
                 if isCreateCube:
-                    gray_texture = self.get_resource_data('common.flat_gray')
-                    texture_right = cube_faces['right'].get_data() or gray_texture
-                    texture_left = cube_faces['left'].get_data() or gray_texture
-                    texture_top = cube_faces['top'].get_data() or gray_texture
-                    texture_bottom = cube_faces['bottom'].get_data() or gray_texture
-                    texture_back = cube_faces['back'].get_data() or gray_texture
-                    texture_front = cube_faces['front'].get_data() or gray_texture
+                    default_texture = self.get_resource_data('common.flat_gray')
+                    texture_right = cube_faces['right'].get_data() or default_texture
+                    texture_left = cube_faces['left'].get_data() or default_texture
+                    texture_top = cube_faces['top'].get_data() or default_texture
+                    texture_bottom = cube_faces['bottom'].get_data() or default_texture
+                    texture_back = cube_faces['back'].get_data() or default_texture
+                    texture_front = cube_faces['front'].get_data() or default_texture
 
                     cube_texture_datas = copy.copy(texture_front.__dict__)
                     cube_texture_datas['name'] = cube_texture_name
