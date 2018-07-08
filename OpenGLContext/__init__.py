@@ -14,3 +14,4 @@ from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformTextureBase, UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray,  \
                             UniformTexture3D, UniformTextureCube
 from .VertexArrayBuffer import VertexArrayBuffer, CreateVertexArrayBuffer, InstanceBuffer
+from .ShaderStorageBuffer import ShaderStorageBuffer

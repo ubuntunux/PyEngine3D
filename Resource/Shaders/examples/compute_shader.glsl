@@ -2,14 +2,10 @@
 //#extension GL_ARB_shader_storage_buffer_object : enable;
 
 #ifdef GL_COMPUTE_SHADER
-layout( std140, binding=0 ) buffer Pos
-{
-    vec4 Positions[ ]; // array of structures
-};
-
 layout(local_size_x = 1, local_size_y = 1) in;
 
-layout(binding=0, rgba16f) uniform image2D img_output;
+layout(rgba16f, binding=0) uniform image2D img_output;
+layout(std140, binding=1) buffer InputPos { vec4 color[]; };
 
 void main()
 {
@@ -20,6 +16,7 @@ void main()
   ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 
   pixel.xy = vec2(pixel_coords.x, pixel_coords.y) / vec2(imageSize(img_output));
+  pixel += color[1];
 
   // output to a specific pixel in the image
   imageStore(img_output, pixel_coords, pixel);
