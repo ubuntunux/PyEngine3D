@@ -1,5 +1,5 @@
-#extension GL_ARB_compute_shader : enable
-#extension GL_ARB_shader_storage_buffer_object : enable;
+//#extension GL_ARB_compute_shader : enable;
+//#extension GL_ARB_shader_storage_buffer_object : enable;
 
 #ifdef GL_COMPUTE_SHADER
 layout( std140, binding=0 ) buffer Pos
@@ -18,6 +18,8 @@ void main()
 
   // get index in global work group i.e x,y position
   ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+
+  pixel.xy = vec2(pixel_coords.x, pixel_coords.y) / vec2(imageSize(img_output));
 
   // output to a specific pixel in the image
   imageStore(img_output, pixel_coords, pixel);

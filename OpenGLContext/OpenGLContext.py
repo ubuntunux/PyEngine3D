@@ -36,6 +36,17 @@ class OpenGLContext(Singleton):
                 # set value
                 setattr(self, info.name, glGetIntegerv(info))
 
+            # shader storage
+            infos = [GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, GL_MAX_SHADER_STORAGE_BLOCK_SIZE,
+                     GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS,
+                     GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS, GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS,
+                     GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS, GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
+                     GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS]
+            for info in infos:
+                logger.info("%s : %s" % (info.name, glGetIntegerv(info)))
+                # set value
+                setattr(self, info.name, glGetIntegerv(info))
+
             # compute shader
             self.GL_MAX_COMPUTE_WORK_GROUP_COUNT = [glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, i)[0] for i in range(3)]
             self.GL_MAX_COMPUTE_WORK_GROUP_SIZE = [glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, i)[0] for i in range(3)]
