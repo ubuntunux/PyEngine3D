@@ -61,3 +61,9 @@ class OpenGLContext(Singleton):
 
         except BaseException:
             logger.error(traceback.format_exc())
+
+    # util run compute shader
+    @staticmethod
+    def dispatch_compute(num_groups_x,num_groups_y,num_groups_z):
+        glDispatchCompute(num_groups_x,num_groups_y,num_groups_z)
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
