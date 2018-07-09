@@ -1,5 +1,6 @@
 import math
-from ctypes import c_void_p
+import ctypes
+from ctypes import sizeof, c_float, c_void_p, c_uint, string_at
 
 import numpy as np
 from OpenGL.GL import *
@@ -8,14 +9,25 @@ from Common import logger
 
 
 class ShaderStorageBuffer:
-    def __init__(self, name):
+    def __init__(self, name, binding, data):
         self.name = name
         self.buffer = glGenBuffers(1)
+        self.binding = binding
+        self.data = data  # numpy array
 
-    def bind_storage_buffer(self, binding, data):
+    def delete(self):
+        glDeleteBuffers(1, self.buffer)
+
+    def bind_storage_buffer(self, data=None):
+        if data is not None and self.data.nbytes == data.nbytes:
+            self.data[...] = data
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        glBufferData(GL_SHADER_STORAGE_BUFFER, data.nbytes, data, GL_STATIC_DRAW)
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, self.buffer)
-        # mask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT
-        # x = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, size_of_data, mask)
-        # glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)
+        glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, self.binding, self.buffer)
+
+    def map_buffer(self):
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
+        data_string = string_at(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY), self.data.nbytes)
+        self.data[...] = np.fromstring(data_string, dtype=self.data.dtype)
+        return self.data

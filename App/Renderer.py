@@ -1,7 +1,9 @@
-import os, math
+import os
+import math
 import platform as platformModule
 import time as timeModule
 import random
+
 
 import numpy as np
 from OpenGL.GL import *
@@ -432,20 +434,23 @@ class Renderer(Singleton):
 
             self.render_postprocess()
 
-        # if not hasattr(self, 'first'):
-        #     self.first = True
-        #     self.ssb = ShaderStorageBuffer(name='ssb')
-        #     self.data = np.array([[0.0, 0.0, 1.0, 0.0], ] * 100, dtype=np.float32)
-        #     self.data[1][1] = 1.0
-        #     self.data[1][2] = 0.0
-        #
-        # s = self.resource_manager.get_material_instance('examples.compute_shader')
-        # s.use_program()
-        # # use bind_texture or bind_image
-        # s.bind_uniform_data('img_output', RenderTargets.HDR)
-        # self.ssb.bind_storage_buffer(binding=1, data=self.data)
-        # glDispatchCompute(RenderTargets.HDR.width, RenderTargets.HDR.height, 1)
-        # glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
+        if not hasattr(self, 'first'):
+            self.first = True
+            self.ssb = ShaderStorageBuffer(name='ssb',
+                                           binding=1,
+                                           data=np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32))
+            self.ssb2 = ShaderStorageBuffer(name='ssb2',
+                                            binding=2,
+                                            data=np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32))
+
+        s = self.resource_manager.get_material_instance('examples.compute_shader')
+        s.use_program()
+        # use bind_texture or bind_image
+        s.bind_uniform_data('img_output', RenderTargets.HDR, access=GL_READ_WRITE)
+        self.ssb.bind_storage_buffer()
+        self.ssb2.bind_storage_buffer()
+        glDispatchCompute(RenderTargets.HDR.width, RenderTargets.HDR.height, 1)
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 
         # debug render target
         if self.debug_texture is not None and self.debug_texture is not RenderTargets.BACKBUFFER and \
