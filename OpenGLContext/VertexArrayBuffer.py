@@ -7,6 +7,7 @@ from OpenGL.GL import *
 
 from Common import logger
 from Utilities import compute_tangent
+from .OpenGLContext import OpenGLContext
 
 
 #  Reference : https://learnopengl.com/Advanced-OpenGL/Instancing
@@ -129,20 +130,23 @@ class VertexArrayBuffer:
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
 
-    def bind_vertex_buffer(self):
-        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
+    def __bind_vertex_buffer(self):
+        if OpenGLContext.need_to_bind_vertex_array(self.vertex_buffer):
+            glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
 
-        for layout_location in self.layout_location_count:
-            glEnableVertexAttribArray(layout_location)
-            glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location], GL_FLOAT, GL_FALSE,
-                                  self.vertex_buffer_size, self.vertex_buffer_offset[layout_location])
+            for layout_location in self.layout_location_count:
+                glEnableVertexAttribArray(layout_location)
+                glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location], GL_FLOAT, GL_FALSE,
+                                      self.vertex_buffer_size, self.vertex_buffer_offset[layout_location])
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def draw_elements(self):
+        self.__bind_vertex_buffer()
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
     def draw_elements_instanced(self, count, *instance_buffers):
+        self.__bind_vertex_buffer()
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
 
         if len(instance_buffers) < 1:

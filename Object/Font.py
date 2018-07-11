@@ -100,7 +100,6 @@ class FontManager(Singleton):
 
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
-            self.quad.bind_vertex_buffer()
             render_queue = np.array(self.render_queues, dtype=np.float32)
             self.instance_buffer.bind_instance_buffer(instance_data=render_queue,
                                                       divisor=1)

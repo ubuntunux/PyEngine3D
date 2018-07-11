@@ -275,7 +275,6 @@ class Ocean:
         self.fft_variance.bind_uniform_data("spectrum_1_2_Sampler", self.texture_spectrum_1_2)
         self.fft_variance.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
         self.fft_variance.bind_uniform_data("FFT_SIZE", FFT_SIZE)
-        self.quad.bind_vertex_buffer()
 
         for layer in range(N_SLOPE_VARIANCE):
             self.renderer.framebuffer_manager.bind_framebuffer(self.texture_slope_variance, target_layer=layer)
@@ -409,7 +408,6 @@ class Ocean:
         self.fft_init.bind_uniform_data("spectrum_3_4_Sampler", self.texture_spectrum_3_4)
         self.fft_init.bind_uniform_data("t", self.acc_time * self.simulation_wind)
 
-        self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
         # # fft passes
@@ -464,5 +462,4 @@ class Ocean:
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.fft_render)
 
-        self.fft_grid.bind_vertex_buffer()
         self.fft_grid.draw_elements()

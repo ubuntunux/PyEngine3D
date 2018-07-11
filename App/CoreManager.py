@@ -72,7 +72,6 @@ class CoreManager(Singleton):
         self.acc_presentTime = 0.0
 
         # managers
-        self.opengl_context = None
         self.script_manager = None
         self.game_backend = None
         self.resource_manager = None
@@ -117,7 +116,6 @@ class CoreManager(Singleton):
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
-        self.opengl_context = OpenGLContext.instance()
         self.resource_manager = ResourceManager.instance()
         self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
@@ -133,7 +131,7 @@ class CoreManager(Singleton):
             self.exit()
             return False
 
-        self.opengl_context.initialize()
+        OpenGLContext.initialize()
 
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.project_manager.config.Screen.size

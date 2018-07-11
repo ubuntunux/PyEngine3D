@@ -65,8 +65,6 @@ class CloudTexture3D:
         renderer.framebuffer_manager.bind_framebuffer(texture)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        renderer.postprocess.bind_quad()
-
         mat = resource_manager.get_material_instance('procedural.cloud_noise_3d')
         mat.use_program()
         mat.bind_uniform_data('texture_random', resource_manager.get_texture("common.random"))

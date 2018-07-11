@@ -34,9 +34,6 @@ class Geometry:
         self.boundCenter = (self.boundMin + self.boundMax) * 0.5
         self.radius = geometry_data.get('radius', 0.0)
 
-    def bind_vertex_buffer(self):
-        self.vertex_buffer.bind_vertex_buffer()
-
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
 

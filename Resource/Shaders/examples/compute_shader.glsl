@@ -20,7 +20,6 @@ void main()
   pixel.xy = vec2(pixel_coords.x, pixel_coords.y) / vec2(imageSize(img_output));
 
   pixel = color + color2;
-  color2 += vec4(0.00001);
 
   // output to a specific pixel in the image
   imageStore(img_output, pixel_coords, pixel);

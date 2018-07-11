@@ -367,7 +367,6 @@ class Model:
             'precomputed_atmosphere.recompute_transmittance',
             macros=self.material_instance_macros)
         recompute_transmittance_mi.use_program()
-        self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
         # save textures
@@ -407,8 +406,6 @@ class Model:
         glEnable(GL_BLEND)
         glBlendEquation(GL_FUNC_ADD)
         glBlendFunc(GL_ONE, GL_ONE)
-
-        self.quad.bind_vertex_buffer()
 
         # compute_transmittance
         framebuffer_manager.bind_framebuffer(self.transmittance_texture)

@@ -254,7 +254,6 @@ class Atmosphere:
         if not self.is_render_atmosphere:
             return
 
-        self.quad.bind_vertex_buffer()
         self.atmosphere_material_instance.use_program()
         self.atmosphere_material_instance.bind_material_instance()
         self.atmosphere_material_instance.bind_uniform_data("texture_linear_depth", texture_linear_depth)

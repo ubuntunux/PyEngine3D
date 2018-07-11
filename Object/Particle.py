@@ -91,7 +91,6 @@ class ParticleManager(Singleton):
                 material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
 
                 geometry = emitter_info.mesh.get_geometry()
-                geometry.bind_vertex_buffer()
 
                 draw_count = 0
                 for emitter in particle.emitters_group[i]:

@@ -63,8 +63,6 @@ class NoiseTexture3D:
         renderer.framebuffer_manager.bind_framebuffer(texture)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        renderer.postprocess.bind_quad()
-
         mat = resource_manager.get_material_instance('procedural.noise_3d')
         mat.use_program()
         mat.bind_uniform_data('noise_persistance', self.noise_persistance)

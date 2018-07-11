@@ -309,7 +309,6 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.bind_quad()
             self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
@@ -371,7 +370,6 @@ class Renderer(Singleton):
                                                       texture_shadow=RenderTargets.SHADOWMAP)
 
                 # re copy Linear depth
-                self.postprocess.bind_quad()
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
                 self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
 
@@ -392,7 +390,6 @@ class Renderer(Singleton):
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
                 # composite atmosphere
-                self.postprocess.bind_quad()
                 self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
                 composite_atmosphere = self.resource_manager.get_material_instance(
@@ -445,16 +442,16 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_font()
 
-        # reset shader program
-        glUseProgram(0)
-
         # blit frame buffer
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.framebuffer_manager.blit_framebuffer(self.width, self.height)
         self.framebuffer_manager.unbind_framebuffer()
 
-        # flush
+        # end of render scene
+        glUseProgram(0)
         glFlush()
+
+        OpenGLContext.end_render()
 
         endTime = timeModule.perf_counter()
         renderTime = endTime - startTime
@@ -559,8 +556,6 @@ class Renderer(Singleton):
                           np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32),
                           np.array([[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]], dtype=np.float32)]
 
-        self.postprocess.bind_quad()
-
         convolve_environment = self.resource_manager.get_material_instance('convolve_environment')
         convolve_environment.use_program()
 
@@ -609,7 +604,6 @@ class Renderer(Singleton):
                            self.pre_pass_material)
 
         # render velocity
-        self.postprocess.bind_quad()
         self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY)
         glClear(GL_COLOR_BUFFER_BIT)
 
@@ -640,7 +634,6 @@ class Renderer(Singleton):
                            self.scene_manager.static_solid_render_infos)
 
         # render velocity
-        self.postprocess.bind_quad()
         self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY)
         glClear(GL_COLOR_BUFFER_BIT)
 
@@ -673,8 +666,6 @@ class Renderer(Singleton):
                                self.shadowmap_skeletal_material)
 
     def render_preprocess(self):
-        self.postprocess.bind_quad()
-
         # Linear depth
         self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
         glClearColor(1.0, 1.0, 1.0, 1.0)
@@ -705,7 +696,6 @@ class Renderer(Singleton):
 
         # render solid
         if RenderingType.DEFERRED_RENDERING == self.render_option_manager.rendering_type:
-            self.postprocess.bind_quad()
             # render deferred
             self.postprocess.render_deferred_shading(self.scene_manager.get_light_probe_texture(),
                                                      self.scene_manager.atmosphere)
@@ -737,7 +727,6 @@ class Renderer(Singleton):
             scene_material_instance.material.use_program()
 
         last_actor = None
-        last_geometry = None
         last_material = None
         last_material_instance = None
 
@@ -787,15 +776,10 @@ class Renderer(Singleton):
                     scene_material_instance.bind_uniform_data('prev_bone_matrices',
                                                               prev_animation_buffer,
                                                               len(prev_animation_buffer))
-
-            if last_geometry != geometry:
-                geometry.bind_vertex_buffer()
-
             # draw
             geometry.draw_elements()
 
             last_actor = actor
-            last_geometry = geometry
             last_material = material
             last_material_instance = material_instance
 
@@ -809,7 +793,6 @@ class Renderer(Singleton):
             material_instance = self.debug_bone_material
             material_instance.use_program()
             material_instance.bind()
-            mesh.bind_vertex_buffer()
 
             def draw_bone(mesh, skeleton_mesh, parent_matrix, material_instance, bone, root_matrix, isAnimation):
                 if isAnimation:
@@ -851,9 +834,6 @@ class Renderer(Singleton):
     def render_postprocess(self):
         # bind frame buffer
         self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
-
-        # bind quad mesh
-        self.postprocess.bind_quad()
 
         # copy HDR target
         src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)

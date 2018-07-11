@@ -238,9 +238,6 @@ class PostProcess:
             self.jitter[0] = 0.0
             self.jitter[1] = 0.0
 
-    def bind_quad(self):
-        self.quad.bind_vertex_buffer()
-
     def draw_elements(self):
         self.quad.draw_elements()
 
@@ -471,7 +468,6 @@ class PostProcess:
                                                  source_texture if GL_TEXTURE_3D == target else None)
         self.render_texture_mi.bind_uniform_data("texture_source_cube",
                                                  source_texture if GL_TEXTURE_CUBE_MAP == target else None)
-        self.quad.bind_vertex_buffer()
         self.quad.draw_elements()
 
     def is_render_shader(self):
@@ -488,7 +484,6 @@ class PostProcess:
 
     def render_material_instance(self):
         if self.target_material_instance is not None:
-            self.quad.bind_vertex_buffer()
             self.target_material_instance.use_program()
             self.target_material_instance.bind_material_instance()
             self.quad.draw_elements()

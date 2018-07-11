@@ -15,15 +15,19 @@ class ShaderStorageBuffer:
         self.binding = binding
         self.data = data  # numpy array
 
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
+        glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+
     def delete(self):
         glDeleteBuffers(1, self.buffer)
 
     def bind_storage_buffer(self, data=None):
-        if data is not None and self.data.nbytes == data.nbytes:
-            self.data[...] = data
-
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
+        if data is not None:
+            # new data binding
+            self.data = data
+            glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, self.binding, self.buffer)
 
     def map_buffer(self):
