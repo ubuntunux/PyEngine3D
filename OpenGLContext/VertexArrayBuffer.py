@@ -10,42 +10,6 @@ from Utilities import compute_tangent
 from .OpenGLContext import OpenGLContext
 
 
-#  Reference : https://learnopengl.com/Advanced-OpenGL/Instancing
-class InstanceBuffer:
-    def __init__(self, name, layout_location, element_data):
-        self.name = name
-        self.layout_location = layout_location
-
-        self.instance_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-
-        # One of the elements of the instance data list
-        self.component_count = len(element_data)
-        # The instance data is a 16-byte boundary. For example, since mat4 is 64 bytes,
-        # you need to divide it into 4 by 16 bytes.
-        self.divide_count = math.ceil(element_data.nbytes / 16)
-        self.size_of_data = element_data.nbytes
-
-    def bind_instance_buffer(self, instance_data, divisor=1):
-        glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-        glBufferData(GL_ARRAY_BUFFER, instance_data, GL_STATIC_DRAW)
-
-        component_count = len(instance_data[0])
-        size_of_data = instance_data[0].nbytes
-
-        if self.divide_count == 1:
-            glEnableVertexAttribArray(self.layout_location)
-            glVertexAttribPointer(self.layout_location, component_count, GL_FLOAT, GL_FALSE, size_of_data, c_void_p(0))
-            # divisor == 0, not instancing.
-            # divisor > 0, the attribute advances once per divisor instances of the set(s) of vertices being rendered.
-            glVertexAttribDivisor(self.layout_location, divisor)
-        else:
-            for i in range(self.divide_count):
-                glEnableVertexAttribArray(self.layout_location + i)
-                glVertexAttribPointer(self.layout_location + i, component_count, GL_FLOAT, GL_FALSE, size_of_data,
-                                      c_void_p(self.divide_count * component_count * i))
-                glVertexAttribDivisor(self.layout_location + i, divisor)
-
 
 def CreateVertexArrayBuffer(geometry_data):
     geometry_name = geometry_data.get('name', 'VertexArrayBuffer')
@@ -95,6 +59,38 @@ def CreateVertexArrayBuffer(geometry_data):
     return vertex_array_buffer
 
 
+#  Reference : https://learnopengl.com/Advanced-OpenGL/Instancing
+class InstanceBuffer:
+    def __init__(self, name, layout_location, element_data):
+        self.name = name
+        self.instance_buffer = glGenBuffers(1)
+        self.layout_location = layout_location
+        # One of the elements of the instance data list
+        self.component_count = len(element_data)
+        self.size_of_data = element_data.nbytes
+        # The instance data is a 16-byte boundary. For example, since mat4 is 64 bytes,
+        # you need to divide it into 4 by 16 bytes.
+        self.divide_count = math.ceil(element_data.nbytes / 16)
+
+    def bind_instance_buffer(self, instance_data, divisor=1):
+        glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
+        glBufferData(GL_ARRAY_BUFFER, instance_data, GL_STATIC_DRAW)
+
+        if self.divide_count == 1:
+            glEnableVertexAttribArray(self.layout_location)
+            glVertexAttribPointer(self.layout_location, self.component_count, GL_FLOAT, GL_FALSE, self.size_of_data,
+                                  c_void_p(0))
+            # divisor == 0, not instancing.
+            # divisor > 0, the attribute advances once per divisor instances of the set(s) of vertices being rendered.
+            glVertexAttribDivisor(self.layout_location, divisor)
+        else:
+            for i in range(self.divide_count):
+                glEnableVertexAttribArray(self.layout_location + i)
+                glVertexAttribPointer(self.layout_location + i, self.component_count, GL_FLOAT, GL_FALSE,
+                                      self.size_of_data, c_void_p(self.divide_count * self.component_count * i))
+                glVertexAttribDivisor(self.layout_location + i, divisor)
+
+
 class VertexArrayBuffer:
     def __init__(self, name, datas, index_data, dtype=np.float32):
         self.name = name
@@ -138,6 +134,8 @@ class VertexArrayBuffer:
                 glEnableVertexAttribArray(layout_location)
                 glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location], GL_FLOAT, GL_FALSE,
                                       self.vertex_buffer_size, self.vertex_buffer_offset[layout_location])
+                # important : divisor reset
+                glVertexAttribDivisor(layout_location, 0)
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
@@ -145,14 +143,6 @@ class VertexArrayBuffer:
         self.__bind_vertex_buffer()
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
-    def draw_elements_instanced(self, count, *instance_buffers):
+    def draw_elements_instanced(self, count):
         self.__bind_vertex_buffer()
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
-
-        if len(instance_buffers) < 1:
-            raise BaseException(
-                "instance_buffers is None. You must release instance buffer after draw_elements_instanced.")
-
-        # important : After the object is drawn You need to execute glDisableVertexAttribArray.
-        for instance_buffer in instance_buffers:
-            glVertexAttribDivisor(instance_buffer.layout_location, 0)

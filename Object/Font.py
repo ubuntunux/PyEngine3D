@@ -101,13 +101,12 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.instance_buffer.bind_instance_buffer(instance_data=render_queue,
-                                                      divisor=1)
+            self.instance_buffer.bind_instance_buffer(instance_data=render_queue)
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
             self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
             self.font_shader.bind_uniform_data("font_size", self.font_size)
             self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
             self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
-            self.quad.draw_elements_instanced(len(self.render_queues), self.instance_buffer)
+            self.quad.draw_elements_instanced(len(self.render_queues))
         self.clear_logs(screen_width, screen_height)

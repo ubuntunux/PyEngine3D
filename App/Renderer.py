@@ -14,7 +14,7 @@ from PIL import Image
 from Common import logger, log_level, COMMAND
 from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from OpenGLContext import ShaderStorageBuffer
+from OpenGLContext import OpenGLContext, ShaderStorageBuffer
 from Object.PostProcess import AntiAliasing, PostProcess
 from Object.RenderTarget import RenderTargets
 from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode

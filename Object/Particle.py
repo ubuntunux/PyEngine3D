@@ -104,15 +104,12 @@ class ParticleManager(Singleton):
 
                 if 0 < draw_count:
                     emitter_info.instance_buffer_0.bind_instance_buffer(
-                        instance_data=emitter_info.instance_data_0[:draw_count], divisor=1)
+                        instance_data=emitter_info.instance_data_0[:draw_count])
                     emitter_info.instance_buffer_1.bind_instance_buffer(
-                        instance_data=emitter_info.instance_data_1[:draw_count], divisor=1)
+                        instance_data=emitter_info.instance_data_1[:draw_count])
                     emitter_info.instance_buffer_2.bind_instance_buffer(
-                        instance_data=emitter_info.instance_data_2[:draw_count], divisor=1)
-                    geometry.draw_elements_instanced(draw_count,
-                                                     emitter_info.instance_buffer_0,
-                                                     emitter_info.instance_buffer_1,
-                                                     emitter_info.instance_buffer_2)
+                        instance_data=emitter_info.instance_data_2[:draw_count])
+                    geometry.draw_elements_instanced(draw_count)
 
     def view_frustum_culling_particle(self, camera, particle):
         to_particle = particle.transform.pos - camera.transform.pos
