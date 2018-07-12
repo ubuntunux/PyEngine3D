@@ -103,7 +103,7 @@ class ParticleManager(Singleton):
                         draw_count += 1
 
                 if 0 < draw_count:
-                    emitter_info.instance_buffer_0.bind_instance_buffer(emitter_info.instance_data_0,
+                    emitter_info.instance_buffer.bind_instance_buffer(emitter_info.instance_data_0,
                                                                         emitter_info.instance_data_1,
                                                                         emitter_info.instance_data_2)
                     geometry.draw_elements_instanced(draw_count)
@@ -484,9 +484,9 @@ class EmitterInfo:
             **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
 
         # instance data
-        self.instance_buffer_0 = InstanceBuffer(name="instance_buffer",
-                                                location_offset=5,
-                                                element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
+        self.instance_buffer = InstanceBuffer(name="instance_buffer",
+                                              location_offset=5,
+                                              element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
         self.instance_data_0 = None
         self.instance_data_1 = None
         self.instance_data_2 = None
