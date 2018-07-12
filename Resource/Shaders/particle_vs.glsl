@@ -46,13 +46,8 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = particle_matrix * model;
+    mat4 world_matrix = billboard ? particle_matrix * INV_VIEW_ORIGIN * model : particle_matrix * model;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
-
-    if(billboard)
-    {
-        vertex_position = INV_VIEW_ORIGIN * vertex_position;
-    }
 
     vec4 world_position = world_matrix * vertex_position;
     vs_output.world_position = world_position.xyz;
