@@ -10,7 +10,6 @@ from Utilities import compute_tangent
 from .OpenGLContext import OpenGLContext
 
 
-
 def CreateVertexArrayBuffer(geometry_data):
     geometry_name = geometry_data.get('name', 'VertexArrayBuffer')
     logger.info("Load %s geometry." % geometry_name)
@@ -92,27 +91,29 @@ class InstanceBuffer:
 
 
 class VertexArrayBuffer:
-    def __init__(self, name, datas, index_data, dtype=np.float32):
+    def __init__(self, name, datas, index_data):
         self.name = name
         self.vertex_component_count = []
+        self.data_types = []
         self.vertex_buffer_offset = []
         self.vertex_buffer_size = 0
 
         for data in datas:
-            stride = len(data[0]) if len(data) > 0 else 0
+            element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
+            stride = len(element) if hasattr(element, '__len__') else 1
             if stride == 0:
                 continue
             self.vertex_component_count.append(stride)
             self.vertex_buffer_offset.append(ctypes.c_void_p(self.vertex_buffer_size))
-            self.vertex_buffer_size += stride * np.nbytes[dtype]
+            self.vertex_buffer_size += element.nbytes
+            self.data_types.append(OpenGLContext.get_gl_dtype(data.dtype))
         self.layout_location_count = range(len(self.vertex_component_count))
 
-        self.vertex_array = glGenVertexArrays(1)
-        glBindVertexArray(self.vertex_array)
+        vertex_datas = np.hstack(datas).astype(np.float32)
 
-        # The important thing is np.hstack. It is to serialize the data.
-        vertex_datas = np.hstack(datas).astype(dtype)
+        self.vertex_array = glGenVertexArrays(1)
         self.vertex_buffer = glGenBuffers(1)
+        glBindVertexArray(self.vertex_array)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
         glBufferData(GL_ARRAY_BUFFER, vertex_datas, GL_STATIC_DRAW)
 
@@ -132,8 +133,9 @@ class VertexArrayBuffer:
 
             for layout_location in self.layout_location_count:
                 glEnableVertexAttribArray(layout_location)
-                glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location], GL_FLOAT, GL_FALSE,
-                                      self.vertex_buffer_size, self.vertex_buffer_offset[layout_location])
+                glVertexAttribPointer(layout_location, self.vertex_component_count[layout_location],
+                                      self.data_types[layout_location], GL_FALSE, self.vertex_buffer_size,
+                                      self.vertex_buffer_offset[layout_location])
                 # important : divisor reset
                 glVertexAttribDivisor(layout_location, 0)
 

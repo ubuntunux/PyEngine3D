@@ -1,6 +1,5 @@
 from .OpenGLContext import OpenGLContext
 from .FrameBuffer import FrameBuffer, FrameBufferManager
-from .GLUtil import IsExtensionSupported
 from .RenderBuffer import RenderBuffer
 from .Shader import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
 from .Shader import parsing_macros, parsing_uniforms, parsing_material_components

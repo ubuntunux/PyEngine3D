@@ -63,6 +63,29 @@ class OpenGLContext:
             logger.error(traceback.format_exc())
 
     @staticmethod
+    def get_gl_dtype(numpy_dtype):
+        if np.float32 == numpy_dtype:
+            return GL_FLOAT
+        elif np.float64 == numpy_dtype or np.double == numpy_dtype:
+            return GL_DOUBLE
+        elif np.uint8 == numpy_dtype:
+            return GL_UNSIGNED_BYTE
+        elif np.uint16 == numpy_dtype:
+            return GL_UNSIGNED_SHORT
+        elif np.uint32 == numpy_dtype:
+            return GL_UNSIGNED_INT
+        elif np.uint64 == numpy_dtype:
+            return GL_UNSIGNED_INT64
+        elif np.int8 == numpy_dtype:
+            return GL_BYTE
+        elif np.int16 == numpy_dtype:
+            return GL_SHORT
+        elif np.int32 == numpy_dtype:
+            return GL_INT
+        elif np.int64 == numpy_dtype:
+            return GL_INT64
+
+    @staticmethod
     def end_render():
         OpenGLContext.last_vertex_array = -1
 
@@ -78,3 +101,47 @@ class OpenGLContext:
         glDispatchCompute(num_groups_x, num_groups_y, num_groups_z)
         # barrier_mask : GL_ALL_BARRIER_BITS, GL_SHADER_STORAGE_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT...
         glMemoryBarrier(barrier_mask)
+
+    @staticmethod
+    def IsExtensionSupported(TargetExtension):
+        """ Accesses the rendering context to see if it supports an extension.
+            Note, that this test only tells you if the OpenGL library supports
+            the extension. The PyOpenGL system might not actually support the extension.
+        """
+        Extensions = glGetString(GL_EXTENSIONS)
+        Extensions = Extensions.split()
+        bTargetExtension = str.encode(TargetExtension)
+        for extension in Extensions:
+            if extension == bTargetExtension:
+                break
+        else:
+            # not found surpport
+            msg = "OpenGL rendering context does not support '%s'" % TargetExtension
+            logger.error(msg)
+            raise BaseException(msg)
+
+        # Now determine if Python supports the extension
+        # Exentsion names are in the form GL_<group>_<extension_name>
+        # e.g.  GL_EXT_fog_coord
+        # Python divides extension into modules
+        # g_fVBOSupported = IsExtensionSupported ("GL_ARB_vertex_buffer_object")
+        # from OpenGL.GL.EXT.fog_coord import *
+        m = re.match(reCheckGLExtention, TargetExtension)
+        if m:
+            group_name = m.groups()[0]
+            extension_name = m.groups()[1]
+        else:
+            msg = "GL unsupport error, %s" % TargetExtension
+            logger.error(msg)
+            raise BaseException(msg)
+
+        extension_module_name = "OpenGL.GL.%s.%s" % (group_name, extension_name)
+
+        try:
+            __import__(extension_module_name)
+            logger.info("PyOpenGL supports '%s'" % TargetExtension)
+        except:
+            msg = 'Failed to import', extension_module_name
+            logger.error(msg)
+            raise BaseException(msg)
+        return True

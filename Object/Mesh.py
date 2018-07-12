@@ -318,6 +318,5 @@ class ScreenQuad:
             indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
             ScreenQuad.vertex_array_buffer = VertexArrayBuffer(name='screen quad',
                                                                datas=[positions, ],
-                                                               index_data=indices,
-                                                               dtype=np.float32)
+                                                               index_data=indices)
         return ScreenQuad.vertex_array_buffer
