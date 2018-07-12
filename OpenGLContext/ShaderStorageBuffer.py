@@ -9,25 +9,30 @@ from Common import logger
 
 
 class ShaderStorageBuffer:
-    def __init__(self, name, binding, data):
+    def __init__(self, name, binding, datas):
         self.name = name
-        self.buffer = glGenBuffers(1)
         self.binding = binding
-        self.data = data  # numpy array
-
+        self.buffer = glGenBuffers(1)
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+        self.set_buffer_data(datas)
 
     def delete(self):
         glDeleteBuffers(1, self.buffer)
 
-    def bind_storage_buffer(self, data=None):
+    def set_buffer_data(self, datas):
+        size_of_data = sum([data.nbytes for data in datas])
+        if 0 < size_of_data:
+            glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_STATIC_DRAW)
+
+            offset = 0
+            for data in datas:
+                glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, data.nbytes, data)
+                offset += data.nbytes
+
+    def bind_storage_buffer(self, datas=None):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        if data is not None:
-            # new data binding
-            self.data = data
-            glBufferData(GL_SHADER_STORAGE_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
+        if datas is not None:
+            self.set_buffer_data(datas)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, self.binding, self.buffer)
 
     def map_buffer(self):
