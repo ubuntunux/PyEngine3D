@@ -50,8 +50,8 @@ class FontManager(Singleton):
 
         # layout(location=1) vec4 font_offset;
         self.instance_buffer = InstanceBuffer(name="font_offset",
-                                              layout_location=1,
-                                              element_data=FLOAT4_ZERO)
+                                              location_offset=1,
+                                              element_datas=[FLOAT4_ZERO, ])
 
     def clear_logs(self, screen_width, screen_height):
         self.pos_x = 0
@@ -101,7 +101,7 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.instance_buffer.bind_instance_buffer(instance_data=render_queue)
+            self.instance_buffer.bind_instance_buffer(render_queue)
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
             self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
