@@ -8,7 +8,7 @@ from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
-from OpenGLContext import InstanceBuffer
+from OpenGLContext import InstanceBuffer, ShaderStorageBuffer
 from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
@@ -58,6 +58,10 @@ class ParticleManager(Singleton):
 
     def render(self):
         glEnable(GL_BLEND)
+
+        if not hasattr(self, 'gpu_particle'):
+            self.gpu_particle = GPUParticle()
+        self.gpu_particle.render()
 
         for particle in self.render_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
@@ -129,6 +133,37 @@ class ParticleManager(Singleton):
                     self.render_particles.append(particle)
             else:
                 self.destroy_particle(particle)
+
+
+class GPUParticle:
+    def __init__(self):
+        resource_manager = CoreManager.instance().resource_manager
+        self.mesh = resource_manager.get_default_mesh()
+        self.material_instance = resource_manager.get_material_instance('fx.gpu_particle')
+        self.gpu_update = resource_manager.get_material_instance('fx.gpu_update')
+        self.data = np.array([[0.0, 0.0, 0.0], ] * 100, dtype=np.float32)
+        for i, data in enumerate(self.data):
+            data[...] = [i, i, i]
+
+        self.buffer = ShaderStorageBuffer('test', 0, self.data)
+
+    def render(self):
+        self.gpu_update.use_program()
+        self.gpu_update.bind_uniform_data('time', math.fmod(time.time(), 1.0))
+        self.buffer.bind_storage_buffer()
+        glDispatchCompute(len(self.data), 1, 1)
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
+
+        glEnable(GL_BLEND)
+        glBlendEquation(GL_FUNC_ADD)
+        glBlendFunc(GL_ONE, GL_ONE)
+
+        self.material_instance.use_program()
+        self.material_instance.bind_material_instance()
+        self.buffer.bind_storage_buffer()
+        self.material_instance.bind_uniform_data('particle_matrix', MATRIX4_IDENTITY)
+        geometry = self.mesh.get_geometry()
+        geometry.draw_elements_instanced(len(self.data))
 
 
 class Particle:

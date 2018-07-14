@@ -1562,7 +1562,7 @@ class ResourceManager(Singleton):
                self.get_default_material_instance(skeletal=(True if 1 == macros.get('SKELETAL', 0) else 0))
 
     def get_default_particle_material_instance(self):
-        return self.material_instance_loader.get_material_instance('particle')
+        return self.material_instance_loader.get_material_instance('fx.particle')
 
     def get_default_mesh(self):
         return self.get_mesh('Quad')

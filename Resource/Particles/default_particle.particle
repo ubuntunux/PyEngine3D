@@ -9,7 +9,7 @@
                     'gravity': {'max_value': 30.0, 'min_value': 10.0},
                     'life_time': {'max_value': 5.0, 'min_value': 1.0},
                     'loop': -1,
-                    'material_instance': 'particle',
+                    'material_instance': 'fx.particle',
                     'mesh': 'Quad',
                     'opacity': {'max_value': 1.0, 'min_value': 1.0},
                     'play_speed': {'max_value': 0.0, 'min_value': 0.0},
