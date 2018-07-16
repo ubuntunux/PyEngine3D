@@ -139,16 +139,29 @@ class GPUParticle:
         self.mesh = resource_manager.get_default_mesh()
         self.material_instance = resource_manager.get_material_instance('fx.gpu_particle')
         self.gpu_update = resource_manager.get_material_instance('fx.gpu_update')
+
         self.data = np.array([[0.0, 0.0, 0.0], ] * 100, dtype=np.float32)
         for i, data in enumerate(self.data):
             data[...] = [i, i, i]
 
         self.buffer = ShaderStorageBuffer('test', 0, self.data)
 
+        self.data2 = np.array([([0.0, 1.0, 0.0, 0.0],
+                                [0, 255, 255, 0]), ] * 100,
+                              dtype=[('color', '4float32'),
+                                     ('color2', '4uint32')])
+        for i in range(len(self.data2['color2'])):
+            self.data2['color2'][i][0] = i * 2
+            self.data2['color2'][i][1] = i * 2
+            self.data2['color2'][i][2] = i * 2
+
+        self.buffer2 = ShaderStorageBuffer('test2', 1, [self.data2, ])
+
     def render(self):
         self.gpu_update.use_program()
         self.gpu_update.bind_uniform_data('time', math.fmod(time.time(), 1.0))
         self.buffer.bind_storage_buffer()
+        self.buffer2.bind_storage_buffer()
         glDispatchCompute(len(self.data), 1, 1)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 
@@ -159,7 +172,9 @@ class GPUParticle:
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()
         self.buffer.bind_storage_buffer()
+        self.buffer2.bind_storage_buffer()
         self.material_instance.bind_uniform_data('particle_matrix', MATRIX4_IDENTITY)
+
         geometry = self.mesh.get_geometry()
         geometry.draw_elements_instanced(len(self.data))
 

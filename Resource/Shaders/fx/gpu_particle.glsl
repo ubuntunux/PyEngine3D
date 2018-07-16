@@ -9,7 +9,7 @@ layout (location = 0) out vec4 ps_output;
 
 void main()
 {
-    ps_output.xyz = vec3(1.0);
+    ps_output.xyz = vs_output.color;
     ps_output.w = 1.0;
 }
 #endif
