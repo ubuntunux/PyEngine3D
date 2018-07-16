@@ -127,17 +127,22 @@ class VertexArrayBuffer:
         self.vertex_buffer_size = 0
         self.vertex_buffer_offset = []
         self.data_element_count = []
+        self.data_element_size = []
         self.data_types = []
 
+        offset = 0
         for data in datas:
             element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
             data_element_count = len(element) if hasattr(element, '__len__') else 1
+            data_element_size = element.nbytes
             if data_element_count == 0:
                 continue
             self.data_element_count.append(data_element_count)
+            self.data_element_size.append(data_element_size)
             self.data_types.append(OpenGLContext.get_gl_dtype(data.dtype))
-            self.vertex_buffer_offset.append(c_void_p(self.vertex_buffer_size))
-            self.vertex_buffer_size += data.nbytes
+            self.vertex_buffer_offset.append(c_void_p(offset))
+            offset += data.nbytes
+        self.vertex_buffer_size = offset
         self.vertex_data_count = len(datas)
 
         # self.vertex_array = glGenVertexArrays(1)
@@ -172,7 +177,7 @@ class VertexArrayBuffer:
                                       self.data_element_count[location],
                                       self.data_types[location],
                                       GL_FALSE,
-                                      0,
+                                      self.data_element_size[location],
                                       self.vertex_buffer_offset[location])
                 # important : divisor reset
                 glVertexAttribDivisor(location, 0)

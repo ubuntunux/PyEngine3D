@@ -57,8 +57,6 @@ class ParticleManager(Singleton):
                 self.play_particle(particle)
 
     def render(self):
-        glEnable(GL_BLEND)
-
         if not hasattr(self, 'gpu_particle'):
             self.gpu_particle = GPUParticle()
         self.gpu_particle.render()
@@ -108,8 +106,8 @@ class ParticleManager(Singleton):
 
                 if 0 < draw_count:
                     emitter_info.instance_buffer.bind_instance_buffer(emitter_info.instance_data_0,
-                                                                        emitter_info.instance_data_1,
-                                                                        emitter_info.instance_data_2)
+                                                                      emitter_info.instance_data_1,
+                                                                      emitter_info.instance_data_2)
                     geometry.draw_elements_instanced(draw_count)
 
     def view_frustum_culling_particle(self, camera, particle):

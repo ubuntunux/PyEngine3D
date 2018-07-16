@@ -418,9 +418,15 @@ class Renderer(Singleton):
 
             self.render_translucent()
 
-            glDisable(GL_CULL_FACE)
-            self.render_particle()
-            glEnable(GL_CULL_FACE)
+            # render particle
+            if RenderOption.RENDER_PARTICLE:
+                glDisable(GL_CULL_FACE)
+                glEnable(GL_BLEND)
+
+                self.render_particle()
+
+                glDisable(GL_BLEND)
+                glEnable(GL_CULL_FACE)
 
             if RenderOption.RENDER_LIGHT_PROBE:
                 return end_render_scene()
@@ -479,6 +485,7 @@ class Renderer(Singleton):
         old_aspect = camera.aspect
         old_render_font = RenderOption.RENDER_FONT
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
+        old_render_particle = RenderOption.RENDER_PARTICLE
 
         old_render_motion_blur = self.postprocess.is_render_motion_blur
         old_antialiasing = self.postprocess.anti_aliasing
@@ -488,8 +495,9 @@ class Renderer(Singleton):
         old_debug_intensity_max = self.postprocess.debug_intensity_max
 
         # set render light probe
-        RenderOption.RENDER_SKELETON_ACTOR = False
         RenderOption.RENDER_LIGHT_PROBE = True
+        RenderOption.RENDER_SKELETON_ACTOR = False
+        RenderOption.RENDER_PARTICLE = False
         RenderOption.RENDER_FONT = False
         self.postprocess.is_render_motion_blur = False
         self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
@@ -576,6 +584,7 @@ class Renderer(Singleton):
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
+        RenderOption.RENDER_PARTICLE = old_render_particle
         RenderOption.RENDER_FONT = old_render_font
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing
