@@ -162,6 +162,7 @@ class CoreManager(Singleton):
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.renderer.resizeScene(width, height)
+        self.particle_manager.initialize(self)
         self.scene_manager.initialize(self)
 
         main_script = self.script_manager = self.resource_manager.get_script('main')

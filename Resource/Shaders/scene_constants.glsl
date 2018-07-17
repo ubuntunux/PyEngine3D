@@ -51,6 +51,16 @@ layout(std140, binding=4) uniform pointLightConstants
     POINT_LIGHT POINT_LIGHTS[MAX_POINT_LIGHTS];
 };
 
+layout(std140, binding=5) uniform emitter_infos
+{
+    float emitter_delay;
+    float emitter_life_time;
+    float emitter_play_speed;
+    float emitter_gravity;
+    float emitter_opacity;
+    vec3 emitter_velocity;
+};
+
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
 const float SHADOW_BIAS = -0.0001;

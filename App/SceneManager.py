@@ -46,8 +46,10 @@ class SceneManager(Singleton):
         # render group
         self.max_point_lights = 10
         self.point_light_count = 0
-        self.point_light_uniform_blocks = np.zeros(8 * self.max_point_lights, dtype=np.float32).reshape(
-            self.max_point_lights, 8)
+        self.point_light_uniform_blocks = np.zeros(self.max_point_lights, dtype=[('color', 'f', 3),
+                                                                                 ('radius', 'f', 1),
+                                                                                 ('pos', 'f', 3),
+                                                                                 ('render', 'f', 1)])
 
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
@@ -444,10 +446,10 @@ class SceneManager(Singleton):
             else:
                 # pass culling
                 point_light_uniform_block = self.point_light_uniform_blocks[self.point_light_count]
-                point_light_uniform_block[0:3][...] = point_light.light_color  # color
-                point_light_uniform_block[3] = point_light.light_radius  # radius
-                point_light_uniform_block[4:7][...] = point_light.transform.pos  # pos
-                point_light_uniform_block[7] = 1.0  # render
+                point_light_uniform_block['color'] = point_light.light_color
+                point_light_uniform_block['radius'] = point_light.light_radius
+                point_light_uniform_block['pos'] = point_light.transform.pos
+                point_light_uniform_block['render'] = 1.0
                 self.point_light_count += 1
             if self.max_point_lights <= self.point_light_count:
                 break

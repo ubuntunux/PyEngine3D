@@ -58,6 +58,7 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
         self.uniformPointLightConstants = None
+        self.uniform_emitter_infos = None
 
         # material instances
         self.scene_constants_material = None
@@ -99,34 +100,26 @@ class Renderer(Singleton):
         program = self.scene_constants_material.get_program()
 
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
-                                                  [FLOAT4_ZERO,
-                                                   FLOAT2_ZERO,
-                                                   FLOAT2_ZERO])
+                                                  FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
+                                                  FLOAT2_ZERO, FLOAT2_ZERO)
 
         self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
-                                                  [MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY,
-                                                   FLOAT4_ZERO,
-                                                   FLOAT2_ZERO,
-                                                   FLOAT2_ZERO,
-                                                   FLOAT2_ZERO])
+                                                 MATRIX4_IDENTITY, MATRIX4_IDENTITY, MATRIX4_IDENTITY, MATRIX4_IDENTITY,
+                                                 MATRIX4_IDENTITY, MATRIX4_IDENTITY, FLOAT3_ZERO, FLOAT_ZERO,
+                                                 FLOAT2_ZERO, FLOAT2_ZERO, FLOAT2_ZERO)
 
-        self.uniformViewProjection = UniformBlock("viewProjection", program, 2,
-                                                  [MATRIX4_IDENTITY,
-                                                   MATRIX4_IDENTITY])
+        self.uniformViewProjection = UniformBlock("viewProjection", program, 2, MATRIX4_IDENTITY, MATRIX4_IDENTITY)
 
         self.uniformLightConstants = UniformBlock("lightConstants", program, 3,
-                                                  [FLOAT4_ZERO,
-                                                   FLOAT4_ZERO,
-                                                   FLOAT4_ZERO,
-                                                   MATRIX4_IDENTITY])
+                                                  FLOAT3_ZERO, FLOAT_ZERO, FLOAT3_ZERO, FLOAT_ZERO,
+                                                  FLOAT4_ZERO, MATRIX4_IDENTITY)
 
         self.uniformPointLightConstants = UniformBlock("pointLightConstants", program, 4,
-                                                       [self.scene_manager.point_light_uniform_blocks, ])
+                                                       self.scene_manager.point_light_uniform_blocks)
+
+        self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
+                                                  FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
+                                                  FLOAT_ZERO, FLOAT3_ZERO)
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -228,14 +221,14 @@ class Renderer(Singleton):
         if not camera or not main_light:
             return
 
-        self.uniformSceneConstants.bind_uniform_block(
-            Float4(self.core_manager.currentTime,
-                   self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0,
-                   self.postprocess.is_render_ssr,
-                   self.postprocess.is_render_ssao),
-            Float2(RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height),
-            self.core_manager.get_mouse_pos(),
-        )
+        frame_count = self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0
+        self.uniformSceneConstants.bind_uniform_block(self.core_manager.currentTime,
+                                                      frame_count,
+                                                      1.0 if self.postprocess.is_render_ssr else 0.0,
+                                                      1.0 if self.postprocess.is_render_ssao else 0.0,
+                                                      Float2(RenderTargets.BACKBUFFER.width,
+                                                             RenderTargets.BACKBUFFER.height),
+                                                      self.core_manager.get_mouse_pos())
 
         self.uniformViewConstants.bind_uniform_block(camera.view,
                                                      np.linalg.inv(camera.view),
@@ -248,15 +241,12 @@ class Renderer(Singleton):
                                                      self.postprocess.jitter_delta,
                                                      self.postprocess.jitter)
 
-        # light.transform.set_pos((math.sin(timeModule.time()) * 20.0, 0.0, math.cos(timeModule.time()) * 20.0))
-        self.uniformLightConstants.bind_uniform_block(
-            main_light.transform.get_pos(), FLOAT_ZERO,
-            main_light.transform.front, FLOAT_ZERO,
-            main_light.light_color,
-            main_light.shadow_view_projection
-        )
+        self.uniformLightConstants.bind_uniform_block(main_light.transform.get_pos(), FLOAT_ZERO,
+                                                      main_light.transform.front, FLOAT_ZERO,
+                                                      main_light.light_color,
+                                                      main_light.shadow_view_projection)
 
-        self.uniformPointLightConstants.bind_uniform_block(self.scene_manager.point_light_uniform_blocks, )
+        self.uniformPointLightConstants.bind_uniform_block(self.scene_manager.point_light_uniform_blocks)
 
     def renderScene(self):
         startTime = timeModule.perf_counter()

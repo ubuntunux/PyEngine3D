@@ -8,7 +8,7 @@ from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
-from OpenGLContext import InstanceBuffer, ShaderStorageBuffer
+from OpenGLContext import InstanceBuffer, ShaderStorageBuffer, UniformBlock
 from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
@@ -21,6 +21,12 @@ class ParticleManager(Singleton):
         self.particles = []
         self.active_particles = []
         self.render_particles = []
+        self.core_manager = None
+        self.uniform_emitter_infos = None
+
+    def initialize(self, core_manager):
+        self.core_manager = core_manager
+        self.uniform_emitter_infos = core_manager.renderer.uniform_emitter_infos
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
@@ -84,7 +90,6 @@ class ParticleManager(Singleton):
                 material_instance.use_program()
                 material_instance.bind_material_instance()
                 material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
-
                 material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
                 material_instance.bind_uniform_data('billboard', emitter_info.billboard)
                 material_instance.bind_uniform_data('color', emitter_info.color)
@@ -94,21 +99,26 @@ class ParticleManager(Singleton):
 
                 geometry = emitter_info.mesh.get_geometry()
 
-                draw_count = 0
-                for emitter in particle.emitters_group[i]:
-                    if emitter.is_renderable():
-                        emitter_info.instance_data_0[draw_count][...] = emitter.transform.matrix
-                        emitter_info.instance_data_1[draw_count][0:2] = emitter.sequence_uv
-                        emitter_info.instance_data_1[draw_count][2:4] = emitter.next_sequence_uv
-                        emitter_info.instance_data_2[draw_count][0] = emitter.sequence_ratio
-                        emitter_info.instance_data_2[draw_count][1] = emitter.final_opacity
-                        draw_count += 1
+                # GPU Particle
+                if emitter_info.gpu_particle:
+                    pass
+                else:
+                    # CPU Particle
+                    draw_count = 0
+                    for emitter in particle.emitters_group[i]:
+                        if emitter.is_renderable():
+                            emitter_info.model_data[draw_count][...] = emitter.transform.matrix
+                            emitter_info.uvs_data[draw_count][0:2] = emitter.sequence_uv
+                            emitter_info.uvs_data[draw_count][2:4] = emitter.next_sequence_uv
+                            emitter_info.sequence_opacity_data[draw_count][0] = emitter.sequence_ratio
+                            emitter_info.sequence_opacity_data[draw_count][1] = emitter.final_opacity
+                            draw_count += 1
 
-                if 0 < draw_count:
-                    emitter_info.instance_buffer.bind_instance_buffer(emitter_info.instance_data_0,
-                                                                      emitter_info.instance_data_1,
-                                                                      emitter_info.instance_data_2)
-                    geometry.draw_elements_instanced(draw_count)
+                    if 0 < draw_count:
+                        emitter_info.instance_buffer.bind_instance_buffer(emitter_info.model_data,
+                                                                          emitter_info.uvs_data,
+                                                                          emitter_info.sequence_opacity_data)
+                        geometry.draw_elements_instanced(draw_count)
 
     def view_frustum_culling_particle(self, camera, particle):
         to_particle = particle.transform.pos - camera.transform.pos
@@ -535,9 +545,9 @@ class EmitterInfo:
         self.instance_buffer = InstanceBuffer(name="instance_buffer",
                                               location_offset=5,
                                               element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
-        self.instance_data_0 = None
-        self.instance_data_1 = None
-        self.instance_data_2 = None
+        self.model_data = None
+        self.uvs_data = None
+        self.sequence_opacity_data = None
 
         self.attributes = Attributes()
 
@@ -545,9 +555,9 @@ class EmitterInfo:
 
     def set_spawn_count(self, spawn_count):
         self.spawn_count = spawn_count
-        self.instance_data_0 = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
-        self.instance_data_1 = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
-        self.instance_data_2 = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
+        self.model_data = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
+        self.uvs_data = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
+        self.sequence_opacity_data = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
 
     def get_save_data(self):
         save_data = dict(
