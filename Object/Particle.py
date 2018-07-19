@@ -23,10 +23,15 @@ class ParticleManager(Singleton):
         self.render_particles = []
         self.core_manager = None
         self.uniform_emitter_infos = None
+        self.emitter_instance_buffer = None
 
     def initialize(self, core_manager):
         self.core_manager = core_manager
-        self.uniform_emitter_infos = core_manager.renderer.uniform_emitter_infos
+        self.uniform_emitter_infos = self.core_manager.renderer.uniform_emitter_infos
+
+        self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
+                                                      location_offset=5,
+                                                      element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
@@ -101,7 +106,7 @@ class ParticleManager(Singleton):
 
                 # GPU Particle
                 if emitter_info.gpu_particle:
-                    pass
+                    self.uniform_emitter_infos.bind_uniform_block(datas=[])
                 else:
                     # CPU Particle
                     draw_count = 0
@@ -115,9 +120,9 @@ class ParticleManager(Singleton):
                             draw_count += 1
 
                     if 0 < draw_count:
-                        emitter_info.instance_buffer.bind_instance_buffer(emitter_info.model_data,
-                                                                          emitter_info.uvs_data,
-                                                                          emitter_info.sequence_opacity_data)
+                        self.emitter_instance_buffer.bind_instance_buffer(datas=[emitter_info.model_data,
+                                                                                 emitter_info.uvs_data,
+                                                                                 emitter_info.sequence_opacity_data])
                         geometry.draw_elements_instanced(draw_count)
 
     def view_frustum_culling_particle(self, camera, particle):
@@ -541,10 +546,6 @@ class EmitterInfo:
         self.scale = RangeVariable(
             **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
 
-        # instance data
-        self.instance_buffer = InstanceBuffer(name="instance_buffer",
-                                              location_offset=5,
-                                              element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
         self.model_data = None
         self.uvs_data = None
         self.sequence_opacity_data = None

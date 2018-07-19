@@ -7,17 +7,14 @@ from Common import logger
 
 
 class UniformBlock:
-    def __init__(self, buffer_name, program, binding, *datas):
-        """
-        :param datas: [np.array, ...] 16 bytes padding
-        """
+    def __init__(self, buffer_name, program, binding, datas):
         self.name = buffer_name
         self.program = program
         self.data = np.zeros(1, dtype=[('', data.dtype, data.shape) for data in datas])
         self.blockSize = self.data.nbytes
 
-        # if self.blockSize % 16 != 0:
-        #     raise BaseException("Uniform buffer block must start on a 16-byte padding.")
+        if self.blockSize % 16 != 0:
+            raise BaseException("Uniform buffer block must start on a 16-byte padding.")
 
         self.buffer_bind = binding
         self.buffer_index = glGetUniformBlockIndex(program, buffer_name)
@@ -31,12 +28,9 @@ class UniformBlock:
     def delete(self):
         glDeleteBuffers(1, self.buffer)
 
-    def bind_uniform_block(self, *datas):
+    def bind_uniform_block(self, datas):
         for i, data in enumerate(datas):
             self.data[0][i] = data
-
-        if self.data.nbytes != self.blockSize:
-            logger.error("Uniform buffer block must start on a 16-byte padding.")
 
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
         glBufferData(GL_UNIFORM_BUFFER, self.blockSize, self.data, GL_DYNAMIC_DRAW)

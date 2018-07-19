@@ -101,7 +101,7 @@ class FontManager(Singleton):
     def render_font(self, screen_width, screen_height):
         if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.instance_buffer.bind_instance_buffer(render_queue)
+            self.instance_buffer.bind_instance_buffer(datas=[render_queue])
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()
             self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)

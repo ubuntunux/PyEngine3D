@@ -91,17 +91,17 @@ class InstanceBuffer:
 
         self.instance_buffer = glGenBuffers(1)
 
-    def bind_instance_buffer(self, *instance_datas, divisor=1):
+    def bind_instance_buffer(self, datas, divisor=1):
         instance_buffer_size = 0
-        for instance_data in instance_datas:
-            instance_buffer_size += instance_data.nbytes
+        for data in datas:
+            instance_buffer_size += data.nbytes
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
         glBufferData(GL_ARRAY_BUFFER, instance_buffer_size, None, GL_DYNAMIC_DRAW)
 
         offset = 0
         location = self.location_offset
-        for i, instance_data in enumerate(instance_datas):
-            glBufferSubData(GL_ARRAY_BUFFER, offset, instance_data.nbytes, instance_data)
+        for i, data in enumerate(datas):
+            glBufferSubData(GL_ARRAY_BUFFER, offset, data.nbytes, data)
 
             divide_count = self.divide_counts[i]
             for j in range(divide_count):
@@ -116,7 +116,7 @@ class InstanceBuffer:
                 # divisor > 0, the attribute advances once per divisor instances of the set(s) of
                 # vertices being rendered.
                 glVertexAttribDivisor(location + j, divisor)
-            offset += instance_data.nbytes
+            offset += data.nbytes
             location += divide_count
 
 

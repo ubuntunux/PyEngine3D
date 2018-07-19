@@ -20,6 +20,7 @@ layout(std140, binding=1) uniform viewConstants
     vec2 NEAR_FAR;
     vec2 JITTER_DELTA;
     vec2 JITTER_OFFSET;
+    vec2 VIEWCONSTANTS_DUMMY0;
 };
 
 layout(std140, binding=2) uniform viewProjection
