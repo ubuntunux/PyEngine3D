@@ -86,6 +86,12 @@ class OpenGLContext:
             return GL_INT64
 
     @staticmethod
+    def get_depth_attachment(internal_format):
+        if internal_format in (GL_DEPTH_STENCIL, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8):
+            return GL_DEPTH_STENCIL_ATTACHMENT
+        return GL_DEPTH_ATTACHMENT
+
+    @staticmethod
     def end_render():
         OpenGLContext.last_vertex_array = -1
 

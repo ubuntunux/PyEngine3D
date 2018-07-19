@@ -70,11 +70,11 @@ class Ocean:
         self.fft_y = self.resource_manager.get_material_instance('fft_ocean.fft_y')
         self.fft_render = self.resource_manager.get_material_instance('fft_ocean.render')
         self.fft_variance = self.resource_manager.get_material_instance('fft_ocean.fft_variance')
-        
-        self.texture_spectrum_1_2 = self.resource_manager.get_texture("fft_ocean.spectrum_1_2")
-        self.texture_spectrum_3_4 = self.resource_manager.get_texture("fft_ocean.spectrum_3_4")
-        self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance")
-        self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly")
+
+        self.texture_spectrum_1_2 = self.resource_manager.get_texture("fft_ocean.spectrum_1_2", default_texture=False)
+        self.texture_spectrum_3_4 = self.resource_manager.get_texture("fft_ocean.spectrum_3_4", default_texture=False)
+        self.texture_slope_variance = self.resource_manager.get_texture("fft_ocean.slope_variance", default_texture=False)
+        self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly", default_texture=False)
 
         self.quad = ScreenQuad.get_vertex_array_buffer()
         self.fft_grid = self.resource_manager.get_mesh("FFT_Grid").get_geometry()

@@ -1576,8 +1576,13 @@ class ResourceManager(Singleton):
     def get_default_texture(self):
         return self.texture_loader.get_resource_data('common.flat_white')
 
-    def get_texture(self, texture_name):
-        return self.texture_loader.get_resource_data(texture_name) or self.get_default_texture()
+    def get_texture(self, texture_name, default_texture=True):
+        if default_texture:
+            return self.texture_loader.get_resource_data(texture_name) or self.get_default_texture()
+        return self.texture_loader.get_resource_data(texture_name)
+
+    def get_texture_or_none(self, texture_name):
+        return self.texture_loader.get_resource_data(texture_name)
 
     def get_model(self, model_name):
         return self.model_loader.get_resource_data(model_name)

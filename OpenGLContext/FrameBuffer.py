@@ -4,8 +4,7 @@ from OpenGL.GL import *
 
 from Utilities import GetClassName, Singleton
 from Common import logger
-
-from .RenderBuffer import RenderBuffer
+from OpenGLContext import OpenGLContext
 
 
 class FrameBuffer:
@@ -130,10 +129,7 @@ class FrameBuffer:
 
         # bind depth texture
         if self.depth_texture is not None:
-            if self.depth_texture.internal_format in (GL_DEPTH_STENCIL, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8):
-                attachment = GL_DEPTH_STENCIL_ATTACHMENT
-            else:
-                attachment = GL_DEPTH_ATTACHMENT
+            attachment = OpenGLContext.get_depth_attachment(self.depth_texture.internal_format)
             self.add_command(
                 self.func_bind_framebuffer, attachment, self.depth_texture.target, self.depth_texture.buffer)
         else:
@@ -169,12 +165,30 @@ class FrameBuffer:
     def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
+
+        if GL_COLOR_BUFFER_BIT == target:
+            glDrawBuffers(1, (GL_COLOR_ATTACHMENT0,))
+            glReadBuffer(GL_COLOR_ATTACHMENT0)
+        elif GL_DEPTH_BUFFER_BIT == target and src.depth_texture is not None:
+            attachment = OpenGLContext.get_depth_attachment(src.depth_texture.internal_format)
+            glDrawBuffers(1, (attachment, ))
+            glReadBuffer(attachment)
+
         glBlitFramebuffer(0, 0, src.viewport_width, src.viewport_height,
                           0, 0, self.viewport_width, self.viewport_height, target, filter_type)
 
     def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
+
+        if GL_COLOR_BUFFER_BIT == target:
+            glDrawBuffers(1, (GL_COLOR_ATTACHMENT0,))
+            glReadBuffer(GL_COLOR_ATTACHMENT0)
+        elif GL_DEPTH_BUFFER_BIT == target and src.depth_texture is not None:
+            attachment = OpenGLContext.get_depth_attachment(src.depth_texture.internal_format)
+            glDrawBuffers(1, (attachment, ))
+            glReadBuffer(attachment)
+
         glBlitFramebuffer(src.viewport_width, 0, 0, src.viewport_height,
                           0, 0, self.viewport_width, self.viewport_height, target, filter_type)
 
