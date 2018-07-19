@@ -463,7 +463,7 @@ class Texture2DMultiSample(Texture):
 
 class TextureCube(Texture):
     target = GL_TEXTURE_CUBE_MAP
-    default_wrap = GL_CLAMP_TO_EDGE
+    default_wrap = GL_REPEAT
 
     def __init__(self, **texture_data):
         Texture.__init__(self, **texture_data)

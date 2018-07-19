@@ -120,8 +120,8 @@ class Renderer(Singleton):
                                                        datas=[self.scene_manager.point_light_uniform_blocks])
 
         self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
-                                                  datas=[FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
-                                                         FLOAT_ZERO, FLOAT3_ZERO])
+                                                  datas=[FLOAT2_ZERO, FLOAT2_ZERO, FLOAT2_ZERO, FLOAT2_ZERO,
+                                                         FLOAT2_ZERO, FLOAT3_ZERO, FLOAT3_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)

@@ -54,12 +54,13 @@ layout(std140, binding=4) uniform pointLightConstants
 
 layout(std140, binding=5) uniform emitter_infos
 {
-    float emitter_delay;
-    float emitter_life_time;
-    float emitter_play_speed;
-    float emitter_gravity;
-    float emitter_opacity;
-    vec3 emitter_velocity;
+    vec2 emitter_delay;
+    vec2 emitter_life_time;
+    vec2 emitter_play_speed;
+    vec2 emitter_gravity;
+    vec2 emitter_opacity;
+    vec3 emitter_velocity_min;
+    vec3 emitter_velocity_max;
 };
 
 const int MAX_BONES_PER_VERTEX = 4;

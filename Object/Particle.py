@@ -104,9 +104,16 @@ class ParticleManager(Singleton):
 
                 geometry = emitter_info.mesh.get_geometry()
 
-                # GPU Particle
                 if emitter_info.gpu_particle:
-                    self.uniform_emitter_infos.bind_uniform_block(datas=[])
+                    # GPU Particle
+                    self.uniform_emitter_infos.bind_uniform_block(datas=[
+                        Float2(emitter_info.delay.min_value, emitter_info.delay.max_value),
+                        Float2(emitter_info.life_time.min_value, emitter_info.life_time.max_value),
+                        Float2(emitter_info.emitter_play_speed.min_value, emitter_info.emitter_play_speed.max_value),
+                        Float2(emitter_info.gravity.min_value, emitter_info.gravity.max_value),
+                        Float2(emitter_info.opacity.min_value, emitter_info.opacity.max_value),
+                        emitter_info.velocity.min_value, emitter_info.velocity.max_value,
+                    ])
                 else:
                     # CPU Particle
                     draw_count = 0
@@ -155,22 +162,17 @@ class GPUParticle:
         self.material_instance = resource_manager.get_material_instance('fx.gpu_particle')
         self.gpu_update = resource_manager.get_material_instance('fx.gpu_update')
 
-        self.data = np.array([[0.0, 0.0, 0.0], ] * 100, dtype=np.float32)
+        self.data = np.zeros(100, dtype=(np.float32, 3))
         for i, data in enumerate(self.data):
             data[...] = [i, i, i]
 
-        self.buffer = ShaderStorageBuffer('test', 0, self.data)
+        self.buffer = ShaderStorageBuffer('test', 0, datas=[self.data])
 
-        self.data2 = np.array([([0.0, 1.0, 0.0, 0.0],
-                                [0, 255, 255, 0]), ] * 100,
-                              dtype=[('color', '4float32'),
-                                     ('color2', '4uint32')])
-        for i in range(len(self.data2['color2'])):
-            self.data2['color2'][i][0] = i * 2
-            self.data2['color2'][i][1] = i * 2
-            self.data2['color2'][i][2] = i * 2
+        self.data2 = np.zeros(100, dtype=[('color', np.float32, 4), ('color2', np.uint32, 4)])
+        for i in range(len(self.data2)):
+            self.data2[i]['color2'][...] = [i * 2, i * 2, i * 2, i * 2]
 
-        self.buffer2 = ShaderStorageBuffer('test2', 1, [self.data2, ])
+        self.buffer2 = ShaderStorageBuffer('test2', 1, datas=[self.data2])
 
     def render(self):
         self.gpu_update.use_program()
@@ -556,9 +558,9 @@ class EmitterInfo:
 
     def set_spawn_count(self, spawn_count):
         self.spawn_count = spawn_count
-        self.model_data = np.array([MATRIX4_IDENTITY, ] * self.spawn_count, dtype=np.float32)
-        self.uvs_data = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
-        self.sequence_opacity_data = np.array([FLOAT4_ZERO, ] * self.spawn_count, dtype=np.float32)
+        self.model_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
+        self.uvs_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
+        self.sequence_opacity_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
 
     def get_save_data(self):
         save_data = dict(

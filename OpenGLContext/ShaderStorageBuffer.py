@@ -22,7 +22,7 @@ class ShaderStorageBuffer:
     def set_buffer_data(self, datas):
         size_of_data = sum([data.nbytes for data in datas])
         if 0 < size_of_data:
-            glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_STATIC_DRAW)
+            glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_DYNAMIC_DRAW)
 
             offset = 0
             for data in datas:
