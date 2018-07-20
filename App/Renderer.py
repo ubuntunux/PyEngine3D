@@ -101,7 +101,7 @@ class Renderer(Singleton):
 
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   datas=[FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
-                                                         FLOAT2_ZERO, FLOAT2_ZERO])
+                                                         FLOAT2_ZERO, FLOAT2_ZERO, FLOAT3_ZERO, FLOAT_ZERO])
 
         self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
                                                  datas=[MATRIX4_IDENTITY, MATRIX4_IDENTITY, MATRIX4_IDENTITY,
@@ -121,7 +121,7 @@ class Renderer(Singleton):
 
         self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
                                                   datas=[FLOAT2_ZERO, FLOAT2_ZERO, FLOAT2_ZERO, FLOAT2_ZERO,
-                                                         FLOAT2_ZERO, FLOAT3_ZERO, FLOAT3_ZERO])
+                                                         FLOAT3_ZERO, FLOAT_ZERO, FLOAT3_ZERO, FLOAT_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -230,7 +230,8 @@ class Renderer(Singleton):
                                                              1.0 if self.postprocess.is_render_ssao else 0.0,
                                                              Float2(RenderTargets.BACKBUFFER.width,
                                                                     RenderTargets.BACKBUFFER.height),
-                                                             self.core_manager.get_mouse_pos()])
+                                                             self.core_manager.get_mouse_pos(),
+                                                             FLOAT3_ZERO, self.core_manager.delta])
 
         self.uniformViewConstants.bind_uniform_block(datas=[camera.view,
                                                             np.linalg.inv(camera.view),

@@ -9,14 +9,8 @@ struct VERTEX_OUTPUT
     vec2 uv;
 };
 
-struct TEST
-{
-    vec4 test_color;
-    ivec4 test_color2;
-};
 
-layout(std430, binding=0) buffer InputPos { vec3 pos[]; };
-layout(std430, binding=1) buffer InputPos2 { TEST test_value[]; };
+layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; };
 
 #ifdef GL_VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -35,13 +29,13 @@ void main() {
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;
-    world_position.xyz += pos[gl_InstanceID];
+    world_position.xyz += emitter_datas[gl_InstanceID.x].position.xyz;
     vs_output.world_position = world_position.xyz;
     vs_output.uv = vs_in_tex_coord;
 
     if(true)
     {
-        vs_output.color = vec3(test_value[gl_InstanceID].test_color2.xyz) / 255.0;
+        vs_output.color = vec3(1.0);
     }
 
     gl_Position = VIEW_PROJECTION * world_position;

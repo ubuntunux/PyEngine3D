@@ -25,6 +25,9 @@ class ParticleManager(Singleton):
         self.uniform_emitter_infos = None
         self.emitter_instance_buffer = None
 
+        self.gpu_particle = None
+        self.gpu_material_instance = False
+
     def initialize(self, core_manager):
         self.core_manager = core_manager
         self.uniform_emitter_infos = self.core_manager.renderer.uniform_emitter_infos
@@ -32,6 +35,7 @@ class ParticleManager(Singleton):
         self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
                                                       location_offset=5,
                                                       element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
+        self.gpu_particle = GPUParticle()
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
@@ -68,9 +72,9 @@ class ParticleManager(Singleton):
                 self.play_particle(particle)
 
     def render(self):
-        if not hasattr(self, 'gpu_particle'):
-            self.gpu_particle = GPUParticle()
-        self.gpu_particle.render()
+        if not self.gpu_material_instance:
+            self.core_manager.scene_manager.add_particle(name='gpu_particle', particle_info='gpu_particle')
+            self.gpu_material_instance = True
 
         for particle in self.render_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
@@ -106,14 +110,13 @@ class ParticleManager(Singleton):
 
                 if emitter_info.gpu_particle:
                     # GPU Particle
-                    self.uniform_emitter_infos.bind_uniform_block(datas=[
-                        Float2(emitter_info.delay.min_value, emitter_info.delay.max_value),
-                        Float2(emitter_info.life_time.min_value, emitter_info.life_time.max_value),
-                        Float2(emitter_info.emitter_play_speed.min_value, emitter_info.emitter_play_speed.max_value),
-                        Float2(emitter_info.gravity.min_value, emitter_info.gravity.max_value),
-                        Float2(emitter_info.opacity.min_value, emitter_info.opacity.max_value),
-                        emitter_info.velocity.min_value, emitter_info.velocity.max_value,
-                    ])
+                    self.uniform_emitter_infos.bind_uniform_block(datas=[emitter_info.delay.value,
+                                                                         emitter_info.life_time.value,
+                                                                         emitter_info.gravity.value,
+                                                                         emitter_info.opacity.value,
+                                                                         emitter_info.velocity.value[0], FLOAT_ZERO,
+                                                                         emitter_info.velocity.value[1], FLOAT_ZERO])
+                    self.gpu_particle.render(emitter_info)
                 else:
                     # CPU Particle
                     draw_count = 0
@@ -162,23 +165,20 @@ class GPUParticle:
         self.material_instance = resource_manager.get_material_instance('fx.gpu_particle')
         self.gpu_update = resource_manager.get_material_instance('fx.gpu_update')
 
-        self.data = np.zeros(100, dtype=(np.float32, 3))
-        for i, data in enumerate(self.data):
-            data[...] = [i, i, i]
+        self.data = np.zeros(100, dtype=[('delay', np.float32),
+                                         ('life_time', np.float32),
+                                         ('gravity', np.float32),
+                                         ('opacity', np.float32),
+                                         ('velocity', np.float32, 3),
+                                         ('alive', np.int32),
+                                         ('position', np.float32, 3),
+                                         ('dummy_0', np.float32), ])
 
-        self.buffer = ShaderStorageBuffer('test', 0, datas=[self.data])
+        self.buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.data])
 
-        self.data2 = np.zeros(100, dtype=[('color', np.float32, 4), ('color2', np.uint32, 4)])
-        for i in range(len(self.data2)):
-            self.data2[i]['color2'][...] = [i * 2, i * 2, i * 2, i * 2]
-
-        self.buffer2 = ShaderStorageBuffer('test2', 1, datas=[self.data2])
-
-    def render(self):
+    def render(self, emitter_info):
         self.gpu_update.use_program()
-        self.gpu_update.bind_uniform_data('time', math.fmod(time.time(), 1.0))
         self.buffer.bind_storage_buffer()
-        self.buffer2.bind_storage_buffer()
         glDispatchCompute(len(self.data), 1, 1)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 
@@ -189,7 +189,6 @@ class GPUParticle:
         self.material_instance.use_program()
         self.material_instance.bind_material_instance()
         self.buffer.bind_storage_buffer()
-        self.buffer2.bind_storage_buffer()
         self.material_instance.bind_uniform_data('particle_matrix', MATRIX4_IDENTITY)
 
         geometry = self.mesh.get_geometry()
@@ -481,9 +480,9 @@ class ParticleInfo:
                     emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
                 elif isinstance(emitter_attribute, RangeVariable):
                     if 'min_value' == attribute_name:
-                        emitter_attribute.set_range(attribute_value, emitter_attribute.max_value)
+                        emitter_attribute.set_range(attribute_value, emitter_attribute.value[1])
                     elif 'max_value' == attribute_name:
-                        emitter_attribute.set_range(emitter_attribute.min_value, attribute_value)
+                        emitter_attribute.set_range(emitter_attribute.value[0], attribute_value)
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
         # refresh
@@ -569,6 +568,7 @@ class EmitterInfo:
             spawn_count=self.spawn_count,
             billboard=self.billboard,
             color=self.color,
+            gpu_particle=self.gpu_particle,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
             texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',

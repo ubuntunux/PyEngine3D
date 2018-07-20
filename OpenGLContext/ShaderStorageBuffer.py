@@ -22,6 +22,10 @@ class ShaderStorageBuffer:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
 
         size_of_data = sum([data.nbytes for data in datas])
+        
+        if size_of_data % 16 != 0:
+            raise BaseException("Shader storage buffer block must start on a 16-byte padding.")
+        
         if 0 < size_of_data:
             glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_DYNAMIC_COPY)
 

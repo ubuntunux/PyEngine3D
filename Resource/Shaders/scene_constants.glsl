@@ -6,6 +6,8 @@ layout(std140, binding=0) uniform sceneConstants
     float RENDER_SSAO;
     vec2 BACKBUFFER_SIZE;
     vec2 MOUSE_POS;
+    vec3 SCENECONSTANTS_DUMMY_0;
+    float DELTA_TIME;
 };
 
 layout(std140, binding=1) uniform viewConstants
@@ -56,12 +58,26 @@ layout(std140, binding=5) uniform emitter_infos
 {
     vec2 emitter_delay;
     vec2 emitter_life_time;
-    vec2 emitter_play_speed;
     vec2 emitter_gravity;
     vec2 emitter_opacity;
     vec3 emitter_velocity_min;
+    float emitter_dummy_0;
     vec3 emitter_velocity_max;
+    float emitter_dummy_1;
 };
+
+struct EmitterData
+{
+    float delay;
+    float life_time;
+    float gravity;
+    float opacity;
+    vec3 velocity;
+    int alive;
+    vec3 position;
+    float dummy_0;
+};
+
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
