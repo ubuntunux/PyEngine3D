@@ -58,12 +58,10 @@ layout(std140, binding=5) uniform emitter_infos
 {
     vec2 emitter_delay;
     vec2 emitter_life_time;
-    vec2 emitter_gravity;
-    vec2 emitter_opacity;
     vec3 emitter_velocity_min;
-    float emitter_dummy_0;
+    float emitter_gravity;
     vec3 emitter_velocity_max;
-    float emitter_dummy_1;
+    float emitter_opacity;
 };
 
 struct EmitterData

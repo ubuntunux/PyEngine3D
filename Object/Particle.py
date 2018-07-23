@@ -112,10 +112,10 @@ class ParticleManager(Singleton):
                     # GPU Particle
                     self.uniform_emitter_infos.bind_uniform_block(datas=[emitter_info.delay.value,
                                                                          emitter_info.life_time.value,
-                                                                         emitter_info.gravity.value,
-                                                                         emitter_info.opacity.value,
-                                                                         emitter_info.velocity.value[0], FLOAT_ZERO,
-                                                                         emitter_info.velocity.value[1], FLOAT_ZERO])
+                                                                         emitter_info.velocity.value[0],
+                                                                         emitter_info.gravity,
+                                                                         emitter_info.velocity.value[1],
+                                                                         emitter_info.opacity])
                     self.gpu_particle.render(emitter_info)
                 else:
                     # CPU Particle
@@ -297,9 +297,6 @@ class Emitter:
 
         self.delay = 0.0
         self.life_time = 0.0
-        self.play_speed = 0.0
-        self.gravity = 0.0
-        self.opacity = 1.0
         self.velocity = Float3()
         self.rotation_velocity = Float3()
         self.scale_velocity = Float3()
@@ -315,9 +312,6 @@ class Emitter:
         
         self.delay = self.emitter_info.delay.get_value()
         self.life_time = self.emitter_info.life_time.get_value()
-        self.play_speed = self.emitter_info.play_speed.get_value()
-        self.gravity = self.emitter_info.gravity.get_value()
-        self.opacity = self.emitter_info.opacity.get_value()
         self.velocity[...] = self.emitter_info.velocity.get_value()
         self.rotation_velocity[...] = self.emitter_info.rotation_velocity.get_value()
         self.scale_velocity[...] = self.emitter_info.scale_velocity.get_value()
@@ -329,7 +323,7 @@ class Emitter:
         self.has_velocity = any([v != 0.0 for v in self.velocity])
         self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
         self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
-        self.final_opacity = self.opacity
+        self.final_opacity = self.emitter_info.opacity
 
     def play(self):
         self.refresh()
@@ -352,8 +346,8 @@ class Emitter:
         return self.alive and (0.0 == self.delay)
 
     def update_sequence(self, life_ratio):
-        if 1 < self.total_cell_count and 0 < self.play_speed:
-            ratio = life_ratio * self.play_speed
+        if 1 < self.total_cell_count and 0 < self.emitter_info.play_speed:
+            ratio = life_ratio * self.emitter_info.play_speed
             ratio = self.total_cell_count * (ratio - math.floor(ratio))
             index = math.floor(ratio)
             next_index = (index + 1) % self.total_cell_count
@@ -401,8 +395,8 @@ class Emitter:
 
         self.update_sequence(life_ratio)
 
-        if 0.0 != self.gravity:
-            self.velocity[1] -= self.gravity * dt
+        if 0.0 != self.emitter_info.gravity:
+            self.velocity[1] -= self.emitter_info.gravity * dt
 
         # update transform
         if self.has_velocity:
@@ -419,7 +413,7 @@ class Emitter:
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
             fade_in = math.pow(life_ratio, self.emitter_info.fade_in)
             fade_out = math.pow(1.0 - life_ratio, self.emitter_info.fade_out)
-            self.final_opacity = (fade_in * (1.0 - life_ratio) + fade_out * life_ratio) * self.opacity
+            self.final_opacity = (fade_in * (1.0 - life_ratio) + fade_out * life_ratio) * self.emitter_info.opacity
 
 
 class ParticleInfo:
@@ -512,6 +506,9 @@ class EmitterInfo:
         self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
         self.color = emitter_info.get('color', Float3(1.0, 1.0, 1.0))
+        self.play_speed = emitter_info.get('play_speed', 0.0)
+        self.gravity = emitter_info.get('gravity', 0.0)
+        self.opacity = emitter_info.get('opacity', 1.0)
         self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
         self.fade_out = emitter_info.get('fade_out', 0.0)
 
@@ -531,9 +528,6 @@ class EmitterInfo:
         # variance
         self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
         self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=1.0, max_value=5.0)))
-        self.play_speed = RangeVariable(**emitter_info.get('play_speed', dict(min_value=0.0, max_value=0.0)))
-        self.gravity = RangeVariable(**emitter_info.get('gravity', dict(min_value=0.0, max_value=0.0)))
-        self.opacity = RangeVariable(**emitter_info.get('opacity', dict(min_value=1.0, max_value=1.0)))
         self.velocity = RangeVariable(
             **emitter_info.get('velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
         self.rotation_velocity = RangeVariable(
@@ -572,15 +566,15 @@ class EmitterInfo:
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
             texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',
+            play_speed=self.play_speed,
+            gravity=self.gravity,
+            opacity=self.opacity,
             fade_in=self.fade_in,
             fade_out=self.fade_out,
             loop=self.loop,
             cell_count=self.cell_count,
             delay=self.delay.get_save_data(),
             life_time=self.life_time.get_save_data(),
-            play_speed=self.play_speed.get_save_data(),
-            gravity=self.gravity.get_save_data(),
-            opacity=self.opacity.get_save_data(),
             velocity=self.velocity.get_save_data(),
             rotation_velocity=self.rotation_velocity.get_save_data(),
             scale_velocity=self.scale_velocity.get_save_data(),

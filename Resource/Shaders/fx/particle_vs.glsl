@@ -46,10 +46,16 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = billboard ? particle_matrix * INV_VIEW_ORIGIN * model : particle_matrix * model;
+    mat4 local_matrix = model;
+    vec3 local_position = local_matrix[3].xyz;
+    local_matrix[3].xyz = vec3(0.0);
+
+    mat4 world_matrix = billboard ? particle_matrix * INV_VIEW_ORIGIN * local_matrix : particle_matrix * local_matrix;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;
+    world_position.xyz += local_position.xyz;
+
     vs_output.world_position = world_position.xyz;
     vs_output.vertex_normal = vertex_normal;
     vs_output.vertex_color = vs_in_color;
