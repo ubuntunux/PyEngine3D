@@ -1,14 +1,23 @@
 #include "scene_constants.glsl"
 
+uniform sampler2D texture_diffuse;
+
+uniform bool billboard;
+uniform vec3 color;
+uniform int blend_mode;
 uniform mat4 particle_matrix;
+uniform float sequence_width;
+uniform float sequence_height;
+
 
 struct VERTEX_OUTPUT
 {
     vec3 world_position;
-    vec3 color;
     vec2 uv;
+    vec2 next_uv;
+    float sequence_ratio;
+    float opacity;
 };
-
 
 layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; };
 
@@ -32,11 +41,9 @@ void main() {
     world_position.xyz += emitter_datas[gl_InstanceID.x].position.xyz;
     vs_output.world_position = world_position.xyz;
     vs_output.uv = vs_in_tex_coord;
-
-    if(true)
-    {
-        vs_output.color = vec3(1.0);
-    }
+    vs_output.next_uv = vs_in_tex_coord;
+    vs_output.sequence_ratio = 1.0;
+    vs_output.opacity = 1.0;
 
     gl_Position = VIEW_PROJECTION * world_position;
 }

@@ -122,6 +122,8 @@ class Renderer(Singleton):
         self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
                                                   datas=[FLOAT2_ZERO, FLOAT2_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO])
 
         # set gl hint

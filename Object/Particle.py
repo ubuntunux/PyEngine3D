@@ -115,7 +115,11 @@ class ParticleManager(Singleton):
                                                                          emitter_info.velocity.value[0],
                                                                          emitter_info.gravity,
                                                                          emitter_info.velocity.value[1],
-                                                                         emitter_info.opacity])
+                                                                         emitter_info.opacity,
+                                                                         emitter_info.position.value[0],
+                                                                         0.0,
+                                                                         emitter_info.position.value[1],
+                                                                         0.0])
                     self.gpu_particle.render(emitter_info)
                 else:
                     # CPU Particle

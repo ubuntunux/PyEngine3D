@@ -62,6 +62,10 @@ layout(std140, binding=5) uniform emitter_infos
     float emitter_gravity;
     vec3 emitter_velocity_max;
     float emitter_opacity;
+    vec3 emitter_position_min;
+    float emitter_dummy_0;
+    vec3 emitter_position_max;
+    float emitter_dummy_1;
 };
 
 struct EmitterData
@@ -75,6 +79,12 @@ struct EmitterData
     vec3 position;
     float dummy_0;
 };
+
+// referene : RenderOptions.py
+#define BLEND 0
+#define ADDITIVE 1
+#define MULTIPLY 2
+#define SUBTRACT 3
 
 
 const int MAX_BONES_PER_VERTEX = 4;

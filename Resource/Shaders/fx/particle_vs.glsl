@@ -1,11 +1,5 @@
 #include "scene_constants.glsl"
 
-// referene : RenderOptions.py
-#define BLEND 0
-#define ADDITIVE 1
-#define MULTIPLY 2
-#define SUBTRACT 3
-
 uniform sampler2D texture_diffuse;
 
 uniform bool billboard;
