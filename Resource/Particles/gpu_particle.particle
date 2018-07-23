@@ -21,5 +21,5 @@
                     'scale_velocity': {'max_value': [0.0, 0.0, 0.0], 'min_value': [0.0, 0.0, 0.0]},
                     'spawn_count': 1,
                     'texture_diffuse': 'common.flat_white',
-                    'velocity': {'max_value': [3.0, 3.0, 3.0], 'min_value': [3.0, 3.0, 3.0]}}],
+                    'velocity': {'max_value': [3.0, 3.0, 3.0], 'min_value': [-3.0, -3.0, -3.0]}}],
  'radius': 1.0}

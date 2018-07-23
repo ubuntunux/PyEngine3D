@@ -24,6 +24,6 @@ class RangeVariable:
     def get_save_data(self):
         save_data = dict(
             min_value=self.value[0].tolist(),
-            max_value=self.value[0].tolist()
+            max_value=self.value[1].tolist()
         )
         return save_data
