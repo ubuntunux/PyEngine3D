@@ -31,19 +31,31 @@ layout (location = 4) in vec2 vs_in_tex_coord;
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
-void main() {
+void main()
+{
+    uint id = gl_InstanceID.x;
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
     mat4 world_matrix = particle_matrix * INV_VIEW_ORIGIN;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;
-    world_position.xyz += emitter_datas[gl_InstanceID.x].position.xyz;
+    world_position.xyz += emitter_datas[id].position.xyz;
     vs_output.world_position = world_position.xyz;
-    vs_output.uv = vs_in_tex_coord;
-    vs_output.next_uv = vs_in_tex_coord;
-    vs_output.sequence_ratio = 1.0;
-    vs_output.opacity = 1.0;
+
+    vec2 uv_size = vs_in_tex_coord.xy / vec2(EMITTER_CELL_COUNT);
+    vs_output.uv = emitter_datas[id].sequence_uv + uv_size;
+    vs_output.next_uv = emitter_datas[id].next_sequence_uv + uv_size;
+    vs_output.sequence_ratio = emitter_datas[id].sequence_ratio;
+
+    if(EMITTER_STATE_ALIVE == emitter_datas[id].state)
+    {
+        vs_output.opacity = emitter_datas[id].opacity;
+    }
+    else
+    {
+        vs_output.opacity = 0.0;
+    }
 
     gl_Position = VIEW_PROJECTION * world_position;
 }

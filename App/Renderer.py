@@ -124,7 +124,8 @@ class Renderer(Singleton):
                                                          FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
-                                                         FLOAT3_ZERO, FLOAT_ZERO])
+                                                         FLOAT3_ZERO, INT_ZERO,
+                                                         INT2_ZERO, INT_ZERO, INT_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)

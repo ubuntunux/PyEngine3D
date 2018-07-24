@@ -56,16 +56,19 @@ layout(std140, binding=4) uniform pointLightConstants
 
 layout(std140, binding=5) uniform emitter_infos
 {
-    vec2 emitter_delay;
-    vec2 emitter_life_time;
-    vec3 emitter_velocity_min;
-    float emitter_gravity;
-    vec3 emitter_velocity_max;
-    float emitter_opacity;
-    vec3 emitter_position_min;
-    float emitter_dummy_0;
-    vec3 emitter_position_max;
-    float emitter_dummy_1;
+    vec2 EMITTER_DELAY;
+    vec2 EMITTER_LIFE_TIME;
+    vec3 EMITTER_VELOCITY_MIN;
+    float EMITTER_GRAVITY;
+    vec3 EMITTER_VELOCITY_MAX;
+    float EMITTER_OPACITY;
+    vec3 EMITTER_POSITION_MIN;
+    float EMITTER_PLAY_SPEED;
+    vec3 EMITTER_POSITION_MAX;
+    int EMITTER_TOTAL_CELL_COUNT;
+    ivec2 EMITTER_CELL_COUNT;
+    int EMITTER_LOOP;
+    int EMITTER_DUMMY_0;
 };
 
 struct EmitterData
@@ -75,17 +78,26 @@ struct EmitterData
     float gravity;
     float opacity;
     vec3 velocity;
-    int alive;
+    int state;
     vec3 position;
-    float dummy_0;
+    float sequence_ratio;
+    vec2 sequence_uv;
+    vec2 next_sequence_uv;
+    int sequence_index;
+    int next_sequence_index;
+    int loop_remain;
+    float elapsed_time;
 };
 
 // referene : RenderOptions.py
-#define BLEND 0
-#define ADDITIVE 1
-#define MULTIPLY 2
-#define SUBTRACT 3
+const int BLEND = 0;
+const int ADDITIVE = 1;
+const int MULTIPLY = 2;
+const int SUBTRACT = 3;
 
+const int EMITTER_STATE_NONE = 0;
+const int EMITTER_STATE_ALIVE = 1;
+const int EMITTER_STATE_DEAD = 2;
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
@@ -100,6 +112,3 @@ const vec3 kSphereCenter = vec3(1.0, 1.0, -2.0);
 const float kSphereRadius = 1.0;
 const vec3 kSphereAlbedo = vec3(0.8);
 const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
-
-
-

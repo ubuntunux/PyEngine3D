@@ -117,9 +117,12 @@ class ParticleManager(Singleton):
                                                                          emitter_info.velocity.value[1],
                                                                          emitter_info.opacity,
                                                                          emitter_info.position.value[0],
-                                                                         0.0,
+                                                                         emitter_info.play_speed,
                                                                          emitter_info.position.value[1],
-                                                                         0.0])
+                                                                         np.product(emitter_info.cell_count),
+                                                                         emitter_info.cell_count,
+                                                                         emitter_info.loop,
+                                                                         0])
                     self.gpu_particle.render(emitter_info)
                 else:
                     # CPU Particle
@@ -174,9 +177,15 @@ class GPUParticle:
                                          ('gravity', np.float32),
                                          ('opacity', np.float32),
                                          ('velocity', np.float32, 3),
-                                         ('alive', np.int32),
+                                         ('state', np.int32),
                                          ('position', np.float32, 3),
-                                         ('dummy_0', np.float32), ])
+                                         ('sequence_ratio', np.float32),
+                                         ('sequence_uv', np.float32, 2),
+                                         ('next_sequence_uv', np.float32, 2),
+                                         ('sequence_index', np.int32),
+                                         ('next_sequence_index', np.int32),
+                                         ('loop_remain', np.int32),
+                                         ('elapsed_time', np.float32)])
 
         self.buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.data])
 
@@ -415,9 +424,14 @@ class Emitter:
         self.transform.update_transform()
 
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
-            fade_in = math.pow(life_ratio, self.emitter_info.fade_in)
-            fade_out = math.pow(1.0 - life_ratio, self.emitter_info.fade_out)
-            self.final_opacity = (fade_in * (1.0 - life_ratio) + fade_out * life_ratio) * self.emitter_info.opacity
+            self.final_opacity = self.emitter_info.opacity
+            left_life_ratio = 1.0 - life_ratio
+
+            if 0.0 < self.emitter_info.fade_in and life_ratio < self.emitter_info.fade_in:
+                self.final_opacity *= life_ratio / self.emitter_info.fade_in
+
+            if 0.0 < self.emitter_info.fade_out and left_life_ratio < self.emitter_info.fade_out:
+                self.final_opacity *= left_life_ratio / self.emitter_info.fade_out
 
 
 class ParticleInfo:
@@ -527,7 +541,7 @@ class EmitterInfo:
 
         # sequence
         self.loop = emitter_info.get('loop', -1)  # -1 is infinite
-        self.cell_count = emitter_info.get('cell_count', [1, 1])
+        self.cell_count = np.array(emitter_info.get('cell_count', [1, 1]), dtype=np.int32)
 
         # variance
         self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
@@ -576,7 +590,7 @@ class EmitterInfo:
             fade_in=self.fade_in,
             fade_out=self.fade_out,
             loop=self.loop,
-            cell_count=self.cell_count,
+            cell_count=self.cell_count.tolist(),
             delay=self.delay.get_save_data(),
             life_time=self.life_time.get_save_data(),
             velocity=self.velocity.get_save_data(),
@@ -619,6 +633,6 @@ class EmitterInfo:
             elif 'spawn_count' == attribute_name:
                 self.set_spawn_count(attribute_value)
             elif 'cell_count' == attribute_name:
-                self.cell_count = [max(1, x) for x in attribute_value]
+                self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)

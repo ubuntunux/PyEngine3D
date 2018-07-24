@@ -21,9 +21,13 @@ TWO_PI = math.pi * 2.0
 FLOAT32_MIN = np.finfo(np.float32).min
 FLOAT32_MAX = np.finfo(np.float32).max
 FLOAT_ZERO = np.float32(0.0)
-FLOAT2_ZERO = np.array([0.0, 0.0], dtype=np.float32)
-FLOAT3_ZERO = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-FLOAT4_ZERO = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+FLOAT2_ZERO = np.zeros(2, dtype=np.float32)
+FLOAT3_ZERO = np.zeros(3, dtype=np.float32)
+FLOAT4_ZERO = np.zeros(4, dtype=np.float32)
+INT_ZERO = np.int32(0)
+INT2_ZERO = np.zeros(2, dtype=np.int32)
+INT3_ZERO = np.zeros(3, dtype=np.int32)
+INT4_ZERO = np.zeros(4, dtype=np.int32)
 MATRIX3_IDENTITY = np.eye(3, dtype=np.float32)
 MATRIX4_IDENTITY = np.eye(4, dtype=np.float32)
 WORLD_LEFT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
