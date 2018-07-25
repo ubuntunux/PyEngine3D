@@ -282,6 +282,12 @@ void main()
     float roughness = 0.1;
     float specular_light = cooktorrance_specular(light_fresnel, NdL, NdV, NdH, roughness).x * 2.0;
 
+    // scattering
+    vec3 scattering_normal = normalize(vec3(vertex_normal.x, 5.0, vertex_normal.z));
+    float scattering = pow(abs(dot(H, scattering_normal)), 20.0) * (0.5 - dot(scattering_normal, V) * 0.5);
+    specular_light += scattering;
+    transmission += scattering * 10.0;
+
     float foam_lum = dot(vec3(0.3f, 0.59f, 0.11f), foam);
     specular_light *= saturate(1.0f - foam_lum * 2.0f);
     fresnel *= saturate(1.0f - foam_lum * 2.0f);

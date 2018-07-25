@@ -9,7 +9,9 @@ layout (location = 0) out vec4 ps_output;
 
 void main()
 {
-    if(vs_output.opacity <= 0.0)
+    uint id = uint(vs_output.id);
+
+    if(EMITTER_STATE_ALIVE != emitter_datas[id].state)
     {
         discard;
     }
@@ -32,5 +34,8 @@ void main()
     {
         ps_output.xyz = mix(vec3(1.0), ps_output.xyz, vec3(ps_output.w));
     }
+
+    ps_output.xyz = vec3(float(emitter_datas[id].state) / 2.0);
+    ps_output.w = 1.0;
 }
 #endif

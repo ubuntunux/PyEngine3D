@@ -17,6 +17,7 @@ struct VERTEX_OUTPUT
     vec2 next_uv;
     float sequence_ratio;
     float opacity;
+    float id;
 };
 
 layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; };
@@ -47,15 +48,8 @@ void main()
     vs_output.uv = emitter_datas[id].sequence_uv + uv_size;
     vs_output.next_uv = emitter_datas[id].next_sequence_uv + uv_size;
     vs_output.sequence_ratio = emitter_datas[id].sequence_ratio;
-
-    if(EMITTER_STATE_ALIVE == emitter_datas[id].state)
-    {
-        vs_output.opacity = emitter_datas[id].opacity;
-    }
-    else
-    {
-        vs_output.opacity = 0.0;
-    }
+    vs_output.id = float(id);
+    vs_output.opacity = emitter_datas[id].opacity;
 
     gl_Position = VIEW_PROJECTION * world_position;
 }

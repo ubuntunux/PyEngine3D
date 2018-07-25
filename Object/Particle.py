@@ -21,21 +21,23 @@ class ParticleManager(Singleton):
         self.particles = []
         self.active_particles = []
         self.render_particles = []
-        self.core_manager = None
+        self.resource_manager = None
         self.uniform_emitter_infos = None
         self.emitter_instance_buffer = None
 
-        self.gpu_particle = None
-        self.gpu_material_instance = False
+        self.material_gpu_particle = None
+        self.material_gpu_update = None
 
     def initialize(self, core_manager):
-        self.core_manager = core_manager
-        self.uniform_emitter_infos = self.core_manager.renderer.uniform_emitter_infos
+        self.resource_manager = core_manager.resource_manager
+        self.uniform_emitter_infos = core_manager.renderer.uniform_emitter_infos
 
         self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
                                                       location_offset=5,
                                                       element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
-        self.gpu_particle = GPUParticle()
+
+        self.material_gpu_particle = self.resource_manager.get_material_instance('fx.gpu_particle')
+        self.material_gpu_update = self.resource_manager.get_material_instance('fx.gpu_update')
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
@@ -72,9 +74,9 @@ class ParticleManager(Singleton):
                 self.play_particle(particle)
 
     def render(self):
-        if not self.gpu_material_instance:
-            self.core_manager.scene_manager.add_particle(name='gpu_particle', particle_info='gpu_particle')
-            self.gpu_material_instance = True
+        if not hasattr(self, 'test'):
+            CoreManager.instance().scene_manager.add_particle(name='gpu_particle', particle_info='gpu_particle')
+            self.test = False
 
         for particle in self.render_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
@@ -95,17 +97,6 @@ class ParticleManager(Singleton):
                     glBlendEquation(GL_FUNC_SUBTRACT)
                     glBlendFunc(GL_ONE, GL_ONE)
 
-                material_instance = emitter_info.material_instance
-                material_instance.use_program()
-                material_instance.bind_material_instance()
-                material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
-                material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
-                material_instance.bind_uniform_data('billboard', emitter_info.billboard)
-                material_instance.bind_uniform_data('color', emitter_info.color)
-                material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
-                material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
-                material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
-
                 geometry = emitter_info.mesh.get_geometry()
 
                 if emitter_info.gpu_particle:
@@ -123,9 +114,42 @@ class ParticleManager(Singleton):
                                                                          emitter_info.cell_count,
                                                                          emitter_info.loop,
                                                                          0])
-                    self.gpu_particle.render(emitter_info)
+                    for emitter in particle.emitters_group[i]:
+                        if emitter.is_renderable():
+                            render_count = emitter_info.spawn_count
+
+                            self.material_gpu_update.use_program()
+                            self.material_gpu_update.bind_material_instance()
+                            emitter.emitter_gpu_buffer.bind_storage_buffer()
+                            glDispatchCompute(render_count, 1, 1)
+                            glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+
+                            material_instance = self.material_gpu_particle
+                            material_instance.use_program()
+                            material_instance.bind_material_instance()
+                            material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
+                            material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
+                            material_instance.bind_uniform_data('billboard', emitter_info.billboard)
+                            material_instance.bind_uniform_data('color', emitter_info.color)
+                            material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
+                            material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
+                            material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
+                            emitter.emitter_gpu_buffer.bind_storage_buffer()
+
+                            geometry.draw_elements_instanced(render_count)
                 else:
                     # CPU Particle
+                    material_instance = emitter_info.material_instance
+                    material_instance.use_program()
+                    material_instance.bind_material_instance()
+                    material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
+                    material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
+                    material_instance.bind_uniform_data('billboard', emitter_info.billboard)
+                    material_instance.bind_uniform_data('color', emitter_info.color)
+                    material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
+                    material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
+                    material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
+
                     draw_count = 0
                     for emitter in particle.emitters_group[i]:
                         if emitter.is_renderable():
@@ -163,51 +187,6 @@ class ParticleManager(Singleton):
                     self.render_particles.append(particle)
             else:
                 self.destroy_particle(particle)
-
-
-class GPUParticle:
-    def __init__(self):
-        resource_manager = CoreManager.instance().resource_manager
-        self.mesh = resource_manager.get_default_mesh()
-        self.material_instance = resource_manager.get_material_instance('fx.gpu_particle')
-        self.gpu_update = resource_manager.get_material_instance('fx.gpu_update')
-
-        self.data = np.zeros(100, dtype=[('delay', np.float32),
-                                         ('life_time', np.float32),
-                                         ('gravity', np.float32),
-                                         ('opacity', np.float32),
-                                         ('velocity', np.float32, 3),
-                                         ('state', np.int32),
-                                         ('position', np.float32, 3),
-                                         ('sequence_ratio', np.float32),
-                                         ('sequence_uv', np.float32, 2),
-                                         ('next_sequence_uv', np.float32, 2),
-                                         ('sequence_index', np.int32),
-                                         ('next_sequence_index', np.int32),
-                                         ('loop_remain', np.int32),
-                                         ('elapsed_time', np.float32)])
-
-        self.buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.data])
-
-    def render(self, emitter_info):
-        render_count = min(emitter_info.spawn_count, len(self.data))
-
-        self.gpu_update.use_program()
-        self.buffer.bind_storage_buffer()
-        glDispatchCompute(render_count, 1, 1)
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
-
-        glEnable(GL_BLEND)
-        glBlendEquation(GL_FUNC_ADD)
-        glBlendFunc(GL_ONE, GL_ONE)
-
-        self.material_instance.use_program()
-        self.material_instance.bind_material_instance()
-        self.buffer.bind_storage_buffer()
-        self.material_instance.bind_uniform_data('particle_matrix', MATRIX4_IDENTITY)
-
-        geometry = self.mesh.get_geometry()
-        geometry.draw_elements_instanced(render_count)
 
 
 class Particle:
@@ -261,9 +240,13 @@ class Particle:
 
         for emitter_info in self.particle_info.emitter_infos:
             emitters = []
-            for i in range(emitter_info.spawn_count):
+            if emitter_info.gpu_particle:
                 emitter = Emitter(emitter_info)
                 emitters.append(emitter)
+            else:
+                for i in range(emitter_info.spawn_count):
+                    emitter = Emitter(emitter_info)
+                    emitters.append(emitter)
             self.emitters_group.append(emitters)
 
         for emitters in self.emitters_group:
@@ -276,6 +259,7 @@ class Particle:
         for emitters in self.emitters_group:
             for emitter in emitters:
                 emitter.destroy()
+
         self.emitters_group = []
 
     def update(self, dt):
@@ -321,6 +305,9 @@ class Emitter:
         self.has_rotation_velocity = False
         self.has_scale_velocity = False
         self.final_opacity = 1.0
+
+        self.emitter_gpu_data = None
+        self.emitter_gpu_buffer = None
     
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
@@ -340,6 +327,39 @@ class Emitter:
         self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
         self.final_opacity = self.emitter_info.opacity
 
+        if self.emitter_info.gpu_particle:
+            self.create_gpu_buffer()
+        else:
+            self.delete_gpu_buffer()
+
+    def create_gpu_buffer(self):
+        self.delete_gpu_buffer()
+
+        count = self.emitter_info.spawn_count
+
+        self.emitter_gpu_data = np.zeros(count, dtype=[('delay', np.float32),
+                                                       ('life_time', np.float32),
+                                                       ('gravity', np.float32),
+                                                       ('opacity', np.float32),
+                                                       ('velocity', np.float32, 3),
+                                                       ('state', np.int32),
+                                                       ('position', np.float32, 3),
+                                                       ('sequence_ratio', np.float32),
+                                                       ('sequence_uv', np.float32, 2),
+                                                       ('next_sequence_uv', np.float32, 2),
+                                                       ('sequence_index', np.int32),
+                                                       ('next_sequence_index', np.int32),
+                                                       ('loop_remain', np.int32),
+                                                       ('elapsed_time', np.float32)])
+
+        self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
+
+    def delete_gpu_buffer(self):
+        self.emitter_gpu_data = None
+        if self.emitter_gpu_buffer is not None:
+            self.emitter_gpu_buffer.delete()
+            self.emitter_gpu_buffer = None
+
     def play(self):
         self.refresh()
 
@@ -356,6 +376,7 @@ class Emitter:
 
     def destroy(self):
         self.alive = False
+        self.delete_gpu_buffer()
 
     def is_renderable(self):
         return self.alive and (0.0 == self.delay)

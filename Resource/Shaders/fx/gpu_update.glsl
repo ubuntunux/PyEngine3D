@@ -113,7 +113,6 @@ void main()
 
         emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
         emitter_datas[id].position += emitter_datas[id].velocity * DELTA_TIME;
-        emitter_datas[id].life_time -= DELTA_TIME;
         emitter_datas[id].opacity = 1.0;
     }
 }

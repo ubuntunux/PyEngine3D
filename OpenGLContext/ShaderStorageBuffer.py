@@ -16,7 +16,7 @@ class ShaderStorageBuffer:
         self.set_buffer_data(datas)
 
     def delete(self):
-        glDeleteBuffers(1, self.buffer)
+        glDeleteBuffers(1, [self.buffer, ])
 
     def set_buffer_data(self, datas):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
@@ -34,14 +34,11 @@ class ShaderStorageBuffer:
                 glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, data.nbytes, data)
                 offset += data.nbytes
 
-    def bind_storage_buffer(self, datas=None):
+    def bind_storage_buffer(self):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        if datas is not None:
-            self.set_buffer_data(datas)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, self.binding, self.buffer)
 
-    def map_buffer(self):
+    def get_map_buffer(self, inout_data):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        data_string = string_at(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY), self.data.nbytes)
-        self.data[...] = np.fromstring(data_string, dtype=self.data.dtype)
-        return self.data
+        data_string = string_at(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY), inout_data.nbytes)
+        inout_data[...] = np.fromstring(data_string, dtype=inout_data.dtype)
