@@ -190,9 +190,11 @@ class GPUParticle:
         self.buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.data])
 
     def render(self, emitter_info):
+        render_count = min(emitter_info.spawn_count, len(self.data))
+
         self.gpu_update.use_program()
         self.buffer.bind_storage_buffer()
-        glDispatchCompute(len(self.data), 1, 1)
+        glDispatchCompute(render_count, 1, 1)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 
         glEnable(GL_BLEND)
@@ -205,7 +207,7 @@ class GPUParticle:
         self.material_instance.bind_uniform_data('particle_matrix', MATRIX4_IDENTITY)
 
         geometry = self.mesh.get_geometry()
-        geometry.draw_elements_instanced(len(self.data))
+        geometry.draw_elements_instanced(render_count)
 
 
 class Particle:
