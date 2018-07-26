@@ -10,20 +10,20 @@ layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; }
 void refresh(uint id)
 {
     // initialize
-    float r1 = rand(vec2(TIME, float(id) + PI));
-    float r2 = rand(vec2(TIME, r1 + PI));
-    float r3 = rand(vec2(TIME, r2 + PI));
-    float r4 = rand(vec2(TIME, r3 + PI));
-    float r5 = rand(vec2(TIME, r4 + PI));
-    float r6 = rand(vec2(TIME, r5 + PI));
-    float r7 = rand(vec2(TIME, r6 + PI));
-    float r8 = rand(vec2(TIME, r7 + PI));
+    float t1 = rand(vec2(TIME, float(id) + PI));
+    float t2 = rand(vec2(TIME, t1 + PI));
+    float t3 = rand(vec2(TIME, t2 + PI));
+    float t4 = rand(vec2(TIME, t3 + PI));
+    float t5 = rand(vec2(TIME, t4 + PI));
+    float t6 = rand(vec2(TIME, t5 + PI));
+    float t7 = rand(vec2(TIME, t6 + PI));
+    float t8 = rand(vec2(TIME, t7 + PI));
 
     emitter_datas[id].state = EMITTER_STATE_ALIVE;
-    emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, r1);
-    emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, r2);
-    emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(r3, r4, r5));
-    emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(r6, r7, r8));
+    emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, t1);
+    emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, t2);
+    emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(t3, t4, t5));
+    emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(t6, t7, t8));
 
     emitter_datas[id].loop_remain = EMITTER_LOOP;
     emitter_datas[id].elapsed_time = 0.0;
