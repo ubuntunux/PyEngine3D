@@ -2,13 +2,6 @@
 
 uniform sampler2D texture_diffuse;
 
-uniform bool billboard;
-uniform vec3 color;
-uniform int blend_mode;
-uniform mat4 particle_matrix;
-uniform float sequence_width;
-uniform float sequence_height;
-
 
 struct VERTEX_OUTPUT
 {
@@ -37,7 +30,7 @@ void main()
     uint id = gl_InstanceID.x;
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = particle_matrix * INV_VIEW_ORIGIN;
+    mat4 world_matrix = EMITTER_PARENT_MATRIX * INV_VIEW_ORIGIN;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;

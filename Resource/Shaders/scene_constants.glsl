@@ -68,7 +68,10 @@ layout(std140, binding=5) uniform emitter_infos
     int EMITTER_TOTAL_CELL_COUNT;
     ivec2 EMITTER_CELL_COUNT;
     int EMITTER_LOOP;
-    int EMITTER_DUMMY_0;
+    int EMITTER_BLEND_MODE;
+    mat4 EMITTER_PARENT_MATRIX;
+    vec3 EMITTER_COLOR;
+    bool EMITTER_BILLBOARD;
 };
 
 struct EmitterData
@@ -87,6 +90,7 @@ struct EmitterData
     int next_sequence_index;
     int loop_remain;
     float elapsed_time;
+    vec4 color;
 };
 
 // referene : RenderOptions.py

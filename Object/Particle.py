@@ -78,24 +78,28 @@ class ParticleManager(Singleton):
             CoreManager.instance().scene_manager.add_particle(name='gpu_particle', particle_info='gpu_particle')
             self.test = False
 
+        prev_blend_mode = None
+
         for particle in self.render_particles:
             for i, emitter_info in enumerate(particle.particle_info.emitter_infos):
                 if not emitter_info.enable:
                     continue
 
                 # set blend mode
-                if emitter_info.blend_mode is BlendMode.BLEND:
-                    glBlendEquation(GL_FUNC_ADD)
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-                elif emitter_info.blend_mode is BlendMode.ADDITIVE:
-                    glBlendEquation(GL_FUNC_ADD)
-                    glBlendFunc(GL_ONE, GL_ONE)
-                elif emitter_info.blend_mode is BlendMode.MULTIPLY:
-                    glBlendEquation(GL_FUNC_ADD)
-                    glBlendFunc(GL_DST_COLOR, GL_ZERO)
-                elif emitter_info.blend_mode is BlendMode.MULTIPLY:
-                    glBlendEquation(GL_FUNC_SUBTRACT)
-                    glBlendFunc(GL_ONE, GL_ONE)
+                if prev_blend_mode != emitter_info.blend_mode:
+                    if emitter_info.blend_mode is BlendMode.BLEND:
+                        glBlendEquation(GL_FUNC_ADD)
+                        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                    elif emitter_info.blend_mode is BlendMode.ADDITIVE:
+                        glBlendEquation(GL_FUNC_ADD)
+                        glBlendFunc(GL_ONE, GL_ONE)
+                    elif emitter_info.blend_mode is BlendMode.MULTIPLY:
+                        glBlendEquation(GL_FUNC_ADD)
+                        glBlendFunc(GL_DST_COLOR, GL_ZERO)
+                    elif emitter_info.blend_mode is BlendMode.MULTIPLY:
+                        glBlendEquation(GL_FUNC_SUBTRACT)
+                        glBlendFunc(GL_ONE, GL_ONE)
+                    prev_blend_mode = emitter_info.blend_mode
 
                 geometry = emitter_info.mesh.get_geometry()
 
@@ -113,7 +117,9 @@ class ParticleManager(Singleton):
                                                                          np.product(emitter_info.cell_count),
                                                                          emitter_info.cell_count,
                                                                          emitter_info.loop,
-                                                                         0])
+                                                                         emitter_info.blend_mode.value,
+                                                                         particle.transform.matrix,
+                                                                         emitter_info.color, emitter_info.billboard])
                     for emitter in particle.emitters_group[i]:
                         if emitter.is_renderable():
                             render_count = emitter_info.spawn_count
@@ -128,12 +134,6 @@ class ParticleManager(Singleton):
                             material_instance.use_program()
                             material_instance.bind_material_instance()
                             material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
-                            material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
-                            material_instance.bind_uniform_data('billboard', emitter_info.billboard)
-                            material_instance.bind_uniform_data('color', emitter_info.color)
-                            material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
-                            material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
-                            material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
 
                             geometry.draw_elements_instanced(render_count)
@@ -350,7 +350,8 @@ class Emitter:
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('elapsed_time', np.float32)])
+                                                       ('elapsed_time', np.float32),
+                                                       ('color', np.float32, 4)])
 
         self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
 
