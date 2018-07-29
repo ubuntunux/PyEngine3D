@@ -10,16 +10,14 @@ layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; }
 void refresh(uint id)
 {
     // initialize
-    /*float t1 = rand(vec2(TIME, float(id) + PI));
+    float t1 = rand(vec2(TIME, float(id) + PI));
     float t2 = rand(vec2(TIME, t1 + PI));
     float t3 = rand(vec2(TIME, t2 + PI));
     float t4 = rand(vec2(TIME, t3 + PI));
     float t5 = rand(vec2(TIME, t4 + PI));
     float t6 = rand(vec2(TIME, t5 + PI));
     float t7 = rand(vec2(TIME, t6 + PI));
-    float t8 = rand(vec2(TIME, t7 + PI));*/
-    float t1 = fract(TIME + float(id) * PI);
-    float t2, t3,t4,t5,t6,t7,t8 = t1;
+    float t8 = rand(vec2(TIME, t7 + PI));
 
     emitter_datas[id].state = EMITTER_STATE_ALIVE;
     emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, t1);
