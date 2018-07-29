@@ -311,22 +311,28 @@ class Emitter:
     
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
-        
-        self.delay = self.emitter_info.delay.get_value()
-        self.life_time = self.emitter_info.life_time.get_value()
-        self.velocity[...] = self.emitter_info.velocity.get_value()
-        self.rotation_velocity[...] = self.emitter_info.rotation_velocity.get_value()
-        self.scale_velocity[...] = self.emitter_info.scale_velocity.get_value()
 
-        self.transform.set_pos(self.emitter_info.position.get_value())
-        self.transform.set_rotation(self.emitter_info.rotation.get_value())
-        self.transform.set_scale(self.emitter_info.scale.get_value())
+        # refresh max parameter
+        if self.emitter_info.gpu_particle:
+            self.delay = self.emitter_info.delay.get_max()
+            self.life_time = self.emitter_info.life_time.get_max()
+        else:
+            self.delay = self.emitter_info.delay.get_value()
+            self.life_time = self.emitter_info.life_time.get_value()
+            self.velocity[...] = self.emitter_info.velocity.get_value()
+            self.rotation_velocity[...] = self.emitter_info.rotation_velocity.get_value()
+            self.scale_velocity[...] = self.emitter_info.scale_velocity.get_value()
 
-        self.has_velocity = any([v != 0.0 for v in self.velocity])
-        self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
-        self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
-        self.final_opacity = self.emitter_info.opacity
+            self.transform.set_pos(self.emitter_info.position.get_value())
+            self.transform.set_rotation(self.emitter_info.rotation.get_value())
+            self.transform.set_scale(self.emitter_info.scale.get_value())
 
+            self.has_velocity = any([v != 0.0 for v in self.velocity])
+            self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
+            self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
+            self.final_opacity = self.emitter_info.opacity
+
+        # gpu buffer
         if self.emitter_info.gpu_particle:
             self.create_gpu_buffer()
         else:
@@ -424,7 +430,13 @@ class Emitter:
                 self.destroy()
                 return
 
-            self.refresh()
+            # refresh only cpu particle
+            if not self.emitter_info.gpu_particle:
+                self.refresh()
+
+        # gpu particle return
+        if self.emitter_info.gpu_particle:
+            return
 
         life_ratio = 0.0
         if 0.0 < self.life_time:

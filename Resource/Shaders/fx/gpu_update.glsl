@@ -19,17 +19,10 @@ void refresh(uint id)
     float t7 = rand(vec2(TIME, t6 + PI));
     float t8 = rand(vec2(TIME, t7 + PI));
 
-    emitter_datas[id].state = EMITTER_STATE_ALIVE;
     emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, t1);
     emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, t2);
     emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(t3, t4, t5));
     emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(t6, t7, t8));
-
-    emitter_datas[id].loop_remain = EMITTER_LOOP;
-    emitter_datas[id].elapsed_time = 0.0;
-    emitter_datas[id].sequence_ratio = 0.0;
-    emitter_datas[id].sequence_index = 0;
-    emitter_datas[id].next_sequence_index = 0;
 }
 
 
@@ -61,8 +54,6 @@ void main()
 {
     uint id = gl_GlobalInvocationID.x;
 
-    emitter_datas[id].color = vec4(1.0);
-
     if(EMITTER_STATE_DEAD == emitter_datas[id].state)
     {
         return;
@@ -80,29 +71,40 @@ void main()
 
     if(EMITTER_STATE_NONE == emitter_datas[id].state)
     {
+        emitter_datas[id].state = EMITTER_STATE_ALIVE;
+        emitter_datas[id].loop_remain = EMITTER_LOOP;
+        emitter_datas[id].elapsed_time = 0.0;
+        emitter_datas[id].sequence_ratio = 0.0;
+        emitter_datas[id].sequence_index = 0;
+        emitter_datas[id].next_sequence_index = 0;
+
         refresh(id);
+
+        emitter_datas[id].color = vec4(1,0,0,0);
     }
     else
     {
         emitter_datas[id].elapsed_time += DELTA_TIME;
-    }
 
-    if(emitter_datas[id].life_time <= emitter_datas[id].elapsed_time)
-    {
-        emitter_datas[id].elapsed_time = mod(emitter_datas[id].elapsed_time, emitter_datas[id].life_time);
-
-        if(0 < emitter_datas[id].loop_remain)
+        if(emitter_datas[id].life_time <= emitter_datas[id].elapsed_time)
         {
-            emitter_datas[id].loop_remain -= 1;
-        }
+            emitter_datas[id].elapsed_time = 0.0;//mod(emitter_datas[id].elapsed_time, emitter_datas[id].life_time);
 
-        if(0 == emitter_datas[id].loop_remain)
-        {
-            emitter_datas[id].state = EMITTER_STATE_DEAD;
-            return;
-        }
+            if(0 < emitter_datas[id].loop_remain)
+            {
+                emitter_datas[id].loop_remain -= 1;
+            }
 
-        refresh(id);
+            if(0 == emitter_datas[id].loop_remain)
+            {
+                emitter_datas[id].state = EMITTER_STATE_DEAD;
+                return;
+            }
+
+            refresh(id);
+
+            emitter_datas[id].color = vec4(0,0,1,0);
+        }
     }
 
     float life_ratio = 0.0;

@@ -18,6 +18,12 @@ class RangeVariable:
 
         self.value = np.array([min_value, max_value], dtype=np.float32)
 
+    def get_min(self):
+        return self.value[0]
+
+    def get_max(self):
+        return self.value[1]
+
     def get_value(self):
         return np.random.uniform(self.value[0], self.value[1])
 
