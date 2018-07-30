@@ -79,8 +79,6 @@ void main()
         emitter_datas[id].next_sequence_index = 0;
 
         refresh(id);
-
-        emitter_datas[id].color = vec4(1,0,0,0);
     }
     else
     {
@@ -88,7 +86,7 @@ void main()
 
         if(emitter_datas[id].life_time <= emitter_datas[id].elapsed_time)
         {
-            emitter_datas[id].elapsed_time = 0.0;//mod(emitter_datas[id].elapsed_time, emitter_datas[id].life_time);
+            emitter_datas[id].elapsed_time = mod(emitter_datas[id].elapsed_time, emitter_datas[id].life_time);
 
             if(0 < emitter_datas[id].loop_remain)
             {
@@ -102,10 +100,10 @@ void main()
             }
 
             refresh(id);
-
-            emitter_datas[id].color = vec4(0,0,1,0);
         }
     }
+
+    emitter_datas[id].color = vec4(id);
 
     float life_ratio = 0.0;
     if(0.0 < emitter_datas[id].life_time)

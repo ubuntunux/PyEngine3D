@@ -128,7 +128,7 @@ class ParticleManager(Singleton):
                             self.material_gpu_update.bind_material_instance()
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
                             glDispatchCompute(render_count, 1, 1)
-                            glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 
                             material_instance = self.material_gpu_particle
                             material_instance.use_program()
