@@ -119,7 +119,9 @@ class ParticleManager(Singleton):
                                                                          emitter_info.loop,
                                                                          emitter_info.blend_mode.value,
                                                                          particle.transform.matrix,
-                                                                         emitter_info.color, emitter_info.billboard])
+                                                                         emitter_info.color, emitter_info.billboard,
+                                                                         FLOAT2_ZERO,
+                                                                         emitter_info.fade_in, emitter_info.fade_out])
                     for emitter in particle.emitters_group[i]:
                         if emitter.alive:
                             render_count = emitter_info.spawn_count
@@ -356,8 +358,7 @@ class Emitter:
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('elapsed_time', np.float32),
-                                                       ('color', np.float32, 4)])
+                                                       ('elapsed_time', np.float32)])
 
         self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
 

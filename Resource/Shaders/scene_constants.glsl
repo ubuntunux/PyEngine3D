@@ -72,8 +72,12 @@ layout(std140, binding=5) uniform emitter_infos
     mat4 EMITTER_PARENT_MATRIX;
     vec3 EMITTER_COLOR;
     bool EMITTER_BILLBOARD;
+    vec2 EMITTER_DUMMY_0;
+    float EMITTER_FADE_IN;
+    float EMITTER_FADE_OUT;
 };
 
+// Storage Buffer Data
 struct EmitterData
 {
     float delay;

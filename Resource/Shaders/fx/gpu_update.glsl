@@ -24,6 +24,7 @@ void refresh(uint id)
     emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, t2);
     emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(t3, t4, t5));
     emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(t6, t7, t8));
+    emitter_datas[id].opacity = EMITTER_OPACITY;
 }
 
 
@@ -116,7 +117,23 @@ void main()
 
         emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
         emitter_datas[id].position += emitter_datas[id].velocity * DELTA_TIME;
-        emitter_datas[id].opacity = 1.0;
+
+        if(0.0 != EMITTER_FADE_IN || 0.0 != EMITTER_FADE_OUT)
+        {
+            emitter_datas[id].opacity = EMITTER_OPACITY;
+
+            float left_life_ratio = 1.0 - life_ratio;
+
+            if(0.0 < EMITTER_FADE_IN && life_ratio < EMITTER_FADE_IN)
+            {
+                emitter_datas[id].opacity *= life_ratio / EMITTER_FADE_IN;
+            }
+
+            if(0.0 < EMITTER_FADE_OUT && left_life_ratio < EMITTER_FADE_OUT)
+            {
+                emitter_datas[id].opacity *= left_life_ratio / EMITTER_FADE_OUT;
+            }
+        }
     }
 }
 #endif
