@@ -90,7 +90,6 @@ struct EmitterData
     int next_sequence_index;
     int loop_remain;
     float elapsed_time;
-    vec4 color;
 };
 
 // referene : RenderOptions.py
@@ -100,8 +99,9 @@ const int MULTIPLY = 2;
 const int SUBTRACT = 3;
 
 const int EMITTER_STATE_NONE = 0;
-const int EMITTER_STATE_ALIVE = 1;
-const int EMITTER_STATE_DEAD = 2;
+const int EMITTER_STATE_DELAY = 1;
+const int EMITTER_STATE_ALIVE = 2;
+const int EMITTER_STATE_DEAD = 3;
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;

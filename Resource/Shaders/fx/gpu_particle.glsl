@@ -5,13 +5,13 @@
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
+layout (location = 5) flat in uint instanceID;
+
 layout (location = 0) out vec4 ps_output;
 
 void main()
 {
-    uint id = uint(vs_output.id);
-
-    if(EMITTER_STATE_ALIVE != emitter_datas[id].state)
+    if(EMITTER_STATE_ALIVE != emitter_datas[instanceID].state)
     {
         discard;
     }
@@ -35,6 +35,6 @@ void main()
         ps_output.xyz = mix(vec3(1.0), ps_output.xyz, vec3(ps_output.w));
     }
 
-    ps_output.xyz = emitter_datas[id].color.xyz;
+    ps_output.xyz *= EMITTER_COLOR.xyz;
 }
 #endif

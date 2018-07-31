@@ -121,7 +121,7 @@ class ParticleManager(Singleton):
                                                                          particle.transform.matrix,
                                                                          emitter_info.color, emitter_info.billboard])
                     for emitter in particle.emitters_group[i]:
-                        if emitter.is_renderable():
+                        if emitter.alive:
                             render_count = emitter_info.spawn_count
 
                             self.material_gpu_update.use_program()

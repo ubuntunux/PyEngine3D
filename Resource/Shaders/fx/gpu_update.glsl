@@ -20,6 +20,7 @@ void refresh(uint id)
     float t8 = rand(vec2(TIME, t7 + PI));
 
     emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, t1);
+    emitter_datas[id].state = (0.0 < emitter_datas[id].delay) ? EMITTER_STATE_DELAY : EMITTER_STATE_ALIVE;
     emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, t2);
     emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(t3, t4, t5));
     emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(t6, t7, t8));
@@ -32,8 +33,10 @@ void update_sequence(uint id, float life_ratio)
     {
         float ratio = life_ratio * EMITTER_PLAY_SPEED;
         ratio = float(EMITTER_TOTAL_CELL_COUNT - 1) * (ratio - floor(ratio));
+
         int index = clamp(int(floor(ratio)), 0, EMITTER_TOTAL_CELL_COUNT - 1);
         int next_index = (index == (EMITTER_TOTAL_CELL_COUNT - 1)) ? 0 : index + 1;
+
         emitter_datas[id].sequence_ratio = ratio - float(index);
 
         if(next_index == emitter_datas[id].next_sequence_index)
@@ -59,7 +62,18 @@ void main()
         return;
     }
 
-    if(0.0 < emitter_datas[id].delay)
+    if(EMITTER_STATE_NONE == emitter_datas[id].state)
+    {
+        refresh(id);
+
+        emitter_datas[id].loop_remain = EMITTER_LOOP;
+        emitter_datas[id].elapsed_time = 0.0;
+        emitter_datas[id].sequence_ratio = 0.0;
+        emitter_datas[id].sequence_index = 0;
+        emitter_datas[id].next_sequence_index = 0;
+    }
+
+    if(EMITTER_STATE_DELAY == emitter_datas[id].state)
     {
         emitter_datas[id].delay -= DELTA_TIME;
         if(0.0 < emitter_datas[id].delay)
@@ -67,24 +81,14 @@ void main()
             return;
         }
         emitter_datas[id].delay = 0.0;
-    }
-
-    if(EMITTER_STATE_NONE == emitter_datas[id].state)
-    {
         emitter_datas[id].state = EMITTER_STATE_ALIVE;
-        emitter_datas[id].loop_remain = EMITTER_LOOP;
-        emitter_datas[id].elapsed_time = 0.0;
-        emitter_datas[id].sequence_ratio = 0.0;
-        emitter_datas[id].sequence_index = 0;
-        emitter_datas[id].next_sequence_index = 0;
-
-        refresh(id);
     }
-    else
+
+    if(EMITTER_STATE_ALIVE == emitter_datas[id].state)
     {
         emitter_datas[id].elapsed_time += DELTA_TIME;
 
-        if(emitter_datas[id].life_time <= emitter_datas[id].elapsed_time)
+        if(emitter_datas[id].life_time < emitter_datas[id].elapsed_time)
         {
             emitter_datas[id].elapsed_time = mod(emitter_datas[id].elapsed_time, emitter_datas[id].life_time);
 
@@ -101,20 +105,18 @@ void main()
 
             refresh(id);
         }
+
+        float life_ratio = 0.0;
+        if(0.0 < emitter_datas[id].life_time)
+        {
+            life_ratio = clamp(emitter_datas[id].elapsed_time / emitter_datas[id].life_time, 0.0, 1.0);
+        }
+
+        update_sequence(id, life_ratio);
+
+        emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
+        emitter_datas[id].position += emitter_datas[id].velocity * DELTA_TIME;
+        emitter_datas[id].opacity = 1.0;
     }
-
-    emitter_datas[id].color = vec4(id);
-
-    float life_ratio = 0.0;
-    if(0.0 < emitter_datas[id].life_time)
-    {
-        life_ratio = clamp(emitter_datas[id].elapsed_time / emitter_datas[id].life_time, 0.0, 1.0);
-    }
-
-    update_sequence(id, life_ratio);
-
-    emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
-    emitter_datas[id].position += emitter_datas[id].velocity * DELTA_TIME;
-    emitter_datas[id].opacity = 1.0;
 }
 #endif
