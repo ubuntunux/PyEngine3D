@@ -56,44 +56,63 @@ layout(std140, binding=4) uniform pointLightConstants
 
 layout(std140, binding=5) uniform emitter_infos
 {
-    vec2 EMITTER_DELAY;
-    vec2 EMITTER_LIFE_TIME;
-    vec3 EMITTER_VELOCITY_MIN;
-    float EMITTER_GRAVITY;
-    vec3 EMITTER_VELOCITY_MAX;
-    float EMITTER_OPACITY;
-    vec3 EMITTER_POSITION_MIN;
-    float EMITTER_PLAY_SPEED;
-    vec3 EMITTER_POSITION_MAX;
-    int EMITTER_TOTAL_CELL_COUNT;
-    ivec2 EMITTER_CELL_COUNT;
-    int EMITTER_LOOP;
-    int EMITTER_BLEND_MODE;
     mat4 EMITTER_PARENT_MATRIX;
     vec3 EMITTER_COLOR;
     bool EMITTER_BILLBOARD;
-    vec2 EMITTER_DUMMY_0;
+    vec2 EMITTER_DELAY;
+    vec2 EMITTER_LIFE_TIME;
+    ivec2 EMITTER_CELL_COUNT;
+    int EMITTER_LOOP;
+    int EMITTER_BLEND_MODE;
+    vec3 EMITTER_POSITION_MIN;
+    float EMITTER_GRAVITY;
+    vec3 EMITTER_POSITION_MAX;
+    float EMITTER_OPACITY;
+    vec3 EMITTER_VELOCITY_MIN;
+    float EMITTER_PLAY_SPEED;
+    vec3 EMITTER_VELOCITY_MAX;
+    int EMITTER_TOTAL_CELL_COUNT;
+    vec3 EMITTER_ROTATION_MIN;
     float EMITTER_FADE_IN;
+    vec3 EMITTER_ROTATION_MAX;
     float EMITTER_FADE_OUT;
+    vec3 EMITTER_ROTATION_VELOCITY_MIN;
+    float EMITTER_DUMMY_0;
+    vec3 EMITTER_ROTATION_VELOCITY_MAX;
+    float EMITTER_DUMMY_1;
+    vec3 EMITTER_SCALE_MIN;
+    float EMITTER_DUMMY_2;
+    vec3 EMITTER_SCALE_MAX;
+    float EMITTER_DUMMY_3;
+    vec3 EMITTER_SCALE_VELOCITY_MIN;
+    float EMITTER_DUMMY_4;
+    vec3 EMITTER_SCALE_VELOCITY_MAX;
+    float EMITTER_DUMMY_5;
 };
+
 
 // Storage Buffer Data
 struct EmitterData
 {
-    float delay;
-    float life_time;
-    float gravity;
-    float opacity;
-    vec3 velocity;
-    int state;
+    mat4 local_matrix;
     vec3 position;
+    float delay;
+    vec3 velocity;
+    float life_time;
+    vec3 rotation;
+    float gravity;
+    vec3 rotation_velocity;
+    float opacity;
+    vec3 scale;
+    float elapsed_time;
+    vec3 scale_velocity;
     float sequence_ratio;
     vec2 sequence_uv;
     vec2 next_sequence_uv;
     int sequence_index;
     int next_sequence_index;
     int loop_remain;
-    float elapsed_time;
+    int state;
 };
 
 // referene : RenderOptions.py

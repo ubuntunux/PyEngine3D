@@ -120,15 +120,22 @@ class Renderer(Singleton):
                                                        datas=[self.scene_manager.point_light_uniform_blocks])
 
         self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
-                                                  datas=[FLOAT2_ZERO, FLOAT2_ZERO,
-                                                         FLOAT3_ZERO, FLOAT_ZERO,
-                                                         FLOAT3_ZERO, FLOAT_ZERO,
-                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                  datas=[MATRIX4_IDENTITY,
                                                          FLOAT3_ZERO, INT_ZERO,
+                                                         FLOAT2_ZERO, FLOAT2_ZERO,
                                                          INT2_ZERO, INT_ZERO, INT_ZERO,
-                                                         MATRIX4_IDENTITY,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, INT_ZERO,
-                                                         FLOAT2_ZERO, FLOAT_ZERO, FLOAT_ZERO])
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO])
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)

@@ -30,7 +30,9 @@ void main()
     instanceID = gl_InstanceID.x;
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = EMITTER_PARENT_MATRIX * INV_VIEW_ORIGIN;
+    mat4 local_matrix = emitter_datas[instanceID].local_matrix;
+    mat4 world_matrix = EMITTER_PARENT_MATRIX;
+    world_matrix *= EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix : local_matrix;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;

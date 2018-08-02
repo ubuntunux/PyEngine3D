@@ -105,23 +105,24 @@ class ParticleManager(Singleton):
 
                 if emitter_info.gpu_particle:
                     # GPU Particle
-                    self.uniform_emitter_infos.bind_uniform_block(datas=[emitter_info.delay.value,
-                                                                         emitter_info.life_time.value,
-                                                                         emitter_info.velocity.value[0],
-                                                                         emitter_info.gravity,
-                                                                         emitter_info.velocity.value[1],
-                                                                         emitter_info.opacity,
-                                                                         emitter_info.position.value[0],
-                                                                         emitter_info.play_speed,
-                                                                         emitter_info.position.value[1],
-                                                                         np.product(emitter_info.cell_count),
-                                                                         emitter_info.cell_count,
-                                                                         emitter_info.loop,
-                                                                         emitter_info.blend_mode.value,
-                                                                         particle.transform.matrix,
-                                                                         emitter_info.color, emitter_info.billboard,
-                                                                         FLOAT2_ZERO,
-                                                                         emitter_info.fade_in, emitter_info.fade_out])
+                    self.uniform_emitter_infos.bind_uniform_block(
+                        datas=[particle.transform.matrix,
+                               emitter_info.color, emitter_info.billboard,
+                               emitter_info.delay.value, emitter_info.life_time.value,
+                               emitter_info.cell_count, emitter_info.loop, emitter_info.blend_mode.value,
+                               emitter_info.position.value[0], emitter_info.gravity,
+                               emitter_info.position.value[1], emitter_info.opacity,
+                               emitter_info.velocity.value[0], emitter_info.play_speed,
+                               emitter_info.velocity.value[1], np.product(emitter_info.cell_count),
+                               emitter_info.rotation.value[0], emitter_info.fade_in,
+                               emitter_info.rotation.value[1], emitter_info.fade_out,
+                               emitter_info.rotation_velocity.value[0], FLOAT_ZERO,
+                               emitter_info.rotation_velocity.value[1], FLOAT_ZERO,
+                               emitter_info.scale.value[0], FLOAT_ZERO,
+                               emitter_info.scale.value[1], FLOAT_ZERO,
+                               emitter_info.scale_velocity.value[0], FLOAT_ZERO,
+                               emitter_info.scale_velocity.value[1], FLOAT_ZERO])
+
                     for emitter in particle.emitters_group[i]:
                         if emitter.alive:
                             render_count = emitter_info.spawn_count
@@ -345,20 +346,25 @@ class Emitter:
 
         count = self.emitter_info.spawn_count
 
-        self.emitter_gpu_data = np.zeros(count, dtype=[('delay', np.float32),
-                                                       ('life_time', np.float32),
-                                                       ('gravity', np.float32),
-                                                       ('opacity', np.float32),
-                                                       ('velocity', np.float32, 3),
-                                                       ('state', np.int32),
+        self.emitter_gpu_data = np.zeros(count, dtype=[('local_matrix', np.float32, 16),
                                                        ('position', np.float32, 3),
+                                                       ('delay', np.float32),
+                                                       ('velocity', np.float32, 3),
+                                                       ('life_time', np.float32),
+                                                       ('rotation', np.float32, 3),
+                                                       ('gravity', np.float32),
+                                                       ('rotation_velocity', np.float32, 3),
+                                                       ('opacity', np.float32),
+                                                       ('scale', np.float32, 3),
+                                                       ('elapsed_time', np.float32),
+                                                       ('scale_velocity', np.float32, 3),
                                                        ('sequence_ratio', np.float32),
                                                        ('sequence_uv', np.float32, 2),
                                                        ('next_sequence_uv', np.float32, 2),
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('elapsed_time', np.float32)])
+                                                       ('state', np.int32)])
 
         self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
 
