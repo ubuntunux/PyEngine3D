@@ -140,15 +140,37 @@ void main()
 
         mat4 local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
-        if(emitter_datas[id].rotation.x != 0.0 || emitter_datas[id].rotation.y != 0.0 || emitter_datas[id].rotation.z != 0.0)
-        {
-            float ch = cos(emitter_datas[id].rotation.y);
-            float sh = sin(emitter_datas[id].rotation.y);
-            float ca = cos(emitter_datas[id].rotation.z);
-            float sa = sin(emitter_datas[id].rotation.z);
-            float cb = cos(emitter_datas[id].rotation.x);
-            float sb = sin(emitter_datas[id].rotation.x);
+        float ch = 1.0;
+        float sh = 0.0;
+        float ca = 1.0;
+        float sa = 0.0;
+        float cb = 1.0;
+        float sb = 0.0;
+        bool rotation_matrix = false;
 
+        if(0.0 != emitter_datas[id].rotation.x)
+        {
+            cb = cos(emitter_datas[id].rotation.x);
+            sb = sin(emitter_datas[id].rotation.x);
+            rotation_matrix = true;
+        }
+
+        if(0.0 != emitter_datas[id].rotation.y)
+        {
+            ch = cos(emitter_datas[id].rotation.y);
+            sh = sin(emitter_datas[id].rotation.y);
+            rotation_matrix = true;
+        }
+
+        if(0.0 != emitter_datas[id].rotation.z)
+        {
+            ca = cos(emitter_datas[id].rotation.z);
+            sa = sin(emitter_datas[id].rotation.z);
+            rotation_matrix = true;
+        }
+
+        if(rotation_matrix)
+        {
             local_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
             local_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
             local_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);

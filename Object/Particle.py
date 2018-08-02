@@ -74,10 +74,6 @@ class ParticleManager(Singleton):
                 self.play_particle(particle)
 
     def render(self):
-        if not hasattr(self, 'test'):
-            CoreManager.instance().scene_manager.add_particle(name='gpu_particle', particle_info='gpu_particle')
-            self.test = False
-
         prev_blend_mode = None
 
         for particle in self.render_particles:
