@@ -105,19 +105,22 @@ class ParticleManager(Singleton):
                         datas=[particle.transform.matrix,
                                emitter_info.color, emitter_info.billboard,
                                emitter_info.delay.value, emitter_info.life_time.value,
+                               emitter_info.fade_in, emitter_info.fade_out,
+                               emitter_info.opacity, emitter_info.play_speed,
                                emitter_info.cell_count, emitter_info.loop, emitter_info.blend_mode.value,
-                               emitter_info.position.value[0], emitter_info.gravity,
-                               emitter_info.position.value[1], emitter_info.opacity,
-                               emitter_info.velocity.value[0], emitter_info.play_speed,
-                               emitter_info.velocity.value[1], np.product(emitter_info.cell_count),
-                               emitter_info.rotation.value[0], emitter_info.fade_in,
-                               emitter_info.rotation.value[1], emitter_info.fade_out,
-                               emitter_info.rotation_velocity.value[0], FLOAT_ZERO,
-                               emitter_info.rotation_velocity.value[1], FLOAT_ZERO,
-                               emitter_info.scale.value[0], FLOAT_ZERO,
-                               emitter_info.scale.value[1], FLOAT_ZERO,
-                               emitter_info.scale_velocity.value[0], FLOAT_ZERO,
-                               emitter_info.scale_velocity.value[1], FLOAT_ZERO])
+                               emitter_info.transform_position.value[0], FLOAT_ZERO,
+                               emitter_info.transform_position.value[1], FLOAT_ZERO,
+                               emitter_info.transform_rotation.value[0], FLOAT_ZERO,
+                               emitter_info.transform_rotation.value[1], FLOAT_ZERO,
+                               emitter_info.transform_scale.value[0], FLOAT_ZERO,
+                               emitter_info.transform_scale.value[1], FLOAT_ZERO,
+                               emitter_info.velocity_position.value[0], FLOAT_ZERO,
+                               emitter_info.velocity_position.value[1], FLOAT_ZERO,
+                               emitter_info.velocity_rotation.value[0], FLOAT_ZERO,
+                               emitter_info.velocity_rotation.value[1], FLOAT_ZERO,
+                               emitter_info.velocity_scale.value[0], FLOAT_ZERO,
+                               emitter_info.velocity_scale.value[1], FLOAT_ZERO]
+                    )
 
                     for emitter in particle.emitters_group[i]:
                         if emitter.alive:
@@ -295,16 +298,24 @@ class Emitter:
 
         self.delay = 0.0
         self.life_time = 0.0
-        self.velocity = Float3()
-        self.rotation_velocity = Float3()
-        self.scale_velocity = Float3()
+        self.velocity_position = Float3()
+        self.velocity_rotation = Float3()
+        self.velocity_scale = Float3()
 
         self.transform = TransformObject()
-        self.has_velocity = False
-        self.has_rotation_velocity = False
-        self.has_scale_velocity = False
+
+        self.force_planar = 0.0
+        self.force_spherical = 0.0
+        self.force_rotational = 0.0
+
+        self.has_velocity_position = False
+        self.has_velocity_rotation = False
+        self.has_velocity_scale = False
+        self.has_force = False
+
         self.final_opacity = 1.0
 
+        # gpu data
         self.emitter_gpu_data = None
         self.emitter_gpu_buffer = None
     
@@ -316,19 +327,26 @@ class Emitter:
             self.delay = self.emitter_info.delay.get_max()
             self.life_time = self.emitter_info.life_time.get_max()
         else:
-            self.delay = self.emitter_info.delay.get_value()
-            self.life_time = self.emitter_info.life_time.get_value()
-            self.velocity[...] = self.emitter_info.velocity.get_value()
-            self.rotation_velocity[...] = self.emitter_info.rotation_velocity.get_value()
-            self.scale_velocity[...] = self.emitter_info.scale_velocity.get_value()
+            self.delay = self.emitter_info.delay.get_uniform()
+            self.life_time = self.emitter_info.life_time.get_uniform()
 
-            self.transform.set_pos(self.emitter_info.position.get_value())
-            self.transform.set_rotation(self.emitter_info.rotation.get_value())
-            self.transform.set_scale(self.emitter_info.scale.get_value())
+            self.velocity_position[...] = self.emitter_info.velocity_position.get_uniform()
+            self.velocity_rotation[...] = self.emitter_info.velocity_rotation.get_uniform()
+            self.velocity_scale[...] = self.emitter_info.velocity_scale.get_uniform()
 
-            self.has_velocity = any([v != 0.0 for v in self.velocity])
-            self.has_rotation_velocity = any([v != 0.0 for v in self.rotation_velocity])
-            self.has_scale_velocity = any([v != 0.0 for v in self.scale_velocity])
+            self.transform.set_pos(self.emitter_info.transform_position.get_uniform())
+            self.transform.set_rotation(self.emitter_info.transform_rotation.get_uniform())
+            self.transform.set_scale(self.emitter_info.transform_scale.get_uniform())
+
+            self.force_planar = self.emitter_info.force_planar.get_uniform()
+            self.force_spherical = self.emitter_info.force_spherical.get_uniform()
+            self.force_rotational = self.emitter_info.force_rotational.get_uniform()
+
+            self.has_velocity_position = any([v != 0.0 for v in self.velocity_position])
+            self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
+            self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
+            self.has_force = self.force_planar != 0.0 or self.force_spherical != 0.0 or self.force_rotational != 0.0
+
             self.final_opacity = self.emitter_info.opacity
 
         # gpu buffer
@@ -343,24 +361,24 @@ class Emitter:
         count = self.emitter_info.spawn_count
 
         self.emitter_gpu_data = np.zeros(count, dtype=[('local_matrix', np.float32, 16),
-                                                       ('position', np.float32, 3),
                                                        ('delay', np.float32),
-                                                       ('velocity', np.float32, 3),
                                                        ('life_time', np.float32),
-                                                       ('rotation', np.float32, 3),
-                                                       ('state', np.int32),
-                                                       ('rotation_velocity', np.float32, 3),
                                                        ('opacity', np.float32),
-                                                       ('scale', np.float32, 3),
                                                        ('elapsed_time', np.float32),
-                                                       ('scale_velocity', np.float32, 3),
-                                                       ('sequence_ratio', np.float32),
                                                        ('sequence_uv', np.float32, 2),
                                                        ('next_sequence_uv', np.float32, 2),
+                                                       ('sequence_ratio', np.float32),
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('dummy_0', np.float32)])
+                                                       ('dummy_0', np.float32, 3),
+                                                       ('state', np.int32),
+                                                       ('transform_position', np.float32, 3), ('dummy_1', np.float32),
+                                                       ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
+                                                       ('transform_scale', np.float32, 3), ('dummy_3', np.float32),
+                                                       ('velocity_position', np.float32, 3), ('dummy_4', np.float32),
+                                                       ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
+                                                       ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)])
 
         self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
 
@@ -447,18 +465,36 @@ class Emitter:
 
         self.update_sequence(life_ratio)
 
-        if 0.0 != self.emitter_info.gravity:
-            self.velocity[1] -= self.emitter_info.gravity * dt
-
         # update transform
-        if self.has_velocity:
-            self.transform.move(self.velocity * dt)
+        if self.has_velocity_position or self.has_force:
+            # apply force
+            if self.has_force:
+                force_transform = self.emitter_info.force_transform
+                direction = self.transform.pos - self.emitter_info.force_transform.pos
+                radius = np.linalg.norm(direction)
+                direction /= radius if radius != 0.0 else 1.0
+                if radius < self.emitter_info.force_radius or self.emitter_info.force_radius <= 0.0:
+                    if 0.0 < self.emitter_info.force_radius:
+                        weight = max(0.0, min(1.0, 1.0 - radius / self.emitter_info.force_radius))
+                        weight *= weight
+                    else:
+                        weight = 1.0
 
-        if self.has_rotation_velocity:
-            self.transform.rotation(self.rotation_velocity * dt)
+                    if self.force_planar != 0.0:
+                        self.velocity_position += force_transform.up * self.force_planar * dt * weight
+                    if self.force_spherical != 0.0:
+                        self.velocity_position += direction * self.force_spherical * dt * weight
+                    if self.force_rotational != 0.0:
+                        force_quaternion = get_quaternion(force_transform.up, self.force_rotational * dt * weight)
+                        self.velocity_position[...] = vector_multiply_quaternion(self.velocity_position,
+                                                                                 force_quaternion)
+            self.transform.move(self.velocity_position * dt)
 
-        if self.has_scale_velocity:
-            self.transform.scaling(self.scale_velocity * dt)
+        if self.has_velocity_rotation:
+            self.transform.rotation(self.velocity_rotation * dt)
+
+        if self.has_velocity_scale:
+            self.transform.scaling(self.velocity_scale * dt)
 
         self.transform.update_transform()
 
@@ -526,14 +562,18 @@ class ParticleInfo:
             if 2 == count:
                 emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
             else:
-                emitter_attribute = getattr(emitter_info, item_info_history[2].attribute_name)
-                if type(emitter_attribute) in (tuple, list, np.ndarray):
+                if hasattr(emitter_info, item_info_history[2].attribute_name):
+                    emitter_attribute = getattr(emitter_info, item_info_history[2].attribute_name)
+                    if type(emitter_attribute) in (tuple, list, np.ndarray):
+                        emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+                    elif isinstance(emitter_attribute, RangeVariable):
+                        if 'min_value' == attribute_name:
+                            emitter_attribute.set_range(attribute_value, emitter_attribute.value[1])
+                        elif 'max_value' == attribute_name:
+                            emitter_attribute.set_range(emitter_attribute.value[0], attribute_value)
+                else:
                     emitter_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
-                elif isinstance(emitter_attribute, RangeVariable):
-                    if 'min_value' == attribute_name:
-                        emitter_attribute.set_range(attribute_value, emitter_attribute.value[1])
-                    elif 'max_value' == attribute_name:
-                        emitter_attribute.set_range(emitter_attribute.value[0], attribute_value)
+
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
         # refresh
@@ -564,7 +604,6 @@ class EmitterInfo:
         self.billboard = emitter_info.get('billboard', True)
         self.color = emitter_info.get('color', Float3(1.0, 1.0, 1.0))
         self.play_speed = emitter_info.get('play_speed', 0.0)
-        self.gravity = emitter_info.get('gravity', 0.0)
         self.opacity = emitter_info.get('opacity', 1.0)
         self.fade_in = emitter_info.get('fade_in', 0.0)  # if 0.0 is none else curve
         self.fade_out = emitter_info.get('fade_out', 0.0)
@@ -578,25 +617,27 @@ class EmitterInfo:
         self.material_instance = emitter_info.get('material_instance') or default_material_instance
         self.texture_diffuse = emitter_info.get('texture_diffuse') or texture_white
 
-        # sequence
         self.loop = emitter_info.get('loop', -1)  # -1 is infinite
         self.cell_count = np.array(emitter_info.get('cell_count', [1, 1]), dtype=np.int32)
 
-        # variance
-        self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0, max_value=0.0)))
-        self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=1.0, max_value=5.0)))
-        self.velocity = RangeVariable(
-            **emitter_info.get('velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
-        self.rotation_velocity = RangeVariable(
-            **emitter_info.get('rotation_velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
-        self.scale_velocity = RangeVariable(
-            **emitter_info.get('scale_velocity', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
-        self.position = RangeVariable(
-            **emitter_info.get('position', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
-        self.rotation = RangeVariable(
-            **emitter_info.get('rotation', dict(min_value=FLOAT3_ZERO, max_value=FLOAT3_ZERO)))
-        self.scale = RangeVariable(
-            **emitter_info.get('scale', dict(min_value=Float3(1.0, 1.0, 1.0), max_value=Float3(1.0, 1.0, 1.0))))
+        self.delay = RangeVariable(**emitter_info.get('delay', dict(min_value=0.0)))
+        self.life_time = RangeVariable(**emitter_info.get('life_time', dict(min_value=1.0)))
+        self.transform_position = RangeVariable(**emitter_info.get('transform_position', dict(min_value=FLOAT3_ZERO)))
+        self.transform_rotation = RangeVariable(**emitter_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
+        self.transform_scale = RangeVariable(
+            **emitter_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+        self.velocity_position = RangeVariable(**emitter_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
+        self.velocity_rotation = RangeVariable(**emitter_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
+        self.velocity_scale = RangeVariable(**emitter_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
+
+        self.force_transform = TransformObject()
+        self.force_transform.set_pos(emitter_info.get('force_position', FLOAT_ZERO))
+        self.force_transform.set_rotation(emitter_info.get('force_rotation', FLOAT_ZERO))
+        self.force_transform.update_transform()
+        self.force_planar = RangeVariable(**emitter_info.get('force_planar', dict(min_value=FLOAT_ZERO)))
+        self.force_spherical = RangeVariable(**emitter_info.get('force_spherical', dict(min_value=FLOAT_ZERO)))
+        self.force_rotational = RangeVariable(**emitter_info.get('force_rotational', dict(min_value=FLOAT_ZERO)))
+        self.force_radius = emitter_info.get('force_radius', 1.0)
 
         self.model_data = None
         self.uvs_data = None
@@ -624,7 +665,6 @@ class EmitterInfo:
             material_instance=self.material_instance.name if self.material_instance is not None else '',
             texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',
             play_speed=self.play_speed,
-            gravity=self.gravity,
             opacity=self.opacity,
             fade_in=self.fade_in,
             fade_out=self.fade_out,
@@ -632,12 +672,18 @@ class EmitterInfo:
             cell_count=self.cell_count.tolist(),
             delay=self.delay.get_save_data(),
             life_time=self.life_time.get_save_data(),
-            velocity=self.velocity.get_save_data(),
-            rotation_velocity=self.rotation_velocity.get_save_data(),
-            scale_velocity=self.scale_velocity.get_save_data(),
-            position=self.position.get_save_data(),
-            rotation=self.rotation.get_save_data(),
-            scale=self.scale.get_save_data(),
+            transform_position=self.transform_position.get_save_data(),
+            transform_rotation=self.transform_rotation.get_save_data(),
+            transform_scale=self.transform_scale.get_save_data(),
+            velocity_position=self.velocity_position.get_save_data(),
+            velocity_rotation=self.velocity_rotation.get_save_data(),
+            velocity_scale=self.velocity_scale.get_save_data(),
+            force_position=self.force_transform.pos.tolist(),
+            force_rotation=self.force_transform.rot.tolist(),
+            force_planar=self.force_planar.get_save_data(),
+            force_spherical=self.force_spherical.get_save_data(),
+            force_rotational=self.force_rotational.get_save_data(),
+            force_radius=self.force_radius,
         )
         return save_data
 
@@ -675,3 +721,10 @@ class EmitterInfo:
                 self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)
+        else:
+            if 'force_position' == attribute_name:
+                self.force_transform.set_pos(attribute_value)
+                self.force_transform.update_transform()
+            elif 'force_rotation' == attribute_name:
+                self.force_transform.set_rotation(attribute_value)
+                self.force_transform.update_transform()

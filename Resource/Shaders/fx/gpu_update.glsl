@@ -34,13 +34,12 @@ void refresh(uint id)
     emitter_datas[id].delay = mix(EMITTER_DELAY.x, EMITTER_DELAY.y, t1);
     emitter_datas[id].state = (0.0 < emitter_datas[id].delay) ? EMITTER_STATE_DELAY : EMITTER_STATE_ALIVE;
     emitter_datas[id].life_time = mix(EMITTER_LIFE_TIME.x, EMITTER_LIFE_TIME.y, t2);
-    emitter_datas[id].position = mix(EMITTER_POSITION_MIN, EMITTER_POSITION_MAX, vec3(t3, t4, t5));
-    emitter_datas[id].velocity = mix(EMITTER_VELOCITY_MIN, EMITTER_VELOCITY_MAX, vec3(t6, t7, t8));
-    emitter_datas[id].rotation = mix(EMITTER_ROTATION_MIN, EMITTER_ROTATION_MAX, vec3(t9, t10, t11));
-    emitter_datas[id].rotation_velocity = mix(EMITTER_ROTATION_VELOCITY_MIN, EMITTER_ROTATION_VELOCITY_MAX, vec3(t12, t13, t14));
-    emitter_datas[id].scale = mix(EMITTER_SCALE_MIN, EMITTER_SCALE_MAX, vec3(t15, t16, t17));
-    emitter_datas[id].scale_velocity = mix(EMITTER_SCALE_VELOCITY_MIN, EMITTER_SCALE_VELOCITY_MAX, vec3(t18, t19, t20));
-
+    emitter_datas[id].transform_position = mix(EMITTER_TRANSFORM_POSITION_MIN, EMITTER_TRANSFORM_POSITION_MAX, vec3(t3, t4, t5));
+    emitter_datas[id].transform_rotation = mix(EMITTER_TRANSFORM_ROTATION_MIN, EMITTER_TRANSFORM_ROTATION_MAX, vec3(t9, t10, t11));
+    emitter_datas[id].transform_scale = mix(EMITTER_TRANSFORM_SCALE_MIN, EMITTER_TRANSFORM_SCALE_MAX, vec3(t15, t16, t17));
+    emitter_datas[id].velocity_position = mix(EMITTER_VELOCITY_POSITION_MIN, EMITTER_VELOCITY_POSITION_MAX, vec3(t6, t7, t8));
+    emitter_datas[id].velocity_rotation = mix(EMITTER_VELOCITY_ROTATION_MIN, EMITTER_VELOCITY_ROTATION_MAX, vec3(t12, t13, t14));
+    emitter_datas[id].velocity_scale = mix(EMITTER_VELOCITY_SCALE_MIN, EMITTER_VELOCITY_SCALE_MAX, vec3(t18, t19, t20));
     emitter_datas[id].opacity = EMITTER_OPACITY;
     emitter_datas[id].local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 }
@@ -48,13 +47,15 @@ void refresh(uint id)
 
 void update_sequence(uint id, float life_ratio)
 {
-    if(1 < EMITTER_TOTAL_CELL_COUNT && 0.0 < EMITTER_PLAY_SPEED)
+    const int emitter_total_cell_count = EMITTER_CELL_COUNT[0] * EMITTER_CELL_COUNT[1];
+
+    if(1 < emitter_total_cell_count && 0.0 < EMITTER_PLAY_SPEED)
     {
         float ratio = life_ratio * EMITTER_PLAY_SPEED;
-        ratio = float(EMITTER_TOTAL_CELL_COUNT - 1) * (ratio - floor(ratio));
+        ratio = float(emitter_total_cell_count - 1) * (ratio - floor(ratio));
 
-        int index = clamp(int(floor(ratio)), 0, EMITTER_TOTAL_CELL_COUNT - 1);
-        int next_index = (index == (EMITTER_TOTAL_CELL_COUNT - 1)) ? 0 : index + 1;
+        int index = clamp(int(floor(ratio)), 0, emitter_total_cell_count - 1);
+        int next_index = (index == (emitter_total_cell_count - 1)) ? 0 : index + 1;
 
         emitter_datas[id].sequence_ratio = ratio - float(index);
 
@@ -133,10 +134,10 @@ void main()
 
         update_sequence(id, life_ratio);
 
-        emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
-        emitter_datas[id].position += emitter_datas[id].velocity * DELTA_TIME;
-        emitter_datas[id].rotation += emitter_datas[id].rotation_velocity * DELTA_TIME;
-        emitter_datas[id].scale += emitter_datas[id].scale_velocity * DELTA_TIME;
+        // emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
+        emitter_datas[id].transform_position += emitter_datas[id].velocity_position * DELTA_TIME;
+        emitter_datas[id].transform_rotation += emitter_datas[id].velocity_rotation * DELTA_TIME;
+        emitter_datas[id].transform_scale += emitter_datas[id].velocity_scale * DELTA_TIME;
 
         mat4 local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
@@ -148,24 +149,24 @@ void main()
         float sb = 0.0;
         bool rotation_matrix = false;
 
-        if(0.0 != emitter_datas[id].rotation.x)
+        if(0.0 != emitter_datas[id].transform_rotation.x)
         {
-            cb = cos(emitter_datas[id].rotation.x);
-            sb = sin(emitter_datas[id].rotation.x);
+            cb = cos(emitter_datas[id].transform_rotation.x);
+            sb = sin(emitter_datas[id].transform_rotation.x);
             rotation_matrix = true;
         }
 
-        if(0.0 != emitter_datas[id].rotation.y)
+        if(0.0 != emitter_datas[id].transform_rotation.y)
         {
-            ch = cos(emitter_datas[id].rotation.y);
-            sh = sin(emitter_datas[id].rotation.y);
+            ch = cos(emitter_datas[id].transform_rotation.y);
+            sh = sin(emitter_datas[id].transform_rotation.y);
             rotation_matrix = true;
         }
 
-        if(0.0 != emitter_datas[id].rotation.z)
+        if(0.0 != emitter_datas[id].transform_rotation.z)
         {
-            ca = cos(emitter_datas[id].rotation.z);
-            sa = sin(emitter_datas[id].rotation.z);
+            ca = cos(emitter_datas[id].transform_rotation.z);
+            sa = sin(emitter_datas[id].transform_rotation.z);
             rotation_matrix = true;
         }
 
@@ -176,9 +177,9 @@ void main()
             local_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
         }
 
-        local_matrix[0].x *= emitter_datas[id].scale.x;
-        local_matrix[1].y *= emitter_datas[id].scale.y;
-        local_matrix[2].z *= emitter_datas[id].scale.z;
+        local_matrix[0].x *= emitter_datas[id].transform_scale.x;
+        local_matrix[1].y *= emitter_datas[id].transform_scale.y;
+        local_matrix[2].z *= emitter_datas[id].transform_scale.z;
 
         emitter_datas[id].local_matrix = local_matrix;
 

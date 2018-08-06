@@ -101,6 +101,8 @@ class InstanceBuffer:
         offset = 0
         location = self.location_offset
         for i, data in enumerate(datas):
+            glBufferSubData(GL_ARRAY_BUFFER, offset, data.nbytes, data)
+
             divide_count = self.divide_counts[i]
             for j in range(divide_count):
                 glEnableVertexAttribArray(location + j)
@@ -114,7 +116,6 @@ class InstanceBuffer:
                 # divisor > 0, the attribute advances once per divisor instances of the set(s) of
                 # vertices being rendered.
                 glVertexAttribDivisor(location + j, divisor)
-            glBufferSubData(GL_ARRAY_BUFFER, offset, data.nbytes, data)
             offset += data.nbytes
             location += divide_count
 
@@ -144,37 +145,22 @@ class VertexArrayBuffer:
         self.vertex_buffer_size = offset
         self.vertex_data_count = len(datas)
 
-        self.vertex_array = glGenVertexArrays(1)
-        glBindVertexArray(self.vertex_array)
-        
+        # self.vertex_array = glGenVertexArrays(1)
+        # glBindVertexArray(self.vertex_array)
+
         self.vertex_buffer = glGenBuffers(1)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
         glBufferData(GL_ARRAY_BUFFER, self.vertex_buffer_size, None, GL_STATIC_DRAW)
 
         offset = 0
-        for location, data in enumerate(datas):
+        for data in datas:
             glBufferSubData(GL_ARRAY_BUFFER, offset, data.nbytes, data)
-
-            glEnableVertexAttribArray(location)
-            glVertexAttribPointer(location,
-                                  self.data_element_count[location],
-                                  self.data_types[location],
-                                  GL_FALSE,
-                                  self.data_element_size[location],
-                                  self.vertex_buffer_offset[location])
-            # important : divisor reset
-            glVertexAttribDivisor(location, 0)
-
             offset += data.nbytes
 
         self.index_buffer_size = index_data.nbytes
         self.index_buffer = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
-
-        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
@@ -183,7 +169,23 @@ class VertexArrayBuffer:
 
     def __bind_vertex_buffer(self):
         if OpenGLContext.need_to_bind_vertex_array(self.vertex_buffer):
-            glBindVertexArray(self.vertex_array)
+            # NOTE : You must set only glBindVertexArray.
+            # glBindVertexArray(self.vertex_array)
+
+            glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
+
+            for location in range(self.vertex_data_count):
+                glEnableVertexAttribArray(location)
+                glVertexAttribPointer(location,
+                                      self.data_element_count[location],
+                                      self.data_types[location],
+                                      GL_FALSE,
+                                      self.data_element_size[location],
+                                      self.vertex_buffer_offset[location])
+                # important : divisor reset
+                glVertexAttribDivisor(location, 0)
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
 
     def draw_elements(self):
         self.__bind_vertex_buffer()

@@ -36,7 +36,7 @@ void main()
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     vec4 world_position = world_matrix * vertex_position;
-    world_position.xyz += emitter_datas[instanceID].position.xyz;
+    world_position.xyz += emitter_datas[instanceID].transform_position.xyz;
     vs_output.world_position = world_position.xyz;
 
     vec2 uv_size = vs_in_tex_coord.xy / vec2(EMITTER_CELL_COUNT);

@@ -61,33 +61,25 @@ layout(std140, binding=5) uniform emitter_infos
     bool EMITTER_BILLBOARD;
     vec2 EMITTER_DELAY;
     vec2 EMITTER_LIFE_TIME;
+    float EMITTER_FADE_IN;
+    float EMITTER_FADE_OUT;
+    float EMITTER_OPACITY;
+    float EMITTER_PLAY_SPEED;
     ivec2 EMITTER_CELL_COUNT;
     int EMITTER_LOOP;
     int EMITTER_BLEND_MODE;
-    vec3 EMITTER_POSITION_MIN;
-    float EMITTER_GRAVITY;
-    vec3 EMITTER_POSITION_MAX;
-    float EMITTER_OPACITY;
-    vec3 EMITTER_VELOCITY_MIN;
-    float EMITTER_PLAY_SPEED;
-    vec3 EMITTER_VELOCITY_MAX;
-    int EMITTER_TOTAL_CELL_COUNT;
-    vec3 EMITTER_ROTATION_MIN;
-    float EMITTER_FADE_IN;
-    vec3 EMITTER_ROTATION_MAX;
-    float EMITTER_FADE_OUT;
-    vec3 EMITTER_ROTATION_VELOCITY_MIN;
-    float EMITTER_DUMMY_0;
-    vec3 EMITTER_ROTATION_VELOCITY_MAX;
-    float EMITTER_DUMMY_1;
-    vec3 EMITTER_SCALE_MIN;
-    float EMITTER_DUMMY_2;
-    vec3 EMITTER_SCALE_MAX;
-    float EMITTER_DUMMY_3;
-    vec3 EMITTER_SCALE_VELOCITY_MIN;
-    float EMITTER_DUMMY_4;
-    vec3 EMITTER_SCALE_VELOCITY_MAX;
-    float EMITTER_DUMMY_5;
+    vec3 EMITTER_TRANSFORM_POSITION_MIN;
+    vec3 EMITTER_TRANSFORM_POSITION_MAX;
+    vec3 EMITTER_TRANSFORM_ROTATION_MIN;
+    vec3 EMITTER_TRANSFORM_ROTATION_MAX;
+    vec3 EMITTER_TRANSFORM_SCALE_MIN;
+    vec3 EMITTER_TRANSFORM_SCALE_MAX;
+    vec3 EMITTER_VELOCITY_POSITION_MIN;
+    vec3 EMITTER_VELOCITY_POSITION_MAX;
+    vec3 EMITTER_VELOCITY_ROTATION_MIN;
+    vec3 EMITTER_VELOCITY_ROTATION_MAX;
+    vec3 EMITTER_VELOCITY_SCALE_MIN;
+    vec3 EMITTER_VELOCITY_SCALE_MAX;
 };
 
 
@@ -95,25 +87,24 @@ layout(std140, binding=5) uniform emitter_infos
 struct EmitterData
 {
     mat4 local_matrix;
-    vec3 position;
     float delay;
-    vec3 velocity;
     float life_time;
-    vec3 rotation;
-    int state;
-    vec3 rotation_velocity;
     float opacity;
-    vec3 scale;
     float elapsed_time;
-    vec3 scale_velocity;
-    float sequence_ratio;
     vec2 sequence_uv;
     vec2 next_sequence_uv;
+    float sequence_ratio;
     int sequence_index;
     int next_sequence_index;
     int loop_remain;
-    float dummy_0;
-
+    vec3 dummy_0;
+    int state;
+    vec3 transform_position;
+    vec3 transform_rotation;
+    vec3 transform_scale;
+    vec3 velocity_position;
+    vec3 velocity_rotation;
+    vec3 velocity_scale;
 };
 
 // referene : RenderOptions.py

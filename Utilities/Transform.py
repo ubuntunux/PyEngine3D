@@ -29,6 +29,7 @@ INT2_ZERO = np.zeros(2, dtype=np.int32)
 INT3_ZERO = np.zeros(3, dtype=np.int32)
 INT4_ZERO = np.zeros(4, dtype=np.int32)
 MATRIX3_IDENTITY = np.eye(3, dtype=np.float32)
+MATRIX3x4_IDENTITY = np.eye(3, 4, dtype=np.float32)
 MATRIX4_IDENTITY = np.eye(4, dtype=np.float32)
 WORLD_LEFT = np.array([1.0, 0.0, 0.0], dtype=np.float32)
 WORLD_UP = np.array([0.0, 1.0, 0.0], dtype=np.float32)
@@ -128,10 +129,8 @@ def muliply_quaternion(quaternion1, quaternion2):
 
 
 def vector_multiply_quaternion(vector, quaternion):
-    qv = Float3(quaternion[1], quaternion[2], quaternion[3])
-    qw = quaternion[0]
-    u = np.cross(vector, qv)
-    return vector + u * 2.0 * qw + np.cross(qv, u) * 2.0
+    u = np.cross(vector, quaternion[1:])
+    return vector + u * 2.0 * quaternion[0] + np.cross(quaternion[1:], u) * 2.0
 
 
 def euler_to_quaternion(rx, ry, rz, quat):
