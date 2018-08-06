@@ -100,7 +100,7 @@ struct EmitterData
     vec3 velocity;
     float life_time;
     vec3 rotation;
-    float gravity;
+    int state;
     vec3 rotation_velocity;
     float opacity;
     vec3 scale;
@@ -112,7 +112,8 @@ struct EmitterData
     int sequence_index;
     int next_sequence_index;
     int loop_remain;
-    int state;
+    float dummy_0;
+
 };
 
 // referene : RenderOptions.py

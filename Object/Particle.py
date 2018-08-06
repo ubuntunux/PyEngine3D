@@ -348,7 +348,7 @@ class Emitter:
                                                        ('velocity', np.float32, 3),
                                                        ('life_time', np.float32),
                                                        ('rotation', np.float32, 3),
-                                                       ('gravity', np.float32),
+                                                       ('state', np.int32),
                                                        ('rotation_velocity', np.float32, 3),
                                                        ('opacity', np.float32),
                                                        ('scale', np.float32, 3),
@@ -360,7 +360,7 @@ class Emitter:
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('state', np.int32)])
+                                                       ('dummy_0', np.float32)])
 
         self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
 
