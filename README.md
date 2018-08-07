@@ -30,16 +30,11 @@
     - Landscape
     - Wind
     - River
-    - Particles
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
 * Debug
     - performance profiler
-    - debug info print
-* Editor
-    - Tab based panel
-    - Snap to window rect
 * Import
     - FBX
     - Blender
@@ -54,11 +49,22 @@
     - Select, Move, Modify
     - Gizmo
     - VTF Skinning
+    - Animation calculation in gpu
 * Particle System
-    - runtime particles
-    - GPU particle
-* PostProcess
+    - Force field
+* Rendering    
+    - View Mode
+        - Wire, Solid, Lighting, Color
+    - Culling
+        - occlusion culling
+        - distance culling   
+    - Volumtric Fog
+    - Fur Rendering
+    - Procedural Terrain
+* Technique
     - FXAA
+    - SSR Optimization
+    - Hierachical-Z depth
     - Screen Space SSS
     - God Ray
     - Glare
@@ -66,21 +72,8 @@
     - Film Grain
     - Color Correction
     - Color Grading
-* Rendering
-    - Hierachical-Z depth
-    - Animation calculation in gpu
-    - Multisample texture - glTexImage2DMultisample
-        - sampler2D/texture by sampler2DMS/texelFetch in the fragment shader
-    - View Mode
-        - Wire, Solid, Lighting, Color
-    - Culling
-        - occlusion culling
-        - distance culling
     - Coarse Shading, Checkboard rendering
     - Paraboloid environment map    
-    - Volumtric Fog
-    - Fur Rendering
-    - Procedural Terrain
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource
