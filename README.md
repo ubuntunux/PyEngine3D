@@ -14,14 +14,11 @@
 
 ## Dependency modules
  - python 3
- - numpy 1.11
- - numba 0.35
+ - numpy
  - pillow
- - pyqt4
- - pybullet
  - pyopengl
  - pyopengl_accelerate
- - pygame
+ - pygame or pyglet
 
 ## TODO
 * Optimize
