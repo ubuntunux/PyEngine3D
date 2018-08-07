@@ -628,7 +628,7 @@ class MaterialLoader(ResourceLoader):
 
     def __init__(self, core_manager, root_path):
         ResourceLoader.__init__(self, core_manager, root_path)
-        self.linked_material_map = {}
+        # self.linked_material_map = {}
 
     def action_resource(self, resource_name):
         material = self.get_resource_data(resource_name)
@@ -689,10 +689,10 @@ class MaterialLoader(ResourceLoader):
         return False
 
     def generate_material_name(self, shader_name, macros=None):
-        if macros:
+        if macros is not None:
             keys = sorted(macros.keys())
             add_name = [key + "_" + str(macros[key]) for key in keys]
-            shader_name = shader_name + "_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, "_".join(add_name))).replace("-", "_")
+            shader_name += "_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, "_".join(add_name))).replace("-", "_")
         return shader_name
 
     def generate_new_material(self, material_name, shader_name, compile_option, macros={}):
@@ -708,13 +708,14 @@ class MaterialLoader(ResourceLoader):
                 uniforms = parsing_uniforms(shader_code_list)
                 material_components = parsing_material_components(shader_code_list)
 
-                final_material_name = self.generate_material_name(shader_name, final_macros)
+                final_material_name = material_name
 
+                # final_material_name = self.generate_material_name(shader_name, final_macros)
                 # Check the material_name with final_material_name.
-                if material_name != final_material_name:
-                    logger.warn("Generated material name is changed. : %s" % final_material_name)
-                    self.linked_material_map[material_name] = final_material_name
-                    self.delete_resource(material_name)
+                # if material_name != final_material_name:
+                #     logger.warn("Generated material name is changed. : %s" % final_material_name)
+                #     self.linked_material_map[material_name] = final_material_name
+                #     self.delete_resource(material_name)
 
                 include_files = {}
                 for include_file in shader.include_files:
@@ -773,9 +774,10 @@ class MaterialLoader(ResourceLoader):
             return None
 
         material_name = self.generate_material_name(shader_name, macros)
+
         # Due to options such as macros, actual material names may differ. That's why we use link maps.
-        if material_name in self.linked_material_map:
-            material_name = self.linked_material_map[material_name]
+        # if material_name in self.linked_material_map:
+        #     material_name = self.linked_material_map[material_name]
 
         material = self.get_resource_data(material_name)
         if material is None:

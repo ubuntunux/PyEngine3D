@@ -126,8 +126,8 @@ class Material:
                     active_texture_index += 1
                 self.uniform_buffers[uniform_name] = uniform_buffer
             else:
-                logger.warn("%s material has no %s uniform variable. (or maybe optimized by compiler.)" % (
-                    self.name, uniform_name))
+                logger.warn("%s material has no %s uniform variable. It may have been optimized by the compiler..)" %
+                            (self.name, uniform_name))
         return True
 
     def compile(self, shaderType, shader_code):

@@ -114,7 +114,7 @@ class MaterialInstance:
             uniform[0].bind_uniform(uniform_data, num, transpose, access)
         elif uniform_name not in self.show_message or self.show_message[uniform_name]:
             self.show_message[uniform_name] = False
-            logger.error('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
+            logger.warn('%s material instance has no %s uniform variable.' % (self.name, uniform_name))
 
     def get_uniform_data(self, uniform_name):
         uniform = self.linked_uniform_map.get(uniform_name)
@@ -134,8 +134,8 @@ class MaterialInstance:
                 if uniform_data is not None:
                     uniform[1] = uniform_data
                     return True
-        logger.error('%s material instance set data error : %s uniform variable %s.' % (
-            self.name, uniform_name, str_uniform_data))
+        logger.warn("%s material instance has no %s uniform variable. It may have been optimized by the compiler..)" %
+                    (self.name, uniform_name))
 
     def get_program(self):
         return self.material.program
