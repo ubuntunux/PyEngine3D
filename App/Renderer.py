@@ -58,6 +58,7 @@ class Renderer(Singleton):
         self.uniformViewProjection = None
         self.uniformLightConstants = None
         self.uniformPointLightConstants = None
+        self.uniform_emitter_common = None
         self.uniform_emitter_infos = None
 
         # material instances
@@ -101,7 +102,8 @@ class Renderer(Singleton):
 
         self.uniformSceneConstants = UniformBlock("sceneConstants", program, 0,
                                                   datas=[FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
-                                                         FLOAT2_ZERO, FLOAT2_ZERO, FLOAT3_ZERO, FLOAT_ZERO])
+                                                         FLOAT2_ZERO, FLOAT2_ZERO,
+                                                         FLOAT3_ZERO, FLOAT_ZERO])
 
         self.uniformViewConstants = UniformBlock("viewConstants", program, 1,
                                                  datas=[MATRIX4_IDENTITY, MATRIX4_IDENTITY, MATRIX4_IDENTITY,
@@ -119,12 +121,14 @@ class Renderer(Singleton):
         self.uniformPointLightConstants = UniformBlock("pointLightConstants", program, 4,
                                                        datas=[self.scene_manager.point_light_uniform_blocks])
 
-        self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 5,
-                                                  datas=[MATRIX4_IDENTITY,
-                                                         FLOAT3_ZERO, INT_ZERO,
-                                                         FLOAT2_ZERO, FLOAT2_ZERO,
-                                                         FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, INT_ZERO,
-                                                         INT2_ZERO, INT_ZERO, INT_ZERO,
+        self.uniform_emitter_common = UniformBlock("emitter_common", program, 5,
+                                                   datas=[MATRIX4_IDENTITY,
+                                                          FLOAT3_ZERO, INT_ZERO,
+                                                          INT2_ZERO, INT_ZERO, INT_ZERO])
+
+        self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 6,
+                                                  datas=[FLOAT2_ZERO, FLOAT2_ZERO,
+                                                         FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,

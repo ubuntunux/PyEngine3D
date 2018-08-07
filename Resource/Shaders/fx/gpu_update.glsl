@@ -134,7 +134,7 @@ void main()
 
         update_sequence(id, life_ratio);
 
-        // emitter_datas[id].velocity += vec3(0.0, -EMITTER_GRAVITY, 0.0) * DELTA_TIME;
+        emitter_datas[id].velocity_position += vec3(0.0, -EMITTER_FORCE_GRAVITY, 0.0) * DELTA_TIME;
         emitter_datas[id].transform_position += emitter_datas[id].velocity_position * DELTA_TIME;
         emitter_datas[id].transform_rotation += emitter_datas[id].velocity_rotation * DELTA_TIME;
         emitter_datas[id].transform_scale += emitter_datas[id].velocity_scale * DELTA_TIME;

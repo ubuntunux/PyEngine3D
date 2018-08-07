@@ -54,21 +54,27 @@ layout(std140, binding=4) uniform pointLightConstants
     POINT_LIGHT POINT_LIGHTS[MAX_POINT_LIGHTS];
 };
 
-layout(std140, binding=5) uniform emitter_infos
+
+layout(std140, binding=5) uniform emitter_common
 {
     mat4 EMITTER_PARENT_MATRIX;
     vec3 EMITTER_COLOR;
     bool EMITTER_BILLBOARD;
+    ivec2 EMITTER_CELL_COUNT;
+    int EMITTER_LOOP;
+    int EMITTER_BLEND_MODE;
+};
+
+layout(std140, binding=6) uniform emitter_infos
+{
     vec2 EMITTER_DELAY;
     vec2 EMITTER_LIFE_TIME;
     float EMITTER_FADE_IN;
     float EMITTER_FADE_OUT;
     float EMITTER_OPACITY;
     float EMITTER_PLAY_SPEED;
-    ivec2 EMITTER_CELL_COUNT;
-    int EMITTER_LOOP;
-    int EMITTER_BLEND_MODE;
     vec3 EMITTER_TRANSFORM_POSITION_MIN;
+    float EMITTER_FORCE_GRAVITY;
     vec3 EMITTER_TRANSFORM_POSITION_MAX;
     vec3 EMITTER_TRANSFORM_ROTATION_MIN;
     vec3 EMITTER_TRANSFORM_ROTATION_MAX;

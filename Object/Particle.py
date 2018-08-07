@@ -22,6 +22,7 @@ class ParticleManager(Singleton):
         self.active_particles = []
         self.render_particles = []
         self.resource_manager = None
+        self.uniform_emitter_common = None
         self.uniform_emitter_infos = None
         self.emitter_instance_buffer = None
 
@@ -30,6 +31,7 @@ class ParticleManager(Singleton):
 
     def initialize(self, core_manager):
         self.resource_manager = core_manager.resource_manager
+        self.uniform_emitter_common = core_manager.renderer.uniform_emitter_common
         self.uniform_emitter_infos = core_manager.renderer.uniform_emitter_infos
 
         self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
@@ -99,16 +101,24 @@ class ParticleManager(Singleton):
 
                 geometry = emitter_info.mesh.get_geometry()
 
+                # emitter common
+                self.uniform_emitter_common.bind_uniform_block(datas=[particle.transform.matrix,
+                                                                      emitter_info.color,
+                                                                      emitter_info.billboard,
+                                                                      emitter_info.cell_count,
+                                                                      emitter_info.loop,
+                                                                      emitter_info.blend_mode.value])
+
                 if emitter_info.gpu_particle:
                     # GPU Particle
                     self.uniform_emitter_infos.bind_uniform_block(
-                        datas=[particle.transform.matrix,
-                               emitter_info.color, emitter_info.billboard,
-                               emitter_info.delay.value, emitter_info.life_time.value,
-                               emitter_info.fade_in, emitter_info.fade_out,
-                               emitter_info.opacity, emitter_info.play_speed,
-                               emitter_info.cell_count, emitter_info.loop, emitter_info.blend_mode.value,
-                               emitter_info.transform_position.value[0], FLOAT_ZERO,
+                        datas=[emitter_info.delay.value,
+                               emitter_info.life_time.value,
+                               emitter_info.fade_in,
+                               emitter_info.fade_out,
+                               emitter_info.opacity,
+                               emitter_info.play_speed,
+                               emitter_info.transform_position.value[0], emitter_info.force_gravity,
                                emitter_info.transform_position.value[1], FLOAT_ZERO,
                                emitter_info.transform_rotation.value[0], FLOAT_ZERO,
                                emitter_info.transform_rotation.value[1], FLOAT_ZERO,
@@ -145,12 +155,6 @@ class ParticleManager(Singleton):
                     material_instance.use_program()
                     material_instance.bind_material_instance()
                     material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
-                    material_instance.bind_uniform_data('particle_matrix', particle.transform.matrix)
-                    material_instance.bind_uniform_data('billboard', emitter_info.billboard)
-                    material_instance.bind_uniform_data('color', emitter_info.color)
-                    material_instance.bind_uniform_data('blend_mode', emitter_info.blend_mode.value)
-                    material_instance.bind_uniform_data('sequence_width', 1.0 / emitter_info.cell_count[0])
-                    material_instance.bind_uniform_data('sequence_height', 1.0 / emitter_info.cell_count[1])
 
                     draw_count = 0
                     for emitter in particle.emitters_group[i]:
@@ -302,18 +306,13 @@ class Emitter:
         self.velocity_rotation = Float3()
         self.velocity_scale = Float3()
 
-        self.transform = TransformObject()
-
-        self.force_planar = 0.0
-        self.force_spherical = 0.0
-        self.force_rotational = 0.0
-
         self.has_velocity_position = False
         self.has_velocity_rotation = False
         self.has_velocity_scale = False
-        self.has_force = False
 
         self.final_opacity = 1.0
+
+        self.transform = TransformObject()
 
         # gpu data
         self.emitter_gpu_data = None
@@ -338,14 +337,9 @@ class Emitter:
             self.transform.set_rotation(self.emitter_info.transform_rotation.get_uniform())
             self.transform.set_scale(self.emitter_info.transform_scale.get_uniform())
 
-            self.force_planar = self.emitter_info.force_planar.get_uniform()
-            self.force_spherical = self.emitter_info.force_spherical.get_uniform()
-            self.force_rotational = self.emitter_info.force_rotational.get_uniform()
-
             self.has_velocity_position = any([v != 0.0 for v in self.velocity_position])
             self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
             self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
-            self.has_force = self.force_planar != 0.0 or self.force_spherical != 0.0 or self.force_rotational != 0.0
 
             self.final_opacity = self.emitter_info.opacity
 
@@ -466,28 +460,10 @@ class Emitter:
         self.update_sequence(life_ratio)
 
         # update transform
-        if self.has_velocity_position or self.has_force:
-            # apply force
-            if self.has_force:
-                force_transform = self.emitter_info.force_transform
-                direction = self.transform.pos - self.emitter_info.force_transform.pos
-                radius = np.linalg.norm(direction)
-                direction /= radius if radius != 0.0 else 1.0
-                if radius < self.emitter_info.force_radius or self.emitter_info.force_radius <= 0.0:
-                    if 0.0 < self.emitter_info.force_radius:
-                        weight = max(0.0, min(1.0, 1.0 - radius / self.emitter_info.force_radius))
-                        weight *= weight
-                    else:
-                        weight = 1.0
+        if self.emitter_info.force_gravity != 0.0:
+            self.velocity_position -= self.emitter_info.force_gravity * dt
 
-                    if self.force_planar != 0.0:
-                        self.velocity_position += force_transform.up * self.force_planar * dt * weight
-                    if self.force_spherical != 0.0:
-                        self.velocity_position += direction * self.force_spherical * dt * weight
-                    if self.force_rotational != 0.0:
-                        force_quaternion = get_quaternion(force_transform.up, self.force_rotational * dt * weight)
-                        self.velocity_position[...] = vector_multiply_quaternion(self.velocity_position,
-                                                                                 force_quaternion)
+        if self.has_velocity_position:
             self.transform.move(self.velocity_position * dt)
 
         if self.has_velocity_rotation:
@@ -630,14 +606,7 @@ class EmitterInfo:
         self.velocity_rotation = RangeVariable(**emitter_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
         self.velocity_scale = RangeVariable(**emitter_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
 
-        self.force_transform = TransformObject()
-        self.force_transform.set_pos(emitter_info.get('force_position', FLOAT_ZERO))
-        self.force_transform.set_rotation(emitter_info.get('force_rotation', FLOAT_ZERO))
-        self.force_transform.update_transform()
-        self.force_planar = RangeVariable(**emitter_info.get('force_planar', dict(min_value=FLOAT_ZERO)))
-        self.force_spherical = RangeVariable(**emitter_info.get('force_spherical', dict(min_value=FLOAT_ZERO)))
-        self.force_rotational = RangeVariable(**emitter_info.get('force_rotational', dict(min_value=FLOAT_ZERO)))
-        self.force_radius = emitter_info.get('force_radius', 1.0)
+        self.force_gravity = emitter_info.get('force_gravity', 0.0)
 
         self.model_data = None
         self.uvs_data = None
@@ -678,12 +647,7 @@ class EmitterInfo:
             velocity_position=self.velocity_position.get_save_data(),
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),
-            force_position=self.force_transform.pos.tolist(),
-            force_rotation=self.force_transform.rot.tolist(),
-            force_planar=self.force_planar.get_save_data(),
-            force_spherical=self.force_spherical.get_save_data(),
-            force_rotational=self.force_rotational.get_save_data(),
-            force_radius=self.force_radius,
+            force_gravity=self.force_gravity,
         )
         return save_data
 
@@ -721,10 +685,3 @@ class EmitterInfo:
                 self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)
-        else:
-            if 'force_position' == attribute_name:
-                self.force_transform.set_pos(attribute_value)
-                self.force_transform.update_transform()
-            elif 'force_rotation' == attribute_name:
-                self.force_transform.set_rotation(attribute_value)
-                self.force_transform.update_transform()

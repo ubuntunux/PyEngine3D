@@ -44,9 +44,10 @@ void main() {
     vec3 local_position = local_matrix[3].xyz;
     local_matrix[3].xyz = vec3(0.0);
 
-    mat4 world_matrix = billboard ? particle_matrix * INV_VIEW_ORIGIN * local_matrix : particle_matrix * local_matrix;
-    vec4 vertex_position = vec4(vs_in_position, 1.0);
+    mat4 world_matrix = EMITTER_PARENT_MATRIX;
+    world_matrix *= EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix : local_matrix;
 
+    vec4 vertex_position = vec4(vs_in_position, 1.0);
     vec4 world_position = world_matrix * vertex_position;
     world_position.xyz += local_position.xyz;
 
@@ -61,7 +62,7 @@ void main() {
         mat4(vec4(vertex_tangent, 0.0), vec4(vertex_normal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 
     vs_output.projection_pos = VIEW_PROJECTION * world_position;
-    vec2 uv_size = vec2(sequence_width, sequence_height) * vs_in_tex_coord.xy;
+    vec2 uv_size = vs_in_tex_coord.xy / vec2(EMITTER_CELL_COUNT);
     vs_output.uv = uvs.xy + uv_size;
     vs_output.next_uv = uvs.zw + uv_size;
     vs_output.sequence_ratio = sequence_opacity.x;
