@@ -2,6 +2,13 @@
 #include "utility.glsl"
 
 
+uniform bool enable_force_field;
+uniform sampler3D texture_force_field;
+uniform float force_field_strength;
+uniform vec3 force_field_offset;
+uniform vec3 force_field_radius;
+
+
 #ifdef GL_COMPUTE_SHADER
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
@@ -73,6 +80,54 @@ void update_sequence(uint id, float life_ratio)
 }
 
 
+void update_local_matrix(uint id)
+{
+    mat4 local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+    float ch = 1.0;
+    float sh = 0.0;
+    float ca = 1.0;
+    float sa = 0.0;
+    float cb = 1.0;
+    float sb = 0.0;
+    bool rotation_matrix = false;
+
+    if(0.0 != emitter_datas[id].transform_rotation.x)
+    {
+        cb = cos(emitter_datas[id].transform_rotation.x);
+        sb = sin(emitter_datas[id].transform_rotation.x);
+        rotation_matrix = true;
+    }
+
+    if(0.0 != emitter_datas[id].transform_rotation.y)
+    {
+        ch = cos(emitter_datas[id].transform_rotation.y);
+        sh = sin(emitter_datas[id].transform_rotation.y);
+        rotation_matrix = true;
+    }
+
+    if(0.0 != emitter_datas[id].transform_rotation.z)
+    {
+        ca = cos(emitter_datas[id].transform_rotation.z);
+        sa = sin(emitter_datas[id].transform_rotation.z);
+        rotation_matrix = true;
+    }
+
+    if(rotation_matrix)
+    {
+        local_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
+        local_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
+        local_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
+    }
+
+    local_matrix[0].x *= emitter_datas[id].transform_scale.x;
+    local_matrix[1].y *= emitter_datas[id].transform_scale.y;
+    local_matrix[2].z *= emitter_datas[id].transform_scale.z;
+
+    emitter_datas[id].local_matrix = local_matrix;
+}
+
+
 void main()
 {
     uint id = gl_GlobalInvocationID.x;
@@ -135,53 +190,21 @@ void main()
         update_sequence(id, life_ratio);
 
         emitter_datas[id].velocity_position += vec3(0.0, -EMITTER_FORCE_GRAVITY, 0.0) * DELTA_TIME;
+
+        if(enable_force_field)
+        {
+            vec3 uvw = force_field_offset + emitter_datas[id].transform_position / force_field_radius;
+            uvw = (EMITTER_PARENT_MATRIX * vec4(uvw, 0.0)).xyz;
+            vec3 force = texture3D(texture_force_field, uvw - vec3(0.5)).xyz * 2.0 - 1.0;
+            emitter_datas[id].velocity_position += force * force_field_strength * DELTA_TIME;
+        }
+
         emitter_datas[id].transform_position += emitter_datas[id].velocity_position * DELTA_TIME;
         emitter_datas[id].transform_rotation += emitter_datas[id].velocity_rotation * DELTA_TIME;
         emitter_datas[id].transform_scale += emitter_datas[id].velocity_scale * DELTA_TIME;
 
-        mat4 local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-
-        float ch = 1.0;
-        float sh = 0.0;
-        float ca = 1.0;
-        float sa = 0.0;
-        float cb = 1.0;
-        float sb = 0.0;
-        bool rotation_matrix = false;
-
-        if(0.0 != emitter_datas[id].transform_rotation.x)
-        {
-            cb = cos(emitter_datas[id].transform_rotation.x);
-            sb = sin(emitter_datas[id].transform_rotation.x);
-            rotation_matrix = true;
-        }
-
-        if(0.0 != emitter_datas[id].transform_rotation.y)
-        {
-            ch = cos(emitter_datas[id].transform_rotation.y);
-            sh = sin(emitter_datas[id].transform_rotation.y);
-            rotation_matrix = true;
-        }
-
-        if(0.0 != emitter_datas[id].transform_rotation.z)
-        {
-            ca = cos(emitter_datas[id].transform_rotation.z);
-            sa = sin(emitter_datas[id].transform_rotation.z);
-            rotation_matrix = true;
-        }
-
-        if(rotation_matrix)
-        {
-            local_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
-            local_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
-            local_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
-        }
-
-        local_matrix[0].x *= emitter_datas[id].transform_scale.x;
-        local_matrix[1].y *= emitter_datas[id].transform_scale.y;
-        local_matrix[2].z *= emitter_datas[id].transform_scale.z;
-
-        emitter_datas[id].local_matrix = local_matrix;
+        // update transform
+        update_local_matrix(id);
 
         if(0.0 != EMITTER_FADE_IN || 0.0 != EMITTER_FADE_OUT)
         {

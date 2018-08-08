@@ -109,7 +109,7 @@ class ParticleManager(Singleton):
                                                                       emitter_info.loop,
                                                                       emitter_info.blend_mode.value])
 
-                if emitter_info.gpu_particle:
+                if emitter_info.enable_gpu_particle:
                     # GPU Particle
                     self.uniform_emitter_infos.bind_uniform_block(
                         datas=[emitter_info.delay.value,
@@ -136,17 +136,32 @@ class ParticleManager(Singleton):
                         if emitter.alive:
                             render_count = emitter_info.spawn_count
 
-                            self.material_gpu_update.use_program()
-                            self.material_gpu_update.bind_material_instance()
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
+
+                            # update gpu particle
+                            material_instance = self.material_gpu_update
+                            material_instance.use_program()
+                            material_instance.bind_material_instance()
+
+                            material_instance.bind_uniform_data('enable_force_field', emitter_info.enable_force_field)
+                            if emitter_info.enable_force_field:
+                                material_instance.bind_uniform_data('force_field_strength',
+                                                                    emitter_info.force_field_strength)
+                                material_instance.bind_uniform_data('force_field_offset',
+                                                                    emitter_info.force_field_offset)
+                                material_instance.bind_uniform_data('force_field_radius',
+                                                                    emitter_info.force_field_radius)
+                                material_instance.bind_uniform_data('texture_force_field',
+                                                                    emitter_info.texture_force_field)
+
                             glDispatchCompute(render_count, 1, 1)
                             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
 
+                            # render gpu particle
                             material_instance = self.material_gpu_particle
                             material_instance.use_program()
                             material_instance.bind_material_instance()
                             material_instance.bind_uniform_data('texture_diffuse', emitter_info.texture_diffuse)
-                            emitter.emitter_gpu_buffer.bind_storage_buffer()
 
                             geometry.draw_elements_instanced(render_count)
                 else:
@@ -246,7 +261,7 @@ class Particle:
 
         for emitter_info in self.particle_info.emitter_infos:
             emitters = []
-            if emitter_info.gpu_particle:
+            if emitter_info.enable_gpu_particle:
                 emitter = Emitter(emitter_info)
                 emitters.append(emitter)
             else:
@@ -322,7 +337,7 @@ class Emitter:
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
 
         # refresh max parameter
-        if self.emitter_info.gpu_particle:
+        if self.emitter_info.enable_gpu_particle:
             self.delay = self.emitter_info.delay.get_max()
             self.life_time = self.emitter_info.life_time.get_max()
         else:
@@ -344,7 +359,7 @@ class Emitter:
             self.final_opacity = self.emitter_info.opacity
 
         # gpu buffer
-        if self.emitter_info.gpu_particle:
+        if self.emitter_info.enable_gpu_particle:
             self.create_gpu_buffer()
         else:
             self.delete_gpu_buffer()
@@ -446,11 +461,11 @@ class Emitter:
                 return
 
             # refresh only cpu particle
-            if not self.emitter_info.gpu_particle:
+            if not self.emitter_info.enable_gpu_particle:
                 self.refresh()
 
         # gpu particle return
-        if self.emitter_info.gpu_particle:
+        if self.emitter_info.enable_gpu_particle:
             return
 
         life_ratio = 0.0
@@ -575,7 +590,7 @@ class EmitterInfo:
         self.name = emitter_info.get('name', 'Emitter')
         self.blend_mode = BlendMode(emitter_info.get('blend_mode', 0))
         self.enable = emitter_info.get('enable', True)
-        self.gpu_particle = emitter_info.get('gpu_particle', False)
+        self.enable_gpu_particle = emitter_info.get('enable_gpu_particle', True)
         self.spawn_count = emitter_info.get('spawn_count', 1)
         self.billboard = emitter_info.get('billboard', True)
         self.color = emitter_info.get('color', Float3(1.0, 1.0, 1.0))
@@ -608,6 +623,13 @@ class EmitterInfo:
 
         self.force_gravity = emitter_info.get('force_gravity', 0.0)
 
+        self.enable_force_field = emitter_info.get('enable_force_field', False)
+        texture_force_field_name = emitter_info.get('texture_force_field', 'common.default_3d')
+        self.texture_force_field = resource_manager.get_texture_or_none(texture_force_field_name)
+        self.force_field_offset = Float3(0.0, 0.0, 0.0)
+        self.force_field_radius = Float3(1.0, 1.0, 1.0)
+        self.force_field_strength = 1.0
+
         self.model_data = None
         self.uvs_data = None
         self.sequence_opacity_data = None
@@ -629,7 +651,7 @@ class EmitterInfo:
             spawn_count=self.spawn_count,
             billboard=self.billboard,
             color=self.color,
-            gpu_particle=self.gpu_particle,
+            enable_gpu_particle=self.enable_gpu_particle,
             mesh=self.mesh.name if self.mesh is not None else '',
             material_instance=self.material_instance.name if self.material_instance is not None else '',
             texture_diffuse=self.texture_diffuse.name if self.texture_diffuse is not None else '',
@@ -648,6 +670,11 @@ class EmitterInfo:
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),
             force_gravity=self.force_gravity,
+            enable_force_field=self.enable_force_field,
+            force_field_offset=self.force_field_offset,
+            force_field_radius=self.force_field_radius,
+            force_field_strength=self.force_field_strength,
+            texture_force_field=self.texture_force_field.name if self.texture_force_field is not None else '',
         )
         return save_data
 
@@ -679,6 +706,10 @@ class EmitterInfo:
                 texture_diffuse = resource_manager.get_texture(attribute_value)
                 if texture_diffuse is not None:
                     self.texture_diffuse = texture_diffuse
+            elif 'texture_force_field' == attribute_name:
+                texture_force_field = resource_manager.get_texture(attribute_value)
+                if texture_force_field is not None:
+                    self.texture_force_field = texture_force_field
             elif 'spawn_count' == attribute_name:
                 self.set_spawn_count(attribute_value)
             elif 'cell_count' == attribute_name:
