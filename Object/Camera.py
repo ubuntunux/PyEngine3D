@@ -110,7 +110,7 @@ class Camera(StaticActor):
             # self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
 
     def update(self, force_update=False):
-        updated = self.transform.update_transform(update_view_transform=True, force_update=force_update)
+        updated = self.transform.update_transform(update_inverse_matrix=True, force_update=force_update)
 
         if updated or force_update:
             self.prev_view = self.transform.prev_inverse_matrix

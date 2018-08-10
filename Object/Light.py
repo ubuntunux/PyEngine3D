@@ -28,7 +28,7 @@ class MainLight(StaticActor):
         return save_data
 
     def update(self, current_camera):
-        self.transform.update_transform(update_view_transform=True)
+        self.transform.update_transform(update_inverse_matrix=True)
 
         if current_camera:
             shadow_distance = 50.0 / current_camera.meter_per_unit

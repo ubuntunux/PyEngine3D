@@ -174,7 +174,7 @@ class ParticleManager(Singleton):
                     draw_count = 0
                     for emitter in particle.emitters_group[i]:
                         if emitter.is_renderable():
-                            emitter_info.model_data[draw_count][...] = emitter.transform.matrix
+                            emitter_info.matrix_data[draw_count][...] = emitter.world_matrix
                             emitter_info.uvs_data[draw_count][0:2] = emitter.sequence_uv
                             emitter_info.uvs_data[draw_count][2:4] = emitter.next_sequence_uv
                             emitter_info.sequence_opacity_data[draw_count][0] = emitter.sequence_ratio
@@ -182,7 +182,7 @@ class ParticleManager(Singleton):
                             draw_count += 1
 
                     if 0 < draw_count:
-                        self.emitter_instance_buffer.bind_instance_buffer(datas=[emitter_info.model_data,
+                        self.emitter_instance_buffer.bind_instance_buffer(datas=[emitter_info.matrix_data,
                                                                                  emitter_info.uvs_data,
                                                                                  emitter_info.sequence_opacity_data])
                         geometry.draw_elements_instanced(draw_count)
@@ -251,9 +251,6 @@ class Particle:
         elif attribute_name == 'scale':
             self.transform.set_scale(attribute_value)
 
-        # replay particle
-        self.play()
-
     def play(self):
         self.destroy()
 
@@ -262,11 +259,11 @@ class Particle:
         for emitter_info in self.particle_info.emitter_infos:
             emitters = []
             if emitter_info.enable_gpu_particle:
-                emitter = Emitter(emitter_info)
+                emitter = Emitter(self, emitter_info)
                 emitters.append(emitter)
             else:
                 for i in range(emitter_info.spawn_count):
-                    emitter = Emitter(emitter_info)
+                    emitter = Emitter(self, emitter_info)
                     emitters.append(emitter)
             self.emitters_group.append(emitters)
 
@@ -287,7 +284,7 @@ class Particle:
         if not self.alive:
             return
 
-        self.transform.update_transform()
+        self.transform.update_transform(update_inverse_matrix=True)
 
         is_alive = self.alive
 
@@ -301,11 +298,12 @@ class Particle:
 
 
 class Emitter:
-    def __init__(self, emitter_info):
+    def __init__(self, parent, emitter_info):
+        self.parent = parent
         self.emitter_info = emitter_info
         self.alive = False
         self.elapsed_time = 0.0
-        
+
         # sequence
         self.loop_remain = 0
         self.total_cell_count = 0
@@ -327,12 +325,17 @@ class Emitter:
 
         self.final_opacity = 1.0
 
+        self.parent_matrix = Matrix4()
+        self.parent_inverse_matrix = Matrix4()
+        self.world_matrix = Matrix4()
+        self.force = Float3()
+
         self.transform = TransformObject()
 
         # gpu data
         self.emitter_gpu_data = None
         self.emitter_gpu_buffer = None
-    
+
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
 
@@ -352,7 +355,15 @@ class Emitter:
             self.transform.set_rotation(self.emitter_info.transform_rotation.get_uniform())
             self.transform.set_scale(self.emitter_info.transform_scale.get_uniform())
 
-            self.has_velocity_position = any([v != 0.0 for v in self.velocity_position])
+            # Store metrics at the time of creation
+            self.parent_matrix[...] = self.parent.transform.matrix
+            self.parent_inverse_matrix[...] = self.parent.transform.inverse_matrix
+
+            # We will apply inverse_matrix here because we will apply parent_matrix later.
+            self.force[...] = np.dot([0.0, self.emitter_info.force_gravity, 0.0, 1.0], self.parent_inverse_matrix)[:3]
+
+            self.has_velocity_position = \
+                any([v != 0.0 for v in self.velocity_position]) or self.emitter_info.force_gravity != 0.0
             self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
             self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
 
@@ -476,7 +487,7 @@ class Emitter:
 
         # update transform
         if self.emitter_info.force_gravity != 0.0:
-            self.velocity_position -= self.emitter_info.force_gravity * dt
+            self.velocity_position -= self.force * dt
 
         if self.has_velocity_position:
             self.transform.move(self.velocity_position * dt)
@@ -487,7 +498,10 @@ class Emitter:
         if self.has_velocity_scale:
             self.transform.scaling(self.velocity_scale * dt)
 
-        self.transform.update_transform()
+        updated = self.transform.update_transform()
+
+        if updated:
+            self.world_matrix[...] = np.dot(self.transform.matrix, self.parent_matrix)
 
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
             self.final_opacity = self.emitter_info.opacity
@@ -630,7 +644,7 @@ class EmitterInfo:
         self.force_field_radius = Float3(1.0, 1.0, 1.0)
         self.force_field_strength = 1.0
 
-        self.model_data = None
+        self.matrix_data = None
         self.uvs_data = None
         self.sequence_opacity_data = None
 
@@ -640,7 +654,7 @@ class EmitterInfo:
 
     def set_spawn_count(self, spawn_count):
         self.spawn_count = spawn_count
-        self.model_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
+        self.matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
         self.uvs_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
         self.sequence_opacity_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
 

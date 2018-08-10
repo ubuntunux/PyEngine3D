@@ -30,7 +30,7 @@ layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;
 layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
-layout (location = 5) in mat4 model;
+layout (location = 5) in mat4 world_matrix;
 layout (location = 9) in vec4 uvs;
 layout (location = 10) in vec4 sequence_opacity;
 
@@ -40,16 +40,14 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 local_matrix = model;
-    vec3 local_position = local_matrix[3].xyz;
-    local_matrix[3].xyz = vec3(0.0);
 
-    mat4 world_matrix = EMITTER_PARENT_MATRIX;
-    world_matrix *= EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix : local_matrix;
+    //vec3 local_position = world_matrix[3].xyz;
+    //world_matrix[3].xyz = vec3(0.0);
+
+    //world_matrix *= EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * world_matrix : world_matrix;
 
     vec4 vertex_position = vec4(vs_in_position, 1.0);
     vec4 world_position = world_matrix * vertex_position;
-    world_position.xyz += local_position.xyz;
 
     vs_output.world_position = world_position.xyz;
     vs_output.vertex_normal = vertex_normal;

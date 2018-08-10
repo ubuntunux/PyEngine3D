@@ -171,7 +171,7 @@ class TransformObject:
         self.scale[...] = self.scale + vScale
 
     # update Transform
-    def update_transform(self, update_view_transform=False, force_update=False):
+    def update_transform(self, update_inverse_matrix=False, force_update=False):
         prev_updated = self.updated
         self.updated = False
 
@@ -210,12 +210,12 @@ class TransformObject:
 
         if prev_updated or self.updated:
             self.prev_matrix[...] = self.matrix
-            if update_view_transform:
+            if update_inverse_matrix:
                 self.prev_inverse_matrix[...] = self.inverse_matrix
 
         if self.updated:
             self.matrix[...] = dot_arrays(self.local, self.scaleMatrix, self.rotationMatrix, self.translateMatrix)
-            if update_view_transform:
+            if update_inverse_matrix:
                 self.inverse_matrix[...] = np.linalg.inv(self.matrix)
         return self.updated
 
