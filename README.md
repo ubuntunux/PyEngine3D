@@ -24,12 +24,12 @@
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
-    - Particle uniform block
 * Actors
     - Tree, Foliage actor
     - Landscape
+    - Road
     - Wind
-    - River
+    - River    
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
@@ -44,14 +44,17 @@
     - progress bar
     - button
 * Light
-    - Spot, area light
+    - Spot
+    - Area light
+    - Point light shadow using dual paraboloid mapping
 * Object
     - Select, Move, Modify
     - Gizmo
     - VTF Skinning
     - Animation calculation in gpu
 * Particle System
-    - Force field
+    - Manage GPU particles
+    - Particle spawn on polygon surface
 * Rendering    
     - View Mode
         - Wire, Solid, Lighting, Color
@@ -60,7 +63,6 @@
         - distance culling   
     - Volumtric Fog
     - Fur Rendering
-    - Procedural Terrain
 * Technique
     - FXAA
     - SSR Optimization

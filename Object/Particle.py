@@ -39,7 +39,7 @@ class ParticleManager(Singleton):
                                                       element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
 
         self.material_gpu_particle = self.resource_manager.get_material_instance('fx.gpu_particle')
-        self.material_gpu_update = self.resource_manager.get_material_instance('fx.gpu_update')
+        self.material_gpu_update = self.resource_manager.get_material_instance('fx.gpu_particle_update')
 
     def get_save_data(self):
         return [particle.get_save_data() for particle in self.particles]
