@@ -14,7 +14,7 @@ class RangeVariable:
         if max_value is None:
             max_value = min_value
 
-        min_value, max_value = np.minimum(min_value, max_value), np.maximum(min_value, max_value)
+        # min_value, max_value = np.minimum(min_value, max_value), np.maximum(min_value, max_value)
 
         self.value = np.array([min_value, max_value], dtype=np.float32)
 

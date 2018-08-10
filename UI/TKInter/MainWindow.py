@@ -567,10 +567,11 @@ class MainWindow:
                 return
 
             try:
-                # check value chaned
                 new_value = get_value(item)
-                if item_info.oldValue == new_value:
-                    return
+
+                # check value chaned
+                # if item_info.oldValue == new_value:
+                #     return
 
                 item_info.oldValue = new_value
 
