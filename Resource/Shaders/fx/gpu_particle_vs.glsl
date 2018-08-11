@@ -33,9 +33,9 @@ void main()
     mat4 local_matrix_origin = emitter_datas[instanceID].local_matrix;
     vec3 local_position = local_matrix_origin[3].xyz:
     local_matrix_origin[3].xyz = vec3(0.0);
-    mat4 local_to_world = EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix : EMITTER_PARENT_MATRIX * local_matrix;
+    mat4 local_to_world = EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix_origlocal_matrix_origin : EMITTER_PARENT_MATRIX * local_matrix_origlocal_matrix_origin;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
-    vec4 world_position = EMITTER_PARENT_MATRIX * vec4(emitter_datas[instanceID].transform_position.xyz, 1.0);
+    vec4 world_position = EMITTER_PARENT_MATRIX * vec4(local_position.xyz, 1.0);
     world_position += local_to_world * vertex_position;
 
     vs_output.world_position = world_position.xyz;
