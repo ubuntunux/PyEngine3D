@@ -124,7 +124,9 @@ void update_local_matrix(uint id)
     local_matrix[1].y *= emitter_datas[id].transform_scale.y;
     local_matrix[2].z *= emitter_datas[id].transform_scale.z;
     
-    local_matrix[3].xyz = emitter_datas[id].transform_position.xyz;
+    local_matrix[0].w = emitter_datas[id].transform_position.x;
+    local_matrix[1].w = emitter_datas[id].transform_position.y;
+    local_matrix[2].w = emitter_datas[id].transform_position.z;
     
     emitter_datas[id].local_matrix = local_matrix;
 }
