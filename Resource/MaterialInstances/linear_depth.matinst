@@ -1,1 +1,4 @@
-{'macros': {}, 'material_name': 'linear_depth', 'shader_name': 'linear_depth', 'uniform_datas': {'texture_depth': 'empty'}}
+{'macros': OrderedDict(),
+ 'material_name': 'linear_depth_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
+ 'shader_name': 'linear_depth',
+ 'uniform_datas': {'texture_depth': 'empty'}}

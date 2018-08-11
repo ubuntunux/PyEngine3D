@@ -1,9 +1,10 @@
-{'macros': {},
- 'material_name': 'ssao',
+{'macros': OrderedDict(),
+ 'material_name': 'ssao_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'ssao',
  'uniform_datas': {'kernel': array([ 1.,  1.,  1.], dtype=float32),
                    'radius_min_max': array([ 1.,  1.], dtype=float32),
-                   'screen_size': array([ 1.,  1.], dtype=float32),
                    'texture_linear_depth': 'empty',
+                   'texture_lod': 0.0,
                    'texture_noise': 'empty',
-                   'texture_normal': 'empty'}}
+                   'texture_normal': 'empty',
+                   'texture_size': array([ 1.,  1.], dtype=float32)}}

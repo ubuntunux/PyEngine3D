@@ -1,4 +1,4 @@
-{'macros': {},
- 'material_name': 'tonemapping',
+{'macros': OrderedDict(),
+ 'material_name': 'tonemapping_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'tonemapping',
- 'uniform_datas': {'exposure': 0.0, 'texture_diffuse': 'empty'}}
+ 'uniform_datas': {'contrast': 0.0, 'exposure': 0.0, 'is_render_tonemapping': False, 'texture_diffuse': 'empty'}}

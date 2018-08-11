@@ -1,8 +1,9 @@
-{'macros': {},
- 'material_name': 'bloom',
+{'macros': OrderedDict(),
+ 'material_name': 'bloom_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'bloom',
  'uniform_datas': {'bloom_intensity': 0.0,
                    'texture_bloom0': 'empty',
                    'texture_bloom1': 'empty',
                    'texture_bloom2': 'empty',
-                   'texture_bloom3': 'empty'}}
+                   'texture_bloom3': 'empty',
+                   'texture_bloom4': 'common.flat_gray'}}

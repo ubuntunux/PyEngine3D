@@ -1,4 +1,4 @@
-{'macros': {},
- 'material_name': 'bloom_highlight',
+{'macros': OrderedDict(),
+ 'material_name': 'bloom_highlight_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'bloom_highlight',
  'uniform_datas': {'bloom_threshold_max': 0.0, 'bloom_threshold_min': 0.0, 'texture_diffuse': 'empty'}}

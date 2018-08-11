@@ -1,5 +1,5 @@
-{'macros': {},
- 'material_name': 'font',
+{'macros': OrderedDict(),
+ 'material_name': 'font_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'font',
  'uniform_datas': {'count_horizontal': 0.0,
                    'font_size': 0.0,

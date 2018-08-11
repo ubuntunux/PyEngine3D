@@ -1,4 +1,4 @@
-{'macros': {},
- 'material_name': 'temporal_antialiasing',
+{'macros': OrderedDict(),
+ 'material_name': 'temporal_antialiasing_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'temporal_antialiasing',
  'uniform_datas': {'texture_input': 'empty', 'texture_prev': 'empty', 'texture_velocity': 'empty'}}

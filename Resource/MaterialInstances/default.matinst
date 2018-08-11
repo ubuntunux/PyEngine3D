@@ -1,4 +1,4 @@
-{'macros': {'COMBINED_SCATTERING_TEXTURES': 0, 'SKELETAL': 0, 'TRANSPARENT_MATERIAL': 0},
+{'macros': OrderedDict([('TRANSPARENT_MATERIAL', 0), ('SKELETAL', 0), ('COMBINED_SCATTERING_TEXTURES', 0)]),
  'material_name': 'default_aec1d398_da1e_308c_9d63_56e9056db8f9',
  'shader_name': 'default',
  'uniform_datas': {'SKY_RADIANCE_TO_LUMINANCE': array([ 1.,  1.,  1.], dtype=float32),

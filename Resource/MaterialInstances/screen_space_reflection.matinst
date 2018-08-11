@@ -1,5 +1,5 @@
-{'macros': {},
- 'material_name': 'screen_space_reflection',
+{'macros': OrderedDict(),
+ 'material_name': 'screen_space_reflection_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'screen_space_reflection',
  'uniform_datas': {'texture_depth': 'empty',
                    'texture_diffuse': 'empty',

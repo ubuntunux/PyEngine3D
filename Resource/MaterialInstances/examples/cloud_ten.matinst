@@ -1,4 +1,4 @@
-{'macros': {},
+{'macros': OrderedDict(),
  'material_name': 'examples.cloud_ten',
  'shader_name': 'examples.cloud_ten',
  'uniform_datas': {'texture_noise': 'noise.LottesGrain5'}}
