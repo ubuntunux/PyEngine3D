@@ -1,16 +1,16 @@
-layout(std140, binding=0) uniform sceneConstants
+layout(std140, binding=0) uniform scene_constants
 {
     float TIME;
     float JITTER_FRAME;
-    float RENDER_SSR;
-    float RENDER_SSAO;
+    bool RENDER_SSR;
+    bool RENDER_SSAO;
     vec2 BACKBUFFER_SIZE;
     vec2 MOUSE_POS;
     vec3 SCENECONSTANTS_DUMMY_0;
     float DELTA_TIME;
 };
 
-layout(std140, binding=1) uniform viewConstants
+layout(std140, binding=1) uniform view_constants
 {
     mat4 VIEW;
     mat4 INV_VIEW;
@@ -25,13 +25,13 @@ layout(std140, binding=1) uniform viewConstants
     vec2 VIEWCONSTANTS_DUMMY0;
 };
 
-layout(std140, binding=2) uniform viewProjection
+layout(std140, binding=2) uniform view_projection
 {
     mat4 VIEW_PROJECTION;
     mat4 PREV_VIEW_PROJECTION;
 };
 
-layout(std140, binding=3) uniform lightConstants
+layout(std140, binding=3) uniform light_constants
 {
     vec4 LIGHT_POSITION;
     vec4 LIGHT_DIRECTION;
@@ -49,7 +49,7 @@ struct POINT_LIGHT
     float render;
 };
 
-layout(std140, binding=4) uniform pointLightConstants
+layout(std140, binding=4) uniform point_light_constants
 {
     POINT_LIGHT POINT_LIGHTS[MAX_POINT_LIGHTS];
 };
@@ -70,23 +70,30 @@ layout(std140, binding=6) uniform emitter_infos
     mat4 EMITTER_PARENT_INVERSE_MATRIX;
     vec2 EMITTER_DELAY;
     vec2 EMITTER_LIFE_TIME;
-    float EMITTER_FADE_IN;
-    float EMITTER_FADE_OUT;
-    float EMITTER_OPACITY;
-    float EMITTER_PLAY_SPEED;
     vec3 EMITTER_TRANSFORM_POSITION_MIN;
     float EMITTER_FORCE_GRAVITY;
     vec3 EMITTER_TRANSFORM_POSITION_MAX;
+    float EMITTER_FADE_IN;
     vec3 EMITTER_TRANSFORM_ROTATION_MIN;
+    float EMITTER_FADE_OUT;
     vec3 EMITTER_TRANSFORM_ROTATION_MAX;
+    float EMITTER_OPACITY;
     vec3 EMITTER_TRANSFORM_SCALE_MIN;
+    float EMITTER_PLAY_SPEED;
     vec3 EMITTER_TRANSFORM_SCALE_MAX;
+    float EMITTER_DUMMY_0;
     vec3 EMITTER_VELOCITY_POSITION_MIN;
+    float EMITTER_DUMMY_1;
     vec3 EMITTER_VELOCITY_POSITION_MAX;
+    float EMITTER_DUMMY_2;
     vec3 EMITTER_VELOCITY_ROTATION_MIN;
+    float EMITTER_DUMMY_3;
     vec3 EMITTER_VELOCITY_ROTATION_MAX;
+    float EMITTER_DUMMY_4;
     vec3 EMITTER_VELOCITY_SCALE_MIN;
+    float EMITTER_DUMMY_5;
     vec3 EMITTER_VELOCITY_SCALE_MAX;
+    float EMITTER_DUMMY_6;
 };
 
 

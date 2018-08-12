@@ -18,21 +18,19 @@ from .RenderOptions import BlendMode
 
 class ParticleManager(Singleton):
     def __init__(self):
+        self.renderer = None
         self.particles = []
         self.active_particles = []
         self.render_particles = []
         self.resource_manager = None
-        self.uniform_emitter_common = None
-        self.uniform_emitter_infos = None
         self.emitter_instance_buffer = None
 
         self.material_gpu_particle = None
         self.material_gpu_update = None
 
     def initialize(self, core_manager):
+        self.renderer = core_manager.renderer
         self.resource_manager = core_manager.resource_manager
-        self.uniform_emitter_common = core_manager.renderer.uniform_emitter_common
-        self.uniform_emitter_infos = core_manager.renderer.uniform_emitter_infos
 
         self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
                                                       location_offset=5,
@@ -105,36 +103,39 @@ class ParticleManager(Singleton):
                 geometry = emitter_info.mesh.get_geometry()
 
                 # emitter common
-                self.uniform_emitter_common.bind_uniform_block(datas=[emitter_info.color,
-                                                                      emitter_info.billboard,
-                                                                      emitter_info.cell_count,
-                                                                      emitter_info.loop,
-                                                                      emitter_info.blend_mode.value])
+                uniform_data = self.renderer.uniform_emitter_common_data
+                uniform_data['EMITTER_COLOR'] = emitter_info.color
+                uniform_data['EMITTER_BILLBOARD'] = emitter_info.billboard
+                uniform_data['EMITTER_CELL_COUNT'] = emitter_info.cell_count
+                uniform_data['EMITTER_LOOP'] = emitter_info.loop
+                uniform_data['EMITTER_BLEND_MODE'] = emitter_info.blend_mode.value
+                self.renderer.uniform_emitter_common_buffer.bind_uniform_block(data=uniform_data)
 
                 if emitter_info.enable_gpu_particle:
                     # GPU Particle
-                    self.uniform_emitter_infos.bind_uniform_block(
-                        datas=[particle.transform.matrix,
-                               particle.transform.inverse_matrix,
-                               emitter_info.delay.value,
-                               emitter_info.life_time.value,
-                               emitter_info.fade_in,
-                               emitter_info.fade_out,
-                               emitter_info.opacity,
-                               emitter_info.play_speed,
-                               emitter_info.transform_position.value[0], emitter_info.force_gravity,
-                               emitter_info.transform_position.value[1], FLOAT_ZERO,
-                               emitter_info.transform_rotation.value[0], FLOAT_ZERO,
-                               emitter_info.transform_rotation.value[1], FLOAT_ZERO,
-                               emitter_info.transform_scale.value[0], FLOAT_ZERO,
-                               emitter_info.transform_scale.value[1], FLOAT_ZERO,
-                               emitter_info.velocity_position.value[0], FLOAT_ZERO,
-                               emitter_info.velocity_position.value[1], FLOAT_ZERO,
-                               emitter_info.velocity_rotation.value[0], FLOAT_ZERO,
-                               emitter_info.velocity_rotation.value[1], FLOAT_ZERO,
-                               emitter_info.velocity_scale.value[0], FLOAT_ZERO,
-                               emitter_info.velocity_scale.value[1], FLOAT_ZERO]
-                    )
+                    uniform_data = self.renderer.uniform_emitter_infos_data
+                    uniform_data['EMITTER_PARENT_MATRIX'] = particle.transform.matrix
+                    uniform_data['EMITTER_PARENT_INVERSE_MATRIX'] = particle.transform.inverse_matrix
+                    uniform_data['EMITTER_DELAY'] = emitter_info.delay.value
+                    uniform_data['EMITTER_LIFE_TIME'] = emitter_info.life_time.value
+                    uniform_data['EMITTER_TRANSFORM_POSITION_MIN'] = emitter_info.transform_position.value[0]
+                    uniform_data['EMITTER_FORCE_GRAVITY'] = emitter_info.force_gravity
+                    uniform_data['EMITTER_TRANSFORM_POSITION_MAX'] = emitter_info.transform_position.value[1]
+                    uniform_data['EMITTER_FADE_IN'] = emitter_info.fade_in
+                    uniform_data['EMITTER_TRANSFORM_ROTATION_MIN'] = emitter_info.transform_rotation.value[0]
+                    uniform_data['EMITTER_FADE_OUT'] = emitter_info.fade_out
+                    uniform_data['EMITTER_TRANSFORM_ROTATION_MAX'] = emitter_info.transform_rotation.value[1]
+                    uniform_data['EMITTER_OPACITY'] = emitter_info.opacity
+                    uniform_data['EMITTER_TRANSFORM_SCALE_MIN'] = emitter_info.transform_scale.value[0]
+                    uniform_data['EMITTER_PLAY_SPEED'] = emitter_info.play_speed
+                    uniform_data['EMITTER_TRANSFORM_SCALE_MAX'] = emitter_info.transform_scale.value[1]
+                    uniform_data['EMITTER_VELOCITY_POSITION_MIN'] = emitter_info.velocity_position.value[0]
+                    uniform_data['EMITTER_VELOCITY_POSITION_MAX'] = emitter_info.velocity_position.value[1]
+                    uniform_data['EMITTER_VELOCITY_ROTATION_MIN'] = emitter_info.velocity_rotation.value[0]
+                    uniform_data['EMITTER_VELOCITY_ROTATION_MAX'] = emitter_info.velocity_rotation.value[1]
+                    uniform_data['EMITTER_VELOCITY_SCALE_MIN'] = emitter_info.velocity_scale.value[0]
+                    uniform_data['EMITTER_VELOCITY_SCALE_MAX'] = emitter_info.velocity_scale.value[1]
+                    self.renderer.uniform_emitter_infos_buffer.bind_uniform_block(data=uniform_data)
 
                     for emitter in particle.emitters_group[i]:
                         if emitter.alive:

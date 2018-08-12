@@ -337,7 +337,7 @@ vec4 surface_shading(vec4 base_color,
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
 
         // mix scene reflection
-        if(RENDER_SSR == 1.0f)
+        if(RENDER_SSR)
         {
             ibl_specular_light.xyz = mix(ibl_specular_light.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
         }
@@ -356,7 +356,7 @@ vec4 surface_shading(vec4 base_color,
     result = diffuse_light + specular_light;
 
     // SSAO
-    if(RENDER_SSAO == 1.0f)
+    if(RENDER_SSAO)
     {
         result *= ssao_factor;
     }

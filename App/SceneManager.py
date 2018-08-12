@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 from Common import logger
+from Common.Constants import *
 from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
@@ -44,12 +45,7 @@ class SceneManager(Singleton):
         self.objectMap = {}  # All of objects
 
         # render group
-        self.max_point_lights = 10
         self.point_light_count = 0
-        self.point_light_uniform_blocks = np.zeros(self.max_point_lights, dtype=[('color', 'f', 3),
-                                                                                 ('radius', 'f', 1),
-                                                                                 ('pos', 'f', 3),
-                                                                                 ('render', 'f', 1)])
 
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
@@ -434,7 +430,7 @@ class SceneManager(Singleton):
 
     def update_light_render_infos(self):
         self.point_light_count = 0
-        self.point_light_uniform_blocks.fill(0.0)
+        self.renderer.uniform_point_light_data.fill(0.0)
 
         for point_light in self.point_lights:
             to_light = point_light.transform.pos - self.main_camera.transform.pos
@@ -445,13 +441,13 @@ class SceneManager(Singleton):
                     break
             else:
                 # pass culling
-                point_light_uniform_block = self.point_light_uniform_blocks[self.point_light_count]
+                point_light_uniform_block = self.renderer.uniform_point_light_data[self.point_light_count]
                 point_light_uniform_block['color'] = point_light.light_color
                 point_light_uniform_block['radius'] = point_light.light_radius
                 point_light_uniform_block['pos'] = point_light.transform.pos
                 point_light_uniform_block['render'] = 1.0
                 self.point_light_count += 1
-            if self.max_point_lights <= self.point_light_count:
+            if MAX_POINT_LIGHTS <= self.point_light_count:
                 break
 
     def update_particle_render_info(self):
