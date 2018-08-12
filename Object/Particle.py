@@ -36,7 +36,10 @@ class ParticleManager(Singleton):
 
         self.emitter_instance_buffer = InstanceBuffer(name="instance_buffer",
                                                       location_offset=5,
-                                                      element_datas=[MATRIX4_IDENTITY, FLOAT4_ZERO, FLOAT4_ZERO])
+                                                      element_datas=[MATRIX4_IDENTITY,
+                                                                     MATRIX4_IDENTITY,
+                                                                     FLOAT4_ZERO,
+                                                                     FLOAT4_ZERO])
 
         self.material_gpu_particle = self.resource_manager.get_material_instance('fx.gpu_particle')
         self.material_gpu_update = self.resource_manager.get_material_instance('fx.gpu_particle_update')
@@ -102,8 +105,7 @@ class ParticleManager(Singleton):
                 geometry = emitter_info.mesh.get_geometry()
 
                 # emitter common
-                self.uniform_emitter_common.bind_uniform_block(datas=[particle.transform.matrix,
-                                                                      emitter_info.color,
+                self.uniform_emitter_common.bind_uniform_block(datas=[emitter_info.color,
                                                                       emitter_info.billboard,
                                                                       emitter_info.cell_count,
                                                                       emitter_info.loop,
@@ -112,7 +114,9 @@ class ParticleManager(Singleton):
                 if emitter_info.enable_gpu_particle:
                     # GPU Particle
                     self.uniform_emitter_infos.bind_uniform_block(
-                        datas=[emitter_info.delay.value,
+                        datas=[particle.transform.matrix,
+                               particle.transform.inverse_matrix,
+                               emitter_info.delay.value,
                                emitter_info.life_time.value,
                                emitter_info.fade_in,
                                emitter_info.fade_out,
@@ -174,6 +178,7 @@ class ParticleManager(Singleton):
                     draw_count = 0
                     for emitter in particle.emitters_group[i]:
                         if emitter.is_renderable():
+                            emitter_info.parent_matrix_data[draw_count][...] = emitter.parent_matrix
                             emitter_info.matrix_data[draw_count][...] = emitter.transform.matrix
                             emitter_info.uvs_data[draw_count][0:2] = emitter.sequence_uv
                             emitter_info.uvs_data[draw_count][2:4] = emitter.next_sequence_uv
@@ -182,7 +187,8 @@ class ParticleManager(Singleton):
                             draw_count += 1
 
                     if 0 < draw_count:
-                        self.emitter_instance_buffer.bind_instance_buffer(datas=[emitter_info.matrix_data,
+                        self.emitter_instance_buffer.bind_instance_buffer(datas=[emitter_info.parent_matrix_data,
+                                                                                 emitter_info.matrix_data,
                                                                                  emitter_info.uvs_data,
                                                                                  emitter_info.sequence_opacity_data])
                         geometry.draw_elements_instanced(draw_count)
@@ -324,12 +330,10 @@ class Emitter:
         self.has_velocity_scale = False
 
         self.final_opacity = 1.0
-
-        self.parent_matrix = Matrix4()
-        self.parent_inverse_matrix = Matrix4()
         self.force = Float3()
 
         self.transform = TransformObject()
+        self.parent_matrix = MATRIX4_IDENTITY.copy()
 
         # gpu data
         self.emitter_gpu_data = None
@@ -354,12 +358,12 @@ class Emitter:
             self.transform.set_rotation(self.emitter_info.transform_rotation.get_uniform())
             self.transform.set_scale(self.emitter_info.transform_scale.get_uniform())
 
-            # Store metrics at the time of creation
+            # Store metrics at the time of spawn.
             self.parent_matrix[...] = self.parent.transform.matrix
-            self.parent_inverse_matrix[...] = self.parent.transform.inverse_matrix
 
             # We will apply inverse_matrix here because we will apply parent_matrix later.
-            self.force[...] = np.dot([0.0, self.emitter_info.force_gravity, 0.0, 1.0], self.parent_inverse_matrix)[:3]
+            self.force[...] = np.dot([0.0, -self.emitter_info.force_gravity, 0.0, 1.0],
+                                     self.parent.transform.inverse_matrix)[:3]
 
             self.has_velocity_position = \
                 any([v != 0.0 for v in self.velocity_position]) or self.emitter_info.force_gravity != 0.0
@@ -379,7 +383,8 @@ class Emitter:
 
         count = self.emitter_info.spawn_count
 
-        self.emitter_gpu_data = np.zeros(count, dtype=[('local_matrix', np.float32, 16),
+        self.emitter_gpu_data = np.zeros(count, dtype=[('parent_matrix', np.float32, 16),
+                                                       ('local_matrix', np.float32, 16),
                                                        ('delay', np.float32),
                                                        ('life_time', np.float32),
                                                        ('opacity', np.float32),
@@ -390,7 +395,7 @@ class Emitter:
                                                        ('sequence_index', np.int32),
                                                        ('next_sequence_index', np.int32),
                                                        ('loop_remain', np.int32),
-                                                       ('dummy_0', np.float32, 3),
+                                                       ('force', np.float32, 3),
                                                        ('state', np.int32),
                                                        ('transform_position', np.float32, 3), ('dummy_1', np.float32),
                                                        ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
@@ -486,7 +491,7 @@ class Emitter:
 
         # update transform
         if self.emitter_info.force_gravity != 0.0:
-            self.velocity_position -= self.force * dt
+            self.velocity_position += self.force * dt
 
         if self.has_velocity_position:
             self.transform.move(self.velocity_position * dt)
@@ -640,6 +645,7 @@ class EmitterInfo:
         self.force_field_radius = Float3(1.0, 1.0, 1.0)
         self.force_field_strength = 1.0
 
+        self.parent_matrix_data = None
         self.matrix_data = None
         self.uvs_data = None
         self.sequence_opacity_data = None
@@ -650,6 +656,7 @@ class EmitterInfo:
 
     def set_spawn_count(self, spawn_count):
         self.spawn_count = spawn_count
+        self.parent_matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
         self.matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
         self.uvs_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
         self.sequence_opacity_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))

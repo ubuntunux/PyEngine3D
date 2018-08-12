@@ -30,15 +30,25 @@ void main()
     instanceID = gl_InstanceID.x;
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 local_matrix_origin = emitter_datas[instanceID].local_matrix;
-    vec3 local_position = vec3(local_matrix_origin[0].w, local_matrix_origin[1].w, local_matrix_origin[2].w);
-    local_matrix_origin[0].w = 0.0;
-    local_matrix_origin[1].w = 0.0;
-    local_matrix_origin[2].w = 0.0;
-    mat4 local_to_world = EMITTER_BILLBOARD ? INV_VIEW_ORIGIN * local_matrix_origin : EMITTER_PARENT_MATRIX * local_matrix_origin;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
-    vec4 world_position = EMITTER_PARENT_MATRIX * vec4(local_position.xyz, 1.0);
-    world_position += local_to_world * vertex_position;
+
+    mat4 world_matrix;
+    vec3 world_position;
+
+    if(EMITTER_BILLBOARD)
+    {
+        world_matrix = emitter_datas[instanceID].local_matrix;
+        world_matrix[3].xyz = vec3(0.0);
+        world_matrix = INV_VIEW_ORIGIN * world_matrix;
+
+        vec3 local_position = (emitter_datas[instanceID].parent_matrix * emitter_datas[instanceID].local_matrix)[3].xyz;
+        world_position = local_position + (world_matrix * vertex_position).xyz;
+    }
+    else
+    {
+        world_matrix = emitter_datas[instanceID].parent_matrix * emitter_datas[instanceID].local_matrix;
+        world_position = (world_matrix * vertex_position).xyz;
+    }
 
     vs_output.world_position = world_position.xyz;
 
@@ -48,6 +58,6 @@ void main()
     vs_output.sequence_ratio = emitter_datas[instanceID].sequence_ratio;
     vs_output.opacity = emitter_datas[instanceID].opacity;
 
-    gl_Position = VIEW_PROJECTION * world_position;
+    gl_Position = VIEW_PROJECTION * vec4(world_position, 1.0);
 }
 #endif

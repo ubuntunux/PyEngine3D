@@ -48,6 +48,9 @@ void refresh(uint id)
     emitter_datas[id].velocity_rotation = mix(EMITTER_VELOCITY_ROTATION_MIN, EMITTER_VELOCITY_ROTATION_MAX, vec3(t12, t13, t14));
     emitter_datas[id].velocity_scale = mix(EMITTER_VELOCITY_SCALE_MIN, EMITTER_VELOCITY_SCALE_MAX, vec3(t18, t19, t20));
     emitter_datas[id].opacity = EMITTER_OPACITY;
+    emitter_datas[id].parent_matrix = EMITTER_PARENT_MATRIX;
+    // We will apply inverse_matrix here because we will apply parent_matrix later.
+    emitter_datas[id].force = (EMITTER_PARENT_INVERSE_MATRIX * vec4(0.0, -EMITTER_FORCE_GRAVITY, 0.0, 1.0)).xyz;
     emitter_datas[id].local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 }
 
@@ -124,10 +127,8 @@ void update_local_matrix(uint id)
     local_matrix[1].y *= emitter_datas[id].transform_scale.y;
     local_matrix[2].z *= emitter_datas[id].transform_scale.z;
     
-    local_matrix[0].w = emitter_datas[id].transform_position.x;
-    local_matrix[1].w = emitter_datas[id].transform_position.y;
-    local_matrix[2].w = emitter_datas[id].transform_position.z;
-    
+    local_matrix[3].xyz = emitter_datas[id].transform_position.xyz;
+
     emitter_datas[id].local_matrix = local_matrix;
 }
 
@@ -193,7 +194,7 @@ void main()
 
         update_sequence(id, life_ratio);
 
-        emitter_datas[id].velocity_position += vec3(0.0, -EMITTER_FORCE_GRAVITY, 0.0) * DELTA_TIME;
+        emitter_datas[id].velocity_position += emitter_datas[id].force * DELTA_TIME;
 
         if(enable_force_field)
         {

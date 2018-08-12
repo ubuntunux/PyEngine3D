@@ -30,9 +30,10 @@ layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;
 layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
-layout (location = 5) in mat4 local_matrix;
-layout (location = 9) in vec4 uvs;
-layout (location = 10) in vec4 sequence_opacity;
+layout (location = 5) in mat4 parent_matrix;
+layout (location = 9) in mat4 local_matrix;
+layout (location = 13) in vec4 uvs;
+layout (location = 14) in vec4 sequence_opacity;
 
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
@@ -50,12 +51,12 @@ void main() {
         world_matrix[3].xyz = vec3(0.0);
         world_matrix = INV_VIEW_ORIGIN * world_matrix;
 
-        vec3 local_position = vec3((EMITTER_PARENT_MATRIX * local_matrix)[3].xyz);
+        vec3 local_position = (parent_matrix * local_matrix)[3].xyz;
         world_position = local_position + (world_matrix * vertex_position).xyz;
     }
     else
     {
-        world_matrix = EMITTER_PARENT_MATRIX * local_matrix;
+        world_matrix = parent_matrix * local_matrix;
         world_position = (world_matrix * vertex_position).xyz;
     }
 

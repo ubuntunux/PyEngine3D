@@ -57,7 +57,6 @@ layout(std140, binding=4) uniform pointLightConstants
 
 layout(std140, binding=5) uniform emitter_common
 {
-    mat4 EMITTER_PARENT_MATRIX;
     vec3 EMITTER_COLOR;
     bool EMITTER_BILLBOARD;
     ivec2 EMITTER_CELL_COUNT;
@@ -67,6 +66,8 @@ layout(std140, binding=5) uniform emitter_common
 
 layout(std140, binding=6) uniform emitter_infos
 {
+    mat4 EMITTER_PARENT_MATRIX;
+    mat4 EMITTER_PARENT_INVERSE_MATRIX;
     vec2 EMITTER_DELAY;
     vec2 EMITTER_LIFE_TIME;
     float EMITTER_FADE_IN;
@@ -92,6 +93,7 @@ layout(std140, binding=6) uniform emitter_infos
 // Storage Buffer Data
 struct EmitterData
 {
+    mat4 parent_matrix;
     mat4 local_matrix;
     float delay;
     float life_time;
@@ -103,7 +105,7 @@ struct EmitterData
     int sequence_index;
     int next_sequence_index;
     int loop_remain;
-    vec3 dummy_0;
+    vec3 force;
     int state;
     vec3 transform_position;
     vec3 transform_rotation;

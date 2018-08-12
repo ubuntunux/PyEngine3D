@@ -122,12 +122,13 @@ class Renderer(Singleton):
                                                        datas=[self.scene_manager.point_light_uniform_blocks])
 
         self.uniform_emitter_common = UniformBlock("emitter_common", program, 5,
-                                                   datas=[MATRIX4_IDENTITY,
-                                                          FLOAT3_ZERO, INT_ZERO,
+                                                   datas=[FLOAT3_ZERO, INT_ZERO,
                                                           INT2_ZERO, INT_ZERO, INT_ZERO])
 
         self.uniform_emitter_infos = UniformBlock("emitter_infos", program, 6,
-                                                  datas=[FLOAT2_ZERO, FLOAT2_ZERO,
+                                                  datas=[MATRIX4_IDENTITY,
+                                                         MATRIX4_IDENTITY,
+                                                         FLOAT2_ZERO, FLOAT2_ZERO,
                                                          FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
                                                          FLOAT3_ZERO, FLOAT_ZERO,
