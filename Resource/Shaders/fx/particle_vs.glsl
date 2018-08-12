@@ -46,17 +46,15 @@ void main() {
 
     if(EMITTER_BILLBOARD)
     {
-        vec3 local_position = vec3(local_matrix[0].w, local_matrix[1].w, local_matrix[2].w);
-        world_matrix[0].w = 0.0;
-        world_matrix[1].w = 0.0;
-        world_matrix[2].w = 0.0;
+        vec3 local_position = vec3(local_matrix[3].xyz);
+        world_matrix[3].xyz = vec3(0.0);
 
         world_matrix = INV_VIEW_ORIGIN * world_matrix;
-        world_position = world_position + (world_matrix * vertex_position).xyz;
+        world_position = local_position + (world_matrix * vertex_position).xyz;
     }
     else
     {
-        world_position = (vertex_position * world_matrix).xyz;
+        world_position = (world_matrix * vertex_position).xyz;
     }
 
     vs_output.world_position = world_position.xyz;

@@ -500,12 +500,12 @@ class Emitter:
 
         updated = self.transform.update_transform()
 
-        if updated:
-            if self.emitter_info.billboard:
-                self.local_matrix[0:2] = self.transform.matrix[0:2]
-                self.local_matrix[3] = np.dot(self.transform.matrix, self.parent_matrix)[3]
-            else:
-                self.local_matrix = np.dot(self.transform.matrix, self.parent_matrix)
+        # if updated:
+        if self.emitter_info.billboard:
+            self.local_matrix[0:2] = self.transform.matrix[0:2]
+            self.local_matrix[3] = np.dot(self.transform.matrix, self.parent_matrix)[3]
+        else:
+            self.local_matrix = np.dot(self.transform.matrix, self.parent_matrix)
 
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
             self.final_opacity = self.emitter_info.opacity
