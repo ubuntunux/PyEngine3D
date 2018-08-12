@@ -125,7 +125,8 @@ class Renderer(Singleton):
                                                     ('INV_VIEW_ORIGIN', np.float32, (4, 4)),
                                                     ('PROJECTION', np.float32, (4, 4)),
                                                     ('INV_PROJECTION', np.float32, (4, 4)),
-                                                    ('CAMERA_POSITION', np.float32, 4),
+                                                    ('CAMERA_POSITION', np.float32, 3),
+                                                    ('VIEW_DUMMY_0', np.float32),
                                                     ('NEAR_FAR', np.float32, 2),
                                                     ('JITTER_DELTA', np.float32, 2),
                                                     ('JITTER_OFFSET', np.float32, 2),
@@ -136,8 +137,10 @@ class Renderer(Singleton):
                                                                ('PREV_VIEW_PROJECTION', np.float32, (4, 4))])
 
         self.uniform_light_buffer = UniformBlock("light_constants", program, 3)
-        self.uniform_light_data = np.zeros(1, dtype=[('LIGHT_POSITION', np.float32, 4),
-                                                     ('LIGHT_DIRECTION', np.float32, 4),
+        self.uniform_light_data = np.zeros(1, dtype=[('LIGHT_POSITION', np.float32, 3),
+                                                     ('LIGHT_DUMMY_0', np.float32),
+                                                     ('LIGHT_DIRECTION', np.float32, 3),
+                                                     ('LIGHT_DUMMY_1', np.float32),
                                                      ('LIGHT_COLOR', np.float32, 4),
                                                      ('SHADOW_MATRIX', np.float32, (4, 4))])
 
@@ -304,15 +307,15 @@ class Renderer(Singleton):
         uniform_data['INV_VIEW_ORIGIN'] = np.linalg.inv(camera.view_origin)
         uniform_data['PROJECTION'] = camera.projection
         uniform_data['INV_PROJECTION'] = np.linalg.inv(camera.projection)
-        uniform_data['CAMERA_POSITION'][0][:3] = camera.transform.get_pos()
+        uniform_data['CAMERA_POSITION'] = camera.transform.get_pos()
         uniform_data['NEAR_FAR'] = (camera.near, camera.far)
         uniform_data['JITTER_DELTA'] = self.postprocess.jitter_delta
         uniform_data['JITTER_OFFSET'] = self.postprocess.jitter
         self.uniform_view_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_light_data
-        uniform_data['LIGHT_POSITION'][0][:3] = main_light.transform.get_pos()
-        uniform_data['LIGHT_DIRECTION'][0][:3] = main_light.transform.front
+        uniform_data['LIGHT_POSITION'] = main_light.transform.get_pos()
+        uniform_data['LIGHT_DIRECTION'] = main_light.transform.front
         uniform_data['LIGHT_COLOR'] = main_light.light_color
         uniform_data['SHADOW_MATRIX'] = main_light.shadow_view_projection
         self.uniform_light_buffer.bind_uniform_block(data=uniform_data)

@@ -18,7 +18,8 @@ layout(std140, binding=1) uniform view_constants
     mat4 INV_VIEW_ORIGIN;
     mat4 PROJECTION;
     mat4 INV_PROJECTION;
-    vec4 CAMERA_POSITION;
+    vec3 CAMERA_POSITION;
+    float VIEW_DUMMY_0;
     vec2 NEAR_FAR;
     vec2 JITTER_DELTA;
     vec2 JITTER_OFFSET;
@@ -33,8 +34,10 @@ layout(std140, binding=2) uniform view_projection
 
 layout(std140, binding=3) uniform light_constants
 {
-    vec4 LIGHT_POSITION;
-    vec4 LIGHT_DIRECTION;
+    vec3 LIGHT_POSITION;
+    float LIGHT_DUMMY_0;
+    vec3 LIGHT_DIRECTION;
+    float LIGHT_DUMMY_1;
     vec4 LIGHT_COLOR;
     mat4 SHADOW_MATRIX;
 };
