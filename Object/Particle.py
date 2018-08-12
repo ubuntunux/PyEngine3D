@@ -174,7 +174,7 @@ class ParticleManager(Singleton):
                     draw_count = 0
                     for emitter in particle.emitters_group[i]:
                         if emitter.is_renderable():
-                            emitter_info.matrix_data[draw_count][...] = emitter.world_matrix
+                            emitter_info.matrix_data[draw_count][...] = emitter.local_matrix
                             emitter_info.uvs_data[draw_count][0:2] = emitter.sequence_uv
                             emitter_info.uvs_data[draw_count][2:4] = emitter.next_sequence_uv
                             emitter_info.sequence_opacity_data[draw_count][0] = emitter.sequence_ratio
@@ -327,7 +327,7 @@ class Emitter:
 
         self.parent_matrix = Matrix4()
         self.parent_inverse_matrix = Matrix4()
-        self.world_matrix = Matrix4()
+        self.local_matrix = Matrix4()
         self.force = Float3()
 
         self.transform = TransformObject()
@@ -501,7 +501,11 @@ class Emitter:
         updated = self.transform.update_transform()
 
         if updated:
-            self.world_matrix[...] = np.dot(self.transform.matrix, self.parent_matrix)
+            if self.emitter_info.billboard:
+                self.local_matrix[0:2] = self.transform.matrix[0:2]
+                self.local_matrix[3] = np.dot(self.transform.matrix, self.parent_matrix)[3]
+            else:
+                self.local_matrix = np.dot(self.transform.matrix, self.parent_matrix)
 
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
             self.final_opacity = self.emitter_info.opacity

@@ -31,7 +31,7 @@ void main()
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
     mat4 local_matrix_origin = emitter_datas[instanceID].local_matrix;
-    vec3 local_position = vec3(local_matrix_origin[3].w, local_matrix_origin[1].w, local_matrix_origin[2].w);
+    vec3 local_position = vec3(local_matrix_origin[0].w, local_matrix_origin[1].w, local_matrix_origin[2].w);
     local_matrix_origin[0].w = 0.0;
     local_matrix_origin[1].w = 0.0;
     local_matrix_origin[2].w = 0.0;
