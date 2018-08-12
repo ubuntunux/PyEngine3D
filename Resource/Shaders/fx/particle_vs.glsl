@@ -40,13 +40,14 @@ layout (location = 0) out VERTEX_OUTPUT vs_output;
 void main() {
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
-    mat4 world_matrix = local_matrix;
+    mat4 world_matrix = EMITTER_PARENT_MATRIX * local_matrix;
     vec3 world_position;
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     if(EMITTER_BILLBOARD)
     {
-        vec3 local_position = vec3(local_matrix[3].xyz);
+        vec3 local_position = vec3(world_matrix[3].xyz);
+        world_matrix = local_matrix;
         world_matrix[3].xyz = vec3(0.0);
 
         world_matrix = INV_VIEW_ORIGIN * world_matrix;
