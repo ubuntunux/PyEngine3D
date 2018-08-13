@@ -436,7 +436,7 @@ class CoreManager(Singleton):
             rendertarget_index, rendertarget_name = value
             texture = self.rendertarget_manager.find_rendertarget(rendertarget_index, rendertarget_name)
             self.renderer.set_debug_texture(texture)
-            if self.renderer.debug_texture:
+            if self.renderer.debug_texture is not None:
                 attribute = self.renderer.debug_texture.get_attribute()
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_RENDERTARGET.value] = cmd_view_rendertarget
@@ -480,6 +480,10 @@ class CoreManager(Singleton):
             if Keyboard.ESCAPE == event_value:
                 if self.game_backend.full_screen:
                     self.game_backend.change_resolution(0, 0, False)
+                elif self.renderer.debug_texture is not None:
+                    self.renderer.set_debug_texture(None)
+                elif self.renderer.postprocess.is_render_shader():
+                    self.renderer.postprocess.is_render_material_instance = False
                 else:
                     self.close()
             elif Keyboard._1 == event_value:

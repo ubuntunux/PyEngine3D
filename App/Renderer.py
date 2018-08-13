@@ -275,10 +275,12 @@ class Renderer(Singleton):
         glLoadIdentity()
 
     def set_debug_texture(self, texture):
-        self.debug_texture = texture
-        if self.debug_texture is not None:
+        if texture is not None and texture is not RenderTargets.BACKBUFFER and type(texture) != RenderBuffer:
+            self.debug_texture = texture
             self.postprocess.is_render_material_instance = False
             logger.info("Current texture : %s" % self.debug_texture.name)
+        else:
+            self.debug_texture = None
 
     def bind_uniform_blocks(self):
         camera = self.scene_manager.main_camera
@@ -287,7 +289,7 @@ class Renderer(Singleton):
         if not camera or not main_light:
             return
 
-        frame_count = self.core_manager.frame_count if self.postprocess.anti_aliasing else 0.0
+        frame_count = self.core_manager.frame_count % 16
 
         uniform_data = self.uniform_scene_data
         uniform_data['TIME'] = self.core_manager.currentTime
@@ -502,8 +504,7 @@ class Renderer(Singleton):
             self.render_postprocess()
 
         # debug render target
-        if self.debug_texture is not None and self.debug_texture is not RenderTargets.BACKBUFFER and \
-                type(self.debug_texture) != RenderBuffer:
+        if self.debug_texture is not None:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_texture(self.debug_texture)
@@ -668,7 +669,9 @@ class Renderer(Singleton):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         camera = self.scene_manager.main_camera
-        self.uniformViewProjection.bind_uniform_block(datas=[camera.view_projection, camera.prev_view_projection])
+        self.uniform_view_projection_data['VIEW_PROJECTION'] = camera.view_projection
+        self.uniform_view_projection_data['PREV_VIEW_PROJECTION'] = camera.prev_view_projection
+        self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
         # render background normal, depth
         self.render_actors(RenderGroup.STATIC_ACTOR,
@@ -753,8 +756,11 @@ class Renderer(Singleton):
         if self.postprocess.is_render_ssr:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.SCREEN_SPACE_REFLECTION)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_screen_space_reflection(RenderTargets.HDR, RenderTargets.WORLD_NORMAL,
-                                                            RenderTargets.VELOCITY, RenderTargets.DEPTHSTENCIL)
+            self.postprocess.render_screen_space_reflection(RenderTargets.HDR,
+                                                            RenderTargets.WORLD_NORMAL,
+                                                            RenderTargets.MATERIAL,
+                                                            RenderTargets.VELOCITY,
+                                                            RenderTargets.DEPTHSTENCIL)
 
         # SSAO
         if self.postprocess.is_render_ssao:

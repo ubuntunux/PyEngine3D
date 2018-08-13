@@ -213,6 +213,8 @@ void main()
                 out_lightshaft.xyz = light_shaft / float(count);
             }
 
+            out_lightshaft.xyz = vec3(0.0);
+
             if(render_cloud)
             {
                 out_lightshaft.xyz += scene_in_scatter;

@@ -418,11 +418,15 @@ class PostProcess:
         self.velocity.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-    def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_velocity, texture_depth):
+    def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_material, texture_velocity,
+                                       texture_depth):
         self.screeen_space_reflection.use_program()
         self.screeen_space_reflection.bind_material_instance()
+        texture_random = self.resource_manager.get_texture('common.random')
+        self.screeen_space_reflection.bind_uniform_data("texture_random", texture_random)
         self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
+        self.screeen_space_reflection.bind_uniform_data("texture_material", texture_material)
         self.screeen_space_reflection.bind_uniform_data("texture_velocity", texture_velocity)
         self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()

@@ -4,8 +4,10 @@
 #include "scene_constants.glsl"
 #include "quad.glsl"
 
+uniform sampler2D texture_random;
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
+uniform sampler2D texture_material;
 uniform sampler2D texture_velocity;
 uniform sampler2D texture_depth;
 
@@ -56,9 +58,9 @@ vec4 ImportanceSampleBlinn(vec2 E, float Roughness)
 
 mat3 GetTangentBasis(vec3 TangentY)
 {
-    vec3 UpVector = abs(TangentY.z) < 0.999 ? vec3(0, 1, 0) : vec3(0, 0, 1);
-    vec3 TangentX = normalize(cross(UpVector, TangentY));
-    vec3 TangentZ = cross(TangentY, TangentX);
+    vec3 UpVector = abs(TangentY.y) < 0.999 ? vec3(0, 1, 0) : vec3(0, 0, 1);
+    vec3 TangentZ = normalize(cross(UpVector, TangentY));
+    vec3 TangentX = cross(TangentY, TangentZ);
     return mat3(TangentX, TangentY, TangentZ);
 }
 
@@ -104,7 +106,7 @@ void main() {
     }
 
     ivec2 PixelPos = ivec2(gl_FragCoord.xy);
-    float linear_depth = depth_to_linear_depth(depth) * 0.1;
+    float linear_depth = depth_to_linear_depth(depth) * 0.01;
 
     vec4 ndc_coord = vec4(vs_output.tex_coord.xy * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 relative_pos = INV_VIEW_ORIGIN * INV_PROJECTION * ndc_coord;
@@ -112,26 +114,26 @@ void main() {
 
     vec3 V = normalize(-relative_pos.xyz);
     vec3 N = normalize(texture2D(texture_normal, vs_output.tex_coord.xy).xyz * 2.0 - 1.0);
+    float NdotV = dot(V, N);
+    float fresnel = pow(1.0 - clamp(NdotV, 0.0, 1.0), 4.0);
 
+    float Roughness = clamp(texture2D(texture_material, vs_output.tex_coord.xy).x - fresnel, 0.0, 1.0);
 
-    float Roughness = 0.0;
-    float RoughnessFade = 1.0;
-
-    const int NumSteps = 8;
-    const int NumRays = 8;
-    //const int NumSteps = 12;
-    //const int NumRays = 12;
+    const int NumSteps = 12;
+    const int NumRays = 12;
 
     vec2 HitSampleUV = vec2(-1.0, -1.0);
     float hit_count = 0.0;
+    vec2 random_texture_size = textureSize(texture_random, 0);
 
     for (int i = 0; i < NumRays; i++)
     {
-        vec2 poisson =  PoissonSamples[int(JITTER_FRAME + i) % PoissonSampleCount];
-        float StepOffset = rand(tex_coord + poisson) - 0.5;
+        vec2 poisson = PoissonSamples[int(JITTER_FRAME + i * PoissonSampleCount / NumRays) % PoissonSampleCount];
+        vec2 random = texture2D(texture_random, tex_coord + poisson).xy;
+        float StepOffset = rand(tex_coord + random) - 0.5;
 
-        vec2 E = Hammersley( i, NumRays, uvec2(poisson * 117) );
-        vec3 H = TangentToWorld(ImportanceSampleBlinn( PoissonSamples[i * PoissonSampleCount / NumRays], Roughness ).xyz, N);
+        vec2 E = Hammersley(i, NumRays, uvec2(random * 117));
+        vec3 H = TangentToWorld(ImportanceSampleBlinn( random, sqrt(Roughness) * 0.6 ).xyz, N);
         vec3 R = reflect(-V, H);
 
         vec4 HitUVzTime = RayCast(
@@ -158,9 +160,9 @@ void main() {
         }
     }
 
-    fs_output /= max(hit_count, 1.0);
+    fs_output.rgb /= max(hit_count, 1.0);
     fs_output.rgb /= 1 - get_linear_luminance(fs_output.rgb);
-    fs_output.w *= RoughnessFade;
+    fs_output.a /= NumRays;
 }
 
 #endif // GL_FRAGMENT_SHADER

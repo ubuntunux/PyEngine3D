@@ -55,7 +55,9 @@
 * Particle System
     - Manage GPU particles
     - Particle spawn on polygon surface
-* Rendering    
+* Rendering
+    - Screen Space LightShaft
+    - Upscale Atmosphere Scattering
     - View Mode
         - Wire, Solid, Lighting, Color
     - Culling
