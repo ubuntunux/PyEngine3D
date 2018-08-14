@@ -200,7 +200,7 @@ void main()
         {
             vec3 uvw = force_field_offset + emitter_datas[id].transform_position / force_field_radius;
             uvw = (EMITTER_PARENT_MATRIX * vec4(uvw, 0.0)).xyz;
-            vec3 force = texture3D(texture_force_field, uvw - vec3(0.5)).xyz * 2.0 - 1.0;
+            vec3 force = texture3D(texture_force_field, uvw - vec3(0.5)).xyz;
             emitter_datas[id].velocity_position += force * force_field_strength * DELTA_TIME;
         }
 
