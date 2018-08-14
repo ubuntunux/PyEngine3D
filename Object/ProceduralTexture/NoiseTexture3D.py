@@ -22,6 +22,8 @@ class NoiseTexture3D:
         self.attribute = Attributes()
 
     def generate_texture(self):
+        logger.info("Generate NoiseTexture3D.")
+
         core_manager = CoreManager.getInstance()
         resource_manager = core_manager.resource_manager
         renderer = core_manager.renderer

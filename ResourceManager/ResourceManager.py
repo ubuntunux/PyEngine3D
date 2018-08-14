@@ -31,7 +31,7 @@ from OpenGL.GL import *
 
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D
+from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, ForceFieldTexture3D
 from Object import ParticleInfo
 from Object.Ocean.Constants import GRID_VERTEX_COUNT
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
@@ -1037,15 +1037,14 @@ class ProceduralTextureLoader(ResourceLoader):
         # load and regist resource
         super(ProceduralTextureLoader, self).initialize()
 
-        resource_name = "NoiseTexture3D"
-        if not self.hasResource(resource_name):
-            self.create_resource(resource_name, NoiseTexture3D())
-            self.save_resource(resource_name)
+        def create_procedural_texture(resource_name, resource_type):
+            if not self.hasResource(resource_name):
+                self.create_resource(resource_name, resource_type())
+                self.save_resource(resource_name)
 
-        resource_name = "CloudTexture3D"
-        if not self.hasResource(resource_name):
-            self.create_resource(resource_name, CloudTexture3D())
-            self.save_resource(resource_name)
+        create_procedural_texture("CloudTexture3D", CloudTexture3D)
+        create_procedural_texture("ForceFieldTexture3D", ForceFieldTexture3D)
+        create_procedural_texture("NoiseTexture3D", NoiseTexture3D)
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)

@@ -218,9 +218,7 @@ class Texture:
                 # convert to numpy array
                 if type(pixels) is bytes:
                     pixels = np.fromstring(pixels, dtype=dtype)
-                else:
-                    pixels = np.array(pixels, dtype=dtype)
-                data.extend(pixels.tolist())
+                data.append(pixels)
             data = np.array(data, dtype=dtype)
             glBindTexture(self.target, 0)
             glBindFramebuffer(GL_FRAMEBUFFER, 0)

@@ -1,30 +1,25 @@
 import random
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
 from OpenGL.GL import *
 
 from Common import logger
 from App import CoreManager
 from Utilities import Attributes
-from OpenGLContext import CreateTexture, Material, Texture2D, Texture3D, TextureCube
+from OpenGLContext import CreateTexture, Texture3D
 
 
-class CloudTexture3D:
+class ForceFieldTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
-        self.texture_name = 'cloud_3d'
-        self.width = data.get('width', 128)
-        self.height = data.get('height', 128)
-        self.depth = data.get('depth', 128)
-        self.sphere_scale = data.get('sphere_scale', 0.15)
-        self.sphere_count = data.get('sphere_count', 4096)
-        self.noise_persistance = data.get('noise_persistance', 0.7)
-        self.noise_scale = data.get('noise_scale', 6)
+        self.texture_name = 'force_field_3d'
+        self.texture_width = data.get('texture_width', 256)
+        self.texture_height = data.get('texture_height', 256)
+        self.texture_depth = data.get('texture_depth', 256)
         self.attribute = Attributes()
 
     def generate_texture(self):
-        logger.info("Generate CloudTexture3D.")
+        logger.info("Generate ForceFieldTexture3D.")
 
         core_manager = CoreManager.getInstance()
         resource_manager = core_manager.resource_manager
@@ -33,15 +28,15 @@ class CloudTexture3D:
         texture = CreateTexture(
             name=self.texture_name,
             texture_type=Texture3D,
-            width=self.width,
-            height=self.height,
-            depth=self.depth,
-            internal_format=GL_R16F,
-            texture_format=GL_RED,
+            width=self.texture_width,
+            height=self.texture_height,
+            depth=self.texture_depth,
+            internal_format=GL_RGBA16F,
+            texture_format=GL_RGBA,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=GL_FLOAT,
-            wrap=GL_REPEAT,
+            wrap=GL_CLAMP,
         )
 
         resource = resource_manager.texture_loader.get_resource(self.texture_name)
@@ -67,17 +62,11 @@ class CloudTexture3D:
         renderer.framebuffer_manager.bind_framebuffer(texture)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        mat = resource_manager.get_material_instance('procedural.cloud_noise_3d')
-        mat.use_program()
-        mat.bind_uniform_data('texture_random', resource_manager.get_texture("common.random"))
-        mat.bind_uniform_data('random_seed', random.random())
-        mat.bind_uniform_data('sphere_count', self.sphere_count)
-        mat.bind_uniform_data('sphere_scale', self.sphere_scale)
-        mat.bind_uniform_data('noise_persistance', self.noise_persistance)
-        mat.bind_uniform_data('noise_scale', self.noise_scale)
+        material_instance = resource_manager.get_material_instance('procedural.force_field_3d')
+        material_instance.use_program()
 
         for i in range(texture.depth):
-            mat.bind_uniform_data('depth', i / texture.depth)
+            material_instance.bind_uniform_data('depth', i / texture.depth)
             renderer.framebuffer_manager.bind_framebuffer(texture, target_layer=i)
             renderer.postprocess.draw_elements()
 
@@ -87,25 +76,17 @@ class CloudTexture3D:
         save_data = dict(
             texture_type=self.__class__.__name__,
             texture_name=self.texture_name,
-            width=self.width,
-            height=self.height,
-            depth=self.depth,
-            sphere_scale=self.sphere_scale,
-            sphere_count=self.sphere_count,
-            noise_persistance=self.noise_persistance,
-            noise_scale=self.noise_scale,
+            texture_width=self.texture_width,
+            texture_height=self.texture_height,
+            texture_depth=self.texture_depth,
         )
         return save_data
 
     def get_attribute(self):
         self.attribute.set_attribute("texture_name", self.texture_name)
-        self.attribute.set_attribute("width", self.width)
-        self.attribute.set_attribute("height", self.height)
-        self.attribute.set_attribute("depth", self.depth)
-        self.attribute.set_attribute("sphere_scale", self.sphere_scale)
-        self.attribute.set_attribute("sphere_count", self.sphere_count)
-        self.attribute.set_attribute("noise_persistance", self.noise_persistance)
-        self.attribute.set_attribute("noise_scale", self.noise_scale)
+        self.attribute.set_attribute("texture_width", self.texture_width)
+        self.attribute.set_attribute("texture_height", self.texture_height)
+        self.attribute.set_attribute("texture_depth", self.texture_depth)
         return self.attribute
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
