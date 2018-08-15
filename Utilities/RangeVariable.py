@@ -19,10 +19,10 @@ class RangeVariable:
         self.value = np.array([min_value, max_value], dtype=np.float32)
 
     def get_min(self):
-        return self.value[0]
+        return np.minimum(self.value[0], self.value[1])
 
     def get_max(self):
-        return self.value[1]
+        return np.maximum(self.value[0], self.value[1])
 
     def get_uniform(self):
         return np.random.uniform(self.value[0], self.value[1])

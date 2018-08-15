@@ -11,6 +11,7 @@ from OpenGL.GL import *
 
 from Common import logger
 from Utilities import Singleton, GetClassName, Attributes, Profiler
+from OpenGLContext import OpenGLContext
 
 
 def get_numpy_dtype(data_type):
@@ -192,9 +193,9 @@ class Texture:
 
         dtype = get_numpy_dtype(self.data_type)
 
-        if GL_TEXTURE_2D == self.target:
+        try:
             glBindTexture(self.target, self.buffer)
-            data = glGetTexImage(self.target, 0, self.texture_format, self.data_type)
+            data = OpenGLContext.glGetTexImage(self.target, 0, self.texture_format, self.data_type)
             # convert to numpy array
             if type(data) is bytes:
                 data = np.fromstring(data, dtype=dtype)
@@ -202,30 +203,33 @@ class Texture:
                 data = np.array(data, dtype=dtype)
             glBindTexture(self.target, 0)
             return data
-        elif GL_TEXTURE_3D == self.target or GL_TEXTURE_2D_ARRAY == self.target:
-            glBindTexture(self.target, self.buffer)
-            fb = glGenFramebuffers(1)
-            glBindFramebuffer(GL_FRAMEBUFFER, fb)
+        except:
+            logger.error('%s failed to get image data.' % self.name)
+            logger.info('Try to glReadPixels.')
 
-            data = []
-            for layer in range(self.depth):
-                if GL_TEXTURE_3D == self.target:
-                    glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
-                elif GL_TEXTURE_2D_ARRAY == self.target:
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
-                glReadBuffer(GL_COLOR_ATTACHMENT0)
-                pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
-                # convert to numpy array
-                if type(pixels) is bytes:
-                    pixels = np.fromstring(pixels, dtype=dtype)
-                data.append(pixels)
-            data = np.array(data, dtype=dtype)
-            glBindTexture(self.target, 0)
-            glBindFramebuffer(GL_FRAMEBUFFER, 0)
-            glDeleteFramebuffers(1, [fb, ])
-            return data
-        logger.error('%s failed to get image data' % self.name)
-        return None
+        glBindTexture(self.target, self.buffer)
+        fb = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, fb)
+
+        data = []
+        for layer in range(self.depth):
+            if GL_TEXTURE_2D == self.target:
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.buffer, 0)
+            elif GL_TEXTURE_3D == self.target:
+                glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
+            elif GL_TEXTURE_2D_ARRAY == self.target:
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
+            glReadBuffer(GL_COLOR_ATTACHMENT0)
+            pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
+            # convert to numpy array
+            if type(pixels) is bytes:
+                pixels = np.fromstring(pixels, dtype=dtype)
+            data.append(pixels)
+        data = np.array(data, dtype=dtype)
+        glBindTexture(self.target, 0)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glDeleteFramebuffers(1, [fb, ])
+        return data
 
     def get_mipmap_count(self):
         factor = max(max(self.width, self.height), self.depth)

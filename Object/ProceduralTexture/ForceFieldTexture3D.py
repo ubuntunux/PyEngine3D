@@ -42,10 +42,10 @@ class ForceFieldTexture3D:
         resource = resource_manager.texture_loader.get_resource(self.texture_name)
         if resource is None:
             resource = resource_manager.texture_loader.create_resource(self.texture_name, texture)
-            resource_manager.texture_loader.save_resource(resource.name)
         else:
             old_texture = resource.get_data()
-            old_texture.delete()
+            if old_texture is not None:
+                old_texture.delete()
             resource.set_data(texture)
 
         glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
@@ -71,6 +71,9 @@ class ForceFieldTexture3D:
             renderer.postprocess.draw_elements()
 
         renderer.restore_blend_state_prev()
+
+        # save
+        resource_manager.texture_loader.save_resource(resource.name)
 
     def get_save_data(self):
         save_data = dict(

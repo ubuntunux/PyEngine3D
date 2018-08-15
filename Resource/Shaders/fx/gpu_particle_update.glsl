@@ -85,7 +85,17 @@ void update_sequence(uint id, float life_ratio)
 
 void update_local_matrix(uint id)
 {
-    mat4 local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    mat4 rotation_matrix = mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0);
+
+    mat4 scale_matrix = mat4(
+        emitter_datas[id].transform_scale.x, 0.0, 0.0, 0.0,
+        0.0, emitter_datas[id].transform_scale.y, 0.0, 0.0,
+        0.0, 0.0, emitter_datas[id].transform_scale.z, 0.0,
+        0.0, 0.0, 0.0, 1.0);
 
     float ch = 1.0;
     float sh = 0.0;
@@ -93,43 +103,38 @@ void update_local_matrix(uint id)
     float sa = 0.0;
     float cb = 1.0;
     float sb = 0.0;
-    bool rotation_matrix = false;
+    bool has_rotation = false;
 
     if(0.0 != emitter_datas[id].transform_rotation.x)
     {
         cb = cos(emitter_datas[id].transform_rotation.x);
         sb = sin(emitter_datas[id].transform_rotation.x);
-        rotation_matrix = true;
+        has_rotation = true;
     }
 
     if(0.0 != emitter_datas[id].transform_rotation.y)
     {
         ch = cos(emitter_datas[id].transform_rotation.y);
         sh = sin(emitter_datas[id].transform_rotation.y);
-        rotation_matrix = true;
+        has_rotation = true;
     }
 
     if(0.0 != emitter_datas[id].transform_rotation.z)
     {
         ca = cos(emitter_datas[id].transform_rotation.z);
         sa = sin(emitter_datas[id].transform_rotation.z);
-        rotation_matrix = true;
+        has_rotation = true;
     }
 
-    if(rotation_matrix)
+    if(has_rotation)
     {
-        local_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
-        local_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
-        local_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
+        rotation_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
+        rotation_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
+        rotation_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
     }
 
-    local_matrix[0].x *= emitter_datas[id].transform_scale.x;
-    local_matrix[1].y *= emitter_datas[id].transform_scale.y;
-    local_matrix[2].z *= emitter_datas[id].transform_scale.z;
-    
-    local_matrix[3].xyz = emitter_datas[id].transform_position.xyz;
-
-    emitter_datas[id].local_matrix = local_matrix;
+    emitter_datas[id].local_matrix = rotation_matrix * scale_matrix;
+    emitter_datas[id].local_matrix[3].xyz = emitter_datas[id].transform_position.xyz;
 }
 
 
@@ -187,9 +192,12 @@ void main()
         }
 
         float life_ratio = 0.0;
+        float elapsed_time = emitter_datas[id].elapsed_time;
+        float life_time = emitter_datas[id].life_time;
+
         if(0.0 < emitter_datas[id].life_time)
         {
-            life_ratio = clamp(emitter_datas[id].elapsed_time / emitter_datas[id].life_time, 0.0, 1.0);
+            life_ratio = clamp(elapsed_time / emitter_datas[id].life_time, 0.0, 1.0);
         }
 
         update_sequence(id, life_ratio);
@@ -211,21 +219,19 @@ void main()
         // update transform
         update_local_matrix(id);
 
-        if(0.0 != EMITTER_FADE_IN || 0.0 != EMITTER_FADE_OUT)
+        // update opacity
+        emitter_datas[id].opacity = EMITTER_OPACITY;
+
+        float left_elapsed_time = life_time - elapsed_time;
+
+        if(0.0 < EMITTER_FADE_IN && elapsed_time < EMITTER_FADE_IN)
         {
-            emitter_datas[id].opacity = EMITTER_OPACITY;
+            emitter_datas[id].opacity *= elapsed_time / EMITTER_FADE_IN;
+        }
 
-            float left_life_ratio = 1.0 - life_ratio;
-
-            if(0.0 < EMITTER_FADE_IN && life_ratio < EMITTER_FADE_IN)
-            {
-                emitter_datas[id].opacity *= life_ratio / EMITTER_FADE_IN;
-            }
-
-            if(0.0 < EMITTER_FADE_OUT && left_life_ratio < EMITTER_FADE_OUT)
-            {
-                emitter_datas[id].opacity *= left_life_ratio / EMITTER_FADE_OUT;
-            }
+        if(0.0 < EMITTER_FADE_OUT && left_elapsed_time < EMITTER_FADE_OUT)
+        {
+            emitter_datas[id].opacity *= left_elapsed_time / EMITTER_FADE_OUT;
         }
     }
 }

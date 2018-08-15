@@ -2,6 +2,11 @@ import traceback
 
 import numpy as np
 from OpenGL.GL import *
+from OpenGL.raw.GL.VERSION import GL_1_1, GL_1_2, GL_3_0
+from OpenGL.raw.GL import _types
+from OpenGL import images, arrays
+
+import ctypes
 
 from Common import logger
 
@@ -54,8 +59,9 @@ class OpenGLContext:
             logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_SIZE.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE))
 
             # OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
-            # logger.info(
-            #     "%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS))
+            # logger.info("%s : %s" % (
+            #   GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS
+            # ))
 
             logger.info("=" * 30)
 
@@ -103,10 +109,40 @@ class OpenGLContext:
         return True
 
     @staticmethod
-    def dispatch_compute(num_groups_x, num_groups_y, num_groups_z, barrier_mask=GL_ALL_BARRIER_BITS):
-        glDispatchCompute(num_groups_x, num_groups_y, num_groups_z)
-        # barrier_mask : GL_ALL_BARRIER_BITS, GL_SHADER_STORAGE_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT...
-        glMemoryBarrier(barrier_mask)
+    def _get_texture_level_dims(target, level):
+        dim = _types.GLuint()
+        GL_1_1.glGetTexLevelParameteriv(target, level, GL_1_1.GL_TEXTURE_WIDTH, dim)
+        dims = [dim.value]
+        if target != GL_1_1.GL_TEXTURE_1D:
+            GL_1_1.glGetTexLevelParameteriv(target, level, GL_1_1.GL_TEXTURE_HEIGHT, dim)
+            dims.append(dim.value)
+            if target != GL_1_1.GL_TEXTURE_2D:
+                # bug fixed : GL_1_1.GL_TEXTURE_DEPTH -> GL_1_2.GL_TEXTURE_DEPTH
+                GL_1_1.glGetTexLevelParameteriv(target, level, GL_1_2.GL_TEXTURE_DEPTH, dim)
+                dims.append(dim.value)
+        return dims
+
+    @staticmethod
+    def glGetTexImage(target, level, format, type, array=None, outputType=bytes):
+        """bug fixed overwirte version"""
+        arrayType = arrays.GL_CONSTANT_TO_ARRAY_TYPE[images.TYPE_TO_ARRAYTYPE.get(type, type)]
+        if array is None:
+            dims = OpenGLContext._get_texture_level_dims(target, level)
+            imageData = images.SetupPixelRead(format, tuple(dims), type)
+            array = imageData
+        else:
+            if isinstance(array, integer_types):
+                imageData = ctypes.c_void_p(array)
+            else:
+                array = arrayType.asArray(array)
+                imageData = arrayType.voidDataPointer(array)
+
+        GL_1_1.glGetTexImage(target, level, format, type, imageData)
+
+        if outputType is bytes:
+            return images.returnFormat(array, type)
+        else:
+            return array
 
     @staticmethod
     def IsExtensionSupported(TargetExtension):

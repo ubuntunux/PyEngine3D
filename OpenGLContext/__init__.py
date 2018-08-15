@@ -1,4 +1,4 @@
-from .OpenGLContext import OpenGLContext
+from .OpenGLContext import OpenGLContext, glGetTexImage
 from .FrameBuffer import FrameBuffer, FrameBufferManager
 from .RenderBuffer import RenderBuffer
 from .Shader import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option

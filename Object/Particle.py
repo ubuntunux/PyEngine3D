@@ -507,13 +507,14 @@ class Emitter:
 
         if 0.0 != self.emitter_info.fade_in or 0.0 != self.emitter_info.fade_out:
             self.final_opacity = self.emitter_info.opacity
-            left_life_ratio = 1.0 - life_ratio
 
-            if 0.0 < self.emitter_info.fade_in and life_ratio < self.emitter_info.fade_in:
-                self.final_opacity *= life_ratio / self.emitter_info.fade_in
+            left_life_time = self.life_time - self.elapsed_time
 
-            if 0.0 < self.emitter_info.fade_out and left_life_ratio < self.emitter_info.fade_out:
-                self.final_opacity *= left_life_ratio / self.emitter_info.fade_out
+            if 0.0 < self.emitter_info.fade_in and self.life_time < self.emitter_info.fade_in:
+                self.final_opacity *= self.life_time / self.emitter_info.fade_in
+
+            if 0.0 < self.emitter_info.fade_out and left_life_time < self.emitter_info.fade_out:
+                self.final_opacity *= left_life_time / self.emitter_info.fade_out
 
 
 class ParticleInfo:
@@ -642,9 +643,9 @@ class EmitterInfo:
         self.enable_force_field = emitter_info.get('enable_force_field', False)
         texture_force_field_name = emitter_info.get('texture_force_field', 'common.default_3d')
         self.texture_force_field = resource_manager.get_texture_or_none(texture_force_field_name)
-        self.force_field_offset = Float3(0.0, 0.0, 0.0)
-        self.force_field_radius = Float3(1.0, 1.0, 1.0)
-        self.force_field_strength = 1.0
+        self.force_field_offset = emitter_info.get('force_field_offset', Float3(0.0, 0.0, 0.0))
+        self.force_field_radius = emitter_info.get('force_field_radius', Float3(1.0, 1.0, 1.0))
+        self.force_field_strength = emitter_info.get('force_field_strength', 1.0)
 
         self.parent_matrix_data = None
         self.matrix_data = None
