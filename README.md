@@ -24,6 +24,7 @@
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR optimize, hierachical z ray marching
+    - SSR ray reuse in compute shader
 * Actors
     - Tree, Foliage actor
     - Landscape
