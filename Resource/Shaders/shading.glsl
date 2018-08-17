@@ -284,7 +284,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
 
 #if TRANSPARENT_MATERIAL == 1
-    float reflectivity = max(max(F0.r, F0.g), F0.b);
+    float reflectivity = max(max(fresnel.r, fresnel.g), fresnel.b);
     opacity = clamp(base_color.w + base_color.w * reflectivity, 0.0, 1.0);
 #endif
 
