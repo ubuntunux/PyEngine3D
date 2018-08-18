@@ -108,7 +108,6 @@ class Renderer(Singleton):
         # scene constants uniform buffer
         program = self.scene_constants_material.get_program()
 
-        self.uniform_scene_buffer = UniformBlock("scene_constants", program, 0)
         self.uniform_scene_data = np.zeros(1, dtype=[('TIME', np.float32),
                                                      ('JITTER_FRAME', np.float32),
                                                      ('RENDER_SSR', np.int32),
@@ -117,8 +116,8 @@ class Renderer(Singleton):
                                                      ('MOUSE_POS', np.float32, 2),
                                                      ('SCENECONSTANTS_DUMMY_0', np.float32, 3),
                                                      ('DELTA_TIME', np.float32)])
+        self.uniform_scene_buffer = UniformBlock("scene_constants", program, 0, self.uniform_scene_data)
 
-        self.uniform_view_buffer = UniformBlock("view_constants", program, 1)
         self.uniform_view_data = np.zeros(1, dtype=[('VIEW', np.float32, (4, 4)),
                                                     ('INV_VIEW', np.float32, (4, 4)),
                                                     ('VIEW_ORIGIN', np.float32, (4, 4)),
@@ -131,33 +130,36 @@ class Renderer(Singleton):
                                                     ('JITTER_DELTA', np.float32, 2),
                                                     ('JITTER_OFFSET', np.float32, 2),
                                                     ('VIEWCONSTANTS_DUMMY0', np.float32, 2)])
+        self.uniform_view_buffer = UniformBlock("view_constants", program, 1, self.uniform_view_data)
 
-        self.uniform_view_projection_buffer = UniformBlock("view_projection", program, 2)
         self.uniform_view_projection_data = np.zeros(1, dtype=[('VIEW_PROJECTION', np.float32, (4, 4)),
                                                                ('PREV_VIEW_PROJECTION', np.float32, (4, 4))])
+        self.uniform_view_projection_buffer = UniformBlock("view_projection", program, 2,
+                                                           self.uniform_view_projection_data)
 
-        self.uniform_light_buffer = UniformBlock("light_constants", program, 3)
         self.uniform_light_data = np.zeros(1, dtype=[('LIGHT_POSITION', np.float32, 3),
                                                      ('LIGHT_DUMMY_0', np.float32),
                                                      ('LIGHT_DIRECTION', np.float32, 3),
                                                      ('LIGHT_DUMMY_1', np.float32),
                                                      ('LIGHT_COLOR', np.float32, 4),
                                                      ('SHADOW_MATRIX', np.float32, (4, 4))])
+        self.uniform_light_buffer = UniformBlock("light_constants", program, 3, self.uniform_light_data)
 
-        self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4)
         self.uniform_point_light_data = np.zeros(MAX_POINT_LIGHTS, dtype=[('color', np.float32, 3),
                                                                           ('radius', np.float32, 1),
                                                                           ('pos', np.float32, 3),
                                                                           ('render', np.float32, 1)])
+        self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4,
+                                                       self.uniform_point_light_data)
 
-        self.uniform_emitter_common_buffer = UniformBlock("emitter_common", program, 5)
         self.uniform_emitter_common_data = np.zeros(1, dtype=[('EMITTER_COLOR', np.float32, 3),
                                                               ('EMITTER_BILLBOARD', np.int32),
                                                               ('EMITTER_CELL_COUNT', np.int32, 2),
                                                               ('EMITTER_LOOP', np.int32),
                                                               ('EMITTER_BLEND_MODE', np.int32)])
+        self.uniform_emitter_common_buffer = UniformBlock("emitter_common", program, 5,
+                                                          self.uniform_emitter_common_data)
 
-        self.uniform_emitter_infos_buffer = UniformBlock("emitter_infos", program, 6)
         self.uniform_emitter_infos_data = np.zeros(1, dtype=[('EMITTER_PARENT_MATRIX', np.float32, (4, 4)),
                                                              ('EMITTER_PARENT_INVERSE_MATRIX', np.float32, (4, 4)),
                                                              ('EMITTER_DELAY', np.float32, 2),
@@ -186,6 +188,7 @@ class Renderer(Singleton):
                                                              ('dummy_5', np.float32),
                                                              ('EMITTER_VELOCITY_SCALE_MAX', np.float32, 3),
                                                              ('dummy_6', np.float32)])
+        self.uniform_emitter_infos_buffer = UniformBlock("emitter_infos", program, 6, self.uniform_emitter_infos_data)
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)

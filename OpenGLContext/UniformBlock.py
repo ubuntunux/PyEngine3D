@@ -7,7 +7,7 @@ from Common import logger
 
 
 class UniformBlock:
-    def __init__(self, buffer_name, program, binding):
+    def __init__(self, buffer_name, program, binding, data):
         self.name = buffer_name
         self.program = program
 
@@ -16,8 +16,7 @@ class UniformBlock:
         glUniformBlockBinding(program, self.buffer_index, binding)
 
         self.buffer = glGenBuffers(1)
-        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
-        # glBufferData(GL_UNIFORM_BUFFER, data.nbytes, data, GL_DYNAMIC_DRAW)
+        self.bind_uniform_block(data)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
     def delete(self):
