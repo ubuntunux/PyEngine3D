@@ -1,4 +1,4 @@
 {'macros': OrderedDict(),
- 'material_name': 'examples.cloud',
+ 'material_name': 'examples.cloud_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
  'shader_name': 'examples.cloud',
  'uniform_datas': {'texture_noise': 'noise.LottesGrain5'}}

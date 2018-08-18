@@ -269,17 +269,8 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     return save_image_data
 
 
-def generate_font_data(
-        resource_name,
-        distance_field_font,
-        anti_aliasing,
-        font_size,
-        padding,
-        unicode_name,
-        range_min,
-        range_max,
-        source_filepath,
-        preview_path=''):
+def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_size, padding, unicode_name,
+                       range_min, range_max, source_filepath, preview_path=''):
     logger.info("Convert Font %s %s : %s" % (resource_name, unicode_name, source_filepath))
 
     back_ground_color = (0, 0, 0)

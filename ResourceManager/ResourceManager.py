@@ -1231,6 +1231,7 @@ class FontLoader(ResourceLoader):
     )
 
     def check_font_data(self, font_datas, resoure, source_filepath):
+        chaneged = False
         for language in self.language_infos:
             if language not in font_datas:
                 unicode_name, range_min, range_max = self.language_infos[language]
@@ -1247,8 +1248,9 @@ class FontLoader(ResourceLoader):
                     preview_path=self.resource_path
                 )
                 font_datas[language] = font_data
+                chaneged = True
 
-        if font_datas:
+        if font_datas is not None and chaneged:
             self.save_resource_data(resoure, font_datas, source_filepath)
         return font_datas
 
