@@ -689,7 +689,7 @@ class MaterialLoader(ResourceLoader):
         return False
 
     def generate_material_name(self, shader_name, macros=None):
-        if macros is not None:
+        if macros is not None and 0 < len(macros):
             keys = sorted(macros.keys())
             add_name = [key + "_" + str(macros[key]) for key in keys]
             shader_name += "_" + str(uuid.uuid3(uuid.NAMESPACE_DNS, "_".join(add_name))).replace("-", "_")
