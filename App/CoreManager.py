@@ -390,9 +390,12 @@ class CoreManager(Singleton):
         # add to scene
         self.commands[COMMAND.ADD_CAMERA.value] = lambda value: self.scene_manager.add_camera()
         self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.add_light()
+        self.commands[COMMAND.ADD_INSTANCE_OBJECT.value] = \
+            lambda value: self.scene_manager.add_instance_object_here(model=None)
 
         # create resource
-        self.commands[COMMAND.CREATE_PARTICLE.value] = lambda value: self.resource_manager.particle_loader.create_particle()
+        self.commands[COMMAND.CREATE_PARTICLE.value] = \
+            lambda value: self.resource_manager.particle_loader.create_particle()
 
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()
         self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.action_object(value)

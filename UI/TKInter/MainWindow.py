@@ -327,6 +327,10 @@ class MainWindow:
         button.pack(fill="x", side="top")
         button.bind("<Button-1>", self.add_light)
 
+        button = tk.Button(label_frame, text="Add Instance Object")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.add_instance_object)
+
         self.object_menu = tk.Menu(root, tearoff=0)
         self.object_menu.add_command(label="Action", command=self.action_object)
         self.object_menu.add_command(label="Focus", command=self.focus_object)
@@ -831,6 +835,9 @@ class MainWindow:
 
     def add_light(self, event):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
+
+    def add_instance_object(self, event):
+        self.appCmdQueue.put(COMMAND.ADD_INSTANCE_OBJECT)
 
     def create_particle(self, event):
         self.appCmdQueue.put(COMMAND.CREATE_PARTICLE)

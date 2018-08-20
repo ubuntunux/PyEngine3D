@@ -78,6 +78,7 @@ class COMMAND(AutoEnum):
     # add to scene
     ADD_CAMERA = ()
     ADD_LIGHT = ()
+    ADD_INSTANCE_OBJECT = ()
 
     # create
     CREATE_PARTICLE = ()

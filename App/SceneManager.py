@@ -316,6 +316,26 @@ class SceneManager(Singleton):
         pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
         return self.add_object(model=model, pos=pos)
 
+    def add_instance_object(self, **object_data):
+        model = object_data.get('model')
+        if model:
+            object_data['name'] = self.generate_object_name(object_data.get('name', model.name))
+            objType = GetClassName(model)
+            logger.info("add %s : %s" % (objType, object_data['name']))
+
+            if model.mesh and model.mesh.has_bone():
+                obj_instance = InstanceSkeletonActor(**object_data)
+            else:
+                obj_instance = InstanceStaticActor(**object_data)
+            # regist
+            self.regist_object(obj_instance)
+            return obj_instance
+        return None
+
+    def add_instance_object_here(self, model):
+        pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
+        return self.add_instance_object(model=model, pos=pos)
+
     def clear_objects(self):
         self.cameras = []
         self.point_lights = []

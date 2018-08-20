@@ -74,6 +74,10 @@ class StaticActor:
         self.transform.update_transform()
 
 
+class InstanceStaticActor(StaticActor):
+    pass
+
+
 class SkeletonActor(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
@@ -111,3 +115,7 @@ class SkeletonActor(StaticActor):
                         frame = 0.0
                     self.prev_animation_buffers[i][...] = self.animation_buffers[i]
                     self.animation_buffers[i][...] = animation.get_animation_transforms(frame)
+
+
+class InstanceSkeletonActor(SkeletonActor):
+    pass
