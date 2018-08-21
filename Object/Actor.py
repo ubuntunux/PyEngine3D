@@ -1,13 +1,10 @@
-import time
 import math
 
 import numpy as np
 
 from Common import logger
-from Object import TransformObject, Model
-from OpenGLContext import UniformBlock
+from Object import TransformObject
 from Utilities import *
-from App import CoreManager
 
 
 class StaticActor:
