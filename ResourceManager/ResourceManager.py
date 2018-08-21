@@ -587,7 +587,7 @@ class ShaderLoader(ResourceLoader):
                         resource.meta_data.set_resource_meta_data(resource.meta_data.resource_filepath)
                         self.resource_manager.material_loader.reload_materials(resource.meta_data.resource_filepath)
                         return True
-                    except BaseException:
+                    except:
                         logger.error(traceback.format_exc())
                         logger.error("Failed %s file open" % file_path)
             else:
@@ -688,7 +688,8 @@ class MaterialLoader(ResourceLoader):
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
-    def generate_material_name(self, shader_name, macros=None):
+    @staticmethod
+    def generate_material_name(shader_name, macros=None):
         if macros is not None and 0 < len(macros):
             keys = sorted(macros.keys())
             add_name = [key + "_" + str(macros[key]) for key in keys]

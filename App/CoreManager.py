@@ -390,8 +390,11 @@ class CoreManager(Singleton):
         # add to scene
         self.commands[COMMAND.ADD_CAMERA.value] = lambda value: self.scene_manager.add_camera()
         self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.add_light()
-        self.commands[COMMAND.ADD_INSTANCE_OBJECT.value] = \
-            lambda value: self.scene_manager.add_instance_object_here(model=None)
+
+        def add_instance_object_here(value):
+            cube = self.resource_manager.get_model('Cube')
+            self.scene_manager.add_instance_object_here(model=cube)
+        self.commands[COMMAND.ADD_INSTANCE_OBJECT.value] = add_instance_object_here
 
         # create resource
         self.commands[COMMAND.CREATE_PARTICLE.value] = \

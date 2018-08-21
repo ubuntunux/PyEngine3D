@@ -8,14 +8,14 @@ import numpy as np
 
 from Common import logger
 from Common.Constants import *
-from Object import SkeletonActor, StaticActor, Camera, MainLight, PointLight, LightProbe, PostProcess
+from Object import StaticActor, InstanceStaticActor, SkeletonActor, InstanceSkeletonActor
+from Object import Camera, MainLight, PointLight, LightProbe
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
 from Object import Particle
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
-from OpenGLContext import UniformBlock
-from Utilities import Singleton, GetClassName, Attributes, FLOAT_ZERO, FLOAT4_ZERO, MATRIX4_IDENTITY, Matrix4, Profiler
+from Utilities import Singleton, GetClassName
 
 
 class SceneManager(Singleton):
