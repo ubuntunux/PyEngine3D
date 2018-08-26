@@ -22,6 +22,20 @@ class StaticActor:
 
         self.set_model(object_data.get('model'))
 
+        self.instance_pos = RangeVariable(**object_data.get('instance_pos', dict(min_value=FLOAT3_ZERO)))
+        self.instance_rot = RangeVariable(**object_data.get('instance_rot', dict(min_value=FLOAT3_ZERO)))
+        self.instance_scale = RangeVariable(**object_data.get('instance_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+        self.instance_pos_list = object_data.get('instance_pos_list', [])
+        self.instance_rot_list = object_data.get('instance_rot_list', [])
+        self.instance_scale_list = object_data.get('instance_scale_list', [])
+
+        self.instance_matrix = None
+        self.instance_radius_offset = object_data.get('instance_radius_offset', 0.0)
+        self.instance_radius_scale = object_data.get('instance_radius_scale', 1.0)
+
+        self.instance_count = object_data.get('instance_count', 1)
+        self.set_instance_count(self.instance_count)
+
         self.attributes = Attributes()
 
     def set_model(self, model):
@@ -35,9 +49,44 @@ class StaticActor:
             model=self.model.name if self.model else '',
             pos=self.transform.pos.tolist(),
             rot=self.transform.rot.tolist(),
-            scale=self.transform.scale.tolist()
+            scale=self.transform.scale.tolist(),
+            instance_count=self.instance_count,
+            instance_pos=self.instance_pos.get_save_data(),
+            instance_rot=self.instance_rot.get_save_data(),
+            instance_scale=self.instance_scale.get_save_data(),
+            instance_pos_list=self.instance_pos_list,
+            instance_rot_list=self.instance_rot_list,
+            instance_scale_list=self.instance_scale_list,
         )
         return save_data
+
+    def set_instance_count(self, count):
+        self.instance_count = count
+
+        if 1 < count:
+            self.instance_pos_list = [self.instance_pos.get_uniform() for i in range(count)]
+            self.instance_rot_list = [self.instance_rot.get_uniform() for i in range(count)]
+            self.instance_scale_list = [self.instance_scale.get_uniform() for i in range(count)]
+
+            self.instance_matrix = np.zeros(count, (np.float32, (4, 4)))
+
+            offset_max = FLOAT32_MIN
+            scale_max = FLOAT32_MIN
+            self.instance_radius_offset = 0.0
+            self.instance_radius_scale = 1.0
+
+            for i in range(count):
+                offset_max = max(offset_max, max(np.abs(self.instance_pos_list[i])))
+                scale_max = max(scale_max, max(np.abs(self.instance_scale_list[i])))
+
+                self.instance_matrix[i][...] = MATRIX4_IDENTITY
+                matrix_scale(self.instance_matrix[i], *self.instance_scale_list[i])
+                matrix_rotate(self.instance_matrix[i], *self.instance_rot_list[i])
+                matrix_translate(self.instance_matrix[i], *self.instance_pos_list[i])
+            self.instance_radius_offset = offset_max
+            self.instance_radius_scale = scale_max
+        else:
+            self.instance_matrix = None
 
     def get_attribute(self):
         self.attributes.set_attribute('name', self.name)
@@ -45,15 +94,37 @@ class StaticActor:
         self.attributes.set_attribute('rot', self.transform.rot)
         self.attributes.set_attribute('scale', self.transform.scale)
         self.attributes.set_attribute('model', self.model.name if self.model else '')
+        self.attributes.set_attribute('instance_count', self.instance_count)
+        self.attributes.set_attribute('instance_pos', self.instance_pos.get_save_data())
+        self.attributes.set_attribute('instance_rot', self.instance_rot.get_save_data())
+        self.attributes.set_attribute('instance_scale', self.instance_scale.get_save_data())
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        if attribute_name == 'pos':
-            self.transform.set_pos(attribute_value)
-        elif attribute_name == 'rot':
-            self.transform.set_rotation(attribute_value)
-        elif attribute_name == 'scale':
-            self.transform.set_scale(attribute_value)
+        item_info_history = []
+        while parent_info is not None:
+            item_info_history.insert(0, parent_info)
+            parent_info = parent_info.parent_info
+
+        if 1 < len(item_info_history):
+            attribute = getattr(self, item_info_history[0].attribute_name)
+            if attribute is not None and isinstance(attribute, RangeVariable):
+                if 'min_value' == attribute_name:
+                    attribute.set_range(attribute_value, attribute.value[1])
+                elif 'max_value' == attribute_name:
+                    attribute.set_range(attribute.value[0], attribute_value)
+                self.set_instance_count(self.instance_count)
+        else:
+            if attribute_name == 'pos':
+                self.transform.set_pos(attribute_value)
+            elif attribute_name == 'rot':
+                self.transform.set_rotation(attribute_value)
+            elif attribute_name == 'scale':
+                self.transform.set_scale(attribute_value)
+            elif attribute_name == 'instance_count':
+                self.set_instance_count(attribute_value)
+            elif hasattr(self, attribute_name):
+                setattr(self, attribute_name, attribute_value)
 
     def get_mesh(self):
         return self.model.mesh if self.has_mesh else None
@@ -69,10 +140,6 @@ class StaticActor:
 
     def update(self, dt):
         self.transform.update_transform()
-
-
-class InstanceStaticActor(StaticActor):
-    pass
 
 
 class SkeletonActor(StaticActor):
@@ -112,7 +179,3 @@ class SkeletonActor(StaticActor):
                         frame = 0.0
                     self.prev_animation_buffers[i][...] = self.animation_buffers[i]
                     self.animation_buffers[i][...] = animation.get_animation_transforms(frame)
-
-
-class InstanceSkeletonActor(SkeletonActor):
-    pass

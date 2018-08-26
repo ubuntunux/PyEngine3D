@@ -15,7 +15,7 @@ from Common import logger, log_level, COMMAND
 from Common.Constants import *
 from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from OpenGLContext import OpenGLContext, ShaderStorageBuffer
+from OpenGLContext import OpenGLContext, ShaderStorageBuffer, InstanceBuffer
 from Object.PostProcess import AntiAliasing, PostProcess
 from Object.RenderTarget import RenderTargets
 from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
@@ -52,6 +52,8 @@ class Renderer(Singleton):
         self.blend_equation_prev = self.blend_equation
         self.blend_func_src_prev = self.blend_func_src
         self.blend_func_dst_prev = self.blend_func_dst
+
+        self.actor_instance_buffer = None
 
         # scene constants uniform buffer
         self.uniform_scene_buffer = None
@@ -104,6 +106,11 @@ class Renderer(Singleton):
         self.shadowmap_skeletal_material = self.resource_manager.get_material_instance(name="shadowmap_skeletal",
                                                                                        shader_name="shadowmap",
                                                                                        macros={"SKELETAL": 1})
+
+        # instance buffer
+        self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer",
+                                                    location_offset=7,
+                                                    element_datas=[MATRIX4_IDENTITY, ])
 
         # scene constants uniform buffer
         program = self.scene_constants_material.get_program()
@@ -811,9 +818,6 @@ class Renderer(Singleton):
         if len(render_infos) < 1:
             return
 
-        if scene_material_instance and scene_material_instance.material:
-            scene_material_instance.material.use_program()
-
         last_actor = None
         last_material = None
         last_material_instance = None
@@ -822,50 +826,59 @@ class Renderer(Singleton):
         for render_info in render_infos:
             actor = render_info.actor
             geometry = render_info.geometry
-            material = render_info.material
-            material_instance = render_info.material_instance
+            if scene_material_instance is None:
+                material = render_info.material
+                material_instance = render_info.material_instance
+            else:
+                material = scene_material_instance.material
+                material_instance = scene_material_instance
+            instance_count = actor.instance_count
+            is_instancing = 1 < instance_count
+
+            if last_material != material and material is not None:
+                material.use_program()
+
+            if last_material_instance != material_instance and material_instance is not None:
+                material_instance.bind_material_instance()
 
             if RenderMode.SHADING == render_mode or RenderMode.GBUFFER == render_mode:
-                if last_material != material:
-                    material.use_program()
-
-                if last_material_instance != material_instance and material_instance:
-                    scene_material_instance = material_instance
-                    material_instance.bind_material_instance()
-                    material_instance.bind_uniform_data('is_render_gbuffer', RenderMode.GBUFFER == render_mode)
-                    # Render Forward
-                    if RenderMode.SHADING == render_mode:
-                        material_instance.bind_uniform_data('texture_probe', self.scene_manager.get_light_probe_texture())
-                        material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
-                        material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
-                        material_instance.bind_uniform_data('texture_scene_reflect',
-                                                            RenderTargets.SCREEN_SPACE_REFLECTION)
-                        # Bind Atmosphere
-                        self.scene_manager.atmosphere.bind_precomputed_atmosphere(material_instance)
-
+                material_instance.bind_uniform_data('is_render_gbuffer', RenderMode.GBUFFER == render_mode)
+                # Render Forward
+                if RenderMode.SHADING == render_mode:
+                    material_instance.bind_uniform_data('texture_probe', self.scene_manager.get_light_probe_texture())
+                    material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
+                    material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
+                    material_instance.bind_uniform_data('texture_scene_reflect', RenderTargets.SCREEN_SPACE_REFLECTION)
+                    # Bind Atmosphere
+                    self.scene_manager.atmosphere.bind_precomputed_atmosphere(material_instance)
             elif RenderMode.PRE_PASS == render_mode or RenderMode.SHADOW == render_mode:
                 if last_material_instance != material_instance and material_instance:
                     data_diffuse = material_instance.get_uniform_data('texture_diffuse')
-                    scene_material_instance.bind_uniform_data('texture_diffuse', data_diffuse)
+                    material_instance.bind_uniform_data('texture_diffuse', data_diffuse)
                     if RenderMode.PRE_PASS == render_mode:
                         data_normal = material_instance.get_uniform_data('texture_normal')
-                        scene_material_instance.bind_uniform_data('texture_normal', data_normal)
+                        material_instance.bind_uniform_data('texture_normal', data_normal)
             else:
                 logger.error("Undefined render mode.")
 
-            if last_actor != actor and scene_material_instance:
-                scene_material_instance.bind_uniform_data('model', actor.transform.matrix)
+            if last_actor != actor and material_instance is not None:
+                material_instance.bind_uniform_data('is_instancing', is_instancing)
+                material_instance.bind_uniform_data('model', actor.transform.matrix)
                 if render_group == RenderGroup.SKELETON_ACTOR:
                     animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
                     prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
-                    scene_material_instance.bind_uniform_data('bone_matrices',
-                                                              animation_buffer,
-                                                              len(animation_buffer))
-                    scene_material_instance.bind_uniform_data('prev_bone_matrices',
-                                                              prev_animation_buffer,
-                                                              len(prev_animation_buffer))
+                    material_instance.bind_uniform_data('bone_matrices',
+                                                        animation_buffer,
+                                                        len(animation_buffer))
+                    material_instance.bind_uniform_data('prev_bone_matrices',
+                                                        prev_animation_buffer,
+                                                        len(prev_animation_buffer))
             # draw
-            geometry.draw_elements()
+            if is_instancing:
+                self.actor_instance_buffer.bind_instance_buffer(datas=[actor.instance_matrix, ])
+                geometry.draw_elements_instanced(instance_count)
+            else:
+                geometry.draw_elements()
 
             last_actor = actor
             last_material = material

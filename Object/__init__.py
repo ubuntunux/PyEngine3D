@@ -11,7 +11,7 @@ from .Mesh import Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad
 from .Model import Model
 
 from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, ForceFieldTexture3D
-from .Actor import StaticActor, InstanceStaticActor, SkeletonActor, InstanceSkeletonActor
+from .Actor import StaticActor, SkeletonActor
 from .Particle import ParticleManager, Particle, Emitter, ParticleInfo, EmitterInfo
 from .Camera import Camera
 from .Light import MainLight, PointLight

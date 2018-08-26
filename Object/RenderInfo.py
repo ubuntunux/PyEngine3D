@@ -36,7 +36,14 @@ def view_frustum_culling_actor(camera, actor):
 def view_frustum_culling_geometry(camera, actor, geometry):
     to_geometry = np.array([geometry.boundCenter[0], geometry.boundCenter[1], geometry.boundCenter[2], 1.0])
     to_geometry = np.dot(to_geometry, actor.transform.matrix)[0:3] - camera.transform.pos
-    radius = geometry.radius * max(actor.transform.scale)
+    max_scale = max(actor.transform.scale)
+
+    if 1 < actor.instance_count:
+        # instancing
+        radius = geometry.radius * max_scale * actor.instance_radius_scale
+        radius += actor.instance_radius_offset * max_scale
+    else:
+        radius = geometry.radius * max_scale
 
     for i in range(4):
         d = np.dot(camera.frustum_vectors[i], to_geometry)

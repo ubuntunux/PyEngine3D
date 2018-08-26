@@ -79,7 +79,7 @@ def dot_arrays(*array_list):
     return reduce(np.dot, array_list)
 
 
-def euler_to_matrix(pitch, yaw, roll, rotationMatrix):
+def euler_to_matrix(rotationMatrix, pitch, yaw, roll):
     '''
     create front vector
     right = cross(world_up, front)
@@ -89,7 +89,7 @@ def euler_to_matrix(pitch, yaw, roll, rotationMatrix):
     pass
 
 
-def matrix_rotation(rx, ry, rz, rotationMatrix):
+def matrix_rotation(rotationMatrix, rx, ry, rz):
     ch = math.cos(ry)
     sh = math.sin(ry)
     ca = math.cos(rz)
@@ -270,12 +270,9 @@ def set_translate_matrix(M, x, y, z):
 
 
 def matrix_translate(M, x, y, z):
-    T = [[1, 0, 0, 0],
-         [0, 1, 0, 0],
-         [0, 0, 1, 0],
-         [x, y, z, 1]]
-    T = np.array(T, dtype=np.float32)
-    M[...] = np.dot(M, T)
+    M[3][0] += x
+    M[3][1] += y
+    M[3][2] += z
 
 
 def get_scale_matrix(x, y, z):
@@ -294,12 +291,9 @@ def set_scale_matrix(M, x, y, z):
 
 
 def matrix_scale(M, x, y, z):
-    S = [[x, 0, 0, 0],
-         [0, y, 0, 0],
-         [0, 0, z, 0],
-         [0, 0, 0, 1]]
-    S = np.array(S, dtype=np.float32)
-    M[...] = np.dot(M, S)
+    M[0][0] *= x
+    M[1][1] *= y
+    M[2][2] *= z
 
 
 def get_rotation_matrix_x(radian):
@@ -368,7 +362,7 @@ def matrix_rotate_z(M, radian):
     M[...] = np.dot(M, R)
 
 
-def matrix_rotate(M, radian, x, y, z):
+def matrix_rotate_axis(M, radian, x, y, z):
     c, s = math.cos(radian), math.sin(radian)
     n = math.sqrt(x * x + y * y + z * z)
     x /= n
@@ -379,6 +373,12 @@ def matrix_rotate(M, radian, x, y, z):
                   [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
                   [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
                   [0, 0, 0, 1]]).T
+    M[...] = np.dot(M, R)
+
+
+def matrix_rotate(M, rx, ry, rz):
+    R = MATRIX4_IDENTITY.copy()
+    matrix_rotation(R, rx, ry, rz)
     M[...] = np.dot(M, R)
 
 

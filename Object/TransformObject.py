@@ -187,7 +187,7 @@ class TransformObject:
             self.updated = True
 
             # Matrix Rotation - faster
-            matrix_rotation(*self.rot, self.rotationMatrix)
+            matrix_rotation(self.rotationMatrix, *self.rot)
             matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
 
             # Euler Rotation - slow

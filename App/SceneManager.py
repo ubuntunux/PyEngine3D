@@ -8,7 +8,7 @@ import numpy as np
 
 from Common import logger
 from Common.Constants import *
-from Object import StaticActor, InstanceStaticActor, SkeletonActor, InstanceSkeletonActor
+from Object import StaticActor, SkeletonActor
 from Object import Camera, MainLight, PointLight, LightProbe
 from Object import RenderInfo, always_pass, view_frustum_culling_geometry
 from Object import Atmosphere, Ocean
@@ -315,26 +315,6 @@ class SceneManager(Singleton):
     def add_object_here(self, model):
         pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
         return self.add_object(model=model, pos=pos)
-
-    def add_instance_object(self, **object_data):
-        model = object_data.get('model')
-        if model:
-            object_data['name'] = self.generate_object_name(object_data.get('name', model.name))
-            objType = GetClassName(model)
-            logger.info("add %s : %s" % (objType, object_data['name']))
-
-            if model.mesh and model.mesh.has_bone():
-                obj_instance = InstanceSkeletonActor(**object_data)
-            else:
-                obj_instance = InstanceStaticActor(**object_data)
-            # regist
-            self.regist_object(obj_instance)
-            return obj_instance
-        return None
-
-    def add_instance_object_here(self, model):
-        pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
-        return self.add_instance_object(model=model, pos=pos)
 
     def clear_objects(self):
         self.cameras = []
