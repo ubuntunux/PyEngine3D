@@ -9,36 +9,45 @@ from Common import logger
 
 
 class ShaderStorageBuffer:
-    def __init__(self, name, binding, datas):
+    def __init__(self, name, binding, data):
         self.name = name
         self.binding = binding
+        self.type_of_data = np.float32
+        self.size_of_data = np.nbytes[self.type_of_data]
         self.buffer = glGenBuffers(1)
-        self.set_buffer_data(datas)
+        self.bind_storage_buffer(data)
 
     def delete(self):
         glDeleteBuffers(1, [self.buffer, ])
 
-    def set_buffer_data(self, datas):
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-
-        size_of_data = sum([data.nbytes for data in datas])
-        
-        if size_of_data % 16 != 0:
-            raise BaseException("Shader storage buffer block must start on a 16-byte padding.")
-        
-        if 0 < size_of_data:
-            glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_DYNAMIC_COPY)
-
-            offset = 0
-            for data in datas:
-                glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, data.nbytes, data)
-                offset += data.nbytes
-
-    def bind_storage_buffer(self):
+    def bind_storage_buffer(self, data=None):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, self.binding, self.buffer)
 
-    def get_map_buffer(self, inout_data):
+        if data is not None:
+            size_of_data = data.nbytes
+
+            if size_of_data % 16 != 0:
+                raise BaseException("Shader storage buffer block must start on a 16-byte padding.")
+
+            if 0 < size_of_data:
+                glBufferData(GL_SHADER_STORAGE_BUFFER, size_of_data, None, GL_DYNAMIC_COPY)
+                glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, size_of_data, data)
+
+                self.type_of_data = data.dtype
+                self.size_of_data = size_of_data
+
+                # multiple sub data
+                # offset = 0
+                # for data in datas:
+                #     glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, data.nbytes, data)
+                #     offset += data.nbytes
+
+    def get_map_buffer(self):
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
-        data_string = string_at(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY), inout_data.nbytes)
-        inout_data[...] = np.fromstring(data_string, dtype=inout_data.dtype)
+        data_ptr = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY)
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+
+        data_string = string_at(data_ptr, self.size_of_data)
+        return np.fromstring(data_string, dtype=self.type_of_data)

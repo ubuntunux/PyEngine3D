@@ -8,7 +8,7 @@ from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
-from OpenGLContext import InstanceBuffer, ShaderStorageBuffer, UniformBlock
+from OpenGLContext import AtomicCounterBuffer, ShaderStorageBuffer, InstanceBuffer, UniformBlock
 from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
@@ -141,8 +141,6 @@ class ParticleManager(Singleton):
                         if emitter.alive:
                             render_count = emitter_info.spawn_count
 
-                            emitter.emitter_gpu_buffer.bind_storage_buffer()
-
                             # update gpu particle
                             material_instance = self.material_gpu_update
                             material_instance.use_program()
@@ -159,8 +157,14 @@ class ParticleManager(Singleton):
                                 material_instance.bind_uniform_data('texture_force_field',
                                                                     emitter_info.texture_force_field)
 
+                            # set gpu buffer
+                            emitter.emitter_gpu_buffer.bind_storage_buffer()
+                            emitter.emitter_counter_buffer.bind_atomic_counter_buffer()
+
                             glDispatchCompute(render_count, 1, 1)
-                            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
+                            glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+
+                            particle_count = emitter.emitter_counter_buffer.get_map_buffer()
 
                             # render gpu particle
                             material_instance = self.material_gpu_particle
@@ -339,6 +343,8 @@ class Emitter:
         # gpu data
         self.emitter_gpu_data = None
         self.emitter_gpu_buffer = None
+        self.emitter_counter = None
+        self.emitter_counter_buffer = None
 
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
@@ -405,13 +411,23 @@ class Emitter:
                                                        ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
                                                        ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)])
 
-        self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, datas=[self.emitter_gpu_data])
+        self.emitter_gpu_buffer = ShaderStorageBuffer('emitter_buffer', 0, data=self.emitter_gpu_data)
+
+        self.emitter_counter = np.zeros(1, np.uint32)
+        self.emitter_counter_buffer = AtomicCounterBuffer("emitter_counter", 1, data=self.emitter_counter)
 
     def delete_gpu_buffer(self):
         self.emitter_gpu_data = None
         if self.emitter_gpu_buffer is not None:
             self.emitter_gpu_buffer.delete()
             self.emitter_gpu_buffer = None
+
+        if self.emitter_counter is not None:
+            self.emitter_counter[0] = 0
+
+        if self.emitter_counter_buffer is not None:
+            self.emitter_counter_buffer.delete()
+            self.emitter_counter_buffer = None
 
     def play(self):
         self.refresh()

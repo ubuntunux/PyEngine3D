@@ -13,6 +13,7 @@ uniform vec3 force_field_radius;
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; };
+layout( binding=1 ) uniform atomic_uint emitter_counter;
 
 void refresh(uint id)
 {
@@ -140,6 +141,7 @@ void update_local_matrix(uint id)
 
 void main()
 {
+    uint particle_count = atomicCounterIncrement( emitter_counter );
     uint id = gl_GlobalInvocationID.x;
 
     if(EMITTER_STATE_DEAD == emitter_datas[id].state)

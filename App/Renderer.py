@@ -15,7 +15,7 @@ from Common import logger, log_level, COMMAND
 from Common.Constants import *
 from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from OpenGLContext import OpenGLContext, ShaderStorageBuffer, InstanceBuffer
+from OpenGLContext import OpenGLContext, AtomicCounterBuffer, ShaderStorageBuffer, InstanceBuffer
 from Object.PostProcess import AntiAliasing, PostProcess
 from Object.RenderTarget import RenderTargets
 from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode

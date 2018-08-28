@@ -23,7 +23,7 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
     else:
         error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
         logger.error(error_message)
-        raise BaseException(error_message)
+        # raise BaseException(error_message)
     return None
 
 
