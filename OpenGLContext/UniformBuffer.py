@@ -7,6 +7,9 @@ from Common import logger
 from App import CoreManager
 
 
+ignore_uniform_types = ["atomic_bool", "atomic_uint", "atomic_int", "atomic_float"]
+
+
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
     uniform_classes = [
@@ -21,9 +24,10 @@ def CreateUniformBuffer(program, uniform_type, uniform_name):
             uniform_buffer = uniform_class(program, uniform_name)
             return uniform_buffer if uniform_buffer.valid else None
     else:
-        error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
-        logger.error(error_message)
-        # raise BaseException(error_message)
+        if uniform_type not in ignore_uniform_types:
+            error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
+            logger.error(error_message)
+            raise BaseException(error_message)
     return None
 
 

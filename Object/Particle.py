@@ -159,12 +159,13 @@ class ParticleManager(Singleton):
 
                             # set gpu buffer
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
-                            emitter.emitter_counter_buffer.bind_atomic_counter_buffer()
+                            # reset to 0
+                            emitter.emitter_counter_buffer.bind_atomic_counter_buffer(data=emitter.emitter_counter)
 
                             glDispatchCompute(render_count, 1, 1)
                             glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
-                            particle_count = emitter.emitter_counter_buffer.get_map_buffer()
+                            emitter.gpu_particle_count = emitter.emitter_counter_buffer.get_map_buffer()
 
                             # render gpu particle
                             material_instance = self.material_gpu_particle
@@ -345,14 +346,16 @@ class Emitter:
         self.emitter_gpu_buffer = None
         self.emitter_counter = None
         self.emitter_counter_buffer = None
+        self.gpu_particle_count = 0
 
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
 
         # refresh max parameter
         if self.emitter_info.enable_gpu_particle:
-            self.delay = self.emitter_info.delay.get_max()
-            self.life_time = self.emitter_info.life_time.get_max()
+            self.gpu_particle_count = self.emitter_info.spawn_count
+            # max life time
+            self.life_time = self.emitter_info.life_time.get_max() + self.emitter_info.delay.get_max()
         else:
             self.delay = self.emitter_info.delay.get_uniform()
             self.life_time = self.emitter_info.life_time.get_uniform()
@@ -473,6 +476,12 @@ class Emitter:
         if not self.alive:
             return
 
+        # gpu particle update
+        if self.emitter_info.enable_gpu_particle:
+            if 0 == self.gpu_particle_count:
+                self.destroy()
+            return
+
         if 0.0 < self.delay:
             self.delay -= dt
             if self.delay < 0.0:
@@ -492,13 +501,7 @@ class Emitter:
                 self.destroy()
                 return
 
-            # refresh only cpu particle
-            if not self.emitter_info.enable_gpu_particle:
-                self.refresh()
-
-        # gpu particle return
-        if self.emitter_info.enable_gpu_particle:
-            return
+            self.refresh()
 
         life_ratio = 0.0
         if 0.0 < self.life_time:

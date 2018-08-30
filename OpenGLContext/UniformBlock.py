@@ -27,4 +27,5 @@ class UniformBlock:
             raise BaseException("Uniform buffer data must start on a 16-byte padding.")
 
         glBindBuffer(GL_UNIFORM_BUFFER, self.buffer)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
         glBufferData(GL_UNIFORM_BUFFER, data.nbytes, data, GL_DYNAMIC_DRAW)

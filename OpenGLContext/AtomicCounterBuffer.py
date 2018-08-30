@@ -25,7 +25,7 @@ class AtomicCounterBuffer:
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, self.binding, self.buffer)
         if data is not None:
             glBufferData(GL_ATOMIC_COUNTER_BUFFER, data.nbytes, None, GL_DYNAMIC_COPY)
-            glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, data.nbytes, np.array([data], dtype=data.dtype))
+            glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, data.nbytes, data)
             self.size_of_data = data.nbytes
             self.type_of_data = data.dtype
 

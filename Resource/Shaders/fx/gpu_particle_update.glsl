@@ -141,13 +141,15 @@ void update_local_matrix(uint id)
 
 void main()
 {
-    uint particle_count = atomicCounterIncrement( emitter_counter );
     uint id = gl_GlobalInvocationID.x;
 
     if(EMITTER_STATE_DEAD == emitter_datas[id].state)
     {
         return;
     }
+
+    // particle count
+    uint particle_count = atomicCounterIncrement( emitter_counter );
 
     if(EMITTER_STATE_NONE == emitter_datas[id].state)
     {
