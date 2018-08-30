@@ -182,7 +182,7 @@ class Renderer(Singleton):
                                                              ('EMITTER_TRANSFORM_SCALE_MIN', np.float32, 3),
                                                              ('EMITTER_PLAY_SPEED', np.float32),
                                                              ('EMITTER_TRANSFORM_SCALE_MAX', np.float32, 3),
-                                                             ('dummy_0', np.float32),
+                                                             ('EMITTER_USE_ATOMIC_COUNTER', np.int32),
                                                              ('EMITTER_VELOCITY_POSITION_MIN', np.float32, 3),
                                                              ('dummy_1', np.float32),
                                                              ('EMITTER_VELOCITY_POSITION_MAX', np.float32, 3),

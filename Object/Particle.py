@@ -17,6 +17,8 @@ from .RenderOptions import BlendMode
 
 
 class ParticleManager(Singleton):
+    USE_ATOMIC_COUNTER = True
+
     def __init__(self):
         self.renderer = None
         self.particles = []
@@ -114,6 +116,7 @@ class ParticleManager(Singleton):
                 if emitter_info.enable_gpu_particle:
                     # GPU Particle
                     uniform_data = self.renderer.uniform_emitter_infos_data
+                    uniform_data['EMITTER_USE_ATOMIC_COUNTER'] = ParticleManager.USE_ATOMIC_COUNTER
                     uniform_data['EMITTER_PARENT_MATRIX'] = particle.transform.matrix
                     uniform_data['EMITTER_PARENT_INVERSE_MATRIX'] = particle.transform.inverse_matrix
                     uniform_data['EMITTER_DELAY'] = emitter_info.delay.value
@@ -140,6 +143,7 @@ class ParticleManager(Singleton):
                     for emitter in particle.emitters_group[i]:
                         if emitter.alive:
                             render_count = emitter_info.spawn_count
+                            is_infinite = emitter.is_infinite()
 
                             # update gpu particle
                             material_instance = self.material_gpu_update
@@ -159,13 +163,17 @@ class ParticleManager(Singleton):
 
                             # set gpu buffer
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
+
                             # reset to 0
-                            emitter.emitter_counter_buffer.bind_atomic_counter_buffer(data=emitter.emitter_counter)
+                            if not is_infinite and ParticleManager.USE_ATOMIC_COUNTER:
+                                emitter.emitter_counter_buffer.bind_atomic_counter_buffer(data=emitter.emitter_counter)
 
                             glDispatchCompute(render_count, 1, 1)
                             glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
-                            emitter.gpu_particle_count = emitter.emitter_counter_buffer.get_map_buffer()
+                            if not is_infinite and ParticleManager.USE_ATOMIC_COUNTER:
+                                # too slow..
+                                emitter.gpu_particle_count = emitter.emitter_counter_buffer.get_buffer_data()
 
                             # render gpu particle
                             material_instance = self.material_gpu_particle
@@ -354,8 +362,8 @@ class Emitter:
         # refresh max parameter
         if self.emitter_info.enable_gpu_particle:
             self.gpu_particle_count = self.emitter_info.spawn_count
-            # max life time
-            self.life_time = self.emitter_info.life_time.get_max() + self.emitter_info.delay.get_max()
+            self.delay = self.emitter_info.delay.get_max()
+            self.life_time = self.emitter_info.life_time.get_max()
         else:
             self.delay = self.emitter_info.delay.get_uniform()
             self.life_time = self.emitter_info.life_time.get_uniform()
@@ -435,8 +443,8 @@ class Emitter:
     def play(self):
         self.refresh()
 
-        if 0.0 == self.life_time:
-            self.alive = False
+        if 0.0 == self.life_time or 0 == self.emitter_info.loop:
+            self.destroy()
             return
 
         self.alive = True
@@ -452,6 +460,9 @@ class Emitter:
 
     def is_renderable(self):
         return self.alive and (0.0 == self.delay)
+
+    def is_infinite(self):
+        return self.loop_remain < 0
 
     def update_sequence(self, life_ratio):
         if 1 < self.total_cell_count and 0 < self.emitter_info.play_speed:
@@ -476,9 +487,9 @@ class Emitter:
         if not self.alive:
             return
 
-        # gpu particle update
-        if self.emitter_info.enable_gpu_particle:
-            if 0 == self.gpu_particle_count:
+        # gpu particle - atomic counter manage
+        if self.emitter_info.enable_gpu_particle and ParticleManager.USE_ATOMIC_COUNTER:
+            if 0 == self.gpu_particle_count and not self.is_infinite():
                 self.destroy()
             return
 
@@ -502,6 +513,10 @@ class Emitter:
                 return
 
             self.refresh()
+
+        # gpu particle - application manage
+        if self.emitter_info.enable_gpu_particle and not ParticleManager.USE_ATOMIC_COUNTER:
+            return
 
         life_ratio = 0.0
         if 0.0 < self.life_time:

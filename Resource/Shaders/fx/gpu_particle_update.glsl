@@ -149,11 +149,21 @@ void main()
     }
 
     // particle count
-    uint particle_count = atomicCounterIncrement( emitter_counter );
+    const bool is_infinite = EMITTER_LOOP < 0;
+    if(!is_infinite && EMITTER_USE_ATOMIC_COUNTER)
+    {
+        uint particle_count = atomicCounterIncrement( emitter_counter );
+    }
 
     if(EMITTER_STATE_NONE == emitter_datas[id].state)
     {
         refresh(id);
+
+        if(0 == EMITTER_LOOP)
+        {
+            emitter_datas[id].state = EMITTER_STATE_DEAD;
+            return;
+        }
 
         emitter_datas[id].loop_remain = EMITTER_LOOP;
         emitter_datas[id].elapsed_time = 0.0;
@@ -165,7 +175,7 @@ void main()
     if(EMITTER_STATE_DELAY == emitter_datas[id].state)
     {
         emitter_datas[id].delay -= DELTA_TIME;
-        if(0.0 < emitter_datas[id].delay)
+        if(0.0 == emitter_datas[id].life_time || 0.0 < emitter_datas[id].delay)
         {
             return;
         }

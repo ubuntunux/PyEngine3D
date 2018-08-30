@@ -29,7 +29,8 @@ class AtomicCounterBuffer:
             self.size_of_data = data.nbytes
             self.type_of_data = data.dtype
 
-    def get_map_buffer(self):
+    def get_buffer_data(self):
+        # too slow..
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.buffer)
         data_ptr = glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_ONLY)
         glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER)

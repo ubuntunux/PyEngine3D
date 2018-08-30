@@ -43,7 +43,8 @@ class ShaderStorageBuffer:
                 #     glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, data.nbytes, data)
                 #     offset += data.nbytes
 
-    def get_map_buffer(self):
+    def get_buffer_data(self):
+        # too slow..
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.buffer)
         data_ptr = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY)
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER)
