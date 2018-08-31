@@ -68,7 +68,7 @@
     - Volumtric Fog
     - Fur Rendering
 * Technique
-    - FXAA
+    - ScreenSpace Bevel
     - SSR Optimization
     - Hierachical-Z depth
     - Screen Space SSS
