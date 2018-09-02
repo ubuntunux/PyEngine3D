@@ -37,6 +37,14 @@ float linear_depth_to_depth(float linear_depth)
     return depth * 0.5 + 0.5;
 }
 
+vec4 linear_depth_to_depth(vec4 linear_depth)
+{
+    const vec4 zNear = NEAR_FAR.xxxx;
+    const vec4 zFar = NEAR_FAR.yyyy;
+    vec4 depth = (zFar + zNear - 2.0 * zNear * zFar / linear_depth) / (zFar - zNear);
+    return depth * 0.5 + 0.5;
+}
+
 vec4 depth_to_relative_world(vec2 tex_coord, float depth)
 {
     vec4 clip_coord = vec4(tex_coord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);

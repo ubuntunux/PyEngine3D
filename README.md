@@ -23,7 +23,6 @@
 ## TODO
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
-    - SSR optimize, hierachical z ray marching
     - SSR ray reuse in compute shader
     - Postprocessing in compute shader
 * Actors
@@ -55,7 +54,6 @@
     - VTF Skinning
     - Animation calculation in gpu
 * Particle System
-    - Manage GPU particles
     - Particle spawn on polygon surface
 * Rendering
     - Screen Space LightShaft
@@ -70,7 +68,6 @@
 * Technique
     - ScreenSpace Bevel
     - SSR Optimization
-    - Hierachical-Z depth
     - Screen Space SSS
     - God Ray
     - Glare

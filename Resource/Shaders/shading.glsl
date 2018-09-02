@@ -332,21 +332,22 @@ vec4 surface_shading(vec4 base_color,
     {
         const vec2 env_size = textureSize(texture_probe, 0);
         const float max_env_mipmap = 8.0; // log2(max(env_size.x, env_size.y));
+        vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
+        vec3 shValue = fresnel * envBRDF.x + envBRDF.y;
 
         vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
+        ibl_specular_light *= shadow_factor;
 
         // mix scene reflection
         if(RENDER_SSR)
         {
+            // NoShadow
             ibl_specular_light.xyz = mix(ibl_specular_light.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
         }
 
-        vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-        vec3 shValue = fresnel * envBRDF.x + envBRDF.y;
-
         diffuse_light += ibl_diffuse_light * shValue * shadow_factor;
-        specular_light += ibl_specular_light * shValue * shadow_factor;
+        specular_light += ibl_specular_light * shValue;
     }
 
     // final result

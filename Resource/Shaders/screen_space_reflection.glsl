@@ -98,7 +98,8 @@ layout (location = 0) out vec4 fs_output;
 void main() {
     fs_output = vec4(0.0);
     vec2 tex_coord = vs_output.tex_coord.xy;
-    float depth = texture2D(texture_depth, tex_coord).x;
+    float linear_depth = texture2D(texture_depth, tex_coord).x;
+    float depth = linear_depth_to_depth(linear_depth);
 
     if(depth >= 1.0)
     {
@@ -106,7 +107,6 @@ void main() {
     }
 
     ivec2 PixelPos = ivec2(gl_FragCoord.xy);
-    float linear_depth = depth_to_linear_depth(depth) * 0.01;
 
     vec4 ndc_coord = vec4(vs_output.tex_coord.xy * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 relative_pos = INV_VIEW_ORIGIN * INV_PROJECTION * ndc_coord;
@@ -130,7 +130,7 @@ void main() {
     {
         vec2 poisson = PoissonSamples[int(JITTER_FRAME + i * PoissonSampleCount / NumRays) % PoissonSampleCount];
         vec2 random = texture2D(texture_random, tex_coord + poisson).xy;
-        float StepOffset = rand(tex_coord + random) - 0.5;
+        float StepOffset = rand(tex_coord + random);
 
         vec2 E = Hammersley(i, NumRays, uvec2(random * 117));
         vec3 H = TangentToWorld(ImportanceSampleBlinn( random, sqrt(Roughness) * 0.6 ).xyz, N);
@@ -144,7 +144,7 @@ void main() {
             R,
             Roughness,
             0.001,
-            linear_depth,
+            linear_depth * 0.01,
             NumSteps,
             StepOffset
         );

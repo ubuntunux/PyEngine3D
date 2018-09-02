@@ -770,7 +770,7 @@ class Renderer(Singleton):
                                                             RenderTargets.WORLD_NORMAL,
                                                             RenderTargets.MATERIAL,
                                                             RenderTargets.VELOCITY,
-                                                            RenderTargets.DEPTHSTENCIL)
+                                                            RenderTargets.LINEAR_DEPTH)
 
         # SSAO
         if self.postprocess.is_render_ssao:
