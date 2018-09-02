@@ -1,3 +1,4 @@
+import math
 import random
 import time
 from ctypes import c_void_p
@@ -77,7 +78,7 @@ class PostProcess:
         self.tonemapping = None
 
         self.linear_depth = None
-        self.generate_max_z = None
+        self.generate_min_z = None
         self.blur = None
         self.circle_blur = None
         self.gaussian_blur = None
@@ -135,7 +136,7 @@ class PostProcess:
         self.motion_blur = self.resource_manager.get_material_instance("motion_blur")
         self.screeen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
         self.linear_depth = self.resource_manager.get_material_instance("linear_depth")
-        self.generate_max_z = self.resource_manager.get_material_instance("generate_max_z")
+        self.generate_min_z = self.resource_manager.get_material_instance("generate_min_z")
         self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
         self.copy_texture_mi = self.resource_manager.get_material_instance("copy_texture")
         self.render_texture_mi = self.resource_manager.get_material_instance("render_texture")
@@ -372,23 +373,23 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-        texture_linear_depth.generate_mipmap()
+        self.render_generate_min_z(texture_linear_depth)
 
-        # temp_depth = self.rendertarget_manager.get_temporary('temp_linear_depth', texture_linear_depth)
-        # temp_depth.generate_mipmap()
-        #
-        # lod_count = texture_linear_depth.get_mipmap_count()
-        # for lod in range(lod_count - 1):
-        #     self.framebuffer_manager.bind_framebuffer(temp_depth, target_level=lod)
-        #     glClear(GL_COLOR_BUFFER_BIT)
-        #     self.copy_texture(texture_linear_depth, target_level=float(lod))
-        #
-        #     self.framebuffer_manager.bind_framebuffer(texture_linear_depth, target_level=lod+1)
-        #     glClear(GL_COLOR_BUFFER_BIT)
-        #     self.generate_max_z.use_program()
-        #     self.generate_max_z.bind_uniform_data("target_level", float(lod))
-        #     self.generate_max_z.bind_uniform_data("texture_source", texture_linear_depth)
-        #     self.quad.draw_elements()
+    def render_generate_min_z(self, texture_linear_depth):
+        lod_count = texture_linear_depth.get_mipmap_count()
+        width = texture_linear_depth.width
+        height = texture_linear_depth.height
+
+        self.generate_min_z.use_program()
+
+        for lod in range(1, lod_count - 1):
+            self.generate_min_z.bind_uniform_data("img_input", texture_linear_depth, level=lod-1, access=GL_READ_ONLY)
+            self.generate_min_z.bind_uniform_data("img_output", texture_linear_depth, level=lod, access=GL_WRITE_ONLY)
+
+            width = math.floor(width / 2)
+            height = math.floor(height / 2)
+            glDispatchCompute(width, height, 1)
+            glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
     def render_tone_map(self, texture_diffuse):
         self.tonemapping.use_program()
@@ -406,7 +407,7 @@ class PostProcess:
         self.ssao.bind_uniform_data("texture_lod", texture_lod)
         self.ssao.bind_uniform_data("texture_size", texture_size)
         self.ssao.bind_uniform_data("radius_min_max", self.ssao_radius_min_max)
-        self.ssao.bind_uniform_data("kernel", self.ssao_kernel, self.ssao_kernel_size)
+        self.ssao.bind_uniform_data("kernel", self.ssao_kernel, num=self.ssao_kernel_size)
         self.ssao.bind_uniform_data("texture_noise", self.ssao_random_texture)
         self.ssao.bind_uniform_data("texture_normal", texture_normal)
         self.ssao.bind_uniform_data("texture_linear_depth", texture_linear_depth)
@@ -452,7 +453,7 @@ class PostProcess:
 
     def copy_texture(self, source_texture, target_level=0.0):
         self.copy_texture_mi.use_program()
-        self.copy_texture_mi.bind_uniform_data("target_level", target_level)
+        self.copy_texture_mi.bind_uniform_data("target_level", float(target_level))
         self.copy_texture_mi.bind_uniform_data("texture_source", source_texture)
         self.quad.draw_elements()
 

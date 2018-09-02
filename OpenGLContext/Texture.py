@@ -248,12 +248,12 @@ class Texture:
             return
         glBindTexture(self.target, self.buffer)
 
-    def bind_image(self, image_unit, access=GL_READ_WRITE):
+    def bind_image(self, image_unit, level=0, access=GL_READ_WRITE):
         if self.buffer == -1:
             logger.warn("%s texture is invalid." % self.name)
             return
         # flag : GL_READ_WRITE, GL_WRITE_ONLY, GL_READ_ONLY
-        glBindImageTexture(image_unit, self.buffer, 0, GL_FALSE, 0, access, self.internal_format)
+        glBindImageTexture(image_unit, self.buffer, level, GL_FALSE, 0, access, self.internal_format)
 
     def is_attached(self):
         return self.attachment

@@ -869,10 +869,10 @@ class Renderer(Singleton):
                     prev_animation_buffer = actor.get_prev_animation_buffer(geometry.skeleton.index)
                     material_instance.bind_uniform_data('bone_matrices',
                                                         animation_buffer,
-                                                        len(animation_buffer))
+                                                        num=len(animation_buffer))
                     material_instance.bind_uniform_data('prev_bone_matrices',
                                                         prev_animation_buffer,
-                                                        len(prev_animation_buffer))
+                                                        num=len(prev_animation_buffer))
             # draw
             if is_instancing:
                 self.actor_instance_buffer.bind_instance_buffer(datas=[actor.instance_matrix, ])
