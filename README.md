@@ -25,6 +25,8 @@
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR ray reuse in compute shader
     - Postprocessing in compute shader
+    - FFT in compute shader
+    - Precompjted atmosphere in compute shader
 * Actors
     - Tree, Foliage actor
     - Landscape
@@ -66,6 +68,7 @@
     - Volumtric Fog
     - Fur Rendering
 * Technique
+    - Voxel Based GI
     - ScreenSpace Bevel
     - SSR Optimization
     - Screen Space SSS
