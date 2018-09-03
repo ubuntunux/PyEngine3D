@@ -68,6 +68,7 @@
     - Volumtric Fog
     - Fur Rendering
 * Technique
+    - Voxelization
     - Voxel Based GI
     - ScreenSpace Bevel
     - SSR Optimization
