@@ -475,7 +475,7 @@ class Renderer(Singleton):
                 composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
                 composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
                 composite_atmosphere.bind_uniform_data("texture_inscatter", RenderTargets.ATMOSPHERE_INSCATTER)
-                composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
+                composite_atmosphere.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
                 self.postprocess.draw_elements()
 
             # set blend state

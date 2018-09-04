@@ -5,7 +5,7 @@
 uniform bool above_the_cloud;
 uniform sampler2D texture_atmosphere;
 uniform sampler2D texture_inscatter;
-uniform sampler2D texture_depth;
+uniform sampler2D texture_linear_depth;
 
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
@@ -14,21 +14,54 @@ layout (location = 0) out vec4 fs_output;
 void main()
 {
     vec2 texcoord = vs_output.tex_coord.xy;
-    float depth = texture2D(texture_depth, texcoord).x;
-    fs_output = texture2D(texture_atmosphere, texcoord);
+    float linear_depth = texture2D(texture_linear_depth, texcoord).x;
+    vec4 color = texture2DLod(texture_atmosphere, texcoord, 0.0);
 
     if(above_the_cloud)
     {
-        fs_output.w = (1.0 <= depth) ? 1.0 : fs_output.w;
+        color.w = (NEAR_FAR.y <= linear_depth) ? 1.0 : color.w;
     }
     else
     {
-        fs_output.w = (1.0 <= depth) ? 1.0 : 0.0;
+        color.w = (NEAR_FAR.y <= linear_depth) ? 1.0 : 0.0;
     }
 
     // for blending : src_color * one + dst_color * (1.0 - src_alpha)
-    fs_output.xyz *= fs_output.w;
+    color.xyz *= color.w;
 
-    fs_output.xyz += texture2D(texture_inscatter, texcoord).xyz;
+    // Upscaling Inscatter
+    vec2 inv_lod_texel_size = 1.0 / textureSize(texture_linear_depth, 2);
+    float fixed_linear_depth = texture2DLod(texture_linear_depth, texcoord, 2.0).x;
+    float fixed_depth_diff = abs(linear_depth - fixed_linear_depth);
+    vec2 fixed_texcoord = (floor(texcoord / inv_lod_texel_size) + 0.5) * inv_lod_texel_size;
+    vec2 fixed_uv = fixed_texcoord;
+
+    vec2 offset[8] = {
+        vec2(-inv_lod_texel_size.x, 0.0),
+        vec2(inv_lod_texel_size.x, 0.0),
+        vec2(0.0, inv_lod_texel_size.y),
+        vec2(0.0, -inv_lod_texel_size.y),
+        vec2(inv_lod_texel_size.x, inv_lod_texel_size.y),
+        vec2(-inv_lod_texel_size.x, inv_lod_texel_size.y),
+        vec2(inv_lod_texel_size.x, -inv_lod_texel_size.y),
+        vec2(-inv_lod_texel_size.x, -inv_lod_texel_size.y),
+    };
+
+    for(int i=0; i<8; ++i)
+    {
+        float lod_linear_depth = texture2DLod(texture_linear_depth, fixed_texcoord + offset[i], 2.0).x;
+        float depth_diff = abs(linear_depth - lod_linear_depth);
+        if(depth_diff < fixed_depth_diff)
+        {
+            fixed_linear_depth = lod_linear_depth;
+            fixed_depth_diff = depth_diff;
+            fixed_uv = fixed_texcoord + offset[i];
+        }
+    }
+
+    // add inscatter
+    color.xyz += texture2D(texture_inscatter, fixed_uv).xyz;
+
+    fs_output = color;
 }
 #endif // GL_FRAGMENT_SHADER
