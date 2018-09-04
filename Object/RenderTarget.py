@@ -26,7 +26,7 @@ class RenderTargets:
     HDR_PREV = None
     LIGHT_PROBE_ATMOSPHERE = None
     ATMOSPHERE = None
-    ATMOSPHERE_LIGHTSHAFT = None
+    ATMOSPHERE_INSCATTER = None
     TAA_RESOLVE = None
     DIFFUSE = None
     MATERIAL = None
@@ -253,8 +253,8 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP_TO_EDGE
         )
 
-        RenderTargets.ATMOSPHERE_LIGHTSHAFT= self.create_rendertarget(
-            "ATMOSPHERE_LIGHTSHAFT",
+        RenderTargets.ATMOSPHERE_INSCATTER= self.create_rendertarget(
+            "ATMOSPHERE_INSCATTER",
             texture_type=Texture2D,
             width=quatersize_x,
             height=quatersize_y,

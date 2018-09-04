@@ -4,6 +4,7 @@
 
 uniform bool above_the_cloud;
 uniform sampler2D texture_atmosphere;
+uniform sampler2D texture_inscatter;
 uniform sampler2D texture_depth;
 
 #ifdef GL_FRAGMENT_SHADER
@@ -24,5 +25,10 @@ void main()
     {
         fs_output.w = (1.0 <= depth) ? 1.0 : 0.0;
     }
+
+    // for blending : src_color * one + dst_color * (1.0 - src_alpha)
+    fs_output.xyz *= fs_output.w;
+
+    fs_output.xyz += texture2D(texture_inscatter, texcoord).xyz;
 }
 #endif // GL_FRAGMENT_SHADER

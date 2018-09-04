@@ -452,7 +452,7 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE,
-                                                          RenderTargets.ATMOSPHERE_LIGHTSHAFT)
+                                                          RenderTargets.ATMOSPHERE_INSCATTER)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
                                                                             RenderOption.RENDER_LIGHT_PROBE)
@@ -466,7 +466,7 @@ class Renderer(Singleton):
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
                 # composite atmosphere
-                self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
                 composite_atmosphere = self.resource_manager.get_material_instance(
                     "precomputed_atmosphere.composite_atmosphere")
@@ -474,16 +474,8 @@ class Renderer(Singleton):
                 above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
                 composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
                 composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
+                composite_atmosphere.bind_uniform_data("texture_inscatter", RenderTargets.ATMOSPHERE_INSCATTER)
                 composite_atmosphere.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
-                self.postprocess.draw_elements()
-
-                # composite light shaft
-                self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
-
-                composite_lightshaft = self.resource_manager.get_material_instance(
-                    "precomputed_atmosphere.composite_lightshaft")
-                composite_lightshaft.use_program()
-                composite_lightshaft.bind_uniform_data("texture_lightshaft", RenderTargets.ATMOSPHERE_LIGHTSHAFT)
                 self.postprocess.draw_elements()
 
             # set blend state

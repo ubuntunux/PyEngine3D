@@ -26,7 +26,7 @@
     - SSR ray reuse in compute shader
     - Postprocessing in compute shader
     - FFT in compute shader
-    - Precompjted atmosphere in compute shader
+    - Precomputed atmosphere in compute shader
 * Actors
     - Tree, Foliage actor
     - Landscape
