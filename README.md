@@ -58,20 +58,16 @@
 * Particle System
     - Particle spawn on polygon surface
 * Rendering
-    - Screen Space LightShaft
-    - Upscale Atmosphere Scattering
     - View Mode
         - Wire, Solid, Lighting, Color
     - Culling
         - occlusion culling
-        - distance culling   
-    - Volumtric Fog
-    - Fur Rendering
+        - distance culling
 * Technique
     - Voxelization
     - Voxel Based GI
-    - ScreenSpace Bevel
-    - SSR Optimization
+    - Screen Space Bevel
+    - Screen Space LightShaft
     - Screen Space SSS
     - God Ray
     - Glare
@@ -80,7 +76,9 @@
     - Color Correction
     - Color Grading
     - Coarse Shading, Checkboard rendering
-    - Paraboloid environment map    
+    - Paraboloid environment map
+    - Volumtric Fog
+    - Fur Rendering
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource
