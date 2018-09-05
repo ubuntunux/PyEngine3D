@@ -33,10 +33,10 @@ class MainLight(StaticActor):
         if current_camera:
             shadow_distance = 50.0 / current_camera.meter_per_unit
             width, height = shadow_distance * 0.5, shadow_distance * 0.5
-            projection = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+            orthogonal = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
 
             lightPosMatrix = get_translate_matrix(*(-current_camera.transform.get_pos()))
-            self.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, self.transform.inverse_matrix), projection)
+            self.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, self.transform.inverse_matrix), orthogonal)
 
 
 class PointLight(StaticActor):

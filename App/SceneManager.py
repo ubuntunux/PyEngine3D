@@ -10,7 +10,7 @@ from Common import logger
 from Common.Constants import *
 from Object import StaticActor, SkeletonActor
 from Object import Camera, MainLight, PointLight, LightProbe
-from Object import RenderInfo, always_pass, view_frustum_culling_geometry
+from Object import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_view_frustum
 from Object import Atmosphere, Ocean
 from Object import Particle
 from Object.RenderOptions import RenderOption
@@ -393,17 +393,19 @@ class SceneManager(Singleton):
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(culling_func=view_frustum_culling_geometry,
-                                       camera=self.main_camera,
-                                       actor_list=self.static_actors,
-                                       solid_render_infos=self.static_solid_render_infos,
-                                       translucent_render_infos=self.static_translucent_render_infos)
+        gather_render_infos(culling_func=view_frustum_culling_geometry,
+                            camera=self.main_camera,
+                            light=self.main_light,
+                            actor_list=self.static_actors,
+                            solid_render_infos=self.static_solid_render_infos,
+                            translucent_render_infos=self.static_translucent_render_infos)
 
-        RenderInfo.gather_render_infos(culling_func=always_pass,
-                                       camera=self.main_light,
-                                       actor_list=self.static_actors,
-                                       solid_render_infos=self.static_shadow_render_infos,
-                                       translucent_render_infos=None)
+        gather_render_infos(culling_func=always_pass,
+                            camera=self.main_camera,
+                            light=self.main_light,
+                            actor_list=self.static_actors,
+                            solid_render_infos=self.static_shadow_render_infos,
+                            translucent_render_infos=None)
 
         self.static_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.static_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
@@ -413,17 +415,19 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
 
-        RenderInfo.gather_render_infos(culling_func=view_frustum_culling_geometry,
-                                       camera=self.main_camera,
-                                       actor_list=self.skeleton_actors,
-                                       solid_render_infos=self.skeleton_solid_render_infos,
-                                       translucent_render_infos=self.skeleton_translucent_render_infos)
+        gather_render_infos(culling_func=view_frustum_culling_geometry,
+                            camera=self.main_camera,
+                            light=self.main_light,
+                            actor_list=self.skeleton_actors,
+                            solid_render_infos=self.skeleton_solid_render_infos,
+                            translucent_render_infos=self.skeleton_translucent_render_infos)
 
-        RenderInfo.gather_render_infos(culling_func=always_pass,
-                                       camera=self.main_light,
-                                       actor_list=self.skeleton_actors,
-                                       solid_render_infos=self.skeleton_shadow_render_infos,
-                                       translucent_render_infos=None)
+        gather_render_infos(culling_func=always_pass,
+                            camera=self.main_camera,
+                            light=self.main_light,
+                            actor_list=self.skeleton_actors,
+                            solid_render_infos=self.skeleton_shadow_render_infos,
+                            translucent_render_infos=None)
 
         self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
