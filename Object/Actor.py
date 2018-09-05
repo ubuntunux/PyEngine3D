@@ -22,9 +22,11 @@ class StaticActor:
 
         self.set_model(object_data.get('model'))
 
-        self.instance_pos = RangeVariable(**object_data.get('instance_pos', dict(min_value=FLOAT3_ZERO)))
+        self.instance_pos = RangeVariable(**object_data.get('instance_pos',
+                                                            dict(min_value=Float3(-10.0, 0.0, -10.0),
+                                                                 max_value=Float3(10.0, 0.0, 10.0))))
         self.instance_rot = RangeVariable(**object_data.get('instance_rot', dict(min_value=FLOAT3_ZERO)))
-        self.instance_scale = RangeVariable(**object_data.get('instance_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+        self.instance_scale = RangeVariable(**object_data.get('instance_scale', dict(min_value=1.0)))
         self.instance_pos_list = object_data.get('instance_pos_list', [])
         self.instance_rot_list = object_data.get('instance_rot_list', [])
         self.instance_scale_list = object_data.get('instance_scale_list', [])
@@ -76,11 +78,12 @@ class StaticActor:
             self.instance_radius_scale = 1.0
 
             for i in range(count):
+                uniform_scale = self.instance_scale_list[i]
                 offset_max = max(offset_max, max(np.abs(self.instance_pos_list[i])))
-                scale_max = max(scale_max, max(np.abs(self.instance_scale_list[i])))
+                scale_max = max(scale_max, np.abs(uniform_scale))
 
                 self.instance_matrix[i][...] = MATRIX4_IDENTITY
-                matrix_scale(self.instance_matrix[i], *self.instance_scale_list[i])
+                matrix_scale(self.instance_matrix[i], uniform_scale, uniform_scale, uniform_scale)
                 matrix_rotate(self.instance_matrix[i], *self.instance_rot_list[i])
                 matrix_translate(self.instance_matrix[i], *self.instance_pos_list[i])
             self.instance_radius_offset = offset_max

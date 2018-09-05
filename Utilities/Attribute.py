@@ -42,3 +42,7 @@ class Attributes:
             if hasattr(attrValue, "name"):
                 attrValue = attrValue.name
         self.attribute_map[attrName] = Attribute(attrName, attrValue, attrType, isReadOnly)
+
+    def delete_attribute(self, attrName):
+        if attrName in self.attribute_map:
+            self.attribute_map.pop(attrName)
