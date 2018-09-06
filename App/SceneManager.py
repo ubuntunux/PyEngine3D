@@ -47,6 +47,7 @@ class SceneManager(Singleton):
         # render group
         self.point_light_count = 0
 
+        self.selected_object_render_info = []
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
@@ -473,6 +474,15 @@ class SceneManager(Singleton):
         self.update_static_render_info()
         self.update_skeleton_render_info()
         self.update_light_render_infos()
+
+        self.selected_object_render_info = []
+        if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):
+            gather_render_infos(culling_func=always_pass,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=[self.selected_object, ],
+                                solid_render_infos=self.selected_object_render_info,
+                                translucent_render_infos=self.selected_object_render_info)
 
         for static_actor in self.static_actors:
             static_actor.update(dt)

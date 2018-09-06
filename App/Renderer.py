@@ -19,6 +19,7 @@ from OpenGLContext import OpenGLContext, AtomicCounterBuffer, ShaderStorageBuffe
 from Object.PostProcess import AntiAliasing, PostProcess
 from Object.RenderTarget import RenderTargets
 from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
+from Object.Actor import SkeletonActor, StaticActor
 
 
 class Renderer(Singleton):
@@ -78,6 +79,9 @@ class Renderer(Singleton):
         self.pre_pass_skeletal_material = None
         self.shadowmap_material = None
         self.shadowmap_skeletal_material = None
+        self.selcted_static_object_material = None
+        self.selcted_skeletal_object_material = None
+        self.selcted_object_composite_material = None
 
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
@@ -106,6 +110,15 @@ class Renderer(Singleton):
         self.shadowmap_skeletal_material = self.resource_manager.get_material_instance(name="shadowmap_skeletal",
                                                                                        shader_name="shadowmap",
                                                                                        macros={"SKELETAL": 1})
+
+        self.selcted_static_object_material = self.resource_manager.get_material_instance("selected_object")
+        self.selcted_skeletal_object_material = self.resource_manager.get_material_instance(
+            name="selected_object_skeletal",
+            shader_name="selected_object",
+            macros={"SKELETAL": 1}
+        )
+        self.selcted_object_composite_material = self.resource_manager.get_material_instance(
+            "selected_object_composite")
 
         # instance buffer
         self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer",
@@ -505,8 +518,12 @@ class Renderer(Singleton):
 
             self.render_postprocess()
 
+        # selected object
+        self.render_selected_object()
+
         # debug render target
         if self.debug_texture is not None:
+            self.set_blend_state(False)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_texture(self.debug_texture)
@@ -850,6 +867,8 @@ class Renderer(Singleton):
                     if RenderMode.PRE_PASS == render_mode:
                         data_normal = material_instance.get_uniform_data('texture_normal')
                         material_instance.bind_uniform_data('texture_normal', data_normal)
+            elif RenderMode.SELECTED_OBJECT == render_mode:
+                pass
             else:
                 logger.error("Undefined render mode.")
 
@@ -875,6 +894,36 @@ class Renderer(Singleton):
             last_actor = actor
             last_material = material
             last_material_instance = material_instance
+
+    def render_selected_object(self):
+        self.set_blend_state(False)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.TEMP_RGBA8)
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+
+        # render mask
+        selected_object = self.scene_manager.get_selected_object()
+        if selected_object is not None:
+            object_type = type(selected_object)
+            if SkeletonActor == object_type:
+                self.render_actors(RenderGroup.SKELETON_ACTOR,
+                                   RenderMode.SELECTED_OBJECT,
+                                   self.scene_manager.selected_object_render_info,
+                                   self.selcted_skeletal_object_material)
+            elif StaticActor == object_type:
+                self.render_actors(RenderGroup.STATIC_ACTOR,
+                                   RenderMode.SELECTED_OBJECT,
+                                   self.scene_manager.selected_object_render_info,
+                                   self.selcted_static_object_material)
+            else:
+                return
+
+            # composite
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+            self.selcted_object_composite_material.use_program()
+            self.selcted_object_composite_material.bind_uniform_data("texture_mask", RenderTargets.TEMP_RGBA8)
+            self.postprocess.draw_elements()
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
