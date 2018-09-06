@@ -27,7 +27,7 @@ void main() {
         }
     }
 
-    mask = saturate(mask - center_mask) + center_mask * 0.3;
+    mask = saturate(mask - center_mask) + center_mask * 0.5;
     fs_output = vec4(0.5, 0.5, 1.0, 1.0) * mask;
 }
 #endif // GL_FRAGMENT_SHADER
