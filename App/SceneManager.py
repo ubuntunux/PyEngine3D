@@ -10,7 +10,7 @@ from Common import logger
 from Common.Constants import *
 from Object import StaticActor, SkeletonActor
 from Object import Camera, MainLight, PointLight, LightProbe
-from Object import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_view_frustum
+from Object import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
 from Object import Atmosphere, Ocean
 from Object import Particle
 from Object.RenderOptions import RenderOption
@@ -81,6 +81,7 @@ class SceneManager(Singleton):
         self.main_camera = None
         self.main_light = None
         self.main_light_probe = None
+        self.selected_object = None
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
@@ -401,7 +402,7 @@ class SceneManager(Singleton):
                             solid_render_infos=self.static_solid_render_infos,
                             translucent_render_infos=self.static_translucent_render_infos)
 
-        gather_render_infos(culling_func=always_pass,
+        gather_render_infos(culling_func=shadow_culling,
                             camera=self.main_camera,
                             light=self.main_light,
                             actor_list=self.static_actors,
@@ -423,7 +424,7 @@ class SceneManager(Singleton):
                             solid_render_infos=self.skeleton_solid_render_infos,
                             translucent_render_infos=self.skeleton_translucent_render_infos)
 
-        gather_render_infos(culling_func=always_pass,
+        gather_render_infos(culling_func=shadow_culling,
                             camera=self.main_camera,
                             light=self.main_light,
                             actor_list=self.skeleton_actors,

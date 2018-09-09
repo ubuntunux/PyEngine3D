@@ -2,6 +2,7 @@ import numpy as np
 
 from Utilities import *
 from Common import logger
+from Common.Constants import *
 from App import CoreManager
 from Object import StaticActor
 
@@ -10,6 +11,16 @@ class MainLight(StaticActor):
     def __init__(self, name, **object_data):
         StaticActor.__init__(self, name, **object_data)
         self.light_color = Float4(*object_data.get('light_color', (1.0, 1.0, 1.0, 1.0)))
+
+        self.last_shadow_camera = None
+        self.last_shadow_position = FLOAT3_ZERO.copy()
+
+        self.shadow_width = SHADOW_DISTANCE * 0.5
+        self.shadow_height = SHADOW_DISTANCE * 0.5
+        self.shadow_depth = SHADOW_DISTANCE
+        self.shadow_orthogonal = ortho(-self.shadow_width, self.shadow_width,
+                                       -self.shadow_height, self.shadow_height,
+                                       -self.shadow_depth, self.shadow_depth)
         self.shadow_view_projection = MATRIX4_IDENTITY.copy()
 
     def get_attribute(self):
@@ -30,13 +41,16 @@ class MainLight(StaticActor):
     def update(self, current_camera):
         self.transform.update_transform(update_inverse_matrix=True)
 
-        if current_camera:
-            shadow_distance = 50.0 / current_camera.meter_per_unit
-            width, height = shadow_distance * 0.5, shadow_distance * 0.5
-            orthogonal = ortho(-width, width, -height, height, -shadow_distance, shadow_distance)
+        if current_camera is not None:
+            camera_pos = current_camera.transform.get_pos()
+            dist = np.linalg.norm(self.last_shadow_position - camera_pos)
 
-            lightPosMatrix = get_translate_matrix(*(-current_camera.transform.get_pos()))
-            self.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, self.transform.inverse_matrix), orthogonal)
+            self.last_shadow_camera = current_camera
+            self.last_shadow_position[...] = camera_pos
+            set_translate_matrix(self.shadow_view_projection, *(-camera_pos))
+            self.shadow_view_projection[...] = np.dot(np.dot(self.shadow_view_projection,
+                                                             self.transform.inverse_matrix),
+                                                      self.shadow_orthogonal)
 
 
 class PointLight(StaticActor):

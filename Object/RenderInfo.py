@@ -42,10 +42,7 @@ def view_frustum_culling_geometry(camera, light, actor, geometry):
     return False
 
 
-def shadow_view_frustum(camera, light, actor, geometry):
-    lightPosMatrix = get_translate_matrix(*(-camera.transform.get_pos()))
-    shadow_matrix = np.dot(actor.transform.matrix, np.dot(lightPosMatrix, light.transform.rotationMatrix.T))
-
+def shadow_culling(camera, light, actor, geometry):
     if 1 < actor.instance_count:
         # instancing
         scale = actor.instance_radius_scale
@@ -56,16 +53,18 @@ def shadow_view_frustum(camera, light, actor, geometry):
         boundMin = geometry.boundMin.copy()
         boundMax = geometry.boundMax.copy()
 
-    boundMin = abs(np.dot(np.array([boundMin[0], boundMin[1], boundMin[2], 1.0], dtype=np.float32), shadow_matrix))
-    boundMax = abs(np.dot(np.array([boundMax[0], boundMax[1], boundMax[2], 1.0], dtype=np.float32), shadow_matrix))
+    shadow_matrix = np.dot(actor.transform.matrix, light.shadow_view_projection)
 
-    shadow_distance = 50.0 / camera.meter_per_unit
-    width, height = shadow_distance * 0.5, shadow_distance * 0.5
+    boundMin[...] = abs(np.dot(np.array([boundMin[0], boundMin[1], boundMin[2], 1.0], dtype=np.float32),
+                               shadow_matrix))[:3]
+    boundMax[...] = abs(np.dot(np.array([boundMax[0], boundMax[1], boundMax[2], 1.0], dtype=np.float32),
+                               shadow_matrix))[:3]
+    minimum = np.minimum(boundMin, boundMax)
+    maximum = np.maximum(boundMin, boundMax)
 
-    orthogonal = ortho(-boundMin[0], boundMax[0], -boundMin[1], boundMax[1], -boundMin[2], boundMax[2])
-
-    light.shadow_view_projection[...] = np.dot(np.dot(lightPosMatrix, light.transform.inverse_matrix), orthogonal)
-    return True
+    if any(x < -1.0 for x in maximum) or any(1.0 < x for x in minimum):
+        return True
+    return False
 
 
 def gather_render_infos(culling_func, camera, light, actor_list, solid_render_infos, translucent_render_infos):
