@@ -37,6 +37,8 @@
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
 * Debug
+    - Debug line rendering
+    - 3D position font
     - performance profiler
 * Import
     - FBX
