@@ -347,212 +347,6 @@ class Renderer(Singleton):
 
         self.uniform_point_light_buffer.bind_uniform_block(data=self.uniform_point_light_data)
 
-    def renderScene(self):
-        startTime = timeModule.perf_counter()
-
-        def end_render_scene():
-            glUseProgram(0)
-            glFlush()
-
-            endTime = timeModule.perf_counter()
-            renderTime = endTime - startTime
-            presentTime = 0.0
-            return renderTime, presentTime
-
-        main_camera = self.scene_manager.main_camera
-
-        # bind scene constants uniform blocks
-        self.bind_uniform_blocks()
-
-        self.set_blend_state(False)
-        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
-        # glEnable(GL_FRAMEBUFFER_SRGB)
-        glEnable(GL_MULTISAMPLE)
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
-        glDepthFunc(GL_LEQUAL)
-        glEnable(GL_CULL_FACE)
-        glFrontFace(GL_CCW)
-        glEnable(GL_DEPTH_TEST)
-        glDepthMask(True)
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClearDepth(1.0)
-
-        if self.postprocess.is_render_shader() and not RenderOption.RENDER_LIGHT_PROBE:
-            """ debug shader """
-            self.set_blend_state(False)
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-            glClear(GL_COLOR_BUFFER_BIT)
-            # render shader
-            self.postprocess.render_material_instance()
-        elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
-            """ render light probe """
-            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
-            glClearColor(1.0, 1.0, 1.0, 1.0)
-            glClear(GL_DEPTH_BUFFER_BIT)
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL,
-                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
-            glClearColor(0.0, 1.0, 0.0, 1.0)
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
-            glClearColor(1.0, 1.0, 1.0, 1.0)
-            glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
-            glClearColor(0.0, 0.0, 0.0, 1.0)
-            glClear(GL_COLOR_BUFFER_BIT)
-
-            # render atmosphere
-            if self.scene_manager.atmosphere.is_render_atmosphere:
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.SHADOWMAP,
-                                                                            RenderOption.RENDER_LIGHT_PROBE)
-            return end_render_scene()
-        else:
-            """ render normal scene """
-            self.scene_manager.ocean.simulateFFTWaves()
-
-            if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
-                self.render_deferred()
-            else:
-                self.render_pre_pass()
-
-            self.render_preprocess()
-
-            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
-            glClear(GL_DEPTH_BUFFER_BIT)
-
-            glFrontFace(GL_CW)
-
-            self.render_shadow()
-
-            glFrontFace(GL_CCW)
-
-            glDepthMask(False)  # cause depth prepass and gbuffer
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
-            glClear(GL_COLOR_BUFFER_BIT)
-
-            self.render_solid()
-
-            # copy HDR Target
-            hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
-            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
-            dst_framebuffer = self.framebuffer_manager.bind_framebuffer(hdr_copy)
-            glClear(GL_COLOR_BUFFER_BIT)
-            dst_framebuffer.copy_framebuffer(src_framebuffer)
-            src_framebuffer.run_bind_framebuffer()
-
-            # render ocean
-            if self.scene_manager.ocean.is_render_ocean:
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
-                glDisable(GL_CULL_FACE)
-                glEnable(GL_DEPTH_TEST)
-                glDepthMask(True)
-
-                self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
-                                                      texture_scene=hdr_copy,
-                                                      texture_linear_depth=RenderTargets.LINEAR_DEPTH,
-                                                      texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
-                                                      texture_shadow=RenderTargets.SHADOWMAP)
-
-                # re copy Linear depth
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
-                self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
-
-            # render atmosphere
-            if self.scene_manager.atmosphere.is_render_atmosphere:
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE,
-                                                          RenderTargets.ATMOSPHERE_INSCATTER)
-                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.SHADOWMAP,
-                                                                            RenderOption.RENDER_LIGHT_PROBE)
-
-            glEnable(GL_CULL_FACE)
-            glEnable(GL_DEPTH_TEST)
-            glDepthMask(False)
-
-            # Composite Atmosphere & Light Shaft
-            if self.scene_manager.atmosphere.is_render_atmosphere:
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
-
-                # composite atmosphere
-                self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-
-                composite_atmosphere = self.resource_manager.get_material_instance(
-                    "precomputed_atmosphere.composite_atmosphere")
-                composite_atmosphere.use_program()
-                above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
-                composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
-                composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
-                composite_atmosphere.bind_uniform_data("texture_inscatter", RenderTargets.ATMOSPHERE_INSCATTER)
-                composite_atmosphere.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
-                self.postprocess.draw_elements()
-
-            # set blend state
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
-            glEnable(GL_DEPTH_TEST)
-
-            self.render_translucent()
-
-            # render particle
-            if RenderOption.RENDER_PARTICLE:
-                glDisable(GL_CULL_FACE)
-                glEnable(GL_BLEND)
-
-                self.render_particle()
-
-                glDisable(GL_BLEND)
-                glEnable(GL_CULL_FACE)
-
-            if RenderOption.RENDER_LIGHT_PROBE:
-                return end_render_scene()
-
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
-            self.set_blend_state(False)
-
-            self.render_postprocess()
-
-        # selected object
-        self.render_selected_object()
-
-        # debug render target
-        if self.debug_texture is not None:
-            self.set_blend_state(False)
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-            glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_texture(self.debug_texture)
-
-        if RenderOption.RENDER_FONT:
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            self.render_font()
-
-        # blit frame buffer
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
-        self.framebuffer_manager.unbind_framebuffer()
-
-        # end of render scene
-        glUseProgram(0)
-        glFlush()
-
-        OpenGLContext.end_render()
-
-        endTime = timeModule.perf_counter()
-        renderTime = endTime - startTime
-        startTime = endTime
-
-        # swap buffer
-        self.core_manager.game_backend.flip()
-
-        presentTime = timeModule.perf_counter() - startTime
-        return renderTime, presentTime
-
     def render_light_probe(self, light_probe):
         if light_probe.isRendered:
             return
@@ -1030,3 +824,218 @@ class Renderer(Singleton):
     def render_font(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.font_manager.render_font(self.width, self.height)
+
+    def draw_debug_line(self):
+        glLineWidth(2.5)
+        glColor3f(1.0, 0.0, 0.0)
+        glBegin(GL_LINES)
+        glVertex3f(0.0, 0.0, 0.0)
+        glVertex3f(15, 0, 0)
+        glEnd()
+
+    def renderScene(self):
+        startTime = timeModule.perf_counter()
+
+        def end_render_scene():
+            glUseProgram(0)
+            glFlush()
+
+            endTime = timeModule.perf_counter()
+            renderTime = endTime - startTime
+            presentTime = 0.0
+            return renderTime, presentTime
+
+        main_camera = self.scene_manager.main_camera
+
+        # bind scene constants uniform blocks
+        self.bind_uniform_blocks()
+
+        self.set_blend_state(False)
+        glPolygonMode(GL_FRONT_AND_BACK, self.viewMode)
+        # glEnable(GL_FRAMEBUFFER_SRGB)
+        glEnable(GL_MULTISAMPLE)
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CCW)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(True)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearDepth(1.0)
+
+        if self.postprocess.is_render_shader() and not RenderOption.RENDER_LIGHT_PROBE:
+            """ debug shader """
+            self.set_blend_state(False)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+            glClear(GL_COLOR_BUFFER_BIT)
+            # render shader
+            self.postprocess.render_material_instance()
+        elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
+            """ render light probe """
+            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_DEPTH_BUFFER_BIT)
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL,
+                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
+            glClearColor(0.0, 1.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
+            glClearColor(1.0, 1.0, 1.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
+            glClearColor(0.0, 0.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            # render atmosphere
+            if self.scene_manager.atmosphere.is_render_atmosphere:
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.SHADOWMAP,
+                                                                            RenderOption.RENDER_LIGHT_PROBE)
+            return end_render_scene()
+        else:
+            """ render normal scene """
+            self.scene_manager.ocean.simulateFFTWaves()
+
+            if self.render_option_manager.rendering_type == RenderingType.DEFERRED_RENDERING:
+                self.render_deferred()
+            else:
+                self.render_pre_pass()
+
+            self.render_preprocess()
+
+            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
+            glClear(GL_DEPTH_BUFFER_BIT)
+
+            glFrontFace(GL_CW)
+
+            self.render_shadow()
+
+            glFrontFace(GL_CCW)
+
+            glDepthMask(False)  # cause depth prepass and gbuffer
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            self.render_solid()
+
+            # copy HDR Target
+            hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
+            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+            dst_framebuffer = self.framebuffer_manager.bind_framebuffer(hdr_copy)
+            glClear(GL_COLOR_BUFFER_BIT)
+            dst_framebuffer.copy_framebuffer(src_framebuffer)
+            src_framebuffer.run_bind_framebuffer()
+
+            # render ocean
+            if self.scene_manager.ocean.is_render_ocean:
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+                glDisable(GL_CULL_FACE)
+                glEnable(GL_DEPTH_TEST)
+                glDepthMask(True)
+
+                self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
+                                                      texture_scene=hdr_copy,
+                                                      texture_linear_depth=RenderTargets.LINEAR_DEPTH,
+                                                      texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
+                                                      texture_shadow=RenderTargets.SHADOWMAP)
+
+                # re copy Linear depth
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
+                self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
+
+            # render atmosphere
+            if self.scene_manager.atmosphere.is_render_atmosphere:
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE,
+                                                          RenderTargets.ATMOSPHERE_INSCATTER)
+                self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
+                                                                            RenderTargets.SHADOWMAP,
+                                                                            RenderOption.RENDER_LIGHT_PROBE)
+
+            glEnable(GL_CULL_FACE)
+            glEnable(GL_DEPTH_TEST)
+            glDepthMask(False)
+
+            # Composite Atmosphere & Light Shaft
+            if self.scene_manager.atmosphere.is_render_atmosphere:
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
+
+                # composite atmosphere
+                self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+
+                composite_atmosphere = self.resource_manager.get_material_instance(
+                    "precomputed_atmosphere.composite_atmosphere")
+                composite_atmosphere.use_program()
+                above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
+                composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
+                composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
+                composite_atmosphere.bind_uniform_data("texture_inscatter", RenderTargets.ATMOSPHERE_INSCATTER)
+                composite_atmosphere.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
+                self.postprocess.draw_elements()
+
+            # set blend state
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+            glEnable(GL_DEPTH_TEST)
+
+            self.render_translucent()
+
+            # render particle
+            if RenderOption.RENDER_PARTICLE:
+                glDisable(GL_CULL_FACE)
+                glEnable(GL_BLEND)
+
+                self.render_particle()
+
+                glDisable(GL_BLEND)
+                glEnable(GL_CULL_FACE)
+
+            if RenderOption.RENDER_LIGHT_PROBE:
+                return end_render_scene()
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+            self.set_blend_state(False)
+
+            self.render_postprocess()
+
+        # selected object
+        self.render_selected_object()
+
+        # debug render target
+        if self.debug_texture is not None:
+            self.set_blend_state(False)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_texture(self.debug_texture)
+
+        if RenderOption.RENDER_FONT:
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            self.render_font()
+
+        # blit frame buffer
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
+        self.framebuffer_manager.unbind_framebuffer()
+
+        # end of render scene
+        OpenGLContext.end_render()
+
+        # draw line
+        self.draw_debug_line()
+
+        endTime = timeModule.perf_counter()
+        renderTime = endTime - startTime
+        startTime = endTime
+
+        # swap buffer
+        glFlush()
+        self.core_manager.game_backend.flip()
+
+        presentTime = timeModule.perf_counter() - startTime
+        return renderTime, presentTime

@@ -99,6 +99,7 @@ class OpenGLContext:
 
     @staticmethod
     def end_render():
+        glUseProgram(0)
         OpenGLContext.last_vertex_array = -1
 
     @staticmethod
