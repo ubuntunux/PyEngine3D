@@ -1018,23 +1018,24 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_font()
 
-        # blit frame buffer
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
-        self.framebuffer_manager.unbind_framebuffer()
-
         # end of render scene
         OpenGLContext.end_render()
 
         # draw line
         self.draw_debug_line()
 
+        # blit frame buffer
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
+        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
+        self.framebuffer_manager.unbind_framebuffer()
+
         endTime = timeModule.perf_counter()
         renderTime = endTime - startTime
         startTime = endTime
 
-        # swap buffer
         glFlush()
+
+        # swap buffer
         self.core_manager.game_backend.flip()
 
         presentTime = timeModule.perf_counter() - startTime
