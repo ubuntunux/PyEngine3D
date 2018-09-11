@@ -22,6 +22,14 @@ from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, Rende
 from Object.Actor import SkeletonActor, StaticActor
 
 
+class DebugLine:
+    def __init__(self, pos1, pos2, color=[1.0, 1.0, 1.0], width=1.0):
+        self.pos1 = pos1.copy()
+        self.pos2 = pos2.copy()
+        self.color = color.copy()
+        self.width = width
+
+
 class Renderer(Singleton):
     def __init__(self):
         self.width = -1
@@ -82,6 +90,9 @@ class Renderer(Singleton):
         self.selcted_static_object_material = None
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
+
+        self.debug_lines_2d = []
+        self.debug_lines_3d = []
 
     def destroyScreen(self):
         self.core_manager.game_backend.quit()
@@ -280,22 +291,36 @@ class Renderer(Singleton):
                 self.scene_manager.atmosphere.initialize()
         self.core_manager.gc_collect()
 
-    def ortho_view(self):
-        # Legacy opengl pipeline - set orthographic view
+    def ortho_view(self, look_at=True):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(0, self.width, 0, self.height, -1, 1)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-    def projection_view(self):
-        # Legacy opengl pipeline - set perspective view
+        if look_at:
+            self.look_at()
+
+    def perspective_view(self, look_at=True):
         camera = self.scene_manager.main_camera
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+
+        if look_at:
+            self.look_at()
+
+    def look_at(self):
+        camera = self.scene_manager.main_camera
+        camera_target = -camera.transform.front
+        camera_up = camera.transform.up
+
+        glScalef(*(1.0 / camera.transform.get_scale()))
+        gluLookAt(0.0, 0.0, 0.0, *camera_target, *camera_up)
+        glTranslatef(*(-camera.transform.get_pos()))
 
     def set_debug_texture(self, texture):
         if texture is not None and texture is not RenderTargets.BACKBUFFER and type(texture) != RenderBuffer:
@@ -825,13 +850,41 @@ class Renderer(Singleton):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.font_manager.render_font(self.width, self.height)
 
-    def draw_debug_line(self):
-        glLineWidth(2.5)
-        glColor3f(1.0, 0.0, 0.0)
-        glBegin(GL_LINES)
-        glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(15, 0, 0)
-        glEnd()
+    def draw_debug_line_2d(self, pos1, pos2, color=[1.0, 1.0, 1.0], width=1.0):
+        debug_line = DebugLine(pos1, pos2, color, width)
+        self.debug_lines_2d.append(debug_line)
+
+    def draw_debug_line_3d(self, pos1, pos2, color=[1.0, 1.0, 1.0], width=1.0):
+        debug_line = DebugLine(pos1, pos2, color, width)
+        self.debug_lines_3d.append(debug_line)
+
+    def render_debug_line(self):
+        # 2D Line
+        glPushMatrix()
+        glLoadIdentity()
+        for debug_line in self.debug_lines_2d:
+            glLineWidth(debug_line.width)
+            glColor3f(*debug_line.color)
+            glBegin(GL_LINES)
+            glVertex3f(*debug_line.pos1)
+            glVertex3f(*debug_line.pos2)
+            glEnd()
+        self.debug_lines_2d = []
+        glPopMatrix()
+
+        # 3D Line
+        glPushMatrix()
+        glLoadIdentity()
+        self.perspective_view(look_at=True)
+        for debug_line in self.debug_lines_3d:
+            glLineWidth(debug_line.width)
+            glColor3f(*debug_line.color)
+            glBegin(GL_LINES)
+            glVertex3f(*debug_line.pos1)
+            glVertex3f(*debug_line.pos2)
+            glEnd()
+        glPopMatrix()
+        self.debug_lines_3d = []
 
     def renderScene(self):
         startTime = timeModule.perf_counter()
@@ -1021,8 +1074,12 @@ class Renderer(Singleton):
         # end of render scene
         OpenGLContext.end_render()
 
+        # self.draw_debug_line_2d([0.0, 0.0, 10.0], [15.0, 0.0, 10.0], [0.0, 0.0, 1.0], 10.0)
+        # self.draw_debug_line_2d([0.0, 0.0, -10.0], [15.0, 0.0, -10.0], [0.0, 1.0, 0.0], 10.0)
+        # self.draw_debug_line_3d([0.0, 0.0, -10.0], [15.0, 0.0, -10.0], [1.0, 0.0, 0.0], 10.0)
+
         # draw line
-        self.draw_debug_line()
+        self.render_debug_line()
 
         # blit frame buffer
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
