@@ -866,8 +866,8 @@ class Renderer(Singleton):
             glLineWidth(debug_line.width)
             glColor3f(*debug_line.color)
             glBegin(GL_LINES)
-            glVertex3f(*debug_line.pos1)
-            glVertex3f(*debug_line.pos2)
+            glVertex3f(*debug_line.pos1, -1.0)
+            glVertex3f(*debug_line.pos2, -1.0)
             glEnd()
         self.debug_lines_2d = []
         glPopMatrix()
@@ -1073,10 +1073,6 @@ class Renderer(Singleton):
 
         # end of render scene
         OpenGLContext.end_render()
-
-        # self.draw_debug_line_2d([0.0, 0.0, 10.0], [15.0, 0.0, 10.0], [0.0, 0.0, 1.0], 10.0)
-        # self.draw_debug_line_2d([0.0, 0.0, -10.0], [15.0, 0.0, -10.0], [0.0, 1.0, 0.0], 10.0)
-        # self.draw_debug_line_3d([0.0, 0.0, -10.0], [15.0, 0.0, -10.0], [1.0, 0.0, 0.0], 10.0)
 
         # draw line
         self.render_debug_line()

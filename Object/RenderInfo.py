@@ -1,5 +1,6 @@
 import math
 from Utilities import *
+from App.CoreManager import CoreManager
 
 
 def always_pass(*args):
@@ -54,11 +55,8 @@ def shadow_culling(camera, light, actor, geometry):
         boundMax = geometry.boundMax.copy()
 
     shadow_matrix = np.dot(actor.transform.matrix, light.shadow_view_projection)
-
-    boundMin[...] = abs(np.dot(np.array([boundMin[0], boundMin[1], boundMin[2], 1.0], dtype=np.float32),
-                               shadow_matrix))[:3]
-    boundMax[...] = abs(np.dot(np.array([boundMax[0], boundMax[1], boundMax[2], 1.0], dtype=np.float32),
-                               shadow_matrix))[:3]
+    boundMin[...] = np.dot(np.array([boundMin[0], boundMin[1], boundMin[2], 1.0], dtype=np.float32), shadow_matrix)[: 3]
+    boundMax[...] = np.dot(np.array([boundMax[0], boundMax[1], boundMax[2], 1.0], dtype=np.float32), shadow_matrix)[: 3]
     minimum = np.minimum(boundMin, boundMax)
     maximum = np.maximum(boundMin, boundMax)
 

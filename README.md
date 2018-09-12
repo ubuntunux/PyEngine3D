@@ -37,7 +37,6 @@
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
 * Debug
-    - Debug line rendering
     - 3D position font
     - performance profiler
 * Import
@@ -59,6 +58,7 @@
     - Animation calculation in gpu
 * Particle System
     - Particle spawn on polygon surface
+    - Bitonic Sorting
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color
