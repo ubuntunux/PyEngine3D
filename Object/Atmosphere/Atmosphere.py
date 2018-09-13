@@ -114,6 +114,7 @@ class Atmosphere:
             noise_tiling=self.noise_tiling,
             noise_contrast=self.noise_contrast,
             noise_coverage=self.noise_coverage,
+            sun_size=self.sun_size,
         )
         return save_data
 

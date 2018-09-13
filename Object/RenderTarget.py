@@ -24,6 +24,7 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
+    LIGHT_SHAFT = None
     LIGHT_PROBE_ATMOSPHERE = None
     ATMOSPHERE = None
     ATMOSPHERE_INSCATTER = None
@@ -217,6 +218,19 @@ class RenderTargetManager(Singleton):
             "HDR_Prev",
             texture_type=Texture2D,
             option=Option.MSAA | Option.SSAA,
+            width=fullsize_x,
+            height=fullsize_y,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.LIGHT_SHAFT = self.create_rendertarget(
+            "LIGHT_SHAFT",
+            texture_type=Texture2D,
             width=fullsize_x,
             height=fullsize_y,
             internal_format=hdr_internal_format,

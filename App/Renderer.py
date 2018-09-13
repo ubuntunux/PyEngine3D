@@ -820,6 +820,15 @@ class Renderer(Singleton):
         if self.postprocess.is_render_bloom:
             self.postprocess.render_bloom(RenderTargets.HDR)
 
+        # Light Shaft
+        if self.postprocess.is_render_light_shaft:
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
+            self.postprocess.render_light_shaft(RenderTargets.HDR,
+                                                RenderTargets.LINEAR_DEPTH,
+                                                RenderTargets.SHADOWMAP)
+
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
+
         # Tone Map
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         glClear(GL_COLOR_BUFFER_BIT)

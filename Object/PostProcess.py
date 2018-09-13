@@ -55,6 +55,9 @@ class PostProcess:
         self.bloom_threshold_max = 10.0
         self.bloom_scale = 1.0
 
+        self.is_render_light_shaft = True
+        self.light_shaft = None
+
         self.is_render_motion_blur = True
         self.motion_blur = None
         self.motion_blur_scale = 1.0
@@ -129,6 +132,7 @@ class PostProcess:
 
         self.velocity = self.resource_manager.get_material_instance("velocity")
 
+        self.light_shaft = self.resource_manager.get_material_instance("light_shaft")
         self.tonemapping = self.resource_manager.get_material_instance("tonemapping")
         self.blur = self.resource_manager.get_material_instance("blur")
         self.circle_blur = self.resource_manager.get_material_instance("circle_blur")
@@ -168,6 +172,7 @@ class PostProcess:
 
         self.Attributes.set_attribute('is_render_ssr', self.is_render_ssr)
         self.Attributes.set_attribute('is_render_motion_blur', self.is_render_motion_blur)
+        self.Attributes.set_attribute('is_render_light_shaft', self.is_render_light_shaft)
 
         self.Attributes.set_attribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.set_attribute('exposure', self.exposure)
@@ -290,6 +295,14 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("motion_blur_scale", motion_blur_scale)
         self.motion_blur.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
+        self.quad.draw_elements()
+
+    def render_light_shaft(self, texture_diffuse, texture_linear_depth, texture_shadow):
+        self.light_shaft.use_program()
+        self.light_shaft.bind_material_instance()
+        self.light_shaft.bind_uniform_data("texture_diffuse", texture_diffuse)
+        self.light_shaft.bind_uniform_data("texture_linear_depth", texture_linear_depth)
+        self.light_shaft.bind_uniform_data("texture_shadow", texture_shadow)
         self.quad.draw_elements()
 
     def render_bloom(self, texture_target):
