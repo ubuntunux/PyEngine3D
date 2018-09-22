@@ -1,5 +1,6 @@
 #include "utility.glsl"
 #include "scene_constants.glsl"
+#include "precomputed_atmosphere/atmosphere_predefine.glsl"
 #include "quad.glsl"
 
 uniform sampler2D texture_diffuse;
@@ -18,10 +19,19 @@ void main()
     vec3 screen_center_ray = -vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
     float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
     float scene_dist = clamp(scene_linear_depth / dot(screen_center_ray, eye_direction), 0.0, NEAR_FAR.y);
-    //float scene_shadow_length = GetSceneShadowLength(scene_dist, eye_direction, texture_shadow);
+    float scene_shadow_length = GetSceneShadowLength(scene_dist, eye_direction, texture_shadow);
+
+    vec3 view_point_in_scatter = vec3(0.0);
+    vec3 view_point_sun_irradiance = vec3(0.0);
+    vec3 view_point_sky_irradiance = vec3(0.0);
+
+    GetCloudRadiance(ATMOSPHERE, NEAR_FAR.x, screen_center_ray, eye_direction, scene_shadow_length,
+        view_point_sun_irradiance, view_point_sky_irradiance, view_point_in_scatter);
 
     vec3 light_shaft = vec3(0.0);
-    vec3 light_shaft_color = vec3(1.0, 1.0, 0.0);//view_point_sun_irradiance * LIGHT_COLOR.xyz;
+    vec3 light_shaft_color = LIGHT_COLOR.xyz * view_point_sun_irradiance;
+    light_shaft_color *= clamp(dot(eye_direction, LIGHT_DIRECTION.xyz), 0.0, 1.0);
+
     const float shadow_depth_bias = 0.0025;
     const int count = 128;
     float march_step = min(NEAR_FAR.y, scene_dist) / float(count);

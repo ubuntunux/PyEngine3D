@@ -823,7 +823,8 @@ class Renderer(Singleton):
         # Light Shaft
         if self.postprocess.is_render_light_shaft:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
-            self.postprocess.render_light_shaft(RenderTargets.HDR,
+            self.postprocess.render_light_shaft(self.scene_manager.atmosphere,
+                                                RenderTargets.HDR,
                                                 RenderTargets.LINEAR_DEPTH,
                                                 RenderTargets.SHADOWMAP)
 

@@ -1175,3 +1175,29 @@ void GetSceneRadianceWithShadow(
     sun_irradiance *= transmittance / PI;
     sky_irradiance *= transmittance / PI;
 }
+
+
+void GetCloudRadiance(
+    const in AtmosphereParameters atmosphere,
+    float dist, vec3 eye_direction, vec3 N, float scene_shadow_length,
+    out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 inscatter)
+{
+    vec3 sun_direction = LIGHT_DIRECTION.xyz;
+    vec3 camera_pos = CAMERA_POSITION.xyz * atmosphere_ratio;
+    vec3 point = camera_pos + eye_direction.xyz * max(NEAR_FAR.x, dist) * atmosphere_ratio;
+
+    sun_irradiance = GetSunAndSkyIrradiance(
+        atmosphere, point.xyz - earth_center, sun_direction, sun_direction, sky_irradiance);
+
+    vec3 transmittance;
+    inscatter = GetSkyRadianceToPoint(atmosphere, camera_pos - earth_center,
+        point.xyz - earth_center, scene_shadow_length, sun_direction, transmittance);
+
+    sun_irradiance = max(vec3(0.0), sun_irradiance);
+    sky_irradiance = max(vec3(0.0), sky_irradiance);
+    transmittance = max(vec3(0.0), transmittance);
+    inscatter = max(vec3(0.0), inscatter);
+
+    sun_irradiance *= transmittance / PI;
+    sky_irradiance *= transmittance / PI;
+}
