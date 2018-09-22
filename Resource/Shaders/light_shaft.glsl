@@ -1,6 +1,6 @@
+#include "utility.glsl"
 #include "scene_constants.glsl"
 #include "quad.glsl"
-
 
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_linear_depth;
@@ -13,8 +13,7 @@ layout (location = 0) out vec4 fs_output;
 void main()
 {
     vec2 uv = vs_output.tex_coord;
-    vec3 eye_direction = (INV_VIEW_ORIGIN * vec4((INV_PROJECTION * vec4(uv * 2.0 - 1.0, -1.0, 0.0)).xyz, 0.0)).xyz;
-    eye_direction = normalize(eye_direction);
+    vec3 eye_direction = normalize(depth_to_relative_world(uv, 0.0).xyz);
 
     vec3 screen_center_ray = -vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
     float scene_linear_depth = textureLod(texture_linear_depth, uv, 0.0).x;
