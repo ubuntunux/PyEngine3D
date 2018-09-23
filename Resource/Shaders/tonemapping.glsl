@@ -6,6 +6,17 @@ uniform float exposure;
 uniform float contrast;
 uniform sampler2D texture_diffuse;
 
+uniform bool is_render_bloom;
+uniform float bloom_intensity;
+uniform sampler2D texture_bloom0;
+uniform sampler2D texture_bloom1;
+uniform sampler2D texture_bloom2;
+uniform sampler2D texture_bloom3;
+uniform sampler2D texture_bloom4;
+
+uniform bool is_render_light_shaft;
+uniform sampler2D texture_light_shaft;
+
 #ifdef GL_FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
@@ -53,12 +64,32 @@ float vignetting(vec2 uv, float inner_value, float outter_value)
 }
 
 void main() {
-    vec3 texColor = texture2D(texture_diffuse, vs_output.tex_coord.xy).xyz;
+    vec2 tex_coord = vs_output.tex_coord.xy;
+    vec3 texColor = texture2D(texture_diffuse, tex_coord).xyz;
+
+    vec3 bloom = vec3(0.0);
+    if(is_render_bloom)
+    {
+        bloom += texture2D(texture_bloom0, tex_coord).xyz;
+        bloom += texture2D(texture_bloom1, tex_coord).xyz;
+        bloom += texture2D(texture_bloom2, tex_coord).xyz;
+        bloom += texture2D(texture_bloom3, tex_coord).xyz;
+        bloom += texture2D(texture_bloom4, tex_coord).xyz;
+        bloom *= bloom_intensity;
+    }
+    texColor += bloom;
+
+    vec3 light_shaft = vec3(0.0);
+    if(is_render_light_shaft)
+    {
+        light_shaft = texture2D(texture_light_shaft, tex_coord).xyz;
+    }
+    texColor += light_shaft;
 
     if(is_render_tonemapping)
     {
         texColor = Uncharted2Tonemap(texColor);
-        texColor *= vignetting(vs_output.tex_coord.xy, 1.0, 0.0);
+        texColor *= vignetting(tex_coord, 1.0, 0.0);
     }
     else
     {

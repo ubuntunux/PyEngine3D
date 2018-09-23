@@ -823,7 +823,7 @@ class Renderer(Singleton):
         # Light Shaft
         if self.postprocess.is_render_light_shaft:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
-            self.postprocess.render_light_shaft(RenderTargets.HDR,
+            self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE,
                                                 RenderTargets.LINEAR_DEPTH,
                                                 RenderTargets.SHADOWMAP)
 
@@ -832,7 +832,13 @@ class Renderer(Singleton):
         # Tone Map
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         glClear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_tone_map(RenderTargets.HDR)
+        self.postprocess.render_tone_map(RenderTargets.HDR,
+                                         RenderTargets.BLOOM_0,
+                                         RenderTargets.BLOOM_1,
+                                         RenderTargets.BLOOM_2,
+                                         RenderTargets.BLOOM_3,
+                                         RenderTargets.BLOOM_4,
+                                         RenderTargets.LIGHT_SHAFT)
 
         # MSAA Test
         if AntiAliasing.MSAA == self.postprocess.anti_aliasing:

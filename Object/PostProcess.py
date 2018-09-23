@@ -56,6 +56,9 @@ class PostProcess:
         self.bloom_scale = 1.0
 
         self.is_render_light_shaft = True
+        self.light_shaft_intensity = 1.0
+        self.light_shaft_threshold = 1.0
+        self.light_shaft_length = 1.0
         self.light_shaft = None
 
         self.is_render_motion_blur = True
@@ -172,7 +175,11 @@ class PostProcess:
 
         self.Attributes.set_attribute('is_render_ssr', self.is_render_ssr)
         self.Attributes.set_attribute('is_render_motion_blur', self.is_render_motion_blur)
+
         self.Attributes.set_attribute('is_render_light_shaft', self.is_render_light_shaft)
+        self.Attributes.set_attribute('light_shaft_intensity', self.light_shaft_intensity)
+        self.Attributes.set_attribute('light_shaft_threshold', self.light_shaft_threshold)
+        self.Attributes.set_attribute('light_shaft_length', self.light_shaft_length)
 
         self.Attributes.set_attribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.set_attribute('exposure', self.exposure)
@@ -300,24 +307,27 @@ class PostProcess:
     def render_light_shaft(self, texture_diffuse, texture_linear_depth, texture_shadow):
         self.light_shaft.use_program()
         self.light_shaft.bind_material_instance()
+        self.light_shaft.bind_uniform_data("light_shaft_intensity", self.light_shaft_intensity)
+        self.light_shaft.bind_uniform_data("light_shaft_threshold", self.light_shaft_threshold)
+        self.light_shaft.bind_uniform_data("light_shaft_length", self.light_shaft_length)
         self.light_shaft.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.light_shaft.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.light_shaft.bind_uniform_data("texture_shadow", texture_shadow)
         self.quad.draw_elements()
 
     def render_bloom(self, texture_target):
-        texture_bloom0 = self.rendertarget_manager.get_temporary('bloom0', texture_target, 1.0 / 2.0)
-        texture_bloom1 = self.rendertarget_manager.get_temporary('bloom1', texture_target, 1.0 / 4.0)
-        texture_bloom2 = self.rendertarget_manager.get_temporary('bloom2', texture_target, 1.0 / 8.0)
-        texture_bloom3 = self.rendertarget_manager.get_temporary('bloom3', texture_target, 1.0 / 16.0)
-        texture_bloom4 = self.rendertarget_manager.get_temporary('bloom4', texture_target, 1.0 / 32.0)
-        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_target, 1.0 / 2.0)
-        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_target, 1.0 / 4.0)
-        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_target, 1.0 / 8.0)
-        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_target, 1.0 / 16.0)
-        texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_target, 1.0 / 32.0)
+        texture_bloom0 = RenderTargets.BLOOM_0
+        texture_bloom1 = RenderTargets.BLOOM_1
+        texture_bloom2 = RenderTargets.BLOOM_2
+        texture_bloom3 = RenderTargets.BLOOM_3
+        texture_bloom4 = RenderTargets.BLOOM_4
+        texture_bloom0_temp = self.rendertarget_manager.get_temporary('bloom0_temp', texture_bloom0)
+        texture_bloom1_temp = self.rendertarget_manager.get_temporary('bloom1_temp', texture_bloom1)
+        texture_bloom2_temp = self.rendertarget_manager.get_temporary('bloom2_temp', texture_bloom2)
+        texture_bloom3_temp = self.rendertarget_manager.get_temporary('bloom3_temp', texture_bloom3)
+        texture_bloom4_temp = self.rendertarget_manager.get_temporary('bloom4_temp', texture_bloom4)
 
-        self.framebuffer_manager.bind_framebuffer(texture_bloom0)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BLOOM_0)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.bloom_highlight.use_program()
@@ -362,24 +372,6 @@ class PostProcess:
                 self.gaussian_blur.bind_uniform_data("texture_diffuse", temp_bloom_target)
                 self.quad.draw_elements()
 
-        # set additive
-        self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE)
-
-        self.framebuffer_manager.bind_framebuffer(texture_target)
-
-        self.bloom.use_program()
-        self.bloom.bind_material_instance()
-        self.bloom.bind_uniform_data("bloom_intensity", self.bloom_intensity)
-        self.bloom.bind_uniform_data("texture_bloom0", texture_bloom0)
-        self.bloom.bind_uniform_data("texture_bloom1", texture_bloom1)
-        self.bloom.bind_uniform_data("texture_bloom2", texture_bloom2)
-        self.bloom.bind_uniform_data("texture_bloom3", texture_bloom3)
-        self.bloom.bind_uniform_data("texture_bloom4", texture_bloom4)
-        self.quad.draw_elements()
-
-        # restore blend state
-        self.renderer.restore_blend_state_prev()
-
     def render_linear_depth(self, texture_depth, texture_linear_depth):
         self.linear_depth.use_program()
         self.linear_depth.bind_material_instance()
@@ -404,13 +396,26 @@ class PostProcess:
             glDispatchCompute(width, height, 1)
             glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
-    def render_tone_map(self, texture_diffuse):
+    def render_tone_map(self, texture_diffuse, texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3,
+                        texture_bloom4, texture_light_shaft):
         self.tonemapping.use_program()
         self.tonemapping.bind_material_instance()
         self.tonemapping.bind_uniform_data("is_render_tonemapping", self.is_render_tonemapping)
         self.tonemapping.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.tonemapping.bind_uniform_data("exposure", self.exposure)
         self.tonemapping.bind_uniform_data("contrast", self.contrast)
+
+        self.tonemapping.bind_uniform_data("is_render_bloom", self.is_render_bloom)
+        self.tonemapping.bind_uniform_data("bloom_intensity", self.bloom_intensity)
+        self.tonemapping.bind_uniform_data("texture_bloom0", texture_bloom0)
+        self.tonemapping.bind_uniform_data("texture_bloom1", texture_bloom1)
+        self.tonemapping.bind_uniform_data("texture_bloom2", texture_bloom2)
+        self.tonemapping.bind_uniform_data("texture_bloom3", texture_bloom3)
+        self.tonemapping.bind_uniform_data("texture_bloom4", texture_bloom4)
+
+        self.tonemapping.bind_uniform_data("is_render_light_shaft", self.is_render_light_shaft)
+        self.tonemapping.bind_uniform_data("texture_light_shaft", texture_light_shaft)
+
         self.quad.draw_elements()
 
     def render_ssao(self, texture_size, texture_lod, texture_normal, texture_linear_depth):

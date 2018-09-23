@@ -24,6 +24,11 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_PREV = None
+    BLOOM_0 = None
+    BLOOM_1 = None
+    BLOOM_2 = None
+    BLOOM_3 = None
+    BLOOM_4 = None
     LIGHT_SHAFT = None
     LIGHT_PROBE_ATMOSPHERE = None
     ATMOSPHERE = None
@@ -226,6 +231,52 @@ class RenderTargetManager(Singleton):
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
             wrap=GL_CLAMP
+        )
+
+        bloom_options = dict(
+            texture_type=Texture2D,
+            option=Option.SSAA,
+            internal_format=hdr_internal_format,
+            texture_format=GL_RGBA,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            data_type=hdr_data_type,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.BLOOM_0 = self.create_rendertarget(
+            "BLOOM_0",
+            width=fullsize_x / 2,
+            height=fullsize_y / 2,
+            **bloom_options
+        )
+
+        RenderTargets.BLOOM_1 = self.create_rendertarget(
+            "BLOOM_1",
+            width=fullsize_x / 4,
+            height=fullsize_y / 4,
+            **bloom_options
+        )
+
+        RenderTargets.BLOOM_2 = self.create_rendertarget(
+            "BLOOM_2",
+            width=fullsize_x / 8,
+            height=fullsize_y / 8,
+            **bloom_options
+        )
+
+        RenderTargets.BLOOM_3 = self.create_rendertarget(
+            "BLOOM_3",
+            width=fullsize_x / 16,
+            height=fullsize_y / 16,
+            **bloom_options
+        )
+
+        RenderTargets.BLOOM_4 = self.create_rendertarget(
+            "BLOOM_4",
+            width=fullsize_x / 32,
+            height=fullsize_y / 32,
+            **bloom_options
         )
 
         RenderTargets.LIGHT_SHAFT = self.create_rendertarget(
