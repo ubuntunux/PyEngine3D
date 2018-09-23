@@ -297,16 +297,12 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()
 
-    def render_light_shaft(self, atmosphere, texture_diffuse, texture_linear_depth, texture_shadow):
+    def render_light_shaft(self, texture_diffuse, texture_linear_depth, texture_shadow):
         self.light_shaft.use_program()
         self.light_shaft.bind_material_instance()
         self.light_shaft.bind_uniform_data("texture_diffuse", texture_diffuse)
         self.light_shaft.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.light_shaft.bind_uniform_data("texture_shadow", texture_shadow)
-
-        # bind Atmosphere
-        atmosphere.bind_precomputed_atmosphere(self.light_shaft)
-
         self.quad.draw_elements()
 
     def render_bloom(self, texture_target):
