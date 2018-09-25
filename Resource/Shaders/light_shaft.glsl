@@ -3,6 +3,7 @@
 #include "quad.glsl"
 
 uniform sampler2D texture_diffuse;
+uniform sampler2D texture_random;
 uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_shadow;
 uniform float light_shaft_intensity;
@@ -24,18 +25,22 @@ void main()
     // light shaft color
     vec4 light_shaft_proj = PROJECTION * VIEW_ORIGIN * vec4(LIGHT_DIRECTION.xyz * NEAR_FAR.y, 1.0);
     light_shaft_proj.xyz /= light_shaft_proj.w;
-    vec2 light_shaft_uv = clamp(light_shaft_proj.xy * 0.5 + 0.5, 0.0, 1.0);
+    vec2 light_shaft_uv = light_shaft_proj.xy * 0.5 + 0.5;
     const int sample_count = 100;
-    vec2 delta_uv = (uv - light_shaft_uv) / float(sample_count);
+    vec2 delta_uv = (light_shaft_uv - uv) / float(sample_count);
     vec3 light_shaft_color = vec3(0.0);
-    vec2 sample_uv;
-    float total_count = 0.0;
+    vec2 sample_uv = uv;
     for(int i=0; i<sample_count; ++i)
     {
-        sample_uv = light_shaft_uv + delta_uv * float(sample_count - i) * light_shaft_length;
-        vec3 diffuse = max(vec3(0.0), textureLod(texture_diffuse, sample_uv, 8.0).xyz - vec3(light_shaft_threshold));
-        light_shaft_color += diffuse;
-        total_count += 1.0;
+        if(sample_uv.x < 0.0 || 1.0 < sample_uv.x || sample_uv.y < 0.0 || 1.0 < sample_uv.y )
+        {
+            break;
+        }
+
+        vec3 diffuse = max(vec3(0.0), textureLod(texture_diffuse, sample_uv, 0.0).xyz - vec3(light_shaft_threshold));
+        float noise = textureLod(texture_random, sample_uv, 0.0).x;
+        light_shaft_color += diffuse * noise;
+        sample_uv += delta_uv;
     }
     light_shaft_color = light_shaft_color / float(sample_count) * light_shaft_intensity;
     light_shaft_color *= clamp(dot(screen_center_ray, LIGHT_DIRECTION.xyz) * 2.0 + 1.0, 0.0, 1.0);

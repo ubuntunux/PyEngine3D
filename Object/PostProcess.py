@@ -311,6 +311,8 @@ class PostProcess:
         self.light_shaft.bind_uniform_data("light_shaft_threshold", self.light_shaft_threshold)
         self.light_shaft.bind_uniform_data("light_shaft_length", self.light_shaft_length)
         self.light_shaft.bind_uniform_data("texture_diffuse", texture_diffuse)
+        texture_random = self.resource_manager.get_texture('common.random')
+        self.light_shaft.bind_uniform_data("texture_random", texture_random)
         self.light_shaft.bind_uniform_data("texture_linear_depth", texture_linear_depth)
         self.light_shaft.bind_uniform_data("texture_shadow", texture_shadow)
         self.quad.draw_elements()
