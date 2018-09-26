@@ -73,6 +73,14 @@ class PostProcess:
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
         self.ssao_random_texture = None
 
+        self.compute_focus_distance = None
+        self.depth_of_field = None
+        self.is_render_depth_of_field = True
+        self.focus_sensitivity = 3.0
+        self.focus_near = 0.0
+        self.focus_far = 100.0
+        self.dof_blur = 4.0
+
         self.velocity = None
 
         self.is_render_ssr = True
@@ -133,6 +141,10 @@ class PostProcess:
             self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
         self.ssao_random_texture = self.resource_manager.get_texture('common.random_normal')
 
+        # depth of field
+        self.compute_focus_distance = self.resource_manager.get_material_instance('compute_focus_distance')
+        self.depth_of_field = self.resource_manager.get_material_instance('depth_of_field')
+
         self.velocity = self.resource_manager.get_material_instance("velocity")
 
         self.light_shaft = self.resource_manager.get_material_instance("light_shaft")
@@ -175,6 +187,12 @@ class PostProcess:
 
         self.Attributes.set_attribute('is_render_ssr', self.is_render_ssr)
         self.Attributes.set_attribute('is_render_motion_blur', self.is_render_motion_blur)
+
+        self.Attributes.set_attribute('is_render_depth_of_field', self.is_render_depth_of_field)
+        self.Attributes.set_attribute('focus_sensitivity', self.focus_sensitivity)
+        self.Attributes.set_attribute('focus_near', self.focus_near)
+        self.Attributes.set_attribute('focus_far', self.focus_far)
+        self.Attributes.set_attribute('dof_blur', self.dof_blur)
 
         self.Attributes.set_attribute('is_render_light_shaft', self.is_render_light_shaft)
         self.Attributes.set_attribute('light_shaft_intensity', self.light_shaft_intensity)
@@ -293,6 +311,46 @@ class PostProcess:
 
         self.gaussian_blur.bind_uniform_data("blur_scale", (0.0, blur_scale))
         self.gaussian_blur.bind_uniform_data("texture_diffuse", texture_temp)
+        self.quad.draw_elements()
+
+    def render_depth_of_field(self):
+        # update focus distance
+        self.compute_focus_distance.use_program()
+        focus_sensitivity = min(1.0, self.focus_sensitivity * self.core_manager.delta)
+        self.compute_focus_distance.bind_uniform_data('focus_sensitivity', focus_sensitivity)
+        self.compute_focus_distance.bind_uniform_data('img_input', RenderTargets.LINEAR_DEPTH, access=GL_READ_ONLY)
+        self.compute_focus_distance.bind_uniform_data("img_output", RenderTargets.FOCUS_DISTANCE, access=GL_READ_WRITE)
+        width = RenderTargets.FOCUS_DISTANCE.width
+        height = RenderTargets.FOCUS_DISTANCE.height
+        glDispatchCompute(width, height, 1)
+        glMemoryBarrier(GL_ALL_BARRIER_BITS)
+
+        # depth of field
+        texture_temp = RenderTargets.HDR_TEMP
+        texture_target = RenderTargets.HDR
+
+        # horizontal blur
+        self.framebuffer_manager.bind_framebuffer(texture_temp)
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.depth_of_field.use_program()
+        self.depth_of_field.bind_material_instance()
+        self.depth_of_field.bind_uniform_data("focus_near", self.focus_near)
+        self.depth_of_field.bind_uniform_data("focus_far", self.focus_far)
+        self.depth_of_field.bind_uniform_data("blur_scale", (self.dof_blur, 0.0))
+        self.depth_of_field.bind_uniform_data("texture_focus_distance", RenderTargets.FOCUS_DISTANCE)
+        self.depth_of_field.bind_uniform_data("texture_diffuse", texture_target)
+        self.depth_of_field.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
+        self.quad.draw_elements()
+
+        # vertical blur
+        self.framebuffer_manager.bind_framebuffer(texture_target)
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.depth_of_field.bind_uniform_data("focus_near", self.focus_near)
+        self.depth_of_field.bind_uniform_data("focus_far", self.focus_far)
+        self.depth_of_field.bind_uniform_data("blur_scale", (0.0, self.dof_blur))
+        self.depth_of_field.bind_uniform_data("texture_focus_distance", RenderTargets.FOCUS_DISTANCE)
+        self.depth_of_field.bind_uniform_data("texture_diffuse", texture_temp)
+        self.depth_of_field.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
         self.quad.draw_elements()
 
     def render_motion_blur(self, texture_velocity, texture_diffuse):

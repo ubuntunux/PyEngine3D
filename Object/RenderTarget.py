@@ -23,6 +23,7 @@ class RenderTargets:
     BACKBUFFER = None
     DEPTHSTENCIL = None
     HDR = None
+    HDR_TEMP = None
     HDR_PREV = None
     BLOOM_0 = None
     BLOOM_1 = None
@@ -39,6 +40,7 @@ class RenderTargets:
     WORLD_NORMAL = None
     SHADOWMAP = None
     LINEAR_DEPTH = None
+    FOCUS_DISTANCE = None
     SCREEN_SPACE_REFLECTION = None
     SSAO = None
     VELOCITY = None
@@ -205,8 +207,7 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
-        RenderTargets.HDR = self.create_rendertarget(
-            "HDR",
+        hdr_options = dict(
             texture_type=Texture2D,
             option=Option.MSAA | Option.SSAA,
             width=fullsize_x,
@@ -219,19 +220,9 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
-        RenderTargets.HDR_PREV = self.create_rendertarget(
-            "HDR_Prev",
-            texture_type=Texture2D,
-            option=Option.MSAA | Option.SSAA,
-            width=fullsize_x,
-            height=fullsize_y,
-            internal_format=hdr_internal_format,
-            texture_format=GL_RGBA,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            data_type=hdr_data_type,
-            wrap=GL_CLAMP
-        )
+        RenderTargets.HDR = self.create_rendertarget("HDR", **hdr_options)
+        RenderTargets.HDR_TEMP = self.create_rendertarget("HDR_TEMP", **hdr_options)
+        RenderTargets.HDR_PREV = self.create_rendertarget("HDR_PREV", **hdr_options)
 
         bloom_options = dict(
             texture_type=Texture2D,
@@ -413,6 +404,21 @@ class RenderTargetManager(Singleton):
             min_filter=GL_NEAREST_MIPMAP_NEAREST,
             mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
+        )
+
+        data = np.zeros(1, dtype=np.float32)
+        RenderTargets.FOCUS_DISTANCE = self.create_rendertarget(
+            "FOCUS_DISTANCE",
+            texture_type=Texture2D,
+            width=1,
+            height=1,
+            internal_format=GL_R32F,
+            texture_format=GL_RED,
+            data_type=GL_FLOAT,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            wrap=GL_CLAMP,
+            data=data
         )
 
         RenderTargets.SCREEN_SPACE_REFLECTION = self.create_rendertarget(

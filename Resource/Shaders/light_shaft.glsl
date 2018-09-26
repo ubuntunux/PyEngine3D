@@ -37,7 +37,10 @@ void main()
             break;
         }
 
-        vec3 diffuse = max(vec3(0.0), textureLod(texture_diffuse, sample_uv, 0.0).xyz - vec3(light_shaft_threshold));
+        vec3 diffuse = textureLod(texture_diffuse, sample_uv, 0.0).xyz;
+        float luminance = max(0.01, get_luminance(diffuse));
+        diffuse *= max(0.0, luminance - light_shaft_threshold) / luminance;
+
         float noise = textureLod(texture_random, sample_uv, 0.0).x;
         light_shaft_color += diffuse * noise;
         sample_uv += delta_uv;

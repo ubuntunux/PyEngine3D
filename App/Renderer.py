@@ -827,6 +827,10 @@ class Renderer(Singleton):
                                                 RenderTargets.LINEAR_DEPTH,
                                                 RenderTargets.SHADOWMAP)
 
+        # Depth Of Field
+        if self.postprocess.is_render_depth_of_field:
+            self.postprocess.render_depth_of_field()
+
         self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
         # Tone Map
@@ -992,9 +996,8 @@ class Renderer(Singleton):
             self.render_solid()
 
             # copy HDR Target
-            hdr_copy = self.rendertarget_manager.get_temporary('hdr_copy', RenderTargets.HDR)
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
-            dst_framebuffer = self.framebuffer_manager.bind_framebuffer(hdr_copy)
+            dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_TEMP)
             glClear(GL_COLOR_BUFFER_BIT)
             dst_framebuffer.copy_framebuffer(src_framebuffer)
             src_framebuffer.run_bind_framebuffer()
@@ -1007,7 +1010,7 @@ class Renderer(Singleton):
                 glDepthMask(True)
 
                 self.scene_manager.ocean.render_ocean(atmosphere=self.scene_manager.atmosphere,
-                                                      texture_scene=hdr_copy,
+                                                      texture_scene=RenderTargets.HDR_TEMP,
                                                       texture_linear_depth=RenderTargets.LINEAR_DEPTH,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
                                                       texture_shadow=RenderTargets.SHADOWMAP)
