@@ -35,6 +35,7 @@ void main()
     mat4 world_matrix;
     vec3 world_position;
 
+    // TODO : Move calculation part of the local position to compute shader
     if(EMITTER_BILLBOARD)
     {
         world_matrix = emitter_datas[instanceID].local_matrix;
