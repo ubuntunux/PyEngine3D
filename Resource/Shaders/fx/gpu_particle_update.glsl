@@ -132,9 +132,14 @@ void update_local_matrix(uint id)
         rotation_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
         rotation_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
         rotation_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
+        emitter_datas[id].local_matrix = rotation_matrix * scale_matrix;
+    }
+    else
+    {
+        emitter_datas[id].local_matrix = scale_matrix;
     }
 
-    emitter_datas[id].local_matrix = rotation_matrix * scale_matrix;
+    
     emitter_datas[id].local_matrix[3].xyz = emitter_datas[id].transform_position.xyz;
 }
 
