@@ -208,17 +208,22 @@ class Renderer(Singleton):
                                                              ('EMITTER_TRANSFORM_SCALE_MAX', np.float32, 3),
                                                              ('EMITTER_USE_ATOMIC_COUNTER', np.int32),
                                                              ('EMITTER_VELOCITY_POSITION_MIN', np.float32, 3),
-                                                             ('dummy_1', np.float32),
+                                                             ('EMITTER_ENABLE_FORCE_FIELD', np.int32),
                                                              ('EMITTER_VELOCITY_POSITION_MAX', np.float32, 3),
-                                                             ('dummy_2', np.float32),
+                                                             ('EMITTER_FORCE_FIELD_STRENGTH', np.float32),
                                                              ('EMITTER_VELOCITY_ROTATION_MIN', np.float32, 3),
-                                                             ('dummy_3', np.float32),
+                                                             ('EMITTER_FORCE_FIELD_TIGHTNESS', np.float32),
                                                              ('EMITTER_VELOCITY_ROTATION_MAX', np.float32, 3),
-                                                             ('dummy_4', np.float32),
+                                                             ('dummy_0', np.float32),
                                                              ('EMITTER_VELOCITY_SCALE_MIN', np.float32, 3),
-                                                             ('dummy_5', np.float32),
+                                                             ('dummy_1', np.float32),
                                                              ('EMITTER_VELOCITY_SCALE_MAX', np.float32, 3),
-                                                             ('dummy_6', np.float32)])
+                                                             ('dummy_2', np.float32),
+                                                             ('EMITTER_FORCE_FIELD_OFFSET', np.float32, 3),
+                                                             ('dummy_3', np.float32),
+                                                             ('EMITTER_FORCE_FIELD_RADIUS', np.float32, 3),
+                                                             ('dummy_4', np.float32)])
+
         self.uniform_emitter_infos_buffer = UniformBlock("emitter_infos", program, 6, self.uniform_emitter_infos_data)
 
         # set gl hint

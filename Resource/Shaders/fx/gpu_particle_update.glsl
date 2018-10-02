@@ -223,12 +223,13 @@ void main()
 
         emitter_datas[id].velocity_position += emitter_datas[id].force * DELTA_TIME;
 
-        if(enable_force_field)
+        if(EMITTER_ENABLE_FORCE_FIELD)
         {
-            vec3 uvw = force_field_offset + emitter_datas[id].transform_position / force_field_radius;
+            vec3 uvw = EMITTER_FORCE_FIELD_OFFSET + emitter_datas[id].transform_position / EMITTER_FORCE_FIELD_RADIUS;
             uvw = (EMITTER_PARENT_MATRIX * vec4(uvw, 0.0)).xyz;
             vec3 force = texture3D(texture_force_field, uvw - vec3(0.5)).xyz;
-            emitter_datas[id].velocity_position += force * force_field_strength * DELTA_TIME;
+            emitter_datas[id].velocity_position = mix(emitter_datas[id].velocity_position, force, EMITTER_FORCE_FIELD_TIGHTNESS);
+            emitter_datas[id].velocity_position += force * EMITTER_FORCE_FIELD_STRENGTH * DELTA_TIME;
         }
 
         emitter_datas[id].transform_position += emitter_datas[id].velocity_position * DELTA_TIME;

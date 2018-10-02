@@ -138,6 +138,12 @@ class ParticleManager(Singleton):
                     uniform_data['EMITTER_VELOCITY_ROTATION_MAX'] = emitter_info.velocity_rotation.value[1]
                     uniform_data['EMITTER_VELOCITY_SCALE_MIN'] = emitter_info.velocity_scale.value[0]
                     uniform_data['EMITTER_VELOCITY_SCALE_MAX'] = emitter_info.velocity_scale.value[1]
+                    uniform_data['EMITTER_ENABLE_FORCE_FIELD'] = emitter_info.enable_force_field
+                    uniform_data['EMITTER_FORCE_FIELD_STRENGTH'] = emitter_info.force_field_strength
+                    uniform_data['EMITTER_FORCE_FIELD_TIGHTNESS'] = emitter_info.force_field_tightness
+                    uniform_data['EMITTER_FORCE_FIELD_OFFSET'] = emitter_info.force_field_offset
+                    uniform_data['EMITTER_FORCE_FIELD_RADIUS'] = emitter_info.force_field_radius
+
                     self.renderer.uniform_emitter_infos_buffer.bind_uniform_block(data=uniform_data)
 
                     for emitter in particle.emitters_group[i]:
@@ -150,14 +156,7 @@ class ParticleManager(Singleton):
                             material_instance.use_program()
                             material_instance.bind_material_instance()
 
-                            material_instance.bind_uniform_data('enable_force_field', emitter_info.enable_force_field)
                             if emitter_info.enable_force_field:
-                                material_instance.bind_uniform_data('force_field_strength',
-                                                                    emitter_info.force_field_strength)
-                                material_instance.bind_uniform_data('force_field_offset',
-                                                                    emitter_info.force_field_offset)
-                                material_instance.bind_uniform_data('force_field_radius',
-                                                                    emitter_info.force_field_radius)
                                 material_instance.bind_uniform_data('texture_force_field',
                                                                     emitter_info.texture_force_field)
 
@@ -680,6 +679,7 @@ class EmitterInfo:
         self.force_field_offset = emitter_info.get('force_field_offset', Float3(0.0, 0.0, 0.0))
         self.force_field_radius = emitter_info.get('force_field_radius', Float3(1.0, 1.0, 1.0))
         self.force_field_strength = emitter_info.get('force_field_strength', 1.0)
+        self.force_field_tightness = emitter_info.get('force_field_tightness', 0.1)
 
         self.parent_matrix_data = None
         self.matrix_data = None
@@ -727,6 +727,7 @@ class EmitterInfo:
             force_field_offset=self.force_field_offset,
             force_field_radius=self.force_field_radius,
             force_field_strength=self.force_field_strength,
+            force_field_tightness=self.force_field_tightness,
             texture_force_field=self.texture_force_field.name if self.texture_force_field is not None else '',
         )
         return save_data
