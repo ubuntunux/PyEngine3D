@@ -356,23 +356,23 @@ class Renderer(Singleton):
         self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_view_data
-        uniform_data['VIEW'] = camera.view
-        uniform_data['INV_VIEW'] = np.linalg.inv(camera.view)
-        uniform_data['VIEW_ORIGIN'] = camera.view_origin
-        uniform_data['INV_VIEW_ORIGIN'] = np.linalg.inv(camera.view_origin)
-        uniform_data['PROJECTION'] = camera.projection
-        uniform_data['INV_PROJECTION'] = np.linalg.inv(camera.projection)
-        uniform_data['CAMERA_POSITION'] = camera.transform.get_pos()
-        uniform_data['NEAR_FAR'] = (camera.near, camera.far)
-        uniform_data['JITTER_DELTA'] = self.postprocess.jitter_delta
-        uniform_data['JITTER_OFFSET'] = self.postprocess.jitter
+        uniform_data['VIEW'][...] = camera.view
+        uniform_data['INV_VIEW'][...] = np.linalg.inv(camera.view)
+        uniform_data['VIEW_ORIGIN'][...] = camera.view_origin
+        uniform_data['INV_VIEW_ORIGIN'][...] = np.transpose(camera.view_origin)
+        uniform_data['PROJECTION'][...] = camera.projection
+        uniform_data['INV_PROJECTION'][...] = np.linalg.inv(camera.projection)
+        uniform_data['CAMERA_POSITION'][...] = camera.transform.get_pos()
+        uniform_data['NEAR_FAR'][...] = (camera.near, camera.far)
+        uniform_data['JITTER_DELTA'][...] = self.postprocess.jitter_delta
+        uniform_data['JITTER_OFFSET'][...] = self.postprocess.jitter
         self.uniform_view_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_light_data
-        uniform_data['LIGHT_POSITION'] = main_light.transform.get_pos()
-        uniform_data['LIGHT_DIRECTION'] = main_light.transform.front
-        uniform_data['LIGHT_COLOR'] = main_light.light_color
-        uniform_data['SHADOW_MATRIX'] = main_light.shadow_view_projection
+        uniform_data['LIGHT_POSITION'][...] = main_light.transform.get_pos()
+        uniform_data['LIGHT_DIRECTION'][...] = main_light.transform.front
+        uniform_data['LIGHT_COLOR'][...] = main_light.light_color
+        uniform_data['SHADOW_MATRIX'][...] = main_light.shadow_view_projection
         self.uniform_light_buffer.bind_uniform_block(data=uniform_data)
 
         self.uniform_point_light_buffer.bind_uniform_block(data=self.uniform_point_light_data)
