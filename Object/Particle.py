@@ -138,11 +138,11 @@ class ParticleManager(Singleton):
                     uniform_data['EMITTER_VELOCITY_ROTATION_MAX'] = emitter_info.velocity_rotation.value[1]
                     uniform_data['EMITTER_VELOCITY_SCALE_MIN'] = emitter_info.velocity_scale.value[0]
                     uniform_data['EMITTER_VELOCITY_SCALE_MAX'] = emitter_info.velocity_scale.value[1]
-                    uniform_data['EMITTER_ENABLE_FORCE_FIELD'] = emitter_info.enable_force_field
-                    uniform_data['EMITTER_FORCE_FIELD_STRENGTH'] = emitter_info.force_field_strength
-                    uniform_data['EMITTER_FORCE_FIELD_TIGHTNESS'] = emitter_info.force_field_tightness
-                    uniform_data['EMITTER_FORCE_FIELD_OFFSET'] = emitter_info.force_field_offset
-                    uniform_data['EMITTER_FORCE_FIELD_RADIUS'] = emitter_info.force_field_radius
+                    uniform_data['EMITTER_ENABLE_VECTOR_FIELD'] = emitter_info.enable_vector_field
+                    uniform_data['EMITTER_VECTOR_FIELD_STRENGTH'] = emitter_info.vector_field_strength
+                    uniform_data['EMITTER_VECTOR_FIELD_TIGHTNESS'] = emitter_info.vector_field_tightness
+                    uniform_data['EMITTER_VECTOR_FIELD_MATRIX'] = emitter_info.vector_field_transform.matrix
+                    uniform_data['EMITTER_VECTOR_FIELD_INV_MATRIX'] = emitter_info.vector_field_transform.inverse_matrix
 
                     self.renderer.uniform_emitter_infos_buffer.bind_uniform_block(data=uniform_data)
 
@@ -156,9 +156,9 @@ class ParticleManager(Singleton):
                             material_instance.use_program()
                             material_instance.bind_material_instance()
 
-                            if emitter_info.enable_force_field:
-                                material_instance.bind_uniform_data('texture_force_field',
-                                                                    emitter_info.texture_force_field)
+                            if emitter_info.enable_vector_field:
+                                material_instance.bind_uniform_data('texture_vector_field',
+                                                                    emitter_info.texture_vector_field)
 
                             # set gpu buffer
                             emitter.emitter_gpu_buffer.bind_storage_buffer()
@@ -358,12 +358,13 @@ class Emitter:
     def refresh(self):
         self.total_cell_count = self.emitter_info.cell_count[0] * self.emitter_info.cell_count[1]
 
-        # refresh max parameter
         if self.emitter_info.enable_gpu_particle:
+            # GPU Particle
             self.gpu_particle_count = self.emitter_info.spawn_count
             self.delay = self.emitter_info.delay.get_max()
             self.life_time = self.emitter_info.life_time.get_max()
         else:
+            # CPU Particle
             self.delay = self.emitter_info.delay.get_uniform()
             self.life_time = self.emitter_info.life_time.get_uniform()
 
@@ -673,13 +674,17 @@ class EmitterInfo:
 
         self.force_gravity = emitter_info.get('force_gravity', 0.0)
 
-        self.enable_force_field = emitter_info.get('enable_force_field', False)
-        texture_force_field_name = emitter_info.get('texture_force_field', 'common.default_3d')
-        self.texture_force_field = resource_manager.get_texture_or_none(texture_force_field_name)
-        self.force_field_offset = emitter_info.get('force_field_offset', Float3(0.0, 0.0, 0.0))
-        self.force_field_radius = emitter_info.get('force_field_radius', Float3(1.0, 1.0, 1.0))
-        self.force_field_strength = emitter_info.get('force_field_strength', 1.0)
-        self.force_field_tightness = emitter_info.get('force_field_tightness', 0.1)
+        self.enable_vector_field = emitter_info.get('enable_vector_field', False)
+        texture_vector_field_name = emitter_info.get('texture_vector_field', 'common.default_3d')
+        self.texture_vector_field = resource_manager.get_texture_or_none(texture_vector_field_name)
+        self.vector_field_strength = emitter_info.get('vector_field_strength', 1.0)
+        self.vector_field_tightness = emitter_info.get('vector_field_tightness', 0.1)
+
+        self.vector_field_position = emitter_info.get('vector_field_position', Float3(0.0, 0.0, 0.0))
+        self.vector_field_rotation = emitter_info.get('vector_field_rotation', Float3(0.0, 0.0, 0.0))
+        self.vector_field_scale = emitter_info.get('vector_field_scale', Float3(1.0, 1.0, 1.0))
+        self.vector_field_transform = TransformObject()
+        self.update_vector_field_matrix()
 
         self.parent_matrix_data = None
         self.matrix_data = None
@@ -696,6 +701,12 @@ class EmitterInfo:
         self.matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
         self.uvs_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
         self.sequence_opacity_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
+
+    def update_vector_field_matrix(self):
+        self.vector_field_transform.set_pos(self.vector_field_position)
+        self.vector_field_transform.set_rotation(self.vector_field_rotation)
+        self.vector_field_transform.set_scale(self.vector_field_scale)
+        self.vector_field_transform.update_transform(update_inverse_matrix=True)
 
     def get_save_data(self):
         save_data = dict(
@@ -723,12 +734,13 @@ class EmitterInfo:
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),
             force_gravity=self.force_gravity,
-            enable_force_field=self.enable_force_field,
-            force_field_offset=self.force_field_offset,
-            force_field_radius=self.force_field_radius,
-            force_field_strength=self.force_field_strength,
-            force_field_tightness=self.force_field_tightness,
-            texture_force_field=self.texture_force_field.name if self.texture_force_field is not None else '',
+            enable_vector_field=self.enable_vector_field,
+            vector_field_position=self.vector_field_position,
+            vector_field_rotation=self.vector_field_rotation,
+            vector_field_scale=self.vector_field_scale,
+            vector_field_strength=self.vector_field_strength,
+            vector_field_tightness=self.vector_field_tightness,
+            texture_vector_field=self.texture_vector_field.name if self.texture_vector_field is not None else '',
         )
         return save_data
 
@@ -760,10 +772,19 @@ class EmitterInfo:
                 texture_diffuse = resource_manager.get_texture(attribute_value)
                 if texture_diffuse is not None:
                     self.texture_diffuse = texture_diffuse
-            elif 'texture_force_field' == attribute_name:
-                texture_force_field = resource_manager.get_texture(attribute_value)
-                if texture_force_field is not None:
-                    self.texture_force_field = texture_force_field
+            elif 'texture_vector_field' == attribute_name:
+                texture_vector_field = resource_manager.get_texture(attribute_value)
+                if texture_vector_field is not None:
+                    self.texture_vector_field = texture_vector_field
+            elif 'vector_field_position' == attribute_name:
+                self.vector_field_position[...] = attribute_value
+                self.update_vector_field_matrix()
+            elif 'vector_field_rotation' == attribute_name:
+                self.vector_field_rotation[...] = attribute_value
+                self.update_vector_field_matrix()
+            elif 'vector_field_scale' == attribute_name:
+                self.vector_field_scale[...] = attribute_value
+                self.update_vector_field_matrix()
             elif 'spawn_count' == attribute_name:
                 self.set_spawn_count(attribute_value)
             elif 'cell_count' == attribute_name:

@@ -9,17 +9,17 @@ from Utilities import Attributes
 from OpenGLContext import CreateTexture, Texture3D
 
 
-class ForceFieldTexture3D:
+class VectorFieldTexture3D:
     def __init__(self, **data):
         self.name = self.__class__.__name__
-        self.texture_name = 'force_field_3d'
+        self.texture_name = 'vector_field_3d'
         self.texture_width = data.get('texture_width', 256)
         self.texture_height = data.get('texture_height', 256)
         self.texture_depth = data.get('texture_depth', 256)
         self.attribute = Attributes()
 
     def generate_texture(self):
-        logger.info("Generate ForceFieldTexture3D.")
+        logger.info("Generate VectorFieldTexture3D.")
 
         core_manager = CoreManager.getInstance()
         resource_manager = core_manager.resource_manager
@@ -62,7 +62,7 @@ class ForceFieldTexture3D:
         renderer.framebuffer_manager.bind_framebuffer(texture)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        material_instance = resource_manager.get_material_instance('procedural.force_field_3d')
+        material_instance = resource_manager.get_material_instance('procedural.vector_field_3d')
         material_instance.use_program()
 
         for i in range(texture.depth):

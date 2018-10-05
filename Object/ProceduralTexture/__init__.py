@@ -1,6 +1,6 @@
 from .CloudTexture3D import CloudTexture3D
 from .NoiseTexture3D import NoiseTexture3D
-from .ForceFieldTexture3D import ForceFieldTexture3D
+from .VectorFieldTexture3D import VectorFieldTexture3D
 
 
 def CreateProceduralTexture(**datas):

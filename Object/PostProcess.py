@@ -79,7 +79,7 @@ class PostProcess:
         self.focus_sensitivity = 3.0
         self.focus_near = 0.0
         self.focus_far = 100.0
-        self.dof_blur = 4.0
+        self.dof_blur = 2.0
 
         self.velocity = None
 

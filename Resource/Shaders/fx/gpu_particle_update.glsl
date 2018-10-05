@@ -2,11 +2,11 @@
 #include "utility.glsl"
 
 
-uniform bool enable_force_field;
-uniform sampler3D texture_force_field;
-uniform float force_field_strength;
-uniform vec3 force_field_offset;
-uniform vec3 force_field_radius;
+uniform bool enable_vector_field;
+uniform sampler3D texture_vector_field;
+uniform float vector_field_strength;
+uniform vec3 vector_field_offset;
+uniform vec3 vector_field_radius;
 
 
 #ifdef GL_COMPUTE_SHADER
@@ -223,13 +223,13 @@ void main()
 
         emitter_datas[id].velocity_position += emitter_datas[id].force * DELTA_TIME;
 
-        if(EMITTER_ENABLE_FORCE_FIELD)
+        if(EMITTER_ENABLE_VECTOR_FIELD)
         {
-            vec3 uvw = EMITTER_FORCE_FIELD_OFFSET + emitter_datas[id].transform_position / EMITTER_FORCE_FIELD_RADIUS;
-            uvw = (EMITTER_PARENT_MATRIX * vec4(uvw, 0.0)).xyz;
-            vec3 force = texture3D(texture_force_field, uvw - vec3(0.5)).xyz;
-            emitter_datas[id].velocity_position = mix(emitter_datas[id].velocity_position, force, EMITTER_FORCE_FIELD_TIGHTNESS);
-            emitter_datas[id].velocity_position += force * EMITTER_FORCE_FIELD_STRENGTH * DELTA_TIME;
+            vec3 uvw = (EMITTER_VECTOR_FIELD_INV_MATRIX * vec4(emitter_datas[id].transform_position, 1.0)).xyz;
+            vec3 force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
+            force = (EMITTER_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz;
+            emitter_datas[id].velocity_position = mix(emitter_datas[id].velocity_position, force, EMITTER_VECTOR_FIELD_TIGHTNESS);
+            emitter_datas[id].velocity_position += force * EMITTER_VECTOR_FIELD_STRENGTH * DELTA_TIME;
         }
 
         emitter_datas[id].transform_position += emitter_datas[id].velocity_position * DELTA_TIME;
