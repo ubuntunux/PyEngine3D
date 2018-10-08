@@ -25,14 +25,14 @@ reVoidMain = re.compile('void\s+main\s*\(')
 reFindUniform = re.compile("uniform\s+(.+?)\s+(.+?)\s*;")  # [Variable Type, Variable Name]
 reMacro = re.compile('\#(ifdef|ifndef|if|elif|else|endif)\s*(.*)')  # [macro type, expression]
 
-shader_types = [GL_VERTEX_SHADER,
-                GL_GEOMETRY_SHADER,
-                GL_FRAGMENT_SHADER,
-                GL_TESS_CONTROL_SHADER,
-                GL_TESS_EVALUATION_SHADER,
-                GL_COMPUTE_SHADER]
-
-shader_type_names = [shader_type.name for shader_type in shader_types]
+shader_types = OrderedDict(
+    VERTEX_SHADER=GL_VERTEX_SHADER,
+    GEOMETRY_SHADER=GL_GEOMETRY_SHADER,
+    FRAGMENT_SHADER=GL_FRAGMENT_SHADER,
+    TESS_CONTROL_SHADER=GL_TESS_CONTROL_SHADER,
+    TESS_EVALUATION_SHADER=GL_TESS_EVALUATION_SHADER,
+    COMPUTE_SHADER=GL_COMPUTE_SHADER
+)
 
 texture_targets = ["texture2D", "texture2DLod", "texture2DGrad",
                    "texture2DArray", "texture2DArrayLod", "texture2DArrayGrad",
@@ -60,7 +60,7 @@ def parsing_macros(shader_code_list):
 
     def is_reserved_word(define_name):
         return define_name == 'MATERIAL_COMPONENTS' or \
-               define_name in shader_type_names or \
+               define_name in shader_types.keys() or \
                define_name.startswith('UUID_')
 
     for expression in shader_macros:
@@ -168,8 +168,9 @@ class Shader:
 
     def generate_shader_codes(self, shader_version, compile_option, external_macros={}):
         shader_codes = {}
-        for shader_type in shader_types:
-            shader_code = self.__parsing_final_code__(shader_type.name, shader_version, compile_option, external_macros)
+        for shader_type_name in shader_types:
+            shader_type = shader_types[shader_type_name]
+            shader_code = self.__parsing_final_code__(shader_type_name, shader_version, compile_option, external_macros)
             # check void main
             if re.search(reVoidMain, shader_code) is not None:
                 shader_codes[shader_type] = shader_code

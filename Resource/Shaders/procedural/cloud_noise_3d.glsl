@@ -51,7 +51,7 @@ float perlinNoise(vec3 p, float scale, float persistance)
 	return n / weights;
 }
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out float fs_output;
 

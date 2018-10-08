@@ -9,7 +9,7 @@ struct VERTEX_OUTPUT
     vec4 font_offset;
 };
 
-#ifdef GL_VERTEX_SHADER
+#ifdef VERTEX_SHADER
 layout (location = 0) in vec4 vs_in_position;
 layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
 
@@ -26,7 +26,7 @@ void main() {
 #endif
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 

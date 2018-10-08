@@ -1,7 +1,7 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/precompute_vs.glsl"
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout(location = 0) out vec3 transmittance;
 void main() {
   transmittance = ComputeTransmittanceToTopAtmosphereBoundarytexture2D(

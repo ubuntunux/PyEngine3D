@@ -7,7 +7,7 @@ uniform sampler2D texture_linear_depth;
 uniform sampler2D texture_normal;
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 in vec3 view_ray;
 in vec2 uv;
 layout(location = 0) out vec4 color;

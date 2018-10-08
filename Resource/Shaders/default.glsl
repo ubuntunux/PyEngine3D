@@ -12,7 +12,7 @@ uniform sampler2D texture_ssao;
 uniform sampler2D texture_scene_reflect;
 uniform samplerCube texture_probe;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 
 layout (location = 0) out vec4 fs_diffuse;

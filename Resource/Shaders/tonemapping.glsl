@@ -17,7 +17,7 @@ uniform sampler2D texture_bloom4;
 uniform bool is_render_light_shaft;
 uniform sampler2D texture_light_shaft;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -99,4 +99,4 @@ void main() {
     fs_output.xyz = Contrast(texColor, contrast);
     fs_output.a = 1.0;
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

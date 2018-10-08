@@ -162,7 +162,7 @@ vec4 render( in vec3 ro, in vec3 rd, in ivec2 px )
 }
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 

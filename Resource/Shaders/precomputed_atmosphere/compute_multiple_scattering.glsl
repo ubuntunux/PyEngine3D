@@ -1,7 +1,7 @@
 #include "precomputed_atmosphere/compute_atmosphere_predefine.glsl"
 #include "precomputed_atmosphere/precompute_vs.glsl"
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout(location = 0) out vec3 delta_multiple_scattering;
 layout(location = 1) out vec4 scattering;
 

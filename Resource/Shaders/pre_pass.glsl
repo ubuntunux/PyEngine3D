@@ -5,7 +5,7 @@
 #include "default_vs.glsl"
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
     layout (location = 0) in VERTEX_OUTPUT vs_output;
 
     layout (location = 0) out vec4 fs_normal;

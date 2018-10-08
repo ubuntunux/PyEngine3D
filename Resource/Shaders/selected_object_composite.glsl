@@ -3,7 +3,7 @@
 
 uniform sampler2D texture_mask;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -30,4 +30,4 @@ void main() {
     mask = saturate(mask - center_mask) + center_mask * 0.5;
     fs_output = vec4(0.5, 0.5, 1.0, 1.0) * mask;
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

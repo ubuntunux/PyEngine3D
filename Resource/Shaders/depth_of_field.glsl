@@ -32,7 +32,7 @@ const float gaussFilter7x7[49] =
     0.00000067,	0.00002292,	0.00019117,	0.00038771,	0.00019117,	0.00002292,	0.00000067
 };
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -53,4 +53,4 @@ void main() {
 		fs_output += texture2D(texture_diffuse, uv) * gaussFilter[i].yyyy;
 	}
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

@@ -3,7 +3,7 @@
 #include "fx/gpu_particle_vs.glsl"
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 5) flat in uint instanceID;
 

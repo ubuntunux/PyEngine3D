@@ -1,4 +1,4 @@
-#ifdef GL_COMPUTE_SHADER
+#ifdef COMPUTE_SHADER
 layout(local_size_x = 1, local_size_y = 1) in;
 
 layout(r32f, binding=0) uniform image2D img_input;

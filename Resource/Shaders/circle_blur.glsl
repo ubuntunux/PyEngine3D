@@ -5,7 +5,7 @@ uniform int loop_count;
 uniform float radius;
 uniform sampler2D texture_color;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -24,4 +24,4 @@ void main() {
     fs_output.xyz /= (loop_count + 1);
     fs_output.w = 1.0;
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

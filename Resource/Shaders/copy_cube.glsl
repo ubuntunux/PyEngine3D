@@ -5,7 +5,7 @@ uniform samplerCube texture_environment;
 uniform mat4 face_matrix;
 uniform float lod;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -18,4 +18,4 @@ void main() {
     normal = (vec4(normal, 0.0) * face_matrix).xyz;
     fs_output = textureCube( texture_environment, normal, lod );
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

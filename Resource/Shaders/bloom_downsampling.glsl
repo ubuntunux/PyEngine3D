@@ -4,7 +4,7 @@
 
 uniform sampler2D texture_source;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -26,4 +26,4 @@ void main() {
     luminance = get_luminance(color.xyz);
     fs_output = mix(fs_output, color, clamp(luminance, 0.0, 1.0));
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

@@ -4,7 +4,7 @@ uniform float bloom_intensity;
 
 uniform sampler2D texture_bloom;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -29,4 +29,4 @@ void main() {
     fs_output.xyz = getBloom(tex_coord) * bloom_intensity;
     fs_output.w = 1.0;
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

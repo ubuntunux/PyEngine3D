@@ -14,7 +14,7 @@ struct VERTEX_OUTPUT
 
 layout(std430, binding=0) buffer emitter_buffer { EmitterData emitter_datas[]; };
 
-#ifdef GL_VERTEX_SHADER
+#ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
 layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;

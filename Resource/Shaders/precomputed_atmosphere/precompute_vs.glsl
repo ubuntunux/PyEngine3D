@@ -1,6 +1,6 @@
 #include "scene_constants.glsl"
 
-#ifdef GL_VERTEX_SHADER
+#ifdef VERTEX_SHADER
 layout(location = 0) in vec4 vertex;
 out vec2 uv;
 void main()

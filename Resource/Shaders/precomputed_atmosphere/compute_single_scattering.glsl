@@ -2,7 +2,7 @@
 #include "precomputed_atmosphere/precompute_vs.glsl"
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout(location = 0) out vec3 delta_rayleigh;
 layout(location = 1) out vec3 delta_mie;
 layout(location = 2) out vec4 scattering;

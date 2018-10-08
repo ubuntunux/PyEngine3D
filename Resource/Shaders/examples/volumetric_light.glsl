@@ -244,7 +244,7 @@ void traceScene(bool improvedScattering, vec3 rO, vec3 rD, inout vec3 finalPos, 
 }
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 

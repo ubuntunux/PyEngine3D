@@ -18,7 +18,7 @@ uniform float debug_intensity_min;
 uniform float debug_intensity_max;
 uniform int debug_target;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -83,4 +83,4 @@ void main()
     fs_output.xyz = clamp((fs_output.xyz - debug_intensity_min) / (debug_intensity_max - debug_intensity_min), 0.0, 1.0);
     fs_output.w = 1.0;
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

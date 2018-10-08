@@ -378,11 +378,11 @@ vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)
 }
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
 void main() {
     fs_output = ResolvePS(vs_output.tex_coord.xy, gl_FragCoord.xy);
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

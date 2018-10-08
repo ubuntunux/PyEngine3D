@@ -16,7 +16,7 @@ vec4 fft2(int layer, vec2 i, vec2 w, vec2 uv)
 }
 
 
-#ifdef GL_VERTEX_SHADER
+#ifdef VERTEX_SHADER
 layout(location = 0) in vec4 vertex;
 out vec2 uv;
 void main()
@@ -27,7 +27,7 @@ void main()
 #endif
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 in vec2 uv;
 
 layout(location = 0) out vec4 color0;

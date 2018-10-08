@@ -17,7 +17,7 @@ from .RenderOptions import BlendMode
 
 
 class ParticleManager(Singleton):
-    USE_ATOMIC_COUNTER = True
+    USE_ATOMIC_COUNTER = False
 
     def __init__(self):
         self.renderer = None

@@ -5,7 +5,7 @@
 uniform float target_level;
 uniform sampler2D texture_source;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -14,4 +14,4 @@ void main() {
     fs_output = texture2D(texture_source, texcoord, target_level);
 
 }
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

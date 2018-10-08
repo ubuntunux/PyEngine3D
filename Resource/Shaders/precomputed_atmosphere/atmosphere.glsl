@@ -23,7 +23,7 @@ uniform float noise_tiling;
 uniform float noise_contrast;
 uniform float noise_coverage;
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 in vec3 eye_ray;
 in vec2 uv;
 layout(location = 0) out vec4 out_color;

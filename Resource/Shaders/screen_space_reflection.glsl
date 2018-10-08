@@ -91,7 +91,7 @@ vec4 SampleScreenColor(sampler2D texPrevSceneColor, vec2 UV)
 
 }
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
@@ -165,4 +165,4 @@ void main() {
     fs_output.a /= NumRays;
 }
 
-#endif // GL_FRAGMENT_SHADER
+#endif // FRAGMENT_SHADER

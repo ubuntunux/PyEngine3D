@@ -35,7 +35,7 @@ struct VERTEX_OUTPUT
     vec3 sky_irradiance;
 };
 
-#ifdef GL_VERTEX_SHADER
+#ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
 layout (location = 1) in vec4 vs_in_color;
 layout (location = 2) in vec3 vs_in_normal;
@@ -141,7 +141,7 @@ void main()
 #endif
 
 
-#ifdef GL_FRAGMENT_SHADER
+#ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
