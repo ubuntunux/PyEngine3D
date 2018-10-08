@@ -45,7 +45,7 @@ void main() {
     mat4 world_matrix;
     vec3 world_position;
 
-    if(EMITTER_BILLBOARD)
+    if(PARTICLE_BILLBOARD)
     {
         world_matrix = local_matrix;
         world_matrix[3].xyz = vec3(0.0);
@@ -71,7 +71,7 @@ void main() {
         mat4(vec4(vertex_tangent, 0.0), vec4(vertex_normal, 0.0), vec4(bitangent, 0.0), vec4(0.0, 0.0, 0.0, 1.0));
 
     vs_output.projection_pos = VIEW_PROJECTION * vec4(world_position, 1.0);
-    vec2 uv_size = vs_in_tex_coord.xy / vec2(EMITTER_CELL_COUNT);
+    vec2 uv_size = vs_in_tex_coord.xy / vec2(PARTICLE_CELL_COUNT);
     vs_output.uv = uvs.xy + uv_size;
     vs_output.next_uv = uvs.zw + uv_size;
     vs_output.sequence_ratio = sequence_opacity.x;

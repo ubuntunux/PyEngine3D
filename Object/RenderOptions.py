@@ -19,7 +19,7 @@ class RenderOption:
     RENDER_SKELETON_ACTOR = True
     RENDER_ATMOSPHERE = True
     RENDER_OCEAN = True
-    RENDER_PARTICLE = True
+    RENDER_EFFECT = True
 
 
 class RenderingType(AutoEnum):

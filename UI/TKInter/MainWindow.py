@@ -278,9 +278,9 @@ class MainWindow:
         label_frame = ttk.LabelFrame(resource_frame, text='Create Resource')
         label_frame.pack(fill="x", side="top", pady=10)
 
-        button = tk.Button(label_frame, text="Create Particle")
+        button = tk.Button(label_frame, text="Create Effect")
         button.pack(fill="x", side="top")
-        button.bind("<Button-1>", self.create_particle)
+        button.bind("<Button-1>", self.create_effect)
 
         self.resource_menu = tk.Menu(root, tearoff=0)
         self.resource_menu.add_command(label="Load", command=self.load_resource)
@@ -832,8 +832,8 @@ class MainWindow:
     def add_light(self, event):
         self.appCmdQueue.put(COMMAND.ADD_LIGHT)
 
-    def create_particle(self, event):
-        self.appCmdQueue.put(COMMAND.CREATE_PARTICLE)
+    def create_effect(self, event):
+        self.appCmdQueue.put(COMMAND.CREATE_EFFECT)
 
     def open_object_menu(self, event):
         item_id = self.object_treeview.identify('item', event.x, event.y)

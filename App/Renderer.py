@@ -75,10 +75,10 @@ class Renderer(Singleton):
         self.uniform_light_data = None
         self.uniform_point_light_buffer = None
         self.uniform_point_light_data = None
-        self.uniform_emitter_common_buffer = None
-        self.uniform_emitter_common_data = None
-        self.uniform_emitter_infos_buffer = None
-        self.uniform_emitter_infos_data = None
+        self.uniform_particle_common_buffer = None
+        self.uniform_particle_common_data = None
+        self.uniform_particle_infos_buffer = None
+        self.uniform_particle_infos_data = None
 
         # material instances
         self.scene_constants_material = None
@@ -183,48 +183,48 @@ class Renderer(Singleton):
         self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4,
                                                        self.uniform_point_light_data)
 
-        self.uniform_emitter_common_data = np.zeros(1, dtype=[('EMITTER_COLOR', np.float32, 3),
-                                                              ('EMITTER_BILLBOARD', np.int32),
-                                                              ('EMITTER_CELL_COUNT', np.int32, 2),
-                                                              ('EMITTER_LOOP', np.int32),
-                                                              ('EMITTER_BLEND_MODE', np.int32)])
-        self.uniform_emitter_common_buffer = UniformBlock("emitter_common", program, 5,
-                                                          self.uniform_emitter_common_data)
+        self.uniform_particle_common_data = np.zeros(1, dtype=[('PARTICLE_COLOR', np.float32, 3),
+                                                               ('PARTICLE_BILLBOARD', np.int32),
+                                                               ('PARTICLE_CELL_COUNT', np.int32, 2),
+                                                               ('PARTICLE_LOOP', np.int32),
+                                                               ('PARTICLE_BLEND_MODE', np.int32)])
+        self.uniform_particle_common_buffer = UniformBlock("particle_common", program, 5,
+                                                           self.uniform_particle_common_data)
 
-        self.uniform_emitter_infos_data = np.zeros(1, dtype=[
-            ('EMITTER_PARENT_MATRIX', np.float32, (4, 4)),
-            ('EMITTER_PARENT_INVERSE_MATRIX', np.float32, (4, 4)),
-            ('EMITTER_DELAY', np.float32, 2),
-            ('EMITTER_LIFE_TIME', np.float32, 2),
-            ('EMITTER_TRANSFORM_POSITION_MIN', np.float32, 3),
-            ('EMITTER_FORCE_GRAVITY', np.float32),
-            ('EMITTER_TRANSFORM_POSITION_MAX', np.float32, 3),
-            ('EMITTER_FADE_IN', np.float32),
-            ('EMITTER_TRANSFORM_ROTATION_MIN', np.float32, 3),
-            ('EMITTER_FADE_OUT', np.float32),
-            ('EMITTER_TRANSFORM_ROTATION_MAX', np.float32, 3),
-            ('EMITTER_OPACITY', np.float32),
-            ('EMITTER_TRANSFORM_SCALE_MIN', np.float32, 3),
-            ('EMITTER_PLAY_SPEED', np.float32),
-            ('EMITTER_TRANSFORM_SCALE_MAX', np.float32, 3),
-            ('EMITTER_USE_ATOMIC_COUNTER', np.int32),
-            ('EMITTER_VELOCITY_POSITION_MIN', np.float32, 3),
-            ('EMITTER_ENABLE_VECTOR_FIELD', np.int32),
-            ('EMITTER_VELOCITY_POSITION_MAX', np.float32, 3),
-            ('EMITTER_VECTOR_FIELD_STRENGTH', np.float32),
-            ('EMITTER_VELOCITY_ROTATION_MIN', np.float32, 3),
-            ('EMITTER_VECTOR_FIELD_TIGHTNESS', np.float32),
-            ('EMITTER_VELOCITY_ROTATION_MAX', np.float32, 3),
+        self.uniform_particle_infos_data = np.zeros(1, dtype=[
+            ('PARTICLE_PARENT_MATRIX', np.float32, (4, 4)),
+            ('PARTICLE_PARENT_INVERSE_MATRIX', np.float32, (4, 4)),
+            ('PARTICLE_DELAY', np.float32, 2),
+            ('PARTICLE_LIFE_TIME', np.float32, 2),
+            ('PARTICLE_TRANSFORM_POSITION_MIN', np.float32, 3),
+            ('PARTICLE_FORCE_GRAVITY', np.float32),
+            ('PARTICLE_TRANSFORM_POSITION_MAX', np.float32, 3),
+            ('PARTICLE_FADE_IN', np.float32),
+            ('PARTICLE_TRANSFORM_ROTATION_MIN', np.float32, 3),
+            ('PARTICLE_FADE_OUT', np.float32),
+            ('PARTICLE_TRANSFORM_ROTATION_MAX', np.float32, 3),
+            ('PARTICLE_OPACITY', np.float32),
+            ('PARTICLE_TRANSFORM_SCALE_MIN', np.float32, 3),
+            ('PARTICLE_PLAY_SPEED', np.float32),
+            ('PARTICLE_TRANSFORM_SCALE_MAX', np.float32, 3),
+            ('PARTICLE_USE_ATOMIC_COUNTER', np.int32),
+            ('PARTICLE_VELOCITY_POSITION_MIN', np.float32, 3),
+            ('PARTICLE_ENABLE_VECTOR_FIELD', np.int32),
+            ('PARTICLE_VELOCITY_POSITION_MAX', np.float32, 3),
+            ('PARTICLE_VECTOR_FIELD_STRENGTH', np.float32),
+            ('PARTICLE_VELOCITY_ROTATION_MIN', np.float32, 3),
+            ('PARTICLE_VECTOR_FIELD_TIGHTNESS', np.float32),
+            ('PARTICLE_VELOCITY_ROTATION_MAX', np.float32, 3),
             ('dummy_0', np.float32),
-            ('EMITTER_VELOCITY_SCALE_MIN', np.float32, 3),
+            ('PARTICLE_VELOCITY_SCALE_MIN', np.float32, 3),
             ('dummy_1', np.float32),
-            ('EMITTER_VELOCITY_SCALE_MAX', np.float32, 3),
+            ('PARTICLE_VELOCITY_SCALE_MAX', np.float32, 3),
             ('dummy_2', np.float32),
-            ('EMITTER_VECTOR_FIELD_MATRIX', np.float32, (4, 4)),
-            ('EMITTER_VECTOR_FIELD_INV_MATRIX', np.float32, (4, 4))
+            ('PARTICLE_VECTOR_FIELD_MATRIX', np.float32, (4, 4)),
+            ('PARTICLE_VECTOR_FIELD_INV_MATRIX', np.float32, (4, 4))
         ])
-
-        self.uniform_emitter_infos_buffer = UniformBlock("emitter_infos", program, 6, self.uniform_emitter_infos_data)
+        self.uniform_particle_infos_buffer = UniformBlock("particle_infos", program, 6,
+                                                          self.uniform_particle_infos_data)
 
         # set gl hint
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -393,7 +393,7 @@ class Renderer(Singleton):
         old_aspect = camera.aspect
         old_render_font = RenderOption.RENDER_FONT
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
-        old_render_particle = RenderOption.RENDER_PARTICLE
+        old_render_effect = RenderOption.RENDER_EFFECT
 
         old_render_motion_blur = self.postprocess.is_render_motion_blur
         old_antialiasing = self.postprocess.anti_aliasing
@@ -405,7 +405,7 @@ class Renderer(Singleton):
         # set render light probe
         RenderOption.RENDER_LIGHT_PROBE = True
         RenderOption.RENDER_SKELETON_ACTOR = False
-        RenderOption.RENDER_PARTICLE = False
+        RenderOption.RENDER_EFFECT = False
         RenderOption.RENDER_FONT = False
         self.postprocess.is_render_motion_blur = False
         self.postprocess.anti_aliasing = AntiAliasing.NONE_AA
@@ -492,7 +492,7 @@ class Renderer(Singleton):
         # restore
         RenderOption.RENDER_LIGHT_PROBE = False
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
-        RenderOption.RENDER_PARTICLE = old_render_particle
+        RenderOption.RENDER_EFFECT = old_render_effect
         RenderOption.RENDER_FONT = old_render_font
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing
@@ -644,8 +644,8 @@ class Renderer(Singleton):
                            RenderMode.SHADING,
                            self.scene_manager.skeleton_translucent_render_infos)
 
-    def render_particle(self):
-        self.scene_manager.particle_manager.render()
+    def render_effect(self):
+        self.scene_manager.effect_manager.render()
 
     def render_actors(self, render_group, render_mode, render_infos, scene_material_instance=None):
         if len(render_infos) < 1:
@@ -1062,11 +1062,11 @@ class Renderer(Singleton):
             self.render_translucent()
 
             # render particle
-            if RenderOption.RENDER_PARTICLE:
+            if RenderOption.RENDER_EFFECT:
                 glDisable(GL_CULL_FACE)
                 glEnable(GL_BLEND)
 
-                self.render_particle()
+                self.render_effect()
 
                 glDisable(GL_BLEND)
                 glEnable(GL_CULL_FACE)

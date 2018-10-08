@@ -80,7 +80,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.font_manager = None
         self.scene_manager = None
-        self.particle_manager = None
+        self.effect_manager = None
         self.project_manager = None
         self.config = None
 
@@ -111,7 +111,7 @@ class CoreManager(Singleton):
 
         from OpenGLContext import OpenGLContext
         from ResourceManager import ResourceManager
-        from Object import RenderTargetManager, FontManager, RenderOptionManager, ParticleManager
+        from Object import RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .Renderer import Renderer
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
@@ -122,7 +122,7 @@ class CoreManager(Singleton):
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
         self.scene_manager = SceneManager.instance()
-        self.particle_manager = ParticleManager.instance()
+        self.effect_manager = EffectManager.instance()
         self.project_manager = ProjectManager.instance()
 
         # check invalid project
@@ -162,7 +162,7 @@ class CoreManager(Singleton):
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.renderer.resizeScene(width, height)
-        self.particle_manager.initialize(self)
+        self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 
         main_script = self.script_manager = self.resource_manager.get_script('main')
@@ -392,8 +392,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.add_light()
 
         # create resource
-        self.commands[COMMAND.CREATE_PARTICLE.value] = \
-            lambda value: self.resource_manager.particle_loader.create_particle()
+        self.commands[COMMAND.CREATE_EFFECT.value] = \
+            lambda value: self.resource_manager.effect_loader.create_effect()
 
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()
         self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.action_object(value)
@@ -642,7 +642,7 @@ class CoreManager(Singleton):
         render_count += len(self.scene_manager.static_translucent_render_infos)
         self.font_manager.log("Render Count : %d" % render_count)
         self.font_manager.log("Point Lights : %d" % self.scene_manager.point_light_count)
-        self.font_manager.log("Particle Count : %d" % len(self.particle_manager.render_particles))
+        self.font_manager.log("Effect Count : %d" % len(self.effect_manager.render_effects))
 
         # selected object transform info
         selected_object = self.scene_manager.get_selected_object()

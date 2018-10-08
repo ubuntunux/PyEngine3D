@@ -32,7 +32,7 @@ from OpenGL.GL import *
 from Common import *
 from Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
-from Object import ParticleInfo
+from Object import EffectInfo
 from Object.Ocean.Constants import GRID_VERTEX_COUNT
 from OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
@@ -564,7 +564,7 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
-    resource_version = 0.6
+    resource_version = 0.7
     fileExt = '.glsl'
     shader_version = "#version 460 core"
 
@@ -1292,40 +1292,40 @@ class FontLoader(ResourceLoader):
 
 
 # -----------------------#
-# CLASS : ParticleLoader
+# CLASS : EffectLoader
 # -----------------------#
-class ParticleLoader(ResourceLoader):
-    name = "ParticleLoader"
-    resource_dir_name = 'Particles'
-    resource_type_name = 'Particle'
-    fileExt = '.particle'
+class EffectLoader(ResourceLoader):
+    name = "EffectLoader"
+    resource_dir_name = 'Effects'
+    resource_type_name = 'Effect'
+    fileExt = '.effect'
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def create_particle(self):
-        resource = self.create_resource('particle')
-        particle = ParticleInfo(resource.name)
-        resource.set_data(particle)
+    def create_effect(self):
+        resource = self.create_resource('effect')
+        effect = EffectInfo(resource.name)
+        resource.set_data(effect)
         self.save_resource(resource.name)
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
         if resource:
-            particle_info = self.load_resource_data(resource)
-            if particle_info is not None:
-                for emitter_info in particle_info.get('emitter_infos', []):
-                    emitter_info['mesh'] = self.resource_manager.get_mesh(emitter_info.get('mesh'))
-                    emitter_info['material_instance'] = self.resource_manager.get_material_instance(
-                        emitter_info.get('material_instance'))
-                    emitter_info['texture_diffuse'] = self.resource_manager.get_texture(
-                        emitter_info.get('texture_diffuse'))
-                particle_info = ParticleInfo(resource_name, **particle_info)
-                resource.set_data(particle_info)
+            effect_info = self.load_resource_data(resource)
+            if effect_info is not None:
+                for particle_info in effect_info.get('particle_infos', []):
+                    particle_info['mesh'] = self.resource_manager.get_mesh(particle_info.get('mesh'))
+                    particle_info['material_instance'] = self.resource_manager.get_material_instance(
+                        particle_info.get('material_instance'))
+                    particle_info['texture_diffuse'] = self.resource_manager.get_texture(
+                        particle_info.get('texture_diffuse'))
+                effect_info = EffectInfo(resource_name, **effect_info)
+                resource.set_data(effect_info)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
         return False
 
     def action_resource(self, resource_name):
-        self.scene_manager.add_particle(name=resource_name, particle_info=resource_name)
+        self.scene_manager.add_effect(name=resource_name, effect_info=resource_name)
 
 
 # -----------------------#
@@ -1391,7 +1391,7 @@ class ResourceManager(Singleton):
         self.material_instance_loader = None
         self.mesh_loader = None
         self.scene_loader = None
-        self.particle_loader = None
+        self.effect_loader = None
         self.sound_loader = None
         self.script_loader = None
         self.model_loader = None
@@ -1420,7 +1420,7 @@ class ResourceManager(Singleton):
         self.material_instance_loader = self.regist_loader(MaterialInstanceLoader)
         self.mesh_loader = self.regist_loader(MeshLoader)
         self.scene_loader = self.regist_loader(SceneLoader)
-        self.particle_loader = self.regist_loader(ParticleLoader)
+        self.effect_loader = self.regist_loader(EffectLoader)
         self.sound_loader = self.regist_loader(SoundLoader)
         self.script_loader = self.regist_loader(ScriptLoader)
         self.model_loader = self.regist_loader(ModelLoader)
@@ -1565,8 +1565,8 @@ class ResourceManager(Singleton):
                                                                    macros=macros) or \
                self.get_default_material_instance(skeletal=(True if 1 == macros.get('SKELETAL', 0) else 0))
 
-    def get_default_particle_material_instance(self):
-        return self.material_instance_loader.get_material_instance('fx.particle')
+    def get_default_effect_material_instance(self):
+        return self.material_instance_loader.get_material_instance('effect.effect')
 
     def get_default_mesh(self):
         return self.get_mesh('Quad')
@@ -1594,11 +1594,11 @@ class ResourceManager(Singleton):
     def get_scene(self, scene_name):
         return self.scene_loader.get_resource_data(scene_name)
 
-    def get_default_particle(self):
-        return self.particle_loader.get_resource_data('default_particle')
+    def get_default_effect(self):
+        return self.effect_loader.get_resource_data('default_effect')
 
-    def get_particle(self, particle_name):
-        return self.particle_loader.get_resource_data(particle_name) or self.get_default_particle()
+    def get_effect(self, effect_name):
+        return self.effect_loader.get_resource_data(effect_name) or self.get_default_effect()
 
     def get_script(self, script_name):
         return self.script_loader.get_resource_data(script_name)

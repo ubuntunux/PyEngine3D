@@ -12,7 +12,7 @@ from Object import StaticActor, SkeletonActor
 from Object import Camera, MainLight, PointLight, LightProbe
 from Object import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
 from Object import Atmosphere, Ocean
-from Object import Particle
+from Object import Effect
 from Object.RenderOptions import RenderOption
 from Object.RenderTarget import RenderTargets
 from Utilities import Singleton, GetClassName
@@ -24,7 +24,7 @@ class SceneManager(Singleton):
         self.resource_manager = None
         self.scene_loader = None
         self.renderer = None
-        self.particle_manager = None
+        self.effect_manager = None
         self.__current_scene_name = ""
 
         # Scene Objects
@@ -55,15 +55,13 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
 
-        self.particle_render_infos = []
-
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
         self.scene_loader = self.resource_manager.scene_loader
         self.renderer = core_manager.renderer
-        self.particle_manager = core_manager.particle_manager
+        self.effect_manager = core_manager.effect_manager
 
         # new scene
         self.new_scene()
@@ -77,7 +75,7 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notify_clear_scene()
-        self.particle_manager.clear()
+        self.effect_manager.clear()
         self.main_camera = None
         self.main_light = None
         self.main_light_probe = None
@@ -93,8 +91,6 @@ class SceneManager(Singleton):
         self.static_translucent_render_infos = []
         self.skeleton_solid_render_infos = []
         self.skeleton_translucent_render_infos = []
-
-        self.particle_render_infos = []
 
         self.renderer.set_debug_texture(None)
 
@@ -162,8 +158,8 @@ class SceneManager(Singleton):
         for object_data in scene_data.get('skeleton_actors', []):
             self.add_object(**object_data)
 
-        for particle_data in scene_data.get('particles', []):
-            self.add_particle(**particle_data)
+        for effect_data in scene_data.get('effects', []):
+            self.add_effect(**effect_data)
 
         self.post_open_scene()
 
@@ -182,7 +178,7 @@ class SceneManager(Singleton):
             ocean=self.ocean.get_save_data(),
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
-            particles=self.particle_manager.get_save_data()
+            effects=self.effect_manager.get_save_data()
         )
         return scene_data
 
@@ -215,8 +211,8 @@ class SceneManager(Singleton):
             object_list = self.get_object_list(object_type)
             if object_list is not None:
                 object_list.append(obj)
-            elif object_type is Particle:
-                self.particle_manager.add_particle(obj)
+            elif object_type is Effect:
+                self.effect_manager.add_effect(obj)
             self.objectMap[obj.name] = obj
             self.core_manager.send_object_info(obj)
         else:
@@ -228,8 +224,8 @@ class SceneManager(Singleton):
             object_list = self.get_object_list(object_type)
             if object_list is not None:
                 object_list.remove(obj)
-            elif object_type is Particle:
-                self.particle_manager.delete_particle(obj)
+            elif object_type is Effect:
+                self.effect_manager.delete_effect(obj)
             self.objectMap.pop(obj.name)
             self.core_manager.notify_delete_object(obj.name)
 
@@ -275,14 +271,14 @@ class SceneManager(Singleton):
         self.regist_object(light_probe)
         return light_probe
 
-    def add_particle(self, **particle_data):
-        name = self.generate_object_name(particle_data.get('name', 'particle'))
-        particle_data['name'] = name
-        particle_data['particle_info'] = self.resource_manager.get_particle(particle_data.get('particle_info', ''))
+    def add_effect(self, **effect_data):
+        name = self.generate_object_name(effect_data.get('name', 'effect'))
+        effect_data['name'] = name
+        effect_data['effect_info'] = self.resource_manager.get_effect(effect_data.get('effect_info', ''))
         logger.info("add Particle : %s" % name)
-        particle = Particle(**particle_data)
-        self.regist_object(particle)
-        return particle
+        effect = Effect(**effect_data)
+        self.regist_object(effect)
+        return effect
 
     def add_atmosphere(self, **atmosphere_data):
         atmosphere_data['name'] = self.generate_object_name(atmosphere_data.get('name', 'atmosphere'))
@@ -456,9 +452,6 @@ class SceneManager(Singleton):
             if MAX_POINT_LIGHTS <= self.point_light_count:
                 break
 
-    def update_particle_render_info(self):
-        self.particle_render_infos = []
-
     def update_scene(self, dt):
         self.renderer.postprocess.update()
 
@@ -495,4 +488,4 @@ class SceneManager(Singleton):
 
         self.ocean.update(dt)
 
-        self.particle_manager.update(dt)
+        self.effect_manager.update(dt)
