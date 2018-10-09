@@ -564,9 +564,9 @@ class ShaderLoader(ResourceLoader):
     name = "ShaderLoader"
     resource_dir_name = 'Shaders'
     resource_type_name = 'Shader'
-    resource_version = 0.7
+    resource_version = 0.6
     fileExt = '.glsl'
-    shader_version = "#version 460 core"
+    shader_version = "#version 430 core"
 
     def get_shader_version(self):
         return self.shader_version

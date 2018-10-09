@@ -9,7 +9,7 @@
                     'gravity': 20.0,
                     'life_time': {'max_value': 5.0, 'min_value': 1.0},
                     'loop': -1,
-                    'material_instance': 'effect.effect',
+                    'material_instance': 'effect.particles',
                     'mesh': 'Quad',
                     'opacity': 1.0,
                     'play_speed': 0.0,
