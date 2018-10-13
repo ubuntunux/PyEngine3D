@@ -104,12 +104,11 @@ class EffectManager(Singleton):
 
                 geometry = particle_info.mesh.get_geometry()
 
-                # emitter common
+                # common
                 uniform_data = self.renderer.uniform_particle_common_data
                 uniform_data['PARTICLE_COLOR'] = particle_info.color
                 uniform_data['PARTICLE_BILLBOARD'] = particle_info.billboard
                 uniform_data['PARTICLE_CELL_COUNT'] = particle_info.cell_count
-                uniform_data['PARTICLE_LOOP'] = particle_info.loop
                 uniform_data['PARTICLE_BLEND_MODE'] = particle_info.blend_mode.value
                 self.renderer.uniform_particle_common_buffer.bind_uniform_block(data=uniform_data)
 
@@ -146,10 +145,10 @@ class EffectManager(Singleton):
 
                     self.renderer.uniform_particle_infos_buffer.bind_uniform_block(data=uniform_data)
 
-                    for particle in effect.particle_list_group[i]:
+                    for particle in effect.emitters[i].particles:
                         if particle.alive:
                             render_count = particle_info.spawn_count
-                            is_infinite = particle.is_infinite()
+                            is_infinite = particle_info.is_infinite()
 
                             # update gpu particle
                             material_instance = self.material_gpu_update
@@ -189,7 +188,7 @@ class EffectManager(Singleton):
                     material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
 
                     draw_count = 0
-                    for particle in effect.particle_list_group[i]:
+                    for particle in effect.emitters[i].particles:
                         if particle.is_renderable():
                             particle_info.parent_matrix_data[draw_count][...] = particle.parent_matrix
                             particle_info.matrix_data[draw_count][...] = particle.transform.matrix
@@ -201,9 +200,9 @@ class EffectManager(Singleton):
 
                     if 0 < draw_count:
                         self.particle_instance_buffer.bind_instance_buffer(datas=[particle_info.parent_matrix_data,
-                                                                                 particle_info.matrix_data,
-                                                                                 particle_info.uvs_data,
-                                                                                 particle_info.sequence_opacity_data])
+                                                                                  particle_info.matrix_data,
+                                                                                  particle_info.uvs_data,
+                                                                                  particle_info.sequence_opacity_data])
                         geometry.draw_elements_instanced(draw_count)
 
     def view_frustum_culling_effect(self, camera, effect):
@@ -240,7 +239,7 @@ class Effect:
         self.transform.set_scale(effect_data.get('scale', (1.0, 1.0, 1.0)))
 
         self.alive = False
-        self.particle_list_group = []
+        self.emitters = []
         self.attributes = Attributes()
 
     def get_save_data(self):
@@ -275,28 +274,19 @@ class Effect:
         self.alive = True
 
         for particle_info in self.effect_info.particle_infos:
-            particle_list = []
-            if particle_info.enable_gpu_particle:
-                particle = Particle(self, particle_info)
-                particle_list.append(particle)
-            else:
-                for i in range(particle_info.spawn_count):
-                    particle = Particle(self, particle_info)
-                    particle_list.append(particle)
-            self.particle_list_group.append(particle_list)
+            emitter = Emitter(self, particle_info)
+            self.emitters.append(emitter)
 
-        for particle_list in self.particle_list_group:
-            for particle in particle_list:
-                particle.play()
+        for emitter in self.emitters:
+            emitter.play()
 
     def destroy(self):
         self.alive = False
 
-        for particle_list in self.particle_list_group:
-            for particle in particle_list:
-                particle.destroy()
+        for emitter in self.emitters:
+            emitter.destroy()
 
-        self.particle_list_group = []
+        self.emitters = []
 
     def update(self, dt):
         if not self.alive:
@@ -306,46 +296,26 @@ class Effect:
 
         is_alive = self.alive
 
-        for particle_list in self.particle_list_group:
-            for particle in particle_list:
-                particle.update(dt)
-                is_alive = is_alive or particle.alive
+        for emitter in self.emitters:
+            emitter.update(dt)
+            is_alive = is_alive or emitter.alive
 
         if not is_alive:
             self.destroy()
 
 
-class Particle:
-    def __init__(self, parent, particle_info):
-        self.parent = parent
+class Emitter:
+    def __init__(self, parent_effect, particle_info):
+        self.parent_effect = parent_effect
         self.particle_info = particle_info
         self.alive = False
         self.elapsed_time = 0.0
+        self.last_spawned_time = 0.0
+        self.particles = []
 
-        # sequence
-        self.loop_remain = 0
-        self.total_cell_count = 0
-        self.sequence_uv = [0.0, 0.0]
-        self.next_sequence_uv = [0.0, 0.0]
-        self.sequence_ratio = 0.0
-        self.sequence_index = 0
-        self.next_sequence_index = 0
-
-        self.delay = 0.0
-        self.life_time = 0.0
-        self.velocity_position = Float3()
-        self.velocity_rotation = Float3()
-        self.velocity_scale = Float3()
-
-        self.has_velocity_position = False
-        self.has_velocity_rotation = False
-        self.has_velocity_scale = False
-
-        self.final_opacity = 1.0
-        self.force = Float3()
-
-        self.transform = TransformObject()
-        self.parent_matrix = MATRIX4_IDENTITY.copy()
+        self.alive_index_list = []
+        self.dead_index_list = []
+        self.spawned_count = self.particle_info.spawn_count
 
         # gpu data
         self.particle_gpu_data = None
@@ -354,51 +324,10 @@ class Particle:
         self.particle_counter_buffer = None
         self.gpu_particle_count = 0
 
-    def refresh(self):
-        self.total_cell_count = self.particle_info.cell_count[0] * self.particle_info.cell_count[1]
-
-        if self.particle_info.enable_gpu_particle:
-            # GPU Particle
-            self.gpu_particle_count = self.particle_info.spawn_count
-            self.delay = self.particle_info.delay.get_max()
-            self.life_time = self.particle_info.life_time.get_max()
-        else:
-            # CPU Particle
-            self.delay = self.particle_info.delay.get_uniform()
-            self.life_time = self.particle_info.life_time.get_uniform()
-
-            self.velocity_position[...] = self.particle_info.velocity_position.get_uniform()
-            self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
-            self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
-
-            self.transform.set_pos(self.particle_info.transform_position.get_uniform())
-            self.transform.set_rotation(self.particle_info.transform_rotation.get_uniform())
-            self.transform.set_scale(self.particle_info.transform_scale.get_uniform())
-
-            # Store metrics at the time of spawn.
-            self.parent_matrix[...] = self.parent.transform.matrix
-
-            # We will apply inverse_matrix here because we will apply parent_matrix later.
-            self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0, 1.0],
-                                     self.parent.transform.inverse_matrix)[:3]
-
-            self.has_velocity_position = \
-                any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
-            self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
-            self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
-
-            self.final_opacity = self.particle_info.opacity
-
-        # gpu buffer
-        if self.particle_info.enable_gpu_particle:
-            self.create_gpu_buffer()
-        else:
-            self.delete_gpu_buffer()
-
-    def create_gpu_buffer(self):
+    def create_gpu_buffer(self, count):
         self.delete_gpu_buffer()
 
-        count = self.particle_info.spawn_count
+        self.gpu_particle_count = count
 
         self.particle_gpu_data = np.zeros(count, dtype=[('parent_matrix', np.float32, 16),
                                                         ('local_matrix', np.float32, 16),
@@ -440,14 +369,130 @@ class Particle:
             self.particle_counter_buffer = None
 
     def play(self):
-        self.refresh()
+        self.alive = True
 
-        if 0.0 == self.life_time or 0 == self.particle_info.loop:
-            self.destroy()
+        particle_info = self.particle_info
+
+        if particle_info.enable_gpu_particle:
+            # GPU Particle
+            self.create_gpu_buffer(particle_info.max_particle_count)
+            particle = Particle(self.parent_effect, self, particle_info)
+            self.particles.append(particle)
+        else:
+            # CPU Particle
+            for i in range(particle_info.max_particle_count):
+                particle = Particle(self.parent_effect, self, particle_info)
+                self.particles.append(particle)
+
+        self.spawn_particle()
+
+    def spawn_particle(self):
+        self.alive_index_list = []
+        self.dead_index_list = []
+        self.spawned_count = self.particle_info.spawn_count
+
+        for particle in self.particles:
+            particle.spawn()
+
+    def destroy(self):
+        self.alive = False
+
+        for particle in self.particles:
+            particle.destroy()
+
+        self.particles = []
+
+    def update(self, dt):
+        if not self.alive:
             return
 
+        self.elapsed_time += dt
+
+        if self.particle_info.spawn_term == 0.0:
+            self.spawn_particle()
+        else:
+            spawn_num = math.ceil(dt / self.particle_info.spawn_term)
+
+        is_alive = self.alive
+
+        for particle in self.particles:
+            particle.update(dt)
+            is_alive = is_alive or particle.alive
+
+        if not is_alive:
+            self.destroy()
+
+
+class Particle:
+    def __init__(self, parent_effect, parent_emitter, particle_info):
+        self.parent_effect = parent_effect
+        self.parent_emitter = parent_emitter
+        self.particle_info = particle_info
+        self.alive = False
+        self.elapsed_time = 0.0
+
+        # sequence
+        self.total_cell_count = 0
+        self.sequence_uv = [0.0, 0.0]
+        self.next_sequence_uv = [0.0, 0.0]
+        self.sequence_ratio = 0.0
+        self.sequence_index = 0
+        self.next_sequence_index = 0
+
+        self.delay = 0.0
+        self.life_time = 0.0
+        self.velocity_position = Float3()
+        self.velocity_rotation = Float3()
+        self.velocity_scale = Float3()
+
+        self.has_velocity_position = False
+        self.has_velocity_rotation = False
+        self.has_velocity_scale = False
+
+        self.final_opacity = 1.0
+        self.force = Float3()
+
+        self.transform = TransformObject()
+        self.parent_matrix = MATRIX4_IDENTITY.copy()
+
+    def initialize(self):
+        self.total_cell_count = self.particle_info.cell_count[0] * self.particle_info.cell_count[1]
+
+        if self.particle_info.enable_gpu_particle:
+            # GPU Particle
+            self.delay = self.particle_info.delay.get_max()
+            self.life_time = self.particle_info.life_time.get_max()
+        else:
+            # CPU Particle
+            self.delay = self.particle_info.delay.get_uniform()
+            self.life_time = self.particle_info.life_time.get_uniform()
+
+            self.velocity_position[...] = self.particle_info.velocity_position.get_uniform()
+            self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
+            self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
+
+            self.transform.set_pos(self.particle_info.transform_position.get_uniform())
+            self.transform.set_rotation(self.particle_info.transform_rotation.get_uniform())
+            self.transform.set_scale(self.particle_info.transform_scale.get_uniform())
+
+            # Store metrics at the time of spawn.
+            self.parent_matrix[...] = self.parent_effect.transform.matrix
+
+            # We will apply inverse_matrix here because we will apply parent_matrix later.
+            self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0, 1.0],
+                                     self.parent_effect.transform.inverse_matrix)[:3]
+
+            self.has_velocity_position = \
+                any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
+            self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
+            self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
+
+            self.final_opacity = self.particle_info.opacity
+
+    def spawn(self):
+        self.initialize()
+
         self.alive = True
-        self.loop_remain = self.particle_info.loop
         self.elapsed_time = 0.0
         self.sequence_ratio = 0.0
         self.sequence_index = 0
@@ -455,13 +500,9 @@ class Particle:
 
     def destroy(self):
         self.alive = False
-        self.delete_gpu_buffer()
 
     def is_renderable(self):
-        return self.alive and (0.0 == self.delay)
-
-    def is_infinite(self):
-        return self.loop_remain < 0
+        return self.alive and (self.delay <= 0.0)
 
     def update_sequence(self, life_ratio):
         if 1 < self.total_cell_count and 0 < self.particle_info.play_speed:
@@ -486,12 +527,6 @@ class Particle:
         if not self.alive:
             return
 
-        # gpu particle - atomic counter manage
-        if self.particle_info.enable_gpu_particle and EffectManager.USE_ATOMIC_COUNTER:
-            if 0 == self.gpu_particle_count and not self.is_infinite():
-                self.destroy()
-            return
-
         if 0.0 < self.delay:
             self.delay -= dt
             if self.delay < 0.0:
@@ -504,17 +539,17 @@ class Particle:
         if self.life_time < self.elapsed_time:
             self.elapsed_time %= self.life_time
 
-            if 0 < self.loop_remain:
-                self.loop_remain -= 1
+            # if 0 < self.loop_remain:
+            #     self.loop_remain -= 1
+            #
+            # if 0 == self.loop_remain:
+            #     self.destroy()
+            #     return
 
-            if 0 == self.loop_remain:
-                self.destroy()
-                return
+            self.initialize()
 
-            self.refresh()
-
-        # gpu particle - application manage
-        if self.particle_info.enable_gpu_particle and not EffectManager.USE_ATOMIC_COUNTER:
+        if self.particle_info.enable_gpu_particle:
+            # gpu particle, just return.
             return
 
         life_ratio = 0.0
@@ -603,8 +638,9 @@ class EffectInfo:
             if 2 == count:
                 particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
             else:
-                if hasattr(particle_info, item_info_history[2].attribute_name):
-                    particle_attribute = getattr(particle_info, item_info_history[2].attribute_name)
+                particle_attribute_name = item_info_history[2].attribute_name
+                if hasattr(particle_info, particle_attribute_name):
+                    particle_attribute = getattr(particle_info, particle_attribute_name)
                     if type(particle_attribute) in (tuple, list, np.ndarray):
                         particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
                     elif isinstance(particle_attribute, RangeVariable):
@@ -612,9 +648,10 @@ class EffectInfo:
                             particle_attribute.set_range(attribute_value, particle_attribute.value[1])
                         elif 'max_value' == attribute_name:
                             particle_attribute.set_range(particle_attribute.value[0], attribute_value)
+                    # notify
+                    particle_info.notify_attribute_changed(particle_attribute_name)
                 else:
                     particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
-
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
         # refresh
@@ -637,11 +674,16 @@ class EffectInfo:
 class ParticleInfo:
     def __init__(self, **particle_info):
         self.particle_info = particle_info
-        self.name = particle_info.get('name', 'Emitter')
+        self.name = particle_info.get('name', 'Particle')
         self.blend_mode = BlendMode(particle_info.get('blend_mode', 0))
         self.enable = particle_info.get('enable', True)
         self.enable_gpu_particle = particle_info.get('enable_gpu_particle', True)
+
+        self.max_particle_count = particle_info.get('max_particle_count', 1)
         self.spawn_count = particle_info.get('spawn_count', 1)
+        self.spawn_term = particle_info.get('spawn_term', 0.1)
+        self.spawn_time = particle_info.get('spawn_time', 0.0)
+
         self.billboard = particle_info.get('billboard', True)
         self.color = particle_info.get('color', Float3(1.0, 1.0, 1.0))
         self.play_speed = particle_info.get('play_speed', 0.0)
@@ -658,7 +700,6 @@ class ParticleInfo:
         self.material_instance = particle_info.get('material_instance') or default_material_instance
         self.texture_diffuse = particle_info.get('texture_diffuse') or texture_white
 
-        self.loop = particle_info.get('loop', -1)  # -1 is infinite
         self.cell_count = np.array(particle_info.get('cell_count', [1, 1]), dtype=np.int32)
 
         self.delay = RangeVariable(**particle_info.get('delay', dict(min_value=0.0)))
@@ -692,14 +733,23 @@ class ParticleInfo:
 
         self.attributes = Attributes()
 
-        self.set_spawn_count(self.spawn_count)
+        self.refresh_spawn_count()
 
-    def set_spawn_count(self, spawn_count):
-        self.spawn_count = spawn_count
-        self.parent_matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
-        self.matrix_data = np.zeros(self.spawn_count, dtype=(np.float32, (4, 4)))
-        self.uvs_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
-        self.sequence_opacity_data = np.zeros(self.spawn_count, dtype=(np.float32, 4))
+    def is_infinite(self):
+        return self.spawn_time <= 0.0
+
+    def refresh_spawn_count(self):
+        if self.spawn_term == 0.0:
+            # emitte particles at once
+            self.max_particle_count = self.spawn_count
+        else:
+            total_time = self.delay.get_max() + self.life_time.get_max()
+            self.max_particle_count = self.spawn_count * math.ceil(total_time / self.spawn_term)
+
+        self.parent_matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
+        self.matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
+        self.uvs_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
+        self.sequence_opacity_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
 
     def update_vector_field_matrix(self):
         self.vector_field_transform.set_pos(self.vector_field_position)
@@ -712,6 +762,8 @@ class ParticleInfo:
             enable=self.enable,
             blend_mode=self.blend_mode.value,
             spawn_count=self.spawn_count,
+            spawn_term=self.spawn_term,
+            spawn_time=self.spawn_time,
             billboard=self.billboard,
             color=self.color,
             enable_gpu_particle=self.enable_gpu_particle,
@@ -722,7 +774,6 @@ class ParticleInfo:
             opacity=self.opacity,
             fade_in=self.fade_in,
             fade_out=self.fade_out,
-            loop=self.loop,
             cell_count=self.cell_count.tolist(),
             delay=self.delay.get_save_data(),
             life_time=self.life_time.get_save_data(),
@@ -784,9 +835,13 @@ class ParticleInfo:
             elif 'vector_field_scale' == attribute_name:
                 self.vector_field_scale[...] = attribute_value
                 self.update_vector_field_matrix()
-            elif 'spawn_count' == attribute_name:
-                self.set_spawn_count(attribute_value)
             elif 'cell_count' == attribute_name:
                 self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)
+
+            self.notify_attribute_changed(attribute_name)
+
+    def notify_attribute_changed(self, attribute_name):
+        if attribute_name in ('delay', 'life_time', 'spawn_count', 'spawn_term', 'spawn_time'):
+            self.refresh_spawn_count()

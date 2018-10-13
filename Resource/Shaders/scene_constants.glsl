@@ -63,8 +63,8 @@ layout(std140, binding=5) uniform particle_common
     vec3 PARTICLE_COLOR;
     bool PARTICLE_BILLBOARD;
     ivec2 PARTICLE_CELL_COUNT;
-    int PARTICLE_LOOP;
     int PARTICLE_BLEND_MODE;
+    int PARTICLE_COMMON_DUMMY_0;
 };
 
 layout(std140, binding=6) uniform particle_infos

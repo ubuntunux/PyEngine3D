@@ -183,11 +183,13 @@ class Renderer(Singleton):
         self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4,
                                                        self.uniform_point_light_data)
 
-        self.uniform_particle_common_data = np.zeros(1, dtype=[('PARTICLE_COLOR', np.float32, 3),
-                                                               ('PARTICLE_BILLBOARD', np.int32),
-                                                               ('PARTICLE_CELL_COUNT', np.int32, 2),
-                                                               ('PARTICLE_LOOP', np.int32),
-                                                               ('PARTICLE_BLEND_MODE', np.int32)])
+        self.uniform_particle_common_data = np.zeros(1, dtype=[
+            ('PARTICLE_COLOR', np.float32, 3),
+            ('PARTICLE_BILLBOARD', np.int32),
+            ('PARTICLE_CELL_COUNT', np.int32, 2),
+            ('PARTICLE_BLEND_MODE', np.int32),
+            ('PARTICLE_COMMON_DUMMY_0', np.int32)
+        ])
         self.uniform_particle_common_buffer = UniformBlock("particle_common", program, 5,
                                                            self.uniform_particle_common_data)
 
