@@ -308,14 +308,12 @@ class Emitter:
     def __init__(self, parent_effect, particle_info):
         self.parent_effect = parent_effect
         self.particle_info = particle_info
+
         self.alive = False
         self.elapsed_time = 0.0
         self.last_spawned_time = 0.0
+        self.alive_particle_count = 0
         self.particles = []
-
-        self.alive_index_list = []
-        self.dead_index_list = []
-        self.spawned_count = self.particle_info.spawn_count
 
         # gpu data
         self.particle_gpu_data = None
@@ -368,8 +366,16 @@ class Emitter:
             self.particle_counter_buffer.delete()
             self.particle_counter_buffer = None
 
+    def is_infinite_emitter(self):
+        return self.particle_info.spawn_time <= 0.0
+
     def play(self):
+        self.destroy()
+
         self.alive = True
+        self.elapsed_time = 0.0
+        self.last_spawned_time = 0.0
+        self.alive_particle_count = 0
 
         particle_info = self.particle_info
 
@@ -384,15 +390,19 @@ class Emitter:
                 particle = Particle(self.parent_effect, self, particle_info)
                 self.particles.append(particle)
 
+        # spawn at first time
         self.spawn_particle()
 
     def spawn_particle(self):
-        self.alive_index_list = []
-        self.dead_index_list = []
-        self.spawned_count = self.particle_info.spawn_count
-
-        for particle in self.particles:
-            particle.spawn()
+        if self.alive_particle_count < self.particle_info.max_particle_count:
+            available_spawn_count = min(self.particle_info.spawn_count,
+                                        self.particle_info.max_particle_count - self.alive_particle_count)
+            for i in range(available_spawn_count):
+                index = self.alive_particle_count
+                if index < self.particle_info.max_particle_count:
+                    particle = self.particles[index]
+                    particle.spawn()
+                    self.alive_particle_count += 1
 
     def destroy(self):
         self.alive = False
@@ -408,18 +418,38 @@ class Emitter:
 
         self.elapsed_time += dt
 
-        if self.particle_info.spawn_term == 0.0:
-            self.spawn_particle()
-        else:
-            spawn_num = math.ceil(dt / self.particle_info.spawn_term)
+        # spawn particles
+        if self.is_infinite_emitter() or self.elapsed_time < self.particle_info.spawn_time:
+            if self.particle_info.spawn_term <= 0.0:
+                self.spawn_particle()
+            else:
+                next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
+                while next_spawn_time < self.elapsed_time:
+                    self.spawn_particle()
+                    self.last_spawned_time = next_spawn_time
+                    next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
 
-        is_alive = self.alive
+        alive_count = 0
 
-        for particle in self.particles:
+        for index in range(self.alive_particle_count):
+            particle = self.particles[index]
             particle.update(dt)
-            is_alive = is_alive or particle.alive
 
-        if not is_alive:
+            if particle.alive:
+                alive_count += 1
+            else:
+                if self.alive_particle_count == 1:
+                    # all dead.
+                    self.alive_particle_count = 0
+                else:
+                    self.alive_particle_count -= 1
+                    # If it's not the last particle.
+                    if index != self.alive_particle_count:
+                        # swap the present and the last.
+                        last_particle = self.particles[self.alive_particle_count]
+                        self.particles[index], self.particles[self.alive_particle_count] = last_particle, particle
+
+        if 0 == alive_count and not self.is_infinite_emitter() and self.particle_info.spawn_time < self.elapsed_time:
             self.destroy()
 
 
@@ -504,6 +534,9 @@ class Particle:
     def is_renderable(self):
         return self.alive and (self.delay <= 0.0)
 
+    def is_infinite_particle(self):
+        return self.particle_info.life_time.get_max() <= 0.0
+
     def update_sequence(self, life_ratio):
         if 1 < self.total_cell_count and 0 < self.particle_info.play_speed:
             ratio = life_ratio * self.particle_info.play_speed
@@ -537,16 +570,8 @@ class Particle:
         self.elapsed_time += dt
 
         if self.life_time < self.elapsed_time:
-            self.elapsed_time %= self.life_time
-
-            # if 0 < self.loop_remain:
-            #     self.loop_remain -= 1
-            #
-            # if 0 == self.loop_remain:
-            #     self.destroy()
-            #     return
-
-            self.initialize()
+            self.destroy()
+            return
 
         if self.particle_info.enable_gpu_particle:
             # gpu particle, just return.
@@ -734,9 +759,6 @@ class ParticleInfo:
         self.attributes = Attributes()
 
         self.refresh_spawn_count()
-
-    def is_infinite(self):
-        return self.spawn_time <= 0.0
 
     def refresh_spawn_count(self):
         if self.spawn_term == 0.0:
