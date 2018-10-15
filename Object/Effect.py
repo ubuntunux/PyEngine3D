@@ -397,8 +397,10 @@ class Emitter:
         if self.alive_particle_count < self.particle_info.max_particle_count:
             available_spawn_count = min(self.particle_info.spawn_count,
                                         self.particle_info.max_particle_count - self.alive_particle_count)
-            for i in range(available_spawn_count):
-                index = self.alive_particle_count
+            
+            index = self.alive_particle_count
+            
+            for i in range(available_spawn_count):                
                 if index < self.particle_info.max_particle_count:
                     particle = self.particles[index]
                     particle.spawn()
