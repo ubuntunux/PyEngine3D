@@ -65,8 +65,8 @@ void update_sequence(uint id, float life_ratio)
         float ratio = life_ratio * PARTICLE_PLAY_SPEED;
         ratio = float(particle_total_cell_count - 1) * (ratio - floor(ratio));
 
-        int index = clamp(int(floor(ratio)), 0, particle_total_cell_count - 1);
-        int next_index = (index == (particle_total_cell_count - 1)) ? 0 : index + 1;
+        int index = int(ratio);
+        int next_index = min(index + 1, particle_total_cell_count - 1);
 
         particle_datas[id].sequence_ratio = ratio - float(index);
 

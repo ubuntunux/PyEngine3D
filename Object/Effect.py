@@ -367,7 +367,7 @@ class Emitter:
             self.particle_counter_buffer = None
 
     def is_infinite_emitter(self):
-        return self.particle_info.spawn_time <= 0.0
+        return self.particle_info.spawn_end_time < 0.0
 
     def play(self):
         self.destroy()
@@ -391,16 +391,12 @@ class Emitter:
         self.spawn_particle()
 
     def spawn_particle(self):
-        if self.alive_particle_count < self.particle_info.max_particle_count:
-            available_spawn_count = min(self.particle_info.spawn_count,
-                                        self.particle_info.max_particle_count - self.alive_particle_count)
-            
-            index = self.alive_particle_count
-            
-            for i in range(available_spawn_count):                
-                if index < self.particle_info.max_particle_count:
-                    self.particles[index].spawn()
-                    self.alive_particle_count += 1
+        available_spawn_count = min(self.particle_info.spawn_count, self.particle_info.max_particle_count - self.alive_particle_count)
+        if 0 < available_spawn_count:
+            begin_index = self.alive_particle_count
+            for i in range(available_spawn_count):
+                self.particles[begin_index + i].spawn()
+            self.alive_particle_count += available_spawn_count
 
     def destroy(self):
         self.alive = False
@@ -416,38 +412,39 @@ class Emitter:
 
         self.elapsed_time += dt
 
-        # spawn particles
-        if self.is_infinite_emitter() or self.elapsed_time < self.particle_info.spawn_time:
-            if self.particle_info.spawn_term <= 0.0:
-                self.spawn_particle()
-            else:
-                next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
-                while next_spawn_time < self.elapsed_time:
-                    self.spawn_particle()
-                    self.last_spawned_time = next_spawn_time
-                    next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
-
-        alive_count = 0
-
-        for index in range(self.alive_particle_count):
+        # update particles
+        index = 0
+        alive_count = self.alive_particle_count
+        for n in range(alive_count):
             particle = self.particles[index]
             particle.update(dt)
 
-            if particle.alive:
-                alive_count += 1
-            else:
-                if self.alive_particle_count == 1:
-                    # all dead.
-                    self.alive_particle_count = 0
-                else:
-                    self.alive_particle_count -= 1
-                    # If it's not the last particle.
-                    if index != self.alive_particle_count:
-                        # swap the present and the last.
-                        last_particle = self.particles[self.alive_particle_count]
-                        self.particles[index], self.particles[self.alive_particle_count] = last_particle, particle
+            if not particle.alive:
+                self.alive_particle_count -= 1
+                last_particle_index = self.alive_particle_count
+                if 0 < self.alive_particle_count:
+                    # swap the present and the last.
+                    if index != last_particle_index:
+                        self.particles[index] = self.particles[last_particle_index]
+                        self.particles[last_particle_index] = particle
+                        continue
+            index += 1
 
-        if 0 == alive_count and not self.is_infinite_emitter() and self.particle_info.spawn_time < self.elapsed_time:
+        # spawn particles
+        if self.is_infinite_emitter() or self.elapsed_time < self.particle_info.spawn_end_time:
+            if self.particle_info.spawn_term <= 0.0:
+                # continuously spawn
+                self.spawn_particle()
+            else:
+                next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
+                available_spawn_count = self.particle_info.max_particle_count - self.alive_particle_count
+                while next_spawn_time < self.elapsed_time and self.particle_info.spawn_count <= available_spawn_count:
+                    self.spawn_particle()
+                    self.last_spawned_time = next_spawn_time
+                    next_spawn_time = self.last_spawned_time + self.particle_info.spawn_term
+                    available_spawn_count -= self.particle_info.spawn_count
+
+        if 0 == self.alive_particle_count and not self.is_infinite_emitter() and self.particle_info.spawn_end_time < self.elapsed_time:
             self.destroy()
 
 
@@ -538,9 +535,9 @@ class Particle:
     def update_sequence(self, life_ratio):
         if 1 < self.total_cell_count and 0 < self.particle_info.play_speed:
             ratio = life_ratio * self.particle_info.play_speed
-            ratio = self.total_cell_count * (ratio - math.floor(ratio))
+            ratio = (self.total_cell_count - 1) * (ratio - math.floor(ratio))
             index = math.floor(ratio)
-            next_index = (index + 1) % self.total_cell_count
+            next_index = min(index + 1, self.total_cell_count - 1)
             self.sequence_ratio = ratio - index
 
             if next_index == self.next_sequence_index:
@@ -577,7 +574,7 @@ class Particle:
 
         life_ratio = 0.0
         if 0.0 < self.life_time:
-            life_ratio = self.elapsed_time / self.life_time
+            life_ratio = min(1.0, self.elapsed_time / self.life_time)
 
         self.update_sequence(life_ratio)
 
@@ -705,7 +702,7 @@ class ParticleInfo:
         self.max_particle_count = particle_info.get('max_particle_count', 1)
         self.spawn_count = particle_info.get('spawn_count', 1)
         self.spawn_term = particle_info.get('spawn_term', 0.1)
-        self.spawn_time = particle_info.get('spawn_time', 0.0)
+        self.spawn_end_time = particle_info.get('spawn_end_time', -1.0)
 
         self.billboard = particle_info.get('billboard', True)
         self.color = particle_info.get('color', Float3(1.0, 1.0, 1.0))
@@ -783,7 +780,7 @@ class ParticleInfo:
             blend_mode=self.blend_mode.value,
             spawn_count=self.spawn_count,
             spawn_term=self.spawn_term,
-            spawn_time=self.spawn_time,
+            spawn_end_time=self.spawn_end_time,
             billboard=self.billboard,
             color=self.color,
             enable_gpu_particle=self.enable_gpu_particle,
