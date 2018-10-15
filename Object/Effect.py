@@ -380,15 +380,12 @@ class Emitter:
         particle_info = self.particle_info
 
         if particle_info.enable_gpu_particle:
-            # GPU Particle
+            # GPU Particle - create only one particle
             self.create_gpu_buffer(particle_info.max_particle_count)
-            particle = Particle(self.parent_effect, self, particle_info)
-            self.particles.append(particle)
+            self.particles = [Particle(self.parent_effect, self, particle_info), ]
         else:
             # CPU Particle
-            for i in range(particle_info.max_particle_count):
-                particle = Particle(self.parent_effect, self, particle_info)
-                self.particles.append(particle)
+            self.particles = [Particle(self.parent_effect, self, particle_info) for i in range(particle_info.max_particle_count)]
 
         # spawn at first time
         self.spawn_particle()
