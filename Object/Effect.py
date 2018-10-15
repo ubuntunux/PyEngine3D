@@ -402,8 +402,7 @@ class Emitter:
             
             for i in range(available_spawn_count):                
                 if index < self.particle_info.max_particle_count:
-                    particle = self.particles[index]
-                    particle.spawn()
+                    self.particles[index].spawn()
                     self.alive_particle_count += 1
 
     def destroy(self):
