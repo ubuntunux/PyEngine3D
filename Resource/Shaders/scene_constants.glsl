@@ -117,15 +117,21 @@ struct ParticleData
     float sequence_ratio;
     int sequence_index;
     int next_sequence_index;
-    int loop_remain;
-    vec3 force;
     int state;
+    vec3 force;
+    float dummy_0;
     vec3 transform_position;
+    float dummy_1;
     vec3 transform_rotation;
+    float dummy_2;
     vec3 transform_scale;
+    float dummy_3;
     vec3 velocity_position;
+    float dummy_4;
     vec3 velocity_rotation;
+    float dummy_5;
     vec3 velocity_scale;
+    float dummy_6;
 };
 
 // referene : RenderOptions.py

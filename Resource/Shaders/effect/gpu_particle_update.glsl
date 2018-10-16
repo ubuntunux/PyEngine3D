@@ -15,7 +15,7 @@ layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
 layout( binding=1 ) uniform atomic_uint particle_counter;
 
-void refresh(uint id)
+void spawn_particle(uint id)
 {
     // initialize
     float t1 = rand(vec2(TIME, float(id) + PI));
@@ -53,6 +53,11 @@ void refresh(uint id)
     // We will apply inverse_matrix here because we will apply parent_matrix later.
     particle_datas[id].force = (PARTICLE_PARENT_INVERSE_MATRIX * vec4(0.0, -PARTICLE_FORCE_GRAVITY, 0.0, 1.0)).xyz;
     particle_datas[id].local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+    particle_datas[id].elapsed_time = 0.0;
+    particle_datas[id].sequence_ratio = 0.0;
+    particle_datas[id].sequence_index = 0;
+    particle_datas[id].next_sequence_index = 0;
 }
 
 
@@ -153,39 +158,24 @@ void main()
         return;
     }
 
-    // particle count
-    const bool is_infinite = PARTICLE_LOOP < 0;
-    if(!is_infinite && PARTICLE_USE_ATOMIC_COUNTER)
-    {
-        uint particle_count = atomicCounterIncrement( particle_counter );
-    }
-
     if(PARTICLE_STATE_NONE == particle_datas[id].state)
     {
-        refresh(id);
-
-        if(0 == PARTICLE_LOOP)
-        {
-            particle_datas[id].state = PARTICLE_STATE_DEAD;
-            return;
-        }
-
-        particle_datas[id].loop_remain = PARTICLE_LOOP;
-        particle_datas[id].elapsed_time = 0.0;
-        particle_datas[id].sequence_ratio = 0.0;
-        particle_datas[id].sequence_index = 0;
-        particle_datas[id].next_sequence_index = 0;
+        spawn_particle(id);
     }
 
     if(PARTICLE_STATE_DELAY == particle_datas[id].state)
     {
         particle_datas[id].delay -= DELTA_TIME;
-        if(0.0 == particle_datas[id].life_time || 0.0 < particle_datas[id].delay)
+        if(0.0 < particle_datas[id].delay)
+        {
+            particle_datas[id].elapsed_time = abs(particle_datas[id].delay);
+            particle_datas[id].delay = 0.0;
+            particle_datas[id].state = PARTICLE_STATE_ALIVE;
+        }
+        else
         {
             return;
         }
-        particle_datas[id].delay = 0.0;
-        particle_datas[id].state = PARTICLE_STATE_ALIVE;
     }
 
     if(PARTICLE_STATE_ALIVE == particle_datas[id].state)
@@ -194,20 +184,10 @@ void main()
 
         if(particle_datas[id].life_time < particle_datas[id].elapsed_time)
         {
-            particle_datas[id].elapsed_time = mod(particle_datas[id].elapsed_time, particle_datas[id].life_time);
-
-            if(0 < particle_datas[id].loop_remain)
-            {
-                particle_datas[id].loop_remain -= 1;
-            }
-
-            if(0 == particle_datas[id].loop_remain)
-            {
-                particle_datas[id].state = PARTICLE_STATE_DEAD;
-                return;
-            }
-
-            refresh(id);
+            // for respawn
+            particle_datas[id].state = PARTICLE_STATE_NONE;
+            //particle_datas[id].state = PARTICLE_STATE_DEAD;
+            return;
         }
 
         float life_ratio = 0.0;

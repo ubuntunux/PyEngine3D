@@ -82,8 +82,9 @@ class EffectManager(Singleton):
         prev_blend_mode = None
 
         for effect in self.render_effects:
-            for i, particle_info in enumerate(effect.effect_info.particle_infos):
-                if not particle_info.enable:
+            for emitter in effect.emitters:
+                particle_info = emitter.particle_info
+                if not particle_info.enable or not emitter.alive:
                     continue
 
                 # set blend mode
@@ -145,41 +146,28 @@ class EffectManager(Singleton):
 
                     self.renderer.uniform_particle_infos_buffer.bind_uniform_block(data=uniform_data)
 
-                    for particle in effect.emitters[i].particles:
-                        if particle.alive:
-                            render_count = particle_info.spawn_count
-                            is_infinite = particle_info.is_infinite()
+                    render_count = emitter.gpu_particle_count
 
-                            # update gpu particle
-                            material_instance = self.material_gpu_update
-                            material_instance.use_program()
-                            material_instance.bind_material_instance()
+                    # update gpu particle
+                    material_instance = self.material_gpu_update
+                    material_instance.use_program()
+                    material_instance.bind_material_instance()
 
-                            if particle_info.enable_vector_field:
-                                material_instance.bind_uniform_data('texture_vector_field',
-                                                                    particle_info.texture_vector_field)
+                    if particle_info.enable_vector_field:
+                        material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
 
-                            # set gpu buffer
-                            particle.particle_gpu_buffer.bind_storage_buffer()
+                    emitter.particle_gpu_buffer.bind_storage_buffer()
 
-                            # reset to 0
-                            if not is_infinite and EffectManager.USE_ATOMIC_COUNTER:
-                                particle.particle_counter_buffer.bind_atomic_counter_buffer(data=particle.particle_counter)
+                    glDispatchCompute(render_count, 1, 1)
+                    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
-                            glDispatchCompute(render_count, 1, 1)
-                            glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                    # render gpu particle
+                    material_instance = self.material_gpu_particle
+                    material_instance.use_program()
+                    material_instance.bind_material_instance()
+                    material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
 
-                            if not is_infinite and EffectManager.USE_ATOMIC_COUNTER:
-                                # too slow..
-                                particle.gpu_particle_count = particle.particle_counter_buffer.get_buffer_data()
-
-                            # render gpu particle
-                            material_instance = self.material_gpu_particle
-                            material_instance.use_program()
-                            material_instance.bind_material_instance()
-                            material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
-
-                            geometry.draw_elements_instanced(render_count)
+                    geometry.draw_elements_instanced(render_count)
                 else:
                     # CPU Particle
                     material_instance = particle_info.material_instance
@@ -188,7 +176,7 @@ class EffectManager(Singleton):
                     material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
 
                     draw_count = 0
-                    for particle in effect.emitters[i].particles:
+                    for particle in emitter.particles:
                         if particle.is_renderable():
                             particle_info.parent_matrix_data[draw_count][...] = particle.parent_matrix
                             particle_info.matrix_data[draw_count][...] = particle.transform.matrix
@@ -318,8 +306,6 @@ class Emitter:
         # gpu data
         self.particle_gpu_data = None
         self.particle_gpu_buffer = None
-        self.particle_counter = None
-        self.particle_counter_buffer = None
         self.gpu_particle_count = 0
 
     def create_gpu_buffer(self, count):
@@ -338,9 +324,8 @@ class Emitter:
                                                         ('sequence_ratio', np.float32),
                                                         ('sequence_index', np.int32),
                                                         ('next_sequence_index', np.int32),
-                                                        ('loop_remain', np.int32),
-                                                        ('force', np.float32, 3),
                                                         ('state', np.int32),
+                                                        ('force', np.float32, 3), ('dummy_0', np.float32),
                                                         ('transform_position', np.float32, 3), ('dummy_1', np.float32),
                                                         ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
                                                         ('transform_scale', np.float32, 3), ('dummy_3', np.float32),
@@ -350,21 +335,11 @@ class Emitter:
 
         self.particle_gpu_buffer = ShaderStorageBuffer('particle_buffer', 0, data=self.particle_gpu_data)
 
-        self.particle_counter = np.zeros(1, np.uint32)
-        self.particle_counter_buffer = AtomicCounterBuffer("particle_counter", 1, data=self.particle_counter)
-
     def delete_gpu_buffer(self):
         self.particle_gpu_data = None
         if self.particle_gpu_buffer is not None:
             self.particle_gpu_buffer.delete()
             self.particle_gpu_buffer = None
-
-        if self.particle_counter is not None:
-            self.particle_counter[0] = 0
-
-        if self.particle_counter_buffer is not None:
-            self.particle_counter_buffer.delete()
-            self.particle_counter_buffer = None
 
     def is_infinite_emitter(self):
         return self.particle_info.spawn_end_time < 0.0
@@ -382,7 +357,8 @@ class Emitter:
         if particle_info.enable_gpu_particle:
             # GPU Particle - create only one particle
             self.create_gpu_buffer(particle_info.max_particle_count)
-            self.particles = [Particle(self.parent_effect, self, particle_info), ]
+            particle = Particle(self.parent_effect, self, particle_info)
+            self.particles = [particle, ]
         else:
             # CPU Particle
             self.particles = [Particle(self.parent_effect, self, particle_info) for i in range(particle_info.max_particle_count)]
@@ -391,12 +367,18 @@ class Emitter:
         self.spawn_particle()
 
     def spawn_particle(self):
-        available_spawn_count = min(self.particle_info.spawn_count, self.particle_info.max_particle_count - self.alive_particle_count)
-        if 0 < available_spawn_count:
-            begin_index = self.alive_particle_count
-            for i in range(available_spawn_count):
-                self.particles[begin_index + i].spawn()
-            self.alive_particle_count += available_spawn_count
+        if self.particle_info.enable_gpu_particle:
+            # spawn only one particle for gpu particle
+            if 0 == self.alive_particle_count:
+                self.particles[0].spawn()
+                self.alive_particle_count += 1
+        else:
+            available_spawn_count = min(self.particle_info.spawn_count, self.particle_info.max_particle_count - self.alive_particle_count)
+            if 0 < available_spawn_count:
+                begin_index = self.alive_particle_count
+                for i in range(available_spawn_count):
+                    self.particles[begin_index + i].spawn()
+                self.alive_particle_count += available_spawn_count
 
     def destroy(self):
         self.alive = False
@@ -558,6 +540,7 @@ class Particle:
         if 0.0 < self.delay:
             self.delay -= dt
             if self.delay < 0.0:
+                self.elapsed_time += abs(self.delay)
                 self.delay = 0.0
             else:
                 return
