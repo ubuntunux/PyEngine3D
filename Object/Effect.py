@@ -8,7 +8,7 @@ from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
-from OpenGLContext import AtomicCounterBuffer, ShaderStorageBuffer, InstanceBuffer, UniformBlock
+from OpenGLContext import ShaderStorageBuffer, InstanceBuffer, UniformBlock
 from Utilities import *
 from Common.Constants import *
 from Common import logger, log_level, COMMAND
@@ -156,7 +156,7 @@ class EffectManager(Singleton):
                     if particle_info.enable_vector_field:
                         material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
 
-                    emitter.particle_gpu_buffer.bind_storage_buffer()
+                    emitter.particle_gpu_buffer.bind_buffer()
 
                     glDispatchCompute(render_count, 1, 1)
                     glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)

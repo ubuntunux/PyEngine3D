@@ -15,7 +15,7 @@ from Common import logger, log_level, COMMAND
 from Common.Constants import *
 from Utilities import *
 from OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from OpenGLContext import OpenGLContext, AtomicCounterBuffer, ShaderStorageBuffer, InstanceBuffer
+from OpenGLContext import OpenGLContext, InstanceBuffer
 from Object.PostProcess import AntiAliasing, PostProcess
 from Object.RenderTarget import RenderTargets
 from Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
@@ -23,10 +23,10 @@ from Object.Actor import SkeletonActor, StaticActor
 
 
 class DebugLine:
-    def __init__(self, pos1, pos2, color=[1.0, 1.0, 1.0], width=1.0):
+    def __init__(self, pos1, pos2, color=None, width=1.0):
         self.pos1 = pos1.copy()
         self.pos2 = pos2.copy()
-        self.color = color.copy()
+        self.color = color.copy() if color is not None else [1.0, 1.0, 1.0]
         self.width = width
 
 

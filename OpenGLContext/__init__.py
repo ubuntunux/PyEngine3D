@@ -13,5 +13,5 @@ from .UniformBuffer import CreateUniformBuffer, CreateUniformDataFromString, \
                             UniformTextureBase, UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray,  \
                             UniformTexture3D, UniformTextureCube
 from .VertexArrayBuffer import VertexArrayBuffer, CreateVertexArrayBuffer, InstanceBuffer
-from .AtomicCounterBuffer import AtomicCounterBuffer
-from .ShaderStorageBuffer import ShaderStorageBuffer
+from .ShaderBuffer import DispatchIndirectCommand, DrawElementsIndirectCommand
+from .ShaderBuffer import AtomicCounterBuffer, DispatchIndirectBuffer, DrawElementIndirectBuffer, ShaderStorageBuffer

@@ -96,7 +96,7 @@ class InstanceBuffer:
         for data in datas:
             instance_buffer_size += data.nbytes
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
-        glBufferData(GL_ARRAY_BUFFER, instance_buffer_size, None, GL_DYNAMIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, instance_buffer_size, None, GL_STATIC_DRAW)
 
         offset = 0
         location = self.location_offset
@@ -194,3 +194,7 @@ class VertexArrayBuffer:
     def draw_elements_instanced(self, count):
         self.__bind_vertex_buffer()
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
+
+    def draw_elements_indirect(self, indirect_buffer):
+        self.__bind_vertex_buffer()
+        glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, indirect_buffer)
