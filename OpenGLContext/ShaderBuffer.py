@@ -8,67 +8,67 @@ from OpenGL.GL import *
 from Common import logger
 
 
-class DispatchIndirectCommand:
-    def __init__(self, num_groups_x=1, num_groups_y=1, num_groups_z=1):
-        self.data = np.array([num_groups_x, num_groups_y, num_groups_z],
-                             dtype=[('num_groups_x', np.uint32),
-                                    ('num_groups_y', np.uint32),
-                                    ('num_groups_z', np.uint32)])
+def DispatchIndirectCommand(num_groups_x=1, num_groups_y=1, num_groups_z=1):
+    return np.array([(num_groups_x, num_groups_y, num_groups_z), ],
+                    dtype=[('num_groups_x', np.uint32),
+                           ('num_groups_y', np.uint32),
+                           ('num_groups_z', np.uint32)])
 
 
-class DrawElementsIndirectCommand:
-    def __init__(self, vertex_count=6, prim_count=1, first_index=0, base_vertex=0, base_instance=0):
-        self.data = np.array([vertex_count, prim_count, first_index, base_vertex, base_instance],
-                             dtype=[('vertex_count', np.uint32),
-                                    ('prim_count', np.uint32),
-                                    ('first_index', np.uint32),
-                                    ('base_vertex', np.uint32),
-                                    ('base_instance', np.uint32)])
+def DrawElementsIndirectCommand(vertex_count=6, instance_count=1, first_index=0, base_vertex=0, base_instance=0):
+    # vertex_count 6 is Quad
+    return np.array([(vertex_count, instance_count, first_index, base_vertex, base_instance), ],
+                    dtype=[('vertex_count', np.uint32),
+                           ('instance_count', np.uint32),
+                           ('first_index', np.uint32),
+                           ('base_vertex', np.uint32),
+                           ('base_instance', np.uint32)])
 
 
 class ShaderBuffer:
     target = GL_SHADER_STORAGE_BUFFER
     usage = GL_STATIC_DRAW
 
-    def __init__(self, name, binding, data):
+    def __init__(self, name, binding, data_size, data=None):
         self.name = name
         self.binding = binding
-        self.type_of_data = np.float32
-        self.size_of_data = np.nbytes[self.type_of_data]
         self.buffer = glGenBuffers(1)
-        self.bind_buffer(data)
+        self.data_size = data_size
+        self.set_buffer_data(data)
 
     def delete(self):
         glDeleteBuffers(1, [self.buffer, ])
 
-    def bind_buffer(self, data=None):
+    def bind_buffer(self):
         glBindBuffer(self.target, self.buffer)
         glBindBufferBase(self.target, self.binding, self.buffer)
 
-        if data is not None:
-            self.type_of_data = data.dtype
-            self.size_of_data = data.nbytes
+    def set_buffer_data(self, data):
+        self.bind_buffer()
 
-            # if self.size_of_data % 16 != 0:
-            #     raise BaseException("Shader storage buffer block must start on a 16-byte padding.")
+        if data is not None and self.data_size != data.nbytes:
+            raise BaseException("The data size is different.")
 
-            glBufferData(self.target, self.size_of_data, data, self.usage)
+        # if self.data_size % 16 != 0:
+        #     raise BaseException("Buffer must be aligned with 16-byte padding.")
 
-            # multiple sub data
-            # offset = 0
-            # for data in datas:
-            #     glBufferSubData(self.target, offset, data.nbytes, data)
-            #     offset += data.nbytes
+        glBufferData(self.target, self.data_size, data, self.usage)
 
-    def get_buffer_data(self):
+        # multiple sub data
+        # offset = 0
+        # for data in datas:
+        #     glBufferSubData(self.target, offset, data.nbytes, data)
+        #     offset += data.nbytes
+
+    def get_buffer_data(self, data_type):
         # too slow..
         glBindBuffer(self.target, self.buffer)
         data_ptr = glMapBuffer(self.target, GL_READ_ONLY)
         glUnmapBuffer(self.target)
         glBindBuffer(self.target, 0)
 
-        data_string = string_at(data_ptr, self.size_of_data)
-        return np.fromstring(data_string, dtype=self.type_of_data)
+        data_string = string_at(data_ptr, self.data_size)
+        return np.fromstring(data_string, dtype=data_type)
 
 
 class AtomicCounterBuffer(ShaderBuffer):
@@ -78,9 +78,21 @@ class AtomicCounterBuffer(ShaderBuffer):
 class DispatchIndirectBuffer(ShaderBuffer):
     target = GL_DISPATCH_INDIRECT_BUFFER
 
+    def __init__(self, name, data_size, data):
+        super().__init__(name, 0, data_size, data)
+
+    def bind_buffer(self):
+        glBindBuffer(self.target, self.buffer)
+
 
 class DrawElementIndirectBuffer(ShaderBuffer):
     target = GL_DRAW_INDIRECT_BUFFER
+
+    def __init__(self, name, data_size, data):
+        super().__init__(name, 0, data_size, data)
+
+    def bind_buffer(self):
+        glBindBuffer(self.target, self.buffer)
 
 
 class ShaderStorageBuffer(ShaderBuffer):

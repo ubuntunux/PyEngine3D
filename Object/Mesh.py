@@ -40,6 +40,9 @@ class Geometry:
     def draw_elements_instanced(self, count):
         self.vertex_buffer.draw_elements_instanced(count)
 
+    def draw_elements_indirect(self, offset=0):
+        self.vertex_buffer.draw_elements_indirect(offset)
+
 
 class Mesh:
     def __init__(self, mesh_name, **mesh_data):

@@ -195,6 +195,6 @@ class VertexArrayBuffer:
         self.__bind_vertex_buffer()
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
 
-    def draw_elements_indirect(self, indirect_buffer):
+    def draw_elements_indirect(self, offset=0):
         self.__bind_vertex_buffer()
-        glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, indirect_buffer)
+        glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, c_void_p(offset))

@@ -8,6 +8,8 @@ from OpenGL.GLU import *
 
 from Common import logger
 from Object import TransformObject, Model
+from OpenGLContext import DispatchIndirectCommand, DispatchIndirectBuffer
+from OpenGLContext import DrawElementsIndirectCommand, DrawElementIndirectBuffer
 from OpenGLContext import ShaderStorageBuffer, InstanceBuffer, UniformBlock
 from Utilities import *
 from Common.Constants import *
@@ -146,19 +148,21 @@ class EffectManager(Singleton):
 
                     self.renderer.uniform_particle_infos_buffer.bind_uniform_block(data=uniform_data)
 
-                    render_count = emitter.gpu_particle_count
-
                     # update gpu particle
                     material_instance = self.material_gpu_update
                     material_instance.use_program()
                     material_instance.bind_material_instance()
 
+                    need to initialize shader
+
                     if particle_info.enable_vector_field:
                         material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
 
                     emitter.particle_gpu_buffer.bind_buffer()
+                    emitter.dispatch_indirect_buffer.bind_buffer()
 
-                    glDispatchCompute(render_count, 1, 1)
+                    # glDispatchCompute(emitter.gpu_particle_count, 1, 1)
+                    glDispatchComputeIndirect(0)
                     glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
                     # render gpu particle
@@ -167,7 +171,8 @@ class EffectManager(Singleton):
                     material_instance.bind_material_instance()
                     material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
 
-                    geometry.draw_elements_instanced(render_count)
+                    emitter.draw_indirect_buffer.bind_buffer()
+                    geometry.draw_elements_indirect()
                 else:
                     # CPU Particle
                     material_instance = particle_info.material_instance
@@ -301,10 +306,12 @@ class Emitter:
         self.elapsed_time = 0.0
         self.last_spawned_time = 0.0
         self.alive_particle_count = 0
+        self.need_to_gpu_particle_initialize = True
         self.particles = []
 
         # gpu data
-        self.particle_gpu_data = None
+        self.dispatch_indirect_buffer = None
+        self.draw_indirect_buffer = None
         self.particle_gpu_buffer = None
         self.gpu_particle_count = 0
 
@@ -313,30 +320,51 @@ class Emitter:
 
         self.gpu_particle_count = count
 
-        self.particle_gpu_data = np.zeros(count, dtype=[('parent_matrix', np.float32, 16),
-                                                        ('local_matrix', np.float32, 16),
-                                                        ('delay', np.float32),
-                                                        ('life_time', np.float32),
-                                                        ('opacity', np.float32),
-                                                        ('elapsed_time', np.float32),
-                                                        ('sequence_uv', np.float32, 2),
-                                                        ('next_sequence_uv', np.float32, 2),
-                                                        ('sequence_ratio', np.float32),
-                                                        ('sequence_index', np.int32),
-                                                        ('next_sequence_index', np.int32),
-                                                        ('state', np.int32),
-                                                        ('force', np.float32, 3), ('dummy_0', np.float32),
-                                                        ('transform_position', np.float32, 3), ('dummy_1', np.float32),
-                                                        ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
-                                                        ('transform_scale', np.float32, 3), ('dummy_3', np.float32),
-                                                        ('velocity_position', np.float32, 3), ('dummy_4', np.float32),
-                                                        ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
-                                                        ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)])
+        particle_gpu_data_type = np.dtype([
+            ('parent_matrix', np.float32, 16),
+            ('local_matrix', np.float32, 16),
+            ('delay', np.float32),
+            ('life_time', np.float32),
+            ('opacity', np.float32),
+            ('elapsed_time', np.float32),
+            ('sequence_uv', np.float32, 2),
+            ('next_sequence_uv', np.float32, 2),
+            ('sequence_ratio', np.float32),
+            ('sequence_index', np.int32),
+            ('next_sequence_index', np.int32),
+            ('state', np.int32),
+            ('force', np.float32, 3), ('dummy_0', np.float32),
+            ('transform_position', np.float32, 3), ('dummy_1', np.float32),
+            ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
+            ('transform_scale', np.float32, 3), ('dummy_3', np.float32),
+            ('velocity_position', np.float32, 3), ('dummy_4', np.float32),
+            ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
+            ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)
+        ])
 
-        self.particle_gpu_buffer = ShaderStorageBuffer('particle_buffer', 0, data=self.particle_gpu_data)
+        dispatch_data = DispatchIndirectCommand(num_groups_x=count)
+        self.dispatch_indirect_buffer = DispatchIndirectBuffer('indirect buffer',
+                                                               dispatch_data.nbytes,
+                                                               dispatch_data)
+
+        draw_indirect_data = DrawElementsIndirectCommand(vertex_count=6, instance_count=count)
+        self.draw_indirect_buffer = DrawElementIndirectBuffer('draw indirect buffer',
+                                                              draw_indirect_data.nbytes,
+                                                              draw_indirect_data)
+
+        self.particle_gpu_buffer = ShaderStorageBuffer(name='particle_buffer',
+                                                       binding=0,
+                                                       data_size=particle_gpu_data_type.itemsize * count)
 
     def delete_gpu_buffer(self):
-        self.particle_gpu_data = None
+        if self.dispatch_indirect_buffer is not None:
+            self.dispatch_indirect_buffer.delete()
+            self.dispatch_indirect_buffer = None
+            
+        if self.draw_indirect_buffer is not None:
+            self.draw_indirect_buffer.delete()
+            self.draw_indirect_buffer = None
+            
         if self.particle_gpu_buffer is not None:
             self.particle_gpu_buffer.delete()
             self.particle_gpu_buffer = None
