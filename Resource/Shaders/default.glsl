@@ -50,7 +50,7 @@ void main()
     {
         fs_diffuse.xyz = base_color.xyz + emissive_color.xyz * clamp(emissive_color.w, 0.0, 1.0);
         // emissive
-        fs_diffuse.w = (get_linear_luminance(emissive_color.xyz) * emissive_color.w) * 0.1;
+        fs_diffuse.w = (get_luminance(emissive_color.xyz) * emissive_color.w) * 0.1;
         fs_material = vec4(get_roughness(), metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);
 #if 1 == SKELETAL

@@ -154,14 +154,14 @@ void main() {
         {
             HitSampleUV = HitUVzTime.xy - texture2D(texture_velocity, HitUVzTime.xy).xy;
             vec4 SampleColor = SampleScreenColor(texture_diffuse, HitSampleUV);
-            SampleColor.rgb /= 1 + get_linear_luminance(SampleColor.rgb);
+            SampleColor.rgb /= 1 + get_luminance(SampleColor.rgb);
             fs_output += SampleColor;
             hit_count += 1.0;
         }
     }
 
     fs_output.rgb /= max(hit_count, 1.0);
-    fs_output.rgb /= 1 - get_linear_luminance(fs_output.rgb);
+    fs_output.rgb /= 1 - get_luminance(fs_output.rgb);
     fs_output.a /= NumRays;
 }
 

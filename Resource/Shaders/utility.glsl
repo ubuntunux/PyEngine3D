@@ -10,11 +10,6 @@ float get_luminance(vec3 color)
     return dot(vec3(0.2126, 0.7152, 0.0722), color);
 }
 
-float get_linear_luminance(vec3 LinearColor)
-{
-    return dot(LinearColor, vec3(0.3, 0.59, 0.11));
-}
-
 // non-linear depth to linear depth
 float depth_to_linear_depth(float depth)
 {
