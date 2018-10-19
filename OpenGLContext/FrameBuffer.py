@@ -224,7 +224,7 @@ class FrameBufferManager(Singleton):
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
         else:
-            if 0 <len(textures):
+            if 0 < len(textures):
                 error = False
                 width = textures[0].width
                 height = textures[0].height

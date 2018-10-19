@@ -123,9 +123,9 @@ class Texture:
         if GL_RGB == self.internal_format:
             self.internal_format = GL_RGB8
 
-        self.width = texture_data.get('width', 0)
-        self.height = texture_data.get('height', 0)
-        self.depth = max(1, texture_data.get('depth', 1))
+        self.width = int(texture_data.get('width', 0))
+        self.height = int(texture_data.get('height', 0))
+        self.depth = int(max(1, texture_data.get('depth', 1)))
         self.data_type = texture_data.get('data_type', GL_UNSIGNED_BYTE)
         self.min_filter = texture_data.get('min_filter', GL_LINEAR_MIPMAP_LINEAR)
         self.mag_filter = texture_data.get('mag_filter', GL_LINEAR)  # GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_NEAREST
