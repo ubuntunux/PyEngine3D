@@ -1,6 +1,7 @@
 import copy
 import time
 import math
+import ctypes
 
 import numpy as np
 from OpenGL.GL import *
@@ -152,8 +153,6 @@ class EffectManager(Singleton):
                     material_instance = self.material_gpu_update
                     material_instance.use_program()
                     material_instance.bind_material_instance()
-
-                    need to initialize shader
 
                     if particle_info.enable_vector_field:
                         material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
@@ -320,6 +319,18 @@ class Emitter:
 
         self.gpu_particle_count = count
 
+        dispatch_data = DispatchIndirectCommand(num_groups_x=count)
+        self.dispatch_indirect_buffer = DispatchIndirectBuffer('indirect buffer',
+                                                               data_count=1,
+                                                               dtype=dispatch_data.dtype,
+                                                               init_data=dispatch_data)
+
+        draw_indirect_data = DrawElementsIndirectCommand(vertex_count=6, instance_count=count)
+        self.draw_indirect_buffer = DrawElementIndirectBuffer('draw indirect buffer',
+                                                              data_count=1,
+                                                              dtype=draw_indirect_data.dtype,
+                                                              init_data=draw_indirect_data)
+
         particle_gpu_data_type = np.dtype([
             ('parent_matrix', np.float32, 16),
             ('local_matrix', np.float32, 16),
@@ -341,20 +352,12 @@ class Emitter:
             ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
             ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)
         ])
-
-        dispatch_data = DispatchIndirectCommand(num_groups_x=count)
-        self.dispatch_indirect_buffer = DispatchIndirectBuffer('indirect buffer',
-                                                               dispatch_data.nbytes,
-                                                               dispatch_data)
-
-        draw_indirect_data = DrawElementsIndirectCommand(vertex_count=6, instance_count=count)
-        self.draw_indirect_buffer = DrawElementIndirectBuffer('draw indirect buffer',
-                                                              draw_indirect_data.nbytes,
-                                                              draw_indirect_data)
-
         self.particle_gpu_buffer = ShaderStorageBuffer(name='particle_buffer',
                                                        binding=0,
-                                                       data_size=particle_gpu_data_type.itemsize * count)
+                                                       data_count=count,
+                                                       dtype=particle_gpu_data_type)
+
+        self.particle_gpu_buffer.clear_buffer()
 
     def delete_gpu_buffer(self):
         if self.dispatch_indirect_buffer is not None:
