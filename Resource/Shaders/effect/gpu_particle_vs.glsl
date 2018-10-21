@@ -13,6 +13,7 @@ struct VERTEX_OUTPUT
 };
 
 layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
+layout(std430, binding=1) buffer update_particle_index_buffer { uint update_particle_index[]; };
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -27,7 +28,16 @@ layout (location = 5) flat out uint instanceID;
 
 void main()
 {
-    instanceID = gl_InstanceID.x;
+    uint index = gl_InstanceID.x;
+    instanceID = update_particle_index[index];
+
+    if(PARTICLE_STATE_ALIVE != particle_datas[instanceID].state)
+    {
+        // culling
+        gl_Position = vec4(0.0, 0.0, -10.0, 1.0);
+        return;
+    }
+
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
     vec4 vertex_position = vec4(vs_in_position, 1.0);

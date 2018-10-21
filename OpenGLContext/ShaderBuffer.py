@@ -29,40 +29,54 @@ class ShaderBuffer:
     target = GL_SHADER_STORAGE_BUFFER
     usage = GL_STATIC_DRAW
 
-    def __init__(self, name, binding, data_count, dtype, init_data=None):
+    def __init__(self, name, data_size, dtype, init_data=None):
         self.name = name
-        self.binding = binding
         self.dtype = dtype
-        self.data_size = dtype.itemsize * data_count
+        self.data_size = data_size
 
         self.buffer = glGenBuffers(1)
-        self.bind_buffer()
-        self.set_buffer_data(init_data)
+        glBindBuffer(self.target, self.buffer)
+        glBufferData(self.target, self.data_size, init_data, self.usage)
 
     def delete(self):
         glDeleteBuffers(1, [self.buffer, ])
 
     def bind_buffer(self):
         glBindBuffer(self.target, self.buffer)
-        glBindBufferBase(self.target, self.binding, self.buffer)
 
-    def clear_buffer(self, internal_format=GL_R32UI, offset=0, format=GL_RED_INTEGER, type=GL_UNSIGNED_INT):
+    def bind_buffer_base(self, binding):
+        glBindBufferBase(self.target, binding, self.buffer)
+
+    def clear_buffer(self, internal_format=GL_R32UI, format=GL_RED_INTEGER, type=GL_UNSIGNED_INT):
         # 4 bytes aligned.
         clear_value = np.array([0, ], dtype=np.uint32)
         value_ptr = clear_value.ctypes.data_as(ctypes.c_void_p)
         # value_ptr = ctype.c_void_p(0)
 
+        glBindBuffer(self.target, self.buffer)
         glClearBufferData(self.target, internal_format, format, type, value_ptr)
-        # glClearBufferSubData(self.target, internal_format, offset, self.data_size, format, type, data)
 
-    def set_buffer_data(self, data, offset=0):
-        glBufferData(self.target, self.data_size, None, self.usage)
+    def copy_buffer(self, src_buffer):
+        if src_buffer.data_size != self.data_size:
+            raise BaseException("The source and destination buffers must be the same size.")
 
-        if data is not None:
-            # if data.nbytes % 16 != 0:
-            #     raise BaseException("Buffer must be aligned with 16-byte padding.")
+        glBindBuffer(GL_COPY_READ_BUFFER, src_buffer.buffer)
+        glBindBuffer(GL_COPY_WRITE_BUFFER, self.buffer)
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, self.data_size)
 
-            glBufferSubData(self.target, offset, data.nbytes, data)
+    def copy_array_buffer(self, src_array_buffer):
+        glBindBuffer(GL_ARRAY_BUFFER, src_array_buffer)
+        glBindBuffer(GL_COPY_WRITE_BUFFER, self.buffer)
+        glCopyBufferSubData(GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, self.data_size)
+
+    def set_buffer_data(self, data):
+        glBindBuffer(self.target, self.buffer)
+        glBufferData(self.target, self.data_size, data, self.usage)
+
+        # if data is not None:
+        #     # if data.nbytes % 16 != 0:
+        #     #     raise BaseException("Buffer must be aligned with 16-byte padding.")
+        #     glBufferSubData(self.target, 0, data.nbytes, data)
 
         # multiple sub data
         # offset = 0
@@ -88,21 +102,15 @@ class AtomicCounterBuffer(ShaderBuffer):
 class DispatchIndirectBuffer(ShaderBuffer):
     target = GL_DISPATCH_INDIRECT_BUFFER
 
-    def __init__(self, name, data_count, dtype, init_data):
-        super().__init__(name, -1, data_count, dtype, init_data)
-
-    def bind_buffer(self):
-        glBindBuffer(self.target, self.buffer)
+    def bind_buffer_base(self, binding):
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, self.buffer)
 
 
 class DrawElementIndirectBuffer(ShaderBuffer):
     target = GL_DRAW_INDIRECT_BUFFER
 
-    def __init__(self, name, data_count, dtype, init_data):
-        super().__init__(name, -1, data_count, dtype, init_data)
-
-    def bind_buffer(self):
-        glBindBuffer(self.target, self.buffer)
+    def bind_buffer_base(self, binding):
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, self.buffer)
 
 
 class ShaderStorageBuffer(ShaderBuffer):

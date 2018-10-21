@@ -9,6 +9,7 @@ layout (location = 5) flat in uint instanceID;
 
 layout (location = 0) out vec4 ps_output;
 
+
 void main()
 {
     if(PARTICLE_STATE_ALIVE != particle_datas[instanceID].state)

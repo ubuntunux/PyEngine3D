@@ -84,24 +84,22 @@ layout(std140, binding=6) uniform particle_infos
     vec3 PARTICLE_TRANSFORM_SCALE_MIN;
     float PARTICLE_PLAY_SPEED;
     vec3 PARTICLE_TRANSFORM_SCALE_MAX;
-    bool PARTICLE_USE_ATOMIC_COUNTER;
-    vec3 PARTICLE_VELOCITY_POSITION_MIN;
     bool PARTICLE_ENABLE_VECTOR_FIELD;
-    vec3 PARTICLE_VELOCITY_POSITION_MAX;
+    vec3 PARTICLE_VELOCITY_POSITION_MIN;
     float PARTICLE_VECTOR_FIELD_STRENGTH;
-    vec3 PARTICLE_VELOCITY_ROTATION_MIN;
+    vec3 PARTICLE_VELOCITY_POSITION_MAX;
     float PARTICLE_VECTOR_FIELD_TIGHTNESS;
+    vec3 PARTICLE_VELOCITY_ROTATION_MIN;
+    uint PARTICLE_MAX_COUNT;
     vec3 PARTICLE_VELOCITY_ROTATION_MAX;
-    float PARTICLE_DUMMY_0;
+    uint PARTICLE_SPAWN_COUNT;
     vec3 PARTICLE_VELOCITY_SCALE_MIN;
-    float PARTICLE_DUMMY_1;
+    float PARTICLE_DUMMY_0;
     vec3 PARTICLE_VELOCITY_SCALE_MAX;
-    float PARTICLE_DUMMY_2;
+    float PARTICLE_DUMMY_1;
     mat4 PARTICLE_VECTOR_FIELD_MATRIX;
     mat4 PARTICLE_VECTOR_FIELD_INV_MATRIX;
 };
-
-
 
 // Storage Buffer Data
 struct ParticleData
@@ -133,6 +131,25 @@ struct ParticleData
     vec3 velocity_scale;
     float dummy_6;
 };
+
+
+struct DispatchIndirectCommand
+{
+    uint num_groups_x;
+    uint num_groups_y;
+    uint num_groups_z;
+};
+
+
+struct DrawElementsIndirectCommand
+{
+    uint vertex_count;
+    uint instance_count;
+    uint first_index;
+    uint base_vertex;
+    uint base_instance;
+};
+
 
 // referene : RenderOptions.py
 const int BLEND = 0;

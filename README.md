@@ -57,8 +57,10 @@
     - VTF Skinning
     - Animation calculation in gpu
 * Particle System
-    - Particle spawn on polygon surface
+    - Particle spawn on polygon surface ( Traqnsform Feedback )
+    - Spawn / Dead list
     - Bitonic Sorting
+    - Memory Pool
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color

@@ -13,9 +13,13 @@ ignore_uniform_types = ["atomic_bool", "atomic_uint", "atomic_int", "atomic_floa
 def CreateUniformBuffer(program, uniform_type, uniform_name):
     """ create uniform buffer from .mat(shader) file """
     uniform_classes = [
-        UniformBool, UniformInt, UniformFloat,
+        UniformBool, UniformInt, UniformUint, UniformFloat,
         UniformVector2, UniformVector3, UniformVector4,
+        UniformBoolVector2, UniformBoolVector3, UniformBoolVector4,
+        UniformIntVector2, UniformIntVector3, UniformIntVector4,
+        UniformUintVector2, UniformUintVector3, UniformUintVector4,
         UniformMatrix2, UniformMatrix3, UniformMatrix4,
+        UniformDoubleMatrix2, UniformDoubleMatrix3, UniformDoubleMatrix4,
         UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube,
         UniformImage2D, UniformImage3D
     ]
@@ -41,28 +45,42 @@ def CreateUniformDataFromString(data_type, strValue=None):
     elif data_type == 'int':
         # return int(strValue) if strValue else 0
         return np.int32(strValue) if strValue else np.int32(0)
-    elif data_type in ('vec2', 'vec3', 'vec4'):
+    elif data_type == 'uint':
+        # return int(strValue) if strValue else 0
+        return np.uint32(strValue) if strValue else np.uint32(0)
+    elif data_type in ('vec2', 'vec3', 'vec4', 'bvec2', 'bvec3', 'bvec4', 'ivec2', 'ivec3', 'ivec4', 'uvec2', 'uvec3', 'uvec4'):
+        if data_type in ('bvec2', 'bvec3', 'bvec4', 'ivec2', 'ivec3', 'ivec4'):
+            dtype = np.int32
+        elif data_type in ('uvec2', 'uvec3', 'uvec4'):
+            dtype = np.uint32
+        else:
+            dtype = np.float32
+
         componentCount = int(data_type[-1])
         if strValue is not None:
             vecValue = eval(strValue) if type(strValue) is str else strValue
             if len(vecValue) == componentCount:
-                return np.array(vecValue, dtype=np.float32)
+                return np.array(vecValue, dtype=dtype)
             else:
                 logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
                 raise ValueError
         else:
-            return np.array([1.0, ] * componentCount, dtype=np.float32)
-    elif data_type in ('mat2', 'mat3', 'mat4'):
+            return np.array([1, ] * componentCount, dtype=dtype)
+    elif data_type in ('mat2', 'mat3', 'mat4', 'dmat2', 'dmat3', 'dmat4'):
+        if data_type in ('dmat2', 'dmat3', 'dmat4'):
+            dtype = np.float32
+        else:
+            dtype = np.double
         componentCount = int(data_type[-1])
         if strValue is not None:
             vecValue = eval(strValue) if type(strValue) is str else strValue
             if len(vecValue) == componentCount:
-                return np.array(vecValue, dtype=np.float32)
+                return np.array(vecValue, dtype=dtype)
             else:
                 logger.error(ValueError("%s need %d float members." % (data_type, componentCount)))
                 raise ValueError
         else:
-            return np.eye(componentCount, dtype=np.float32)
+            return np.eye(componentCount, dtype=dtype)
     elif data_type in ('sampler2D', 'image2D'):
         texture = CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_gray')
         return texture
@@ -119,6 +137,13 @@ class UniformInt(UniformVariable):
         glUniform1i(self.location, value)
 
 
+class UniformUint(UniformVariable):
+    uniform_type = "uint"
+
+    def bind_uniform(self, value):
+        glUniform1ui(self.location, value)
+
+
 class UniformFloat(UniformVariable):
     uniform_type = "float"
 
@@ -147,6 +172,69 @@ class UniformVector4(UniformVariable):
         glUniform4fv(self.location, num, value)
 
 
+class UniformBoolVector2(UniformVariable):
+    uniform_type = "bvec2"
+
+    def bind_uniform(self, value, num=1):
+        glUniform2iv(self.location, num, value)
+
+
+class UniformBoolVector3(UniformVariable):
+    uniform_type = "bvec3"
+
+    def bind_uniform(self, value, num=1):
+        glUniform3iv(self.location, num, value)
+
+
+class UniformBoolVector4(UniformVariable):
+    uniform_type = "bvec4"
+
+    def bind_uniform(self, value, num=1):
+        glUniform4iv(self.location, num, value)
+
+
+class UniformIntVector2(UniformVariable):
+    uniform_type = "ivec2"
+
+    def bind_uniform(self, value, num=1):
+        glUniform2iv(self.location, num, value)
+
+
+class UniformIntVector3(UniformVariable):
+    uniform_type = "ivec3"
+
+    def bind_uniform(self, value, num=1):
+        glUniform3iv(self.location, num, value)
+
+
+class UniformIntVector4(UniformVariable):
+    uniform_type = "ivec4"
+
+    def bind_uniform(self, value, num=1):
+        glUniform4iv(self.location, num, value)
+
+
+class UniformUintVector2(UniformVariable):
+    uniform_type = "uvec2"
+
+    def bind_uniform(self, value, num=1):
+        glUniform2uiv(self.location, num, value)
+
+
+class UniformUintVector3(UniformVariable):
+    uniform_type = "uvec3"
+
+    def bind_uniform(self, value, num=1):
+        glUniform3uiv(self.location, num, value)
+
+
+class UniformUintVector4(UniformVariable):
+    uniform_type = "uvec4"
+
+    def bind_uniform(self, value, num=1):
+        glUniform4uiv(self.location, num, value)
+
+
 class UniformMatrix2(UniformVariable):
     uniform_type = "mat2"
 
@@ -166,6 +254,27 @@ class UniformMatrix4(UniformVariable):
 
     def bind_uniform(self, value, num=1, transpose=False):
         glUniformMatrix4fv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
+
+
+class UniformDoubleMatrix2(UniformVariable):
+    uniform_type = "dmat2"
+
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix2dv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
+
+
+class UniformDoubleMatrix3(UniformVariable):
+    uniform_type = "dmat3"
+
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix3dv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
+
+
+class UniformDoubleMatrix4(UniformVariable):
+    uniform_type = "dmat4"
+
+    def bind_uniform(self, value, num=1, transpose=False):
+        glUniformMatrix4dv(self.location, num, GL_TRUE if transpose else GL_FALSE, value)
 
 
 class UniformTextureBase(UniformVariable):

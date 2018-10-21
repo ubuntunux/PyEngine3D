@@ -643,6 +643,7 @@ class CoreManager(Singleton):
         self.font_manager.log("Render Count : %d" % render_count)
         self.font_manager.log("Point Lights : %d" % self.scene_manager.point_light_count)
         self.font_manager.log("Effect Count : %d" % len(self.effect_manager.render_effects))
+        self.font_manager.log("Particle Count : %d" % self.effect_manager.alive_particle_count)
 
         # selected object transform info
         selected_object = self.scene_manager.get_selected_object()
