@@ -37,16 +37,6 @@ layout(std430, binding=4) buffer update_particle_index_buffer
     uint update_particle_index[];
 };
 
-layout(std430, binding=5) buffer dead_particle_counter_buffer
-{
-    uint dead_particle_counter;
-};
-
-layout(std430, binding=6) buffer dead_particle_index_buffer
-{
-    uint dead_particle_index[];
-};
-
 
 void spawn_particle(uint id)
 {
@@ -264,16 +254,17 @@ void main()
     if(PARTICLE_STATE_DEAD == particle_datas[id].state)
     {
         uint alive_count = atomicAdd(alive_particle_counter, -1);
-        atomicAdd(dead_particle_counter, 1);
 
         if(0 < alive_count)
         {
+            // Give back id because the particle is dead.
             uint last_index = alive_count - 1;
-            dead_particle_index[last_index] = id;
+            update_particle_index[last_index] = id;
         }
     }
     else
     {
+        // refresh the alive particle index.
         uint update_index = atomicAdd(update_particle_counter, 1);
         if(update_index < PARTICLE_MAX_COUNT)
         {

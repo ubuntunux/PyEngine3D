@@ -17,12 +17,7 @@ layout(std430, binding=1) buffer update_particle_counter_buffer
     uint update_particle_counter;
 };
 
-layout(std430, binding=2) buffer dead_particle_counter_buffer
-{
-    uint dead_particle_counter;
-};
-
-layout(std430, binding=3) buffer dispatch_indirect_buffer
+layout(std430, binding=2) buffer dispatch_indirect_buffer
 {
     DispatchIndirectCommand dispatch_indirect;
 };
@@ -34,6 +29,5 @@ void main()
 
     // reset
     update_particle_counter = 0;
-    dead_particle_counter = 0;
 }
 #endif

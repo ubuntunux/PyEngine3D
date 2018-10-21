@@ -167,8 +167,6 @@ class EffectManager(Singleton):
                         emitter.alive_particle_index_buffer.bind_buffer_base(1)
                         emitter.update_particle_counter.bind_buffer_base(2)
                         emitter.update_particle_index_buffer.bind_buffer_base(3)
-                        emitter.dead_particle_counter.bind_buffer_base(4)
-                        emitter.dead_particle_index_buffer.bind_buffer_base(5)
 
                         glDispatchCompute(emitter.gpu_particle_max_count, 1, 1)
                         glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
@@ -178,19 +176,17 @@ class EffectManager(Singleton):
                     material_instance.use_program()
                     emitter.alive_particle_counter.bind_buffer_base(0)
                     emitter.alive_particle_index_buffer.bind_buffer_base(1)
-                    emitter.dead_particle_index_buffer.bind_buffer_base(2)
-                    emitter.particle_buffer.bind_buffer_base(3)
+                    emitter.particle_buffer.bind_buffer_base(2)
 
                     glDispatchCompute(emitter.gpu_particle_spawn_count, 1, 1)
                     glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
-                    # update dispatch indirect
+                    # set dispatch indirect
                     material_instance = self.material_gpu_particle_dispatch_indircet
                     material_instance.use_program()
                     emitter.alive_particle_counter.bind_buffer_base(0)
                     emitter.update_particle_counter.bind_buffer_base(1)
-                    emitter.dead_particle_counter.bind_buffer_base(2)
-                    emitter.dispatch_indirect_buffer.bind_buffer_base(3)
+                    emitter.dispatch_indirect_buffer.bind_buffer_base(2)
 
                     glDispatchCompute(1, 1, 1)
                     glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
@@ -207,8 +203,6 @@ class EffectManager(Singleton):
                     emitter.alive_particle_index_buffer.bind_buffer_base(2)
                     emitter.update_particle_counter.bind_buffer_base(3)
                     emitter.update_particle_index_buffer.bind_buffer_base(4)
-                    emitter.dead_particle_counter.bind_buffer_base(5)
-                    emitter.dead_particle_index_buffer.bind_buffer_base(6)
 
                     emitter.dispatch_indirect_buffer.bind_buffer()
                     glDispatchComputeIndirect(0)
@@ -218,7 +212,7 @@ class EffectManager(Singleton):
                     emitter.alive_particle_counter.copy_buffer(emitter.update_particle_counter)
                     emitter.alive_particle_index_buffer.copy_buffer(emitter.update_particle_index_buffer)
 
-                    # update draw indirect
+                    # set draw indirect
                     material_instance = self.material_gpu_particle_draw_indirect
                     material_instance.use_program()
                     emitter.update_particle_counter.bind_buffer_base(0)
@@ -381,8 +375,6 @@ class Emitter:
         self.alive_particle_index_buffer = None
         self.update_particle_counter = None
         self.update_particle_index_buffer = None
-        self.dead_particle_counter = None
-        self.dead_particle_index_buffer = None
         self.dispatch_indirect_buffer = None
         self.draw_indirect_buffer = None
         self.particle_buffer = None
@@ -411,14 +403,6 @@ class Emitter:
         self.update_particle_index_buffer = ShaderStorageBuffer(name='update_particle_index_buffer',
                                                                 data_size=np.nbytes[np.uint32] * count,
                                                                 dtype=np.uint32)
-
-        self.dead_particle_counter = ShaderStorageBuffer(name='dead_particle_counter',
-                                                         data_size=np.nbytes[np.uint32],
-                                                         dtype=np.uint32)
-
-        self.dead_particle_index_buffer = ShaderStorageBuffer(name='dead_particle_index_buffer',
-                                                              data_size=np.nbytes[np.uint32] * count,
-                                                              dtype=np.uint32)
 
         dispatch_data = DispatchIndirectCommand(num_groups_x=count)
         self.dispatch_indirect_buffer = DispatchIndirectBuffer('indirect buffer',
@@ -475,14 +459,6 @@ class Emitter:
         if self.update_particle_index_buffer is not None:
             self.update_particle_index_buffer.delete()
             self.update_particle_index_buffer = None
-
-        if self.dead_particle_counter is not None:
-            self.dead_particle_counter.delete()
-            self.dead_particle_counter = None
-
-        if self.dead_particle_index_buffer is not None:
-            self.dead_particle_index_buffer.delete()
-            self.dead_particle_index_buffer = None
 
         if self.dispatch_indirect_buffer is not None:
             self.dispatch_indirect_buffer.delete()
@@ -543,7 +519,7 @@ class Emitter:
 
     def update(self, dt):
         if not self.alive:
-            return
+            return 0
 
         self.elapsed_time += dt
 
