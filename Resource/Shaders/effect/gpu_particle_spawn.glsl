@@ -24,12 +24,9 @@ layout(std430, binding=2) buffer particle_buffer
 
 void main()
 {
-    uint index = alive_particle_counter + gl_GlobalInvocationID.x;
+    uint index = (alive_particle_counter + gl_GlobalInvocationID.x) % PARTICLE_MAX_COUNT;
 
-    if(index < PARTICLE_MAX_COUNT)
-    {
-        uint id = alive_particle_index[index];
-        particle_datas[id].state = PARTICLE_STATE_NONE;
-    }
+    uint id = alive_particle_index[index];
+    particle_datas[id].state = PARTICLE_STATE_NONE;
 }
 #endif

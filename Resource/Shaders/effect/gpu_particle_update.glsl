@@ -177,80 +177,81 @@ void main()
     uint index = gl_GlobalInvocationID.x;
     uint id = alive_particle_index[index];
 
+    // Spawn
     if(PARTICLE_STATE_NONE == particle_datas[id].state)
     {
         spawn_particle(id);
     }
-    else
+
+    if(PARTICLE_STATE_DELAY == particle_datas[id].state)
     {
-        if(PARTICLE_STATE_DELAY == particle_datas[id].state)
+        particle_datas[id].delay -= DELTA_TIME;
+        if(0.0 < particle_datas[id].delay)
         {
-            particle_datas[id].delay -= DELTA_TIME;
-            if(0.0 < particle_datas[id].delay)
-            {
-                particle_datas[id].elapsed_time = abs(particle_datas[id].delay);
-                particle_datas[id].delay = 0.0;
-                particle_datas[id].state = PARTICLE_STATE_ALIVE;
-            }
-        }
-
-        if(PARTICLE_STATE_ALIVE == particle_datas[id].state)
-        {
-            particle_datas[id].elapsed_time += DELTA_TIME;
-
-            if(particle_datas[id].elapsed_time <= particle_datas[id].life_time)
-            {
-                float life_ratio = 0.0;
-                float elapsed_time = particle_datas[id].elapsed_time;
-                float life_time = particle_datas[id].life_time;
-
-                if(0.0 < particle_datas[id].life_time)
-                {
-                    life_ratio = clamp(elapsed_time / particle_datas[id].life_time, 0.0, 1.0);
-                }
-
-                update_sequence(id, life_ratio);
-
-                particle_datas[id].velocity_position += particle_datas[id].force * DELTA_TIME;
-
-                if(PARTICLE_ENABLE_VECTOR_FIELD)
-                {
-                    vec3 uvw = (PARTICLE_VECTOR_FIELD_INV_MATRIX * vec4(particle_datas[id].transform_position, 1.0)).xyz;
-                    vec3 force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
-                    force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz;
-                    particle_datas[id].velocity_position = mix(particle_datas[id].velocity_position, force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
-                    particle_datas[id].velocity_position += force * PARTICLE_VECTOR_FIELD_STRENGTH * DELTA_TIME;
-                }
-
-                particle_datas[id].transform_position += particle_datas[id].velocity_position * DELTA_TIME;
-                particle_datas[id].transform_rotation += particle_datas[id].velocity_rotation * DELTA_TIME;
-                particle_datas[id].transform_scale += particle_datas[id].velocity_scale * DELTA_TIME;
-
-                // update transform
-                update_local_matrix(id);
-
-                // update opacity
-                particle_datas[id].opacity = PARTICLE_OPACITY;
-
-                float left_elapsed_time = life_time - elapsed_time;
-
-                if(0.0 < PARTICLE_FADE_IN && elapsed_time < PARTICLE_FADE_IN)
-                {
-                    particle_datas[id].opacity *= elapsed_time / PARTICLE_FADE_IN;
-                }
-
-                if(0.0 < PARTICLE_FADE_OUT && left_elapsed_time < PARTICLE_FADE_OUT)
-                {
-                    particle_datas[id].opacity *= left_elapsed_time / PARTICLE_FADE_OUT;
-                }
-            }
-            else
-            {
-                particle_datas[id].state = PARTICLE_STATE_DEAD;
-            }
+            particle_datas[id].elapsed_time = abs(particle_datas[id].delay);
+            particle_datas[id].delay = 0.0;
+            particle_datas[id].state = PARTICLE_STATE_ALIVE;
         }
     }
 
+    // Update
+    if(PARTICLE_STATE_ALIVE == particle_datas[id].state)
+    {
+        particle_datas[id].elapsed_time += DELTA_TIME;
+
+        if(particle_datas[id].elapsed_time <= particle_datas[id].life_time)
+        {
+            float life_ratio = 0.0;
+            float elapsed_time = particle_datas[id].elapsed_time;
+            float life_time = particle_datas[id].life_time;
+
+            if(0.0 < particle_datas[id].life_time)
+            {
+                life_ratio = clamp(elapsed_time / particle_datas[id].life_time, 0.0, 1.0);
+            }
+
+            update_sequence(id, life_ratio);
+
+            particle_datas[id].velocity_position += particle_datas[id].force * DELTA_TIME;
+
+            if(PARTICLE_ENABLE_VECTOR_FIELD)
+            {
+                vec3 uvw = (PARTICLE_VECTOR_FIELD_INV_MATRIX * vec4(particle_datas[id].transform_position, 1.0)).xyz;
+                vec3 force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
+                force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz;
+                particle_datas[id].velocity_position = mix(particle_datas[id].velocity_position, force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
+                particle_datas[id].velocity_position += force * PARTICLE_VECTOR_FIELD_STRENGTH * DELTA_TIME;
+            }
+
+            particle_datas[id].transform_position += particle_datas[id].velocity_position * DELTA_TIME;
+            particle_datas[id].transform_rotation += particle_datas[id].velocity_rotation * DELTA_TIME;
+            particle_datas[id].transform_scale += particle_datas[id].velocity_scale * DELTA_TIME;
+
+            // update transform
+            update_local_matrix(id);
+
+            // update opacity
+            particle_datas[id].opacity = PARTICLE_OPACITY;
+
+            float left_elapsed_time = life_time - elapsed_time;
+
+            if(0.0 < PARTICLE_FADE_IN && elapsed_time < PARTICLE_FADE_IN)
+            {
+                particle_datas[id].opacity *= elapsed_time / PARTICLE_FADE_IN;
+            }
+
+            if(0.0 < PARTICLE_FADE_OUT && left_elapsed_time < PARTICLE_FADE_OUT)
+            {
+                particle_datas[id].opacity *= left_elapsed_time / PARTICLE_FADE_OUT;
+            }
+        }
+        else
+        {
+            particle_datas[id].state = PARTICLE_STATE_DEAD;
+        }
+    }
+
+    // update the dead index and update index.
     if(PARTICLE_STATE_DEAD == particle_datas[id].state)
     {
         uint alive_count = atomicAdd(alive_particle_counter, -1);
