@@ -249,11 +249,12 @@ class EffectManager(Singleton):
                             draw_count += 1
 
                     if 0 < draw_count:
-                        self.particle_instance_buffer.bind_instance_buffer(datas=[particle_info.parent_matrix_data,
-                                                                                  particle_info.matrix_data,
-                                                                                  particle_info.uvs_data,
-                                                                                  particle_info.sequence_opacity_data])
-                        geometry.draw_elements_instanced(draw_count)
+                        geometry.draw_elements_instanced(draw_count,
+                                                         self.particle_instance_buffer,
+                                                         [particle_info.parent_matrix_data,
+                                                          particle_info.matrix_data,
+                                                          particle_info.uvs_data,
+                                                          particle_info.sequence_opacity_data])
 
     def view_frustum_culling_effect(self, camera, effect):
         to_effect = effect.transform.pos - camera.transform.pos

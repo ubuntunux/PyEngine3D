@@ -129,46 +129,43 @@ class InstanceBuffer:
 class VertexArrayBuffer:
     def __init__(self, name, datas, index_data):
         self.name = name
-        self.vertex_data_count = 0
-        self.vertex_buffer_size = 0
         self.vertex_buffer_offset = []
         self.data_element_count = []
         self.data_element_size = []
         self.data_types = []
 
+        self.vertex_array = glGenVertexArrays(1)
+        glBindVertexArray(self.vertex_array)
+
+        # NOTE : Just one array buffer
+        vertex_buffer_size = sum([data.nbytes for data in datas])
+        self.vertex_buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
+        glBufferData(GL_ARRAY_BUFFER, vertex_buffer_size, None, GL_STATIC_DRAW)
+
         offset = 0
-        for data in datas:
-            # element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
-            data_element_count = data.shape[-1]  # len(element) if hasattr(element, '__len__') else 1
-            data_element_size = data.itemsize * data_element_count  # element.nbytes
+        for location, data in enumerate(datas):
+            element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
+            data_element_count = len(element) if hasattr(element, '__len__') else 1
+            data_element_size = element.nbytes
+            data_type = OpenGLContext.get_gl_dtype(data.dtype)
 
             if data_element_count == 0:
                 continue
 
-            self.data_element_count.append(data_element_count)
-            self.data_element_size.append(data_element_size)
-            self.data_types.append(OpenGLContext.get_gl_dtype(data.dtype))
-            self.vertex_buffer_offset.append(c_void_p(offset))
-            offset += data.nbytes
-        self.vertex_buffer_size = offset
-        self.vertex_data_count = len(datas)
-
-        # self.vertex_array = glGenVertexArrays(1)
-        # glBindVertexArray(self.vertex_array)
-
-        self.vertex_buffer = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-        glBufferData(GL_ARRAY_BUFFER, self.vertex_buffer_size, None, GL_STATIC_DRAW)
-
-        offset = 0
-        for data in datas:
             glBufferSubData(GL_ARRAY_BUFFER, offset, data.nbytes, data)
+            glEnableVertexAttribArray(location)
+            glVertexAttribPointer(location, data_element_count, data_type, GL_FALSE, data_element_size, c_void_p(offset))
+            # This is very important!!! : divisor reset
+            glVertexAttribDivisor(location, 0)
             offset += data.nbytes
 
         self.index_buffer_size = index_data.nbytes
         self.index_buffer = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer_size, index_data, GL_STATIC_DRAW)
+
+        glBindVertexArray(0)
 
     def delete(self):
         glDeleteVertexArrays(1, self.vertex_array)
@@ -178,30 +175,16 @@ class VertexArrayBuffer:
     def __bind_vertex_buffer(self):
         if OpenGLContext.need_to_bind_vertex_array(self.vertex_buffer):
             # NOTE : You must set only glBindVertexArray.
-            # glBindVertexArray(self.vertex_array)
-
-            glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
-
-            for location in range(self.vertex_data_count):
-                glEnableVertexAttribArray(location)
-                glVertexAttribPointer(location,
-                                      self.data_element_count[location],
-                                      self.data_types[location],
-                                      GL_FALSE,
-                                      self.data_element_size[location],
-                                      self.vertex_buffer_offset[location])
-                # important : divisor reset
-                glVertexAttribDivisor(location, 0)
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.index_buffer)
+            glBindVertexArray(self.vertex_array)
 
     def draw_elements(self):
         self.__bind_vertex_buffer()
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
-    def draw_elements_instanced(self, count):
+    def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
         self.__bind_vertex_buffer()
-        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, count)
+        instance_buffer.bind_instance_buffer(datas=instance_datas)
+        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
 
     def draw_elements_indirect(self, offset=0):
         self.__bind_vertex_buffer()

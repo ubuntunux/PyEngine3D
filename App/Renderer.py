@@ -712,8 +712,7 @@ class Renderer(Singleton):
                                                         num=len(prev_animation_buffer))
             # draw
             if is_instancing:
-                self.actor_instance_buffer.bind_instance_buffer(datas=[actor.instance_matrix, ])
-                geometry.draw_elements_instanced(instance_count)
+                geometry.draw_elements_instanced(instance_count, self.actor_instance_buffer, [actor.instance_matrix, ])
             else:
                 geometry.draw_elements()
 
