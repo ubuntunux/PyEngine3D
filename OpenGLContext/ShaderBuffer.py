@@ -51,7 +51,6 @@ class ShaderBuffer:
         # 4 bytes aligned.
         clear_value = np.array([0, ], dtype=np.uint32)
         value_ptr = clear_value.ctypes.data_as(ctypes.c_void_p)
-        # value_ptr = ctype.c_void_p(0)
 
         glBindBuffer(self.target, self.buffer)
         glClearBufferData(self.target, internal_format, format, type, value_ptr)

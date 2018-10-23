@@ -6,6 +6,7 @@ import numpy as np
 from OpenGL.GL import *
 
 from Common import logger
+from Common.Constants import *
 from Utilities import compute_tangent
 from .OpenGLContext import OpenGLContext
 
@@ -50,10 +51,11 @@ def CreateVertexArrayBuffer(geometry_data):
 
     if 0 < len(bone_indicies) and 0 < len(bone_weights):
         vertex_array_buffer = VertexArrayBuffer(geometry_name,
-                                                [positions, colors, normals, tangents, texcoords, bone_indicies,
-                                                 bone_weights], indices)
+                                                [positions, colors, normals, tangents, texcoords, bone_indicies, bone_weights],
+                                                indices)
     else:
-        vertex_array_buffer = VertexArrayBuffer(geometry_name, [positions, colors, normals, tangents, texcoords],
+        vertex_array_buffer = VertexArrayBuffer(geometry_name,
+                                                [positions, colors, normals, tangents, texcoords],
                                                 indices)
     return vertex_array_buffer
 
@@ -73,21 +75,25 @@ class InstanceBuffer:
 
         offset = 0
         for element_data in element_datas:
-            if (0 != element_data.nbytes % 16) or (0 != element_data.size % 4):
+            data_element_count = element_data.size
+            data_element_size = element_data.nbytes
+            dtype = OpenGLContext.get_gl_dtype(element_data.dtype)
+
+            if (0 != data_element_size % 16) or (0 != data_element_count % 4):
                 raise BaseException("The instance data is a 16-byte boundary. "
                                     "For example, since mat4 is 64 bytes, you need to divide it into 4 by 16 bytes.")
 
             # The instance data is a 16-byte boundary. For example, since mat4 is 64 bytes,
             # you need to divide it into 4 by 16 bytes.
-            divide_count = math.ceil(element_data.nbytes / 16)
+            divide_count = math.ceil(data_element_size / 16)
             self.divide_counts.append(divide_count)
-            self.data_element_count.append(element_data.size)
-            self.data_element_size.append(element_data.nbytes)
-            self.divided_element_count.append(int(element_data.size / divide_count))
-            self.divided_element_size.append(int(element_data.nbytes / divide_count))
-            self.data_types.append(OpenGLContext.get_gl_dtype(element_data.dtype))
+            self.data_element_count.append(data_element_count)
+            self.data_element_size.append(data_element_size)
+            self.divided_element_count.append(int(data_element_count / divide_count))
+            self.divided_element_size.append(int(data_element_size / divide_count))
+            self.data_types.append(dtype)
             self.instance_buffer_offset.append(offset)
-            offset += element_data.nbytes
+            offset += data_element_size
 
         self.instance_buffer = glGenBuffers(1)
 
@@ -132,11 +138,13 @@ class VertexArrayBuffer:
 
         offset = 0
         for data in datas:
-            element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
-            data_element_count = len(element) if hasattr(element, '__len__') else 1
-            data_element_size = element.nbytes
+            # element = data[0] if hasattr(data, '__len__') and 0 < len(data) else data
+            data_element_count = data.shape[-1]  # len(element) if hasattr(element, '__len__') else 1
+            data_element_size = data.itemsize * data_element_count  # element.nbytes
+
             if data_element_count == 0:
                 continue
+
             self.data_element_count.append(data_element_count)
             self.data_element_size.append(data_element_size)
             self.data_types.append(OpenGLContext.get_gl_dtype(data.dtype))
@@ -189,11 +197,11 @@ class VertexArrayBuffer:
 
     def draw_elements(self):
         self.__bind_vertex_buffer()
-        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
+        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
     def draw_elements_instanced(self, count):
         self.__bind_vertex_buffer()
-        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), count)
+        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, count)
 
     def draw_elements_indirect(self, offset=0):
         self.__bind_vertex_buffer()

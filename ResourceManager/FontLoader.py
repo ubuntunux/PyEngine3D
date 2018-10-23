@@ -16,6 +16,7 @@ from pygame.locals import *
 import numpy as np
 
 from Common import logger
+from Common.Constants import *
 from Utilities import *
 
 SIMPLE_VERTEX_SHADER = '''
@@ -191,8 +192,7 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     # Create RenderTarget
     render_target_buffer = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, render_target_buffer)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 ctypes.c_void_p(0))
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL_POINTER)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -252,7 +252,7 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer)
 
     # Draw Quad
-    glDrawElements(GL_TRIANGLES, index_buffer_size, GL_UNSIGNED_INT, ctypes.c_void_p(0))
+    glDrawElements(GL_TRIANGLES, index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
     # blit frame buffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active

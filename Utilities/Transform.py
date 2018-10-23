@@ -505,28 +505,58 @@ def convert_triangulate(polygon, vcount, stride=1):
         t2 = indices_list[i]
 
 
-# http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/
+# http://jerome.jouvie.free.fr/opengl-tutorials/Lesson8.php
 def compute_tangent(positions, texcoords, normals, indices):
+    """
+    Note: This point can also be considered as the vector starting from the origin to pi.
+    Writting this equation for the points p1, p2 and p3 give :
+        p1 = u1 * T + v1 * B
+        p2 = u2 * T + v2 * B
+        p3 = u3 * T + v3 * B
+    Texture/World space relation
+
+    With equation manipulation (equation subtraction), we can write :
+        p2 - p1 = (u2 - u1) * T + (v2 - v1) * B
+        p3 - p1 = (u3 - u1) * T + (v3 - v1) * B
+
+    By resolving this system :
+        Equation of Tangent:
+            (v3 - v1) * (p2 - p1) = (v3 - v1) * (u2 - u1) * T + (v3 - v1) * (v2 - v1) * B
+            (v2 - v1) * (p3 - p1) = (v2 - v1) * (u3 - u1) * T + (v2 - v1) * (v3 - v1) * B
+
+        Equation of Binormal:
+            (u3 - u1) * (p2 - p1) = (u3 - u1) * (u2 - u1) * T + (u3 - u1) * (v2 - v1) * B
+            (u2 - u1) * (p3 - p1) = (u2 - u1) * (u3 - u1) * T + (u2 - u1) * (v3 - v1) * B
+
+
+    And we finally have the formula of T and B :
+        T = ((v3 - v1) * (p2 - p1) - (v2 - v1) * (p3 - p1)) / ((u2 - u1) * (v3 - v1) - (u3 - u1) * (v2 - v1))
+        B = ((u3 - u1) * (p2 - p1) - (u2 - u1) * (p3 - p1)) / -((u2 - u1) * (v3 - v1) - (u3 - u1) * (v2 - v1))
+
+    Equation of N:
+        N = cross(T, B)
+    """
+
     tangents = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
     # binormals = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
 
     for i in range(0, len(indices), 3):
-        i1, i2, i3 = indices[i:i + 3]
-        deltaPos2 = positions[i2] - positions[i1]
-        deltaPos3 = positions[i3] - positions[i1]
-        deltaUV2 = texcoords[i2] - texcoords[i1]
-        deltaUV3 = texcoords[i3] - texcoords[i1]
-        r = deltaUV2[0] * deltaUV3[1] - deltaUV2[1] * deltaUV3[0]
+        i0, i1, i2 = indices[i:i + 3]
+        deltaPos_0_1 = positions[i1] - positions[i0]
+        deltaPos_0_2 = positions[i2] - positions[i0]
+        deltaUV_0_1 = texcoords[i1] - texcoords[i0]
+        deltaUV_0_2 = texcoords[i2] - texcoords[i0]
+        r = deltaUV_0_1[0] * deltaUV_0_2[1] - deltaUV_0_1[1] * deltaUV_0_2[0]
         r = (1.0 / r) if r != 0.0 else 0.0
 
-        tangent = (deltaPos2 * deltaUV3[1] - deltaPos3 * deltaUV2[1]) * r
+        tangent = (deltaPos_0_1 * deltaUV_0_2[1] - deltaPos_0_2 * deltaUV_0_1[1]) * r
         tangent = normalize(tangent)
-        # binormal = (deltaPos3 * deltaUV2[0]   - deltaPos2 * deltaUV3[0]) * r
+        # binormal = (deltaPos_0_2 * deltaUV_0_1[0]   - deltaPos_0_1 * deltaUV_0_2[0]) * r
         # binormal = normalize(binormal)
 
         # invalid tangent
         if 0.0 == np.dot(tangent, tangent):
-            avg_normal = normalize(normals[i1] + normals[i2] + normals[i3])
+            avg_normal = normalize(normals[i0] + normals[i1] + normals[i2])
             tangent = np.cross(avg_normal, WORLD_UP)
 
         tangents[indices[i]] = tangent

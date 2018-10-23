@@ -17,7 +17,6 @@ class UniformBlock:
 
         self.buffer = glGenBuffers(1)
         self.bind_uniform_block(data)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.buffer_bind, self.buffer)
 
     def delete(self):
         glDeleteBuffers(1, self.buffer)
