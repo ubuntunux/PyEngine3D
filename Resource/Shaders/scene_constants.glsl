@@ -162,6 +162,8 @@ const int PARTICLE_STATE_DELAY = 1;
 const int PARTICLE_STATE_ALIVE = 2;
 const int PARTICLE_STATE_DEAD = 3;
 
+#define WORK_GROUP_SIZE 64
+
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
 const float SHADOW_BIAS = -0.0001;

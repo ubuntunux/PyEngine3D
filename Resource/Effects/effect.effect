@@ -4,7 +4,7 @@
                      'color': array([ 5.,  5.,  5.], dtype=float32),
                      'delay': {'max_value': 0.0, 'min_value': 0.0},
                      'enable': True,
-                     'enable_gpu_particle': False,
+                     'enable_gpu_particle': True,
                      'enable_vector_field': False,
                      'fade_in': 0.1,
                      'fade_out': 0.1,

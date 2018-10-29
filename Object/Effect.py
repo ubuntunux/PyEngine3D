@@ -168,7 +168,8 @@ class EffectManager(Singleton):
                         emitter.update_particle_counter.bind_buffer_base(2)
                         emitter.update_particle_index_buffer.bind_buffer_base(3)
 
-                        glDispatchCompute(emitter.gpu_particle_max_count, 1, 1)
+                        dispatchCount = int((emitter.gpu_particle_max_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
+                        glDispatchCompute(dispatchCount, 1, 1)
                         glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
                     # spawn gpu particle
@@ -178,7 +179,8 @@ class EffectManager(Singleton):
                     emitter.alive_particle_index_buffer.bind_buffer_base(1)
                     emitter.particle_buffer.bind_buffer_base(2)
 
-                    glDispatchCompute(emitter.gpu_particle_spawn_count, 1, 1)
+                    dispatchCount = int((emitter.gpu_particle_spawn_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
+                    glDispatchCompute(dispatchCount, 1, 1)
                     glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
                     # set dispatch indirect
