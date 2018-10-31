@@ -1,3 +1,4 @@
+from enum import Enum
 import copy
 import time
 import math
@@ -17,6 +18,15 @@ from Common.Constants import *
 from Common import logger, log_level, COMMAND
 from App import CoreManager
 from .RenderOptions import BlendMode
+
+
+
+class SpawnVolume(Enum):
+    POINT = 0
+    BOX = 1
+    SPHERE = 2
+    CONE = 3
+    CYLINDER = 4
 
 
 class EffectManager(Singleton):
@@ -164,9 +174,8 @@ class EffectManager(Singleton):
                         material_instance.use_program()
 
                         emitter.alive_particle_counter.bind_buffer_base(0)
-                        emitter.alive_particle_index_buffer.bind_buffer_base(1)
-                        emitter.update_particle_counter.bind_buffer_base(2)
-                        emitter.update_particle_index_buffer.bind_buffer_base(3)
+                        emitter.update_particle_counter.bind_buffer_base(1)
+                        emitter.particle_index_buffer.bind_buffer_base(2)
 
                         dispatchCount = int((emitter.gpu_particle_max_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
                         glDispatchCompute(dispatchCount, 1, 1)
@@ -176,7 +185,7 @@ class EffectManager(Singleton):
                     material_instance = self.material_gpu_particle_spawn
                     material_instance.use_program()
                     emitter.alive_particle_counter.bind_buffer_base(0)
-                    emitter.alive_particle_index_buffer.bind_buffer_base(1)
+                    emitter.particle_index_buffer.bind_buffer_base(1)
                     emitter.particle_buffer.bind_buffer_base(2)
 
                     dispatchCount = int((emitter.gpu_particle_spawn_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
@@ -202,9 +211,8 @@ class EffectManager(Singleton):
 
                     emitter.particle_buffer.bind_buffer_base(0)
                     emitter.alive_particle_counter.bind_buffer_base(1)
-                    emitter.alive_particle_index_buffer.bind_buffer_base(2)
-                    emitter.update_particle_counter.bind_buffer_base(3)
-                    emitter.update_particle_index_buffer.bind_buffer_base(4)
+                    emitter.update_particle_counter.bind_buffer_base(2)
+                    emitter.particle_index_buffer.bind_buffer_base(3)
 
                     emitter.dispatch_indirect_buffer.bind_buffer()
                     glDispatchComputeIndirect(0)
@@ -212,7 +220,6 @@ class EffectManager(Singleton):
 
                     # copy buffer
                     emitter.alive_particle_counter.copy_buffer(emitter.update_particle_counter)
-                    emitter.alive_particle_index_buffer.copy_buffer(emitter.update_particle_index_buffer)
 
                     # set draw indirect
                     material_instance = self.material_gpu_particle_draw_indirect
@@ -227,7 +234,7 @@ class EffectManager(Singleton):
                     material_instance = self.material_gpu_particle_render
                     material_instance.use_program()
                     emitter.particle_buffer.bind_buffer_base(0)
-                    emitter.update_particle_index_buffer.bind_buffer_base(1)
+                    emitter.particle_index_buffer.bind_buffer_base(1)
                     material_instance.bind_uniform_data('texture_diffuse', particle_info.texture_diffuse)
 
                     emitter.draw_indirect_buffer.bind_buffer()
@@ -375,9 +382,8 @@ class Emitter:
         # gpu data
         self.need_to_initialize_gpu_buffer = True
         self.alive_particle_counter = None
-        self.alive_particle_index_buffer = None
+        self.particle_index_buffer = None
         self.update_particle_counter = None
-        self.update_particle_index_buffer = None
         self.dispatch_indirect_buffer = None
         self.draw_indirect_buffer = None
         self.particle_buffer = None
@@ -395,17 +401,13 @@ class Emitter:
                                                                data_size=np.nbytes[np.uint32],
                                                                dtype=np.uint32)
 
-        self.alive_particle_index_buffer = ShaderStorageBuffer(name='alive_particle_index_buffer',
+        self.particle_index_buffer = ShaderStorageBuffer(name='particle_index_buffer',
                                                                data_size=np.nbytes[np.uint32] * count,
                                                                dtype=np.uint32)
 
         self.update_particle_counter = ShaderStorageBuffer(name='update_particle_counter',
                                                            data_size=np.nbytes[np.uint32],
                                                            dtype=np.uint32)
-
-        self.update_particle_index_buffer = ShaderStorageBuffer(name='update_particle_index_buffer',
-                                                                data_size=np.nbytes[np.uint32] * count,
-                                                                dtype=np.uint32)
 
         dispatch_data = DispatchIndirectCommand(num_groups_x=count)
         self.dispatch_indirect_buffer = DispatchIndirectBuffer('indirect buffer',
@@ -451,17 +453,13 @@ class Emitter:
             self.alive_particle_counter.delete()
             self.alive_particle_counter = None
 
-        if self.alive_particle_index_buffer is not None:
-            self.alive_particle_index_buffer.delete()
-            self.alive_particle_index_buffer = None
+        if self.particle_index_buffer is not None:
+            self.particle_index_buffer.delete()
+            self.particle_index_buffer = None
 
         if self.update_particle_counter is not None:
             self.update_particle_counter.delete()
             self.update_particle_counter = None
-
-        if self.update_particle_index_buffer is not None:
-            self.update_particle_index_buffer.delete()
-            self.update_particle_index_buffer = None
 
         if self.dispatch_indirect_buffer is not None:
             self.dispatch_indirect_buffer.delete()

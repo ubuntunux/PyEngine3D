@@ -14,9 +14,8 @@ layout(local_size_x=WORK_GROUP_SIZE, local_size_y=1, local_size_z=1) in;
 
 layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
 layout(std430, binding=1) buffer alive_particle_counter_buffer { uint alive_particle_counter; };
-layout(std430, binding=2) buffer alive_particle_index_buffer { uint alive_particle_index[]; };
-layout(std430, binding=3) buffer update_particle_counter_buffer { uint update_particle_counter; };
-layout(std430, binding=4) buffer update_particle_index_buffer { uint update_particle_index[]; };
+layout(std430, binding=2) buffer update_particle_counter_buffer { uint update_particle_counter; };
+layout(std430, binding=3) buffer particle_index_buffer { uint particle_index[]; };
 
 
 void update_sequence(inout ParticleData particle_data, float life_ratio)
@@ -112,7 +111,7 @@ void update(inout ParticleData particle_data, uint id)
     if(PARTICLE_STATE_DELAY == particle_data.state)
     {
         particle_data.delay -= DELTA_TIME;
-        if(0.0 < particle_data.delay)
+        if(particle_data.delay <= 0.0)
         {
             particle_data.elapsed_time = abs(particle_data.delay);
             particle_data.delay = 0.0;
@@ -183,12 +182,11 @@ void update(inout ParticleData particle_data, uint id)
 void main()
 {
     uint update_count = alive_particle_counter;
+    uint id = (gl_GlobalInvocationID.x < PARTICLE_MAX_COUNT) ? particle_index[gl_GlobalInvocationID.x] : PARTICLE_MAX_COUNT;
     barrier();
 
     if(gl_GlobalInvocationID.x < update_count)
     {
-        uint id = alive_particle_index[gl_GlobalInvocationID.x];
-
         update(particle_datas[id], id);
 
         // update the dead index and update index.
@@ -200,7 +198,7 @@ void main()
             {
                 // Give back id
                 uint last_index = alive_count - 1;
-                update_particle_index[last_index] = id;
+                particle_index[last_index] = id;
             }
         }
         else
@@ -209,7 +207,7 @@ void main()
             uint update_index = atomicAdd(update_particle_counter, 1);
             if(update_index < PARTICLE_MAX_COUNT)
             {
-                update_particle_index[update_index] = id;
+                particle_index[update_index] = id;
             }
         }
     }

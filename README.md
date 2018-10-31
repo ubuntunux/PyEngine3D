@@ -58,9 +58,10 @@
     - Animation calculation in gpu
 * Particle System
     - Particle spawn on polygon surface ( Traqnsform Feedback )
-    - Spawn / Dead list
     - Bitonic Sorting
     - Memory Pool
+    - Velocity Aligned
+    - Path Tracking
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color

@@ -13,7 +13,7 @@ struct VERTEX_OUTPUT
 };
 
 layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
-layout(std430, binding=1) buffer update_particle_index_buffer { uint update_particle_index[]; };
+layout(std430, binding=1) buffer particle_index_buffer { uint particle_index[]; };
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -29,7 +29,7 @@ layout (location = 5) flat out uint instanceID;
 void main()
 {
     uint index = gl_InstanceID.x;
-    instanceID = update_particle_index[index];
+    instanceID = particle_index[index];
 
     if(PARTICLE_STATE_ALIVE != particle_datas[instanceID].state)
     {
