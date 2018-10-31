@@ -62,6 +62,8 @@
     - Memory Pool
     - Velocity Aligned
     - Path Tracking
+    - Depth Biased Alpha
+    - Alpha Test
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color

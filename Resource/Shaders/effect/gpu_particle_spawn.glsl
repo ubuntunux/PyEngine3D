@@ -57,9 +57,10 @@ void spawn_particle(inout ParticleData particle_data, float random_seed)
 
 void main()
 {
-    if(gl_GlobalInvocationID.x < PARTICLE_SPAWN_COUNT)
+    uint index = alive_particle_counter + gl_GlobalInvocationID.x;
+
+    if(index < PARTICLE_MAX_COUNT)
     {
-        uint index = min(PARTICLE_MAX_COUNT, alive_particle_counter + gl_GlobalInvocationID.x);
         uint id = particle_index[index];
         spawn_particle(particle_datas[id], float(id) * 0.01 + PI);
     }

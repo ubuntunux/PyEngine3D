@@ -14,11 +14,10 @@ layout(std430, binding=2) buffer dispatch_indirect_buffer { DispatchIndirectComm
 void main()
 {
     alive_particle_counter = min(PARTICLE_MAX_COUNT, alive_particle_counter + PARTICLE_SPAWN_COUNT);
+    update_particle_counter = 0;
+
     dispatch_indirect.num_groups_x = (alive_particle_counter + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE;
     dispatch_indirect.num_groups_y = 1;
     dispatch_indirect.num_groups_z = 1;
-
-    // reset
-    update_particle_counter = 0;
 }
 #endif

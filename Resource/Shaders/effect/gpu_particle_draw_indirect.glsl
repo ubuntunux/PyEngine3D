@@ -12,6 +12,8 @@ layout(std430, binding=1) buffer draw_indirect_buffer { DrawElementsIndirectComm
 
 void main()
 {
-    draw_indirect.instance_count = min(PARTICLE_MAX_COUNT, update_particle_counter);
+    update_particle_counter = min(PARTICLE_MAX_COUNT, update_particle_counter);
+
+    draw_indirect.instance_count = update_particle_counter;
 }
 #endif

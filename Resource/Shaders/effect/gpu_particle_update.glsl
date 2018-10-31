@@ -194,7 +194,7 @@ void main()
         {
             uint alive_count = atomicAdd(alive_particle_counter, -1);
 
-            if(0 < alive_count)
+            if(alive_count < PARTICLE_MAX_COUNT)
             {
                 // Give back id
                 uint last_index = alive_count - 1;

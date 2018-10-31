@@ -218,9 +218,6 @@ class EffectManager(Singleton):
                     glDispatchComputeIndirect(0)
                     glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 
-                    # copy buffer
-                    emitter.alive_particle_counter.copy_buffer(emitter.update_particle_counter)
-
                     # set draw indirect
                     material_instance = self.material_gpu_particle_draw_indirect
                     material_instance.use_program()
@@ -239,6 +236,9 @@ class EffectManager(Singleton):
 
                     emitter.draw_indirect_buffer.bind_buffer()
                     geometry.draw_elements_indirect()
+
+                    # swap buffer
+                    emitter.alive_particle_counter, emitter.update_particle_counter = emitter.update_particle_counter, emitter.alive_particle_counter
                 else:
                     # CPU Particle
                     material_instance = particle_info.material_instance
