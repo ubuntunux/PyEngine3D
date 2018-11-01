@@ -27,9 +27,11 @@ layout (location = 5) flat out uint instanceID;
 
 void main()
 {
-    instanceID = (particle_index_range.begin_index + gl_InstanceID.x) % PARTICLE_MAX_COUNT;
+    instanceID = gl_InstanceID.x;
 
-    if(PARTICLE_STATE_ALIVE != particle_datas[instanceID].state)
+    uint id = (particle_index_range.begin_index + gl_InstanceID.x) % PARTICLE_MAX_COUNT;
+
+    if(PARTICLE_STATE_ALIVE != particle_datas[id].state)
     {
         // culling
         gl_Position = vec4(0.0, 0.0, -10.0, 1.0);
@@ -46,26 +48,26 @@ void main()
     // TODO : Move calculation part of the local position to compute shader
     if(PARTICLE_BILLBOARD)
     {
-        world_matrix = particle_datas[instanceID].local_matrix;
+        world_matrix = particle_datas[id].local_matrix;
         world_matrix[3].xyz = vec3(0.0);
         world_matrix = INV_VIEW_ORIGIN * world_matrix;
 
-        vec3 local_position = (particle_datas[instanceID].parent_matrix * particle_datas[instanceID].local_matrix)[3].xyz;
+        vec3 local_position = (particle_datas[id].parent_matrix * particle_datas[id].local_matrix)[3].xyz;
         world_position = local_position + (world_matrix * vertex_position).xyz;
     }
     else
     {
-        world_matrix = particle_datas[instanceID].parent_matrix * particle_datas[instanceID].local_matrix;
+        world_matrix = particle_datas[id].parent_matrix * particle_datas[id].local_matrix;
         world_position = (world_matrix * vertex_position).xyz;
     }
 
     vs_output.world_position = world_position.xyz;
 
     vec2 uv_size = vs_in_tex_coord.xy / vec2(PARTICLE_CELL_COUNT);
-    vs_output.uv = particle_datas[instanceID].sequence_uv + uv_size;
-    vs_output.next_uv = particle_datas[instanceID].next_sequence_uv + uv_size;
-    vs_output.sequence_ratio = particle_datas[instanceID].sequence_ratio;
-    vs_output.opacity = particle_datas[instanceID].opacity;
+    vs_output.uv = particle_datas[id].sequence_uv + uv_size;
+    vs_output.next_uv = particle_datas[id].next_sequence_uv + uv_size;
+    vs_output.sequence_ratio = particle_datas[id].sequence_ratio;
+    vs_output.opacity = particle_datas[id].opacity;
 
     gl_Position = VIEW_PROJECTION * vec4(world_position, 1.0);
 }

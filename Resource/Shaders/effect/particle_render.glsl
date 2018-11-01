@@ -1,10 +1,7 @@
-#include "scene_constants.glsl"
-#include "utility.glsl"
-#include "effect/particle_vs.glsl"
-
-
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
+layout (location = 5) flat in uint instanceID;
+
 layout (location = 0) out vec4 ps_output;
 
 void main()

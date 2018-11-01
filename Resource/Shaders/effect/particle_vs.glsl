@@ -35,10 +35,13 @@ layout (location = 9) in mat4 local_matrix;
 layout (location = 13) in vec4 uvs;
 layout (location = 14) in vec4 sequence_opacity;
 
-
 layout (location = 0) out VERTEX_OUTPUT vs_output;
+layout (location = 5) flat out uint instanceID;
+
 
 void main() {
+    instanceID = gl_InstanceID.x;
+
     vec3 vertex_normal = normalize(vs_in_normal);
     vec3 vertex_tangent = normalize(vs_in_tangent);
     vec4 vertex_position = vec4(vs_in_position, 1.0);
