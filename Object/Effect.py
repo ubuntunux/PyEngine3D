@@ -180,7 +180,7 @@ class EffectManager(Singleton):
 
                         dispatchCount = int((emitter.gpu_particle_max_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
                         glDispatchCompute(dispatchCount, 1, 1)
-                        glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                        glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
                     print("===========================================")
 
@@ -194,7 +194,7 @@ class EffectManager(Singleton):
 
                         dispatchCount = int((emitter.gpu_particle_spawn_count + WORK_GROUP_SIZE - 1) / WORK_GROUP_SIZE)
                         glDispatchCompute(dispatchCount, 1, 1)
-                        glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                        glMemoryBarrier(GL_ALL_BARRIER_BITS)
                         print("spawn :", emitter.gpu_particle_spawn_count)
                         print(" alive", emitter.alive_particle_counter.get_buffer_data())
                         print(" index", emitter.particle_index_buffer.get_buffer_data())
@@ -208,7 +208,7 @@ class EffectManager(Singleton):
                     emitter.dispatch_indirect_buffer.bind_buffer_base(2)
 
                     glDispatchCompute(1, 1, 1)
-                    glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                    glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
                     # update gpu particle
                     material_instance = self.material_gpu_particle_update
@@ -224,13 +224,27 @@ class EffectManager(Singleton):
 
                     emitter.dispatch_indirect_buffer.bind_buffer()
                     glDispatchComputeIndirect(0)
-                    glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                    glMemoryBarrier(GL_ALL_BARRIER_BITS)
+
+                    index_data = emitter.particle_index_buffer.get_buffer_data()
+                    alive_count = emitter.alive_particle_counter.get_buffer_data()
+                    update_count = emitter.update_particle_counter.get_buffer_data()
+                    states = list(emitter.particle_buffer.get_buffer_data()['state'])
 
                     print("update")
-                    print(" alive", emitter.alive_particle_counter.get_buffer_data())
-                    print(" update", emitter.update_particle_counter.get_buffer_data())
-                    print(" index", emitter.particle_index_buffer.get_buffer_data())
-                    print(" states", emitter.particle_buffer.get_buffer_data()['state'])
+                    print(" alive", alive_count)
+                    print(" update", update_count)
+                    print(" index", index_data)
+                    print(" none : %d, alive : %d, dead : %d" % (states.count(0), states.count(1) + states.count(2), states.count(3)))
+
+                    if len(index_data) != len(set(index_data)):
+                        raise BaseException("Error")
+
+                    if (states.count(1) + states.count(2)) != alive_count:
+                        raise BaseException("diff alive_count")
+
+                    if update_count != alive_count:
+                        raise BaseException("diff update_count")
 
                     # set draw indirect
                     material_instance = self.material_gpu_particle_draw_indirect
@@ -239,7 +253,7 @@ class EffectManager(Singleton):
                     emitter.draw_indirect_buffer.bind_buffer_base(1)
 
                     glDispatchCompute(1, 1, 1)
-                    glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+                    glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
                     # render gpu particle
                     material_instance = self.material_gpu_particle_render
