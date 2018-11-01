@@ -2,6 +2,8 @@
 
 uniform sampler2D texture_diffuse;
 
+layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
+layout(std430, binding=1) buffer index_range_buffer { ParticleIndexRange particle_index_range; };
 
 struct VERTEX_OUTPUT
 {
@@ -11,9 +13,6 @@ struct VERTEX_OUTPUT
     float sequence_ratio;
     float opacity;
 };
-
-layout(std430, binding=0) buffer particle_buffer { ParticleData particle_datas[]; };
-layout(std430, binding=1) buffer particle_index_buffer { uint particle_index[]; };
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -28,8 +27,7 @@ layout (location = 5) flat out uint instanceID;
 
 void main()
 {
-    uint index = gl_InstanceID.x;
-    instanceID = particle_index[index];
+    instanceID = (particle_index_range.begin_index + gl_InstanceID.x) % PARTICLE_MAX_COUNT;
 
     if(PARTICLE_STATE_ALIVE != particle_datas[instanceID].state)
     {

@@ -133,6 +133,15 @@ struct ParticleData
 };
 
 
+struct ParticleIndexRange
+{
+    uint begin_index;
+    uint instance_count;
+    uint destroy_count;
+    uint dummy;
+};
+
+
 struct DispatchIndirectCommand
 {
     uint num_groups_x;
