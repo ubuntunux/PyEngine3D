@@ -190,25 +190,19 @@ void main()
         update(particle_datas[id], id);
 
         // update the dead index and update index.
+        uint index;
         if(PARTICLE_STATE_DEAD == particle_datas[id].state)
         {
-            uint alive_count = atomicAdd(alive_particle_counter, -1);
-
-            if(alive_count < PARTICLE_MAX_COUNT)
-            {
-                // Give back id
-                uint last_index = alive_count - 1;
-                particle_index[last_index] = id;
-            }
+            index = atomicAdd(alive_particle_counter, -1) - 1;
         }
         else
         {
-            // refresh the alive particle index.
-            uint update_index = atomicAdd(update_particle_counter, 1);
-            if(update_index < PARTICLE_MAX_COUNT)
-            {
-                particle_index[update_index] = id;
-            }
+            index = atomicAdd(update_particle_counter, 1);
+        }
+
+        if(index < PARTICLE_MAX_COUNT)
+        {
+            particle_index[index] = id;
         }
     }
 }

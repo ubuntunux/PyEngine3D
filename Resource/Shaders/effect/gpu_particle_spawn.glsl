@@ -59,7 +59,7 @@ void main()
 {
     uint index = alive_particle_counter + gl_GlobalInvocationID.x;
 
-    if(index < PARTICLE_MAX_COUNT)
+    if(gl_GlobalInvocationID.x < PARTICLE_SPAWN_COUNT && index < PARTICLE_MAX_COUNT)
     {
         uint id = particle_index[index];
         spawn_particle(particle_datas[id], float(id) * 0.01 + PI);
