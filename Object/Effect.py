@@ -143,7 +143,6 @@ class EffectManager(Singleton):
                     # GPU Particle
                     uniform_data = self.renderer.uniform_particle_infos_data
                     uniform_data['PARTICLE_PARENT_MATRIX'] = effect.transform.matrix
-                    uniform_data['PARTICLE_PARENT_INVERSE_MATRIX'] = effect.transform.inverse_matrix
                     uniform_data['PARTICLE_DELAY'] = particle_info.delay.value
                     uniform_data['PARTICLE_LIFE_TIME'] = particle_info.life_time.value
                     uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
@@ -405,7 +404,7 @@ class Emitter:
 
         particle_gpu_data_type = np.dtype([
             ('parent_matrix', np.float32, 16),
-            ('world_matrix', np.float32, 16),
+            ('local_matrix', np.float32, 16),
             ('force', np.float32, 3),
             ('delay', np.float32),
             ('transform_position', np.float32, 3),

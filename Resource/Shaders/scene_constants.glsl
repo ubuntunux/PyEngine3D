@@ -70,7 +70,6 @@ layout(std140, binding=5) uniform particle_common
 layout(std140, binding=6) uniform particle_infos
 {
     mat4 PARTICLE_PARENT_MATRIX;
-    mat4 PARTICLE_PARENT_INVERSE_MATRIX;
     vec2 PARTICLE_DELAY;
     vec2 PARTICLE_LIFE_TIME;
     vec3 PARTICLE_TRANSFORM_POSITION_MIN;

@@ -195,7 +195,6 @@ class Renderer(Singleton):
 
         self.uniform_particle_infos_data = np.zeros(1, dtype=[
             ('PARTICLE_PARENT_MATRIX', np.float32, (4, 4)),
-            ('PARTICLE_PARENT_INVERSE_MATRIX', np.float32, (4, 4)),
             ('PARTICLE_DELAY', np.float32, 2),
             ('PARTICLE_LIFE_TIME', np.float32, 2),
             ('PARTICLE_TRANSFORM_POSITION_MIN', np.float32, 3),

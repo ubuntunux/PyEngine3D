@@ -47,22 +47,8 @@ void main()
     vec3 vertex_tangent = normalize(vs_in_tangent);
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
-    mat4 world_matrix;
     vec3 world_position = particle_datas[id].relative_position.xyz + CAMERA_POSITION.xyz;
-
-    // TODO : Move calculation part of the local position to compute shader
-    if(ALIGN_MODE_BILLBOARD == PARTICLE_ALIGN_MODE)
-    {
-        world_matrix = particle_datas[id].world_matrix;
-        world_matrix[3].xyz = vec3(0.0);
-        world_matrix = INV_VIEW_ORIGIN * world_matrix;
-    }
-    else
-    {
-        world_matrix = particle_datas[id].parent_matrix * particle_datas[id].world_matrix;
-    }
-
-    world_position += (particle_datas[id].world_matrix * vertex_position).xyz;
+    world_position += (particle_datas[id].local_matrix * vertex_position).xyz;
 
     vs_output.world_position = world_position.xyz;
 

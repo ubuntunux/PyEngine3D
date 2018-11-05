@@ -46,8 +46,8 @@ void spawn_particle(inout ParticleData particle_data, float random_seed)
     particle_data.opacity = PARTICLE_OPACITY;
     particle_data.parent_matrix = PARTICLE_PARENT_MATRIX;
     // We will apply inverse_matrix here because we will apply parent_matrix later.
-    particle_data.force = (PARTICLE_PARENT_INVERSE_MATRIX * vec4(0.0, -PARTICLE_FORCE_GRAVITY, 0.0, 1.0)).xyz;
-    particle_data.world_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    particle_data.force = transpose(mat3(PARTICLE_PARENT_MATRIX)) * vec3(0.0, -PARTICLE_FORCE_GRAVITY, 0.0);
+    particle_data.local_matrix = mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
     particle_data.elapsed_time = 0.0;
     particle_data.sequence_ratio = 0.0;

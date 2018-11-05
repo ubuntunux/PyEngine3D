@@ -94,15 +94,53 @@ void update_local_matrix(inout ParticleData particle_data)
         rotation_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
         rotation_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
         rotation_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
-        particle_data.world_matrix = rotation_matrix * scale_matrix;
+        particle_data.local_matrix = rotation_matrix * scale_matrix;
     }
     else
     {
-        particle_data.world_matrix = scale_matrix;
+        particle_data.local_matrix = scale_matrix;
     }
 
-    
-    particle_data.world_matrix[3].xyz = particle_data.transform_position.xyz;
+    // apply alignment
+    if(ALIGN_MODE_BILLBOARD == PARTICLE_ALIGN_MODE)
+    {
+        mat4 world_matrix = INV_VIEW_ORIGIN;
+
+        world_matrix[0].xyz *= length(particle_data.parent_matrix[0].xyz);
+        world_matrix[1].xyz *= length(particle_data.parent_matrix[1].xyz);
+        world_matrix[2].xyz *= length(particle_data.parent_matrix[2].xyz);
+        world_matrix[3].xyz = particle_data.parent_matrix[3].xyz;
+
+        particle_data.local_matrix = world_matrix * particle_data.local_matrix;
+    }
+    else if(ALIGN_MODE_VELOCITY_ALIGN == PARTICLE_ALIGN_MODE)
+    {
+        vec3 world_velocity = mat3(particle_data.parent_matrix) * particle_data.velocity_position.xyz;
+        float velocity_length = length(world_velocity);
+
+        if(0.0 < velocity_length)
+        {
+            world_velocity /= velocity_length;
+
+            mat4 world_matrix = mat4(0.0);
+
+            world_matrix[0].xyz = cross(world_velocity, normalize(particle_data.relative_position));
+            world_matrix[1].xyz = world_velocity * velocity_length * 0.1;
+            world_matrix[2].xyz = cross(world_matrix[0].xyz, world_velocity);
+
+            world_matrix[0].xyz *= length(particle_data.parent_matrix[0].xyz);
+            world_matrix[1].xyz *= length(particle_data.parent_matrix[1].xyz);
+            world_matrix[2].xyz *= length(particle_data.parent_matrix[2].xyz);
+            world_matrix[3].xyz = particle_data.parent_matrix[3].xyz;
+            world_matrix[3].w = 1.0;
+
+            particle_data.local_matrix = world_matrix * particle_data.local_matrix;
+        }
+    }
+    else
+    {
+        particle_data.local_matrix = particle_data.parent_matrix * particle_data.local_matrix;
+    }
 }
 
 
@@ -152,10 +190,9 @@ void update(inout ParticleData particle_data, uint id)
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
             particle_data.transform_rotation += particle_data.velocity_rotation * DELTA_TIME;
             particle_data.transform_scale += particle_data.velocity_scale * DELTA_TIME;
-
             particle_data.relative_position = (vec4(particle_data.transform_position, 1.0) * particle_datas[id].parent_matrix).xyz - CAMERA_POSITION.xyz;
 
-            // update transform
+            // update matrix
             update_local_matrix(particle_data);
 
             // update opacity
