@@ -405,7 +405,7 @@ class Emitter:
 
         particle_gpu_data_type = np.dtype([
             ('parent_matrix', np.float32, 16),
-            ('local_matrix', np.float32, 16),
+            ('world_matrix', np.float32, 16),
             ('force', np.float32, 3),
             ('delay', np.float32),
             ('transform_position', np.float32, 3),
@@ -422,7 +422,7 @@ class Emitter:
             ('next_sequence_index', np.int32),
             ('sequence_uv', np.float32, 2),
             ('next_sequence_uv', np.float32, 2),
-            ('dummy_0', np.float32, 3),
+            ('relative_position', np.float32, 3),
             ('state', np.int32),
         ])
         self.particle_buffer = ShaderStorageBuffer(name='particle_buffer',

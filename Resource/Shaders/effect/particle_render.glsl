@@ -1,6 +1,6 @@
 #ifdef FRAGMENT_SHADER
 layout (location = 0) in VERTEX_OUTPUT vs_output;
-layout (location = 5) flat in uint instanceID;
+layout (location = INSTANCE_ID_LOCATION) flat in uint instanceID;
 
 layout (location = 0) out vec4 ps_output;
 

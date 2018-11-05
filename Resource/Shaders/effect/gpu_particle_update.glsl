@@ -65,6 +65,7 @@ void update_local_matrix(inout ParticleData particle_data)
     float sa = 0.0;
     float cb = 1.0;
     float sb = 0.0;
+
     bool has_rotation = false;
 
     if(0.0 != particle_data.transform_rotation.x)
@@ -93,15 +94,15 @@ void update_local_matrix(inout ParticleData particle_data)
         rotation_matrix[0] = vec4(ch*ca, sa, -sh*ca, 0.0);
         rotation_matrix[1] = vec4(sh*sb - ch*sa*cb, ca*cb, sh*sa*cb + ch*sb, 0.0);
         rotation_matrix[2] = vec4(ch*sa*sb + sh*cb, -ca*sb, -sh*sa*sb + ch*cb, 0.0);
-        particle_data.local_matrix = rotation_matrix * scale_matrix;
+        particle_data.world_matrix = rotation_matrix * scale_matrix;
     }
     else
     {
-        particle_data.local_matrix = scale_matrix;
+        particle_data.world_matrix = scale_matrix;
     }
 
     
-    particle_data.local_matrix[3].xyz = particle_data.transform_position.xyz;
+    particle_data.world_matrix[3].xyz = particle_data.transform_position.xyz;
 }
 
 
@@ -151,6 +152,8 @@ void update(inout ParticleData particle_data, uint id)
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
             particle_data.transform_rotation += particle_data.velocity_rotation * DELTA_TIME;
             particle_data.transform_scale += particle_data.velocity_scale * DELTA_TIME;
+
+            particle_data.relative_position = (vec4(particle_data.transform_position, 1.0) * particle_datas[id].parent_matrix).xyz - CAMERA_POSITION.xyz;
 
             // update transform
             update_local_matrix(particle_data);

@@ -15,6 +15,10 @@ struct VERTEX_OUTPUT
     float opacity;
 };
 
+
+#define INSTANCE_ID_LOCATION 5
+
+
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
 layout (location = 1) in vec4 vs_in_color;
@@ -23,7 +27,7 @@ layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
-layout (location = 5) flat out uint instanceID;
+layout (location = INSTANCE_ID_LOCATION) flat out uint instanceID;
 
 
 void main()
@@ -44,23 +48,21 @@ void main()
     vec4 vertex_position = vec4(vs_in_position, 1.0);
 
     mat4 world_matrix;
-    vec3 world_position;
+    vec3 world_position = particle_datas[id].relative_position.xyz + CAMERA_POSITION.xyz;
 
     // TODO : Move calculation part of the local position to compute shader
     if(ALIGN_MODE_BILLBOARD == PARTICLE_ALIGN_MODE)
     {
-        world_matrix = particle_datas[id].local_matrix;
+        world_matrix = particle_datas[id].world_matrix;
         world_matrix[3].xyz = vec3(0.0);
         world_matrix = INV_VIEW_ORIGIN * world_matrix;
-
-        vec3 local_position = (particle_datas[id].parent_matrix * particle_datas[id].local_matrix)[3].xyz;
-        world_position = local_position + (world_matrix * vertex_position).xyz;
     }
     else
     {
-        world_matrix = particle_datas[id].parent_matrix * particle_datas[id].local_matrix;
-        world_position = (world_matrix * vertex_position).xyz;
+        world_matrix = particle_datas[id].parent_matrix * particle_datas[id].world_matrix;
     }
+
+    world_position += (particle_datas[id].world_matrix * vertex_position).xyz;
 
     vs_output.world_position = world_position.xyz;
 

@@ -10,7 +10,7 @@
                      'fade_out': 0.0,
                      'force_gravity': 0.0,
                      'life_time': {'max_value': 5.0, 'min_value': 1.0},
-                     'material_instance': 'effect.particle',
+                     'material_instance': 'effect.particle_ps',
                      'mesh': 'Quad',
                      'opacity': 1.0,
                      'play_speed': 0.0,

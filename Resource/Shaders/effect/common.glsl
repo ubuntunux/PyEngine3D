@@ -11,7 +11,7 @@ const int ALIGN_MODE_VELOCITY_ALIGN = 2;
 struct ParticleData
 {
     mat4 parent_matrix;
-    mat4 local_matrix;
+    mat4 world_matrix;
     vec3 force;
     float delay;
     vec3 transform_position;
@@ -28,7 +28,7 @@ struct ParticleData
     int next_sequence_index;
     vec2 sequence_uv;
     vec2 next_sequence_uv;
-    vec3 dummy_0;
+    vec3 relative_position;
     int state;
 };
 

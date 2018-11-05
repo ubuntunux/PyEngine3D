@@ -24,6 +24,8 @@ struct VERTEX_OUTPUT
     float opacity;
 };
 
+#define INSTANCE_ID_LOCATION 12
+
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -37,7 +39,7 @@ layout (location = 13) in vec4 uvs;
 layout (location = 14) in vec4 sequence_opacity;
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
-layout (location = 5) flat out uint instanceID;
+layout (location = INSTANCE_ID_LOCATION) flat out uint instanceID;
 
 
 void main() {
