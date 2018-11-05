@@ -1,4 +1,5 @@
 #include "scene_constants.glsl"
+#include "effect/common.glsl"
 
 uniform sampler2D texture_diffuse;
 
@@ -46,7 +47,7 @@ void main()
     vec3 world_position;
 
     // TODO : Move calculation part of the local position to compute shader
-    if(PARTICLE_BILLBOARD)
+    if(ALIGN_MODE_BILLBOARD == PARTICLE_ALIGN_MODE)
     {
         world_matrix = particle_datas[id].local_matrix;
         world_matrix[3].xyz = vec3(0.0);

@@ -20,13 +20,18 @@ from App import CoreManager
 from .RenderOptions import BlendMode
 
 
-
 class SpawnVolume(Enum):
     POINT = 0
     BOX = 1
     SPHERE = 2
     CONE = 3
     CYLINDER = 4
+
+
+class AlignMode(Enum):
+    NONE = 0
+    BILLBOARD = 1
+    VELOCITY_ALIGN = 2
 
 
 class EffectManager(Singleton):
@@ -129,7 +134,7 @@ class EffectManager(Singleton):
                 # common
                 uniform_data = self.renderer.uniform_particle_common_data
                 uniform_data['PARTICLE_COLOR'] = particle_info.color
-                uniform_data['PARTICLE_BILLBOARD'] = particle_info.billboard
+                uniform_data['PARTICLE_ALIGN_MODE'] = particle_info.align_mode.value
                 uniform_data['PARTICLE_CELL_COUNT'] = particle_info.cell_count
                 uniform_data['PARTICLE_BLEND_MODE'] = particle_info.blend_mode.value
                 self.renderer.uniform_particle_common_buffer.bind_uniform_block(data=uniform_data)
@@ -401,23 +406,24 @@ class Emitter:
         particle_gpu_data_type = np.dtype([
             ('parent_matrix', np.float32, 16),
             ('local_matrix', np.float32, 16),
+            ('force', np.float32, 3),
             ('delay', np.float32),
+            ('transform_position', np.float32, 3),
             ('life_time', np.float32),
+            ('transform_rotation', np.float32, 3),
             ('opacity', np.float32),
+            ('transform_scale', np.float32, 3),
             ('elapsed_time', np.float32),
+            ('velocity_position', np.float32, 3),
+            ('sequence_ratio', np.float32),
+            ('velocity_rotation', np.float32, 3),
+            ('sequence_index', np.int32),
+            ('velocity_scale', np.float32, 3),
+            ('next_sequence_index', np.int32),
             ('sequence_uv', np.float32, 2),
             ('next_sequence_uv', np.float32, 2),
-            ('sequence_ratio', np.float32),
-            ('sequence_index', np.int32),
-            ('next_sequence_index', np.int32),
+            ('dummy_0', np.float32, 3),
             ('state', np.int32),
-            ('force', np.float32, 3), ('dummy_0', np.float32),
-            ('transform_position', np.float32, 3), ('dummy_1', np.float32),
-            ('transform_rotation', np.float32, 3), ('dummy_2', np.float32),
-            ('transform_scale', np.float32, 3), ('dummy_3', np.float32),
-            ('velocity_position', np.float32, 3), ('dummy_4', np.float32),
-            ('velocity_rotation', np.float32, 3), ('dummy_5', np.float32),
-            ('velocity_scale', np.float32, 3), ('dummy_6', np.float32)
         ])
         self.particle_buffer = ShaderStorageBuffer(name='particle_buffer',
                                                    data_size=particle_gpu_data_type.itemsize * count,
@@ -794,7 +800,7 @@ class ParticleInfo:
     def __init__(self, **particle_info):
         self.particle_info = particle_info
         self.name = particle_info.get('name', 'Particle')
-        self.blend_mode = BlendMode(particle_info.get('blend_mode', 0))
+        self.blend_mode = BlendMode(particle_info.get('blend_mode', BlendMode.ADDITIVE.value))
         self.enable = particle_info.get('enable', True)
         self.enable_gpu_particle = particle_info.get('enable_gpu_particle', True)
 
@@ -803,7 +809,7 @@ class ParticleInfo:
         self.spawn_term = particle_info.get('spawn_term', 0.1)
         self.spawn_end_time = particle_info.get('spawn_end_time', -1.0)
 
-        self.billboard = particle_info.get('billboard', True)
+        self.align_mode = AlignMode(particle_info.get('align_mode', AlignMode.BILLBOARD.value))
         self.color = particle_info.get('color', Float3(1.0, 1.0, 1.0))
         self.play_speed = particle_info.get('play_speed', 0.0)
         self.opacity = particle_info.get('opacity', 1.0)
@@ -880,7 +886,7 @@ class ParticleInfo:
             spawn_count=self.spawn_count,
             spawn_term=self.spawn_term,
             spawn_end_time=self.spawn_end_time,
-            billboard=self.billboard,
+            align_mode=self.align_mode.value,
             color=self.color,
             enable_gpu_particle=self.enable_gpu_particle,
             mesh=self.mesh.name if self.mesh is not None else '',
@@ -917,7 +923,9 @@ class ParticleInfo:
         keys = list(attributes.keys())
         keys.sort()
         for key in keys:
-            if 'blend_mode' == key:
+            if 'align_mode' == key:
+                self.attributes.set_attribute(key, AlignMode(self.align_mode.value))
+            elif 'blend_mode' == key:
                 self.attributes.set_attribute(key, BlendMode(self.blend_mode.value))
             else:
                 self.attributes.set_attribute(key, attributes[key])

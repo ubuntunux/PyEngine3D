@@ -185,7 +185,7 @@ class Renderer(Singleton):
 
         self.uniform_particle_common_data = np.zeros(1, dtype=[
             ('PARTICLE_COLOR', np.float32, 3),
-            ('PARTICLE_BILLBOARD', np.int32),
+            ('PARTICLE_ALIGN_MODE', np.int32),
             ('PARTICLE_CELL_COUNT', np.int32, 2),
             ('PARTICLE_BLEND_MODE', np.int32),
             ('PARTICLE_COMMON_DUMMY_0', np.int32)

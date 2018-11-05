@@ -1,4 +1,5 @@
 #include "scene_constants.glsl"
+#include "effect/common.glsl"
 
 uniform sampler2D texture_diffuse;
 
@@ -48,7 +49,7 @@ void main() {
     mat4 world_matrix;
     vec3 world_position;
 
-    if(PARTICLE_BILLBOARD)
+    if(ALIGN_MODE_BILLBOARD == PARTICLE_ALIGN_MODE)
     {
         world_matrix = local_matrix;
         world_matrix[3].xyz = vec3(0.0);

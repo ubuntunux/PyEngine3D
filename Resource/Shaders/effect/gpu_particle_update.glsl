@@ -1,5 +1,6 @@
 #include "scene_constants.glsl"
 #include "utility.glsl"
+#include "effect/common.glsl"
 
 
 uniform bool enable_vector_field;

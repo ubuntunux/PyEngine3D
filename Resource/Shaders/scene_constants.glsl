@@ -61,7 +61,7 @@ layout(std140, binding=4) uniform point_light_constants
 layout(std140, binding=5) uniform particle_common
 {
     vec3 PARTICLE_COLOR;
-    bool PARTICLE_BILLBOARD;
+    int PARTICLE_ALIGN_MODE;
     ivec2 PARTICLE_CELL_COUNT;
     int PARTICLE_BLEND_MODE;
     int PARTICLE_COMMON_DUMMY_0;
@@ -101,75 +101,12 @@ layout(std140, binding=6) uniform particle_infos
     mat4 PARTICLE_VECTOR_FIELD_INV_MATRIX;
 };
 
-// Storage Buffer Data
-struct ParticleData
-{
-    mat4 parent_matrix;
-    mat4 local_matrix;
-    float delay;
-    float life_time;
-    float opacity;
-    float elapsed_time;
-    vec2 sequence_uv;
-    vec2 next_sequence_uv;
-    float sequence_ratio;
-    int sequence_index;
-    int next_sequence_index;
-    int state;
-    vec3 force;
-    float dummy_0;
-    vec3 transform_position;
-    float dummy_1;
-    vec3 transform_rotation;
-    float dummy_2;
-    vec3 transform_scale;
-    float dummy_3;
-    vec3 velocity_position;
-    float dummy_4;
-    vec3 velocity_rotation;
-    float dummy_5;
-    vec3 velocity_scale;
-    float dummy_6;
-};
-
-
-struct ParticleIndexRange
-{
-    uint begin_index;
-    uint instance_count;
-    uint destroy_count;
-    uint dummy;
-};
-
-
-struct DispatchIndirectCommand
-{
-    uint num_groups_x;
-    uint num_groups_y;
-    uint num_groups_z;
-};
-
-
-struct DrawElementsIndirectCommand
-{
-    uint vertex_count;
-    uint instance_count;
-    uint first_index;
-    uint base_vertex;
-    uint base_instance;
-};
-
 
 // referene : RenderOptions.py
 const int BLEND = 0;
 const int ADDITIVE = 1;
 const int MULTIPLY = 2;
 const int SUBTRACT = 3;
-
-const int PARTICLE_STATE_NONE = 0;
-const int PARTICLE_STATE_DELAY = 1;
-const int PARTICLE_STATE_ALIVE = 2;
-const int PARTICLE_STATE_DEAD = 3;
 
 #define WORK_GROUP_SIZE 64
 
