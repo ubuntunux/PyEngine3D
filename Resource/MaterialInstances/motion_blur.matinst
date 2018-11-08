@@ -1,4 +1,4 @@
 {'macros': OrderedDict(),
- 'material_name': 'motion_blur_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
+ 'material_name': 'motion_blur',
  'shader_name': 'motion_blur',
  'uniform_datas': {'motion_blur_scale': 0.0, 'texture_diffuse': 'empty', 'texture_velocity': 'empty'}}

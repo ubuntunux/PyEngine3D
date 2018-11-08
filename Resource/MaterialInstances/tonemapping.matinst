@@ -1,4 +1,16 @@
 {'macros': OrderedDict(),
- 'material_name': 'tonemapping_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
+ 'material_name': 'tonemapping',
  'shader_name': 'tonemapping',
- 'uniform_datas': {'contrast': 0.0, 'exposure': 0.0, 'is_render_tonemapping': False, 'texture_diffuse': 'empty'}}
+ 'uniform_datas': {'bloom_intensity': 0.0,
+                   'contrast': 0.0,
+                   'exposure': 0.0,
+                   'is_render_bloom': False,
+                   'is_render_light_shaft': False,
+                   'is_render_tonemapping': False,
+                   'texture_bloom0': 'common.flat_gray',
+                   'texture_bloom1': 'common.flat_gray',
+                   'texture_bloom2': 'common.flat_gray',
+                   'texture_bloom3': 'common.flat_gray',
+                   'texture_bloom4': 'common.flat_gray',
+                   'texture_diffuse': 'empty',
+                   'texture_light_shaft': 'common.flat_gray'}}

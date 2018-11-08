@@ -57,13 +57,20 @@
     - VTF Skinning
     - Animation calculation in gpu
 * Particle System
-    - Particle spawn on polygon surface ( Traqnsform Feedback )
+    - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool
-    - Velocity Aligned
+    - Spawn Volume
+    - Velocity Type
+        - Random
+        - Spawn Direction
+        - Tornado
+        - Hurricane
+    - Acceleration / Damping
+    - Screen Space Collide
+    - Noise
     - Path Tracking
     - Depth Biased Alpha
-    - Alpha Test
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color

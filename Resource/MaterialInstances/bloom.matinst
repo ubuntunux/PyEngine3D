@@ -1,5 +1,5 @@
 {'macros': OrderedDict(),
- 'material_name': 'bloom_c87ee674_4ddc_3efe_a74e_dfe25da5d7b3',
+ 'material_name': 'bloom',
  'shader_name': 'bloom',
  'uniform_datas': {'bloom_intensity': 0.0,
                    'texture_bloom0': 'empty',
