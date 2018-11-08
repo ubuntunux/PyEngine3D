@@ -57,16 +57,20 @@
     - VTF Skinning
     - Animation calculation in gpu
 * Particle System
+    - Emitter Rotation
     - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool
     - Spawn Volume
+    - Attractor
+    - Projector
     - Velocity Type
         - Random
         - Spawn Direction
         - Tornado
         - Hurricane
     - Acceleration / Damping
+    - Vector Field Tiling
     - Screen Space Collide
     - Noise
     - Path Tracking

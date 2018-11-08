@@ -183,9 +183,8 @@ void update(inout ParticleData particle_data, uint id)
             {
                 vec3 uvw = (PARTICLE_VECTOR_FIELD_INV_MATRIX * vec4(particle_data.transform_position, 1.0)).xyz;
                 vec3 force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
-                force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz;
-                particle_data.velocity_position = mix(particle_data.velocity_position, force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
-                particle_data.velocity_position += force * PARTICLE_VECTOR_FIELD_STRENGTH * DELTA_TIME;
+                force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz * PARTICLE_VECTOR_FIELD_STRENGTH;
+                particle_data.velocity_position = mix(particle_data.velocity_position + force * DELTA_TIME, force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
             }
 
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
