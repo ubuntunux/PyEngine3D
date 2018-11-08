@@ -106,9 +106,9 @@ void update_local_matrix(inout ParticleData particle_data)
     {
         mat4 world_matrix = INV_VIEW_ORIGIN;
 
-        world_matrix[0].xyz *= length(particle_data.parent_matrix[0].xyz);
-        world_matrix[1].xyz *= length(particle_data.parent_matrix[1].xyz);
-        world_matrix[2].xyz *= length(particle_data.parent_matrix[2].xyz);
+        world_matrix[0].xyz *= PARTICLE_PARENT_SCALE.x;
+        world_matrix[1].xyz *= PARTICLE_PARENT_SCALE.y;
+        world_matrix[2].xyz *= PARTICLE_PARENT_SCALE.z;
         world_matrix[3].xyz = particle_data.parent_matrix[3].xyz;
 
         particle_data.local_matrix = world_matrix * particle_data.local_matrix;
@@ -125,12 +125,13 @@ void update_local_matrix(inout ParticleData particle_data)
             mat4 world_matrix = mat4(0.0);
 
             world_matrix[0].xyz = cross(world_velocity, normalize(particle_data.relative_position));
-            world_matrix[1].xyz = world_velocity * velocity_length * 0.1;
+            world_matrix[1].xyz = world_velocity * (1.0 + velocity_length * PARTICLE_VELOCITY_STRETCH * 0.1);
             world_matrix[2].xyz = cross(world_matrix[0].xyz, world_velocity);
 
-            world_matrix[0].xyz *= length(particle_data.parent_matrix[0].xyz);
-            world_matrix[1].xyz *= length(particle_data.parent_matrix[1].xyz);
-            world_matrix[2].xyz *= length(particle_data.parent_matrix[2].xyz);
+            // apply scale
+            world_matrix[0].xyz *= PARTICLE_PARENT_SCALE.x;
+            world_matrix[1].xyz *= PARTICLE_PARENT_SCALE.y;
+            world_matrix[2].xyz *= PARTICLE_PARENT_SCALE.z;
             world_matrix[3].xyz = particle_data.parent_matrix[3].xyz;
             world_matrix[3].w = 1.0;
 

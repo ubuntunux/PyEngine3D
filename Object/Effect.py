@@ -143,6 +143,7 @@ class EffectManager(Singleton):
                     # GPU Particle
                     uniform_data = self.renderer.uniform_particle_infos_data
                     uniform_data['PARTICLE_PARENT_MATRIX'] = effect.transform.matrix
+                    uniform_data['PARTICLE_PARENT_SCALE'][...] = effect.transform.scale
                     uniform_data['PARTICLE_DELAY'] = particle_info.delay.value
                     uniform_data['PARTICLE_LIFE_TIME'] = particle_info.life_time.value
                     uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
@@ -162,6 +163,7 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_VELOCITY_ROTATION_MAX'] = particle_info.velocity_rotation.value[1]
                     uniform_data['PARTICLE_VELOCITY_SCALE_MIN'] = particle_info.velocity_scale.value[0]
                     uniform_data['PARTICLE_VELOCITY_SCALE_MAX'] = particle_info.velocity_scale.value[1]
+                    uniform_data['PARTICLE_VELOCITY_STRETCH'] = particle_info.velocity_stretch
                     uniform_data['PARTICLE_ENABLE_VECTOR_FIELD'] = particle_info.enable_vector_field
                     uniform_data['PARTICLE_VECTOR_FIELD_STRENGTH'] = particle_info.vector_field_strength
                     uniform_data['PARTICLE_VECTOR_FIELD_TIGHTNESS'] = particle_info.vector_field_tightness
@@ -835,6 +837,7 @@ class ParticleInfo:
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
         self.velocity_rotation = RangeVariable(**particle_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
         self.velocity_scale = RangeVariable(**particle_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
+        self.velocity_stretch = particle_info.get('velocity_stretch', 1.0)
 
         self.force_gravity = particle_info.get('force_gravity', 0.0)
 
@@ -886,6 +889,7 @@ class ParticleInfo:
             spawn_term=self.spawn_term,
             spawn_end_time=self.spawn_end_time,
             align_mode=self.align_mode.value,
+            velocity_stretch=self.velocity_stretch,
             color=self.color,
             enable_gpu_particle=self.enable_gpu_particle,
             mesh=self.mesh.name if self.mesh is not None else '',
