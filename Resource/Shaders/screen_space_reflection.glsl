@@ -97,6 +97,7 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     fs_output = vec4(0.0);
+
     vec2 tex_coord = vs_output.tex_coord.xy;
     float linear_depth = texture2D(texture_depth, tex_coord).x;
     float depth = linear_depth_to_depth(linear_depth);
@@ -115,12 +116,18 @@ void main() {
     vec3 V = normalize(-relative_pos.xyz);
     vec3 N = normalize(texture2D(texture_normal, vs_output.tex_coord.xy).xyz * 2.0 - 1.0);
     float NdotV = dot(V, N);
+
+    if(0.9 < NdotV)
+    {
+        return;
+    }
+
     float fresnel = pow(1.0 - clamp(NdotV, 0.0, 1.0), 4.0);
 
     float Roughness = clamp(texture2D(texture_material, vs_output.tex_coord.xy).x - fresnel, 0.0, 1.0);
 
     const int NumSteps = 12;
-    const int NumRays = 12;
+    const int NumRays = 4;
 
     vec2 HitSampleUV = vec2(-1.0, -1.0);
     float hit_count = 0.0;

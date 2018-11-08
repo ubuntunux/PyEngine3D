@@ -36,9 +36,8 @@ class RenderGroup(AutoEnum):
 
 
 class RenderMode(AutoEnum):
-    PRE_PASS = ()
     GBUFFER = ()
-    SHADING = ()
+    FORWARD_SHADING = ()
     SHADOW = ()
     SELECTED_OBJECT = ()
     COUNT = ()

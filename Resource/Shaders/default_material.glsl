@@ -27,7 +27,7 @@ vec4 get_base_color(vec2 tex_coord)
     vec4 color = texture2D(texture_diffuse, tex_coord);
     // gamma correction
     color.xyz = pow(color.xyz, vec3(2.2));
-    color.xyz = color.xyz * brightness * diffuse_color.xyz * diffuse_color.a;
+    color.xyz = color.xyz * brightness * diffuse_color.xyz;
     return color;
 }
 
