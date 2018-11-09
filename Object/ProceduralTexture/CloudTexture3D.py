@@ -53,7 +53,7 @@ class CloudTexture3D:
             old_texture.delete()
             resource.set_data(texture)
 
-        glPolygonMode(GL_FRONT_AND_BACK, renderer.viewMode)
+        glPolygonMode(GL_FRONT_AND_BACK, renderer.view_mode)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_CULL_FACE)
         glFrontFace(GL_CCW)
