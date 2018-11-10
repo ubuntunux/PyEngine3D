@@ -2,6 +2,8 @@
 
 ### What is PyEngine3D
 * An open source OpenGL 3D engine written in Python.
+* Homepage : https://pyengine3d.blogspot.com
+* Documents : https://pyengine3d.readthedocs.io
 * Reference
     - http://learnopengl.com/
     - http://www.opengl-tutorial.org/
