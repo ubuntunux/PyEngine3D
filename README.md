@@ -15,10 +15,12 @@
     - https://github.com/bartwronski/CSharpRenderer
 
 ## Installation and Run
+```
   >>> git clone https://github.com/ubuntunux/PyEngine3D
   >>> cd PyEngine3D
   >>> pip install -r requirements.txt
   >>> python main.py
+```
 
 ## Requirments
  - numba
