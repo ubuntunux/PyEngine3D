@@ -4,15 +4,6 @@
 * An open source OpenGL 3D engine written in Python.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
-
-## Requirements
- - numpy
- - Pillow
- - pygame
- - pyglet
- - PyOpenGL
- - PyOpenGL-accelerate ( optional )
- - Windows, Linux, Mac(not tested)
  
 ## How to install PyEngine3D
 ```
@@ -22,6 +13,15 @@
   python main.py
 ```
 * Video : https://www.youtube.com/watch?v=bVwdV695_zo
+
+## Requirements
+ - numpy
+ - Pillow
+ - pygame
+ - pyglet
+ - PyOpenGL
+ - PyOpenGL-accelerate ( optional )
+ - Windows, Linux, Mac(not tested)
 
 ## TODO
 * Optimize
