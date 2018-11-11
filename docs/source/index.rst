@@ -35,7 +35,7 @@ How to install
 .. raw:: html
 
     <div style="text-align: center; margin-bottom: 2em;">
-    <iframe width="100%" height="350" src="https://www.youtube.com/watch?v=bVwdV695_zo&t=5s" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <iframe width="100%" height="350" src="https://youtu.be/bVwdV695_zo" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
     
 
