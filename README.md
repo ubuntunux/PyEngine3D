@@ -14,6 +14,15 @@
     - https://github.com/JoshuaSenouf/GLEngine
     - https://github.com/bartwronski/CSharpRenderer
 
+## Requirments
+ - numpy
+ - Pillow
+ - pygame
+ - pyglet
+ - PyOpenGL
+ - PyOpenGL-accelerate ( optional )
+ - Windows, Linux, Mac(not tested)
+ 
 ## Installation and Run
 ```
   git clone https://github.com/ubuntunux/PyEngine3D
@@ -21,16 +30,6 @@
   pip install -r requirements.txt
   python main.py
 ```
-- It is available on windows too.
-
-## Requirments
- - numpy
- - Pillow
- - pygame
- - pyglet
- - PyOpenGL
- - PyOpenGL-accelerate
- - Windows, Linux, Mac(not tested)
 
 ## TODO
 * Optimize
