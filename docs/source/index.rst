@@ -3,8 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. raw:: html
-    <img src="https://3.bp.blogspot.com/-eJ_jt9lcYww/W-ZdhHm2UGI/AAAAAAAAJ-4/E0wdz8J7sqIvloAD1308ECXxT-JoLwxlwCK4BGAYYCw/s1600/pyengine3d.png">
+.. figure:: https://3.bp.blogspot.com/-eJ_jt9lcYww/W-ZdhHm2UGI/AAAAAAAAJ-4/E0wdz8J7sqIvloAD1308ECXxT-JoLwxlwCK4BGAYYCw/s1600/pyengine3d.png
+    :align: center
+    :target: https://3.bp.blogspot.com/-eJ_jt9lcYww/W-ZdhHm2UGI/AAAAAAAAJ-4/E0wdz8J7sqIvloAD1308ECXxT-JoLwxlwCK4BGAYYCw/s1600/pyengine3d.png
 
 
 PyEngine3D
