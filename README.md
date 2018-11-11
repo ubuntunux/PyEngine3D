@@ -5,7 +5,7 @@
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
 
-## Requirments
+## Requirements
  - numpy
  - Pillow
  - pygame
