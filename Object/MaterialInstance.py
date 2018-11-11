@@ -167,7 +167,6 @@ class MaterialInstance:
         elif attribute_name in self.macros:
             if self.macros[attribute_name] != attribute_value:
                 self.macros[attribute_name] = attribute_value
-                material = CoreManager.instance().resource_manager.get_material(self.material.shader_name,
-                                                                               self.macros)
+                material = CoreManager.instance().resource_manager.get_material(self.material.shader_name, self.macros)
                 self.set_material(material)
         return self.Attributes

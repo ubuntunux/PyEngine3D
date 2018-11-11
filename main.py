@@ -35,6 +35,10 @@ import os
 import time
 from multiprocessing import Process
 
+# import OpenGL
+# OpenGL.FULL_LOGGING = True
+
+
 from Common.Command import CustomQueue, CustomPipe
 from App.CoreManager import CoreManager
 from Utilities import AutoEnum, Config

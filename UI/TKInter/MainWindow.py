@@ -606,8 +606,12 @@ class MainWindow:
                         index = [dataType(i).name for i in range(len(dataType))].index(get_value(item))
                         value = dataType(index)
                     else:
-                        # evaluate int, float, string
-                        value = dataType(get_value(item))
+                        value = get_value(item)
+                        try:
+                            # try to evaluate int, float, string
+                            value = dataType(value)
+                        except:
+                            pass
 
                 selectedItems = []
                 command = None
