@@ -1,38 +1,26 @@
 ![PyEngine3D](https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png)
 
-# Homepage
-* https://pyengine3d.blogspot.com/
-
-### What is PyEngine3D
+## What is PyEngine3D
 * An open source OpenGL 3D engine written in Python.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
-* Reference
-    - http://learnopengl.com/
-    - http://www.opengl-tutorial.org/
-    - https://github.com/neutralord/pyopengl-experiments
-    - https://github.com/asylum2010/Asylum_Tutorials
-* Similar projects
-    - http://glumpy.github.io/
-    - https://github.com/JoshuaSenouf/GLEngine
-    - https://github.com/bartwronski/CSharpRenderer
-
-## Installation and Run
+ 
+## How to install PyEngine3D
 ```
-  >>> git clone https://github.com/ubuntunux/PyEngine3D
-  >>> cd PyEngine3D
-  >>> pip install -r requirements.txt
-  >>> python main.py
+  git clone https://github.com/ubuntunux/PyEngine3D
+  cd PyEngine3D
+  pip install -r requirements.txt
+  python main.py
 ```
+* Video : https://www.youtube.com/watch?v=bVwdV695_zo
 
-## Requirments
- - numba
+## Requirements
  - numpy
  - Pillow
  - pygame
  - pyglet
  - PyOpenGL
- - PyOpenGL-accelerate
+ - PyOpenGL-accelerate ( optional )
  - Windows, Linux, Mac(not tested)
 
 ## TODO
