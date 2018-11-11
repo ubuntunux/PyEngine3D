@@ -4,8 +4,7 @@
    contain the root `toctree` directive.
 
 .. raw:: html
-
-    <img src="https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png">
+    <img src="https://3.bp.blogspot.com/-eJ_jt9lcYww/W-ZdhHm2UGI/AAAAAAAAJ-4/E0wdz8J7sqIvloAD1308ECXxT-JoLwxlwCK4BGAYYCw/s1600/pyengine3d.png">
 
 
 PyEngine3D
@@ -26,16 +25,17 @@ Requirments
  
 How to install
 ------------------------------------------
-
-.. raw:: html
-
-    <div style="text-align: center; margin-bottom: 2em;">
-    <iframe width="100%" height="350" src="https://www.youtube.com/embed/oJsUvBQyHBs?rel=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-    
 .. sourcecode:: bash
 
   git clone https://github.com/ubuntunux/PyEngine3D
   cd PyEngine3D
   pip install -r requirements.txt
   python main.py
+  
+.. raw:: html
+
+    <div style="text-align: center; margin-bottom: 2em;">
+    <iframe width="100%" height="350" src="https://www.youtube.com/watch?v=bVwdV695_zo&t=5s" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    
+
