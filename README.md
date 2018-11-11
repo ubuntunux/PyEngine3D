@@ -23,7 +23,6 @@
 ```
 
 ## Requirments
- - numba
  - numpy
  - Pillow
  - pygame
