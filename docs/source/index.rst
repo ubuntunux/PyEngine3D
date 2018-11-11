@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. figure::  https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png
-   :align:   center
-   
-..  youtube:: bVwdV695_zo
+.. raw:: html
+
+    <img src="https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png">
+
 
 PyEngine3D
 ======================================
@@ -26,6 +26,15 @@ Requirments
  
 How to install
 ------------------------------------------
+
+.. raw:: html
+
+    <div style="text-align: center; margin-bottom: 2em;">
+    <iframe width="100%" height="350" src="https://www.youtube.com/embed/oJsUvBQyHBs?rel=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+    
+.. sourcecode:: bash
+
   git clone https://github.com/ubuntunux/PyEngine3D
   cd PyEngine3D
   pip install -r requirements.txt
