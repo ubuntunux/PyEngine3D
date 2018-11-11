@@ -21,7 +21,7 @@
   pip install -r requirements.txt
   python main.py
 ```
-How to install PyEngine3D video
+How to install PyEngine3D
 * https://www.youtube.com/watch?v=bVwdV695_zo
 
 ## TODO
