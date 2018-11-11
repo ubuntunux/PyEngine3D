@@ -3,15 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-<img src="https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png" width="100%" align="right">
+.. figure::  https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png
+   :align:   center
+   
+..  youtube:: bVwdV695_zo
 
-# PyEngine3D
+PyEngine3D
 ======================================
 * An open source OpenGL 3D engine written in Python.
 * Homepage : https://pyengine3d.blogspot.com
 * Github : https://github.com/ubuntunux/PyEngine3D
 
-### Requirments
+Requirments
+-------------------------------
  - numpy
  - Pillow
  - pygame
@@ -20,7 +24,8 @@
  - PyOpenGL-accelerate ( optional )
  - Windows, Linux, Mac(not tested)
  
-### How to install
+How to install
+------------------------------------------
   git clone https://github.com/ubuntunux/PyEngine3D
   cd PyEngine3D
   pip install -r requirements.txt
