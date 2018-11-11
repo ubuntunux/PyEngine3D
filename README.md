@@ -4,15 +4,6 @@
 * An open source OpenGL 3D engine written in Python.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
-* Reference
-    - http://learnopengl.com/
-    - http://www.opengl-tutorial.org/
-    - https://github.com/neutralord/pyopengl-experiments
-    - https://github.com/asylum2010/Asylum_Tutorials
-* Similar projects
-    - http://glumpy.github.io/
-    - https://github.com/JoshuaSenouf/GLEngine
-    - https://github.com/bartwronski/CSharpRenderer
 
 ## Requirments
  - numpy
@@ -30,6 +21,7 @@
   pip install -r requirements.txt
   python main.py
 ```
+![* hwo to install PyEngine3D video](https://www.youtube.com/watch?v=Btkjbfqpjp4)
 
 ## TODO
 * Optimize
