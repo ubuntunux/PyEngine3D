@@ -22,7 +22,7 @@
   python main.py
 ```
 How to install PyEngine3D video
-    - https://www.youtube.com/watch?v=bVwdV695_zo
+* https://www.youtube.com/watch?v=bVwdV695_zo
 
 ## TODO
 * Optimize
