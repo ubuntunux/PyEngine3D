@@ -75,7 +75,7 @@ class PostProcess:
 
         self.compute_focus_distance = None
         self.depth_of_field = None
-        self.is_render_depth_of_field = True
+        self.is_render_depth_of_field = False
         self.focus_sensitivity = 3.0
         self.focus_near = 0.0
         self.focus_far = 100.0

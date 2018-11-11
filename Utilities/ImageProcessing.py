@@ -3,7 +3,6 @@ import os
 from subprocess import call
 from time import time
 from math import sqrt
-from numba import jit
 
 
 def check(limit, ox, oy, px, py, current):
