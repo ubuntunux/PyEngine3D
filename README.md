@@ -14,15 +14,14 @@
  - PyOpenGL-accelerate ( optional )
  - Windows, Linux, Mac(not tested)
  
-## Installation and Run
+## How to install PyEngine3D
 ```
   git clone https://github.com/ubuntunux/PyEngine3D
   cd PyEngine3D
   pip install -r requirements.txt
   python main.py
 ```
-How to install PyEngine3D
-* https://www.youtube.com/watch?v=bVwdV695_zo
+* Guide Video : https://www.youtube.com/watch?v=bVwdV695_zo
 
 ## TODO
 * Optimize
