@@ -21,7 +21,7 @@
   pip install -r requirements.txt
   python main.py
 ```
-    - It is available on windows too.
+- It is available on windows too.
 
 ## Requirments
  - numpy
