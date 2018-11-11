@@ -1,8 +1,5 @@
 ![PyEngine3D](https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png)
 
-# Homepage
-* https://pyengine3d.blogspot.com/
-
 ### What is PyEngine3D
 * An open source OpenGL 3D engine written in Python.
 * Homepage : https://pyengine3d.blogspot.com
@@ -19,10 +16,10 @@
 
 ## Installation and Run
 ```
-  >>> git clone https://github.com/ubuntunux/PyEngine3D
-  >>> cd PyEngine3D
-  >>> pip install -r requirements.txt
-  >>> python main.py
+  $ git clone https://github.com/ubuntunux/PyEngine3D
+  $ cd PyEngine3D
+  $ pip install -r requirements.txt
+  $ python main.py
 ```
 
 ## Requirments
