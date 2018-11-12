@@ -61,8 +61,7 @@ vec4 RayCast(
     vec3 RayStepUVz = vec3(RayStepScreen.xy * 0.5, RayStepScreen.z);
  
     float Step = 1.0 / NumSteps;
-    float CompareTolerance = max(abs(RayStepUVz.z), abs(RayStartScreen.z - RayDepthScreen.z)) * Step;
-    // float CompareTolerance = max(abs(RayStepUVz.z), (RayStartScreen.z - RayDepthScreen.z) * 4.0) * Step;
+    float CompareTolerance = max(abs(RayStepUVz.z), abs(RayStartScreen.z - RayDepthScreen.z) * 4.0) * Step;
  
     float LastDiff = 0;
  
@@ -90,8 +89,8 @@ vec4 RayCast(
             abs(DepthDiff[3] - CompareTolerance) < CompareTolerance
         );
  
-        // if (any(Hit) && all(SampleDepth < 1.0))  // Sky Clipping
-        if (Hit[0] || Hit[1] || Hit[2] || Hit[3])
+        //if (any(Hit) && (SampleDepth.x < 1.0 && SampleDepth.y < 1.0 && SampleDepth.z < 1.0 && SampleDepth.w < 1.0))
+        if (any(Hit))
         {
             float DepthDiff0 = DepthDiff[2];
             float DepthDiff1 = DepthDiff[3];
@@ -129,7 +128,7 @@ vec4 RayCast(
  
         LastDiff = DepthDiff.w;
         RayUVz += 4 * RayStepUVz;
-        lod_level += 1.0;
+        lod_level += 4.0 / NumSteps;
     }
 
     return Result;

@@ -24,7 +24,6 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_TEMP = None
-    HDR_PREV = None
     BLOOM_0 = None
     BLOOM_1 = None
     BLOOM_2 = None
@@ -42,6 +41,8 @@ class RenderTargets:
     LINEAR_DEPTH = None
     FOCUS_DISTANCE = None
     SCREEN_SPACE_REFLECTION = None
+    SCREEN_SPACE_REFLECTION_RESOLVED_PREV = None
+    SCREEN_SPACE_REFLECTION_RESOLVED = None
     SSAO = None
     VELOCITY = None
     FFT_A = None
@@ -180,6 +181,11 @@ class RenderTargetManager(Singleton):
         hdr_internal_format = GL_RGBA16F
         hdr_data_type = GL_FLOAT
 
+        COLOR_BLACK = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+        COLOR_BLACK_NO_ALPHA = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+        COLOR_WHITE = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+        COLOR_WHITE_NO_ALPHA = np.array([1.0, 1.0, 1.0, 0.0], dtype=np.float32)
+
         RenderTargets.BACKBUFFER = self.create_rendertarget(
             "BACKBUFFER",
             texture_type=Texture2D,
@@ -214,7 +220,7 @@ class RenderTargetManager(Singleton):
             height=fullsize_y,
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
-            min_filter=GL_LINEAR,
+            min_filter=GL_LINEAR_MIPMAP_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
             wrap=GL_CLAMP
@@ -222,7 +228,6 @@ class RenderTargetManager(Singleton):
 
         RenderTargets.HDR = self.create_rendertarget("HDR", **hdr_options)
         RenderTargets.HDR_TEMP = self.create_rendertarget("HDR_TEMP", **hdr_options)
-        RenderTargets.HDR_PREV = self.create_rendertarget("HDR_PREV", **hdr_options)
 
         bloom_options = dict(
             texture_type=Texture2D,
@@ -421,8 +426,7 @@ class RenderTargetManager(Singleton):
             data=data
         )
 
-        RenderTargets.SCREEN_SPACE_REFLECTION = self.create_rendertarget(
-            "SCREEN_SPACE_REFLECTION",
+        ssr_options = dict(
             texture_type=Texture2D,
             width=halfsize_x,
             height=halfsize_y,
@@ -431,8 +435,13 @@ class RenderTargetManager(Singleton):
             data_type=hdr_data_type,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
+            clear_color=COLOR_BLACK,
             wrap=GL_CLAMP
         )
+
+        RenderTargets.SCREEN_SPACE_REFLECTION = self.create_rendertarget("SCREEN_SPACE_REFLECTION", **ssr_options)
+        RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED_PREV = self.create_rendertarget("SCREEN_SPACE_REFLECTION_RESOLVED_PREV", **ssr_options)
+        RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED = self.create_rendertarget("SCREEN_SPACE_REFLECTION_RESOLVED", **ssr_options)
 
         RenderTargets.SSAO = self.create_rendertarget(
             "SSAO",

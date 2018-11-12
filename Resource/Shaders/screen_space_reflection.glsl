@@ -5,7 +5,7 @@
 #include "quad.glsl"
 
 uniform sampler2D texture_random;
-uniform sampler2D texture_diffuse;
+uniform sampler2D texture_scene;
 uniform sampler2D texture_normal;
 uniform sampler2D texture_material;
 uniform sampler2D texture_velocity;
@@ -126,8 +126,8 @@ void main() {
 
     float Roughness = clamp(texture2D(texture_material, vs_output.tex_coord.xy).x - fresnel, 0.0, 1.0);
 
-    const int NumSteps = 12;
-    const int NumRays = 4;
+    const int NumSteps = 16;
+    const int NumRays = 8;
 
     vec2 HitSampleUV = vec2(-1.0, -1.0);
     float hit_count = 0.0;
@@ -137,7 +137,7 @@ void main() {
     {
         vec2 poisson = PoissonSamples[int(JITTER_FRAME + i * PoissonSampleCount / NumRays) % PoissonSampleCount];
         vec2 random = texture2D(texture_random, tex_coord + poisson).xy;
-        float StepOffset = rand(tex_coord + random);
+        float StepOffset = 0.5 - rand(tex_coord + random);
 
         vec2 E = Hammersley(i, NumRays, uvec2(random * 117));
         vec3 H = TangentToWorld(ImportanceSampleBlinn( random, sqrt(Roughness) * 0.6 ).xyz, N);
@@ -160,16 +160,19 @@ void main() {
         if (HitUVzTime.w < 1)
         {
             HitSampleUV = HitUVzTime.xy - texture2D(texture_velocity, HitUVzTime.xy).xy;
-            vec4 SampleColor = SampleScreenColor(texture_diffuse, HitSampleUV);
+            vec4 SampleColor = SampleScreenColor(texture_scene, HitSampleUV);
             SampleColor.rgb /= 1 + get_luminance(SampleColor.rgb);
             fs_output += SampleColor;
             hit_count += 1.0;
         }
     }
 
-    fs_output.rgb /= max(hit_count, 1.0);
-    fs_output.rgb /= 1 - get_luminance(fs_output.rgb);
-    fs_output.a /= NumRays;
+    if(0.0 < hit_count)
+    {
+        fs_output.rgb /= hit_count;
+        fs_output.rgb /= 1.0 - get_luminance(fs_output.rgb);
+        fs_output.a /= NumRays;
+    }
 }
 
 #endif // FRAGMENT_SHADER

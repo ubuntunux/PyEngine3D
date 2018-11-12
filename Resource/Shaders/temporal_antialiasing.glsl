@@ -9,21 +9,11 @@
 //=================================================================================================
 
 #include "scene_constants.glsl"
+#include "utility.glsl"
 #include "quad.glsl"
 
-//----------- CONSTANTS -------------//
 
 const float Pi = 3.141592f;
-const int FilterTypes_Box = 0;
-const int FilterTypes_Triangle = 1;
-const int FilterTypes_Gaussian = 2;
-const int FilterTypes_BlackmanHarris = 3;
-const int FilterTypes_Smoothstep = 4;
-const int FilterTypes_BSpline = 5;
-const int FilterTypes_CatmullRom = 6;
-const int FilterTypes_Mitchell = 7;
-const int FilterTypes_GeneralizedCubic = 8;
-const int FilterTypes_Sinc = 9;
 
 const int ClampModes_Disabled = 0;
 const int ClampModes_RGB_Clamp = 1;
@@ -34,13 +24,9 @@ const int DilationModes_CenterAverage = 0;
 const int DilationModes_DilateNearestDepth = 1;
 const int DilationModes_DilateGreatestVelocity = 2;
 
-//---------- INPUT -----------------//
 
 const int ResolveFilterType = FilterTypes_BSpline;
 const float ResolveFilterDiameter = 2.0;  // 0.0 ~ 6.0
-const float GaussianSigma = 0.25;   // 0.0 ~ 1.0
-const float CubicB = 0.33;  // 0.0 ~ 1.0
-const float CubicC = 0.33;  // 0.0 ~ 1.0
 const float ExposureFilterOffset = 2.0;     // -16.0 ~ 16.0
 const float TemporalAABlendFactor = 0.9;    // 0.0 ~ 1.0
 const int NeighborhoodClampMode = ClampModes_Variance_Clip;
@@ -63,97 +49,6 @@ uniform sampler2D texture_velocity;
 uniform sampler2D texture_linear_depth;
 
 
-// All filtering functions assume that 'x' is normalized to [0, 1], where 1 == FilteRadius
-float FilterBox(in float x)
-{
-    return x <= 1.0 ? 1.0 : 0.0;
-}
-
-float FilterTriangle(in float x)
-{
-    return clamp(1.0f - x, 0.0, 1.0);
-}
-
-float FilterGaussian(in float x)
-{
-    const float sigma = GaussianSigma;
-    const float g = 1.0f / sqrt(2.0f * 3.14159f * sigma * sigma);
-    return (g * exp(-(x * x) / (2 * sigma * sigma)));
-}
-
-float FilterCubic(in float x, in float B, in float C)
-{
-    float y = 0.0f;
-    float x2 = x * x;
-    float x3 = x * x * x;
-    if(x < 1)
-        y = (12 - 9 * B - 6 * C) * x3 + (-18 + 12 * B + 6 * C) * x2 + (6 - 2 * B);
-    else if (x <= 2)
-        y = (-B - 6 * C) * x3 + (6 * B + 30 * C) * x2 + (-12 * B - 48 * C) * x + (8 * B + 24 * C);
-    return y / 6.0f;
-}
-
-float FilterSinc(in float x, in float filterRadius)
-{
-    float s;
-    x *= filterRadius * 2.0f;
-    if(x < 0.001f)
-        s = 1.0f;
-    else
-        s = sin(x * Pi) / (x * Pi);
-    return s;
-}
-
-float FilterBlackmanHarris(in float x)
-{
-    x = 1.0f - x;
-    const float a0 = 0.35875f;
-    const float a1 = 0.48829f;
-    const float a2 = 0.14128f;
-    const float a3 = 0.01168f;
-    return clamp(a0 - a1 * cos(Pi * x) + a2 * cos(2 * Pi * x) - a3 * cos(3 * Pi * x), 0.0, 1.0);
-}
-
-float FilterSmoothstep(in float x)
-{
-    return 1.0f - smoothstep(0.0f, 1.0f, x);
-}
-
-float Filter(in float x, in int filterType, in float filterRadius, in bool rescaleCubic)
-{
-    // Cubic filters naturually work in a [-2, 2] domain. For the resolve case we
-    // want to rescale the filter so that it works in [-1, 1] instead
-    float cubicX = rescaleCubic ? x * 2.0f : x;
-
-    if(filterType == FilterTypes_Box)
-        return FilterBox(x);
-    else if(filterType == FilterTypes_Triangle)
-        return FilterTriangle(x);
-    else if(filterType == FilterTypes_Gaussian)
-        return FilterGaussian(x);
-    else if(filterType == FilterTypes_BlackmanHarris)
-        return FilterBlackmanHarris(x);
-    else if(filterType == FilterTypes_Smoothstep)
-        return FilterSmoothstep(x);
-    else if(filterType == FilterTypes_BSpline)
-        return FilterCubic(cubicX, 1.0, 0.0f);
-    else if(filterType == FilterTypes_CatmullRom)
-        return FilterCubic(cubicX, 0, 0.5f);
-    else if(filterType == FilterTypes_Mitchell)
-        return FilterCubic(cubicX, 1 / 3.0f, 1 / 3.0f);
-    else if(filterType == FilterTypes_GeneralizedCubic)
-        return FilterCubic(cubicX, CubicB, CubicC);
-    else if(filterType == FilterTypes_Sinc)
-        return FilterSinc(x, filterRadius);
-    else
-        return 1.0f;
-}
-
-float Luminance(in vec3 clr)
-{
-    return dot(clr, vec3(0.299f, 0.587f, 0.114f));
-}
-
 // From "Temporal Reprojection Anti-Aliasing"
 // https://github.com/playdeadgames/temporal
 vec3 ClipAABB(vec3 aabbMin, vec3 aabbMax, vec3 prevSample, vec3 avg)
@@ -169,9 +64,13 @@ vec3 ClipAABB(vec3 aabbMin, vec3 aabbMax, vec3 prevSample, vec3 avg)
         float ma_unit = max(a_unit.x, max(a_unit.y, a_unit.z));
 
         if (ma_unit > 1.0)
+        {
             return p_clip + v_clip / ma_unit;
+        }
         else
+        {
             return prevSample;// point inside aabb
+        }
     #else
         vec3 r = prevSample - avg;
         vec3 rmax = aabbMax - avg.xyz;
@@ -267,7 +166,7 @@ vec3 Reproject(vec2 texCoord)
 
             if(InverseLuminanceFiltering)
             {
-                float sampleLum = Luminance(reprojectedSample);
+                float sampleLum = get_luminance(reprojectedSample);
                 if(UseExposureFiltering)
                 {
                     sampleLum *= exp2(ManualExposure - ExposureScale + ExposureFilterOffset);
@@ -317,7 +216,7 @@ vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)
 
             if(InverseLuminanceFiltering)
             {
-                float sampleLum = Luminance(sample_color);
+                float sampleLum = get_luminance(sample_color);
                 if(UseExposureFiltering)
                 {
                     sampleLum *= exp2(ManualExposure - ExposureScale + ExposureFilterOffset);
@@ -368,8 +267,8 @@ vec4 ResolvePS(vec2 texCoord, vec2 pixelPos)
 
     if(InverseLuminanceFiltering)
     {
-        weightA /= (1.0f + Luminance(currColor));
-        weightB /= (1.0f + Luminance(prevColor));
+        weightA /= (1.0f + get_luminance(currColor));
+        weightB /= (1.0f + get_luminance(prevColor));
     }
 
     result.xyz = (currColor * weightA + prevColor * weightB) / (weightA + weightB);

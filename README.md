@@ -86,14 +86,15 @@
         - occlusion culling
         - distance culling
 * Technique
-    - Voxelization
     - Voxel Based GI
     - Screen Space Bevel
-    - Screen Space LightShaft
     - Screen Space SSS
-    - God Ray
+    - Screen Space Reflection
+        - Temporal Resolve
+        - Cone trace mipmap
     - Glare
     - Depth Of Field
+        - Bokeh
     - Film Grain
     - Color Correction
     - Color Grading
@@ -101,6 +102,10 @@
     - Paraboloid environment map
     - Volumtric Fog
     - Fur Rendering
+    - TAA
+        - Translucent Masking 
+    - Motion Blur
+        - Recursive Velocity
 * Resource Manager
     - Load / Unload / Reload system
     - Duplicate resource

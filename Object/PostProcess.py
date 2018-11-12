@@ -14,14 +14,29 @@ from OpenGLContext import FrameBufferManager
 from Utilities import *
 from .Mesh import ScreenQuad
 from .RenderTarget import RenderTargets
-from .RenderOptions import RenderOption
+
+
+# https://github.com/TheRealMJP/SamplePattern/blob/master/SamplePattern.cpp
+# Computes a radical inverse with base 2 using crazy bit-twiddling from "Hacker's Delight"
+def RadicalInverseBase2(bits):
+    bits = (bits << 16) | (bits >> 16)
+    bits = ((bits & 0x55555555) << 1) | ((bits & 0xAAAAAAAA) >> 1)
+    bits = ((bits & 0x33333333) << 2) | ((bits & 0xCCCCCCCC) >> 2)
+    bits = ((bits & 0x0F0F0F0F) << 4) | ((bits & 0xF0F0F0F0) >> 4)
+    bits = ((bits & 0x00FF00FF) << 8) | ((bits & 0xFF00FF00) >> 8)
+    return float(bits) * 2.3283064365386963e-10
+
+
+# Returns a single 2D point in a Hammersley sequence of length "numSamples", using base 1 and base 2
+def Hammersley2D(sampleIdx, numSamples):
+    return float(sampleIdx) / float(numSamples), RadicalInverseBase2(sampleIdx)
 
 
 class JitterMode:
     Uniform2x = np.array([[0.25, 0.75], [0.5, 0.5]], dtype=np.float32) * 2.0 - 1.0
     Hammersley4x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
-    Hammersley8x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
-    Hammersley16x = np.array([Hammersley2D(i, 4) for i in range(4)], dtype=np.float32) * 2.0 - 1.0
+    Hammersley8x = np.array([Hammersley2D(i, 8) for i in range(8)], dtype=np.float32) * 2.0 - 1.0
+    Hammersley16x = np.array([Hammersley2D(i, 16) for i in range(16)], dtype=np.float32) * 2.0 - 1.0
 
 
 class AntiAliasing(AutoEnum):
@@ -84,7 +99,8 @@ class PostProcess:
         self.velocity = None
 
         self.is_render_ssr = True
-        self.screeen_space_reflection = None
+        self.screen_space_reflection = None
+        self.screen_space_reflection_resolve = None
 
         self.is_render_tonemapping = True
         self.exposure = 1.0
@@ -101,7 +117,7 @@ class PostProcess:
         self.render_texture_mi = None
 
         self.temporal_antialiasing = None
-        self.jitter_mode = JitterMode.Hammersley4x
+        self.jitter_mode = JitterMode.Hammersley16x
         self.jitter = Float2()
         self.jitter_prev = Float2()
         self.jitter_frame = 0
@@ -153,7 +169,8 @@ class PostProcess:
         self.circle_blur = self.resource_manager.get_material_instance("circle_blur")
         self.gaussian_blur = self.resource_manager.get_material_instance("gaussian_blur")
         self.motion_blur = self.resource_manager.get_material_instance("motion_blur")
-        self.screeen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
+        self.screen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
+        self.screen_space_reflection_resolve = self.resource_manager.get_material_instance("screen_space_reflection_resolve")
         self.linear_depth = self.resource_manager.get_material_instance("linear_depth")
         self.generate_min_z = self.resource_manager.get_material_instance("generate_min_z")
         self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
@@ -167,8 +184,7 @@ class PostProcess:
             anti_aliasing = str(anti_aliasing)
             return anti_aliasing.split('.')[-1] if '.' in anti_aliasing else anti_aliasing
 
-        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x))
-                              for x in range(AntiAliasing.COUNT.value)]
+        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in range(AntiAliasing.COUNT.value)]
         # Send to GUI
         self.core_manager.send_anti_aliasing_list(anti_aliasing_list)
 
@@ -497,17 +513,24 @@ class PostProcess:
         self.velocity.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-    def render_screen_space_reflection(self, texture_diffuse, texture_normal, texture_material, texture_velocity,
-                                       texture_depth):
-        self.screeen_space_reflection.use_program()
-        self.screeen_space_reflection.bind_material_instance()
+    def render_screen_space_reflection(self, texture_scene, texture_normal, texture_material, texture_velocity, texture_depth):
+        self.screen_space_reflection.use_program()
+        self.screen_space_reflection.bind_material_instance()
         texture_random = self.resource_manager.get_texture('common.random')
-        self.screeen_space_reflection.bind_uniform_data("texture_random", texture_random)
-        self.screeen_space_reflection.bind_uniform_data("texture_diffuse", texture_diffuse)
-        self.screeen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
-        self.screeen_space_reflection.bind_uniform_data("texture_material", texture_material)
-        self.screeen_space_reflection.bind_uniform_data("texture_velocity", texture_velocity)
-        self.screeen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
+        self.screen_space_reflection.bind_uniform_data("texture_random", texture_random)
+        self.screen_space_reflection.bind_uniform_data("texture_scene", texture_scene)
+        self.screen_space_reflection.bind_uniform_data("texture_normal", texture_normal)
+        self.screen_space_reflection.bind_uniform_data("texture_material", texture_material)
+        self.screen_space_reflection.bind_uniform_data("texture_velocity", texture_velocity)
+        self.screen_space_reflection.bind_uniform_data("texture_depth", texture_depth)
+        self.quad.draw_elements()
+
+    def render_screen_space_reflection_resolve(self, texture_input, texture_resolve_prev, texture_velocity):
+        self.screen_space_reflection_resolve.use_program()
+        self.screen_space_reflection_resolve.bind_material_instance()
+        self.screen_space_reflection_resolve.bind_uniform_data("texture_input", texture_input)
+        self.screen_space_reflection_resolve.bind_uniform_data("texture_resolve_prev", texture_resolve_prev)
+        self.screen_space_reflection_resolve.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()
 
     def render_deferred_shading(self, texture_probe, atmosphere):
@@ -522,7 +545,7 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
         self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.SHADOWMAP)
         self.deferred_shading.bind_uniform_data("texture_ssao", RenderTargets.SSAO)
-        self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION)
+        self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED)
 
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.deferred_shading)

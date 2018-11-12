@@ -575,6 +575,17 @@ class Renderer(Singleton):
                                                             RenderTargets.VELOCITY,
                                                             RenderTargets.LINEAR_DEPTH)
 
+            # swap ssr resolve textures
+            RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED, RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED_PREV = \
+                RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED_PREV, RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED
+
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED)
+            glClearColor(0.0, 0.0, 0.0, 0.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+            self.postprocess.render_screen_space_reflection_resolve(RenderTargets.SCREEN_SPACE_REFLECTION,
+                                                                    RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED_PREV,
+                                                                    RenderTargets.VELOCITY)
+
         # SSAO
         if self.postprocess.is_render_ssao:
             temp_ssao = self.rendertarget_manager.get_temporary('temp_ssao', RenderTargets.SSAO)
@@ -650,7 +661,7 @@ class Renderer(Singleton):
                         actor_material_instance.bind_uniform_data('texture_probe', self.scene_manager.get_light_probe_texture())
                         actor_material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
                         actor_material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
-                        actor_material_instance.bind_uniform_data('texture_scene_reflect', RenderTargets.SCREEN_SPACE_REFLECTION)
+                        actor_material_instance.bind_uniform_data('texture_scene_reflect', RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED)
                         # Bind Atmosphere
                         self.scene_manager.atmosphere.bind_precomputed_atmosphere(actor_material_instance)
             elif RenderMode.SHADOW == render_mode:
@@ -762,7 +773,7 @@ class Renderer(Singleton):
 
         # copy HDR target
         src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_PREV)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_TEMP)
         glClear(GL_COLOR_BUFFER_BIT)
         self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
@@ -770,7 +781,7 @@ class Renderer(Singleton):
         if AntiAliasing.TAA == self.postprocess.anti_aliasing:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_PREV,
+            self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_TEMP,
                                                           RenderTargets.TAA_RESOLVE,
                                                           RenderTargets.VELOCITY,
                                                           RenderTargets.LINEAR_DEPTH)
@@ -874,16 +885,16 @@ class Renderer(Singleton):
         self.debug_lines_3d = []
 
     def renderScene(self):
-        startTime = timeModule.perf_counter()
+        start_time = timeModule.perf_counter()
 
         def end_render_scene():
             glUseProgram(0)
             glFlush()
 
-            endTime = timeModule.perf_counter()
-            renderTime = endTime - startTime
-            presentTime = 0.0
-            return renderTime, presentTime
+            end_time = timeModule.perf_counter()
+            render_time = end_time - start_time
+            present_time = 0.0
+            return render_time, present_time
 
         main_camera = self.scene_manager.main_camera
 
@@ -999,15 +1010,13 @@ class Renderer(Singleton):
             glEnable(GL_DEPTH_TEST)
             glDepthMask(False)
 
-            # Composite Atmosphere & Light Shaft
+            # Composite Atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
-                # composite atmosphere
                 self.set_blend_state(True, GL_FUNC_ADD, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
-                composite_atmosphere = self.resource_manager.get_material_instance(
-                    "precomputed_atmosphere.composite_atmosphere")
+                composite_atmosphere = self.resource_manager.get_material_instance("precomputed_atmosphere.composite_atmosphere")
                 composite_atmosphere.use_program()
                 above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
                 composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
@@ -1022,6 +1031,7 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
             glEnable(GL_DEPTH_TEST)
 
+            # Translucent
             self.render_translucent()
 
             # render particle
@@ -1041,6 +1051,7 @@ class Renderer(Singleton):
 
             self.set_blend_state(False)
 
+            # PostProcess
             self.render_postprocess()
 
         # selected object
@@ -1068,14 +1079,14 @@ class Renderer(Singleton):
         self.framebuffer_manager.blit_framebuffer(self.width, self.height)
         self.framebuffer_manager.unbind_framebuffer()
 
-        endTime = timeModule.perf_counter()
-        renderTime = endTime - startTime
-        startTime = endTime
+        end_time = timeModule.perf_counter()
+        render_time = end_time - start_time
+        start_time = end_time
 
         glFlush()
 
         # swap buffer
         self.core_manager.game_backend.flip()
 
-        presentTime = timeModule.perf_counter() - startTime
-        return renderTime, presentTime
+        present_time = timeModule.perf_counter() - start_time
+        return render_time, present_time

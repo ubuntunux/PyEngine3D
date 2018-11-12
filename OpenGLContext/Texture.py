@@ -101,7 +101,8 @@ class Texture:
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
-        self.sRGB = texture_data.get('sRGB', None)
+        self.sRGB = texture_data.get('sRGB')
+        self.clear_color = texture_data.get('clear_color')
         self.multisample_count = 0
 
         if self.internal_format is None and self.image_mode:
@@ -337,6 +338,10 @@ class Texture2D(Texture):
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, self.wrap_t or self.wrap)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
+
+        if self.clear_color is not None:
+            glClearTexImage(self.buffer, 0, self.texture_format, self.data_type, self.clear_color)
+
         glBindTexture(GL_TEXTURE_2D, 0)
 
 
