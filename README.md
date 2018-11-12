@@ -13,11 +13,15 @@
   python main.py
 ```
 * Video : https://www.youtube.com/watch?v=bVwdV695_zo
+
+
 <div align="center">
     <iframe width="620" height="315"
         src="https://www.youtube.com/embed/OhlVBpEnjig">
     </iframe>
 </div>
+
+
 ## Requirements
  - numpy
  - Pillow
