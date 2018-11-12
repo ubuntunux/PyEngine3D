@@ -224,7 +224,6 @@ class MainWindow(QtGui.QMainWindow, Singleton):
         self.connect(self.message_thread, QtCore.SIGNAL(get_command_name(COMMAND.TRANS_GAME_BACKEND_INDEX)),
                      self.set_game_backend_index)
 
-
         # Object list
         self.objectList = self.findChild(QtGui.QTreeWidget, "objectListWidget")
         self.object_menu = QMenu()
