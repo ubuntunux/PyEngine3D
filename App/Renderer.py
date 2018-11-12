@@ -808,6 +808,8 @@ class Renderer(Singleton):
 
         self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
 
+        RenderTargets.HDR.generate_mipmap()
+
         # Tone Map
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         glClear(GL_COLOR_BUFFER_BIT)

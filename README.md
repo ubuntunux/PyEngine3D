@@ -103,7 +103,8 @@
     - Volumtric Fog
     - Fur Rendering
     - TAA
-        - Translucent Masking 
+        - Effect Masking
+        - Seperate Translucent, Ocedan, Atmosphere
     - Motion Blur
         - Recursive Velocity
 * Resource Manager

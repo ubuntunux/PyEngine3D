@@ -69,10 +69,10 @@ vec3 TangentToWorld(vec3 vector, vec3 TangentY)
     return GetTangentBasis(TangentY) * vector;
 }
 
-vec4 SampleScreenColor(sampler2D texPrevSceneColor, vec2 UV)
+vec4 SampleScreenColor(sampler2D texPrevSceneColor, vec2 UV, float lod)
 {
     vec4 OutColor;
-    OutColor.xyz = texture2DLod(texPrevSceneColor, UV, 0.0).xyz;
+    OutColor.xyz = texture2DLod(texPrevSceneColor, UV, lod).xyz;
     OutColor.w = 1;
 
     // Off screen masking
@@ -125,6 +125,7 @@ void main() {
     float fresnel = pow(1.0 - clamp(NdotV, 0.0, 1.0), 4.0);
 
     float Roughness = clamp(texture2D(texture_material, vs_output.tex_coord.xy).x - fresnel, 0.0, 1.0);
+    float sqrtRoughness = sqrt(Roughness);
 
     const int NumSteps = 16;
     const int NumRays = 8;
@@ -140,7 +141,7 @@ void main() {
         float StepOffset = 0.5 - rand(tex_coord + random);
 
         vec2 E = Hammersley(i, NumRays, uvec2(random * 117));
-        vec3 H = TangentToWorld(ImportanceSampleBlinn( random, sqrt(Roughness) * 0.6 ).xyz, N);
+        vec3 H = TangentToWorld(ImportanceSampleBlinn( random, sqrtRoughness * 0.5 ).xyz, N);
         vec3 R = reflect(-V, H);
 
         vec4 HitUVzTime = RayCast(
@@ -160,7 +161,7 @@ void main() {
         if (HitUVzTime.w < 1)
         {
             HitSampleUV = HitUVzTime.xy - texture2D(texture_velocity, HitUVzTime.xy).xy;
-            vec4 SampleColor = SampleScreenColor(texture_scene, HitSampleUV);
+            vec4 SampleColor = SampleScreenColor(texture_scene, HitSampleUV, sqrtRoughness * 6.0);
             SampleColor.rgb /= 1 + get_luminance(SampleColor.rgb);
             fs_output += SampleColor;
             hit_count += 1.0;
