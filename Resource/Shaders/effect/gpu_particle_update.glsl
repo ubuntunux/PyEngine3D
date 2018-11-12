@@ -178,14 +178,20 @@ void update(inout ParticleData particle_data, uint id)
             update_sequence(particle_data, life_ratio);
 
             particle_data.velocity_position += particle_data.force * DELTA_TIME;
+            
+            vec3 force = vec3(0.0, 0.0, 0.0);
 
             if(PARTICLE_ENABLE_VECTOR_FIELD)
             {
                 vec3 uvw = (PARTICLE_VECTOR_FIELD_INV_MATRIX * vec4(particle_data.transform_position, 1.0)).xyz;
-                vec3 force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
-                force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz * PARTICLE_VECTOR_FIELD_STRENGTH;
-                particle_data.velocity_position = mix(particle_data.velocity_position + force * DELTA_TIME, force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
+                vec3 vector_field_force = texture3D(texture_vector_field, uvw - vec3(0.5)).xyz;
+                vector_field_force = (PARTICLE_VECTOR_FIELD_MATRIX * vec4(force, 1.0)).xyz * PARTICLE_VECTOR_FIELD_STRENGTH;
+                
+                force += vector_field_force * clamp(1.0 - PARTICLE_VECTOR_FIELD_TIGHTNESS, 0.0, 1.0);
+                
+                particle_data.velocity_position = mix(particle_data.velocity_position, vector_field_force, PARTICLE_VECTOR_FIELD_TIGHTNESS);
             }
+            particle_data.velocity_position += force * DELTA_TIME;
 
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
             particle_data.transform_rotation += particle_data.velocity_rotation * DELTA_TIME;
