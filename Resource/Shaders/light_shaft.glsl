@@ -26,10 +26,42 @@ void main()
     vec4 light_shaft_proj = PROJECTION * VIEW_ORIGIN * vec4(LIGHT_DIRECTION.xyz * NEAR_FAR.y, 1.0);
     light_shaft_proj.xyz /= light_shaft_proj.w;
     vec2 light_shaft_uv = light_shaft_proj.xy * 0.5 + 0.5;
-    const int sample_count = 100;
-    vec2 delta_uv = (light_shaft_uv - uv) / float(sample_count);
+
+    vec2 delta_uv = light_shaft_uv - uv;
+    float ratio = 1.0;
+
+    if(abs(light_shaft_uv.y) < abs(light_shaft_uv.x))
+    {
+        if(1.0 < light_shaft_uv.x)
+        {
+            ratio = (1.0 - uv.x) / delta_uv.x;
+        }
+        else if(light_shaft_uv.y < 0.0)
+        {
+            ratio = uv.x / -delta_uv.x;
+        }
+    }
+    else
+    {
+        if(1.0 < light_shaft_uv.y)
+        {
+            ratio = (1.0 - uv.y) / delta_uv.y;
+        }
+        else if(light_shaft_uv.y < 0.0)
+        {
+            ratio = uv.y / -delta_uv.y;
+        }
+    }
+
+    const int sample_count = 30;
+    delta_uv = delta_uv * ratio / float(sample_count);
+
+    float radian = atan((0.0 != delta_uv.x) ? (delta_uv.y / -delta_uv.x) : delta_uv.x) * 0.05;
+    float noise = textureLod(texture_random, vec2(radian, 0.0), 0.0).x * 0.5 + 0.5;
+
     vec3 light_shaft_color = vec3(0.0);
     vec2 sample_uv = uv;
+
     for(int i=0; i<sample_count; ++i)
     {
         if(sample_uv.x < 0.0 || 1.0 < sample_uv.x || sample_uv.y < 0.0 || 1.0 < sample_uv.y )
@@ -41,12 +73,12 @@ void main()
         float luminance = max(0.01, get_luminance(diffuse));
         diffuse *= max(0.0, luminance - light_shaft_threshold) / luminance;
 
-        float noise = textureLod(texture_random, sample_uv, 0.0).x;
-        light_shaft_color += diffuse * noise;
+        light_shaft_color += diffuse;
         sample_uv += delta_uv;
     }
+
     light_shaft_color = light_shaft_color / float(sample_count) * light_shaft_intensity;
-    light_shaft_color *= clamp(dot(screen_center_ray, LIGHT_DIRECTION.xyz) * 2.0 + 1.0, 0.0, 1.0);
+    light_shaft_color *= clamp(dot(screen_center_ray, LIGHT_DIRECTION.xyz) * 0.5 + 0.5, 0.0, 1.0);
 
     // scattering
     const float shadow_depth_bias = 0.0025;
@@ -63,7 +95,7 @@ void main()
         shadow_uv.xyz /= shadow_uv.w;
         shadow_uv.xyz = shadow_uv.xyz * 0.5 + 0.5;
 
-        float shadow_depth = texture2D(texture_shadow, shadow_uv.xy, 0.0).x;
+        float shadow_depth = textureLod(texture_shadow, shadow_uv.xy, 0.0).x;
 
         if(shadow_uv.x < 0.0 || 1.0 < shadow_uv.x ||
             shadow_uv.y < 0.0 || 1.0 < shadow_uv.y ||
@@ -74,7 +106,7 @@ void main()
         }
     }
 
-    fs_output.xyz = light_shaft / float(count);
+    fs_output.xyz = light_shaft * noise / float(count);
     fs_output.w = 1.0;
 }
 #endif

@@ -139,7 +139,7 @@ void main()
     float atmosphere_lighting = max(0.2, pow(saturate(dot(N, sun_direction) * 0.5 + 0.5), 1.0));
 
     // Cloud
-    if(render_cloud)
+    if(render_cloud && NEAR_FAR.y <= scene_linear_depth)
     {
         vec3 cloud_inscatter = vec3(0.0);
         vec3 cloud_sun_irradiance = vec3(0.0);

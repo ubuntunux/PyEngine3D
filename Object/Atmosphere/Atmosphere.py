@@ -56,7 +56,7 @@ class Atmosphere:
         self.cloud_absorption = 0.15
 
         self.cloud_contrast = 2.0
-        self.cloud_coverage = 0.9
+        self.cloud_coverage = 0.8
         self.cloud_tiling = 0.0004
 
         self.noise_contrast = 1.0

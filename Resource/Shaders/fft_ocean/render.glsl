@@ -230,7 +230,7 @@ void main()
     vec3 scene_reflect_color = textureCubeLod(texture_probe, invert_y(R), 0.0).xyz;
 
     // Under Water
-    vec3 under_water_color = texture2D(texture_scene, (refracted_scene_dist <= dist) ? screen_tex_coord : reflected_screen_uv, 0.0).xyz;
+    vec3 under_water_color = texture2DLod(texture_scene, (refracted_scene_dist <= dist) ? screen_tex_coord : reflected_screen_uv, 0.0).xyz;
     {
         // Under Water Caustic
         if(false == isUnderWater)

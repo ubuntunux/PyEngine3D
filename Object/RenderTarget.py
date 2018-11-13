@@ -278,8 +278,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.LIGHT_SHAFT = self.create_rendertarget(
             "LIGHT_SHAFT",
             texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
+            width=halfsize_x,
+            height=halfsize_y,
             internal_format=hdr_internal_format,
             texture_format=GL_RGBA,
             min_filter=GL_LINEAR,

@@ -11,13 +11,13 @@ const float VarianceClipGamma = 1.5;
 
 vec4 ClipAABB(vec4 aabbMin, vec4 aabbMax, vec4 prevSample, vec4 avg)
 {
-
     vec4 p_clip = 0.5 * (aabbMax + aabbMin);
     vec4 e_clip = 0.5 * (aabbMax - aabbMin);
 
     vec4 v_clip = prevSample - p_clip;
     vec4 v_unit = v_clip / e_clip;
     vec4 a_unit = abs(v_unit);
+
     float ma_unit = max(a_unit.x, max(a_unit.y, max(a_unit.z, a_unit.w)));
 
     if (ma_unit > 1.0)
@@ -60,6 +60,7 @@ void main()
             if(0 == x && 0 == y)
             {
                 currColor = sampleColor;
+                currColor.w = saturate(currColor.w);
             }
 
             vec2 sampleDist = abs(sampleOffset);
@@ -81,13 +82,14 @@ void main()
     // Anti Aliasing
     vec2 velocity = texture2DLod(texture_velocity, uv, 0.0).xy;
     vec4 prevColor = texture2DLod(texture_resolve_prev, uv - velocity, 0.0);
+    prevColor.w = saturate(prevColor.w);
 
     // NeighborhoodClampMode
-    vec4 mu = m1 / mWeight;
+    vec4 mu = currColor; // important, use currColor instead of (m1 / mWeight) beacause blurry result..
     vec4 sigma = sqrt(abs(m2 / mWeight - mu * mu));
     vec4 minc = mu - VarianceClipGamma * sigma;
     vec4 maxc = mu + VarianceClipGamma * sigma;
-    prevColor = ClipAABB(minc, maxc, prevColor, mu);
+    prevColor = ClipAABB(minc, maxc, prevColor, m1 / mWeight);
 
     vec4 weightB = mix(vec4(0.9f), vec4(0.99f), saturate(abs(clrMax - clrMin) / currColor));
     vec4 weightA = 1.0f - weightB;
@@ -96,9 +98,12 @@ void main()
     weightA = weightA / (1.0f + get_luminance(currColor.xyz));
     weightB = weightB / (1.0f + get_luminance(prevColor.xyz));
 
-    weightA = weightA * (1.0 + currColor.w * 10.0f);
-    weightB = weightB * (1.0f + prevColor.w * 10.0f);
+    weightA = weightA * (1.0 + currColor.w * 10.0);
+    weightB = weightB * (1.0 + prevColor.w * 10.0);
 
     fs_output = (currColor * weightA + prevColor * weightB) / (weightA + weightB);
+
+    fs_output.xyz = max(vec3(0.0), fs_output.xyz);
+    fs_output.w = saturate(fs_output.w);
 }
 #endif

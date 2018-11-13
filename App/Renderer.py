@@ -343,23 +343,22 @@ class Renderer(Singleton):
         frame_count = self.core_manager.frame_count % 16
 
         uniform_data = self.uniform_scene_data
-        uniform_data['TIME'] = self.core_manager.currentTime
+        uniform_data['TIME'] = self.core_manager.current_time
         uniform_data['JITTER_FRAME'] = frame_count
         uniform_data['RENDER_SSR'] = self.postprocess.is_render_ssr
         uniform_data['RENDER_SSAO'] = self.postprocess.is_render_ssao
-        uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width,
-                                           RenderTargets.BACKBUFFER.height)
+        uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
         uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
         uniform_data['DELTA_TIME'] = self.core_manager.delta
         self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_view_data
         uniform_data['VIEW'][...] = camera.view
-        uniform_data['INV_VIEW'][...] = np.linalg.inv(camera.view)
+        uniform_data['INV_VIEW'][...] = camera.inv_view
         uniform_data['VIEW_ORIGIN'][...] = camera.view_origin
         uniform_data['INV_VIEW_ORIGIN'][...] = np.transpose(camera.view_origin)
-        uniform_data['PROJECTION'][...] = camera.projection
-        uniform_data['INV_PROJECTION'][...] = np.linalg.inv(camera.projection)
+        uniform_data['PROJECTION'][...] = camera.projection_jitter
+        uniform_data['INV_PROJECTION'][...] = camera.inv_projection_jitter
         uniform_data['CAMERA_POSITION'][...] = camera.transform.get_pos()
         uniform_data['NEAR_FAR'][...] = (camera.near, camera.far)
         uniform_data['JITTER_DELTA'][...] = self.postprocess.jitter_delta
@@ -513,11 +512,6 @@ class Renderer(Singleton):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        camera = self.scene_manager.main_camera
-        self.uniform_view_projection_data['VIEW_PROJECTION'] = camera.view_projection
-        self.uniform_view_projection_data['PREV_VIEW_PROJECTION'] = camera.prev_view_projection
-        self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
-
         # render static actor
         self.render_actors(RenderGroup.STATIC_ACTOR,
                            RenderMode.GBUFFER,
@@ -541,11 +535,6 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_solid_render_infos)
 
     def render_shadow(self):
-        light = self.scene_manager.main_light
-        self.uniform_view_projection_data['VIEW_PROJECTION'] = light.shadow_view_projection
-        self.uniform_view_projection_data['PREV_VIEW_PROJECTION'] = light.shadow_view_projection
-        self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
-
         self.render_actors(RenderGroup.STATIC_ACTOR,
                            RenderMode.SHADOW,
                            self.scene_manager.static_shadow_render_infos,
@@ -599,11 +588,6 @@ class Renderer(Singleton):
             self.postprocess.render_gaussian_blur(RenderTargets.SSAO, temp_ssao)
 
     def render_solid(self):
-        camera = self.scene_manager.main_camera
-        self.uniform_view_projection_data['VIEW_PROJECTION'] = camera.view_projection
-        self.uniform_view_projection_data['PREV_VIEW_PROJECTION'] = camera.prev_view_projection
-        self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
-
         if RenderingType.DEFERRED_RENDERING == self.render_option_manager.rendering_type:
             self.postprocess.render_deferred_shading(self.scene_manager.get_light_probe_texture(),
                                                      self.scene_manager.atmosphere)
@@ -760,7 +744,7 @@ class Renderer(Singleton):
                     skeletons = static_actor.model.mesh.skeletons
                     skeleton_mesh = static_actor.model.mesh
                     frame_count = skeleton_mesh.get_animation_frame_count()
-                    frame = math.fmod(self.core_manager.currentTime * 30.0, frame_count) if frame_count > 0.0 else 0.0
+                    frame = math.fmod(self.core_manager.current_time * 30.0, frame_count) if frame_count > 0.0 else 0.0
                     isAnimation = frame_count > 0.0
                     for skeleton in skeletons:
                         matrix = static_actor.transform.matrix
@@ -953,12 +937,20 @@ class Renderer(Singleton):
             """ render normal scene """
             self.scene_manager.ocean.simulateFFTWaves()
 
-            if RenderingType.DEFERRED_RENDERING == self.render_option_manager.rendering_type:
-                self.render_gbuffer()
-            else:
-                self.render_gbuffer()
+            # render gbuffer & preprocess
+            camera = self.scene_manager.main_camera
+            self.uniform_view_projection_data['VIEW_PROJECTION'][...] = camera.view_projection_jitter
+            self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = camera.prev_view_projection_jitter
+            self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
+            self.render_gbuffer()
             self.render_preprocess()
+
+            # render shadow
+            light = self.scene_manager.main_light
+            self.uniform_view_projection_data['VIEW_PROJECTION'][...] = light.shadow_view_projection
+            self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = light.shadow_view_projection
+            self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
             self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
             glClear(GL_DEPTH_BUFFER_BIT)
@@ -966,6 +958,12 @@ class Renderer(Singleton):
             glFrontFace(GL_CW)
 
             self.render_shadow()
+
+            # render solid
+            camera = self.scene_manager.main_camera
+            self.uniform_view_projection_data['VIEW_PROJECTION'][...] = camera.view_projection_jitter
+            self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = camera.prev_view_projection_jitter
+            self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
             glFrontFace(GL_CCW)
 
@@ -982,6 +980,12 @@ class Renderer(Singleton):
             glClear(GL_COLOR_BUFFER_BIT)
             dst_framebuffer.copy_framebuffer(src_framebuffer)
             src_framebuffer.run_bind_framebuffer()
+
+            # set common projection matrix
+            camera = self.scene_manager.main_camera
+            self.uniform_view_projection_data['VIEW_PROJECTION'][...] = camera.view_projection
+            self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = camera.prev_view_projection
+            self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
             # render ocean
             if self.scene_manager.ocean.is_render_ocean:

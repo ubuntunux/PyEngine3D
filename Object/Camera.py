@@ -32,17 +32,26 @@ class Camera(StaticActor):
         self.frustum_vectors = np.zeros(12, dtype=np.float32).reshape(4, 3)
 
         self.projection = Matrix4()
+        self.projection_jitter = Matrix4()
+        self.inv_projection = Matrix4()
+        self.inv_projection_jitter = Matrix4()
         self.projection_offset = Float2()
 
         self.view = Matrix4()
+        self.inv_view = Matrix4()
         self.view_origin = Matrix4()
         self.view_projection = Matrix4()
+        self.view_projection_jitter = Matrix4()
         self.view_origin_projection = Matrix4()
+        self.view_origin_projection_jitter = Matrix4()
 
         self.prev_view = Matrix4()
+        self.inv_prev_view = Matrix4()
         self.prev_view_origin = Matrix4()
         self.prev_view_projection = Matrix4()
+        self.prev_view_projection_jitter = Matrix4()
         self.prev_view_origin_projection = Matrix4()
+        self.prev_view_origin_projection_jitter = Matrix4()
 
     def initialize(self):
         config = CoreManager.instance().project_manager.config
@@ -97,39 +106,51 @@ class Camera(StaticActor):
 
     def update_projection(self, fov=0.0, aspect=0.0, force_update=False):
         need_to_update = False
-        if 0.0 < fov and fov != self.fov:
+        if 0.0 < fov != self.fov:
             self.fov = fov
             need_to_update = True
 
-        if 0.0 < aspect and aspect != self.aspect:
+        if 0.0 < aspect != self.aspect:
             self.aspect = aspect
             need_to_update = True
 
         if force_update or need_to_update:
             self.projection[...] = perspective(self.fov, self.aspect, self.near, self.far)
-            # self.half_cone = atan(1.0 / min(self.projection[0][0], self.projection[1][1]))
+            self.projection_jitter[...] = self.projection
+            self.projection_jitter[2][0] = -self.postprocess.jitter[0]
+            self.projection_jitter[2][1] = -self.postprocess.jitter[1]
+
+            self.inv_projection[...] = np.linalg.inv(self.projection)
+            self.inv_projection_jitter[...] = np.linalg.inv(self.projection_jitter)
 
     def update(self, force_update=False):
         updated = self.transform.update_transform(update_inverse_matrix=True, force_update=force_update)
 
         if updated or force_update:
             self.prev_view = self.transform.prev_inverse_matrix
+            self.inv_prev_view = self.transform.prev_matrix
             self.prev_view_origin[...] = self.view_origin
 
             self.view = self.transform.inverse_matrix
+            self.inv_view = self.transform.matrix
             self.view_origin[...] = self.view
             self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
 
         self.prev_view_projection[...] = self.view_projection
+        self.prev_view_projection_jitter[...] = self.view_projection_jitter
         self.prev_view_origin_projection[...] = self.view_origin_projection
+        self.prev_view_origin_projection_jitter[...] = self.view_origin_projection_jitter
 
         # Update projection jitter.
         # This part is very important because the w value of the projection matrix 3rd row is ​​-1.0.
-        self.projection[2][0] = -self.postprocess.jitter[0]
-        self.projection[2][1] = -self.postprocess.jitter[1]
+        self.projection_jitter[2][0] = -self.postprocess.jitter[0]
+        self.projection_jitter[2][1] = -self.postprocess.jitter[1]
+        self.inv_projection_jitter[...] = np.linalg.inv(self.projection_jitter)
 
         self.view_projection[...] = np.dot(self.view, self.projection)
+        self.view_projection_jitter[...] = np.dot(self.view, self.projection_jitter)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
+        self.view_origin_projection_jitter[...] = np.dot(self.view_origin, self.projection_jitter)
 
         # update frustum planes
         if updated or force_update:

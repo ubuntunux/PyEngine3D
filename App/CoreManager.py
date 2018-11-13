@@ -43,14 +43,14 @@ class CoreManager(Singleton):
         # timer
         self.fps = 0.0
         self.vsync = False
-        self.minDelta = 1.0 / 60.0  # 60fps
+        self.min_delta = 1.0 / 60.0  # 60fps
         self.delta = 0.0
-        self.updateTime = 0.0
-        self.logicTime = 0.0
-        self.gpuTime = 0.0
-        self.renderTime = 0.0
-        self.presentTime = 0.0
-        self.currentTime = 0.0
+        self.update_time = 0.0
+        self.logic_time = 0.0
+        self.gpu_time = 0.0
+        self.render_time = 0.0
+        self.present_time = 0.0
+        self.current_time = 0.0
 
         self.min_delta = sys.float_info.max
         self.max_delta = sys.float_info.min
@@ -61,15 +61,15 @@ class CoreManager(Singleton):
         self.frame_count = 0
         self.acc_time = 0.0
 
-        self.avg_logicTime = 0.0
-        self.avg_gpuTime = 0.0
-        self.avg_renderTime = 0.0
-        self.avg_presentTime = 0.0
+        self.avg_logic_time = 0.0
+        self.avg_gpu_time = 0.0
+        self.avg_render_time = 0.0
+        self.avg_present_time = 0.0
 
-        self.acc_logicTime = 0.0
-        self.acc_gpuTime = 0.0
-        self.acc_renderTime = 0.0
-        self.acc_presentTime = 0.0
+        self.acc_logic_time = 0.0
+        self.acc_gpu_time = 0.0
+        self.acc_render_time = 0.0
+        self.acc_present_time = 0.0
 
         # managers
         self.script_manager = None
@@ -148,8 +148,7 @@ class CoreManager(Singleton):
         self.game_backend.change_resolution(width, height, full_screen, resize_scene=False)
 
         self.send_game_backend_list(self.game_backend_list)
-        index = self.game_backend_list.index(
-            self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
+        index = self.game_backend_list.index(self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
         self.send_current_game_backend_index(index)
 
         if not self.game_backend.valid:
@@ -562,10 +561,10 @@ class CoreManager(Singleton):
             cameraTransform.reset_transform()
 
     def update(self):
-        currentTime = time.perf_counter()
-        delta = currentTime - self.currentTime
+        current_time = time.perf_counter()
+        delta = current_time - self.current_time
 
-        if self.vsync and delta < self.minDelta or delta == 0.0:
+        if self.vsync and delta < self.min_delta or delta == 0.0:
             return
 
         self.acc_time += delta
@@ -574,13 +573,13 @@ class CoreManager(Singleton):
         self.curr_max_delta = max(delta, self.curr_max_delta)
 
         # set timer
-        self.currentTime = currentTime
+        self.current_time = current_time
         self.delta = delta
         self.fps = 1.0 / delta
 
-        self.updateTime = delta * 1000.0  # millisecond
+        self.update_time = delta * 1000.0  # millisecond
 
-        startTime = time.perf_counter()
+        start_time = time.perf_counter()
         self.updateCommand()
 
         if self.is_play_mode:
@@ -592,31 +591,32 @@ class CoreManager(Singleton):
 
         # update actors
         self.scene_manager.update_scene(delta)
-        self.logicTime = (time.perf_counter() - startTime) * 1000.0  # millisecond
+        self.logic_time = (time.perf_counter() - start_time) * 1000.0  # millisecond
 
-        # render scene
-        startTime = time.perf_counter()
+        start_time = time.perf_counter()
+        # render_light_probe scene
         self.renderer.render_light_probe(self.scene_manager.main_light_probe)
-        renderTime, presentTime = self.renderer.renderScene()
+        # render sceme
+        render_time, present_time = self.renderer.renderScene()
 
-        self.renderTime = renderTime * 1000.0  # millisecond
-        self.presentTime = presentTime * 1000.0  # millisecond
+        self.render_time = render_time * 1000.0  # millisecond
+        self.present_time = present_time * 1000.0  # millisecond
 
-        self.acc_logicTime += self.logicTime
-        self.acc_gpuTime += self.gpuTime
-        self.acc_renderTime += self.renderTime
-        self.acc_presentTime += self.presentTime
+        self.acc_logic_time += self.logic_time
+        self.acc_gpu_time += self.gpu_time
+        self.acc_render_time += self.render_time
+        self.acc_present_time += self.present_time
 
         if 1.0 < self.acc_time:
-            self.avg_logicTime = self.acc_logicTime / self.frame_count
-            self.avg_gpuTime = self.acc_gpuTime / self.frame_count
-            self.avg_renderTime = self.acc_renderTime / self.frame_count
-            self.avg_presentTime = self.acc_presentTime / self.frame_count
+            self.avg_logic_time = self.acc_logic_time / self.frame_count
+            self.avg_gpu_time = self.acc_gpu_time / self.frame_count
+            self.avg_render_time = self.acc_render_time / self.frame_count
+            self.avg_present_time = self.acc_present_time / self.frame_count
 
-            self.acc_logicTime = 0.0
-            self.acc_gpuTime = 0.0
-            self.acc_renderTime = 0.0
-            self.acc_presentTime = 0.0
+            self.acc_logic_time = 0.0
+            self.acc_gpu_time = 0.0
+            self.acc_render_time = 0.0
+            self.acc_present_time = 0.0
 
             self.min_delta = self.curr_min_delta * 1000.0
             self.max_delta = self.curr_max_delta * 1000.0
@@ -628,13 +628,13 @@ class CoreManager(Singleton):
             self.acc_time = 0.0
 
         # debug info
-        # print(self.fps, self.updateTime)
+        # print(self.fps, self.update_time)
         self.font_manager.log("%.2f fps" % self.avg_fps)
         self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (self.avg_ms, self.min_delta, self.max_delta))
-        self.font_manager.log("CPU : %.2f ms" % self.avg_logicTime)
-        self.font_manager.log("GPU : %.2f ms" % self.avg_gpuTime)
-        self.font_manager.log("Render : %.2f ms" % self.avg_renderTime)
-        self.font_manager.log("Present : %.2f ms" % self.avg_presentTime)
+        self.font_manager.log("CPU : %.2f ms" % self.avg_logic_time)
+        self.font_manager.log("GPU : %.2f ms" % self.avg_gpu_time)
+        self.font_manager.log("Render : %.2f ms" % self.avg_render_time)
+        self.font_manager.log("Present : %.2f ms" % self.avg_present_time)
 
         render_count = len(self.scene_manager.skeleton_solid_render_infos)
         render_count += len(self.scene_manager.skeleton_translucent_render_infos)
@@ -651,7 +651,7 @@ class CoreManager(Singleton):
             self.font_manager.log("Selected Object : %s" % selected_object.name)
             if hasattr(selected_object, 'transform'):
                 self.font_manager.log(selected_object.transform.get_transform_infos())
-        self.gpuTime = (time.perf_counter() - startTime) * 1000.0
+        self.gpu_time = (time.perf_counter() - start_time) * 1000.0
 
         if self.need_to_gc_collect:
             self.need_to_gc_collect = False
