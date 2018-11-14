@@ -2,7 +2,7 @@
                 'cloud_absorption': 0.15,
                 'cloud_altitude': 100.0,
                 'cloud_contrast': 2.0,
-                'cloud_coverage': 0.9,
+                'cloud_coverage': 0.8,
                 'cloud_height': 500.0,
                 'cloud_speed': 0.01,
                 'cloud_tiling': 0.0004,
