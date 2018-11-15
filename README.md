@@ -91,9 +91,6 @@
     - Voxel Based GI
     - Screen Space Bevel
     - Screen Space SSS
-    - Screen Space Reflection
-        - Temporal Resolve
-        - Cone trace mipmap
     - Glare
     - Depth Of Field
         - Bokeh
