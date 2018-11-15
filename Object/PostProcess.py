@@ -71,8 +71,8 @@ class PostProcess:
         self.bloom_scale = 1.0
 
         self.is_render_light_shaft = True
-        self.light_shaft_intensity = 1.0
-        self.light_shaft_threshold = 1.0
+        self.light_shaft_intensity = 2.0
+        self.light_shaft_threshold = 0.0
         self.light_shaft_length = 1.0
         self.light_shaft = None
 
