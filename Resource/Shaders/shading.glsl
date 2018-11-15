@@ -337,7 +337,6 @@ vec4 surface_shading(vec4 base_color,
 
         vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
-        ibl_specular_light *= shadow_factor;
 
         // mix scene reflection
         if(RENDER_SSR)
@@ -347,7 +346,7 @@ vec4 surface_shading(vec4 base_color,
         }
 
         diffuse_light += ibl_diffuse_light * shValue * shadow_factor;
-        specular_light += ibl_specular_light * shValue;
+        specular_light += ibl_specular_light * shValue * shadow_factor;
     }
 
     // final result

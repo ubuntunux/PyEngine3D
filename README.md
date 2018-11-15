@@ -55,6 +55,7 @@
     - Spot
     - Area light
     - Point light shadow using dual paraboloid mapping
+        - Use TextureArray2D for resource managemnet
 * Object
     - Select, Move, Modify
     - Gizmo
@@ -62,6 +63,7 @@
     - Animation calculation in gpu
 * Particle System
     - Emitter Rotation
+    - Emitter Script
     - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool
