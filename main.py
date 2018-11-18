@@ -48,7 +48,7 @@ class GUIEditor(AutoEnum):
     CLIENT_MODE = ()
     QT = ()
     TKINTER = ()
-    KIVY = ()
+    PYGLGUI = ()
 
 
 def run(editor=GUIEditor.QT, project_filename=""):
@@ -65,7 +65,7 @@ def run(editor=GUIEditor.QT, project_filename=""):
         if os.path.exists(last_project):
             project_filename = last_project
 
-    # other process - GUIEditor ( TKINTER, QT, Kivy )
+    # other process - GUIEditor
     if editor != GUIEditor.CLIENT_MODE:
         appCmdQueue = CustomQueue()
         uiCmdQueue = CustomQueue()
@@ -76,8 +76,8 @@ def run(editor=GUIEditor.QT, project_filename=""):
             from UI.QT.MainWindow import run_editor
         elif editor == GUIEditor.TKINTER:
             from UI.TKInter.MainWindow import run_editor
-        elif editor == GUIEditor.KIVY:
-            from UI.Kivy.MainWindow import run_editor
+        elif editor == GUIEditor.PYGLGUI:
+            from UI.PyGLGUI.MainWindow import run_editor
         editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
         editor_process.start()
 

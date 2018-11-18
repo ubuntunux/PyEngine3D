@@ -14,10 +14,6 @@ from .GameBackend import PyGlet, PyGame, Keyboard, Event
 from Common import logger, log_level, COMMAND
 from Utilities import Singleton, GetClassName, Config, Profiler
 
-# Function : IsExtensionSupported
-# NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
-reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
-
 
 # ------------------------------#
 # CLASS : CoreManager
@@ -110,7 +106,7 @@ class CoreManager(Singleton):
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
         from OpenGLContext import OpenGLContext
-        from ResourceManager import ResourceManager
+        from Resource import ResourceManager
         from Object import RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .Renderer import Renderer
         from .SceneManager import SceneManager

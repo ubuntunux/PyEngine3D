@@ -1,3 +1,4 @@
+import re
 import traceback
 
 import numpy as np
@@ -9,6 +10,11 @@ from OpenGL import images, arrays
 import ctypes
 
 from Common import logger
+
+
+# Function : IsExtensionSupported
+# NeHe Tutorial Lesson: 45 - Vertex Buffer Objects
+reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 
 
 class OpenGLContext:
