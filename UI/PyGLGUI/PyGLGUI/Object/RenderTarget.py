@@ -2,9 +2,9 @@ from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
-from ...PyGLGUI.Utilities import *
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
+from ..Utilities import *
+from ..Common import logger
+from ..OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
 
 
 class Option:

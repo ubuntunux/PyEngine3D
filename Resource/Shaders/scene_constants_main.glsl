@@ -1,3 +1,4 @@
+#include "scene_constants.glsl"
 #include "quad.glsl"
 
 

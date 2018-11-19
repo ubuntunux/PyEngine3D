@@ -7,9 +7,9 @@ import uuid
 
 from OpenGL.GL import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import GetClassName, Attributes, Logger, AutoEnum
-from ...PyGLGUI.App import CoreManager
+from ..Common import logger
+from ..Utilities import GetClassName, Attributes, Logger, AutoEnum
+from ..App import CoreManager
 
 reInclude = re.compile('\#include\s+[\"|\<](.+?)[\"|\>]')  # [include file name, ]
 reVersion = re.compile("(\#version\s+.+)")  # [version code, ]

@@ -1,8 +1,8 @@
 import numpy as np
 from OpenGL.GL import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.App import CoreManager
+from ..Common import logger
+from ..App import CoreManager
 
 
 ignore_uniform_types = ["atomic_bool", "atomic_uint", "atomic_int", "atomic_float"]

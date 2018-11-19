@@ -8,7 +8,7 @@ from pyglet import info
 from pyglet.window import key
 from pyglet.window import mouse
 
-from Common import logger, log_level, COMMAND
+from ...Common import logger
 from .GameBackend import GameBackend, Keyboard, Event
 
 
@@ -276,7 +276,6 @@ class PyGlet(GameBackend):
 
         if resize_scene:
             self.core_manager.renderer.resizeScene(self.width, self.height)
-        self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
     def on_resize(self, width, height):
         self.video_resized = True

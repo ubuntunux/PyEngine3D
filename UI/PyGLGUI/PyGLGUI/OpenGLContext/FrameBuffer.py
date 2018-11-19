@@ -2,9 +2,9 @@ from functools import partial
 
 from OpenGL.GL import *
 
-from ...PyGLGUI.Utilities import GetClassName, Singleton
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.OpenGLContext import OpenGLContext
+from ..Utilities import GetClassName, Singleton
+from ..Common import logger
+from ..OpenGLContext import OpenGLContext
 
 
 class FrameBuffer:

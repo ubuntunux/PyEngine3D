@@ -1,6 +1,6 @@
-from ...PyGLGUI.Object import ScreenQuad
-from ...PyGLGUI.OpenGLContext import InstanceBuffer
-from ...PyGLGUI.Utilities import *
+from ..Object import ScreenQuad
+from ..OpenGLContext import InstanceBuffer
+from ..Utilities import *
 
 
 class FontData:
@@ -22,7 +22,6 @@ class FontManager(Singleton):
         self.quad = None
         self.instance_buffer = None
         self.ascii = None
-        self.show = True
 
         self.pos_x = 0
         self.pos_y = 0
@@ -58,12 +57,7 @@ class FontManager(Singleton):
     def get_font_texture(self):
         return self.ascii.texture
 
-    def toggle(self):
-        self.show = not self.show
-
     def log(self, text, font_size=12):
-        if not self.show or not RenderOption.RENDER_FONT:
-            return
         self.font_size = font_size
         count_ratio = 1.0 / self.ascii.count_horizontal
         render_size = len(self.render_queues)
@@ -92,7 +86,7 @@ class FontManager(Singleton):
                 self.pos_x += font_size
 
     def render_font(self, screen_width, screen_height):
-        if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
+        if len(self.render_queues) > 0:
             render_queue = np.array(self.render_queues, dtype=np.float32)
             self.font_shader.use_program()
             self.font_shader.bind_material_instance()

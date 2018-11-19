@@ -109,7 +109,8 @@ class Renderer(Singleton):
         self.framebuffer_manager = FrameBufferManager.instance()
 
         # material instances
-        self.scene_constants_material = self.resource_manager.get_default_material_instance()
+        self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants_main')
+
         self.debug_bone_material = self.resource_manager.get_material_instance("debug_bone")
 
         self.shadowmap_material = self.resource_manager.get_material_instance("shadowmap")

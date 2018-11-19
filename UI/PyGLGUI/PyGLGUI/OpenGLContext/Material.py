@@ -11,9 +11,9 @@ from OpenGL.GL.shaders import glDeleteShader
 import numpy as np
 
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import Attributes, Logger
-from ...PyGLGUI.App import CoreManager
+from ..Common import logger
+from ..Utilities import Attributes, Logger
+from ..App import CoreManager
 from .UniformBuffer import CreateUniformBuffer, UniformTextureBase
 
 

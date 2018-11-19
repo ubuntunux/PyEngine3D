@@ -1,6 +1,6 @@
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.OpenGLContext import CreateVertexArrayBuffer, VertexArrayBuffer
-from ...PyGLGUI.Utilities import *
+from ..Common import logger
+from ..OpenGLContext import CreateVertexArrayBuffer, VertexArrayBuffer
+from ..Utilities import *
 
 
 def calc_bounding(positions):

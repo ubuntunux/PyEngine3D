@@ -1,10 +1,10 @@
 from collections import OrderedDict
 import copy
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.App import CoreManager
-from ...PyGLGUI.OpenGLContext import CreateUniformDataFromString
-from ...PyGLGUI.Utilities import Attributes
+from ..Common import logger
+from ..App import CoreManager
+from ..OpenGLContext import CreateUniformDataFromString
+from ..Utilities import Attributes
 
 
 class MaterialInstance:

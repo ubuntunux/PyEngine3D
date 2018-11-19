@@ -29,13 +29,13 @@ import numpy as np
 from numpy import array, float32, uint8
 from OpenGL.GL import *
 
-from ...PyGLGUI.Common import *
-from ...PyGLGUI.Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Font
-from ...PyGLGUI.OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
-from ...PyGLGUI.OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
-from ...PyGLGUI.OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
-from ...PyGLGUI.Utilities import Attributes, Singleton
-from ...PyGLGUI.Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
+from ..Common import *
+from ..Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Font
+from ..OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
+from ..OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
+from ..OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
+from ..Utilities import Attributes, Singleton
+from ..Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import generate_font_data, TextureGenerator
 
 

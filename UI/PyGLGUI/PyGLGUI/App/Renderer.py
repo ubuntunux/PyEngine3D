@@ -1,34 +1,34 @@
-import time as timeModule
-
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import *
-from ...PyGLGUI.OpenGLContext import FrameBufferManager, RenderBuffer, UniformBlock
-from ...PyGLGUI.OpenGLContext import OpenGLContext
-from ...PyGLGUI.Object.RenderTarget import RenderTargets
+from ..Common import logger
+from ..Utilities import *
+from ..OpenGLContext import FrameBufferManager, UniformBlock
+from ..OpenGLContext import OpenGLContext
+from ..Object.RenderTarget import RenderTargets
+from ..Object.Mesh import ScreenQuad
 
 
 class Renderer(Singleton):
     def __init__(self):
-        self.width = -1
-        self.height = -1
-        self.aspect = 0.0
-        self.view_mode = GL_FILL
-
-        # managers
         self.core_manager = None
         self.resource_manager = None
         self.font_manager = None
-        self.scene_manager = None
         self.rendertarget_manager = None
         self.framebuffer_manager = None
 
-        # components
-        self.lastShader = None
-        self.screen = None
-        self.debug_texture = None
+        self.width = -1
+        self.height = -1
+        self.aspect = 0.0
+        self.fov = 90.0
+        self.near = 1.0
+        self.far = 1000.0
+
+        self.view_mode = GL_FILL
+
+        self.projection = None
+
+        self.quad = None
 
         self.blend_enable = False
         self.blend_equation = GL_FUNC_ADD
@@ -55,13 +55,14 @@ class Renderer(Singleton):
         self.core_manager = core_manager
         self.resource_manager = core_manager.resource_manager
         self.font_manager = core_manager.font_manager
-        self.scene_manager = core_manager.scene_manager
         self.rendertarget_manager = core_manager.rendertarget_manager
 
         self.framebuffer_manager = FrameBufferManager.instance()
 
+        self.quad = ScreenQuad.get_vertex_array_buffer()
+
         # material instances
-        self.scene_constants_material = self.resource_manager.get_default_material_instance()
+        self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants_main')
 
         # scene constants uniform buffer
         program = self.scene_constants_material.get_program()
@@ -106,12 +107,6 @@ class Renderer(Singleton):
                              self.blend_func_src_prev,
                              self.blend_func_dst_prev)
 
-    def set_view_mode(self, view_mode):
-        if view_mode == COMMAND.VIEWMODE_WIREFRAME:
-            self.view_mode = GL_LINE
-        elif view_mode == COMMAND.VIEWMODE_SHADING:
-            self.view_mode = GL_FILL
-
     def resizeScene(self, width=0, height=0, clear_rendertarget=False):
         changed = False
 
@@ -125,16 +120,13 @@ class Renderer(Singleton):
 
         self.aspect = float(self.width) / float(self.height)
 
-        # update perspective and ortho
-        self.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
+        self.projection = perspective(self.fov, self.aspect, self.near, self.far)
 
         # recreate render targets and framebuffer
         if changed or clear_rendertarget:
             self.framebuffer_manager.clear_framebuffer()
             self.rendertarget_manager.create_rendertargets()
-            self.scene_manager.reset_light_probe()
-            if self.scene_manager.atmosphere:
-                self.scene_manager.atmosphere.initialize()
+
         self.core_manager.gc_collect()
 
     def ortho_view(self, look_at=True):
@@ -148,11 +140,9 @@ class Renderer(Singleton):
             self.look_at()
 
     def perspective_view(self, look_at=True):
-        camera = self.scene_manager.main_camera
-
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
+        gluPerspective(self.fov, self.aspect, self.near, self.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -160,51 +150,27 @@ class Renderer(Singleton):
             self.look_at()
 
     def look_at(self):
-        camera = self.scene_manager.main_camera
-        camera_target = -camera.transform.front
-        camera_up = camera.transform.up
-
-        glScalef(*(1.0 / camera.transform.get_scale()))
-        gluLookAt(0.0, 0.0, 0.0, *camera_target, *camera_up)
-        glTranslatef(*(-camera.transform.get_pos()))
+        glScalef(1.0, 1.0, 1.0)
+        gluLookAt(0.0, 0.0, 0.0, (0.0, 0.0, 1.0), (0.0, 1.0, 0.0))
+        glTranslatef(0.0, 0.0, 0.0)
 
     def bind_uniform_blocks(self):
-        camera = self.scene_manager.main_camera
-        main_light = self.scene_manager.main_light
-
-        if not camera or not main_light:
-            return
-
-        frame_count = self.core_manager.frame_count % 16
-
-        uniform_data = self.uniform_scene_data
-        uniform_data['TIME'] = self.core_manager.current_time
-        uniform_data['JITTER_FRAME'] = frame_count
-        uniform_data['RENDER_SSR'] = False
-        uniform_data['RENDER_SSAO'] = False
-        uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
-        uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
-        uniform_data['DELTA_TIME'] = self.core_manager.delta
-        self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
+        pass
+        # uniform_data = self.uniform_scene_data
+        # uniform_data['TIME'] = self.core_manager.current_time
+        # uniform_data['JITTER_FRAME'] = frame_count
+        # uniform_data['RENDER_SSR'] = False
+        # uniform_data['RENDER_SSAO'] = False
+        # uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
+        # uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
+        # uniform_data['DELTA_TIME'] = self.core_manager.delta
+        # self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
 
     def render_font(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.font_manager.render_font(self.width, self.height)
 
     def renderScene(self):
-        start_time = timeModule.perf_counter()
-
-        def end_render_scene():
-            glUseProgram(0)
-            glFlush()
-
-            end_time = timeModule.perf_counter()
-            render_time = end_time - start_time
-            present_time = 0.0
-            return render_time, present_time
-
-        main_camera = self.scene_manager.main_camera
-
         # bind scene constants uniform blocks
         self.bind_uniform_blocks()
 
@@ -221,16 +187,14 @@ class Renderer(Singleton):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
 
-        # debug render target
-        if self.debug_texture is not None:
-            self.set_blend_state(False)
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-            glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_texture(self.debug_texture)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
 
-        if RenderOption.RENDER_FONT:
-            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            self.render_font()
+        self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.render_font()
+
+        material_instance = self.resource_manager.get_default_material_instance()
+        material_instance.use_program()
+        self.quad.draw_elements()
 
         # end of render scene
         OpenGLContext.end_render()
@@ -240,14 +204,7 @@ class Renderer(Singleton):
         self.framebuffer_manager.blit_framebuffer(self.width, self.height)
         self.framebuffer_manager.unbind_framebuffer()
 
-        end_time = timeModule.perf_counter()
-        render_time = end_time - start_time
-        start_time = end_time
-
         glFlush()
 
         # swap buffer
         self.core_manager.game_backend.flip()
-
-        present_time = timeModule.perf_counter() - start_time
-        return render_time, present_time

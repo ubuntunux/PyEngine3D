@@ -1,4 +1,4 @@
-from ...PyGLGUI.Utilities import *
+from ..Utilities import *
 
 
 def always_pass(*args):

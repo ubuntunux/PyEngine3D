@@ -1,6 +1,6 @@
 import numpy as np
 
-from ...PyGLGUI.Utilities import *
+from ..Utilities import *
 
 
 class TransformObject:

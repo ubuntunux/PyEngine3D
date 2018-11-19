@@ -1,8 +1,8 @@
 from OpenGL.GL import *
 from OpenGL.GL.ARB.framebuffer_object import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import GetClassName
+from ..Common import logger
+from ..Utilities import GetClassName
 from .Texture import Texture
 
 
@@ -19,8 +19,7 @@ class RenderBuffer(Texture):
         if self.multisample_count == 0:
             glRenderbufferStorage(GL_RENDERBUFFER, self.internal_format, self.width, self.height)
         else:
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.multisample_count, self.internal_format, self.width,
-                                             self.height)
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.multisample_count, self.internal_format, self.width, self.height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     def delete(self):

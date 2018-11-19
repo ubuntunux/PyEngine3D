@@ -5,9 +5,9 @@ import numpy as np
 
 from OpenGL.GL import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import Singleton, GetClassName, Attributes, Profiler
-from ...PyGLGUI.OpenGLContext import OpenGLContext
+from ..Common import logger
+from ..Utilities import Singleton, GetClassName, Attributes, Profiler
+from ..OpenGLContext import OpenGLContext
 
 
 def get_numpy_dtype(data_type):

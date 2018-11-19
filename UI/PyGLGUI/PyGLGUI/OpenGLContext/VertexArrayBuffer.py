@@ -4,8 +4,8 @@ from ctypes import c_void_p
 import numpy as np
 from OpenGL.GL import *
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import compute_tangent
+from ..Common import logger
+from ..Utilities import compute_tangent
 from .OpenGLContext import OpenGLContext
 
 
@@ -177,12 +177,12 @@ class VertexArrayBuffer:
 
     def draw_elements(self):
         self.__bind_vertex_buffer()
-        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
+        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0))
 
     def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
         self.__bind_vertex_buffer()
         instance_buffer.bind_instance_buffer(datas=instance_datas)
-        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
+        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, c_void_p(0), instance_count)
 
     def draw_elements_indirect(self, offset=0):
         self.__bind_vertex_buffer()

@@ -5,8 +5,8 @@ from numpy import array
 
 from OpenGL.GL import *
 
-from ...PyGLGUI.Utilities import normalize
-from ...PyGLGUI.OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, TextureCube
+from ..Utilities import normalize
+from ..OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, TextureCube
 
 
 def generate_3d_data(size):

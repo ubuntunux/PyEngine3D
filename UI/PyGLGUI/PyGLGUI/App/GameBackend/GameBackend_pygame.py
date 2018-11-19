@@ -3,7 +3,7 @@ import os
 import pygame
 from pygame.locals import *
 
-from Common import logger, log_level, COMMAND
+from ...Common import logger
 from .GameBackend import GameBackend, Keyboard, Event
 
 

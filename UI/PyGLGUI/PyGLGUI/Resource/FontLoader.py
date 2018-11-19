@@ -9,8 +9,8 @@ import pygame
 from pygame.locals import *
 
 
-from ...PyGLGUI.Common import logger
-from ...PyGLGUI.Utilities import *
+from ..Common import logger
+from ..Utilities import *
 
 SIMPLE_VERTEX_SHADER = '''
 #version 430 core
