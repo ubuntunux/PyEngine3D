@@ -203,6 +203,9 @@ class Resource:
             else:
                 self.data.__dict__ = data.__dict__
 
+        # Notify that data has been loaded.
+        ResourceManager.instance().core_manager.send_resource_info(self.get_resource_info())
+
     def delete_data(self):
         if self.data is not None and hasattr(self.data, 'delete'):
             self.data.delete()
@@ -437,6 +440,9 @@ class ResourceLoader(object):
         if meta_data is not None:
             self.metaDatas[resource.name] = meta_data
             resource.meta_data = meta_data
+        # The new resource registered.
+        if resource:
+            self.core_manager.send_resource_info(resource.get_resource_info())
 
     def unregist_resource(self, resource):
         if resource:
