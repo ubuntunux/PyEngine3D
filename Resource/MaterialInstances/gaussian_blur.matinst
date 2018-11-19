@@ -1,4 +1,4 @@
 {'macros': OrderedDict(),
  'material_name': 'gaussian_blur',
  'shader_name': 'gaussian_blur',
- 'uniform_datas': {'blur_scale': array([1., 1.], dtype=float32), 'texture_diffuse': 'empty'}}
+ 'uniform_datas': {'blur_scale': array([1., 1.], dtype=float32), 'texture_diffuse': 'common.flat_white'}}

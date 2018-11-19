@@ -1,3 +1,4 @@
+import traceback
 import copy
 import gc
 from ctypes import c_void_p
@@ -205,6 +206,7 @@ class Texture:
             glBindTexture(self.target, 0)
             return data
         except:
+            logger.error(traceback.format_exc())
             logger.error('%s failed to get image data.' % self.name)
             logger.info('Try to glReadPixels.')
 

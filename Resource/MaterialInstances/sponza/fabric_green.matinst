@@ -19,8 +19,8 @@
                    'texture_depth': 'common.flat_gray',
                    'texture_diffuse': 'sponza.fabric_green_diff',
                    'texture_normal': 'common.flat_normal',
-                   'texture_probe': 'empty',
-                   'texture_scene_reflect': 'empty',
-                   'texture_shadow': 'empty',
-                   'texture_ssao': 'empty',
+                   'texture_probe': 'common.flat_white',
+                   'texture_scene_reflect': 'common.flat_white',
+                   'texture_shadow': 'common.flat_white',
+                   'texture_ssao': 'common.flat_white',
                    'transmittance_texture': 'common.flat_gray'}}

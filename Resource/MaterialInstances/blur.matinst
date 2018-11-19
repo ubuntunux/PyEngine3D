@@ -1,4 +1,4 @@
 {'macros': OrderedDict(),
  'material_name': 'blur',
  'shader_name': 'blur',
- 'uniform_datas': {'blur_kernel_radius': 0.0, 'texture_diffuse': 'empty'}}
+ 'uniform_datas': {'blur_kernel_radius': 0.0, 'texture_diffuse': 'common.flat_white'}}

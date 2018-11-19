@@ -20,7 +20,7 @@
                    'scattering_texture': 'common.default_3d',
                    'sun_size': array([ 1.,  1.], dtype=float32),
                    'texture_cloud': 'common.default_3d',
-                   'texture_linear_depth': 'empty',
+                   'texture_linear_depth': 'common.flat_white',
                    'texture_noise': 'common.default_3d',
-                   'texture_shadow': 'empty',
-                   'transmittance_texture': 'empty'}}
+                   'texture_shadow': 'common.flat_white',
+                   'transmittance_texture': 'common.flat_white'}}

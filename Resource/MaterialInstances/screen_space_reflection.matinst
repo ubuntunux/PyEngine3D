@@ -1,9 +1,9 @@
 {'macros': OrderedDict(),
  'material_name': 'screen_space_reflection',
  'shader_name': 'screen_space_reflection',
- 'uniform_datas': {'texture_depth': 'empty',
-                   'texture_diffuse': 'empty',
+ 'uniform_datas': {'texture_depth': 'common.flat_white',
+                   'texture_diffuse': 'common.flat_white',
                    'texture_material': 'common.flat_gray',
-                   'texture_normal': 'empty',
+                   'texture_normal': 'common.flat_white',
                    'texture_random': 'common.flat_gray',
-                   'texture_velocity': 'empty'}}
+                   'texture_velocity': 'common.flat_white'}}

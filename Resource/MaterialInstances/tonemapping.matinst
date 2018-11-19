@@ -12,5 +12,5 @@
                    'texture_bloom2': 'common.flat_gray',
                    'texture_bloom3': 'common.flat_gray',
                    'texture_bloom4': 'common.flat_gray',
-                   'texture_diffuse': 'empty',
+                   'texture_diffuse': 'common.flat_white',
                    'texture_light_shaft': 'common.flat_gray'}}

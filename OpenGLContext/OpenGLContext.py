@@ -3,7 +3,8 @@ import traceback
 
 import numpy as np
 from OpenGL.GL import *
-from OpenGL.raw.GL.VERSION import GL_1_1, GL_1_2
+from OpenGL.raw.GL.VERSION import GL_1_1, GL_1_2, GL_3_0
+from OpenGL.raw.GL import _types
 from OpenGL import images, arrays
 
 import ctypes
