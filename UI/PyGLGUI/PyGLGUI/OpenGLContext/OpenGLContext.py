@@ -9,7 +9,7 @@ from OpenGL import images, arrays
 
 import ctypes
 
-from Common import logger
+from ..Common import logger
 
 
 # Function : IsExtensionSupported
