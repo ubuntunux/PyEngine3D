@@ -35,20 +35,20 @@ import os
 import time
 from multiprocessing import Process
 
+
 # import OpenGL
 # OpenGL.FULL_LOGGING = True
 
 
-from Common.Command import CustomQueue, CustomPipe
-from App.CoreManager import CoreManager
-from Utilities import AutoEnum, Config
+from PyEngine3D.Common import CustomQueue, CustomPipe
+from PyEngine3D.App import CoreManager
+from PyEngine3D.Utilities import AutoEnum, Config
 
 
 class GUIEditor(AutoEnum):
     CLIENT_MODE = ()
     QT = ()
     TKINTER = ()
-    PYGLGUI = ()
 
 
 def run(editor=GUIEditor.QT, project_filename=""):
@@ -73,11 +73,9 @@ def run(editor=GUIEditor.QT, project_filename=""):
 
         # Select GUI backend
         if editor == GUIEditor.QT:
-            from UI.QT.MainWindow import run_editor
+            from PyEngine3D.UI.QT.MainWindow import run_editor
         elif editor == GUIEditor.TKINTER:
-            from UI.TKInter.MainWindow import run_editor
-        elif editor == GUIEditor.PYGLGUI:
-            from UI.PyGLGUI.MainWindow import run_editor
+            from PyEngine3D.UI.TKInter.MainWindow import run_editor
         editor_process = Process(target=run_editor, args=(project_filename, uiCmdQueue, appCmdQueue, pipe2))
         editor_process.start()
 
