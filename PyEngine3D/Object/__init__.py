@@ -23,3 +23,4 @@ from .Font import FontData, FontManager
 from .RenderTarget import RenderTargets, RenderTargetManager
 
 from .PostProcess import PostProcess
+from .Renderer import Renderer

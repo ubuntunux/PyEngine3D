@@ -1083,7 +1083,7 @@ class Renderer(Singleton):
 
         # blit frame buffer
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.framebuffer_manager.blit_framebuffer(self.width, self.height)
+        self.framebuffer_manager.blit_framebuffer(dst_w=self.width, dst_h=self.height)
         self.framebuffer_manager.unbind_framebuffer()
 
         end_time = timeModule.perf_counter()

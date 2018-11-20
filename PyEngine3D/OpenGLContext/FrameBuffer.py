@@ -162,7 +162,7 @@ class FrameBuffer:
         self.set_depth_texture(None)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+    def copy_framebuffer(self, src, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
 
@@ -174,10 +174,11 @@ class FrameBuffer:
             glDrawBuffers(1, (attachment, ))
             glReadBuffer(attachment)
 
-        glBlitFramebuffer(0, 0, src.viewport_width, src.viewport_height,
-                          0, 0, self.viewport_width, self.viewport_height, target, filter_type)
+        glBlitFramebuffer(src_x, src_y, src_w or src.viewport_width, src_h or src.viewport_height,
+                          dst_x, dst_y, dst_w or self.viewport_width, dst_h or self.viewport_height,
+                          target, filter_type)
 
-    def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+    def mirror_framebuffer(self, src, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, src.buffer)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.buffer)
 
@@ -189,13 +190,16 @@ class FrameBuffer:
             glDrawBuffers(1, (attachment, ))
             glReadBuffer(attachment)
 
-        glBlitFramebuffer(src.viewport_width, 0, 0, src.viewport_height,
-                          0, 0, self.viewport_width, self.viewport_height, target, filter_type)
+        glBlitFramebuffer(src_w or src.viewport_width, src_y, src_x, src_h or src.viewport_height,
+                          dst_x, dst_y, dst_w or self.viewport_width, dst_h or self.viewport_height,
+                          target, filter_type)
 
-    def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
-        glBlitFramebuffer(0, 0, self.viewport_width, self.viewport_height,
-                          0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, filter_type)
+    def blit_framebuffer(self, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, filter_type=GL_LINEAR):
+        # active default framebuffer
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
+        glBlitFramebuffer(src_x, src_y, src_w or self.viewport_width, src_h or self.viewport_height,
+                          dst_x, dst_y, dst_w, dst_h,
+                          GL_COLOR_BUFFER_BIT, filter_type)
 
 
 class FrameBufferManager(Singleton):
@@ -228,20 +232,20 @@ class FrameBufferManager(Singleton):
                 error = False
                 width = textures[0].width
                 height = textures[0].height
-                
+
                 for texture in textures[1:]:
                     if texture is not None and (width != texture.width or height != texture.height):
                         error = True
                         break
-                
+
                 if depth_texture is not None and (width != depth_texture.width or height != depth_texture.height):
                     error = True
-                    
+
                 if error:
                     error_message = "Render targets must be the same size."
                     logger.error(error_message)
                     raise BaseException(error_message)
-                
+
             framebuffer = FrameBuffer()
             self.framebuffers[key] = framebuffer
             framebuffer.set_color_textures(*textures)
@@ -261,11 +265,11 @@ class FrameBufferManager(Singleton):
     def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def copy_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
-        self.current_framebuffer.copy_framebuffer(src, target, filter_type)
+    def copy_framebuffer(self, src, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        self.current_framebuffer.copy_framebuffer(src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, target, filter_type)
 
-    def mirror_framebuffer(self, src, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
-        self.current_framebuffer.mirror_framebuffer(src, target, filter_type)
+    def mirror_framebuffer(self, src, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        self.current_framebuffer.mirror_framebuffer(src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, target, filter_type)
 
-    def blit_framebuffer(self, window_width, window_height, filter_type=GL_LINEAR):
-        self.current_framebuffer.blit_framebuffer(window_width, window_height, filter_type)
+    def blit_framebuffer(self, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, filter_type=GL_LINEAR):
+        self.current_framebuffer.blit_framebuffer(src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, filter_type)

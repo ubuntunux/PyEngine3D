@@ -107,8 +107,7 @@ class CoreManager(Singleton):
 
         from PyEngine3D.OpenGLContext import OpenGLContext
         from PyEngine3D.ResourceManager import ResourceManager
-        from PyEngine3D.Object import RenderTargetManager, FontManager, RenderOptionManager, EffectManager
-        from .Renderer import Renderer
+        from PyEngine3D.Object import Renderer, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
