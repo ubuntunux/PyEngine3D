@@ -3,10 +3,11 @@ import os
 import numpy as np
 
 import pyglet
-from pyglet.gl import *
 from pyglet import info
+from pyglet import window
 from pyglet.window import key
 from pyglet.window import mouse
+from pyglet.gl import *
 
 from PyEngine3D.Common import logger, log_level, COMMAND
 from .GameBackend import GameBackend, Keyboard, Event
@@ -24,10 +25,10 @@ class PyGlet(GameBackend):
         config = Config(double_buffer=True, )
 
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
-        self.window = pyglet.window.Window(width=1024, height=768, config=config, resizable=True, vsync=False)
+        self.window = window.Window(width=1024, height=768, config=config, resizable=True, vsync=False)
 
         # for debbug
-        # self.window.push_handlers(pyglet.window.event.WindowEventLogger())
+        # self.window.push_handlers(window.event.WindowEventLogger())
 
         # show system info
         # pyglet.info.dump()
@@ -47,197 +48,197 @@ class PyGlet(GameBackend):
         )
 
         # ASCII commands
-        Keyboard.BACKSPACE = pyglet.window.key.BACKSPACE
-        Keyboard.TAB = pyglet.window.key.TAB
-        Keyboard.LINEFEED = pyglet.window.key.LINEFEED
-        Keyboard.CLEAR = pyglet.window.key.CLEAR
-        Keyboard.RETURN = pyglet.window.key.RETURN
-        Keyboard.ENTER = pyglet.window.key.ENTER
-        Keyboard.PAUSE = pyglet.window.key.PAUSE
-        Keyboard.SCROLLLOCK = pyglet.window.key.SCROLLLOCK
-        Keyboard.SYSREQ = pyglet.window.key.SYSREQ
-        Keyboard.ESCAPE = pyglet.window.key.ESCAPE
-        Keyboard.SPACE = pyglet.window.key.SPACE
+        Keyboard.BACKSPACE = window.key.BACKSPACE
+        Keyboard.TAB = window.key.TAB
+        Keyboard.LINEFEED = window.key.LINEFEED
+        Keyboard.CLEAR = window.key.CLEAR
+        Keyboard.RETURN = window.key.RETURN
+        Keyboard.ENTER = window.key.ENTER
+        Keyboard.PAUSE = window.key.PAUSE
+        Keyboard.SCROLLLOCK = window.key.SCROLLLOCK
+        Keyboard.SYSREQ = window.key.SYSREQ
+        Keyboard.ESCAPE = window.key.ESCAPE
+        Keyboard.SPACE = window.key.SPACE
 
         # Cursor control and motion
-        Keyboard.HOME = pyglet.window.key.HOME
-        Keyboard.LEFT = pyglet.window.key.LEFT
-        Keyboard.UP = pyglet.window.key.UP
-        Keyboard.RIGHT = pyglet.window.key.RIGHT
-        Keyboard.DOWN = pyglet.window.key.DOWN
-        Keyboard.PAGEUP = pyglet.window.key.PAGEUP
-        Keyboard.PAGEDOWN = pyglet.window.key.PAGEDOWN
-        Keyboard.END = pyglet.window.key.END
-        Keyboard.BEGIN = pyglet.window.key.BEGIN
+        Keyboard.HOME = window.key.HOME
+        Keyboard.LEFT = window.key.LEFT
+        Keyboard.UP = window.key.UP
+        Keyboard.RIGHT = window.key.RIGHT
+        Keyboard.DOWN = window.key.DOWN
+        Keyboard.PAGEUP = window.key.PAGEUP
+        Keyboard.PAGEDOWN = window.key.PAGEDOWN
+        Keyboard.END = window.key.END
+        Keyboard.BEGIN = window.key.BEGIN
 
         # Misc functions
-        Keyboard.DELETE = pyglet.window.key.DELETE
-        Keyboard.SELECT = pyglet.window.key.SELECT
-        Keyboard.PRINT = pyglet.window.key.PRINT
-        Keyboard.EXECUTE = pyglet.window.key.EXECUTE
-        Keyboard.INSERT = pyglet.window.key.INSERT
-        Keyboard.UNDO = pyglet.window.key.UNDO
-        Keyboard.REDO = pyglet.window.key.REDO
-        Keyboard.MENU = pyglet.window.key.MENU
-        Keyboard.FIND = pyglet.window.key.FIND
-        Keyboard.CANCEL = pyglet.window.key.CANCEL
-        Keyboard.HELP = pyglet.window.key.HELP
-        Keyboard.BREAK = pyglet.window.key.BREAK
-        Keyboard.MODESWITCH = pyglet.window.key.MODESWITCH
-        Keyboard.SCRIPTSWITCH = pyglet.window.key.SCRIPTSWITCH
-        Keyboard.FUNCTION = pyglet.window.key.FUNCTION
+        Keyboard.DELETE = window.key.DELETE
+        Keyboard.SELECT = window.key.SELECT
+        Keyboard.PRINT = window.key.PRINT
+        Keyboard.EXECUTE = window.key.EXECUTE
+        Keyboard.INSERT = window.key.INSERT
+        Keyboard.UNDO = window.key.UNDO
+        Keyboard.REDO = window.key.REDO
+        Keyboard.MENU = window.key.MENU
+        Keyboard.FIND = window.key.FIND
+        Keyboard.CANCEL = window.key.CANCEL
+        Keyboard.HELP = window.key.HELP
+        Keyboard.BREAK = window.key.BREAK
+        Keyboard.MODESWITCH = window.key.MODESWITCH
+        Keyboard.SCRIPTSWITCH = window.key.SCRIPTSWITCH
+        Keyboard.FUNCTION = window.key.FUNCTION
 
         # Number pad
-        Keyboard.NUMLOCK = pyglet.window.key.NUMLOCK
-        Keyboard.NUM_SPACE = pyglet.window.key.NUM_SPACE
-        Keyboard.NUM_TAB = pyglet.window.key.NUM_TAB
-        Keyboard.NUM_ENTER = pyglet.window.key.NUM_ENTER
-        Keyboard.NUM_F1 = pyglet.window.key.NUM_F1
-        Keyboard.NUM_F2 = pyglet.window.key.NUM_F2
-        Keyboard.NUM_F3 = pyglet.window.key.NUM_F3
-        Keyboard.NUM_F4 = pyglet.window.key.NUM_F4
-        Keyboard.NUM_HOME = pyglet.window.key.NUM_HOME
-        Keyboard.NUM_LEFT = pyglet.window.key.NUM_LEFT
-        Keyboard.NUM_UP = pyglet.window.key.NUM_UP
-        Keyboard.NUM_RIGHT = pyglet.window.key.NUM_RIGHT
-        Keyboard.NUM_DOWN = pyglet.window.key.NUM_DOWN
-        Keyboard.NUM_PRIOR = pyglet.window.key.NUM_PRIOR
-        Keyboard.NUM_PAGE_UP = pyglet.window.key.NUM_PAGE_UP
-        Keyboard.NUM_NEXT = pyglet.window.key.NUM_NEXT
-        Keyboard.NUM_PAGE_DOWN = pyglet.window.key.NUM_PAGE_DOWN
-        Keyboard.NUM_END = pyglet.window.key.NUM_END
-        Keyboard.NUM_BEGIN = pyglet.window.key.NUM_BEGIN
-        Keyboard.NUM_INSERT = pyglet.window.key.NUM_INSERT
-        Keyboard.NUM_DELETE = pyglet.window.key.NUM_DELETE
-        Keyboard.NUM_EQUAL = pyglet.window.key.NUM_EQUAL
-        Keyboard.NUM_MULTIPLY = pyglet.window.key.NUM_MULTIPLY
-        Keyboard.NUM_ADD = pyglet.window.key.NUM_ADD
-        Keyboard.NUM_SEPARATOR = pyglet.window.key.NUM_SEPARATOR
-        Keyboard.NUM_SUBTRACT = pyglet.window.key.NUM_SUBTRACT
-        Keyboard.NUM_DECIMAL = pyglet.window.key.NUM_DECIMAL
-        Keyboard.NUM_DIVIDE = pyglet.window.key.NUM_DIVIDE
+        Keyboard.NUMLOCK = window.key.NUMLOCK
+        Keyboard.NUM_SPACE = window.key.NUM_SPACE
+        Keyboard.NUM_TAB = window.key.NUM_TAB
+        Keyboard.NUM_ENTER = window.key.NUM_ENTER
+        Keyboard.NUM_F1 = window.key.NUM_F1
+        Keyboard.NUM_F2 = window.key.NUM_F2
+        Keyboard.NUM_F3 = window.key.NUM_F3
+        Keyboard.NUM_F4 = window.key.NUM_F4
+        Keyboard.NUM_HOME = window.key.NUM_HOME
+        Keyboard.NUM_LEFT = window.key.NUM_LEFT
+        Keyboard.NUM_UP = window.key.NUM_UP
+        Keyboard.NUM_RIGHT = window.key.NUM_RIGHT
+        Keyboard.NUM_DOWN = window.key.NUM_DOWN
+        Keyboard.NUM_PRIOR = window.key.NUM_PRIOR
+        Keyboard.NUM_PAGE_UP = window.key.NUM_PAGE_UP
+        Keyboard.NUM_NEXT = window.key.NUM_NEXT
+        Keyboard.NUM_PAGE_DOWN = window.key.NUM_PAGE_DOWN
+        Keyboard.NUM_END = window.key.NUM_END
+        Keyboard.NUM_BEGIN = window.key.NUM_BEGIN
+        Keyboard.NUM_INSERT = window.key.NUM_INSERT
+        Keyboard.NUM_DELETE = window.key.NUM_DELETE
+        Keyboard.NUM_EQUAL = window.key.NUM_EQUAL
+        Keyboard.NUM_MULTIPLY = window.key.NUM_MULTIPLY
+        Keyboard.NUM_ADD = window.key.NUM_ADD
+        Keyboard.NUM_SEPARATOR = window.key.NUM_SEPARATOR
+        Keyboard.NUM_SUBTRACT = window.key.NUM_SUBTRACT
+        Keyboard.NUM_DECIMAL = window.key.NUM_DECIMAL
+        Keyboard.NUM_DIVIDE = window.key.NUM_DIVIDE
 
-        Keyboard.NUM_0 = pyglet.window.key.NUM_0
-        Keyboard.NUM_1 = pyglet.window.key.NUM_1
-        Keyboard.NUM_2 = pyglet.window.key.NUM_2
-        Keyboard.NUM_3 = pyglet.window.key.NUM_3
-        Keyboard.NUM_4 = pyglet.window.key.NUM_4
-        Keyboard.NUM_5 = pyglet.window.key.NUM_5
-        Keyboard.NUM_6 = pyglet.window.key.NUM_6
-        Keyboard.NUM_7 = pyglet.window.key.NUM_7
-        Keyboard.NUM_8 = pyglet.window.key.NUM_8
-        Keyboard.NUM_9 = pyglet.window.key.NUM_9
+        Keyboard.NUM_0 = window.key.NUM_0
+        Keyboard.NUM_1 = window.key.NUM_1
+        Keyboard.NUM_2 = window.key.NUM_2
+        Keyboard.NUM_3 = window.key.NUM_3
+        Keyboard.NUM_4 = window.key.NUM_4
+        Keyboard.NUM_5 = window.key.NUM_5
+        Keyboard.NUM_6 = window.key.NUM_6
+        Keyboard.NUM_7 = window.key.NUM_7
+        Keyboard.NUM_8 = window.key.NUM_8
+        Keyboard.NUM_9 = window.key.NUM_9
 
         # Function keys
-        Keyboard.F1 = pyglet.window.key.F1
-        Keyboard.F2 = pyglet.window.key.F2
-        Keyboard.F3 = pyglet.window.key.F3
-        Keyboard.F4 = pyglet.window.key.F4
-        Keyboard.F5 = pyglet.window.key.F5
-        Keyboard.F6 = pyglet.window.key.F6
-        Keyboard.F7 = pyglet.window.key.F7
-        Keyboard.F8 = pyglet.window.key.F8
-        Keyboard.F9 = pyglet.window.key.F9
-        Keyboard.F10 = pyglet.window.key.F10
-        Keyboard.F11 = pyglet.window.key.F11
-        Keyboard.F12 = pyglet.window.key.F12
-        Keyboard.F13 = pyglet.window.key.F13
-        Keyboard.F14 = pyglet.window.key.F14
-        Keyboard.F15 = pyglet.window.key.F15
-        Keyboard.F16 = pyglet.window.key.F16
-        Keyboard.F17 = pyglet.window.key.F17
-        Keyboard.F18 = pyglet.window.key.F18
-        Keyboard.F19 = pyglet.window.key.F19
-        Keyboard.F20 = pyglet.window.key.F20
+        Keyboard.F1 = window.key.F1
+        Keyboard.F2 = window.key.F2
+        Keyboard.F3 = window.key.F3
+        Keyboard.F4 = window.key.F4
+        Keyboard.F5 = window.key.F5
+        Keyboard.F6 = window.key.F6
+        Keyboard.F7 = window.key.F7
+        Keyboard.F8 = window.key.F8
+        Keyboard.F9 = window.key.F9
+        Keyboard.F10 = window.key.F10
+        Keyboard.F11 = window.key.F11
+        Keyboard.F12 = window.key.F12
+        Keyboard.F13 = window.key.F13
+        Keyboard.F14 = window.key.F14
+        Keyboard.F15 = window.key.F15
+        Keyboard.F16 = window.key.F16
+        Keyboard.F17 = window.key.F17
+        Keyboard.F18 = window.key.F18
+        Keyboard.F19 = window.key.F19
+        Keyboard.F20 = window.key.F20
 
         # Modifiers
-        Keyboard.LSHIFT = pyglet.window.key.LSHIFT
-        Keyboard.RSHIFT = pyglet.window.key.RSHIFT
-        Keyboard.LCTRL = pyglet.window.key.LCTRL
-        Keyboard.RCTRL = pyglet.window.key.RCTRL
-        Keyboard.CAPSLOCK = pyglet.window.key.CAPSLOCK
-        Keyboard.LMETA = pyglet.window.key.LMETA
-        Keyboard.RMETA = pyglet.window.key.RMETA
-        Keyboard.LALT = pyglet.window.key.LALT
-        Keyboard.RALT = pyglet.window.key.RALT
-        Keyboard.LWINDOWS = pyglet.window.key.LWINDOWS
-        Keyboard.RWINDOWS = pyglet.window.key.RWINDOWS
-        Keyboard.LCOMMAND = pyglet.window.key.LCOMMAND
-        Keyboard.RCOMMAND = pyglet.window.key.RCOMMAND
-        Keyboard.LOPTION = pyglet.window.key.LOPTION
-        Keyboard.ROPTION = pyglet.window.key.ROPTION
+        Keyboard.LSHIFT = window.key.LSHIFT
+        Keyboard.RSHIFT = window.key.RSHIFT
+        Keyboard.LCTRL = window.key.LCTRL
+        Keyboard.RCTRL = window.key.RCTRL
+        Keyboard.CAPSLOCK = window.key.CAPSLOCK
+        Keyboard.LMETA = window.key.LMETA
+        Keyboard.RMETA = window.key.RMETA
+        Keyboard.LALT = window.key.LALT
+        Keyboard.RALT = window.key.RALT
+        Keyboard.LWINDOWS = window.key.LWINDOWS
+        Keyboard.RWINDOWS = window.key.RWINDOWS
+        Keyboard.LCOMMAND = window.key.LCOMMAND
+        Keyboard.RCOMMAND = window.key.RCOMMAND
+        Keyboard.LOPTION = window.key.LOPTION
+        Keyboard.ROPTION = window.key.ROPTION
 
         # Latin-1
-        Keyboard.SPACE = pyglet.window.key.SPACE
-        Keyboard.EXCLAMATION = pyglet.window.key.EXCLAMATION
-        Keyboard.DOUBLEQUOTE = pyglet.window.key.DOUBLEQUOTE
-        Keyboard.HASH = pyglet.window.key.HASH
-        Keyboard.POUND = pyglet.window.key.POUND
-        Keyboard.DOLLAR = pyglet.window.key.DOLLAR
-        Keyboard.PERCENT = pyglet.window.key.PERCENT
-        Keyboard.AMPERSAND = pyglet.window.key.AMPERSAND
-        Keyboard.APOSTROPHE = pyglet.window.key.APOSTROPHE
-        Keyboard.PARENLEFT = pyglet.window.key.PARENLEFT
-        Keyboard.PARENRIGHT = pyglet.window.key.PARENRIGHT
-        Keyboard.ASTERISK = pyglet.window.key.ASTERISK
-        Keyboard.PLUS = pyglet.window.key.PLUS
-        Keyboard.COMMA = pyglet.window.key.COMMA
-        Keyboard.MINUS = pyglet.window.key.MINUS
-        Keyboard.PERIOD = pyglet.window.key.PERIOD
-        Keyboard.SLASH = pyglet.window.key.SLASH
-        Keyboard._0 = pyglet.window.key._0
-        Keyboard._1 = pyglet.window.key._1
-        Keyboard._2 = pyglet.window.key._2
-        Keyboard._3 = pyglet.window.key._3
-        Keyboard._4 = pyglet.window.key._4
-        Keyboard._5 = pyglet.window.key._5
-        Keyboard._6 = pyglet.window.key._6
-        Keyboard._7 = pyglet.window.key._7
-        Keyboard._8 = pyglet.window.key._8
-        Keyboard._9 = pyglet.window.key._9
-        Keyboard.COLON = pyglet.window.key.COLON
-        Keyboard.SEMICOLON = pyglet.window.key.SEMICOLON
-        Keyboard.LESS = pyglet.window.key.LESS
-        Keyboard.EQUAL = pyglet.window.key.EQUAL
-        Keyboard.GREATER = pyglet.window.key.GREATER
-        Keyboard.QUESTION = pyglet.window.key.QUESTION
-        Keyboard.AT = pyglet.window.key.AT
-        Keyboard.BRACKETLEFT = pyglet.window.key.BRACKETLEFT
-        Keyboard.BACKSLASH = pyglet.window.key.BACKSLASH
-        Keyboard.BRACKETRIGHT = pyglet.window.key.BRACKETRIGHT
-        Keyboard.ASCIICIRCUM = pyglet.window.key.ASCIICIRCUM
-        Keyboard.UNDERSCORE = pyglet.window.key.UNDERSCORE
-        Keyboard.GRAVE = pyglet.window.key.GRAVE
-        Keyboard.QUOTELEFT = pyglet.window.key.QUOTELEFT
-        Keyboard.A = pyglet.window.key.A
-        Keyboard.B = pyglet.window.key.B
-        Keyboard.C = pyglet.window.key.C
-        Keyboard.D = pyglet.window.key.D
-        Keyboard.E = pyglet.window.key.E
-        Keyboard.F = pyglet.window.key.F
-        Keyboard.G = pyglet.window.key.G
-        Keyboard.H = pyglet.window.key.H
-        Keyboard.I = pyglet.window.key.I
-        Keyboard.J = pyglet.window.key.J
-        Keyboard.K = pyglet.window.key.K
-        Keyboard.L = pyglet.window.key.L
-        Keyboard.M = pyglet.window.key.M
-        Keyboard.N = pyglet.window.key.N
-        Keyboard.O = pyglet.window.key.O
-        Keyboard.P = pyglet.window.key.P
-        Keyboard.Q = pyglet.window.key.Q
-        Keyboard.R = pyglet.window.key.R
-        Keyboard.S = pyglet.window.key.S
-        Keyboard.T = pyglet.window.key.T
-        Keyboard.U = pyglet.window.key.U
-        Keyboard.V = pyglet.window.key.V
-        Keyboard.W = pyglet.window.key.W
-        Keyboard.X = pyglet.window.key.X
-        Keyboard.Y = pyglet.window.key.Y
-        Keyboard.Z = pyglet.window.key.Z
-        Keyboard.BRACELEFT = pyglet.window.key.BRACELEFT
-        Keyboard.BAR = pyglet.window.key.BAR
-        Keyboard.BRACERIGHT = pyglet.window.key.BRACERIGHT
+        Keyboard.SPACE = window.key.SPACE
+        Keyboard.EXCLAMATION = window.key.EXCLAMATION
+        Keyboard.DOUBLEQUOTE = window.key.DOUBLEQUOTE
+        Keyboard.HASH = window.key.HASH
+        Keyboard.POUND = window.key.POUND
+        Keyboard.DOLLAR = window.key.DOLLAR
+        Keyboard.PERCENT = window.key.PERCENT
+        Keyboard.AMPERSAND = window.key.AMPERSAND
+        Keyboard.APOSTROPHE = window.key.APOSTROPHE
+        Keyboard.PARENLEFT = window.key.PARENLEFT
+        Keyboard.PARENRIGHT = window.key.PARENRIGHT
+        Keyboard.ASTERISK = window.key.ASTERISK
+        Keyboard.PLUS = window.key.PLUS
+        Keyboard.COMMA = window.key.COMMA
+        Keyboard.MINUS = window.key.MINUS
+        Keyboard.PERIOD = window.key.PERIOD
+        Keyboard.SLASH = window.key.SLASH
+        Keyboard._0 = window.key._0
+        Keyboard._1 = window.key._1
+        Keyboard._2 = window.key._2
+        Keyboard._3 = window.key._3
+        Keyboard._4 = window.key._4
+        Keyboard._5 = window.key._5
+        Keyboard._6 = window.key._6
+        Keyboard._7 = window.key._7
+        Keyboard._8 = window.key._8
+        Keyboard._9 = window.key._9
+        Keyboard.COLON = window.key.COLON
+        Keyboard.SEMICOLON = window.key.SEMICOLON
+        Keyboard.LESS = window.key.LESS
+        Keyboard.EQUAL = window.key.EQUAL
+        Keyboard.GREATER = window.key.GREATER
+        Keyboard.QUESTION = window.key.QUESTION
+        Keyboard.AT = window.key.AT
+        Keyboard.BRACKETLEFT = window.key.BRACKETLEFT
+        Keyboard.BACKSLASH = window.key.BACKSLASH
+        Keyboard.BRACKETRIGHT = window.key.BRACKETRIGHT
+        Keyboard.ASCIICIRCUM = window.key.ASCIICIRCUM
+        Keyboard.UNDERSCORE = window.key.UNDERSCORE
+        Keyboard.GRAVE = window.key.GRAVE
+        Keyboard.QUOTELEFT = window.key.QUOTELEFT
+        Keyboard.A = window.key.A
+        Keyboard.B = window.key.B
+        Keyboard.C = window.key.C
+        Keyboard.D = window.key.D
+        Keyboard.E = window.key.E
+        Keyboard.F = window.key.F
+        Keyboard.G = window.key.G
+        Keyboard.H = window.key.H
+        Keyboard.I = window.key.I
+        Keyboard.J = window.key.J
+        Keyboard.K = window.key.K
+        Keyboard.L = window.key.L
+        Keyboard.M = window.key.M
+        Keyboard.N = window.key.N
+        Keyboard.O = window.key.O
+        Keyboard.P = window.key.P
+        Keyboard.Q = window.key.Q
+        Keyboard.R = window.key.R
+        Keyboard.S = window.key.S
+        Keyboard.T = window.key.T
+        Keyboard.U = window.key.U
+        Keyboard.V = window.key.V
+        Keyboard.W = window.key.W
+        Keyboard.X = window.key.X
+        Keyboard.Y = window.key.Y
+        Keyboard.Z = window.key.Z
+        Keyboard.BRACELEFT = window.key.BRACELEFT
+        Keyboard.BAR = window.key.BAR
+        Keyboard.BRACERIGHT = window.key.BRACERIGHT
 
         self.key_pressed = dict()
 
@@ -248,6 +249,9 @@ class PyGlet(GameBackend):
 
     def set_window_title(self, title):
         self.window.set_caption(title)
+
+    def set_mouse_visible(self, visible):
+        self.window.set_mouse_visible(visible)
 
     def change_resolution(self, width, height, full_screen, resize_scene=True):
         changed = False
@@ -295,21 +299,21 @@ class PyGlet(GameBackend):
     def on_mouse_press(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        if button == pyglet.window.mouse.LEFT:
+        if button == window.mouse.LEFT:
             self.mouse_btn_l = True
-        elif button == pyglet.window.mouse.MIDDLE:
+        elif button == window.mouse.MIDDLE:
             self.mouse_btn_m = True
-        elif button == pyglet.window.mouse.RIGHT:
+        elif button == window.mouse.RIGHT:
             self.mouse_btn_r = True
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        if button == pyglet.window.mouse.LEFT:
+        if button == window.mouse.LEFT:
             self.mouse_btn_l = False
-        elif button == pyglet.window.mouse.MIDDLE:
+        elif button == window.mouse.MIDDLE:
             self.mouse_btn_m = False
-        elif button == pyglet.window.mouse.RIGHT:
+        elif button == window.mouse.RIGHT:
             self.mouse_btn_r = False
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):

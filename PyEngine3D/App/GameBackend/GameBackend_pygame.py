@@ -224,6 +224,9 @@ class PyGame(GameBackend):
     def set_window_title(self, title):
         pygame.display.set_caption(title)
 
+    def set_mouse_visible(self, visible):
+        pygame.mouse.set_visible(visible)
+
     def change_resolution(self, width, height, full_screen, resize_scene=True):
         changed = False
         if 0 < width != self.width:
