@@ -1,5 +1,5 @@
-from Common import logger
-from Utilities import Singleton
+from PyEngine3D.Common import logger
+from PyEngine3D.Utilities import Singleton
 
 
 class ScriptManager(Singleton):
