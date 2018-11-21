@@ -15,9 +15,6 @@ from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.Utilities import Singleton, GetClassName, Config, Profiler
 
 
-# ------------------------------#
-# CLASS : CoreManager
-# ------------------------------#
 class CoreManager(Singleton):
     """
     Manager other mangers classes. ex) shader manager, material manager...
@@ -575,6 +572,7 @@ class CoreManager(Singleton):
         self.update_time = delta * 1000.0  # millisecond
 
         start_time = time.perf_counter()
+
         self.updateCommand()
 
         if self.is_play_mode:
@@ -584,18 +582,31 @@ class CoreManager(Singleton):
 
         self.resource_manager.update()
 
-        # update actors
+        # update scene
         self.scene_manager.update_scene(delta)
-        self.logic_time = (time.perf_counter() - start_time) * 1000.0  # millisecond
 
-        start_time = time.perf_counter()
+        end_time = time.perf_counter()
+        self.logic_time = (end_time - start_time) * 1000.0  # millisecond
+        start_time = end_time
+
         # render_light_probe scene
         self.renderer.render_light_probe(self.scene_manager.main_light_probe)
-        # render sceme
-        render_time, present_time = self.renderer.renderScene()
 
-        self.render_time = render_time * 1000.0  # millisecond
-        self.present_time = present_time * 1000.0  # millisecond
+        # render sceme
+        self.renderer.render_scene()
+
+        end_time = time.perf_counter()
+        self.render_time = (end_time - start_time) * 1000.0  # millisecond
+        start_time = end_time
+
+        # end of render scene
+        self.renderer.end_render()
+
+        # swap buffer
+        self.game_backend.flip()
+
+        end_time = time.perf_counter()
+        self.present_time = (end_time - start_time) * 1000.0  # millisecond
 
         self.acc_logic_time += self.logic_time
         self.acc_gpu_time += self.gpu_time

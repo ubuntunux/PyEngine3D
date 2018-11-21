@@ -14,8 +14,8 @@ from PIL import Image
 from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.Common.Constants import *
 from PyEngine3D.Utilities import *
-from PyEngine3D.OpenGLContext import FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from PyEngine3D.OpenGLContext import OpenGLContext, InstanceBuffer
+from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
+from PyEngine3D.OpenGLContext import OpenGLContext
 from PyEngine3D.Object.PostProcess import AntiAliasing, PostProcess
 from PyEngine3D.Object.RenderTarget import RenderTargets
 from PyEngine3D.Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
@@ -393,6 +393,7 @@ class Renderer(Singleton):
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
         old_render_effect = RenderOption.RENDER_EFFECT
 
+        old_render_ssr = self.postprocess.is_render_ssr
         old_render_motion_blur = self.postprocess.is_render_motion_blur
         old_antialiasing = self.postprocess.anti_aliasing
         old_debug_absolute = self.postprocess.debug_absolute
@@ -416,7 +417,7 @@ class Renderer(Singleton):
             camera.update(force_update=True)
 
             # render
-            self.renderScene()
+            self.render_scene()
 
             # copy
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
@@ -492,6 +493,7 @@ class Renderer(Singleton):
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
         RenderOption.RENDER_EFFECT = old_render_effect
         RenderOption.RENDER_FONT = old_render_font
+        self.postprocess.is_render_ssr = old_render_ssr
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing
         self.postprocess.debug_absolute = old_debug_absolute
@@ -871,18 +873,7 @@ class Renderer(Singleton):
         glPopMatrix()
         self.debug_lines_3d = []
 
-    def renderScene(self):
-        start_time = timeModule.perf_counter()
-
-        def end_render_scene():
-            glUseProgram(0)
-            glFlush()
-
-            end_time = timeModule.perf_counter()
-            render_time = end_time - start_time
-            present_time = 0.0
-            return render_time, present_time
-
+    def render_scene(self):
         main_camera = self.scene_manager.main_camera
 
         # bind scene constants uniform blocks
@@ -906,10 +897,11 @@ class Renderer(Singleton):
             self.set_blend_state(False)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
             glClear(GL_COLOR_BUFFER_BIT)
-            # render shader
+
             self.postprocess.render_material_instance()
+
         elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
-            """ render light probe """
+            """ render light probe preprocess """
             self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_DEPTH_BUFFER_BIT)
@@ -933,7 +925,8 @@ class Renderer(Singleton):
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
                                                                             RenderTargets.SHADOWMAP,
                                                                             RenderOption.RENDER_LIGHT_PROBE)
-            return end_render_scene()
+            # done render light probe preprocess
+            return
         else:
             """ render normal scene """
             self.scene_manager.ocean.simulateFFTWaves()
@@ -955,7 +948,6 @@ class Renderer(Singleton):
 
             self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
             glClear(GL_DEPTH_BUFFER_BIT)
-
             glFrontFace(GL_CW)
 
             self.render_shadow()
@@ -1051,8 +1043,9 @@ class Renderer(Singleton):
                 glDisable(GL_BLEND)
                 glEnable(GL_CULL_FACE)
 
+            # render probe done
             if RenderOption.RENDER_LIGHT_PROBE:
-                return end_render_scene()
+                return
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
@@ -1075,9 +1068,6 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_font()
 
-        # end of render scene
-        OpenGLContext.end_render()
-
         # draw line
         self.render_debug_line()
 
@@ -1086,14 +1076,7 @@ class Renderer(Singleton):
         self.framebuffer_manager.blit_framebuffer(dst_w=self.width, dst_h=self.height)
         self.framebuffer_manager.unbind_framebuffer()
 
-        end_time = timeModule.perf_counter()
-        render_time = end_time - start_time
-        start_time = end_time
-
+    def end_render(self):
+        OpenGLContext.end_render()
+        glUseProgram(0)
         glFlush()
-
-        # swap buffer
-        self.core_manager.game_backend.flip()
-
-        present_time = timeModule.perf_counter() - start_time
-        return render_time, present_time
