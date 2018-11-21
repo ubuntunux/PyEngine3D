@@ -255,9 +255,11 @@ class PyGlet(GameBackend):
 
     def change_resolution(self, width, height, full_screen, resize_scene=True):
         changed = False
+
         if 0 < width != self.width:
             self.width = width
             changed = True
+
         if 0 < height != self.height:
             self.height = height
             changed = True
@@ -279,7 +281,8 @@ class PyGlet(GameBackend):
             self.full_screen = full_screen
 
         if resize_scene:
-            self.core_manager.renderer.resizeScene(self.width, self.height)
+            self.core_manager.renderer.resize_scene(self.width, self.height)
+
         self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
     def on_resize(self, width, height):

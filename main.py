@@ -35,10 +35,8 @@ import os
 import time
 from multiprocessing import Process
 
-
 # import OpenGL
 # OpenGL.FULL_LOGGING = True
-
 
 from PyEngine3D.Common import CustomQueue, CustomPipe
 from PyEngine3D.App import CoreManager

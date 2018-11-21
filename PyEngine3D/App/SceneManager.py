@@ -95,7 +95,7 @@ class SceneManager(Singleton):
         self.renderer.set_debug_texture(None)
 
     def post_open_scene(self):
-        self.renderer.resizeScene(clear_rendertarget=True)
+        self.renderer.resize_scene(clear_rendertarget=True)
         self.regist_object(self.renderer.postprocess)
 
     def new_scene(self):

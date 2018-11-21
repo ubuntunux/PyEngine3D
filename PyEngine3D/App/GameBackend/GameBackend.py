@@ -232,5 +232,5 @@ class GameBackend:
         self.mouse_btn_r = False
 
     def resize_scene_to_window(self):
-        self.core_manager.renderer.resizeScene(self.width, self.height)
+        self.core_manager.renderer.resize_scene(self.width, self.height)
 

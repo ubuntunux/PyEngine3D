@@ -265,6 +265,14 @@ class FrameBufferManager(Singleton):
     def unbind_framebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
+    def copy_rendertarget(self, src_render_target, dst_render_target,
+                           src_x=0, src_y=0, src_w=0, src_h=0,
+                           dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
+        src_framebuffer = self.bind_framebuffer(src_render_target)
+        self.bind_framebuffer(dst_render_target)
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.current_framebuffer.copy_framebuffer(src_framebuffer, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, target, filter_type)
+
     def copy_framebuffer(self, src, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, target=GL_COLOR_BUFFER_BIT, filter_type=GL_LINEAR):
         self.current_framebuffer.copy_framebuffer(src, src_x, src_y, src_w, src_h, dst_x, dst_y, dst_w, dst_h, target, filter_type)
 

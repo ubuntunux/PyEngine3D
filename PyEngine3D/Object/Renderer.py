@@ -270,7 +270,7 @@ class Renderer(Singleton):
         elif view_mode == COMMAND.VIEWMODE_SHADING:
             self.view_mode = GL_FILL
 
-    def resizeScene(self, width=0, height=0, clear_rendertarget=False):
+    def resize_scene(self, width=0, height=0, clear_rendertarget=False):
         changed = False
 
         if 0 < width != self.width:
@@ -385,6 +385,7 @@ class Renderer(Singleton):
         light_probe.isRendered = True
 
         camera = self.scene_manager.main_camera
+
         old_pos = camera.transform.get_pos().copy()
         old_rot = camera.transform.get_rotation().copy()
         old_fov = camera.fov
@@ -488,7 +489,6 @@ class Renderer(Singleton):
 
         self.rendertarget_manager.get_temporary('temp_cube', light_probe.texture_probe)
 
-        # restore
         RenderOption.RENDER_LIGHT_PROBE = False
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
         RenderOption.RENDER_EFFECT = old_render_effect

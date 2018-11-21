@@ -152,7 +152,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
-        self.renderer.resizeScene(width, height)
+        self.renderer.resize_scene(width, height)
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 

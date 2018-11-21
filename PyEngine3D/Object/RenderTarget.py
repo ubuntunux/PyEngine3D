@@ -24,6 +24,7 @@ class RenderTargets:
     DEPTHSTENCIL = None
     HDR = None
     HDR_TEMP = None
+    HDR_BACKUP = None
     BLOOM_0 = None
     BLOOM_1 = None
     BLOOM_2 = None
@@ -223,11 +224,13 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR_MIPMAP_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
+            clear_color=COLOR_BLACK,
             wrap=GL_CLAMP
         )
 
         RenderTargets.HDR = self.create_rendertarget("HDR", **hdr_options)
         RenderTargets.HDR_TEMP = self.create_rendertarget("HDR_TEMP", **hdr_options)
+        RenderTargets.HDR_BACKUP = self.create_rendertarget("HDR_BACKUP", **hdr_options)
 
         bloom_options = dict(
             texture_type=Texture2D,
