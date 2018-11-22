@@ -9,7 +9,7 @@ import numpy as np
 
 from PyEngine3D.Common import logger
 from PyEngine3D.App import CoreManager
-from PyEngine3D.Object import ScreenQuad
+from PyEngine3D.Render import ScreenQuad
 from PyEngine3D.Utilities import Attributes
 from .Constants import *
 from .Model import *

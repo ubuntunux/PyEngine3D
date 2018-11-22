@@ -4,7 +4,6 @@ import platform as platformModule
 import time as timeModule
 import random
 
-
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *

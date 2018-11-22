@@ -8,13 +8,13 @@ import numpy as np
 
 from PyEngine3D.Common import logger
 from PyEngine3D.Common.Constants import *
-from PyEngine3D.Object import StaticActor, SkeletonActor
-from PyEngine3D.Object import Camera, MainLight, PointLight, LightProbe
-from PyEngine3D.Object import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
-from PyEngine3D.Object import Atmosphere, Ocean
-from PyEngine3D.Object import Effect
-from PyEngine3D.Object.RenderOptions import RenderOption
-from PyEngine3D.Object.RenderTarget import RenderTargets
+from PyEngine3D.Render import StaticActor, SkeletonActor
+from PyEngine3D.Render import Camera, MainLight, PointLight, LightProbe
+from PyEngine3D.Render import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
+from PyEngine3D.Render import Atmosphere, Ocean
+from PyEngine3D.Render import Effect
+from PyEngine3D.Render.RenderOptions import RenderOption
+from PyEngine3D.Render.RenderTarget import RenderTargets
 from PyEngine3D.Utilities import Singleton, GetClassName
 
 

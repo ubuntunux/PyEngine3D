@@ -30,10 +30,10 @@ from numpy import array, float32, uint8
 from OpenGL.GL import *
 
 from PyEngine3D.Common import *
-from PyEngine3D.Object import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
-from PyEngine3D.Object import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
-from PyEngine3D.Object import EffectInfo
-from PyEngine3D.Object.Ocean.Constants import GRID_VERTEX_COUNT
+from PyEngine3D.Render import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
+from PyEngine3D.Render import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
+from PyEngine3D.Render import EffectInfo
+from PyEngine3D.Render.Ocean.Constants import GRID_VERTEX_COUNT
 from PyEngine3D.OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from PyEngine3D.OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
 from PyEngine3D.OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components

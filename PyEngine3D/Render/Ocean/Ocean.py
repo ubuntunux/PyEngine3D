@@ -6,7 +6,7 @@ from OpenGL.GL import *
 from PyEngine3D.Common import logger
 from PyEngine3D.App import CoreManager
 from PyEngine3D.OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, FrameBuffer
-from PyEngine3D.Object import RenderTarget, ScreenQuad
+from PyEngine3D.Render import RenderTarget, ScreenQuad
 from PyEngine3D.Utilities import *
 from .Constants import *
 
