@@ -4,7 +4,7 @@ import numpy as np
 from PyEngine3D.Common import logger
 from PyEngine3D.App.CoreManager import CoreManager
 from PyEngine3D.Utilities import *
-from .Actor import StaticActor
+from . import StaticActor
 
 
 # ------------------------------ #

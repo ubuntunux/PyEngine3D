@@ -16,10 +16,9 @@ from PyEngine3D.Common.Constants import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
 from PyEngine3D.OpenGLContext import OpenGLContext
-from PyEngine3D.Object.PostProcess import AntiAliasing, PostProcess
-from PyEngine3D.Object.RenderTarget import RenderTargets
-from PyEngine3D.Object.RenderOptions import RenderOption, RenderingType, RenderGroup, RenderMode
-from PyEngine3D.Object.Actor import SkeletonActor, StaticActor
+from .PostProcess import AntiAliasing, PostProcess
+from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
+from . import SkeletonActor, StaticActor
 
 
 class DebugLine:

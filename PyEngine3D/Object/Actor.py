@@ -3,8 +3,8 @@ import math
 import numpy as np
 
 from PyEngine3D.Common import logger
-from PyEngine3D.Object import TransformObject
 from PyEngine3D.Utilities import *
+from . import TransformObject
 
 
 class StaticActor:

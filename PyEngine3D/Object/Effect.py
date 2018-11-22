@@ -9,7 +9,6 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from PyEngine3D.Common import logger
-from PyEngine3D.Object import TransformObject, Model
 from PyEngine3D.OpenGLContext import DispatchIndirectCommand, DispatchIndirectBuffer
 from PyEngine3D.OpenGLContext import DrawElementsIndirectCommand, DrawElementIndirectBuffer
 from PyEngine3D.OpenGLContext import ShaderStorageBuffer, InstanceBuffer, UniformBlock
@@ -17,7 +16,7 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.Common.Constants import *
 from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.App import CoreManager
-from .RenderOptions import BlendMode
+from . import TransformObject, Model, BlendMode
 
 
 class SpawnVolume(Enum):
