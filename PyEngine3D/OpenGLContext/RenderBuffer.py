@@ -3,17 +3,17 @@ from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
 from PyEngine3D.Common import logger
-from PyEngine3D.Utilities import GetClassName, Attributes, Data
+from PyEngine3D.Utilities import GetClassName
 from .Texture import Texture
 
 
 class RenderBuffer(Texture):
     target = GL_RENDERBUFFER
 
-    def __init__(self, name, datas):
-        Texture.__init__(self, name=name, **datas.get_dict())
+    def __init__(self, name, **datas):
+        Texture.__init__(self, name=name, **datas)
 
-        self.multisample_count = datas.multisample_count or 0
+        self.multisample_count = datas.get('multisample_count', 0)
 
         self.buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)

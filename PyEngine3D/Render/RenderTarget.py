@@ -59,6 +59,7 @@ class RenderTargetManager(Singleton):
 
     def __init__(self):
         self.core_manager = None
+        self.viewport_manager = None
         self.renderer = None
         self.rendertargets = dict()
         self.immutable_rendertarget_names = []
@@ -69,6 +70,7 @@ class RenderTargetManager(Singleton):
     def initialize(self, core_manager):
         logger.info("initialize " + GetClassName(self))
         self.core_manager = core_manager
+        self.viewport_manager = core_manager.viewport_manager
         self.renderer = core_manager.renderer
         self.clear()
 
@@ -126,28 +128,27 @@ class RenderTargetManager(Singleton):
             logger.warn("Failed to get temporary %s render target." % rendertarget_name)
         return temp_rendertarget
 
-    def create_rendertarget(self, rendertarget_name, **kwargs):
-        datas = Data(**kwargs)
-        option = datas.option or Option.NONE
+    def create_rendertarget(self, rendertarget_name, **datas):
+        option = datas.get('option', Option.NONE)
 
-        rendertarget_type = kwargs.get('texture_type', Texture2D)
+        rendertarget_type = datas.get('texture_type', Texture2D)
 
         if (Option.MSAA & option) and self.renderer.postprocess.enable_MSAA():
             if rendertarget_type == Texture2D:
                 rendertarget_type = Texture2DMultiSample
-            datas.multisample_count = self.renderer.postprocess.get_msaa_multisample_count()
+            datas['multisample_count'] = self.renderer.postprocess.get_msaa_multisample_count()
         elif (Option.SSAA & option) and self.renderer.postprocess.is_SSAA():
-            datas.width *= 2
-            datas.height *= 2
+            datas['width'] = datas.get('width', 1) * 2
+            datas['height'] = datas.get('height', 1) * 2
 
-        immutable = kwargs.get('immutable', False)
+        immutable = datas.get('immutable', False)
 
         if not immutable or rendertarget_name not in self.rendertargets:
             # Create RenderTarget
             if rendertarget_type == RenderBuffer:
-                rendertarget = RenderBuffer(rendertarget_name, datas=datas)
+                rendertarget = RenderBuffer(rendertarget_name, **datas)
             else:
-                rendertarget = CreateTexture(name=rendertarget_name, **datas.get_dict())
+                rendertarget = CreateTexture(name=rendertarget_name, **datas)
 
             if rendertarget_name not in self.rendertargets:
                 self.rendertargets[rendertarget_name] = rendertarget
@@ -169,8 +170,22 @@ class RenderTargetManager(Singleton):
         # Note : # clear rendertarget infos in GUI
         self.core_manager.clear_render_target_list()
 
-        width = self.renderer.width
-        height = self.renderer.height
+        # RenderTargets.BACKBUFFER = self.create_rendertarget(
+        #     "BACKBUFFER",
+        #     texture_type=Texture2D,
+        #     width=fullsize_x,
+        #     height=fullsize_y,
+        #     internal_format=GL_RGBA8,
+        #     texture_format=GL_RGBA,
+        #     data_type=GL_UNSIGNED_BYTE,
+        #     min_filter=GL_LINEAR,
+        #     mag_filter=GL_LINEAR,
+        #     wrap=GL_CLAMP
+        # )
+        RenderTargets.BACKBUFFER = self.viewport_manager.main_viewport.rendertarget
+
+        width = RenderTargets.BACKBUFFER.width
+        height = RenderTargets.BACKBUFFER.height
 
         fullsize_x = width
         fullsize_y = height
@@ -186,19 +201,6 @@ class RenderTargetManager(Singleton):
         COLOR_BLACK_NO_ALPHA = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
         COLOR_WHITE = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
         COLOR_WHITE_NO_ALPHA = np.array([1.0, 1.0, 1.0, 0.0], dtype=np.float32)
-
-        RenderTargets.BACKBUFFER = self.create_rendertarget(
-            "BACKBUFFER",
-            texture_type=Texture2D,
-            width=fullsize_x,
-            height=fullsize_y,
-            internal_format=GL_RGBA8,
-            texture_format=GL_RGBA,
-            data_type=GL_UNSIGNED_BYTE,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            wrap=GL_CLAMP
-        )
 
         RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
             "DEPTHSTENCIL",

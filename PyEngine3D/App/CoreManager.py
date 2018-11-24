@@ -149,16 +149,16 @@ class CoreManager(Singleton):
         if not self.game_backend.valid:
             self.error('game_backend initializing failed')
 
-        # initalize managers
+        # initialize managers
         self.resource_manager.initialize(self, self.project_manager.project_dir)
         self.render_option_manager.initialize(self)
+        self.viewport_manager.initialize(self)
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.renderer.resize_scene(width, height)
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
-        self.viewport_manager.initialize(self)
 
         main_script = self.script_manager = self.resource_manager.get_script('main')
         self.script_manager = main_script.ScriptManager.instance()

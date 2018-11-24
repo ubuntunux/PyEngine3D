@@ -59,7 +59,7 @@ class Ocean:
         self.attributes = Attributes()
 
         self.acc_time = 0.0
-        self.fft_seed = Data(data=1234)
+        self.fft_seed = 1234
 
         self.renderer = CoreManager.instance().renderer
         self.scene_manager = CoreManager.instance().scene_manager
@@ -198,8 +198,8 @@ class Ocean:
         else:
             S = self.spectrum(kx, ky)
             h = sqrt(S / 2.0) * dk
-            self.fft_seed.data = (self.fft_seed.data * 1103515245 + 12345) & 0x7FFFFFFF
-            phi = frandom(self.fft_seed.data) * 2.0 * pi
+            self.fft_seed = (self.fft_seed * 1103515245 + 12345) & 0x7FFFFFFF
+            phi = frandom(self.fft_seed) * 2.0 * pi
             return h * cos(phi), h * sin(phi)
 
     def computeButterflyLookupTexture(self, butterfly_data):

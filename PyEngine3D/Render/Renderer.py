@@ -34,6 +34,7 @@ class Renderer(Singleton):
 
         # managers
         self.core_manager = None
+        self.viewport_manager = None
         self.resource_manager = None
         self.font_manager = None
         self.scene_manager = None
@@ -93,6 +94,7 @@ class Renderer(Singleton):
     def initialize(self, core_manager):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager
+        self.viewport_manager = core_manager.viewport_manager
         self.resource_manager = core_manager.resource_manager
         self.render_option_manager = core_manager.render_option_manager
         self.font_manager = core_manager.font_manager
@@ -283,6 +285,9 @@ class Renderer(Singleton):
 
         # recreate render targets and framebuffer
         if changed or clear_rendertarget:
+            # NOTE : Keep the order. viewport_manager.resize then rendertarget_manager.create_rendertargets
+            if changed:
+                self.viewport_manager.resize(width, height)
             self.framebuffer_manager.clear_framebuffer()
             self.rendertarget_manager.create_rendertargets()
             self.scene_manager.reset_light_probe()
