@@ -245,8 +245,7 @@ class PostProcess:
         if index != self.anti_aliasing.value or force:
             old_anti_aliasing = self.anti_aliasing
             self.anti_aliasing = AntiAliasing.convert_index_to_enum(index)
-            if self.anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA) \
-                    or old_anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
+            if self.anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA) or old_anti_aliasing in (AntiAliasing.MSAA, AntiAliasing.SSAA):
                 self.core_manager.request(COMMAND.RECREATE_RENDER_TARGETS)
 
     def get_msaa_multisample_count(self):

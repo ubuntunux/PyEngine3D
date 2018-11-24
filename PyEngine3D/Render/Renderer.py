@@ -1,10 +1,7 @@
-import os
 import math
-import platform as platformModule
-import time as timeModule
-import random
 
 import numpy as np
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
@@ -289,8 +286,6 @@ class Renderer(Singleton):
             self.framebuffer_manager.clear_framebuffer()
             self.rendertarget_manager.create_rendertargets()
             self.scene_manager.reset_light_probe()
-            if self.scene_manager.atmosphere:
-                self.scene_manager.atmosphere.initialize()
         self.core_manager.gc_collect()
 
     def ortho_view(self, look_at=True):

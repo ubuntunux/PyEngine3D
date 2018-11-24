@@ -73,6 +73,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.font_manager = None
         self.scene_manager = None
+        self.viewport_manager = None
         self.effect_manager = None
         self.project_manager = None
         self.config = None
@@ -106,6 +107,7 @@ class CoreManager(Singleton):
         from PyEngine3D.ResourceManager import ResourceManager
         from PyEngine3D.Render import Renderer, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .SceneManager import SceneManager
+        from .ViewportManager import ViewportManager
         from .ProjectManager import ProjectManager
 
         self.resource_manager = ResourceManager.instance()
@@ -114,6 +116,7 @@ class CoreManager(Singleton):
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
         self.scene_manager = SceneManager.instance()
+        self.viewport_manager = ViewportManager.instance()
         self.effect_manager = EffectManager.instance()
         self.project_manager = ProjectManager.instance()
 
@@ -155,6 +158,7 @@ class CoreManager(Singleton):
         self.renderer.resize_scene(width, height)
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
+        self.viewport_manager.initialize(self)
 
         main_script = self.script_manager = self.resource_manager.get_script('main')
         self.script_manager = main_script.ScriptManager.instance()
@@ -391,8 +395,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.delete_object(value)
 
         def cmd_request_object_attribute(value):
-            objName, objTypeName = value
-            attribute = self.scene_manager.get_object_attribute(objName, objTypeName)
+            obj_name, obj_type_name = value
+            attribute = self.scene_manager.get_object_attribute(obj_name, obj_type_name)
             if attribute:
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
@@ -421,7 +425,6 @@ class CoreManager(Singleton):
             self.renderer.framebuffer_manager.clear_framebuffer()
             self.renderer.rendertarget_manager.create_rendertargets()
             self.scene_manager.reset_light_probe()
-            self.scene_manager.atmosphere.initialize()
         self.commands[COMMAND.RECREATE_RENDER_TARGETS.value] = cmd_recreate_render_targets
 
         def cmd_view_rendertarget(value):

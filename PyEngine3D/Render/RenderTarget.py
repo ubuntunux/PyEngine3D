@@ -61,6 +61,7 @@ class RenderTargetManager(Singleton):
         self.core_manager = None
         self.renderer = None
         self.rendertargets = dict()
+        self.immutable_rendertarget_names = []
         self.temp_rendertargets = dict()
         self.first_time = True
         self.texture_lod_in_ssao = 1.0
@@ -71,14 +72,21 @@ class RenderTargetManager(Singleton):
         self.renderer = core_manager.renderer
         self.clear()
 
-    def clear(self):
-        self.clear_rendertargets()
+    def clear(self, force=False):
+        self.clear_rendertargets(force)
         self.clear_temp_rendertargets()
 
-    def clear_rendertargets(self):
+    def clear_rendertargets(self, force=False):
+        delete_list = []
+
         for key, rendertarget in self.rendertargets.items():
-            rendertarget.delete()
-        self.rendertargets = dict()
+            if not force or key not in self.immutable_rendertarget_names:
+                rendertarget.delete()
+                delete_list.append(key)
+
+        for key in delete_list:
+            self.rendertargets.pop(key)
+
         self.core_manager.gc_collect()
 
     def clear_temp_rendertargets(self):
@@ -132,15 +140,19 @@ class RenderTargetManager(Singleton):
             datas.width *= 2
             datas.height *= 2
 
-        # Create RenderTarget
-        if rendertarget_type == RenderBuffer:
-            rendertarget = RenderBuffer(rendertarget_name, datas=datas)
-        else:
-            rendertarget = CreateTexture(name=rendertarget_name, **datas.get_dict())
+        immutable = kwargs.get('immutable', False)
 
-        if rendertarget:
+        if not immutable or rendertarget_name not in self.rendertargets:
+            # Create RenderTarget
+            if rendertarget_type == RenderBuffer:
+                rendertarget = RenderBuffer(rendertarget_name, datas=datas)
+            else:
+                rendertarget = CreateTexture(name=rendertarget_name, **datas.get_dict())
+
             if rendertarget_name not in self.rendertargets:
                 self.rendertargets[rendertarget_name] = rendertarget
+                if immutable:
+                    self.immutable_rendertarget_names.append(rendertarget_name)
                 # send rendertarget info to GUI
                 self.core_manager.send_render_target_info(rendertarget_name)
             else:
@@ -150,18 +162,6 @@ class RenderTargetManager(Singleton):
         else:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
         return rendertarget
-
-    def recreate_rendertargets(self):
-        self.core_manager.clear_render_target_list()
-
-        for rendertarget_name in self.rendertargets:
-            rendertarget = self.rendertargets[rendertarget_name]
-            datas = rendertarget.get_texture_info()
-            self.create_rendertarget(rendertarget_name, **datas)
-            self.core_manager.send_render_target_info(rendertarget_name)
-
-        self.clear_temp_rendertargets()
-        self.core_manager.gc_collect()
 
     def create_rendertargets(self):
         self.clear()
@@ -301,7 +301,8 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR_MIPMAP_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
-            wrap=GL_CLAMP_TO_EDGE
+            wrap=GL_CLAMP_TO_EDGE,
+            immutable=True
         )
 
         RenderTargets.ATMOSPHERE = self.create_rendertarget(
@@ -314,10 +315,11 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
-            wrap=GL_CLAMP_TO_EDGE
+            wrap=GL_CLAMP_TO_EDGE,
+            immutable=True
         )
 
-        RenderTargets.ATMOSPHERE_INSCATTER= self.create_rendertarget(
+        RenderTargets.ATMOSPHERE_INSCATTER = self.create_rendertarget(
             "ATMOSPHERE_INSCATTER",
             texture_type=Texture2D,
             width=quatersize_x,
@@ -327,7 +329,8 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=hdr_data_type,
-            wrap=GL_CLAMP_TO_EDGE
+            wrap=GL_CLAMP_TO_EDGE,
+            immutable=True
         )
 
         RenderTargets.TAA_RESOLVE = self.create_rendertarget(
@@ -485,7 +488,8 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR_MIPMAP_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=GL_FLOAT,
-            wrap=GL_REPEAT
+            wrap=GL_REPEAT,
+            immutable=True
         )
 
         RenderTargets.FFT_B = self.create_rendertarget(
@@ -500,7 +504,8 @@ class RenderTargetManager(Singleton):
             min_filter=GL_LINEAR_MIPMAP_LINEAR,
             mag_filter=GL_LINEAR,
             data_type=GL_FLOAT,
-            wrap=GL_REPEAT
+            wrap=GL_REPEAT,
+            immutable=True
         )
 
         RenderTargets.TEMP_RGBA8 = self.create_rendertarget(

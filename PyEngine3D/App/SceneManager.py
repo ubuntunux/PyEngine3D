@@ -284,6 +284,7 @@ class SceneManager(Singleton):
         atmosphere_data['name'] = self.generate_object_name(atmosphere_data.get('name', 'atmosphere'))
         logger.info("add Atmosphere : %s" % atmosphere_data['name'])
         atmosphere = Atmosphere(**atmosphere_data)
+        atmosphere.initialize()
         self.regist_object(atmosphere)
         return atmosphere
 
@@ -325,21 +326,21 @@ class SceneManager(Singleton):
         for obj_name in list(self.objectMap.keys()):
             self.delete_object(obj_name)
 
-    def action_object(self, objectName):
-        obj = self.get_object(objectName)
+    def action_object(self, object_name):
+        obj = self.get_object(object_name)
         if obj is not None:
             object_type = type(obj)
             if LightProbe == object_type:
                 self.renderer.set_debug_texture(obj.texture_probe)
                 self.core_manager.send_object_attribute(obj.texture_probe.get_attribute())
 
-    def delete_object(self, objectName):
-        obj = self.get_object(objectName)
+    def delete_object(self, object_name):
+        obj = self.get_object(object_name)
         if obj is not None and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
-    def get_object(self, objectName):
-        return self.objectMap[objectName] if objectName in self.objectMap else None
+    def get_object(self, object_name):
+        return self.objectMap[object_name] if object_name in self.objectMap else None
 
     def get_object_names(self):
         return self.objectMap.keys()
@@ -356,20 +357,20 @@ class SceneManager(Singleton):
         for light_probe in self.light_probes:
             light_probe.isRendered = False
 
-    def get_object_attribute(self, objectName, objectTypeName):
-        obj = self.get_object(objectName)
+    def get_object_attribute(self, object_name, objectTypeName):
+        obj = self.get_object(object_name)
         return obj.get_attribute() if obj else None
 
-    def set_object_attribute(self, objectName, objectTypeName, attribute_name, attribute_value, parent_info,
+    def set_object_attribute(self, object_name, objectTypeName, attribute_name, attribute_value, parent_info,
                              attribute_index):
-        obj = self.get_object(objectName)
+        obj = self.get_object(object_name)
         obj and obj.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
 
     def get_selected_object(self):
         return self.selected_object
 
-    def set_selected_object(self, objectName):
-        selected_object = self.get_object(objectName)
+    def set_selected_object(self, object_name):
+        selected_object = self.get_object(object_name)
         if self.selected_object is not selected_object:
             if self.selected_object and hasattr(self.selected_object, "setSelected"):
                 self.selected_object.setSelected(False)
@@ -377,8 +378,8 @@ class SceneManager(Singleton):
             if selected_object and hasattr(selected_object, "setSelected"):
                 selected_object.setSelected(True)
 
-    def set_object_focus(self, objectName):
-        obj = self.get_object(objectName)
+    def set_object_focus(self, object_name):
+        obj = self.get_object(object_name)
         if obj and obj != self.main_camera:
             self.main_camera.transform.set_pos(obj.transform.pos - self.main_camera.transform.front * 2.0)
 
