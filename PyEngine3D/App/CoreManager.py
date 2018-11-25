@@ -11,7 +11,7 @@ from functools import partial
 import numpy as np
 
 from .GameBackend import PyGlet, PyGame, Keyboard, Event
-from PyEngine3D.Common import logger, log_level, COMMAND
+from PyEngine3D.Common import logger, log_level, COMMAND, VIDEO_RESIZE_TIME
 from PyEngine3D.Utilities import Singleton, GetClassName, Config, Profiler
 
 
