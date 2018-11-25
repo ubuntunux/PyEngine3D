@@ -44,6 +44,8 @@ class CoreManager(Singleton):
         self.render_time = 0.0
         self.present_time = 0.0
         self.current_time = 0.0
+        self.video_resize_time = 0.0
+        self.video_resized = False
 
         self.min_delta = sys.float_info.max
         self.max_delta = sys.float_info.min
@@ -452,7 +454,7 @@ class CoreManager(Singleton):
                 self.send(COMMAND.TRANS_OBJECT_ATTRIBUTE, attribute)
         self.commands[COMMAND.VIEW_MATERIAL_INSTANCE.value] = cmd_view_material_instance
 
-    def updateCommand(self):
+    def update_command(self):
         if self.uiCmdQueue is None:
             return
 
@@ -468,6 +470,8 @@ class CoreManager(Singleton):
         if Event.QUIT == event_type:
             self.close()
         elif Event.VIDEORESIZE == event_type:
+            self.video_resized = True
+            self.video_resize_time = self.current_time + 0.5
             self.notify_change_resolution(event_value)
         elif Event.KEYDOWN == event_type:
             key_pressed = self.game_backend.get_keyboard_pressed()
@@ -510,7 +514,7 @@ class CoreManager(Singleton):
 
         # get camera
         camera = self.scene_manager.main_camera
-        cameraTransform = camera.transform
+        camera_transform = camera.transform
         move_speed = camera.move_speed * self.delta
         pan_speed = camera.pan_speed * self.delta
         rotation_speed = camera.rotation_speed * self.delta
@@ -521,39 +525,39 @@ class CoreManager(Singleton):
 
         # camera move pan
         if btnL and btnR or btnM:
-            cameraTransform.move_to_left(-mouse_delta[0] * pan_speed)
-            cameraTransform.move_to_up(-mouse_delta[1] * pan_speed)
+            camera_transform.move_to_left(-mouse_delta[0] * pan_speed)
+            camera_transform.move_to_up(-mouse_delta[1] * pan_speed)
 
         # camera rotation
         elif btnL or btnR:
-            cameraTransform.rotation_pitch(mouse_delta[1] * rotation_speed)
-            cameraTransform.rotation_yaw(-mouse_delta[0] * rotation_speed)
+            camera_transform.rotation_pitch(mouse_delta[1] * rotation_speed)
+            camera_transform.rotation_yaw(-mouse_delta[0] * rotation_speed)
 
         if keydown[Keyboard.Z]:
-            cameraTransform.rotation_roll(-rotation_speed * 10.0)
+            camera_transform.rotation_roll(-rotation_speed * 10.0)
         elif keydown[Keyboard.C]:
-            cameraTransform.rotation_roll(rotation_speed * 10.0)
+            camera_transform.rotation_roll(rotation_speed * 10.0)
 
         # move to view direction ( inverse front of camera matrix )
         if keydown[Keyboard.W] or self.game_backend.wheel_up:
-            cameraTransform.move_to_front(-move_speed)
+            camera_transform.move_to_front(-move_speed)
         elif keydown[Keyboard.S] or self.game_backend.wheel_down:
-            cameraTransform.move_to_front(move_speed)
+            camera_transform.move_to_front(move_speed)
 
         # move to side
         if keydown[Keyboard.A]:
-            cameraTransform.move_to_left(-move_speed)
+            camera_transform.move_to_left(-move_speed)
         elif keydown[Keyboard.D]:
-            cameraTransform.move_to_left(move_speed)
+            camera_transform.move_to_left(move_speed)
 
         # move to up
         if keydown[Keyboard.Q]:
-            cameraTransform.move_to_up(move_speed)
+            camera_transform.move_to_up(move_speed)
         elif keydown[Keyboard.E]:
-            cameraTransform.move_to_up(-move_speed)
+            camera_transform.move_to_up(-move_speed)
 
         if keydown[Keyboard.SPACE]:
-            cameraTransform.reset_transform()
+            camera_transform.reset_transform()
 
     def update(self):
         current_time = time.perf_counter()
@@ -576,7 +580,12 @@ class CoreManager(Singleton):
 
         start_time = time.perf_counter()
 
-        self.updateCommand()
+        if self.video_resized and self.video_resize_time < self.current_time:
+            self.video_resized = True
+            self.video_resize_time = 0
+            self.game_backend.resize_scene_to_window()
+
+        self.update_command()
 
         if self.is_play_mode:
             self.script_manager.update(delta)

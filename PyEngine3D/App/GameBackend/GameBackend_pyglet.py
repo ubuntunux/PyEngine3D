@@ -286,7 +286,6 @@ class PyGlet(GameBackend):
         self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
     def on_resize(self, width, height):
-        self.video_resized = True
         self.width = width
         self.height = height
         self.core_manager.update_event(Event.VIDEORESIZE, (width, height, self.full_screen))
@@ -324,9 +323,7 @@ class PyGlet(GameBackend):
         self.mouse_pos[1] = y
 
     def on_mouse_enter(self, x, y):
-        if self.video_resized:
-            self.resize_scene_to_window()
-            self.video_resized = False
+        pass
 
     def on_mouse_leave(self, x, y):
         pass

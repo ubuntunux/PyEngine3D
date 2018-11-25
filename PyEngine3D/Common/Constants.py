@@ -1,6 +1,6 @@
 import ctypes
-import math
 
+VIDEO_RESIZE_TIME = 1.0
 GRAVITY = 980.0
 MAX_POINT_LIGHTS = 10
 NULL_POINTER = ctypes.c_void_p(0)

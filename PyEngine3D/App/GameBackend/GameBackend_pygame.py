@@ -262,11 +262,6 @@ class PyGame(GameBackend):
         self.wheel_up = False
         self.wheel_down = False
 
-        # do resize
-        if self.video_resized and pygame.mouse.get_focused():
-            self.video_resized = False
-            self.resize_scene_to_window()
-
         # Keyboard & Mouse Events
         for event in pygame.event.get():
             event_type = event.type
@@ -274,7 +269,6 @@ class PyGame(GameBackend):
             if event_type == QUIT:
                 self.core_manager.update_event(Event.QUIT)
             elif event_type == VIDEORESIZE:
-                self.video_resized = True
                 self.width, self.height = event.dict['size']
                 self.core_manager.update_event(Event.VIDEORESIZE, (self.width, self.height, self.full_screen))
             elif event_type == KEYDOWN:

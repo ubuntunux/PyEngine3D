@@ -220,8 +220,6 @@ class GameBackend:
         self.height = 0
         self.full_screen = False
 
-        self.video_resized = False
-
         self.mouse_pos = np.zeros(2)
         self.mouse_pos_old = np.zeros(2)
         self.mouse_delta = np.zeros(2)
