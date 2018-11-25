@@ -471,7 +471,7 @@ class CoreManager(Singleton):
             self.close()
         elif Event.VIDEORESIZE == event_type:
             self.video_resized = True
-            self.video_resize_time = self.current_time + 0.5
+            self.video_resize_time = self.current_time + VIDEO_RESIZE_TIME
             self.notify_change_resolution(event_value)
         elif Event.KEYDOWN == event_type:
             key_pressed = self.game_backend.get_keyboard_pressed()
