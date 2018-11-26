@@ -88,6 +88,8 @@
         - occlusion culling
         - distance culling
 * Technique
+    - Font Distance Field
+        - FontLoader.DistanceField
     - Voxel Based GI
     - Screen Space Bevel
     - Screen Space SSS

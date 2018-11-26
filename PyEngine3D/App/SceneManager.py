@@ -63,9 +63,6 @@ class SceneManager(Singleton):
         self.renderer = core_manager.renderer
         self.effect_manager = core_manager.effect_manager
 
-        # new scene
-        self.new_scene()
-
     def get_current_scene_name(self):
         return self.__current_scene_name
 
@@ -95,7 +92,7 @@ class SceneManager(Singleton):
         self.renderer.set_debug_texture(None)
 
     def post_open_scene(self):
-        self.renderer.resize_scene(clear_rendertarget=True)
+        self.renderer.clear_rendertargets()
         self.regist_object(self.renderer.postprocess)
 
     def new_scene(self):

@@ -10,9 +10,6 @@ from OpenGL.GL.shaders import *
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-import pygame
-from pygame.locals import *
-
 import numpy as np
 
 from PyEngine3D.Common import logger
@@ -101,11 +98,6 @@ void main(void)
 
 
 def DistanceField(font_size, image_width, image_height, image_mode, image_data):
-    if pygame.display.get_init() == 0:
-        pygame.init()
-        # Because of the off-screen rendering, the size of the screen is meaningless.
-        pygame.display.set_mode((512, 512), OPENGL | DOUBLEBUF | RESIZABLE | HWPALETTE | HWSURFACE)
-
     # GL setting
     glFrontFace(GL_CCW)
     glEnable(GL_TEXTURE_2D)
@@ -254,13 +246,6 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     # Draw Quad
     glDrawElements(GL_TRIANGLES, index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
-    # blit frame buffer
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)  # the default framebuffer active
-    glBlitFramebuffer(0, 0, image_width, image_height, 0, 0, image_width, image_height, GL_COLOR_BUFFER_BIT,
-                      GL_LINEAR)
-
-    pygame.display.flip()
-
     # Save
     glBindTexture(GL_TEXTURE_2D, render_target_buffer)
     save_image_data = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE)
@@ -305,8 +290,7 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
     for y in range(count_horizontal):
         for x in range(count_horizontal):
             unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
-            draw.text((x * font_size + padding, y * font_size + padding), unicode_text, font=unicode_font,
-                      fill=font_color)
+            draw.text((x * font_size + padding, y * font_size + padding), unicode_text, font=unicode_font, fill=font_color)
             unicode_index += 1
             if unicode_index >= range_max:
                 break
@@ -328,6 +312,7 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
         image = Image.frombytes(image.mode, image.size, image_data)
         image.save(os.path.join(preview_path, texture_name + ".png"))
         # image.show()
+
     font_data = dict(
         unicode_name=unicode_name,
         range_min=range_min,
@@ -342,26 +327,3 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
     )
 
     return font_data
-
-
-if __name__ == '__main__':
-    language_infos = dict(
-        ascii=('Basic Latin', 0x20, 0x7F),  # 32 ~ 127
-        korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
-    )
-
-    resource_name = 'NanumBarunGothic'
-    font_filepath = os.path.join('..', 'Resource', 'Externals', 'Fonts', 'NanumBarunGothic.ttf')
-    preview_save_path = os.path.join('..', 'Resource', 'Fonts')
-
-    for language in language_infos:
-        unicode_name, range_min, range_max = language_infos[language]
-        font_data = generate_font_data(
-            resource_name,
-            True,
-            unicode_name,
-            range_min,
-            range_max,
-            font_filepath,
-            preview_save_path
-        )

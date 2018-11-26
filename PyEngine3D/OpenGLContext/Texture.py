@@ -99,10 +99,40 @@ class Texture:
     def __init__(self, **texture_data):
         self.name = texture_data.get('name')
         self.attachment = False
+        self.image_mode = "RGBA"
+        self.internal_format = GL_RGBA8
+        self.texture_format = GL_RGBA
+        self.sRGB = False
+        self.clear_color = None
+        self.multisample_count = 0
+
+        self.width = 0
+        self.height = 0
+        self.depth = 1
+        self.data_type = GL_UNSIGNED_BYTE
+        self.min_filter = GL_LINEAR_MIPMAP_LINEAR
+        self.mag_filter = GL_LINEAR
+        self.enable_mipmap = False
+
+        self.wrap = self.default_wrap
+        self.wrap_s = self.default_wrap
+        self.wrap_t = self.default_wrap
+        self.wrap_r = self.default_wrap
+        self.buffer = -1
+        self.sampler_handle = -1
+        self.attribute = Attributes()
+
+        self.create_texture(**texture_data)
+
+    def create_texture(self, **texture_data):
+        if self.buffer != -1:
+            self.delete()
+
+        self.attachment = False
         self.image_mode = texture_data.get('image_mode')
         self.internal_format = texture_data.get('internal_format')
         self.texture_format = texture_data.get('texture_format')
-        self.sRGB = texture_data.get('sRGB')
+        self.sRGB = texture_data.get('sRGB', False)
         self.clear_color = texture_data.get('clear_color')
         self.multisample_count = 0
 
@@ -300,8 +330,8 @@ class Texture:
 class Texture2D(Texture):
     target = GL_TEXTURE_2D
 
-    def __init__(self, **texture_data):
-        Texture.__init__(self, **texture_data)
+    def create_texture(self, **texture_data):
+        Texture.create_texture(self, **texture_data)
 
         data = texture_data.get('data')
 
@@ -350,8 +380,8 @@ class Texture2D(Texture):
 class Texture2DArray(Texture):
     target = GL_TEXTURE_2D_ARRAY
 
-    def __init__(self, **texture_data):
-        Texture.__init__(self, **texture_data)
+    def create_texture(self, **texture_data):
+        Texture.create_texture(self, **texture_data)
 
         data = texture_data.get('data')
 
@@ -396,8 +426,8 @@ class Texture2DArray(Texture):
 class Texture3D(Texture):
     target = GL_TEXTURE_3D
 
-    def __init__(self, **texture_data):
-        Texture.__init__(self, **texture_data)
+    def create_texture(self, **texture_data):
+        Texture.create_texture(self, **texture_data)
 
         data = texture_data.get('data')
 
@@ -443,8 +473,8 @@ class Texture3D(Texture):
 class Texture2DMultiSample(Texture):
     target = GL_TEXTURE_2D_MULTISAMPLE
 
-    def __init__(self, **texture_data):
-        Texture.__init__(self, **texture_data)
+    def create_texture(self, **texture_data):
+        Texture.create_texture(self, **texture_data)
 
         multisample_count = texture_data.get('multisample_count', 4)
         self.multisample_count = multisample_count - (multisample_count % 4)
@@ -475,7 +505,17 @@ class TextureCube(Texture):
     default_wrap = GL_REPEAT
 
     def __init__(self, **texture_data):
+        self.texture_positive_x = None
+        self.texture_negative_x = None
+        self.texture_positive_y = None
+        self.texture_negative_y = None
+        self.texture_positive_z = None
+        self.texture_negative_z = None
+
         Texture.__init__(self, **texture_data)
+
+    def create_texture(self, **texture_data):
+        Texture.create_texture(self, **texture_data)
 
         # If texture2d is None then create render target.
         face_texture_datas = copy.copy(texture_data)

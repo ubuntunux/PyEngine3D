@@ -20,6 +20,9 @@ class PyGame(GameBackend):
             logger.error('Could not render font.')
             return
 
+        # create window
+        pygame.display.set_mode((1024, 768), OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE)
+
         # ASCII commands
         Keyboard.BACKSPACE = K_BACKSPACE
         Keyboard.TAB = K_TAB
@@ -227,7 +230,7 @@ class PyGame(GameBackend):
     def set_mouse_visible(self, visible):
         pygame.mouse.set_visible(visible)
 
-    def change_resolution(self, width, height, full_screen, resize_scene=True):
+    def change_resolution(self, width, height, full_screen):
         changed = False
 
         if 0 < width != self.width:
@@ -237,6 +240,9 @@ class PyGame(GameBackend):
         if 0 < height != self.height:
             self.height = height
             changed = True
+
+        if 0 < width and 0 < height:
+            self.aspect = float(width) / float(height)
 
         if full_screen != self.full_screen:
             self.full_screen = full_screen
@@ -249,10 +255,11 @@ class PyGame(GameBackend):
         if changed:
             pygame.display.set_mode((self.width, self.height), option)
 
-        if resize_scene:
-            self.core_manager.renderer.resize_scene(self.width, self.height)
+            self.post_change_resolution(self.width, self.height, self.aspect)
 
         self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
+
+        return changed
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos
@@ -269,8 +276,8 @@ class PyGame(GameBackend):
             if event_type == QUIT:
                 self.core_manager.update_event(Event.QUIT)
             elif event_type == VIDEORESIZE:
-                self.width, self.height = event.dict['size']
-                self.core_manager.update_event(Event.VIDEORESIZE, (self.width, self.height, self.full_screen))
+                self.goal_width, self.goal_height = event.dict['size']
+                self.core_manager.update_event(Event.VIDEORESIZE, (self.goal_width, self.goal_height, self.full_screen))
             elif event_type == KEYDOWN:
                 symbol = event.key
                 self.core_manager.update_event(Event.KEYDOWN, symbol)

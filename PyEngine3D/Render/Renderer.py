@@ -1,3 +1,4 @@
+from ctypes import c_void_p
 import math
 
 import numpy as np
@@ -27,9 +28,7 @@ class DebugLine:
 
 class Renderer(Singleton):
     def __init__(self):
-        self.width = -1
-        self.height = -1
-        self.aspect = 0.0
+        self.initialized = False
         self.view_mode = GL_FILL
 
         # managers
@@ -44,8 +43,7 @@ class Renderer(Singleton):
         self.postprocess = None
 
         # components
-        self.lastShader = None
-        self.screen = None
+        self.viewport = None
         self.debug_texture = None
 
         self.blend_enable = False
@@ -104,6 +102,8 @@ class Renderer(Singleton):
         self.postprocess.initialize()
 
         self.framebuffer_manager = FrameBufferManager.instance()
+
+        self.viewport = self.viewport_manager.main_viewport
 
         # material instances
         self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants_main')
@@ -219,18 +219,16 @@ class Renderer(Singleton):
             ('PARTICLE_PARENT_SCALE', np.float32, 3),
             ('dummy_1', np.float32),
         ])
-        self.uniform_particle_infos_buffer = UniformBlock("particle_infos", program, 6,
-                                                          self.uniform_particle_infos_data)
-
-        # set gl hint
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+        self.uniform_particle_infos_buffer = UniformBlock("particle_infos", program, 6, self.uniform_particle_infos_data)
 
         def get_rendering_type_name(rendering_type):
             rendering_type = str(rendering_type)
             return rendering_type.split('.')[-1] if '.' in rendering_type else rendering_type
 
-        rendering_type_list = [get_rendering_type_name(RenderingType.convert_index_to_enum(x)) for x in
-                               range(RenderingType.COUNT.value)]
+        rendering_type_list = [get_rendering_type_name(RenderingType.convert_index_to_enum(x)) for x in range(RenderingType.COUNT.value)]
+
+        self.initialized = True
+
         # Send to GUI
         self.core_manager.send_rendering_type_list(rendering_type_list)
 
@@ -267,36 +265,16 @@ class Renderer(Singleton):
         elif view_mode == COMMAND.VIEWMODE_SHADING:
             self.view_mode = GL_FILL
 
-    def resize_scene(self, width=0, height=0, clear_rendertarget=False):
-        changed = False
-
-        if 0 < width != self.width:
-            self.width = width
-            changed = True
-
-        if 0 < height != self.height:
-            self.height = height
-            changed = True
-
-        self.aspect = float(self.width) / float(self.height)
-
-        # update perspective and ortho
-        self.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
-
-        # recreate render targets and framebuffer
-        if changed or clear_rendertarget:
-            # NOTE : Keep the order. viewport_manager.resize then rendertarget_manager.create_rendertargets
-            if changed:
-                self.viewport_manager.resize(width, height)
-            self.framebuffer_manager.clear_framebuffer()
-            self.rendertarget_manager.create_rendertargets()
-            self.scene_manager.reset_light_probe()
+    def clear_rendertargets(self):
+        self.framebuffer_manager.clear_framebuffer()
+        self.rendertarget_manager.create_rendertargets()
+        self.scene_manager.reset_light_probe()
         self.core_manager.gc_collect()
 
     def ortho_view(self, look_at=True):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(0, self.width, 0, self.height, -1, 1)
+        glOrtho(0, self.viewport.width, 0, self.viewport.height, -1, 1)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -308,7 +286,7 @@ class Renderer(Singleton):
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(camera.fov, self.aspect, camera.near, camera.far)
+        gluPerspective(camera.fov, camera.aspect, camera.near, camera.far)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -829,7 +807,7 @@ class Renderer(Singleton):
 
     def render_font(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.font_manager.render_font(self.width, self.height)
+        self.font_manager.render_font(self.viewport.width, self.viewport.height)
 
     def draw_debug_line_2d(self, pos1, pos2, color=None, width=1.0):
         if color is None:
@@ -878,6 +856,8 @@ class Renderer(Singleton):
         self.bind_uniform_blocks()
 
         self.set_blend_state(False)
+
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
         glPolygonMode(GL_FRONT_AND_BACK, self.view_mode)
         # glEnable(GL_FRAMEBUFFER_SRGB)
         glEnable(GL_MULTISAMPLE)
@@ -966,7 +946,7 @@ class Renderer(Singleton):
             self.render_solid()
 
             # copy HDR Target
-            src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
+            src_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_TEMP)
             glClear(GL_COLOR_BUFFER_BIT)
             dst_framebuffer.copy_framebuffer(src_framebuffer)
@@ -1071,7 +1051,7 @@ class Renderer(Singleton):
 
         # blit frame buffer
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.framebuffer_manager.blit_framebuffer(dst_w=self.width, dst_h=self.height)
+        self.framebuffer_manager.blit_framebuffer(dst_w=self.viewport.width, dst_h=self.viewport.height)
         self.framebuffer_manager.unbind_framebuffer()
 
     def end_render(self):

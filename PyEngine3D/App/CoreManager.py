@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-from .GameBackend import PyGlet, PyGame, Keyboard, Event
+from .GameBackend import GameBackNames, Keyboard, Event
 from PyEngine3D.Common import logger, log_level, COMMAND, VIDEO_RESIZE_TIME
 from PyEngine3D.Utilities import Singleton, GetClassName, Config, Profiler
 
@@ -36,7 +36,7 @@ class CoreManager(Singleton):
         # timer
         self.fps = 0.0
         self.vsync = False
-        self.min_delta = 1.0 / 60.0  # 60fps
+        self.limit_delta = 1.0 / 60.0  # 60fps
         self.delta = 0.0
         self.update_time = 0.0
         self.logic_time = 0.0
@@ -80,8 +80,8 @@ class CoreManager(Singleton):
         self.project_manager = None
         self.config = None
 
-        self.last_game_backend = PyGlet.__name__
-        self.game_backend_list = [PyGlet.__name__, PyGame.__name__]
+        self.last_game_backend = GameBackNames.PYGLET
+        self.game_backend_list = [GameBackNames.PYGLET, GameBackNames.PYGAME]
 
         self.commands = []
 
@@ -128,8 +128,6 @@ class CoreManager(Singleton):
             self.exit()
             return False
 
-        OpenGLContext.initialize()
-
         # do First than other manager initalize. Because have to been opengl init from pygame.display.set_mode
         width, height = self.project_manager.config.Screen.size
         full_screen = self.project_manager.config.Screen.full_screen
@@ -137,12 +135,17 @@ class CoreManager(Singleton):
         if self.config.hasValue('Project', 'game_backend'):
             self.last_game_backend = self.config.getValue('Project', 'game_backend')
 
-        if self.last_game_backend == PyGame.__name__:
-            self.game_backend = PyGame(self)
+        self.last_game_backend = self.last_game_backend.lower()
+
+        if self.last_game_backend == GameBackNames.PYGAME:
+            from .GameBackend import GameBackend_pygame
+            self.game_backend = GameBackend_pygame.PyGame(self)
         else:
-            self.game_backend = PyGlet(self)
-            self.last_game_backend = PyGlet.__name__
-        self.game_backend.change_resolution(width, height, full_screen, resize_scene=False)
+            from .GameBackend import GameBackend_pyglet
+            self.game_backend = GameBackend_pyglet.PyGlet(self)
+            self.last_game_backend = GameBackNames.PYGLET
+
+        OpenGLContext.initialize()
 
         self.send_game_backend_list(self.game_backend_list)
         index = self.game_backend_list.index(self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
@@ -158,13 +161,16 @@ class CoreManager(Singleton):
         self.rendertarget_manager.initialize(self)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
-        self.renderer.resize_scene(width, height)
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 
         main_script = self.script_manager = self.resource_manager.get_script('main')
         self.script_manager = main_script.ScriptManager.instance()
         self.script_manager.initialize(self)
+
+        # new scene
+        self.game_backend.change_resolution(width, height, full_screen)
+        self.scene_manager.new_scene()
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
@@ -320,28 +326,28 @@ class CoreManager(Singleton):
 
         # Resource commands
         def cmd_load_resource(value):
-            resName, resTypeName = value
-            self.resource_manager.load_resource(resName, resTypeName)
+            resource_name, resource_type_name = value
+            self.resource_manager.load_resource(resource_name, resource_type_name)
         self.commands[COMMAND.LOAD_RESOURCE.value] = cmd_load_resource
 
         def cmd_action_resource(value):
-            resName, resTypeName = value
-            self.resource_manager.action_resource(resName, resTypeName)
+            resource_name, resource_type_name = value
+            self.resource_manager.action_resource(resource_name, resource_type_name)
         self.commands[COMMAND.ACTION_RESOURCE.value] = cmd_action_resource
 
         def cmd_duplicate_resource(value):
-            resName, resTypeName = value
-            self.resource_manager.duplicate_resource(resName, resTypeName)
+            resource_name, resource_type_name = value
+            self.resource_manager.duplicate_resource(resource_name, resource_type_name)
         self.commands[COMMAND.DUPLICATE_RESOURCE.value] = cmd_duplicate_resource
 
         def cmd_save_resource(value):
-            resName, resTypeName = value
-            self.resource_manager.save_resource(resName, resTypeName)
+            resource_name, resource_type_name = value
+            self.resource_manager.save_resource(resource_name, resource_type_name)
         self.commands[COMMAND.SAVE_RESOURCE.value] = cmd_save_resource
 
         def cmd_delete_resource(value):
-            resName, resTypeName = value
-            self.resource_manager.delete_resource(resName, resTypeName)
+            resource_name, resource_type_name = value
+            self.resource_manager.delete_resource(resource_name, resource_type_name)
         self.commands[COMMAND.DELETE_RESOURCE.value] = cmd_delete_resource
 
         def cmd_request_resource_list(value):
@@ -350,8 +356,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_RESOURCE_LIST.value] = cmd_request_resource_list
 
         def cmd_request_resource_attribute(value):
-            resName, resTypeName = value
-            attribute = self.resource_manager.get_resource_attribute(resName, resTypeName)
+            resource_name, resource_type_name = value
+            attribute = self.resource_manager.get_resource_attribute(resource_name, resource_type_name)
             if attribute:
                 self.send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, attribute)
         self.commands[COMMAND.REQUEST_RESOURCE_ATTRIBUTE.value] = cmd_request_resource_attribute
@@ -404,9 +410,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.REQUEST_OBJECT_ATTRIBUTE.value] = cmd_request_object_attribute
 
         def cmd_set_object_attribute(value):
-            objectName, objectType, attribute_name, attribute_value, parent_info, attribute_index = value
-            self.scene_manager.set_object_attribute(objectName, objectType, attribute_name, attribute_value,
-                                                    parent_info, attribute_index)
+            object_name, object_type, attribute_name, attribute_value, parent_info, attribute_index = value
+            self.scene_manager.set_object_attribute(object_name, object_type, attribute_name, attribute_value, parent_info, attribute_index)
         self.commands[COMMAND.SET_OBJECT_ATTRIBUTE.value] = cmd_set_object_attribute
 
         self.commands[COMMAND.SET_OBJECT_SELECT.value] = lambda value: self.scene_manager.set_selected_object(value)
@@ -563,7 +568,7 @@ class CoreManager(Singleton):
         current_time = time.perf_counter()
         delta = current_time - self.current_time
 
-        if self.vsync and delta < self.min_delta or delta == 0.0:
+        if self.vsync and delta < self.limit_delta or delta == 0.0:
             return
 
         self.acc_time += delta
@@ -581,7 +586,7 @@ class CoreManager(Singleton):
         start_time = time.perf_counter()
 
         if self.video_resized and self.video_resize_time < self.current_time:
-            self.video_resized = True
+            self.video_resized = False
             self.video_resize_time = 0
             self.game_backend.resize_scene_to_window()
 
@@ -601,24 +606,25 @@ class CoreManager(Singleton):
         self.logic_time = (end_time - start_time) * 1000.0  # millisecond
         start_time = end_time
 
-        # render_light_probe scene
-        self.renderer.render_light_probe(self.scene_manager.main_light_probe)
+        if not self.video_resized:
+            # render_light_probe scene
+            self.renderer.render_light_probe(self.scene_manager.main_light_probe)
 
-        # render sceme
-        self.renderer.render_scene()
+            # render sceme
+            self.renderer.render_scene()
 
-        end_time = time.perf_counter()
-        self.render_time = (end_time - start_time) * 1000.0  # millisecond
-        start_time = end_time
+            end_time = time.perf_counter()
+            self.render_time = (end_time - start_time) * 1000.0  # millisecond
+            start_time = end_time
 
-        # end of render scene
-        self.renderer.end_render()
+            # end of render scene
+            self.renderer.end_render()
 
-        # swap buffer
-        self.game_backend.flip()
+            # swap buffer
+            self.game_backend.flip()
 
-        end_time = time.perf_counter()
-        self.present_time = (end_time - start_time) * 1000.0  # millisecond
+            end_time = time.perf_counter()
+            self.present_time = (end_time - start_time) * 1000.0  # millisecond
 
         self.acc_logic_time += self.logic_time
         self.acc_gpu_time += self.gpu_time

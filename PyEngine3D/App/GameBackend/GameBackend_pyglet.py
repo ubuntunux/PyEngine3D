@@ -253,7 +253,7 @@ class PyGlet(GameBackend):
     def set_mouse_visible(self, visible):
         self.window.set_mouse_visible(visible)
 
-    def change_resolution(self, width, height, full_screen, resize_scene=True):
+    def change_resolution(self, width, height, full_screen):
         changed = False
 
         if 0 < width != self.width:
@@ -263,6 +263,9 @@ class PyGlet(GameBackend):
         if 0 < height != self.height:
             self.height = height
             changed = True
+
+        if 0 < width and 0 < height:
+            self.aspect = float(width) / float(height)
 
         if full_screen != self.full_screen:
             changed = True
@@ -280,14 +283,15 @@ class PyGlet(GameBackend):
                 self.window.set_size(self.width, self.height)
             self.full_screen = full_screen
 
-        if resize_scene:
-            self.core_manager.renderer.resize_scene(self.width, self.height)
+            self.post_change_resolution(self.width, self.height, self.aspect)
 
         self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
+        return changed
+
     def on_resize(self, width, height):
-        self.width = width
-        self.height = height
+        self.goal_width = width
+        self.goal_height = height
         self.core_manager.update_event(Event.VIDEORESIZE, (width, height, self.full_screen))
         return pyglet.event.EVENT_HANDLED
 

@@ -10,8 +10,12 @@ from .Texture import Texture
 class RenderBuffer(Texture):
     target = GL_RENDERBUFFER
 
-    def __init__(self, name, **datas):
-        Texture.__init__(self, name=name, **datas)
+    def __init__(self, **datas):
+        Texture.__init__(self, **datas)
+
+    def create_texture(self, **datas):
+        if self.buffer != -1:
+            self.delete()
 
         self.multisample_count = datas.get('multisample_count', 0)
 
@@ -20,8 +24,7 @@ class RenderBuffer(Texture):
         if self.multisample_count == 0:
             glRenderbufferStorage(GL_RENDERBUFFER, self.internal_format, self.width, self.height)
         else:
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.multisample_count, self.internal_format, self.width,
-                                             self.height)
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self.multisample_count, self.internal_format, self.width, self.height)
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     def delete(self):

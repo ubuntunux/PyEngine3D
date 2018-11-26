@@ -8,7 +8,7 @@ from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
 from PyEngine3D.Utilities import *
-from PyEngine3D.Common import logger
+from PyEngine3D.Common import logger, COLOR_BLACK
 from PyEngine3D.OpenGLContext import Texture2D, Texture2DArray, Texture2DMultiSample, TextureCube, RenderBuffer, CreateTexture
 from .Ocean import Constants as OceanConstants
 
@@ -146,20 +146,18 @@ class RenderTargetManager(Singleton):
         if not immutable or rendertarget_name not in self.rendertargets:
             # Create RenderTarget
             if rendertarget_type == RenderBuffer:
-                rendertarget = RenderBuffer(rendertarget_name, **datas)
+                rendertarget = RenderBuffer(name=rendertarget_name, **datas)
             else:
                 rendertarget = CreateTexture(name=rendertarget_name, **datas)
 
             if rendertarget_name not in self.rendertargets:
                 self.rendertargets[rendertarget_name] = rendertarget
+
                 if immutable:
                     self.immutable_rendertarget_names.append(rendertarget_name)
+
                 # send rendertarget info to GUI
                 self.core_manager.send_render_target_info(rendertarget_name)
-            else:
-                # overwrite
-                self.rendertargets[rendertarget_name].delete()
-                object_copy(rendertarget, self.rendertargets[rendertarget_name])
         else:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
         return rendertarget
@@ -196,11 +194,6 @@ class RenderTargetManager(Singleton):
 
         hdr_internal_format = GL_RGBA16F
         hdr_data_type = GL_FLOAT
-
-        COLOR_BLACK = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
-        COLOR_BLACK_NO_ALPHA = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-        COLOR_WHITE = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-        COLOR_WHITE_NO_ALPHA = np.array([1.0, 1.0, 1.0, 0.0], dtype=np.float32)
 
         RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
             "DEPTHSTENCIL",

@@ -6,6 +6,11 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.Common import logger, log_level, COMMAND
 
 
+class GameBackNames:
+    PYGLET = "pyglet"
+    PYGAME = "pygame"
+
+
 class Event(AutoEnum):
     QUIT = ()
     VIDEORESIZE = ()
@@ -218,6 +223,9 @@ class GameBackend:
 
         self.width = 0
         self.height = 0
+        self.goal_width = 0
+        self.goal_height = 0
+        self.aspect = 1.0
         self.full_screen = False
 
         self.mouse_pos = np.zeros(2)
@@ -229,6 +237,17 @@ class GameBackend:
         self.mouse_btn_m = False
         self.mouse_btn_r = False
 
-    def resize_scene_to_window(self):
-        self.core_manager.renderer.resize_scene(self.width, self.height)
+    def post_change_resolution(self, width, height, aspect):
+        self.goal_width = self.width
+        self.goal_height = self.height
 
+        # update perspective and ortho
+        self.core_manager.scene_manager.update_camera_projection_matrix(aspect=aspect)
+
+        # reset viewport
+        self.core_manager.viewport_manager.resize(width, height)
+
+        self.core_manager.renderer.clear_rendertargets()
+
+    def resize_scene_to_window(self):
+        self.change_resolution(self.goal_width, self.goal_height, self.full_screen)

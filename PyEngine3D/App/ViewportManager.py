@@ -5,8 +5,8 @@ import numpy as np
 from OpenGL.GL import *
 
 from PyEngine3D.Utilities import *
-from PyEngine3D.Common import logger
-from PyEngine3D.OpenGLContext import Texture2D, RenderBuffer, CreateTexture
+from PyEngine3D.Common import logger, COLOR_BLACK
+from PyEngine3D.OpenGLContext import Texture2D, RenderBuffer
 
 
 class Viewport:
@@ -18,11 +18,9 @@ class Viewport:
         self.height = 0
         self.rendertarget = None
 
-    def create(self, x, y, width, height):
-        self.delete()
-
-        options = dict(
-            texture_type=Texture2D,
+    @staticmethod
+    def get_options(width, height):
+        return dict(
             width=width,
             height=height,
             internal_format=GL_RGBA8,
@@ -30,13 +28,22 @@ class Viewport:
             data_type=GL_UNSIGNED_BYTE,
             min_filter=GL_LINEAR,
             mag_filter=GL_LINEAR,
+            clear_color=COLOR_BLACK,
             wrap=GL_CLAMP
         )
 
-        self.rendertarget = CreateTexture(name=self.name, **options)
+    def create(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
-        # overwrite pattern
-        # object_copy(rendertarget, self.rendertarget)
+        options = self.get_options(width, height)
+
+        if self.rendertarget is None:
+            self.rendertarget = Texture2D(name=self.name, **options)
+        else:
+            self.rendertarget.create_texture(**options)
 
     def delete(self):
         if self.rendertarget is not None:
