@@ -82,12 +82,15 @@ class RenderTargetManager(Singleton):
         delete_list = []
 
         for key, rendertarget in self.rendertargets.items():
-            if not force or key not in self.immutable_rendertarget_names:
+            if force or key not in self.immutable_rendertarget_names:
                 rendertarget.delete()
                 delete_list.append(key)
 
         for key in delete_list:
             self.rendertargets.pop(key)
+
+            if key in self.immutable_rendertarget_names:
+                self.immutable_rendertarget_names.pop(key)
 
         self.core_manager.gc_collect()
 
@@ -143,6 +146,11 @@ class RenderTargetManager(Singleton):
 
         immutable = datas.get('immutable', False)
 
+        rendertarget = None
+
+        if rendertarget_name in self.rendertargets:
+            rendertarget = self.rendertargets[rendertarget_name]
+
         if not immutable or rendertarget_name not in self.rendertargets:
             # Create RenderTarget
             if rendertarget_type == RenderBuffer:
@@ -158,8 +166,10 @@ class RenderTargetManager(Singleton):
 
                 # send rendertarget info to GUI
                 self.core_manager.send_render_target_info(rendertarget_name)
-        else:
+
+        if rendertarget is None:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
+
         return rendertarget
 
     def create_rendertargets(self):

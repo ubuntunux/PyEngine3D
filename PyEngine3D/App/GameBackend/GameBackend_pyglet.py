@@ -25,7 +25,7 @@ class PyGlet(GameBackend):
         config = Config(double_buffer=True, )
 
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
-        self.window = window.Window(width=1024, height=768, config=config, resizable=True, vsync=False)
+        self.window = window.Window(width=1280, height=720, config=config, resizable=True, vsync=False)
 
         # for debbug
         # self.window.push_handlers(window.event.WindowEventLogger())

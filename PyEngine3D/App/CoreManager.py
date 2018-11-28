@@ -148,7 +148,9 @@ class CoreManager(Singleton):
         OpenGLContext.initialize()
 
         self.send_game_backend_list(self.game_backend_list)
+
         index = self.game_backend_list.index(self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
+
         self.send_current_game_backend_index(index)
 
         if not self.game_backend.valid:
