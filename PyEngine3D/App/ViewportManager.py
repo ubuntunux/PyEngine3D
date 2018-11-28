@@ -32,7 +32,7 @@ class Viewport:
             wrap=GL_CLAMP
         )
 
-    def create(self, x, y, width, height):
+    def initialize(self, x, y, width, height):
         self.x = x
         self.y = y
         self.width = width
@@ -60,8 +60,7 @@ class ViewportManager(Singleton):
     def initialize(self, core_manager):
         self.core_manager = core_manager
         self.renderer = core_manager.renderer
-        self.main_viewport = Viewport("VIEWPORT_MAIN")
-        self.viewports.append(self.main_viewport)
+        self.main_viewport = self.create_viewport("VIEWPORT_MAIN")
 
     def clear(self):
         for viewport in self.viewports:
@@ -71,7 +70,12 @@ class ViewportManager(Singleton):
         self.main_viewport = None
 
     def resize(self, width, height):
-        self.main_viewport.create(0, 0, width, height)
+        self.main_viewport.initialize(0, 0, width, height)
+
+    def create_viewport(self, viewport_name):
+        viewport = Viewport(viewport_name)
+        self.viewports.append(viewport)
+        return viewport
 
     def split_viewport(self, x, y, width, height):
         pass
