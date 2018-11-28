@@ -125,9 +125,7 @@ class Renderer(Singleton):
             "selected_object_composite")
 
         # instance buffer
-        self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer",
-                                                    location_offset=7,
-                                                    element_datas=[MATRIX4_IDENTITY, ])
+        self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer", location_offset=7, element_datas=[MATRIX4_IDENTITY, ])
 
         # scene constants uniform buffer
         program = self.scene_constants_material.get_program()
@@ -173,8 +171,7 @@ class Renderer(Singleton):
                                                                           ('radius', np.float32, 1),
                                                                           ('pos', np.float32, 3),
                                                                           ('render', np.float32, 1)])
-        self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4,
-                                                       self.uniform_point_light_data)
+        self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4, self.uniform_point_light_data)
 
         self.uniform_particle_common_data = np.zeros(1, dtype=[
             ('PARTICLE_COLOR', np.float32, 3),
@@ -183,8 +180,7 @@ class Renderer(Singleton):
             ('PARTICLE_BLEND_MODE', np.int32),
             ('PARTICLE_COMMON_DUMMY_0', np.int32)
         ])
-        self.uniform_particle_common_buffer = UniformBlock("particle_common", program, 5,
-                                                           self.uniform_particle_common_data)
+        self.uniform_particle_common_buffer = UniformBlock("particle_common", program, 5, self.uniform_particle_common_data)
 
         self.uniform_particle_infos_data = np.zeros(1, dtype=[
             ('PARTICLE_PARENT_MATRIX', np.float32, (4, 4)),
@@ -235,8 +231,7 @@ class Renderer(Singleton):
     def close(self):
         pass
 
-    def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA,
-                        func_dst=GL_ONE_MINUS_SRC_ALPHA):
+    def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA, func_dst=GL_ONE_MINUS_SRC_ALPHA):
         self.blend_enable_prev = self.blend_enable
         self.blend_equation_prev = self.blend_equation
         self.blend_func_src_prev = self.blend_func_src
