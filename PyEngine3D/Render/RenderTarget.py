@@ -204,6 +204,9 @@ class RenderTargetManager(Singleton):
             wrap=GL_CLAMP
         )
 
+        # NOTE : bind render target
+        self.viewport_manager.main_viewport.bind_rendertarget(RenderTargets.BACKBUFFER)
+
         RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
             "DEPTHSTENCIL",
             texture_type=Texture2D,

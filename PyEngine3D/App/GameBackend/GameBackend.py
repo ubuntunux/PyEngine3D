@@ -245,7 +245,7 @@ class GameBackend:
         self.core_manager.scene_manager.update_camera_projection_matrix(aspect=aspect)
 
         # reset viewport
-        self.core_manager.viewport_manager.resize(width, height)
+        self.core_manager.viewport_manager.resize_viewport(width, height)
 
         self.core_manager.renderer.clear_rendertargets()
 
