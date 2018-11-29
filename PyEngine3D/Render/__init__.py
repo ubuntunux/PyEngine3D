@@ -4,7 +4,6 @@ from .RenderOptions import BlendMode, RenderOption, RenderingType, RenderGroup, 
 
 from .MaterialInstance import MaterialInstance
 
-from .TransformObject import TransformObject
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
 from .Mesh import Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad

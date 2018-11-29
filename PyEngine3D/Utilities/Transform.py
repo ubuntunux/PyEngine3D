@@ -11,9 +11,10 @@ reference - http://www.euclideanspace.com/maths/geometry/rotations/conversions/m
 """
 
 import math
-import numpy as np
-from numpy.linalg import norm
 from functools import reduce
+
+import numpy as np
+
 
 HALF_PI = math.pi * 0.5
 PI = math.pi

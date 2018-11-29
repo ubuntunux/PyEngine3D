@@ -16,7 +16,7 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.Common.Constants import *
 from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.App import CoreManager
-from . import TransformObject, Model, BlendMode
+from . import Model, BlendMode
 
 
 class SpawnVolume(Enum):

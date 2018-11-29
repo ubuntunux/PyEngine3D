@@ -1,8 +1,6 @@
-import time
-
 import numpy as np
 
-from PyEngine3D.Utilities import *
+from .Transform import *
 
 
 class TransformObject:

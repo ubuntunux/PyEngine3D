@@ -1,7 +1,6 @@
 import numpy as np
 
-from PyEngine3D.Common import logger
-from .TransformObject import TransformObject
+from PyEngine3D.Utilities import TransformObject
 
 
 class Bone:
