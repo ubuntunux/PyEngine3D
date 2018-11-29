@@ -2,11 +2,8 @@ import math
 
 import numpy as np
 
-from OpenGL.GL import *
-
 from PyEngine3D.Utilities import *
 from PyEngine3D.Common import logger, COLOR_BLACK
-from PyEngine3D.OpenGLContext import Texture2D, RenderBuffer
 
 
 class Viewport:
@@ -16,21 +13,6 @@ class Viewport:
         self.y = 0
         self.width = 0
         self.height = 0
-        self.rendertarget = None
-
-    @staticmethod
-    def get_options(width, height):
-        return dict(
-            width=width,
-            height=height,
-            internal_format=GL_RGBA8,
-            texture_format=GL_RGBA,
-            data_type=GL_UNSIGNED_BYTE,
-            min_filter=GL_LINEAR,
-            mag_filter=GL_LINEAR,
-            clear_color=COLOR_BLACK,
-            wrap=GL_CLAMP
-        )
 
     def initialize(self, x, y, width, height):
         self.x = x
@@ -38,16 +20,8 @@ class Viewport:
         self.width = width
         self.height = height
 
-        options = self.get_options(width, height)
-
-        if self.rendertarget is None:
-            self.rendertarget = Texture2D(name=self.name, **options)
-        else:
-            self.rendertarget.create_texture(**options)
-
-    def delete(self):
-        if self.rendertarget is not None:
-            self.rendertarget.delete()
+    def update(self, dt):
+        pass
 
 
 class ViewportManager(Singleton):
@@ -77,11 +51,9 @@ class ViewportManager(Singleton):
         self.viewports.append(viewport)
         return viewport
 
-    def split_viewport(self, x, y, width, height):
-        pass
-
-    def merge_viewport(self, x, y, width, height):
-        pass
-
     def viewport_count(self):
         return len(self.rendertarget)
+
+    def update(self, dt):
+        for viewport in self.viewports:
+            viewport.update(dt)

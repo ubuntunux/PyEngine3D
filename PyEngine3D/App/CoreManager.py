@@ -157,10 +157,10 @@ class CoreManager(Singleton):
             self.error('game_backend initializing failed')
 
         # initialize managers
-        self.resource_manager.initialize(self, self.project_manager.project_dir)
-        self.render_option_manager.initialize(self)
         self.viewport_manager.initialize(self)
+        self.render_option_manager.initialize(self)
         self.rendertarget_manager.initialize(self)
+        self.resource_manager.initialize(self, self.project_manager.project_dir)
         self.font_manager.initialize(self)
         self.renderer.initialize(self)
         self.effect_manager.initialize(self)
@@ -200,11 +200,8 @@ class CoreManager(Singleton):
 
         # save project
         self.project_manager.close_project()
-
         self.renderer.close()
         self.resource_manager.close()
-        self.renderer.destroyScreen()
-
         self.game_backend.quit()
 
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop

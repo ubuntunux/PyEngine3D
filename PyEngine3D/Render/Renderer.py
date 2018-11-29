@@ -86,9 +86,6 @@ class Renderer(Singleton):
         self.debug_lines_2d = []
         self.debug_lines_3d = []
 
-    def destroyScreen(self):
-        self.core_manager.game_backend.quit()
-
     def initialize(self, core_manager):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager

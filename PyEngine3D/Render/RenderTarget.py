@@ -178,22 +178,8 @@ class RenderTargetManager(Singleton):
         # Note : # clear rendertarget infos in GUI
         self.core_manager.clear_render_target_list()
 
-        # RenderTargets.BACKBUFFER = self.create_rendertarget(
-        #     "BACKBUFFER",
-        #     texture_type=Texture2D,
-        #     width=fullsize_x,
-        #     height=fullsize_y,
-        #     internal_format=GL_RGBA8,
-        #     texture_format=GL_RGBA,
-        #     data_type=GL_UNSIGNED_BYTE,
-        #     min_filter=GL_LINEAR,
-        #     mag_filter=GL_LINEAR,
-        #     wrap=GL_CLAMP
-        # )
-        RenderTargets.BACKBUFFER = self.viewport_manager.main_viewport.rendertarget
-
-        width = RenderTargets.BACKBUFFER.width
-        height = RenderTargets.BACKBUFFER.height
+        width = self.viewport_manager.main_viewport.width
+        height = self.viewport_manager.main_viewport.height
 
         fullsize_x = width
         fullsize_y = height
@@ -204,6 +190,19 @@ class RenderTargetManager(Singleton):
 
         hdr_internal_format = GL_RGBA16F
         hdr_data_type = GL_FLOAT
+
+        RenderTargets.BACKBUFFER = self.create_rendertarget(
+            "BACKBUFFER",
+            texture_type=Texture2D,
+            width=fullsize_x,
+            height=fullsize_y,
+            internal_format=GL_RGBA8,
+            texture_format=GL_RGBA,
+            data_type=GL_UNSIGNED_BYTE,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
+            wrap=GL_CLAMP
+        )
 
         RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
             "DEPTHSTENCIL",
