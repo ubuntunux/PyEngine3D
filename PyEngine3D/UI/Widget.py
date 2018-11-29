@@ -9,8 +9,8 @@ class Widget:
         self.widgets = []
 
     def resize(self, width, height):
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
 
     def clear_widgets(self):
         for widget in self.widgets:
