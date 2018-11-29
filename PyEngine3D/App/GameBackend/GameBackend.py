@@ -237,17 +237,39 @@ class GameBackend:
         self.mouse_btn_m = False
         self.mouse_btn_r = False
 
-    def post_change_resolution(self, width, height, aspect):
-        self.goal_width = self.width
-        self.goal_height = self.height
+    def change_resolution(self, width, height, full_screen):
+        changed = False
 
-        # update perspective and ortho
-        self.core_manager.scene_manager.update_camera_projection_matrix(aspect=aspect)
+        if 0 < width != self.width:
+            self.width = width
+            changed = True
 
-        # reset viewport
-        self.core_manager.viewport_manager.resize_viewport(width, height)
+        if 0 < height != self.height:
+            self.height = height
+            changed = True
 
-        self.core_manager.renderer.clear_rendertargets()
+        if 0 < width and 0 < height:
+            self.aspect = float(width) / float(height)
+
+        if full_screen != self.full_screen:
+            self.full_screen = full_screen
+            changed = True
+
+        if changed:
+            self.do_change_resolution()
+
+            self.goal_width = self.width
+            self.goal_height = self.height
+
+            # update perspective and ortho
+            self.core_manager.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
+
+            # reset viewport
+            self.core_manager.viewport_manager.resize_viewport(self.width, self.height)
+
+            self.core_manager.renderer.clear_rendertargets()
+
+            self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
 
     def resize_scene_to_window(self):
         self.change_resolution(self.goal_width, self.goal_height, self.full_screen)

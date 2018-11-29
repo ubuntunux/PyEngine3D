@@ -2,6 +2,8 @@ import ctypes
 
 import numpy as np
 
+INITIAL_WIDTH = 800
+INITIAL_HEIGHT = 600
 VIDEO_RESIZE_TIME = 0.5
 GRAVITY = 980.0
 MAX_POINT_LIGHTS = 10

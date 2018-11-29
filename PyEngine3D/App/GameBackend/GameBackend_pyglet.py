@@ -9,7 +9,7 @@ from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.gl import *
 
-from PyEngine3D.Common import logger, log_level, COMMAND
+from PyEngine3D.Common import logger, INITIAL_WIDTH, INITIAL_HEIGHT
 from .GameBackend import GameBackend, Keyboard, Event
 
 
@@ -25,7 +25,7 @@ class PyGlet(GameBackend):
         config = Config(double_buffer=True, )
 
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
-        self.window = window.Window(width=1280, height=720, config=config, resizable=True, vsync=False)
+        self.window = window.Window(width=INITIAL_WIDTH, height=INITIAL_HEIGHT, config=config, resizable=True, vsync=False)
 
         # for debbug
         # self.window.push_handlers(window.event.WindowEventLogger())
@@ -253,41 +253,14 @@ class PyGlet(GameBackend):
     def set_mouse_visible(self, visible):
         self.window.set_mouse_visible(visible)
 
-    def change_resolution(self, width, height, full_screen):
-        changed = False
-
-        if 0 < width != self.width:
-            self.width = width
-            changed = True
-
-        if 0 < height != self.height:
-            self.height = height
-            changed = True
-
-        if 0 < width and 0 < height:
-            self.aspect = float(width) / float(height)
-
-        if full_screen != self.full_screen:
-            changed = True
-
-        if changed:
-            if full_screen:
-                self.window.set_fullscreen(True)
-                # cannot change screen size in fullscreen, fit to background screen size.
-                self.width, self.height = self.window.get_size()
-            elif not full_screen and self.full_screen:
-                self.window.set_fullscreen(False)
-                self.window.set_size(self.width, self.height)
-            elif not full_screen and not self.full_screen:
-                self.window.set_fullscreen(False)
-                self.window.set_size(self.width, self.height)
-            self.full_screen = full_screen
-
-            self.post_change_resolution(self.width, self.height, self.aspect)
-
-        self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
-
-        return changed
+    def do_change_resolution(self):
+        if self.full_screen:
+            self.window.set_fullscreen(True)
+            # cannot change screen size in fullscreen, fit to background screen size.
+            self.width, self.height = self.window.get_size()
+        else:
+            self.window.set_fullscreen(False)
+            self.window.set_size(self.width, self.height)
 
     def on_resize(self, width, height):
         self.goal_width = width

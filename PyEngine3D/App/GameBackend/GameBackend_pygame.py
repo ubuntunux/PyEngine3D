@@ -3,7 +3,7 @@ import os
 import pygame
 from pygame.locals import *
 
-from PyEngine3D.Common import logger, log_level, COMMAND
+from PyEngine3D.Common import logger, INITIAL_WIDTH, INITIAL_HEIGHT
 from .GameBackend import GameBackend, Keyboard, Event
 
 
@@ -21,7 +21,7 @@ class PyGame(GameBackend):
             return
 
         # create window
-        pygame.display.set_mode((1024, 768), OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE)
+        pygame.display.set_mode((INITIAL_WIDTH, INITIAL_HEIGHT), OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE)
 
         # ASCII commands
         Keyboard.BACKSPACE = K_BACKSPACE
@@ -230,36 +230,13 @@ class PyGame(GameBackend):
     def set_mouse_visible(self, visible):
         pygame.mouse.set_visible(visible)
 
-    def change_resolution(self, width, height, full_screen):
-        changed = False
-
-        if 0 < width != self.width:
-            self.width = width
-            changed = True
-
-        if 0 < height != self.height:
-            self.height = height
-            changed = True
-
-        if 0 < width and 0 < height:
-            self.aspect = float(width) / float(height)
-
-        if full_screen != self.full_screen:
-            self.full_screen = full_screen
-            changed = True
-
+    def do_change_resolution(self):
         option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE
+
         if self.full_screen:
-            option |= FULLSCREEN
-
-        if changed:
+            pygame.display.set_mode((0, 0), option | FULLSCREEN)
+        else:
             pygame.display.set_mode((self.width, self.height), option)
-
-            self.post_change_resolution(self.width, self.height, self.aspect)
-
-        self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
-
-        return changed
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos
