@@ -6,13 +6,10 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from PIL import Image
-
-from PyEngine3D.Common import logger, log_level, COMMAND
+from PyEngine3D.Common import logger, COMMAND
 from PyEngine3D.Common.Constants import *
 from PyEngine3D.Utilities import *
-from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBuffer, FrameBufferManager, RenderBuffer, UniformMatrix4, UniformBlock, CreateTexture
-from PyEngine3D.OpenGLContext import OpenGLContext
+from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderBuffer, UniformBlock, CreateTexture
 from .PostProcess import AntiAliasing, PostProcess
 from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
 from . import SkeletonActor, StaticActor
@@ -90,6 +87,7 @@ class Renderer(Singleton):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager
         self.viewport_manager = core_manager.viewport_manager
+        self.viewport = self.viewport_manager.main_viewport
         self.resource_manager = core_manager.resource_manager
         self.render_option_manager = core_manager.render_option_manager
         self.font_manager = core_manager.font_manager
@@ -99,8 +97,6 @@ class Renderer(Singleton):
         self.postprocess.initialize()
 
         self.framebuffer_manager = FrameBufferManager.instance()
-
-        self.viewport = self.viewport_manager.main_viewport
 
         # material instances
         self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants_main')
@@ -1041,13 +1037,3 @@ class Renderer(Singleton):
 
         # draw line
         self.render_debug_line()
-
-        # blit frame buffer
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.framebuffer_manager.blit_framebuffer(dst_w=self.viewport.width, dst_h=self.viewport.height)
-        self.framebuffer_manager.unbind_framebuffer()
-
-    def end_render(self):
-        OpenGLContext.end_render()
-        glUseProgram(0)
-        glFlush()

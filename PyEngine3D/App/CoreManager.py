@@ -67,6 +67,7 @@ class CoreManager(Singleton):
         self.acc_present_time = 0.0
 
         # managers
+        self.opengl_context = None
         self.script_manager = None
         self.game_backend = None
         self.resource_manager = None
@@ -105,20 +106,21 @@ class CoreManager(Singleton):
         if self.cmdPipe:
             self.cmdPipe.SendAndRecv(COMMAND.UI_RUN, None, COMMAND.UI_RUN_OK, None)
 
+        from PyEngine3D.UI import ViewportManager
         from PyEngine3D.OpenGLContext import OpenGLContext
         from PyEngine3D.ResourceManager import ResourceManager
         from PyEngine3D.Render import Renderer, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .SceneManager import SceneManager
-        from .ViewportManager import ViewportManager
         from .ProjectManager import ProjectManager
 
-        self.resource_manager = ResourceManager.instance()
+        self.opengl_context = OpenGLContext
+        self.viewport_manager = ViewportManager.instance()
         self.render_option_manager = RenderOptionManager.instance()
         self.rendertarget_manager = RenderTargetManager.instance()
+        self.resource_manager = ResourceManager.instance()
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
         self.scene_manager = SceneManager.instance()
-        self.viewport_manager = ViewportManager.instance()
         self.effect_manager = EffectManager.instance()
         self.project_manager = ProjectManager.instance()
 
@@ -145,7 +147,7 @@ class CoreManager(Singleton):
             self.game_backend = GameBackend_pyglet.PyGlet(self)
             self.last_game_backend = GameBackNames.PYGLET
 
-        OpenGLContext.initialize()
+        self.opengl_context.initialize()
 
         self.send_game_backend_list(self.game_backend_list)
 
@@ -591,15 +593,18 @@ class CoreManager(Singleton):
 
         self.update_command()
 
+        self.resource_manager.update()
+
         if self.is_play_mode:
             self.script_manager.update(delta)
         else:
             self.update_camera()
 
-        self.resource_manager.update()
-
-        # update scene
         self.scene_manager.update_scene(delta)
+
+        self.viewport_manager.update(delta)
+
+        # Start Render Scene
 
         end_time = time.perf_counter()
         self.logic_time = (end_time - start_time) * 1000.0  # millisecond
@@ -612,12 +617,15 @@ class CoreManager(Singleton):
             # render sceme
             self.renderer.render_scene()
 
+            # render viewport
+            self.viewport_manager.render()
+
             end_time = time.perf_counter()
             self.render_time = (end_time - start_time) * 1000.0  # millisecond
             start_time = end_time
 
             # end of render scene
-            self.renderer.end_render()
+            self.opengl_context.present()
 
             # swap buffer
             self.game_backend.flip()

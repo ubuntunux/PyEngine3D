@@ -103,9 +103,10 @@ class OpenGLContext:
         return GL_DEPTH_ATTACHMENT
 
     @staticmethod
-    def end_render():
+    def present():
         glUseProgram(0)
         OpenGLContext.last_vertex_array = -1
+        glFlush()
 
     @staticmethod
     def need_to_bind_vertex_array(vertex_array):

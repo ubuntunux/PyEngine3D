@@ -1,35 +1,35 @@
 
-
 class Widget:
-    def __init__(self, **kwargs):
-        self.__x = 0
-        self.__y = 0
-        self.__width = 100
-        self.__height = 100
+    def __init__(self, name='', x=0, y=0, width=100, height=100):
+        self.name = name
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.widgets = []
 
-        self.parent_widget = None
-        self.child_widgets = []
+    def resize(self, width, height):
+        self.width = width
+        self.height = height
 
-        if 'x' in kwargs:
-            self.x = kwargs['x']
+    def clear_widgets(self):
+        for widget in self.widgets:
+            widget.clear_widgets()
 
-        if 'y' in kwargs:
-            self.y = kwargs['y']
+        self.widgets = []
 
-        self.pos = kwargs.get('pos', [0, 0])
+    def add_widget(self, widget):
+        if widget not in self.widgets:
+            self.widgets.append(widget)
 
-        self.center = kwargs.get('center', [0, 0])
-        self.width = kwargs.get('width', 100)
-        self.height = kwargs.get('height', 100)
-        self.pos_hint_x = kwargs.get('pos_hint_x', 0.0)
-        self.pos_hint_y = kwargs.get('pos_hint_y', 0.0)
-        self.size_hint_x = kwargs.get('size_hint_x', 1.0)
-        self.size_hint_y = kwargs.get('size_hint_y', 1.0)
+    def remove_widget(self, widget):
+        if widget in self.widgets:
+            self.widgets.remove(widget)
 
-    @property
-    def x(self):
-        return self.__x
+    def update(self, dt):
+        for widget in self.widgets:
+            widget.update(dt)
 
-    @x.setter
-    def x(self, x):
-        self.__x = x
+    def render(self):
+        for widget in self.widgets:
+            widget.render()
