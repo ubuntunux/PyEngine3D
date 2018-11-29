@@ -1,6 +1,8 @@
+from PyEngine3D.Common import *
+
 
 class Widget:
-    def __init__(self, name='', x=0, y=0, width=100, height=100, rendertarget=None):
+    def __init__(self, name='', x=0, y=0, width=100, height=100, rendertarget=None, **kwargs):
         self.name = name
         self.x = x
         self.y = y

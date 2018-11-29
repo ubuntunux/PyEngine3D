@@ -2,7 +2,8 @@ from OpenGL.GL import *
 
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
-from PyEngine3D.Render import RenderTargets, ScreenQuad
+from PyEngine3D.Render import ScreenQuad
+from PyEngine3D.Common import *
 from .Widget import Widget
 
 
@@ -35,7 +36,8 @@ class ViewportManager(Singleton):
         self.add_widget(side_viewport)
 
     def resize_viewport(self, width, height):
-        self.main_viewport.resize(width, height)
+        for widget in self.widgets:
+            widget.resize(width, height)
 
     def clear_widgets(self):
         for widget in self.widgets:
@@ -56,6 +58,8 @@ class ViewportManager(Singleton):
             widget.update(dt)
 
     def render(self):
+        self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
 
         self.render_widget.use_program()

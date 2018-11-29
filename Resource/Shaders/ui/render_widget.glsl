@@ -2,6 +2,7 @@
 
 uniform sampler2D texture_diffuse;
 uniform bool is_render_diffuse;
+uniform vec4 background_color;
 
 
 #ifdef FRAGMENT_SHADER
