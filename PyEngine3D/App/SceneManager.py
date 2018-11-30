@@ -91,12 +91,15 @@ class SceneManager(Singleton):
 
         self.renderer.set_debug_texture(None)
 
-    def post_open_scene(self):
-        self.renderer.clear_rendertargets()
+    def begin_open_scene(self):
+        self.clear_scene()
+        self.renderer.reset_renderer()
+
+    def end_open_scene(self):
         self.regist_object(self.renderer.postprocess)
 
     def new_scene(self):
-        self.clear_scene()
+        self.begin_open_scene()
 
         # add scene objects
         self.main_camera = self.add_camera()
@@ -112,10 +115,11 @@ class SceneManager(Singleton):
         scene_data = self.get_save_data()
         self.resource_manager.scene_loader.create_resource(self.__current_scene_name, scene_data)
 
-        self.post_open_scene()
+        self.end_open_scene()
 
     def open_scene(self, scene_name, scene_data):
-        self.clear_scene()
+        self.begin_open_scene()
+
         self.set_current_scene_name(scene_name)
 
         logger.info("Open scene : %s" % scene_name)
@@ -158,7 +162,7 @@ class SceneManager(Singleton):
         for effect_data in scene_data.get('effects', []):
             self.add_effect(**effect_data)
 
-        self.post_open_scene()
+        self.end_open_scene()
 
     def save_scene(self):
         if self.__current_scene_name == "":

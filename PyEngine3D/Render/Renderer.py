@@ -253,7 +253,7 @@ class Renderer(Singleton):
         elif view_mode == COMMAND.VIEWMODE_SHADING:
             self.view_mode = GL_FILL
 
-    def clear_rendertargets(self):
+    def reset_renderer(self):
         self.scene_manager.update_camera_projection_matrix(aspect=self.core_manager.game_backend.aspect)
         self.framebuffer_manager.clear_framebuffer()
         self.rendertarget_manager.create_rendertargets()

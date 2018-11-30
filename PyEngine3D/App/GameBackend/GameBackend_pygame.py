@@ -11,9 +11,14 @@ class PyGame(GameBackend):
     def __init__(self, core_manager):
         GameBackend.__init__(self, core_manager)
 
+        logger.error('GameBackend : pygame %s' % pygame.__version__)
+
         # centered window
         os.environ['SDL_VIDEO_CENTERED'] = '1'
         pygame.init()
+
+        self.screen_width = pygame.display.Info().current_w
+        self.screen_height = pygame.display.Info().current_h
 
         pygame.font.init()
         if not pygame.font.get_init():
@@ -234,9 +239,9 @@ class PyGame(GameBackend):
         option = OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE
 
         if self.full_screen:
-            pygame.display.set_mode((0, 0), option | FULLSCREEN)
-        else:
-            pygame.display.set_mode((self.width, self.height), option)
+            option |= FULLSCREEN
+
+        pygame.display.set_mode((self.width, self.height), option)
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos

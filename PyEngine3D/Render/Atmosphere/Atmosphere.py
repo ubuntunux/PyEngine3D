@@ -65,7 +65,6 @@ class Atmosphere:
 
         self.model = None
         self.atmosphere_material_instance = None
-        self.atmosphere_demo_material_instance = None
 
         self.transmittance_texture = None
         self.scattering_texture = None
@@ -121,16 +120,13 @@ class Atmosphere:
     def initialize(self):
         resource_manager = CoreManager.instance().resource_manager
 
-        # load material instance
-        macros = {
-            'USE_LUMINANCE': 1 if self.luminance_type else 0,
-            'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
-        }
         self.atmosphere_material_instance = resource_manager.get_material_instance(
-            'precomputed_atmosphere.atmosphere', macros=macros)
-
-        self.atmosphere_demo_material_instance = resource_manager.get_material_instance(
-            'precomputed_atmosphere.atmosphere_demo', macros=macros)
+            'precomputed_atmosphere.atmosphere',
+            macros={
+                'USE_LUMINANCE': 1 if self.luminance_type else 0,
+                'COMBINED_SCATTERING_TEXTURES': 1 if self.use_combined_textures else 0
+            }
+        )
 
         # precompute constants
         max_sun_zenith_angle = 120.0 / 180.0 * kPi

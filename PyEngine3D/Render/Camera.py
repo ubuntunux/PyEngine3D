@@ -102,7 +102,7 @@ class Camera(StaticActor):
             if "fov" == attribute_name:
                 self.update_projection(force_update=True)
             else:
-                self.scene_manager.renderer.clear_rendertargets()
+                self.scene_manager.renderer.reset_renderer()
 
     def update_projection(self, fov=0.0, aspect=0.0, force_update=False):
         need_to_update = False

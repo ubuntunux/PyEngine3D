@@ -21,8 +21,16 @@ class PyGlet(GameBackend):
     def __init__(self, core_manager):
         GameBackend.__init__(self, core_manager)
 
+        logger.info('GameBackend : pyglet %s' % pyglet.version)
+
         # os.environ['PYGLET_DEBUG_GL'] = '1'
         config = Config(double_buffer=True, )
+
+        platform = pyglet.window.get_platform()
+        display = platform.get_default_display()
+        screen = display.get_default_screen()
+        self.screen_width = screen.width
+        self.screen_height = screen.height
 
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
         self.window = window.Window(width=INITIAL_WIDTH, height=INITIAL_HEIGHT, config=config, resizable=True, vsync=False)
@@ -255,12 +263,10 @@ class PyGlet(GameBackend):
 
     def do_change_resolution(self):
         if self.full_screen:
-            self.window.set_fullscreen(True)
-            # cannot change screen size in fullscreen, fit to background screen size.
-            self.width, self.height = self.window.get_size()
+            self.window.set_fullscreen(fullscreen=True)
         else:
-            self.window.set_fullscreen(False)
-            self.window.set_size(self.width, self.height)
+            self.window.set_fullscreen(width=self.width, height=self.height, fullscreen=False)
+            # self.window.set_size(self.width, self.height)
 
     def on_resize(self, width, height):
         self.goal_width = width

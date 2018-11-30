@@ -215,8 +215,6 @@ class Keyboard:
 
 class GameBackend:
     def __init__(self, core_manager):
-        logger.info("Run game backend : " + self.__class__.__name__)
-
         self.running = False
         self.valid = False
         self.core_manager = core_manager
@@ -225,6 +223,8 @@ class GameBackend:
         self.height = 0
         self.goal_width = 0
         self.goal_height = 0
+        self.screen_width = 0
+        self.screen_height = 0
         self.aspect = 1.0
         self.full_screen = False
 
@@ -239,6 +239,10 @@ class GameBackend:
 
     def change_resolution(self, width, height, full_screen):
         changed = False
+
+        if full_screen:
+            width = self.screen_width
+            height = self.screen_height
 
         if 0 < width != self.width:
             self.width = width
@@ -255,11 +259,10 @@ class GameBackend:
             self.full_screen = full_screen
             changed = True
 
+        logger.info("Change resolution : %d x %d Full Screen (%s)" % (width, height, full_screen))
+
         if changed:
             self.do_change_resolution()
-
-            self.goal_width = self.width
-            self.goal_height = self.height
 
             # update perspective and ortho
             self.core_manager.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
@@ -267,9 +270,8 @@ class GameBackend:
             # reset viewport
             self.core_manager.viewport_manager.resize_viewport(self.width, self.height)
 
-            self.core_manager.renderer.clear_rendertargets()
-
-            self.core_manager.notify_change_resolution((self.width, self.height, self.full_screen))
+            # reset frame buffers and render targets
+            self.core_manager.renderer.reset_renderer()
 
     def resize_scene_to_window(self):
         self.change_resolution(self.goal_width, self.goal_height, self.full_screen)
