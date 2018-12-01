@@ -147,6 +147,8 @@ class CoreManager(Singleton):
             self.game_backend = GameBackend_pyglet.PyGlet(self)
             self.last_game_backend = GameBackNames.PYGLET
 
+        self.game_backend.create_window(width, height, full_screen)
+
         self.opengl_context.initialize()
 
         self.send_game_backend_list(self.game_backend_list)
@@ -173,7 +175,7 @@ class CoreManager(Singleton):
         self.script_manager.initialize(self)
 
         # new scene
-        self.game_backend.change_resolution(width, height, full_screen)
+        self.game_backend.reset_screen()
         self.scene_manager.new_scene()
 
         self.send(COMMAND.SORT_UI_ITEMS)

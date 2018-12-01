@@ -237,7 +237,7 @@ class GameBackend:
         self.mouse_btn_m = False
         self.mouse_btn_r = False
 
-    def change_resolution(self, width, height, full_screen):
+    def set_window_info(self, width, height, full_screen):
         changed = False
 
         if full_screen:
@@ -259,19 +259,29 @@ class GameBackend:
             self.full_screen = full_screen
             changed = True
 
-        logger.info("Change resolution : %d x %d Full Screen (%s)" % (width, height, full_screen))
+        logger.info("Set Window Info : %d x %d Full Screen (%s)" % (width, height, full_screen))
 
-        if changed:
+        return changed
+
+    def create_window(self, width, height, fullscreen):
+        if self.set_window_info(width, height, fullscreen):
             self.do_change_resolution()
 
-            # update perspective and ortho
-            self.core_manager.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
+    def change_resolution(self, width, height, full_screen):
+        if self.set_window_info(width, height, full_screen):
+            self.do_change_resolution()
+            self.reset_screen()
 
-            # reset viewport
-            self.core_manager.viewport_manager.resize_viewport(self.width, self.height)
+    def reset_screen(self):
+        # update perspective and ortho
+        self.core_manager.scene_manager.update_camera_projection_matrix(aspect=self.aspect)
 
-            # reset frame buffers and render targets
-            self.core_manager.renderer.reset_renderer()
+        # reset viewport
+        self.core_manager.viewport_manager.resize_viewport(self.width, self.height)
+
+        # reset frame buffers and render targets
+        self.core_manager.renderer.reset_renderer()
 
     def resize_scene_to_window(self):
-        self.change_resolution(self.goal_width, self.goal_height, self.full_screen)
+        if self.set_window_info(self.goal_width, self.goal_height, self.full_screen):
+            self.reset_screen()

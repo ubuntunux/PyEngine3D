@@ -3,7 +3,7 @@ import os
 import pygame
 from pygame.locals import *
 
-from PyEngine3D.Common import logger, INITIAL_WIDTH, INITIAL_HEIGHT
+from PyEngine3D.Common import logger
 from .GameBackend import GameBackend, Keyboard, Event
 
 
@@ -24,9 +24,6 @@ class PyGame(GameBackend):
         if not pygame.font.get_init():
             logger.error('Could not render font.')
             return
-
-        # create window
-        pygame.display.set_mode((INITIAL_WIDTH, INITIAL_HEIGHT), OPENGL | DOUBLEBUF | HWPALETTE | HWSURFACE | RESIZABLE)
 
         # ASCII commands
         Keyboard.BACKSPACE = K_BACKSPACE
