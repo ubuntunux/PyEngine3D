@@ -4,10 +4,11 @@ layout(std140, binding=0) uniform scene_constants
     float JITTER_FRAME;
     bool RENDER_SSR;
     bool RENDER_SSAO;
+    vec2 SCREEN_SIZE;
     vec2 BACKBUFFER_SIZE;
     vec2 MOUSE_POS;
-    vec3 SCENECONSTANTS_DUMMY_0;
     float DELTA_TIME;
+    float SCENECONSTANTS_DUMMY_0;
 };
 
 layout(std140, binding=1) uniform view_constants

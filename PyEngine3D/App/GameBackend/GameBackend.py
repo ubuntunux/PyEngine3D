@@ -233,9 +233,18 @@ class GameBackend:
         self.mouse_delta = np.zeros(2)
         self.wheel_up = False
         self.wheel_down = False
-        self.mouse_btn_l = False
-        self.mouse_btn_m = False
-        self.mouse_btn_r = False
+        self.btn_l_clicked = False
+        self.btn_m_clicked = False
+        self.btn_r_clicked = False
+        self.btn_l_pressed = False
+        self.btn_m_pressed = False
+        self.btn_r_pressed = False
+
+    def get_mouse_clicked(self):
+        return self.btn_l_clicked, self.btn_m_clicked, self.btn_r_clicked
+
+    def get_mouse_pressed(self):
+        return self.btn_l_pressed, self.btn_m_pressed, self.btn_r_pressed
 
     def set_window_info(self, width, height, full_screen):
         changed = False

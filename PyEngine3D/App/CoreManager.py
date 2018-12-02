@@ -516,7 +516,7 @@ class CoreManager(Singleton):
     def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
         mouse_delta = self.game_backend.mouse_delta
-        btnL, btnM, btnR = self.game_backend.get_mouse_pressed()
+        btn_left, btn_middle, btn_right = self.game_backend.get_mouse_pressed()
 
         # get camera
         camera = self.scene_manager.main_camera
@@ -530,12 +530,12 @@ class CoreManager(Singleton):
             pan_speed *= 4.0
 
         # camera move pan
-        if btnL and btnR or btnM:
+        if btn_left and btn_right or btn_middle:
             camera_transform.move_to_left(-mouse_delta[0] * pan_speed)
             camera_transform.move_to_up(-mouse_delta[1] * pan_speed)
 
         # camera rotation
-        elif btnL or btnR:
+        elif btn_left or btn_right:
             camera_transform.rotation_pitch(mouse_delta[1] * rotation_speed)
             camera_transform.rotation_yaw(-mouse_delta[0] * rotation_speed)
 
@@ -591,18 +591,19 @@ class CoreManager(Singleton):
             self.video_resize_time = 0
             self.game_backend.resize_scene_to_window()
 
+        touch_event = self.viewport_manager.update(delta)
+
         self.update_command()
 
         self.resource_manager.update()
 
-        if self.is_play_mode:
-            self.script_manager.update(delta)
-        else:
-            self.update_camera()
+        if not touch_event and self.viewport_manager.main_viewport.collide(*self.get_mouse_pos()):
+            if self.is_play_mode:
+                self.script_manager.update(delta)
+            else:
+                self.update_camera()
 
         self.scene_manager.update_scene(delta)
-
-        self.viewport_manager.update(delta)
 
         # Start Render Scene
 

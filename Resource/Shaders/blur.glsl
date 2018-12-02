@@ -1,5 +1,3 @@
-
-
 #include "quad.glsl"
 
 uniform float blur_kernel_radius;

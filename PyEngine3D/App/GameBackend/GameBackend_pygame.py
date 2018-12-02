@@ -242,9 +242,9 @@ class PyGame(GameBackend):
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos
-        self.mouse_btn_l = False
-        self.mouse_btn_m = False
-        self.mouse_btn_r = False
+        self.btn_l_clicked = False
+        self.btn_m_clicked = False
+        self.btn_r_clicked = False
         self.wheel_up = False
         self.wheel_down = False
 
@@ -266,22 +266,25 @@ class PyGame(GameBackend):
                 self.mouse_pos[1] = self.height - self.mouse_pos[1]
             elif event_type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    self.mouse_btn_l = True
+                    self.btn_l_clicked = True
+                    self.btn_l_pressed = True
                 elif event.button == 2:
-                    self.mouse_btn_m = True
+                    self.btn_m_clicked = True
+                    self.btn_m_pressed = True
                 elif event.button == 3:
-                    self.mouse_btn_r = True
+                    self.btn_r_clicked = True
+                    self.btn_r_pressed = True
                 elif event.button == 4:
                     self.wheel_up = True
                 elif event.button == 5:
                     self.wheel_down = True
             elif event_type == MOUSEBUTTONUP:
                 if event.button == 1:
-                    self.mouse_btn_l = False
+                    self.btn_l_pressed = False
                 elif event.button == 2:
-                    self.mouse_btn_m = False
+                    self.btn_m_pressed = False
                 elif event.button == 3:
-                    self.mouse_btn_r = False
+                    self.btn_r_pressed = False
                 elif event.button == 4:
                     self.wheel_up = False
                 elif event.button == 5:
@@ -290,9 +293,6 @@ class PyGame(GameBackend):
 
     def get_keyboard_pressed(self):
         return pygame.key.get_pressed()
-
-    def get_mouse_pressed(self):
-        return pygame.mouse.get_pressed()
 
     def flip(self):
         pygame.display.flip()

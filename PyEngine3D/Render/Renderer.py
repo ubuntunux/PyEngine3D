@@ -127,10 +127,11 @@ class Renderer(Singleton):
                                                      ('JITTER_FRAME', np.float32),
                                                      ('RENDER_SSR', np.int32),
                                                      ('RENDER_SSAO', np.int32),
+                                                     ('SCREEN_SIZE', np.float32, 2),
                                                      ('BACKBUFFER_SIZE', np.float32, 2),
                                                      ('MOUSE_POS', np.float32, 2),
-                                                     ('SCENECONSTANTS_DUMMY_0', np.float32, 3),
-                                                     ('DELTA_TIME', np.float32)])
+                                                     ('DELTA_TIME', np.float32),
+                                                     ('SCENECONSTANTS_DUMMY_0', np.float32)])
         self.uniform_scene_buffer = UniformBlock("scene_constants", program, 0, self.uniform_scene_data)
 
         self.uniform_view_data = np.zeros(1, dtype=[('VIEW', np.float32, (4, 4)),
@@ -313,6 +314,7 @@ class Renderer(Singleton):
         uniform_data['JITTER_FRAME'] = frame_count
         uniform_data['RENDER_SSR'] = self.postprocess.is_render_ssr
         uniform_data['RENDER_SSAO'] = self.postprocess.is_render_ssao
+        uniform_data['SCREEN_SIZE'] = (self.core_manager.game_backend.width, self.core_manager.game_backend.height)
         uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
         uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
         uniform_data['DELTA_TIME'] = self.core_manager.delta

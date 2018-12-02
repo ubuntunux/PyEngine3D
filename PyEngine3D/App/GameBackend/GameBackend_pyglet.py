@@ -268,6 +268,20 @@ class PyGlet(GameBackend):
             self.window.set_fullscreen(width=self.width, height=self.height, fullscreen=False)
             # self.window.set_size(self.width, self.height)
 
+    def update_event(self):
+        self.mouse_pos_old[...] = self.mouse_pos
+        self.btn_l_clicked = False
+        self.btn_m_clicked = False
+        self.btn_r_clicked = False
+
+        self.window.switch_to()
+
+        # update event
+        self.window.dispatch_events()
+        # self.window.dispatch_event('on_draw')
+
+        self.mouse_delta[...] = self.mouse_pos - self.mouse_pos_old
+
     def on_resize(self, width, height):
         self.goal_width = width
         self.goal_height = height
@@ -285,21 +299,24 @@ class PyGlet(GameBackend):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
         if button == window.mouse.LEFT:
-            self.mouse_btn_l = True
+            self.btn_l_clicked = True
+            self.btn_l_pressed = True
         elif button == window.mouse.MIDDLE:
-            self.mouse_btn_m = True
+            self.btn_m_clicked = True
+            self.btn_m_pressed = True
         elif button == window.mouse.RIGHT:
-            self.mouse_btn_r = True
+            self.btn_r_clicked = True
+            self.btn_r_pressed = True
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
         if button == window.mouse.LEFT:
-            self.mouse_btn_l = False
+            self.btn_l_pressed = False
         elif button == window.mouse.MIDDLE:
-            self.mouse_btn_m = False
+            self.btn_m_pressed = False
         elif button == window.mouse.RIGHT:
-            self.mouse_btn_r = False
+            self.btn_r_pressed = False
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.mouse_pos[0] = x
@@ -322,7 +339,7 @@ class PyGlet(GameBackend):
         return self.key_pressed
 
     def get_mouse_pressed(self):
-        return self.mouse_btn_l, self.mouse_btn_m, self.mouse_btn_r
+        return self.btn_l_pressed, self.btn_m_pressed, self.btn_r_pressed
 
     def flip(self):
         self.window.flip()
@@ -331,16 +348,9 @@ class PyGlet(GameBackend):
         self.running = True
         while self.running:
             pyglet.clock.tick()
-            # for self.window in pyglet.app.windows:
-            self.mouse_pos_old[...] = self.mouse_pos
 
-            self.window.switch_to()
+            self.update_event()
 
-            # update event
-            self.window.dispatch_events()
-            # self.window.dispatch_event('on_draw')
-
-            self.mouse_delta[...] = self.mouse_pos - self.mouse_pos_old
             self.core_manager.update()
 
     def close(self):

@@ -93,8 +93,7 @@ class FrameBuffer:
         elif GL_TEXTURE_2D_ARRAY == target:
             glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, texture_buffer, 0, self.target_layer + offset)
         elif GL_TEXTURE_3D == target:
-            glFramebufferTexture3D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level,
-                                   self.target_layer + offset)
+            glFramebufferTexture3D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_3D, texture_buffer, self.target_level, self.target_layer + offset)
         elif GL_TEXTURE_CUBE_MAP == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
 
@@ -118,8 +117,7 @@ class FrameBuffer:
             attachment = GL_COLOR_ATTACHMENT0 + i
 
             if color_texture is not None:
-                self.add_command(
-                    self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer, layer_offset)
+                self.add_command(self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer, layer_offset)
 
         if self.attach_count > 0:
             self.add_command(glDrawBuffers, self.attach_count, self.attachments)
@@ -130,8 +128,7 @@ class FrameBuffer:
         # bind depth texture
         if self.depth_texture is not None:
             attachment = OpenGLContext.get_depth_attachment(self.depth_texture.internal_format)
-            self.add_command(
-                self.func_bind_framebuffer, attachment, self.depth_texture.target, self.depth_texture.buffer)
+            self.add_command(self.func_bind_framebuffer, attachment, self.depth_texture.target, self.depth_texture.buffer)
         else:
             self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
 
