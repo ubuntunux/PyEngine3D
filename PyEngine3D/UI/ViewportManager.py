@@ -1,9 +1,9 @@
 from OpenGL.GL import *
 
+from PyEngine3D.Common import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad
-from PyEngine3D.Common import *
 from .Widget import Widget
 
 

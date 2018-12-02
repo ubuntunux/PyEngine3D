@@ -2,13 +2,14 @@ from PyEngine3D.Common import *
 
 
 class Widget:
-    def __init__(self, name='', x=0, y=0, width=100, height=100, rendertarget=None, **kwargs):
+    def __init__(self, name='', **kwargs):
         self.name = name
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.rendertarget = rendertarget
+        self.x = kwargs.get('x', 0)
+        self.y = kwargs.get('y', 0)
+        self.width = kwargs.get('width', 100)
+        self.height = kwargs.get('height', 100)
+        self.color = kwargs.get('color')
+        self.rendertarget = kwargs.get('rendertarget')
         self.widgets = []
 
     def resize(self, width, height):
