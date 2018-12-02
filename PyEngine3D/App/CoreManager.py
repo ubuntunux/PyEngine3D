@@ -316,10 +316,8 @@ class CoreManager(Singleton):
         self.commands[COMMAND.NEW_SCENE.value] = lambda value: self.scene_manager.new_scene()
         self.commands[COMMAND.SAVE_SCENE.value] = lambda value: self.scene_manager.save_scene()
         # view mode
-        self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.set_view_mode(
-            COMMAND.VIEWMODE_WIREFRAME)
-        self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.set_view_mode(
-            COMMAND.VIEWMODE_SHADING)
+        self.commands[COMMAND.VIEWMODE_WIREFRAME.value] = lambda value: self.renderer.set_view_mode(COMMAND.VIEWMODE_WIREFRAME)
+        self.commands[COMMAND.VIEWMODE_SHADING.value] = lambda value: self.renderer.set_view_mode(COMMAND.VIEWMODE_SHADING)
 
         # screen
         def cmd_change_resolution(value):
