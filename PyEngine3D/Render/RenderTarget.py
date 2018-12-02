@@ -205,7 +205,7 @@ class RenderTargetManager(Singleton):
         )
 
         # NOTE : bind render target
-        self.viewport_manager.main_viewport.bind_rendertarget(RenderTargets.BACKBUFFER)
+        self.viewport_manager.main_viewport.bind_texture(RenderTargets.BACKBUFFER)
 
         RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
             "DEPTHSTENCIL",

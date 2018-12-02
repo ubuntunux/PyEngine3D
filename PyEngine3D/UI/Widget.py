@@ -9,15 +9,15 @@ class Widget:
         self.width = kwargs.get('width', 100)
         self.height = kwargs.get('height', 100)
         self.color = kwargs.get('color')
-        self.rendertarget = kwargs.get('rendertarget')
+        self.texture = kwargs.get('texture')
         self.widgets = []
 
     def resize(self, width, height):
         self.width = int(width)
         self.height = int(height)
 
-    def bind_rendertarget(self, rendertarget):
-        self.rendertarget = rendertarget
+    def bind_texture(self, texture):
+        self.texture = texture
 
     def clear_widgets(self):
         for widget in self.widgets:
@@ -38,8 +38,8 @@ class Widget:
             widget.update(dt)
 
     def render(self, material_instance, mesh):
-        if self.rendertarget is not None:
-            material_instance.bind_uniform_data("texture_diffuse", self.rendertarget)
+        if self.texture is not None:
+            material_instance.bind_uniform_data("texture_diffuse", self.texture)
             material_instance.bind_uniform_data("is_render_diffuse", True)
         else:
             material_instance.bind_uniform_data("is_render_diffuse", False)
