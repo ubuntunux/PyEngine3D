@@ -1,3 +1,5 @@
+import numpy as np
+
 from PyEngine3D.Common import *
 
 
@@ -8,9 +10,19 @@ class Widget:
         self.y = kwargs.get('y', 0)
         self.width = kwargs.get('width', 100)
         self.height = kwargs.get('height', 100)
-        self.color = kwargs.get('color')
+        self.color = np.array(kwargs.get('color', [0.0, 0.0, 0.0, 0.0]), np.float32)
         self.texture = kwargs.get('texture')
+
+        self.parent_widget = None
         self.widgets = []
+
+    @property
+    def opacity(self):
+        return self.color[3]
+
+    @opacity.setter
+    def opacity(self, opacity):
+        self.color[3] = opacity
 
     def resize(self, width, height):
         self.width = int(width)
