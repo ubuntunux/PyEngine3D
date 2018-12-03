@@ -11,7 +11,7 @@ class PyGame(GameBackend):
     def __init__(self, core_manager):
         GameBackend.__init__(self, core_manager)
 
-        logger.error('GameBackend : pygame %s' % pygame.__version__)
+        logger.info('GameBackend : pygame %s' % pygame.__version__)
 
         # centered window
         os.environ['SDL_VIDEO_CENTERED'] = '1'
