@@ -192,10 +192,10 @@ class FrameBuffer:
                           target, filter_type)
 
     def blit_framebuffer(self, src_x=0, src_y=0, src_w=0, src_h=0, dst_x=0, dst_y=0, dst_w=0, dst_h=0, filter_type=GL_LINEAR):
-        # active default framebuffer
+        # active default frame buffer
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
         glBlitFramebuffer(src_x, src_y, src_w or self.viewport_width, src_h or self.viewport_height,
-                          dst_x, dst_y, dst_w, dst_h,
+                          dst_x, dst_y, dst_w or self.viewport_width, dst_h or self.viewport_height,
                           GL_COLOR_BUFFER_BIT, filter_type)
 
 

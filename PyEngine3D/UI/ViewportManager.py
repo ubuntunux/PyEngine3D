@@ -3,7 +3,7 @@ from OpenGL.GL import *
 from PyEngine3D.Common import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
-from PyEngine3D.Render import ScreenQuad
+from PyEngine3D.Render import ScreenQuad, RenderTargets
 from .Widget import Widget
 
 
@@ -71,9 +71,10 @@ class ViewportManager(Singleton):
     def render(self):
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-        glViewport(0, 0, self.game_backend.width, self.game_backend.height)
-        glClearColor(0.0, 0.0, 0.0, 0.0)
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.SCREENBUFFER)
+        # glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
+        # glViewport(0, 0, self.game_backend.width, self.game_backend.height)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.render_widget.use_program()
@@ -82,6 +83,5 @@ class ViewportManager(Singleton):
         self.root.render(material_instance=self.render_widget, mesh=self.quad)
 
         # blit frame buffer
-        # self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        # self.framebuffer_manager.blit_framebuffer(dst_w=self.main_viewport.width, dst_h=self.main_viewport.height)
-        # self.framebuffer_manager.unbind_framebuffer()
+        self.framebuffer_manager.blit_framebuffer()
+        self.framebuffer_manager.unbind_framebuffer()
