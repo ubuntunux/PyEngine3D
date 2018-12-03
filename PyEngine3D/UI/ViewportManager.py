@@ -34,7 +34,7 @@ class ViewportManager(Singleton):
 
         self.root = Widget(name="root", width=self.game_backend.width, height=self.game_backend.height)
 
-        self.main_viewport = Widget(name="Main viewport", touchable=True, size_hint_x=0.5, size_hint_y=0.5)
+        self.main_viewport = Widget(name="Main viewport", touchable=True, size_hint_x=0.5, size_hint_y=0.5, pos_hint_x=0.5)
         side_viewport = Widget(name="Side viewport", touchable=True, color=[0.0, 1.0, 0.0, 0.5], size_hint_x=0.5, size_hint_y=0.5)
 
         self.root.add_widget(self.main_viewport)

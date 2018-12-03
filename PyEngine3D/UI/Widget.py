@@ -82,6 +82,7 @@ class Widget:
     def x(self, x):
         if self.__x != x:
             self.changed_layout = True
+            self.__pos_hint_x = None
             self.__x = x
 
     @property
@@ -92,6 +93,7 @@ class Widget:
     def y(self, y):
         if self.__y != y:
             self.changed_layout = True
+            self.__pos_hint_y = None
             self.__y = y
 
     @property
@@ -102,6 +104,7 @@ class Widget:
     def width(self, width):
         if self.__width != width:
             self.changed_layout = True
+            self.__size_hint_x = None
             self.__width = width
 
     @property
@@ -112,6 +115,7 @@ class Widget:
     def height(self, height):
         if self.__height != height:
             self.changed_layout = True
+            self.__size_hint_y = None
             self.__height = height
 
     @property
@@ -158,6 +162,12 @@ class Widget:
         changed_layout = self.changed_layout or changed_layout
 
         if changed_layout:
+            if self.__pos_hint_x is not None:
+                self.__x = self.__pos_hint_x * (self.parent.width if self.parent is not None else self.root.width)
+
+            if self.__pos_hint_y is not None:
+                self.__y = self.__pos_hint_y * (self.parent.height if self.parent is not None else self.root.height)
+
             if self.__size_hint_x is not None:
                 self.__width = self.__size_hint_x * (self.parent.width if self.parent is not None else self.root.width)
 
