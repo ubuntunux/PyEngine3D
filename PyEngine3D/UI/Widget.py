@@ -1,11 +1,13 @@
 import numpy as np
+import pyglet
 
 from PyEngine3D.Common import *
+from PyEngine3D.App.CoreManager import CoreManager
 
 
 class Widget:
-    def __init__(self, root=None, **kwargs):
-        self.root = root
+    def __init__(self, **kwargs):
+        self.root = kwargs.get('root')
         self.changed_layout = False
         self.parent = None
         self.widgets = []
@@ -19,44 +21,60 @@ class Widget:
         self.__size_hint_x = None
         self.__size_hint_y = None
         self.__color = np.array(kwargs.get('color', [0.0, 0.0, 0.0, 0.0]), np.float32)
+        self.__pressed_color = np.array(kwargs.get('pressed_color', [0.0, 0.0, 0.0, 0.0]), np.float32)
 
         self.name = kwargs.get('name', '')
         self.x = kwargs.get('x', 0)
         self.y = kwargs.get('y', 0)
+        self.world_x = 0
+        self.world_y = 0
         self.width = kwargs.get('width', 100)
         self.height = kwargs.get('height', 100)
         self.pos_hint_x = kwargs.get('pos_hint_x', None)
         self.pos_hint_y = kwargs.get('pos_hint_y', None)
         self.size_hint_x = kwargs.get('size_hint_x', None)
         self.size_hint_y = kwargs.get('size_hint_y', None)
-        self.absolute_x = 0
-        self.absolute_y = 0
-        self.absolute_width = 0
-        self.absolute_height = 0
-        self.offset_x = 0
-        self.offset_y = 0
-        self.touchable = kwargs.get('touchable', False)
-        self.drag = False
+        self.touch_offset_x = 0
+        self.touch_offset_y = 0
+
+        self.dragable = kwargs.get('dragable', False)
+        self.touchable = kwargs.get('touchable', False) or self.dragable
+        self.touched = False
+        self.pressed = False
+
+        self.text = kwargs.get('text', '')
+        self.font_size = 10
+        self.text_render_queue = None
+
         self.texture = kwargs.get('texture')
 
+    def set_text(self, text, font_size=10):
+        core_manager = CoreManager.instance()
+        self.text = text
+        self.font_size = font_size
+        self.text_render_queue = core_manager.font_manager.compile_text(text, font_size=font_size)
+
     def collide(self, x, y):
-        return self.x <= x < (self.x + self.width) and self.y <= y < (self.y + self.height)
+        return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
 
     def on_touch_down(self, x, y):
-        self.drag = True
-        self.offset_x = self.x - x
-        self.offset_y = self.y - y
+        self.touched = True
+        if self.dragable:
+            self.touch_offset_x = self.x - x
+            self.touch_offset_y = self.y - y
 
     def on_touch_move(self, x, y):
-        if self.drag:
-            self.x = x + self.offset_x
-            self.y = y + self.offset_y
+        if self.touched:
+            if self.dragable:
+                self.x = x + self.touch_offset_x
+                self.y = y + self.touch_offset_y
 
     def on_touch_up(self, x, y):
-        if self.drag:
-            self.drag = False
-            self.x = x + self.offset_x
-            self.y = y + self.offset_y
+        if self.touched:
+            self.touched = False
+            if self.dragable:
+                self.x = x + self.touch_offset_x
+                self.y = y + self.touch_offset_y
 
     @property
     def color(self):
@@ -73,6 +91,22 @@ class Widget:
     @opacity.setter
     def opacity(self, opacity):
         self.__color[3] = opacity
+
+    @property
+    def pressed_color(self):
+        return self.__pressed_color
+
+    @pressed_color.setter
+    def pressed_color(self, color):
+        self.__pressed_color[...] = color
+
+    @property
+    def pressed_opacity(self):
+        return self.__pressed_color[3]
+
+    @pressed_opacity.setter
+    def pressed_opacity(self, opacity):
+        self.__pressed_color[3] = opacity
 
     @property
     def x(self):
@@ -162,17 +196,25 @@ class Widget:
         changed_layout = self.changed_layout or changed_layout
 
         if changed_layout:
-            if self.__pos_hint_x is not None:
-                self.__x = self.__pos_hint_x * (self.parent.width if self.parent is not None else self.root.width)
+            if self.parent is not None:
+                if self.pos_hint_x is not None:
+                    self.x = self.pos_hint_x * self.parent.width
 
-            if self.__pos_hint_y is not None:
-                self.__y = self.__pos_hint_y * (self.parent.height if self.parent is not None else self.root.height)
+                if self.pos_hint_y is not None:
+                    self.y = self.pos_hint_y * self.parent.height
 
-            if self.__size_hint_x is not None:
-                self.__width = self.__size_hint_x * (self.parent.width if self.parent is not None else self.root.width)
+                if self.size_hint_x is not None:
+                    self.width = self.size_hint_x * self.parent.width
 
-            if self.__size_hint_y is not None:
-                self.__height = self.__size_hint_y * (self.parent.height if self.parent is not None else self.root.height)
+                if self.size_hint_y is not None:
+                    self.height = self.size_hint_y * self.parent.height
+
+            self.world_x = self.x
+            self.world_y = self.y
+
+            if self.parent is not None:
+                self.world_x += self.parent.world_x
+                self.world_y += self.parent.world_y
 
             self.changed_layout = False
 
@@ -208,7 +250,7 @@ class Widget:
             pressed_left, pressed_middle, pressed_right = game_backend.get_mouse_pressed()
             mouse_x, mouse_y = game_backend.mouse_pos[0], game_backend.mouse_pos[1]
 
-            if self.drag:
+            if self.touched:
                 if pressed_left:
                     self.on_touch_move(mouse_x, mouse_y)
                 else:
@@ -216,12 +258,16 @@ class Widget:
             elif click_left and self.collide(mouse_x, mouse_y):
                 self.on_touch_down(mouse_x, mouse_y)
 
-        return self.drag or touch_event
+        return self.touched or touch_event
 
     def render(self, material_instance, mesh):
         if 0.0 <= self.opacity:
-            material_instance.bind_uniform_data("color", self.color)
-            material_instance.bind_uniform_data("pos_size", [self.x, self.y, self.width, self.height])
+            if self.pressed:
+                material_instance.bind_uniform_data("color", self.pressed_color)
+            else:
+                material_instance.bind_uniform_data("color", self.color)
+
+            material_instance.bind_uniform_data("pos_size", [self.world_x, self.world_y, self.width, self.height])
 
             if self.texture is not None:
                 material_instance.bind_uniform_data("texture_diffuse", self.texture)
@@ -231,5 +277,42 @@ class Widget:
 
             mesh.draw_elements()
 
+        if self.text:
+            core_manager = CoreManager.instance()
+            core_manager.font_manager.render_font(self.root.width, self.root.height, self.font_size, self.text_render_queue)
+
         for widget in self.widgets:
             widget.render(material_instance=material_instance, mesh=mesh)
+
+
+class Button(Widget):
+    def __init__(self, **kwargs):
+        super(Button, self).__init__(touchable=True, **kwargs)
+
+        self.pressed = False
+        self.color = kwargs.get('color', [0.25, 0.25, 0.25, 1.0])
+        self.pressed_color = np.array(kwargs.get('pressed_color', [0.5, 0.5, 1.0, 1.0]), np.float32)
+
+    def on_touch_down(self, x, y):
+        super(Button, self).on_touch_down(x, y)
+        self.pressed = True
+
+    def on_touch_move(self, x, y):
+        super(Button, self).on_touch_move(x, y)
+
+    def on_touch_up(self, x, y):
+        super(Button, self).on_touch_up(x, y)
+        self.pressed = False
+
+
+class ToggleButton(Widget):
+    def __init__(self, **kwargs):
+        super(Button, self).__init__(touchable=True, **kwargs)
+
+        self.pressed = False
+        self.color = kwargs.get('color', [0.25, 0.25, 0.25, 1.0])
+        self.pressed_color = np.array(kwargs.get('pressed_color', [0.5, 0.5, 1.0, 1.0]), np.float32)
+
+    def on_touch_down(self, x, y):
+        super(ToggleButton, self).on_touch_down(x, y)
+        self.pressed = not self.pressed

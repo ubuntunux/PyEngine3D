@@ -170,6 +170,8 @@ class CoreManager(Singleton):
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 
+        self.viewport_manager.build_ui()
+
         main_script = self.script_manager = self.resource_manager.get_script('main')
         self.script_manager = main_script.ScriptManager.instance()
         self.script_manager.initialize(self)

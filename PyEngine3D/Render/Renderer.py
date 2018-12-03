@@ -798,7 +798,7 @@ class Renderer(Singleton):
 
     def render_font(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
-        self.font_manager.render_font(self.viewport.width, self.viewport.height)
+        self.font_manager.render_log(self.viewport.width, self.viewport.height)
 
     def draw_debug_line_2d(self, pos1, pos2, color=None, width=1.0):
         if color is None:

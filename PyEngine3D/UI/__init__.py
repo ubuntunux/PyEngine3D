@@ -3,5 +3,5 @@ from PyEngine3D.Utilities import Logger
 logger = Logger.getLogger()
 
 
-from .Widget import Widget
+from .Widget import Widget, Button
 from .ViewportManager import ViewportManager

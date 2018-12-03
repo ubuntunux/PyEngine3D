@@ -16,9 +16,10 @@ layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
-    vec2 ratio = vec2(font_size) / screen_size;
+    vec2 inv_screen_size = 1.0 / screen_size;
+    vec2 ratio = vec2(font_size) * inv_screen_size;
     vec2 texcoord = vs_in_position.xy * 0.5 + 0.5;
-    vec2 position = texcoord * ratio + vs_in_font_offset.xy / screen_size;
+    vec2 position = texcoord * ratio + vs_in_font_offset.xy * inv_screen_size;
     vs_output.tex_coord = texcoord / count_horizontal;
     vs_output.font_offset = vs_in_font_offset;
     gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);

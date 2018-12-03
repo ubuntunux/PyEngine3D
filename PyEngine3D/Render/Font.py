@@ -71,6 +71,7 @@ class FontManager(Singleton):
     def log(self, text, font_size=12):
         if not self.show or not RenderOption.RENDER_FONT:
             return
+
         self.font_size = font_size
         count_ratio = 1.0 / self.ascii.count_horizontal
         render_size = len(self.render_queues)
@@ -98,14 +99,42 @@ class FontManager(Singleton):
                 self.render_index += 1
                 self.pos_x += font_size
 
-    def render_font(self, screen_width, screen_height):
-        if RenderOption.RENDER_FONT and self.show and len(self.render_queues) > 0:
-            render_queue = np.array(self.render_queues, dtype=np.float32)
-            self.font_shader.use_program()
-            self.font_shader.bind_material_instance()
-            self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
-            self.font_shader.bind_uniform_data("font_size", self.font_size)
-            self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
-            self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
-            self.quad.draw_elements_instanced(len(self.render_queues), self.instance_buffer, [render_queue, ])
-        self.clear_logs(screen_width, screen_height)
+    def compile_text(self, text, font_size=12):
+        count_ratio = 1.0 / self.ascii.count_horizontal
+        text_count = len(text)
+        render_queues = np.array([[0, 0, 0, 0], ] * text_count, dtype=np.float32)
+        render_index = 0
+        pos_x = 0
+        pos_y = 0
+
+        for c in text:
+            if c == '\n':
+                pos_y -= font_size
+                pos_x = 0
+            elif c == '\t':
+                pos_x += font_size * 4
+            elif c == ' ':
+                pos_x += font_size
+            else:
+                index = max(0, ord(c) - self.ascii.range_min)
+                texcoord_x = (index % self.ascii.count_horizontal) * count_ratio
+                texcoord_y = (self.ascii.count_horizontal - 1 - int(index * count_ratio)) * count_ratio
+                render_queues[render_index] = [pos_x, pos_y, texcoord_x, texcoord_y]
+                render_index += 1
+                pos_x += font_size
+        return render_queues
+
+    def render_log(self, screen_width, screen_height):
+        if RenderOption.RENDER_FONT and self.show and 0 < len(self.render_queues):
+            render_queues = np.array(self.render_queues, dtype=np.float32)
+            self.render_font(screen_width, screen_height, self.font_size, render_queues)
+            self.clear_logs(screen_width, screen_height)
+
+    def render_font(self, screen_width, screen_height, font_size, render_queue):
+        self.font_shader.use_program()
+        self.font_shader.bind_material_instance()
+        self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
+        self.font_shader.bind_uniform_data("font_size", font_size)
+        self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
+        self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
+        self.quad.draw_elements_instanced(len(render_queue), self.instance_buffer, [render_queue, ])

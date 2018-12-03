@@ -4,7 +4,7 @@ from PyEngine3D.Common import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
-from .Widget import Widget
+from .Widget import Widget, Button
 
 
 class ViewportManager(Singleton):
@@ -33,12 +33,16 @@ class ViewportManager(Singleton):
         self.render_widget = self.resource_manager.get_material_instance('ui.render_widget')
 
         self.root = Widget(name="root", width=self.game_backend.width, height=self.game_backend.height)
-
-        self.main_viewport = Widget(name="Main viewport", touchable=True, size_hint_x=0.5, size_hint_y=0.5, pos_hint_x=0.5)
-        side_viewport = Widget(name="Side viewport", touchable=True, color=[0.0, 1.0, 0.0, 0.5], size_hint_x=0.5, size_hint_y=0.5)
-
+        self.main_viewport = Widget(name="Main viewport", size_hint_x=1.0, size_hint_y=1.0)
         self.root.add_widget(self.main_viewport)
-        self.root.add_widget(side_viewport)
+
+    def build_ui(self):
+        side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5)
+        btn = Button(name="Side viewport", x=100, y=100, width=100, height=100)
+        btn.set_text("test dqwdwq", font_size=8)
+        side_viewport.add_widget(btn)
+
+        self.main_viewport.add_widget(side_viewport)
 
     def get_window_width(self):
         return self.game_backend.width
@@ -72,8 +76,6 @@ class ViewportManager(Singleton):
         self.renderer.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         self.framebuffer_manager.bind_framebuffer(RenderTargets.SCREENBUFFER)
-        # glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
-        # glViewport(0, 0, self.game_backend.width, self.game_backend.height)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
 
