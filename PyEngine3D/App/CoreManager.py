@@ -471,8 +471,23 @@ class CoreManager(Singleton):
             cmd, value = self.cmdQueue.get()
             self.commands[cmd.value](value)
 
+    def get_window_size(self):
+        return self.game_backend.width, self.game_backend.height
+
+    def get_window_width(self):
+        return self.game_backend.width
+
+    def get_window_height(self):
+        return self.game_backend.height
+
     def get_mouse_pos(self):
         return self.game_backend.mouse_pos
+
+    def get_mouse_clicked(self):
+        return self.game_backend.get_mouse_clicked()
+
+    def get_mouse_pressed(self):
+        return self.game_backend.get_mouse_pressed()
 
     def update_event(self, event_type, event_value=None):
         if Event.QUIT == event_type:

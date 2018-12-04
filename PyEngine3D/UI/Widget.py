@@ -7,6 +7,7 @@ from PyEngine3D.App.CoreManager import CoreManager
 
 class Widget:
     def __init__(self, **kwargs):
+        self.core_manager = CoreManager.instance()
         self.root = kwargs.get('root')
         self.changed_layout = False
         self.parent = None
@@ -49,10 +50,9 @@ class Widget:
         self.texture = kwargs.get('texture')
 
     def set_text(self, text, font_size=10):
-        core_manager = CoreManager.instance()
         self.text = text
         self.font_size = font_size
-        self.text_render_queue = core_manager.font_manager.compile_text(text, font_size=font_size)
+        self.text_render_queue = self.core_manager.font_manager.compile_text(text, font_size=font_size)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
@@ -241,14 +241,14 @@ class Widget:
         if widget in self.widgets:
             self.widgets.remove(widget)
 
-    def update(self, dt, game_backend, touch_event=False):
+    def update(self, dt, touch_event=False):
         for widget in self.widgets:
-            touch_event = widget.update(dt, game_backend, touch_event)
+            touch_event = widget.update(dt, touch_event)
 
         if not touch_event and self.touchable:
-            click_left, click_middle, click_right = game_backend.get_mouse_clicked()
-            pressed_left, pressed_middle, pressed_right = game_backend.get_mouse_pressed()
-            mouse_x, mouse_y = game_backend.mouse_pos[0], game_backend.mouse_pos[1]
+            click_left, click_middle, click_right = self.core_manager.get_mouse_clicked()
+            pressed_left, pressed_middle, pressed_right = self.core_manager.get_mouse_pressed()
+            mouse_x, mouse_y = self.core_manager.get_mouse_pos()
 
             if self.touched:
                 if pressed_left:
@@ -278,8 +278,7 @@ class Widget:
             mesh.draw_elements()
 
         if self.text:
-            core_manager = CoreManager.instance()
-            core_manager.font_manager.render_font(self.root.width, self.root.height, self.font_size, self.text_render_queue)
+            self.core_manager.font_manager.render_font(self.root.width, self.root.height, self.font_size, self.text_render_queue)
 
         for widget in self.widgets:
             widget.render(material_instance=material_instance, mesh=mesh)

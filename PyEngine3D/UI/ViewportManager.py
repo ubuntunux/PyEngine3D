@@ -10,7 +10,6 @@ from .Widget import Widget, Button
 class ViewportManager(Singleton):
     def __init__(self):
         self.core_manager = None
-        self.game_backend = None
         self.resource_manager = None
         self.renderer = None
         self.framebuffer_manager = None
@@ -24,7 +23,6 @@ class ViewportManager(Singleton):
     def initialize(self, core_manager):
         self.touch_event = False
         self.core_manager = core_manager
-        self.game_backend = core_manager.game_backend
         self.resource_manager = core_manager.resource_manager
         self.renderer = core_manager.renderer
         self.framebuffer_manager = FrameBufferManager.instance()
@@ -32,8 +30,10 @@ class ViewportManager(Singleton):
         self.quad = ScreenQuad.get_vertex_array_buffer()
         self.render_widget = self.resource_manager.get_material_instance('ui.render_widget')
 
-        self.root = Widget(name="root", width=self.game_backend.width, height=self.game_backend.height)
-        self.main_viewport = Widget(name="Main viewport", size_hint_x=1.0, size_hint_y=1.0)
+        width, height = self.core_manager.get_window_size()
+
+        self.root = Widget(name="root", width=width, height=height)
+        self.main_viewport = Widget(name="Main viewport", size_hint_x=0.5, size_hint_y=0.5)
         self.root.add_widget(self.main_viewport)
 
     def build_ui(self):
@@ -43,12 +43,6 @@ class ViewportManager(Singleton):
         side_viewport.add_widget(btn)
 
         self.main_viewport.add_widget(side_viewport)
-
-    def get_window_width(self):
-        return self.game_backend.width
-
-    def get_window_height(self):
-        return self.game_backend.height
 
     def resize_viewport(self, width, height):
         self.root.width = width
@@ -68,7 +62,7 @@ class ViewportManager(Singleton):
         self.root.remove_widget(widget)
 
     def update(self, dt):
-        self.touch_event = self.root.update(dt, self.game_backend, touch_event=False)
+        self.touch_event = self.root.update(dt, touch_event=False)
         self.root.update_layout()
         return self.touch_event
 

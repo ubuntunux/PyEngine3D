@@ -135,5 +135,6 @@ class FontManager(Singleton):
         self.font_shader.bind_material_instance()
         self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
         self.font_shader.bind_uniform_data("font_size", font_size)
+        self.font_shader.bind_uniform_data("screen_size", (screen_width, screen_height))
         self.font_shader.bind_uniform_data("count_horizontal", self.ascii.count_horizontal)
         self.quad.draw_elements_instanced(len(render_queue), self.instance_buffer, [render_queue, ])
