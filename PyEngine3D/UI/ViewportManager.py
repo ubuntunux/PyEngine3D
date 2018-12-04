@@ -5,6 +5,7 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
 from .Widget import Widget, Button
+from . import Widget as WidgetModule
 
 
 class ViewportManager(Singleton):
@@ -33,13 +34,18 @@ class ViewportManager(Singleton):
         width, height = self.core_manager.get_window_size()
 
         self.root = Widget(name="root", width=width, height=height)
-        self.main_viewport = Widget(name="Main viewport", size_hint_x=0.5, size_hint_y=0.5)
+        self.main_viewport = Widget(name="Main viewport", dragable=True, size_hint_x=0.8, size_hint_y=0.8)
         self.root.add_widget(self.main_viewport)
+
+        # Set static members
+        Widget.core_manager = core_manager
+        Widget.viewport_manager = self
+        Widget.root = self.root
 
     def build_ui(self):
         side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5)
         btn = Button(name="Side viewport", x=100, y=100, width=100, height=100)
-        btn.set_text("test dqwdwq", font_size=8)
+        btn.set_text("zpqgdXND", font_size=12)
         side_viewport.add_widget(btn)
 
         self.main_viewport.add_widget(side_viewport)

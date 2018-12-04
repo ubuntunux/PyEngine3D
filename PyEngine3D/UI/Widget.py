@@ -6,9 +6,11 @@ from PyEngine3D.App.CoreManager import CoreManager
 
 
 class Widget:
+    core_manager = None
+    viewport_manager = None
+    root = None
+
     def __init__(self, **kwargs):
-        self.core_manager = CoreManager.instance()
-        self.root = kwargs.get('root')
         self.changed_layout = False
         self.parent = None
         self.widgets = []
@@ -43,6 +45,10 @@ class Widget:
         self.touched = False
         self.pressed = False
 
+        self.callback_touch_down = None
+        self.callback_touch_move = None
+        self.callback_touch_up = None
+
         self.text = kwargs.get('text', '')
         self.font_size = 10
         self.text_render_queue = None
@@ -52,10 +58,19 @@ class Widget:
     def set_text(self, text, font_size=10):
         self.text = text
         self.font_size = font_size
-        self.text_render_queue = self.core_manager.font_manager.compile_text(text, font_size=font_size)
+        self.text_render_queue = self.core_manager.font_manager.compile_text(text)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
+
+    def bind(self, **kwargs):
+        for key in kwargs:
+            if self.on_touch_down.__name__ == key:
+                self.callback_touch_down = kwargs[key]
+            elif self.on_touch_move.__name__ == key:
+                self.callback_touch_move = kwargs[key]
+            elif self.on_touch_up.__name__ == key:
+                self.callback_touch_up = kwargs[key]
 
     def on_touch_down(self, x, y):
         self.touched = True
@@ -63,11 +78,17 @@ class Widget:
             self.touch_offset_x = self.x - x
             self.touch_offset_y = self.y - y
 
+            if self.callback_touch_down is not None:
+                self.callback_touch_down(self, x, y)
+
     def on_touch_move(self, x, y):
         if self.touched:
             if self.dragable:
                 self.x = x + self.touch_offset_x
                 self.y = y + self.touch_offset_y
+
+                if self.callback_touch_move is not None:
+                    self.callback_touch_move(self, x, y)
 
     def on_touch_up(self, x, y):
         if self.touched:
@@ -75,6 +96,9 @@ class Widget:
             if self.dragable:
                 self.x = x + self.touch_offset_x
                 self.y = y + self.touch_offset_y
+
+                if self.callback_touch_up is not None:
+                    self.callback_touch_up(self, x, y)
 
     @property
     def color(self):
@@ -233,12 +257,12 @@ class Widget:
     def add_widget(self, widget):
         if widget not in self.widgets:
             widget.parent = self
-            widget.root = self if self.root is None else self.root
             widget.update_layout(self.changed_layout)
             self.widgets.append(widget)
 
     def remove_widget(self, widget):
         if widget in self.widgets:
+            widget.parent = None
             self.widgets.remove(widget)
 
     def update(self, dt, touch_event=False):
@@ -278,7 +302,7 @@ class Widget:
             mesh.draw_elements()
 
         if self.text:
-            self.core_manager.font_manager.render_font(self.root.width, self.root.height, self.font_size, self.text_render_queue)
+            self.core_manager.font_manager.render_font(self.world_x, self.world_y, self.root.width, self.root.height, self.font_size, self.text_render_queue)
 
         for widget in self.widgets:
             widget.render(material_instance=material_instance, mesh=mesh)

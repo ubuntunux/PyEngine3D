@@ -2,28 +2,39 @@
 
 uniform sampler2D texture_font;
 uniform float font_size;
-uniform vec2 screen_size;
-uniform float count_horizontal;
+uniform vec2 offset;
+uniform vec2 inv_canvas_size;
+uniform float count_of_side;
 
 struct VERTEX_OUTPUT
 {
     vec2 tex_coord;
-    vec4 font_offset;
+    vec2 font_offset;
 };
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec4 vs_in_position;
-layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
+layout (location = 1) in vec4 vs_in_font_infos;    // instancing data
 
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
-void main() {
-    vec2 inv_screen_size = 1.0 / screen_size;
-    vec2 ratio = vec2(font_size) * inv_screen_size;
+void main()
+{
+    vec2 inv_texture_size = 1.0 / textureSize(texture_font, 0).xy;
+    vec2 font_texcoord_size = 1.0 / count_of_side - inv_texture_size;
+
+    vec2 ratio = vec2(font_size) * inv_canvas_size;
     vec2 texcoord = vs_in_position.xy * 0.5 + 0.5;
-    vec2 position = texcoord * ratio + vs_in_font_offset.xy * inv_screen_size;
-    vs_output.tex_coord = texcoord / count_horizontal;
-    vs_output.font_offset = vs_in_font_offset;
+
+    vs_output.tex_coord = vs_in_font_infos.zw + texcoord * font_texcoord_size + inv_texture_size * 0.5;
+
+    float column = vs_in_font_infos.x;
+    float row = vs_in_font_infos.y;
+    vec2 position;
+    position.x = (column + texcoord.x) * font_size * inv_canvas_size.x;
+    position.y = 1.0 - (row + (1.0 - texcoord.y)) * font_size * inv_canvas_size.y;
+    // position.xy += offset * 0.01 * inv_canvas_size.xy;
+
     gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
 }
 #endif
@@ -35,7 +46,7 @@ layout (location = 0) out vec4 fs_output;
 
 void main() {
     fs_output.xyz = vec3(1.0);
-    fs_output.w = 2.0 * texture2D(texture_font, vs_output.font_offset.zw + vs_output.tex_coord).x;
+    fs_output.w = texture2D(texture_font, vs_output.tex_coord ).x * 2.0;
     //fs_output = vec4(smoothstep(0.99, 1.0, fs_output.x));
 }
 #endif

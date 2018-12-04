@@ -260,22 +260,29 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
 
     back_ground_color = (0, 0, 0)
     font_color = (255, 255, 255)
-    font_size = font_size
-    padding = padding
     count = abs(range_max - range_min) + 1
-    count_horizontal = int(math.ceil(math.sqrt(count)))
-    texture_size = font_size * count_horizontal
+    count_of_side = int(math.ceil(math.sqrt(count)))
     # make texture size to power of 2.
     # texture_size = (2 ** math.ceil(math.log2(texture_size))) if 4 < texture_size else 4
-
-    if texture_size > 8096:
-        logger.error("%s texture size is too large. %d" % (unicode_name, texture_size))
-        return None
 
     try:
         unicode_font = ImageFont.truetype(source_filepath, font_size - padding * 2)
     except:
         logger.error(traceback.format_exc())
+        return None
+
+    max_font_size = font_size
+    for unicode_index in range(range_min, range_max + 1):
+        unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
+        width, height = unicode_font.getsize(unicode_text)
+        max_font_size = max(max_font_size, max(width, height))
+
+    font_size = max_font_size
+
+    texture_size = font_size * count_of_side
+
+    if texture_size > 8096:
+        logger.error("%s texture size is too large. %d" % (unicode_name, texture_size))
         return None
 
     image = Image.new("RGB", (texture_size, texture_size), back_ground_color)
@@ -287,10 +294,11 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
         draw.fontmode = "1"
 
     unicode_index = range_min
-    for y in range(count_horizontal):
-        for x in range(count_horizontal):
+    for y in range(count_of_side):
+        for x in range(count_of_side):
             unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
-            draw.text((x * font_size + padding, y * font_size + padding), unicode_text, font=unicode_font, fill=font_color)
+
+            draw.text((x * font_size, y * font_size), unicode_text, align='center', font=unicode_font, fill=font_color)
             unicode_index += 1
             if unicode_index >= range_max:
                 break
@@ -319,6 +327,7 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
         range_max=range_max,
         text_count=count,
         font_size=font_size,
+        count_of_side=count_of_side,
         image_mode=image.mode,
         image_width=image.size[0],
         image_height=image.size[1],
