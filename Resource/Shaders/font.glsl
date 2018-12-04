@@ -1,6 +1,7 @@
+#include "scene_constants.glsl"
+
 uniform sampler2D texture_font;
 uniform float font_size;
-uniform vec2 screen_size;
 uniform float count_horizontal;
 
 struct VERTEX_OUTPUT
@@ -16,7 +17,7 @@ layout (location = 1) in vec4 vs_in_font_offset;    // instancing data
 layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main() {
-    vec2 inv_screen_size = 1.0 / screen_size;
+    vec2 inv_screen_size = 1.0 / SCREEN_SIZE;
     vec2 ratio = vec2(font_size) * inv_screen_size;
     vec2 texcoord = vs_in_position.xy * 0.5 + 0.5;
     vec2 position = texcoord * ratio + vs_in_font_offset.xy * inv_screen_size;
