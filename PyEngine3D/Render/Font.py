@@ -124,7 +124,7 @@ class FontManager(Singleton):
     def render_log(self, canvas_width, canvas_height):
         if RenderOption.RENDER_FONT and self.show and 0 < len(self.render_queue):
             render_queue = np.array(self.render_queue, dtype=np.float32)
-            self.render_font(0.0, 0.0, canvas_width, canvas_height, self.font_size, render_queue)
+            self.render_font(0.0, canvas_height - self.font_size, canvas_width, canvas_height, self.font_size, render_queue)
             self.clear_logs()
 
     def render_font(self, offset_x, offset_y, canvas_width, canvas_height, font_size, render_queue):

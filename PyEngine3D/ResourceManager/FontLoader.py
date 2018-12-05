@@ -298,7 +298,7 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
         for x in range(count_of_side):
             unicode_text = chr(unicode_index)  # u"\u2605" + u"\u2606" + u"Текст на русском" + u"파이썬"
 
-            draw.text((x * font_size, y * font_size), unicode_text, align='center', font=unicode_font, fill=font_color)
+            draw.text((x * font_size, y * font_size), unicode_text, font=unicode_font, fill=font_color)
             unicode_index += 1
             if unicode_index >= range_max:
                 break

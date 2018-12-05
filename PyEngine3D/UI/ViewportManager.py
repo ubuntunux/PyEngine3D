@@ -45,7 +45,7 @@ class ViewportManager(Singleton):
     def build_ui(self):
         side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5)
         btn = Button(name="Side viewport", x=100, y=100, width=100, height=100)
-        btn.set_text("zpqgdXND", font_size=12)
+        btn.set_text("  p q g d X N D", font_size=12)
         side_viewport.add_widget(btn)
 
         self.main_viewport.add_widget(side_viewport)

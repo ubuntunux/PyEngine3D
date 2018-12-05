@@ -32,8 +32,8 @@ void main()
     float row = vs_in_font_infos.y;
     vec2 position;
     position.x = (column + texcoord.x) * font_size * inv_canvas_size.x;
-    position.y = 1.0 - (row + (1.0 - texcoord.y)) * font_size * inv_canvas_size.y;
-    // position.xy += offset * 0.01 * inv_canvas_size.xy;
+    position.y = (texcoord.y - row) * font_size * inv_canvas_size.y;
+    position.xy += offset * inv_canvas_size.xy;
 
     gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
 }
