@@ -118,7 +118,7 @@ class FontManager(Singleton):
                 self.render_index += 1
                 self.column += 1
 
-    def compile_text(self, text, column=0, row=0, font_size=10):
+    def compile_text(self, text, initial_column=0, initial_row=0, font_size=10):
         ratio = 1.0 / self.ascii.count_of_side
         text_count = len(text)
         render_queue = np.array([[0, 0, 0, 0], ] * text_count, dtype=np.float32)
@@ -126,9 +126,9 @@ class FontManager(Singleton):
 
         text_render_data = TextRenderData()
 
-        max_column = column
-        initial_column = column
-        initial_row = row
+        max_column = initial_column
+        column = initial_column
+        row = initial_row
 
         for c in text:
             if c == '\n':
