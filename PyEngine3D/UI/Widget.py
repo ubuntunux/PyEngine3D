@@ -319,15 +319,11 @@ class Widget:
             mesh.draw_elements()
 
         if self.text_render_data is not None:
-            self.core_manager.font_manager.render_font(
-                self.world_center_x - self.text_render_data.width / 2,
-                self.world_center_y - self.text_render_data.height,
-                self.root.width,
-                self.root.height,
-                self.text_render_data.font_size,
-                self.text_render_data.render_queue,
-                self.text_render_data.render_count
-            )
+            self.core_manager.renderer.render_text(self.text_render_data,
+                                                   self.world_center_x - self.text_render_data.width / 2,
+                                                   self.world_center_y - self.text_render_data.height,
+                                                   self.root.width,
+                                                   self.root.height)
 
         for widget in self.widgets:
             widget.render(material_instance=material_instance, mesh=mesh)

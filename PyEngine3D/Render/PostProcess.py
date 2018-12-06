@@ -287,6 +287,9 @@ class PostProcess:
     def draw_elements(self):
         self.quad.draw_elements()
 
+    def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
+        self.quad.draw_elements_instanced(instance_count, instance_buffer, instance_datas)
+
     def render_temporal_antialiasing(self, texture_input, texture_prev, texture_velocity, texture_linear_depth):
         self.temporal_antialiasing.use_program()
         self.temporal_antialiasing.bind_material_instance()

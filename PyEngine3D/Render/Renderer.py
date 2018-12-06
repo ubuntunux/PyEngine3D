@@ -53,8 +53,6 @@ class Renderer(Singleton):
         self.blend_func_src_prev = self.blend_func_src
         self.blend_func_dst_prev = self.blend_func_dst
 
-        self.actor_instance_buffer = None
-
         # scene constants uniform buffer
         self.uniform_scene_buffer = None
         self.uniform_scene_data = None
@@ -79,6 +77,12 @@ class Renderer(Singleton):
         self.selcted_static_object_material = None
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
+
+        # font
+        self.font_instance_buffer = None
+        self.font_shader = None
+
+        self.actor_instance_buffer = None
 
         self.debug_lines_2d = []
         self.debug_lines_3d = []
@@ -116,6 +120,10 @@ class Renderer(Singleton):
         )
         self.selcted_object_composite_material = self.resource_manager.get_material_instance(
             "selected_object_composite")
+
+        # font
+        self.font_shader = self.resource_manager.get_material_instance("font")
+        self.font_instance_buffer = InstanceBuffer(name="font_offset", location_offset=1, element_datas=[FLOAT4_ZERO, ])
 
         # instance buffer
         self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer", location_offset=7, element_datas=[MATRIX4_IDENTITY, ])
@@ -796,9 +804,20 @@ class Renderer(Singleton):
             glClear(GL_COLOR_BUFFER_BIT)
             self.framebuffer_manager.copy_framebuffer(src_framebuffer)
 
-    def render_font(self):
+    def render_log(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER)
         self.font_manager.render_log(self.viewport.width, self.viewport.height)
+
+    def render_text(self, text_render_data, offset_x, offset_y, canvas_width, canvas_height):
+        if 0 < text_render_data.render_count:
+            self.font_shader.use_program()
+            self.font_shader.bind_material_instance()
+            self.font_shader.bind_uniform_data("texture_font", text_render_data.font_data.texture)
+            self.font_shader.bind_uniform_data("font_size", text_render_data.font_size)
+            self.font_shader.bind_uniform_data("offset", (offset_x, offset_y))
+            self.font_shader.bind_uniform_data("inv_canvas_size", (1.0 / canvas_width, 1.0 / canvas_height))
+            self.font_shader.bind_uniform_data("count_of_side", text_render_data.font_data.count_of_side)
+            self.postprocess.draw_elements_instanced(text_render_data.render_count, self.font_instance_buffer, [text_render_data.render_queue, ])
 
     def draw_debug_line_2d(self, pos1, pos2, color=None, width=1.0):
         if color is None:
@@ -1035,7 +1054,7 @@ class Renderer(Singleton):
 
         if RenderOption.RENDER_FONT:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            self.render_font()
+            self.render_log()
 
         # draw line
         self.render_debug_line()
