@@ -5,7 +5,6 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
 from .Widget import Widget, Button
-from . import Widget as WidgetModule
 
 
 class ViewportManager(Singleton):

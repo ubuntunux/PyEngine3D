@@ -50,16 +50,13 @@ class Widget:
         self.callback_touch_up = None
 
         self.text = kwargs.get('text', '')
-        self.font_size = 10
-        self.text_render_queue = None
-        self.text_render_count = 0
+        self.text_render_data = None
 
         self.texture = kwargs.get('texture')
 
     def set_text(self, text, font_size=10):
         self.text = text
-        self.font_size = font_size
-        self.text_render_queue, self.text_render_count = self.core_manager.font_manager.compile_text(text)
+        self.text_render_data = self.core_manager.font_manager.compile_text(text, font_size)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
@@ -303,15 +300,15 @@ class Widget:
 
             mesh.draw_elements()
 
-        if self.text:
+        if self.text_render_data is not None:
             self.core_manager.font_manager.render_font(
                 self.world_x,
                 self.world_y,
                 self.root.width,
                 self.root.height,
-                self.font_size,
-                self.text_render_queue,
-                self.text_render_count
+                self.text_render_data.font_size,
+                self.text_render_data.render_queue,
+                self.text_render_data.render_count
             )
 
         for widget in self.widgets:
