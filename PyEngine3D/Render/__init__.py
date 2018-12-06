@@ -18,7 +18,7 @@ from .LightProbe import LightProbe
 from .Atmosphere import Atmosphere
 from .Ocean import Ocean
 
-from .Font import FontData, FontManager
+from .Font import TextRenderData, FontData, FontManager
 from .RenderTarget import RenderTargets, RenderTargetManager
 
 from .PostProcess import PostProcess

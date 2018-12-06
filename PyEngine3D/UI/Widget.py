@@ -2,7 +2,7 @@ import numpy as np
 import pyglet
 
 from PyEngine3D.Common import *
-from PyEngine3D.App.CoreManager import CoreManager
+from PyEngine3D.Render import TextRenderData
 
 
 class Widget:
@@ -54,9 +54,18 @@ class Widget:
 
         self.texture = kwargs.get('texture')
 
+        if self.text:
+            self.set_text(self.text)
+
     def set_text(self, text, font_size=10):
         self.text = text
-        self.text_render_data = self.core_manager.font_manager.compile_text(text, font_size)
+
+        if self.text_render_data is None:
+            self.text_render_data = TextRenderData()
+
+        font_data = self.core_manager.font_manager.get_default_font_data()
+
+        self.text_render_data.set_text(text, font_data, font_size=10)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)

@@ -12,6 +12,7 @@ from .RenderOptions import RenderOption
 
 class TextRenderData:
     def __init__(self):
+        self.text = ""
         self.column = 0
         self.row = 0
         self.font_size = 10
@@ -20,14 +21,43 @@ class TextRenderData:
         self.render_count = 0
         self.render_queue = None
 
-    def set_info(self, column, row, font_size, render_queue, render_count):
-        self.column = column
-        self.row = row
+    def set_text(self, text, font_data, initial_column=0, initial_row=0, font_size=10):
+        if self.text == text:
+            return
+
+        ratio = 1.0 / font_data.count_of_side
+        text_count = len(text)
+        render_queue = np.array([[0, 0, 0, 0], ] * text_count, dtype=np.float32)
+        render_index = 0
+        max_column = initial_column
+        column = initial_column
+        row = initial_row
+
+        for c in text:
+            if c == '\n':
+                column = initial_column
+                row += 1
+            elif c == '\t':
+                column += 1
+            elif c == ' ':
+                column += 1
+            else:
+                index = max(0, ord(c) - font_data.range_min)
+                texcoord_x = (index % font_data.count_of_side) * ratio
+                texcoord_y = (font_data.count_of_side - 1 - int(index * ratio)) * ratio
+                render_queue[render_index] = [column, row, texcoord_x, texcoord_y]
+                render_index += 1
+                column += 1
+            max_column = max(max_column, column)
+
+        self.text = text
+        self.column = max_column - initial_column
+        self.row = row - initial_row
         self.font_size = font_size
-        self.width = column * font_size
-        self.height = row * font_size
+        self.width = self.column * font_size
+        self.height = self.row * font_size
         self.render_queue = render_queue
-        self.render_count = render_count
+        self.render_count = render_index
 
 
 class FontData:
@@ -79,6 +109,9 @@ class FontManager(Singleton):
         self.render_index = 0
         self.render_queue.clear()
 
+    def get_default_font_data(self):
+        return self.ascii
+
     def get_font_size(self):
         return self.ascii.font_size
 
@@ -117,37 +150,6 @@ class FontManager(Singleton):
                 self.render_queue[self.render_index] = [self.column, self.row, texcoord_x, texcoord_y]
                 self.render_index += 1
                 self.column += 1
-
-    def compile_text(self, text, initial_column=0, initial_row=0, font_size=10):
-        ratio = 1.0 / self.ascii.count_of_side
-        text_count = len(text)
-        render_queue = np.array([[0, 0, 0, 0], ] * text_count, dtype=np.float32)
-        render_index = 0
-        max_column = initial_column
-        column = initial_column
-        row = initial_row
-
-        for c in text:
-            if c == '\n':
-                column = initial_column
-                row += 1
-            elif c == '\t':
-                column += 1
-            elif c == ' ':
-                column += 1
-            else:
-                index = max(0, ord(c) - self.ascii.range_min)
-                texcoord_x = (index % self.ascii.count_of_side) * ratio
-                texcoord_y = (self.ascii.count_of_side - 1 - int(index * ratio)) * ratio
-                render_queue[render_index] = [column, row, texcoord_x, texcoord_y]
-                render_index += 1
-                column += 1
-            max_column = max(max_column, column)
-
-        text_render_data = TextRenderData()
-        text_render_data.set_info(max_column - initial_column, row - initial_row, font_size, render_queue, render_index)
-
-        return text_render_data
 
     def render_log(self, canvas_width, canvas_height):
         if RenderOption.RENDER_FONT and self.show and 0 < len(self.render_queue):
