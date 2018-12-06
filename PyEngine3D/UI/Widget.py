@@ -33,10 +33,10 @@ class Widget:
         self.world_y = 0
         self.width = kwargs.get('width', 100)
         self.height = kwargs.get('height', 100)
-        self.pos_hint_x = kwargs.get('pos_hint_x', None)
-        self.pos_hint_y = kwargs.get('pos_hint_y', None)
-        self.size_hint_x = kwargs.get('size_hint_x', None)
-        self.size_hint_y = kwargs.get('size_hint_y', None)
+        self.pos_hint_x = kwargs.get('pos_hint_x')
+        self.pos_hint_y = kwargs.get('pos_hint_y')
+        self.size_hint_x = kwargs.get('size_hint_x')
+        self.size_hint_y = kwargs.get('size_hint_y')
         self.touch_offset_x = 0
         self.touch_offset_y = 0
 
@@ -141,7 +141,7 @@ class Widget:
     def x(self, x):
         if self.__x != x:
             self.changed_layout = True
-            self.__pos_hint_x = None
+            self.pos_hint_x = None
             self.__x = x
 
     @property
@@ -152,7 +152,7 @@ class Widget:
     def y(self, y):
         if self.__y != y:
             self.changed_layout = True
-            self.__pos_hint_y = None
+            self.pos_hint_y = None
             self.__y = y
 
     @property
@@ -163,7 +163,7 @@ class Widget:
     def width(self, width):
         if self.__width != width:
             self.changed_layout = True
-            self.__size_hint_x = None
+            self.size_hint_x = None
             self.__width = width
 
     @property
@@ -174,7 +174,7 @@ class Widget:
     def height(self, height):
         if self.__height != height:
             self.changed_layout = True
-            self.__size_hint_y = None
+            self.size_hint_y = None
             self.__height = height
 
     @property
@@ -185,7 +185,7 @@ class Widget:
     def pos_hint_x(self, pos_hint_x):
         if pos_hint_x is not None and self.__pos_hint_x != pos_hint_x:
             self.changed_layout = True
-            self.__pos_hint_x = pos_hint_x
+        self.__pos_hint_x = pos_hint_x
 
     @property
     def pos_hint_y(self):
@@ -195,7 +195,7 @@ class Widget:
     def pos_hint_y(self, pos_hint_y):
         if pos_hint_y is not None and self.__pos_hint_y != pos_hint_y:
             self.changed_layout = True
-            self.__pos_hint_y = pos_hint_y
+        self.__pos_hint_y = pos_hint_y
 
     @property
     def size_hint_x(self):
@@ -205,7 +205,7 @@ class Widget:
     def size_hint_x(self, size_hint_x):
         if size_hint_x is not None and self.__size_hint_x != size_hint_x:
             self.changed_layout = True
-            self.__size_hint_x = size_hint_x
+        self.__size_hint_x = size_hint_x
 
     @property
     def size_hint_y(self):
@@ -215,27 +215,28 @@ class Widget:
     def size_hint_y(self, size_hint_y):
         if size_hint_y is not None and self.__size_hint_y != size_hint_y:
             self.changed_layout = True
-            self.__size_hint_y = size_hint_y
+        self.__size_hint_y = size_hint_y
 
     def update_layout(self, changed_layout=False):
         changed_layout = self.changed_layout or changed_layout
 
         if changed_layout:
             if self.parent is not None:
-                if self.pos_hint_x is not None:
-                    self.x = self.pos_hint_x * self.parent.width
+                # NOTE : If you set the value to x instead of __x, the value of __size_hint_x will be none by @__x.setter.
+                if self.__pos_hint_x is not None:
+                    self.__x = self.__pos_hint_x * self.parent.__width
 
-                if self.pos_hint_y is not None:
-                    self.y = self.pos_hint_y * self.parent.height
+                if self.__pos_hint_y is not None:
+                    self.__y = self.__pos_hint_y * self.parent.__height
 
-                if self.size_hint_x is not None:
-                    self.width = self.size_hint_x * self.parent.width
+                if self.__size_hint_x is not None:
+                    self.__width = self.__size_hint_x * self.parent.__width
 
-                if self.size_hint_y is not None:
-                    self.height = self.size_hint_y * self.parent.height
+                if self.__size_hint_y is not None:
+                    self.__height = self.__size_hint_y * self.parent.__height
 
-            self.world_x = self.x
-            self.world_y = self.y
+            self.world_x = self.__x
+            self.world_y = self.__y
 
             if self.parent is not None:
                 self.world_x += self.parent.world_x
