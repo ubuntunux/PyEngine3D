@@ -33,6 +33,7 @@ from PyEngine3D.Common import *
 from PyEngine3D.Render import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from PyEngine3D.Render import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
 from PyEngine3D.Render import EffectInfo
+from PyEngine3D.Render import FontData
 from PyEngine3D.Render.Ocean.Constants import GRID_VERTEX_COUNT
 from PyEngine3D.OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from PyEngine3D.OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
@@ -1222,33 +1223,34 @@ class FontLoader(ResourceLoader):
     name = "FontLoader"
     resource_dir_name = 'Fonts'
     resource_type_name = 'Font'
+    resource_version = 2
     fileExt = '.font'
     external_dir_names = [os.path.join('Externals', 'Fonts'), ]
     externalFileExt = dict(TTF='.ttf', OTF='.otf')
 
-    language_infos = dict(
-        ascii=('Basic Latin', 0x20, 0x7F),  # 32 ~ 127
-        korean=('Hangul Syllables', 0xAC00, 0xD7AF),  # 44032 ~ 55215
+    unicode_blocks = dict(
+        Basic_Latin=(0x20, 0x7F),  # 32 ~ 127
+        Hangul_Syllables=(0xAC00, 0xD7AF),  # 44032 ~ 55215
     )
 
     def check_font_data(self, font_datas, resoure, source_filepath):
         chaneged = False
-        for language in self.language_infos:
-            if language not in font_datas:
-                unicode_name, range_min, range_max = self.language_infos[language]
+        for unicode_block_name in self.unicode_blocks:
+            if unicode_block_name not in font_datas:
+                range_min, range_max = self.unicode_blocks[unicode_block_name]
                 font_data = generate_font_data(
                     resource_name=resoure.name,
                     distance_field_font=False,
                     anti_aliasing=True,
                     font_size=20,
                     padding=1,
-                    unicode_name=unicode_name,
+                    unicode_block_name=unicode_block_name,
                     range_min=range_min,
                     range_max=range_max,
                     source_filepath=source_filepath,
                     preview_path=self.resource_path
                 )
-                font_datas[language] = font_data
+                font_datas[unicode_block_name] = font_data
                 chaneged = True
 
         if font_datas is not None and chaneged:
@@ -1265,13 +1267,13 @@ class FontLoader(ResourceLoader):
         if resource:
             meta_data = resource.meta_data
             font_datas = self.load_resource_data(resource)
-            if font_datas:
+            if font_datas is not None:
                 font_datas = self.check_font_data(font_datas, resource, meta_data.source_filepath)
 
-                for language in font_datas:
-                    font_data = font_datas[language]
-                    texture = None
-                    if font_data:
+                for unicode_block_name in font_datas:
+                    font_data = font_datas[unicode_block_name]
+
+                    if font_data is not None:
                         texture_datas = dict(
                             texture_type=Texture2D,
                             image_mode=font_data.get('image_mode'),
@@ -1281,10 +1283,10 @@ class FontLoader(ResourceLoader):
                             min_filter=GL_LINEAR,
                             mag_filter=GL_LINEAR,
                         )
-                        texture_name = "_".join([resource_name, font_data.get('unicode_name')])
-                        if None not in list(texture_datas.values()):
-                            texture = CreateTexture(name=texture_name, **texture_datas)
-                    font_datas[language]['texture'] = texture
+                        texture_name = "_".join([resource_name, font_data.get('unicode_block_name')])
+                        font_data['texture'] = CreateTexture(name=texture_name, **texture_datas)
+                        font_datas[unicode_block_name] = FontData(unicode_block_name, font_data)
+
                 resource.set_data(font_datas)
                 return True
         logger.error('%s failed to load %s' % (self.name, resource_name))
@@ -1535,19 +1537,19 @@ class ResourceManager(Singleton):
         return None
 
     # FUNCTIONS : Font
+    def get_font_data(self, font_name, unicode_block_name):
+        font_data = self.font_loader.get_resource_data(font_name)
+        return font_data.get(unicode_block_name) if font_data is not None else None
 
-    def get_font(self, fontName):
-        return self.font_loader.get_resource_data(fontName)
-
-    def get_default_font(self):
-        return self.font_loader.get_resource_data('NanumBarunGothic')
+    def get_default_font_data(self, unicode_block_name='Basic_Latin'):
+        return self.get_font_data('NanumBarunGothic', unicode_block_name)
 
     # FUNCTIONS : Shader
     def get_shader_version(self):
         return self.shader_loader.get_shader_version()
 
-    def get_shader(self, shaderName):
-        return self.shader_loader.get_resource_data(shaderName)
+    def get_shader(self, shader_name):
+        return self.shader_loader.get_resource_data(shader_name)
 
     def get_material(self, shader_name, macros={}):
         return self.material_loader.get_material(shader_name, macros)

@@ -49,6 +49,7 @@ class TextRenderData:
                 render_index += 1
                 column += 1
             max_column = max(max_column, column)
+        row += 1
 
         self.text = text
         self.column = max_column - initial_column
@@ -61,7 +62,8 @@ class TextRenderData:
 
 
 class FontData:
-    def __init__(self, font_data):
+    def __init__(self, unicode_block_name, font_data):
+        self.unicode_block_name = unicode_block_name
         self.range_min = font_data['range_min']
         self.range_max = font_data['range_max']
         self.text_count = font_data['text_count']
@@ -92,31 +94,18 @@ class FontManager(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.font_shader = self.resource_manager.get_material_instance("font")
 
-        font_datas = self.resource_manager.get_default_font()
-        ascii_data = font_datas['ascii']
-        self.ascii = FontData(ascii_data)
+        self.ascii = self.resource_manager.get_default_font_data()
 
         self.quad = ScreenQuad.get_vertex_array_buffer()
 
         # layout(location=1) vec4 font_offset;
-        self.instance_buffer = InstanceBuffer(name="font_offset",
-                                              location_offset=1,
-                                              element_datas=[FLOAT4_ZERO, ])
+        self.instance_buffer = InstanceBuffer(name="font_offset", location_offset=1, element_datas=[FLOAT4_ZERO, ])
 
     def clear_logs(self):
         self.column = 0
         self.row = 0
         self.render_index = 0
         self.render_queue.clear()
-
-    def get_default_font_data(self):
-        return self.ascii
-
-    def get_font_size(self):
-        return self.ascii.font_size
-
-    def get_font_texture(self):
-        return self.ascii.texture
 
     def toggle(self):
         self.show = not self.show

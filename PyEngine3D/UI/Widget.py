@@ -29,14 +29,19 @@ class Widget:
         self.name = kwargs.get('name', '')
         self.x = kwargs.get('x', 0)
         self.y = kwargs.get('y', 0)
-        self.world_x = 0
-        self.world_y = 0
         self.width = kwargs.get('width', 100)
         self.height = kwargs.get('height', 100)
         self.pos_hint_x = kwargs.get('pos_hint_x')
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
         self.size_hint_y = kwargs.get('size_hint_y')
+
+        self.center_x = 0
+        self.center_y = 0
+        self.world_x = 0
+        self.world_y = 0
+        self.world_center_x = 0
+        self.world_center_y = 0
         self.touch_offset_x = 0
         self.touch_offset_y = 0
 
@@ -63,9 +68,9 @@ class Widget:
         if self.text_render_data is None:
             self.text_render_data = TextRenderData()
 
-        font_data = self.core_manager.font_manager.get_default_font_data()
+        font_data = self.core_manager.resource_manager.get_default_font_data()
 
-        self.text_render_data.set_text(text, font_data, font_size=10)
+        self.text_render_data.set_text(text, font_data, font_size=font_size)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
@@ -241,12 +246,16 @@ class Widget:
                 if self.__size_hint_y is not None:
                     self.__height = self.__size_hint_y * self.parent.__height
 
+            self.center_x = self.__x + self.__width / 2
+            self.center_y = self.__y + self.__height / 2
             self.world_x = self.__x
             self.world_y = self.__y
 
             if self.parent is not None:
                 self.world_x += self.parent.world_x
                 self.world_y += self.parent.world_y
+                self.world_center_x = self.center_x + self.parent.world_x
+                self.world_center_y = self.center_y + self.parent.world_y
 
             self.changed_layout = False
 
@@ -311,8 +320,8 @@ class Widget:
 
         if self.text_render_data is not None:
             self.core_manager.font_manager.render_font(
-                self.world_x,
-                self.world_y,
+                self.world_center_x - self.text_render_data.width / 2,
+                self.world_center_y - self.text_render_data.height,
                 self.root.width,
                 self.root.height,
                 self.text_render_data.font_size,

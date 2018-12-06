@@ -254,9 +254,9 @@ def DistanceField(font_size, image_width, image_height, image_mode, image_data):
     return save_image_data
 
 
-def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_size, padding, unicode_name,
+def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_size, padding, unicode_block_name,
                        range_min, range_max, source_filepath, preview_path=''):
-    logger.info("Convert Font %s %s : %s" % (resource_name, unicode_name, source_filepath))
+    logger.info("Convert Font %s %s : %s" % (resource_name, unicode_block_name, source_filepath))
 
     back_ground_color = (0, 0, 0)
     font_color = (255, 255, 255)
@@ -282,7 +282,7 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
     texture_size = font_size * count_of_side
 
     if texture_size > 8096:
-        logger.error("%s texture size is too large. %d" % (unicode_name, texture_size))
+        logger.error("%s texture size is too large. %d" % (unicode_block_name, texture_size))
         return None
 
     image = Image.new("RGB", (texture_size, texture_size), back_ground_color)
@@ -316,13 +316,13 @@ def generate_font_data(resource_name, distance_field_font, anti_aliasing, font_s
 
     # save for preview
     if preview_path:
-        texture_name = "_".join([resource_name, unicode_name])
+        texture_name = "_".join([resource_name, unicode_block_name])
         image = Image.frombytes(image.mode, image.size, image_data)
         image.save(os.path.join(preview_path, texture_name + ".png"))
         # image.show()
 
     font_data = dict(
-        unicode_name=unicode_name,
+        unicode_block_name=unicode_block_name,
         range_min=range_min,
         range_max=range_max,
         text_count=count,
