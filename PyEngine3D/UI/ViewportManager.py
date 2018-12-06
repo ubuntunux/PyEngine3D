@@ -34,7 +34,7 @@ class ViewportManager(Singleton):
         width, height = self.core_manager.get_window_size()
 
         self.root = Widget(name="root", width=width, height=height)
-        self.main_viewport = Widget(name="Main viewport", dragable=True, size_hint_x=0.8, size_hint_y=0.8)
+        self.main_viewport = Widget(name="Main viewport", dragable=True, size_hint_x=1.0,  size_hint_y=1.0)
         self.root.add_widget(self.main_viewport)
 
         # Set static members

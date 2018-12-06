@@ -119,15 +119,15 @@ class FontManager(Singleton):
                 render_queue[render_index] = [column, row, texcoord_x, texcoord_y]
                 render_index += 1
                 column += 1
-        return render_queue
+        return render_queue, render_index
 
     def render_log(self, canvas_width, canvas_height):
         if RenderOption.RENDER_FONT and self.show and 0 < len(self.render_queue):
             render_queue = np.array(self.render_queue, dtype=np.float32)
-            self.render_font(0.0, canvas_height - self.font_size, canvas_width, canvas_height, self.font_size, render_queue)
+            self.render_font(0.0, canvas_height - self.font_size, canvas_width, canvas_height, self.font_size, render_queue, self.render_index)
             self.clear_logs()
 
-    def render_font(self, offset_x, offset_y, canvas_width, canvas_height, font_size, render_queue):
+    def render_font(self, offset_x, offset_y, canvas_width, canvas_height, font_size, render_queue, text_render_count):
         self.font_shader.use_program()
         self.font_shader.bind_material_instance()
         self.font_shader.bind_uniform_data("texture_font", self.ascii.texture)
@@ -135,4 +135,4 @@ class FontManager(Singleton):
         self.font_shader.bind_uniform_data("offset", (offset_x, offset_y))
         self.font_shader.bind_uniform_data("inv_canvas_size", (1.0 / canvas_width, 1.0 / canvas_height))
         self.font_shader.bind_uniform_data("count_of_side", self.ascii.count_of_side)
-        self.quad.draw_elements_instanced(len(render_queue), self.instance_buffer, [render_queue, ])
+        self.quad.draw_elements_instanced(text_render_count, self.instance_buffer, [render_queue, ])
