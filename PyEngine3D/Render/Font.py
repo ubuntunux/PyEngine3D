@@ -123,9 +123,6 @@ class FontManager(Singleton):
         text_count = len(text)
         render_queue = np.array([[0, 0, 0, 0], ] * text_count, dtype=np.float32)
         render_index = 0
-
-        text_render_data = TextRenderData()
-
         max_column = initial_column
         column = initial_column
         row = initial_row
@@ -147,6 +144,7 @@ class FontManager(Singleton):
                 column += 1
             max_column = max(max_column, column)
 
+        text_render_data = TextRenderData()
         text_render_data.set_info(max_column - initial_column, row - initial_row, font_size, render_queue, render_index)
 
         return text_render_data
