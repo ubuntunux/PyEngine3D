@@ -15,38 +15,39 @@ class Widget:
         self.parent = None
         self.widgets = []
 
-        self.__x = 0
-        self.__y = 0
-        self.__width = 100
-        self.__height = 100
-        self.__pos_hint_x = None
-        self.__pos_hint_y = None
-        self.__size_hint_x = None
-        self.__size_hint_y = None
-        self.__color = np.array(kwargs.get('color', [0.0, 0.0, 0.0, 0.0]), np.float32)
-        self.__pressed_color = np.array(kwargs.get('pressed_color', [0.0, 0.0, 0.0, 0.0]), np.float32)
+        self._x = 0.0
+        self._y = 0.0
+        self._width = 100.0
+        self._height = 100.0
+        self._pos_hint_x = None
+        self._pos_hint_y = None
+        self._size_hint_x = None
+        self._size_hint_y = None
+        self._color = np.array(kwargs.get('color', [0.0, 0.0, 0.0, 0.0]), np.float32)
+        self._pressed_color = np.array(kwargs.get('pressed_color', [0.0, 0.0, 0.0, 0.0]), np.float32)
 
         self.name = kwargs.get('name', '')
-        self.x = kwargs.get('x', 0)
-        self.y = kwargs.get('y', 0)
-        self.width = kwargs.get('width', 100)
-        self.height = kwargs.get('height', 100)
+        self.x = kwargs.get('x', 0.0)
+        self.y = kwargs.get('y', 0.0)
+        self.width = kwargs.get('width', 100.0)
+        self.height = kwargs.get('height', 100.0)
         self.pos_hint_x = kwargs.get('pos_hint_x')
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
         self.size_hint_y = kwargs.get('size_hint_y')
-
-        self.center_x = 0
-        self.center_y = 0
-        self.world_x = 0
-        self.world_y = 0
-        self.world_center_x = 0
-        self.world_center_y = 0
-        self.touch_offset_x = 0
-        self.touch_offset_y = 0
-
         self.dragable = kwargs.get('dragable', False)
         self.touchable = kwargs.get('touchable', False) or self.dragable
+        self.texture = kwargs.get('texture')
+
+        self.center_x = 0.0
+        self.center_y = 0.0
+        self.world_x = 0.0
+        self.world_y = 0.0
+        self.world_center_x = 0.0
+        self.world_center_y = 0.0
+        self.touch_offset_x = 0.0
+        self.touch_offset_y = 0.0
+
         self.touched = False
         self.pressed = False
 
@@ -54,23 +55,18 @@ class Widget:
         self.callback_touch_move = None
         self.callback_touch_up = None
 
-        self.text = kwargs.get('text', '')
-        self.text_render_data = None
+        self.text_widget = None
+        text = kwargs.get('text', '')
+        font_size = kwargs.get('font_size', 10)
 
-        self.texture = kwargs.get('texture')
-
-        if self.text:
-            self.set_text(self.text)
+        if text:
+            self.set_text(self.text, font_size)
 
     def set_text(self, text, font_size=10):
-        self.text = text
-
-        if self.text_render_data is None:
-            self.text_render_data = TextRenderData()
-
-        font_data = self.core_manager.resource_manager.get_default_font_data()
-
-        self.text_render_data.set_text(text, font_data, font_size=font_size)
+        if self.text_widget is None:
+            self.text_widget = Text(halign='center', valign='center', color=[0.0, 0.0, 1.0, 0.1])
+            self.add_widget(self.text_widget)
+        self.text_widget.set_text(text, font_size)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
@@ -114,119 +110,119 @@ class Widget:
 
     @property
     def color(self):
-        return self.__color
+        return self._color
 
     @color.setter
     def color(self, color):
-        self.__color[...] = color
+        self._color[...] = color
 
     @property
     def opacity(self):
-        return self.__color[3]
+        return self._color[3]
 
     @opacity.setter
     def opacity(self, opacity):
-        self.__color[3] = opacity
+        self._color[3] = opacity
 
     @property
     def pressed_color(self):
-        return self.__pressed_color
+        return self._pressed_color
 
     @pressed_color.setter
     def pressed_color(self, color):
-        self.__pressed_color[...] = color
+        self._pressed_color[...] = color
 
     @property
     def pressed_opacity(self):
-        return self.__pressed_color[3]
+        return self._pressed_color[3]
 
     @pressed_opacity.setter
     def pressed_opacity(self, opacity):
-        self.__pressed_color[3] = opacity
+        self._pressed_color[3] = opacity
 
     @property
     def x(self):
-        return self.__x
+        return self._x
 
     @x.setter
     def x(self, x):
-        if self.__x != x:
+        if self._x != x:
             self.changed_layout = True
             self.pos_hint_x = None
-            self.__x = x
+            self._x = x
 
     @property
     def y(self):
-        return self.__y
+        return self._y
 
     @y.setter
     def y(self, y):
-        if self.__y != y:
+        if self._y != y:
             self.changed_layout = True
             self.pos_hint_y = None
-            self.__y = y
+            self._y = y
 
     @property
     def width(self):
-        return self.__width
+        return self._width
 
     @width.setter
     def width(self, width):
-        if self.__width != width:
+        if self._width != width:
             self.changed_layout = True
             self.size_hint_x = None
-            self.__width = width
+            self._width = width
 
     @property
     def height(self):
-        return self.__height
+        return self._height
 
     @height.setter
     def height(self, height):
-        if self.__height != height:
+        if self._height != height:
             self.changed_layout = True
             self.size_hint_y = None
-            self.__height = height
+            self._height = height
 
     @property
     def pos_hint_x(self):
-        return self.__pos_hint_x
+        return self._pos_hint_x
 
     @pos_hint_x.setter
     def pos_hint_x(self, pos_hint_x):
-        if pos_hint_x is not None and self.__pos_hint_x != pos_hint_x:
+        if pos_hint_x is not None and self._pos_hint_x != pos_hint_x:
             self.changed_layout = True
-        self.__pos_hint_x = pos_hint_x
+        self._pos_hint_x = pos_hint_x
 
     @property
     def pos_hint_y(self):
-        return self.__pos_hint_y
+        return self._pos_hint_y
 
     @pos_hint_y.setter
     def pos_hint_y(self, pos_hint_y):
-        if pos_hint_y is not None and self.__pos_hint_y != pos_hint_y:
+        if pos_hint_y is not None and self._pos_hint_y != pos_hint_y:
             self.changed_layout = True
-        self.__pos_hint_y = pos_hint_y
+        self._pos_hint_y = pos_hint_y
 
     @property
     def size_hint_x(self):
-        return self.__size_hint_x
+        return self._size_hint_x
 
     @size_hint_x.setter
     def size_hint_x(self, size_hint_x):
-        if size_hint_x is not None and self.__size_hint_x != size_hint_x:
+        if size_hint_x is not None and self._size_hint_x != size_hint_x:
             self.changed_layout = True
-        self.__size_hint_x = size_hint_x
+        self._size_hint_x = size_hint_x
 
     @property
     def size_hint_y(self):
-        return self.__size_hint_y
+        return self._size_hint_y
 
     @size_hint_y.setter
     def size_hint_y(self, size_hint_y):
-        if size_hint_y is not None and self.__size_hint_y != size_hint_y:
+        if size_hint_y is not None and self._size_hint_y != size_hint_y:
             self.changed_layout = True
-        self.__size_hint_y = size_hint_y
+        self._size_hint_y = size_hint_y
 
     def update_layout(self, changed_layout=False):
         changed_layout = self.changed_layout or changed_layout
@@ -234,22 +230,22 @@ class Widget:
         if changed_layout:
             if self.parent is not None:
                 # NOTE : If you set the value to x instead of __x, the value of __size_hint_x will be none by @__x.setter.
-                if self.__pos_hint_x is not None:
-                    self.__x = self.__pos_hint_x * self.parent.__width
+                if self._pos_hint_x is not None:
+                    self._x = self._pos_hint_x * self.parent.width
 
-                if self.__pos_hint_y is not None:
-                    self.__y = self.__pos_hint_y * self.parent.__height
+                if self._pos_hint_y is not None:
+                    self._y = self._pos_hint_y * self.parent.height
 
-                if self.__size_hint_x is not None:
-                    self.__width = self.__size_hint_x * self.parent.__width
+                if self._size_hint_x is not None:
+                    self._width = self._size_hint_x * self.parent.width
 
-                if self.__size_hint_y is not None:
-                    self.__height = self.__size_hint_y * self.parent.__height
+                if self._size_hint_y is not None:
+                    self._height = self._size_hint_y * self.parent.height
 
-            self.center_x = self.__x + self.__width / 2
-            self.center_y = self.__y + self.__height / 2
-            self.world_x = self.__x
-            self.world_y = self.__y
+            self.center_x = self._x + self._width / 2
+            self.center_y = self._y + self._height / 2
+            self.world_x = self._x
+            self.world_y = self._y
 
             if self.parent is not None:
                 self.world_x += self.parent.world_x
@@ -272,6 +268,9 @@ class Widget:
         self.widgets = []
 
     def add_widget(self, widget):
+        if widget.parent is not None:
+            raise AttributeError("Widget already has parent.")
+
         if widget not in self.widgets:
             widget.parent = self
             widget.update_layout(self.changed_layout)
@@ -318,10 +317,10 @@ class Widget:
 
             mesh.draw_elements()
 
-        if self.text_render_data is not None:
+        if isinstance(self, Text) and self.text_render_data is not None:
             self.core_manager.renderer.render_text(self.text_render_data,
-                                                   self.world_center_x - self.text_render_data.width / 2,
-                                                   self.world_center_y - self.text_render_data.height,
+                                                   self.world_x,
+                                                   self.world_y,
                                                    self.root.width,
                                                    self.root.height)
 
@@ -360,3 +359,107 @@ class ToggleButton(Widget):
     def on_touch_down(self, x, y):
         super(ToggleButton, self).on_touch_down(x, y)
         self.pressed = not self.pressed
+
+
+class Text(Widget):
+    def __init__(self, **kwargs):
+        super(Text, self).__init__(**kwargs)
+
+        self._size_hint_x = None
+        self._size_hint_y = None
+
+        self._halign = ''
+        self._valign = ''
+        self.halign = kwargs.get('halign', 'left')  # ('left', 'center', 'right')
+        self.valign = kwargs.get('valign', 'bottom')  # ('top', 'center', 'bottom')
+        self.text = kwargs.get('text', '')
+        self.text_render_data = TextRenderData()
+
+        if self.text:
+            self.set_text(self.text)
+
+    def set_text(self, text, font_size=10):
+        self.text = text
+        font_data = self.core_manager.resource_manager.get_default_font_data()
+        changed_layout = self.text_render_data.set_text(text, font_data, font_size=font_size)
+        self.update_layout(changed_layout)
+
+    def update_layout(self, changed_layout=False):
+        changed_layout = self.changed_layout or changed_layout
+
+        if changed_layout:
+            self._width = self.text_render_data.width
+            self._height = self.text_render_data.height
+
+            if self.parent is not None:
+                if self._halign:
+                    if 'left' == self._halign:
+                        self._x = 0
+                    elif 'right' == self._halign:
+                        self._x = self.parent.width - self._width
+                    else:
+                        self._x = (self.parent.width - self._width) * 0.5
+                elif self._pos_hint_x is not None:
+                    self._x = self._pos_hint_x * self.parent.width
+
+                if self._valign:
+                    if 'bottom' == self._valign:
+                        self._y = 0
+                    elif 'top' == self._valign:
+                        self._y = self.parent.height - self._height
+                    else:
+                        self._y = (self.parent.height - self._height) * 0.5
+                elif self._pos_hint_y is not None:
+                    self._y = self._pos_hint_y * self.parent.height
+
+            self.center_x = self._x + self._width * 0.5
+            self.center_y = self._y + self._height * 0.5
+            self.world_x = self._x
+            self.world_y = self._y
+
+            if self.parent is not None:
+                self.world_x += self.parent.world_x
+                self.world_y += self.parent.world_y
+                self.world_center_x = self.center_x + self.parent.world_x
+                self.world_center_y = self.center_y + self.parent.world_y
+
+            self.changed_layout = False
+
+        for widget in self.widgets:
+            widget.update_layout(changed_layout)
+
+    @property
+    def halign(self):
+        return self._halign
+
+    @halign.setter
+    def halign(self, halign):
+        if halign != self._halign:
+            self.changed_layout = True
+            self._halign = halign
+
+    @property
+    def valign(self):
+        return self._valign
+
+    @valign.setter
+    def valign(self, valign):
+        if valign != self._valign:
+            self.changed_layout = True
+            self._valign = valign
+
+    @Widget.width.setter
+    def width(self, width):
+        pass
+
+    @Widget.height.setter
+    def height(self, height):
+        pass
+
+    @Widget.size_hint_x.setter
+    def size_hint_x(self, size_hint_x):
+        pass
+
+    @Widget.size_hint_y.setter
+    def size_hint_y(self, size_hint_y):
+        pass

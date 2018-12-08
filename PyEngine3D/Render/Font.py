@@ -1,12 +1,6 @@
-import math
-
 import numpy as np
 
-from PyEngine3D.App import CoreManager
-from PyEngine3D.OpenGLContext import InstanceBuffer
-from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.Utilities import *
-from .Mesh import ScreenQuad
 from .RenderOptions import RenderOption
 
 
@@ -16,15 +10,15 @@ class TextRenderData:
         self.column = 0
         self.row = 0
         self.font_size = 10
-        self.width = 0
-        self.height = 0
+        self.width = 0.0
+        self.height = 0.0
         self.font_data = None
         self.render_count = 0
         self.render_queue = np.array([[0, 0, 0, 0], ], dtype=np.float32)
 
     def set_text(self, text, font_data, initial_column=0, initial_row=0, font_size=10, skip_check=False):
         if not skip_check and self.text == text:
-            return
+            return False
 
         self.font_data = font_data
 
@@ -64,6 +58,7 @@ class TextRenderData:
         self.width = self.column * font_size
         self.height = self.row * font_size
         self.render_count = render_index
+        return True
 
 
 class FontData:
