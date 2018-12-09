@@ -72,7 +72,7 @@ class Widget:
     def set_text(self, text, font_size=10):
         # create text widget
         if self.text_widget is None:
-            self.text_widget = Text(halign='center', valign='center')
+            self.text_widget = Label(halign='center', valign='center')
             self.add_widget(self.text_widget)
         self.text_widget.set_text(text, font_size)
 
@@ -409,7 +409,7 @@ class ToggleButton(Widget):
         self.pressed = not self.pressed
 
 
-class Text(Widget):
+class Label(Widget):
     def __init__(self, **kwargs):
         if 'halign' not in kwargs:
             kwargs['halign'] = 'left'

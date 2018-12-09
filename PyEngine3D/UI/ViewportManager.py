@@ -4,7 +4,7 @@ from PyEngine3D.Common import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
-from .Widget import Widget, Button, ToggleButton, Text
+from .Widget import Widget, Button, ToggleButton, Label
 
 
 class ViewportManager(Singleton):
@@ -45,7 +45,7 @@ class ViewportManager(Singleton):
         side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1])
         btn = Button(name="Side viewport", x=100, y=100, width=200, height=100, color=[1.0, 1.0, 1.0, 0.1])
         btn.set_text("Count", font_size=16)
-        text = Text(name="Text", x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
+        text = Label(name="Text", x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
         text.set_text("Count dwqdwqd", font_size=16)
         side_viewport.add_widget(text)
         side_viewport.add_widget(btn)
