@@ -41,6 +41,7 @@ class Widget:
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
         self.size_hint_y = kwargs.get('size_hint_y')
+        self.texcoord = np.array(kwargs.get('texcoord', [0.0, 0.0, 1.0, 1.0]), np.float32)
         self.dragable = kwargs.get('dragable', False)
         self.touchable = kwargs.get('touchable', False) or self.dragable
         self.texture = kwargs.get('texture')
@@ -354,6 +355,7 @@ class Widget:
                 render_widget_program.bind_uniform_data("color", self.color)
 
             render_widget_program.bind_uniform_data("pos_size", [self.world_x, self.world_y, self.width, self.height])
+            render_widget_program.bind_uniform_data("texcoord", self.texcoord)
 
             if self.texture is not None:
                 render_widget_program.bind_uniform_data("texture_diffuse", self.texture)
