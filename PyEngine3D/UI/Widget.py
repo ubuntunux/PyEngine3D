@@ -364,6 +364,7 @@ class Widget:
             mesh.draw_elements()
 
         if isinstance(self, Text) and self.text_render_data is not None:
+            여기서 쉐이더가 중간에 바뀌니깐 당연히 텍스트가 두개렌더링 되면 에러나지
             self.core_manager.renderer.render_text(self.text_render_data,
                                                    self.world_x,
                                                    self.world_y,
