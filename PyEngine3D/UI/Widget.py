@@ -1,5 +1,4 @@
 import numpy as np
-import pyglet
 
 from PyEngine3D.Common import *
 from PyEngine3D.Render import TextRenderData
@@ -14,7 +13,7 @@ class Widget:
     orientations = ('horizontal', 'vertical')
 
     def __init__(self, **kwargs):
-        self.changed_layout = False
+        self.changed_layout = True
         self.parent = None
         self.widgets = []
 
@@ -255,7 +254,7 @@ class Widget:
             self.pos_hint_y = None
             self._valign = valign
 
-    def update_layout(self, changed_layout=False):
+    def update_layout(self, changed_layout=False, recursive=True):
         changed_layout = self.changed_layout or changed_layout
 
         if changed_layout:
@@ -300,8 +299,9 @@ class Widget:
 
             self.changed_layout = False
 
-        for widget in self.widgets:
-            widget.update_layout(changed_layout)
+        if recursive:
+            for widget in self.widgets:
+                widget.update_layout(changed_layout)
 
     def bind_texture(self, texture):
         self.texture = texture
@@ -465,14 +465,3 @@ class BoxLayout(Widget):
 
         self._orientation = 'horizontal'
         self.orientation = kwargs.get('orientation', 'horizontal')  # ('horizontal', 'vertical')
-
-    def update_layout(self, changed_layout=False):
-        changed_layout = self.changed_layout or changed_layout
-
-        sum_of_height = 0.0
-
-        for widget in self.widgets:
-            sum_of_height += widget.height
-
-        if changed_layout:
-            super(BoxLayout, self).update_layout(changed_layout)
