@@ -9,6 +9,8 @@ class Widget:
     core_manager = None
     viewport_manager = None
     root = None
+    haligns = ('left', 'center', 'right')
+    valigns = ('top', 'center', 'bottom')
 
     def __init__(self, **kwargs):
         self.changed_layout = False
@@ -19,6 +21,8 @@ class Widget:
         self._y = 0.0
         self._width = 100.0
         self._height = 100.0
+        self._halign = ''
+        self._valign = ''
         self._pos_hint_x = None
         self._pos_hint_y = None
         self._size_hint_x = None
@@ -31,6 +35,8 @@ class Widget:
         self.y = kwargs.get('y', 0.0)
         self.width = kwargs.get('width', 100.0)
         self.height = kwargs.get('height', 100.0)
+        self.halign = kwargs.get('halign', '')  # ('left', 'center', 'right')
+        self.valign = kwargs.get('valign', '')  # ('top', 'center', 'bottom')
         self.pos_hint_x = kwargs.get('pos_hint_x')
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
@@ -63,8 +69,9 @@ class Widget:
             self.set_text(self.text, font_size)
 
     def set_text(self, text, font_size=10):
+        # create text widget
         if self.text_widget is None:
-            self.text_widget = Text(halign='center', valign='center', color=[0.0, 0.0, 1.0, 0.1])
+            self.text_widget = Text(halign='center', valign='center')
             self.add_widget(self.text_widget)
         self.text_widget.set_text(text, font_size)
 
@@ -163,6 +170,28 @@ class Widget:
             self._y = y
 
     @property
+    def halign(self):
+        return self._halign
+
+    @halign.setter
+    def halign(self, halign):
+        if halign in self.haligns and halign != self._halign:
+            self.changed_layout = True
+            self.pos_hint_x = None
+            self._halign = halign
+
+    @property
+    def valign(self):
+        return self._valign
+
+    @valign.setter
+    def valign(self, valign):
+        if valign in self.valigns and valign != self._valign:
+            self.changed_layout = True
+            self.pos_hint_y = None
+            self._valign = valign
+
+    @property
     def width(self):
         return self._width
 
@@ -230,10 +259,24 @@ class Widget:
         if changed_layout:
             if self.parent is not None:
                 # NOTE : If you set the value to x instead of __x, the value of __size_hint_x will be none by @__x.setter.
-                if self._pos_hint_x is not None:
+                if self._halign:
+                    if 'left' == self._halign:
+                        self._x = 0
+                    elif 'right' == self._halign:
+                        self._x = self.parent.width - self._width
+                    else:
+                        self._x = (self.parent.width - self._width) * 0.5
+                elif self._pos_hint_x is not None:
                     self._x = self._pos_hint_x * self.parent.width
 
-                if self._pos_hint_y is not None:
+                if self._valign:
+                    if 'bottom' == self._valign:
+                        self._y = 0
+                    elif 'top' == self._valign:
+                        self._y = self.parent.height - self._height
+                    else:
+                        self._y = (self.parent.height - self._height) * 0.5
+                elif self._pos_hint_y is not None:
                     self._y = self._pos_hint_y * self.parent.height
 
                 if self._size_hint_x is not None:
@@ -300,20 +343,23 @@ class Widget:
 
         return self.touched or touch_event
 
-    def render(self, material_instance, mesh):
+    def render(self, last_program, render_widget_program, mesh):
         if 0.0 <= self.opacity:
-            if self.pressed:
-                material_instance.bind_uniform_data("color", self.pressed_color)
-            else:
-                material_instance.bind_uniform_data("color", self.color)
+            render_widget_program.use_program()
+            render_widget_program.bind_material_instance()
 
-            material_instance.bind_uniform_data("pos_size", [self.world_x, self.world_y, self.width, self.height])
+            if self.pressed:
+                render_widget_program.bind_uniform_data("color", self.pressed_color)
+            else:
+                render_widget_program.bind_uniform_data("color", self.color)
+
+            render_widget_program.bind_uniform_data("pos_size", [self.world_x, self.world_y, self.width, self.height])
 
             if self.texture is not None:
-                material_instance.bind_uniform_data("texture_diffuse", self.texture)
-                material_instance.bind_uniform_data("is_render_diffuse", True)
+                render_widget_program.bind_uniform_data("texture_diffuse", self.texture)
+                render_widget_program.bind_uniform_data("is_render_diffuse", True)
             else:
-                material_instance.bind_uniform_data("is_render_diffuse", False)
+                render_widget_program.bind_uniform_data("is_render_diffuse", False)
 
             mesh.draw_elements()
 
@@ -325,7 +371,7 @@ class Widget:
                                                    self.root.height)
 
         for widget in self.widgets:
-            widget.render(material_instance=material_instance, mesh=mesh)
+            widget.render(last_program, render_widget_program, mesh)
 
 
 class Button(Widget):
@@ -363,15 +409,14 @@ class ToggleButton(Widget):
 
 class Text(Widget):
     def __init__(self, **kwargs):
+        if 'halign' not in kwargs:
+            kwargs['halign'] = 'left'
+
+        if 'valign' not in kwargs:
+            kwargs['valign'] = 'bottom'
+
         super(Text, self).__init__(**kwargs)
 
-        self._size_hint_x = None
-        self._size_hint_y = None
-
-        self._halign = ''
-        self._valign = ''
-        self.halign = kwargs.get('halign', 'left')  # ('left', 'center', 'right')
-        self.valign = kwargs.get('valign', 'bottom')  # ('top', 'center', 'bottom')
         self.text = kwargs.get('text', '')
         self.text_render_data = TextRenderData()
 
@@ -391,62 +436,7 @@ class Text(Widget):
             self._width = self.text_render_data.width
             self._height = self.text_render_data.height
 
-            if self.parent is not None:
-                if self._halign:
-                    if 'left' == self._halign:
-                        self._x = 0
-                    elif 'right' == self._halign:
-                        self._x = self.parent.width - self._width
-                    else:
-                        self._x = (self.parent.width - self._width) * 0.5
-                elif self._pos_hint_x is not None:
-                    self._x = self._pos_hint_x * self.parent.width
-
-                if self._valign:
-                    if 'bottom' == self._valign:
-                        self._y = 0
-                    elif 'top' == self._valign:
-                        self._y = self.parent.height - self._height
-                    else:
-                        self._y = (self.parent.height - self._height) * 0.5
-                elif self._pos_hint_y is not None:
-                    self._y = self._pos_hint_y * self.parent.height
-
-            self.center_x = self._x + self._width * 0.5
-            self.center_y = self._y + self._height * 0.5
-            self.world_x = self._x
-            self.world_y = self._y
-
-            if self.parent is not None:
-                self.world_x += self.parent.world_x
-                self.world_y += self.parent.world_y
-                self.world_center_x = self.center_x + self.parent.world_x
-                self.world_center_y = self.center_y + self.parent.world_y
-
-            self.changed_layout = False
-
-        for widget in self.widgets:
-            widget.update_layout(changed_layout)
-
-    @property
-    def halign(self):
-        return self._halign
-
-    @halign.setter
-    def halign(self, halign):
-        if halign != self._halign:
-            self.changed_layout = True
-            self._halign = halign
-
-    @property
-    def valign(self):
-        return self._valign
-
-    @valign.setter
-    def valign(self, valign):
-        if valign != self._valign:
-            self.changed_layout = True
-            self._valign = valign
+            super(Text, self).update_layout(changed_layout)
 
     @Widget.width.setter
     def width(self, width):
