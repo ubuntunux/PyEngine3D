@@ -108,7 +108,6 @@ class OpenGLContext:
         if program != OpenGLContext.last_program:
             OpenGLContext.last_program = program
             glUseProgram(program)
-            print(program)
             return True
         return False
 
