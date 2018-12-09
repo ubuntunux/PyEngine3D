@@ -42,7 +42,7 @@ class ViewportManager(Singleton):
         Widget.root = self.root
 
     def build_ui(self):
-        side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1], texture=texture)
+        side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1])
         btn = Button(name="Side viewport", x=100, y=100, width=200, height=100, color=[1.0, 1.0, 1.0, 0.1])
         btn.set_text("Count", font_size=16)
         text = Text(name="Text", x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
