@@ -365,7 +365,7 @@ class Widget:
 
             mesh.draw_elements()
 
-        if isinstance(self, Text) and self.text_render_data is not None:
+        if isinstance(self, Label) and self.text_render_data is not None:
             self.core_manager.renderer.render_text(self.text_render_data,
                                                    self.world_x,
                                                    self.world_y,
@@ -417,7 +417,7 @@ class Label(Widget):
         if 'valign' not in kwargs:
             kwargs['valign'] = 'bottom'
 
-        super(Text, self).__init__(**kwargs)
+        super(Label, self).__init__(**kwargs)
 
         self.text = kwargs.get('text', '')
         self.text_render_data = TextRenderData()
@@ -438,7 +438,7 @@ class Label(Widget):
             self._width = self.text_render_data.width
             self._height = self.text_render_data.height
 
-            super(Text, self).update_layout(changed_layout)
+            super(Label, self).update_layout(changed_layout)
 
     @Widget.width.setter
     def width(self, width):
@@ -455,3 +455,7 @@ class Label(Widget):
     @Widget.size_hint_y.setter
     def size_hint_y(self, size_hint_y):
         pass
+
+
+class BoxLayout:
+    pass
