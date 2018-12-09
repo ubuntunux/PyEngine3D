@@ -18,6 +18,7 @@ reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 
 class OpenGLContext:
     last_vertex_array = -1
+    last_program = 0
     GL_MAX_COMPUTE_WORK_GROUP_COUNT = None
     GL_MAX_COMPUTE_WORK_GROUP_SIZE = None
     GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = None
@@ -103,17 +104,27 @@ class OpenGLContext:
         return GL_DEPTH_ATTACHMENT
 
     @staticmethod
-    def present():
-        glUseProgram(0)
-        OpenGLContext.last_vertex_array = -1
-        glFlush()
+    def use_program(program):
+        if program != OpenGLContext.last_program:
+            OpenGLContext.last_program = program
+            glUseProgram(program)
+            print(program)
+            return True
+        return False
 
     @staticmethod
-    def need_to_bind_vertex_array(vertex_array):
-        if OpenGLContext.last_vertex_array == vertex_array:
-            return False
-        OpenGLContext.last_vertex_array = vertex_array
-        return True
+    def bind_vertex_array(vertex_array):
+        if vertex_array != OpenGLContext.last_vertex_array:
+            OpenGLContext.last_vertex_array = vertex_array
+            glBindVertexArray(vertex_array)
+            return True
+        return False
+
+    @staticmethod
+    def present():
+        OpenGLContext.use_program(0)
+        OpenGLContext.last_vertex_array = -1
+        glFlush()
 
     @staticmethod
     def _get_texture_level_dims(target, level):

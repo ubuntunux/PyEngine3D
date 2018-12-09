@@ -172,20 +172,15 @@ class VertexArrayBuffer:
         glDeleteBuffers(1, self.vertex_buffer)
         glDeleteBuffers(1, self.index_buffer)
 
-    def __bind_vertex_buffer(self):
-        if OpenGLContext.need_to_bind_vertex_array(self.vertex_buffer):
-            # NOTE : You must set only glBindVertexArray.
-            glBindVertexArray(self.vertex_array)
-
     def draw_elements(self):
-        self.__bind_vertex_buffer()
+        OpenGLContext.bind_vertex_array(self.vertex_array)
         glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
     def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
-        self.__bind_vertex_buffer()
+        OpenGLContext.bind_vertex_array(self.vertex_array)
         instance_buffer.bind_instance_buffer(datas=instance_datas)
         glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
 
     def draw_elements_indirect(self, offset=0):
-        self.__bind_vertex_buffer()
+        OpenGLContext.bind_vertex_array(self.vertex_array)
         glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, c_void_p(offset))

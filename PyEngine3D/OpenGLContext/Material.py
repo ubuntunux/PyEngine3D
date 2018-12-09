@@ -13,6 +13,7 @@ import numpy as np
 from PyEngine3D.Common import logger
 from PyEngine3D.Utilities import Attributes, Logger
 from PyEngine3D.App import CoreManager
+from PyEngine3D.OpenGLContext import OpenGLContext
 from .UniformBuffer import CreateUniformBuffer, UniformTextureBase
 
 
@@ -68,12 +69,12 @@ class Material:
             CoreManager.instance().resource_manager.get_material(self.shader_name, new_macros)
 
     def delete(self):
-        glUseProgram(0)
+        OpenGLContext.use_program(0)
         glDeleteProgram(self.program)
         logger.info("Deleted %s material." % self.name)
 
     def use_program(self):
-        glUseProgram(self.program)
+        OpenGLContext.use_program(self.program)
 
     def save_to_binary(self):
         size = GLint()
