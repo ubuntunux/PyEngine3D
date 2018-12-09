@@ -11,6 +11,7 @@ class Widget:
     root = None
     haligns = ('left', 'center', 'right')
     valigns = ('top', 'center', 'bottom')
+    orientations = ('horizontal', 'vertical')
 
     def __init__(self, **kwargs):
         self.changed_layout = False
@@ -171,26 +172,24 @@ class Widget:
             self._y = y
 
     @property
-    def halign(self):
-        return self._halign
+    def pos_hint_x(self):
+        return self._pos_hint_x
 
-    @halign.setter
-    def halign(self, halign):
-        if halign in self.haligns and halign != self._halign:
+    @pos_hint_x.setter
+    def pos_hint_x(self, pos_hint_x):
+        if pos_hint_x is not None and self._pos_hint_x != pos_hint_x:
             self.changed_layout = True
-            self.pos_hint_x = None
-            self._halign = halign
+        self._pos_hint_x = pos_hint_x
 
     @property
-    def valign(self):
-        return self._valign
+    def pos_hint_y(self):
+        return self._pos_hint_y
 
-    @valign.setter
-    def valign(self, valign):
-        if valign in self.valigns and valign != self._valign:
+    @pos_hint_y.setter
+    def pos_hint_y(self, pos_hint_y):
+        if pos_hint_y is not None and self._pos_hint_y != pos_hint_y:
             self.changed_layout = True
-            self.pos_hint_y = None
-            self._valign = valign
+        self._pos_hint_y = pos_hint_y
 
     @property
     def width(self):
@@ -215,26 +214,6 @@ class Widget:
             self._height = height
 
     @property
-    def pos_hint_x(self):
-        return self._pos_hint_x
-
-    @pos_hint_x.setter
-    def pos_hint_x(self, pos_hint_x):
-        if pos_hint_x is not None and self._pos_hint_x != pos_hint_x:
-            self.changed_layout = True
-        self._pos_hint_x = pos_hint_x
-
-    @property
-    def pos_hint_y(self):
-        return self._pos_hint_y
-
-    @pos_hint_y.setter
-    def pos_hint_y(self, pos_hint_y):
-        if pos_hint_y is not None and self._pos_hint_y != pos_hint_y:
-            self.changed_layout = True
-        self._pos_hint_y = pos_hint_y
-
-    @property
     def size_hint_x(self):
         return self._size_hint_x
 
@@ -253,6 +232,28 @@ class Widget:
         if size_hint_y is not None and self._size_hint_y != size_hint_y:
             self.changed_layout = True
         self._size_hint_y = size_hint_y
+
+    @property
+    def halign(self):
+        return self._halign
+
+    @halign.setter
+    def halign(self, halign):
+        if halign in self.haligns and halign != self._halign:
+            self.changed_layout = True
+            self.pos_hint_x = None
+            self._halign = halign
+
+    @property
+    def valign(self):
+        return self._valign
+
+    @valign.setter
+    def valign(self, valign):
+        if valign in self.valigns and valign != self._valign:
+            self.changed_layout = True
+            self.pos_hint_y = None
+            self._valign = valign
 
     def update_layout(self, changed_layout=False):
         changed_layout = self.changed_layout or changed_layout
@@ -316,14 +317,15 @@ class Widget:
             raise AttributeError("Widget already has parent.")
 
         if widget not in self.widgets:
-            widget.parent = self
-            widget.update_layout(self.changed_layout)
             self.widgets.append(widget)
+            widget.parent = self
+            self.update_layout(changed_layout=True)
 
     def remove_widget(self, widget):
         if widget in self.widgets:
-            widget.parent = None
             self.widgets.remove(widget)
+            widget.parent = None
+            self.update_layout(changed_layout=True)
 
     def update(self, dt, touch_event=False):
         for widget in self.widgets:
@@ -457,5 +459,20 @@ class Label(Widget):
         pass
 
 
-class BoxLayout:
-    pass
+class BoxLayout(Widget):
+    def __init__(self, **kwargs):
+        super(BoxLayout, self).__init__(**kwargs)
+
+        self._orientation = 'horizontal'
+        self.orientation = kwargs.get('orientation', 'horizontal')  # ('horizontal', 'vertical')
+
+    def update_layout(self, changed_layout=False):
+        changed_layout = self.changed_layout or changed_layout
+
+        sum_of_height = 0.0
+
+        for widget in self.widgets:
+            sum_of_height += widget.height
+
+        if changed_layout:
+            super(BoxLayout, self).update_layout(changed_layout)
