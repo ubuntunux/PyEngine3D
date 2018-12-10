@@ -1,16 +1,32 @@
+from enum import Enum
+
 import numpy as np
 
 from PyEngine3D.Common import *
 from PyEngine3D.Render import TextRenderData
 
 
+class Align(Enum):
+    NONE = 0
+    CENTER = 1
+    LEFT = 2
+    RIGHT = 3
+    TOP = 4
+    BOTTOM = 5
+
+
+class Orientation(Enum):
+    HORIZONTAL = 0
+    VERTICAL = 1
+
+
 class Widget:
     core_manager = None
     viewport_manager = None
     root = None
-    haligns = ('left', 'center', 'right')
-    valigns = ('top', 'center', 'bottom')
-    orientations = ('horizontal', 'vertical')
+    haligns = (Align.LEFT, Align.CENTER, Align.RIGHT)
+    valigns = (Align.TOP, Align.CENTER, Align.BOTTOM)
+    orientations = (Orientation.HORIZONTAL, Orientation.VERTICAL)
 
     def __init__(self, **kwargs):
         self.changed_layout = True
@@ -35,8 +51,8 @@ class Widget:
         self.y = kwargs.get('y', 0.0)
         self.width = kwargs.get('width', 100.0)
         self.height = kwargs.get('height', 100.0)
-        self.halign = kwargs.get('halign', '')  # ('left', 'center', 'right')
-        self.valign = kwargs.get('valign', '')  # ('top', 'center', 'bottom')
+        self.halign = kwargs.get('halign', Align.NONE)
+        self.valign = kwargs.get('valign', Align.NONE)
         self.pos_hint_x = kwargs.get('pos_hint_x')
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
@@ -54,6 +70,8 @@ class Widget:
         self.world_center_y = 0.0
         self.touch_offset_x = 0.0
         self.touch_offset_y = 0.0
+        self.total_size_hint_x = 1.0
+        self.total_size_hint_y = 1.0
 
         self.touched = False
         self.pressed = False
@@ -67,12 +85,12 @@ class Widget:
         font_size = kwargs.get('font_size', 10)
 
         if text:
-            self.set_text(self.text, font_size)
+            self.set_text(text, font_size)
 
     def set_text(self, text, font_size=10):
         # create text widget
         if self.text_widget is None:
-            self.text_widget = Label(halign='center', valign='center')
+            self.text_widget = Label(halign=Align.CENTER, valign=Align.CENTER)
             self.add_widget(self.text_widget)
         self.text_widget.set_text(text, font_size)
 
@@ -261,9 +279,9 @@ class Widget:
             if self.parent is not None:
                 # NOTE : If you set the value to x instead of __x, the value of __size_hint_x will be none by @__x.setter.
                 if self._halign:
-                    if 'left' == self._halign:
+                    if Align.LEFT == self._halign:
                         self._x = 0
-                    elif 'right' == self._halign:
+                    elif Align.RIGHT == self._halign:
                         self._x = self.parent.width - self._width
                     else:
                         self._x = (self.parent.width - self._width) * 0.5
@@ -271,9 +289,9 @@ class Widget:
                     self._x = self._pos_hint_x * self.parent.width
 
                 if self._valign:
-                    if 'bottom' == self._valign:
+                    if Align.BOTTOM == self._valign:
                         self._y = 0
-                    elif 'top' == self._valign:
+                    elif Align.TOP == self._valign:
                         self._y = self.parent.height - self._height
                     else:
                         self._y = (self.parent.height - self._height) * 0.5
@@ -281,10 +299,10 @@ class Widget:
                     self._y = self._pos_hint_y * self.parent.height
 
                 if self._size_hint_x is not None:
-                    self._width = self._size_hint_x * self.parent.width
+                    self._width = self.parent.width * self._size_hint_x / self.parent.total_size_hint_x
 
                 if self._size_hint_y is not None:
-                    self._height = self._size_hint_y * self.parent.height
+                    self._height = self.parent.height * self._size_hint_y / self.parent.total_size_hint_y
 
             self.center_x = self._x + self._width / 2
             self.center_y = self._y + self._height / 2
@@ -301,7 +319,7 @@ class Widget:
 
         if recursive:
             for widget in self.widgets:
-                widget.update_layout(changed_layout)
+                widget.update_layout(changed_layout=changed_layout)
 
     def bind_texture(self, texture):
         self.texture = texture
@@ -431,16 +449,16 @@ class Label(Widget):
         self.text = text
         font_data = self.core_manager.resource_manager.get_default_font_data()
         changed_layout = self.text_render_data.set_text(text, font_data, font_size=font_size)
-        self.update_layout(changed_layout)
+        self.update_layout(changed_layout=changed_layout)
 
-    def update_layout(self, changed_layout=False):
+    def update_layout(self, changed_layout=False, recursive=True):
         changed_layout = self.changed_layout or changed_layout
 
         if changed_layout:
             self._width = self.text_render_data.width
             self._height = self.text_render_data.height
 
-            super(Label, self).update_layout(changed_layout)
+            super(Label, self).update_layout(changed_layout=changed_layout)
 
     @Widget.width.setter
     def width(self, width):
@@ -463,5 +481,53 @@ class BoxLayout(Widget):
     def __init__(self, **kwargs):
         super(BoxLayout, self).__init__(**kwargs)
 
-        self._orientation = 'horizontal'
-        self.orientation = kwargs.get('orientation', 'horizontal')  # ('horizontal', 'vertical')
+        self._orientation = Orientation.HORIZONTAL
+        self.orientation = kwargs.get('orientation', Orientation.HORIZONTAL)
+
+    def update_layout(self, changed_layout=False, recursive=True):
+        changed_layout = changed_layout or self.changed_layout
+
+        if changed_layout:
+            super(BoxLayout, self).update_layout(changed_layout=changed_layout, recursive=False)
+
+        if recursive:
+            total_size_hint_x = 0.0
+            total_size_hint_y = 0.0
+            for widget in self.widgets:
+                widget.update_layout(changed_layout=changed_layout, recursive=False)
+
+                # We have to use size_hint.
+                if Orientation.HORIZONTAL == self.orientation:
+                    if widget.size_hint_x is None:
+                        widget.size_hint_x = widget.width / self._width
+                    total_size_hint_x += widget.size_hint_x
+                elif Orientation.VERTICAL == self.orientation:
+                    if widget.size_hint_y is None:
+                        widget.size_hint_y = widget.height / self._height
+                    total_size_hint_y += widget.size_hint_y
+
+            if 0.0 == total_size_hint_x:
+                total_size_hint_x = 1.0
+
+            if 0.0 == total_size_hint_y:
+                total_size_hint_y = 1.0
+
+            if total_size_hint_x != self.total_size_hint_x:
+                self.total_size_hint_x = total_size_hint_x
+                changed_layout = True
+
+            if total_size_hint_y != self.total_size_hint_y:
+                self.total_size_hint_y = total_size_hint_y
+                changed_layout = True
+
+            # normalize
+            x = 0.0
+            y = 0.0
+            for widget in self.widgets:
+                if Orientation.HORIZONTAL == self.orientation:
+                    widget.x = x
+                    x += widget.width
+                elif Orientation.VERTICAL == self.orientation:
+                    widget.y = y
+                    y += widget.height
+                widget.update_layout(changed_layout=changed_layout)

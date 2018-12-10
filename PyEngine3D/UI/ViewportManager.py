@@ -4,7 +4,8 @@ from PyEngine3D.Common import *
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
-from .Widget import Widget, Button, ToggleButton, Label
+from .Widget import Align, Orientation
+from .Widget import Widget, Button, ToggleButton, Label, BoxLayout
 
 
 class ViewportManager(Singleton):
@@ -45,6 +46,13 @@ class ViewportManager(Singleton):
         side_viewport = Button(name="Side viewport", dragable=True, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1])
         btn = Button(name="Side viewport", x=100, y=100, width=200, height=100, color=[1.0, 1.0, 1.0, 0.1])
         btn.set_text("Count", font_size=16)
+
+        layout = BoxLayout(name="BoxLayout", dragable=True, x=0, size_hint_x=1.0, size_hint_y=1.0, color=[1.0, 1.0, 1.0, 0.2], orientation=Orientation.HORIZONTAL)
+        btn1 = Button(name="btn1", text="btn1", font_size=16, dragable=True, x=100, y=100, width=150, height=150, color=[1.0, 1.0, 0.0, 0.1])
+        btn2 = Button(name="btn2", text="btn2", x=200, y=200, size_hint_x=0.5, size_hint_y=0.5, color=[0.0, 0.0, 1.0, 0.1])
+        layout.add_widget(btn1)
+        self.main_viewport.add_widget(layout)
+
         text = Label(name="Text", x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
         text.set_text("Count dwqdwqd", font_size=16)
         side_viewport.add_widget(text)
