@@ -43,6 +43,9 @@ class Widget:
         self._pos_hint_y = None
         self._size_hint_x = None
         self._size_hint_y = None
+        self._padding_x = 0.0
+        self._padding_y = 0.0
+        self._spacing = 0.0
         self._color = np.array(kwargs.get('color', [0.0, 0.0, 0.0, 0.0]), np.float32)
         self._pressed_color = np.array(kwargs.get('pressed_color', [0.0, 0.0, 0.0, 0.0]), np.float32)
 
@@ -57,6 +60,9 @@ class Widget:
         self.pos_hint_y = kwargs.get('pos_hint_y')
         self.size_hint_x = kwargs.get('size_hint_x')
         self.size_hint_y = kwargs.get('size_hint_y')
+        self.padding_x = kwargs.get('padding_x', 0.0)
+        self.padding_y = kwargs.get('padding_y', 0.0)
+        self.spacing = kwargs.get('spacing', 0.0)
         self.texcoord = np.array(kwargs.get('texcoord', [0.0, 0.0, 1.0, 1.0]), np.float32)
         self.dragable = kwargs.get('dragable', False)
         self.touchable = kwargs.get('touchable', False) or self.dragable
@@ -251,6 +257,36 @@ class Widget:
         self._size_hint_y = size_hint_y
 
     @property
+    def padding_x(self):
+        return self._padding_x
+
+    @padding_x.setter
+    def padding_x(self, padding_x):
+        if padding_x != self._padding_x:
+            self._padding_x = padding_x
+            self.changed_layout = True
+
+    @property
+    def padding_y(self):
+        return self._padding_y
+
+    @padding_y.setter
+    def padding_y(self, padding_y):
+        if padding_y != self._padding_y:
+            self._padding_y = padding_y
+            self.changed_layout = True
+
+    @property
+    def spacing(self):
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, spacing):
+        if spacing != self._spacing:
+            self._spacing = spacing
+            self.changed_layout = True
+
+    @property
     def halign(self):
         return self._halign
 
@@ -280,29 +316,29 @@ class Widget:
                 # NOTE : If you set the value to x instead of __x, the value of __size_hint_x will be none by @__x.setter.
                 if self._halign:
                     if Align.LEFT == self._halign:
-                        self._x = 0
+                        self._x = self.parent.padding_x
                     elif Align.RIGHT == self._halign:
-                        self._x = self.parent.width - self._width
+                        self._x = self.parent.width - self._width - self.parent.padding_x
                     else:
                         self._x = (self.parent.width - self._width) * 0.5
                 elif self._pos_hint_x is not None:
-                    self._x = self._pos_hint_x * self.parent.width
+                    self._x = self.parent.padding_x + self._pos_hint_x * (self.parent.width - self.parent.padding_x * 2.0)
 
                 if self._valign:
                     if Align.BOTTOM == self._valign:
-                        self._y = 0
+                        self._y = self.parent.padding_y
                     elif Align.TOP == self._valign:
-                        self._y = self.parent.height - self._height
+                        self._y = self.parent.height - self._height - self.parent.padding_y
                     else:
                         self._y = (self.parent.height - self._height) * 0.5
                 elif self._pos_hint_y is not None:
                     self._y = self._pos_hint_y * self.parent.height
 
                 if self._size_hint_x is not None:
-                    self._width = self.parent.width * self._size_hint_x / self.parent.total_size_hint_x
+                    self._width = (self.parent.width - self.parent.padding_x * 2.0) * self._size_hint_x / self.parent.total_size_hint_x
 
                 if self._size_hint_y is not None:
-                    self._height = self.parent.height * self._size_hint_y / self.parent.total_size_hint_y
+                    self._height = (self.parent.height - self.parent.padding_y * 2.0) * self._size_hint_y / self.parent.total_size_hint_y
 
             self.center_x = self._x + self._width / 2
             self.center_y = self._y + self._height / 2
@@ -490,7 +526,9 @@ class BoxLayout(Widget):
         if changed_layout:
             super(BoxLayout, self).update_layout(changed_layout=changed_layout, recursive=False)
 
-        if recursive:
+        child_count = len(self.widgets)
+
+        if recursive and 0 < child_count:
             total_size_hint_x = 0.0
             total_size_hint_y = 0.0
             for widget in self.widgets:
@@ -512,6 +550,14 @@ class BoxLayout(Widget):
             if 0.0 == total_size_hint_y:
                 total_size_hint_y = 1.0
 
+            spacing_hint_x = self.spacing / self._width
+            spacing_hint_y = self.spacing / self._height
+
+            if Orientation.HORIZONTAL == self.orientation:
+                total_size_hint_x += total_size_hint_x * spacing_hint_x * float(child_count - 1)
+            elif Orientation.VERTICAL == self.orientation:
+                total_size_hint_y += total_size_hint_y * spacing_hint_y * float(child_count - 1)
+
             if total_size_hint_x != self.total_size_hint_x:
                 self.total_size_hint_x = total_size_hint_x
                 changed_layout = True
@@ -521,13 +567,13 @@ class BoxLayout(Widget):
                 changed_layout = True
 
             # normalize
-            x = 0.0
-            y = 0.0
+            x = self.padding_x
+            y = self.padding_y
             for widget in self.widgets:
                 if Orientation.HORIZONTAL == self.orientation:
                     widget.x = x
-                    x += widget.width
+                    x += widget.width + self.spacing
                 elif Orientation.VERTICAL == self.orientation:
                     widget.y = y
-                    y += widget.height
+                    y += widget.height + self.spacing
                 widget.update_layout(changed_layout=changed_layout)
