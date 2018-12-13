@@ -242,11 +242,16 @@ class PyGame(GameBackend):
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos
-        self.btn_l_clicked = False
-        self.btn_m_clicked = False
-        self.btn_r_clicked = False
+        self.btn_l_down = False
+        self.btn_m_down = False
+        self.btn_r_down = False
+        self.btn_l_up = False
+        self.btn_m_up = False
+        self.btn_r_up = False
         self.wheel_up = False
         self.wheel_down = False
+        self.keyboard_up = False
+        self.keyboard_down = False
 
         # Keyboard & Mouse Events
         for event in pygame.event.get():
@@ -258,21 +263,29 @@ class PyGame(GameBackend):
                 self.goal_width, self.goal_height = event.dict['size']
                 self.core_manager.update_event(Event.VIDEORESIZE, (self.goal_width, self.goal_height, self.full_screen))
             elif event_type == KEYDOWN:
-                symbol = event.key
-                self.core_manager.update_event(Event.KEYDOWN, symbol)
+                self.text = event.unicode
+                self.keyboard_down = True
+                self.keyboard_pressed = True
+                self.core_manager.update_event(Event.TEXT, event.unicode)
+                self.core_manager.update_event(Event.KEYDOWN, event.key)
+            elif event_type == KEYUP:
+                self.text = ''
+                self.keyboard_up = True
+                self.keyboard_pressed = False
+                self.core_manager.update_event(Event.KEYUP, event.key)
             elif event_type == MOUSEMOTION:
                 self.mouse_pos[...] = pygame.mouse.get_pos()
                 # invert - Y
                 self.mouse_pos[1] = self.height - self.mouse_pos[1]
             elif event_type == MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    self.btn_l_clicked = True
+                    self.btn_l_down = True
                     self.btn_l_pressed = True
                 elif event.button == 2:
-                    self.btn_m_clicked = True
+                    self.btn_m_down = True
                     self.btn_m_pressed = True
                 elif event.button == 3:
-                    self.btn_r_clicked = True
+                    self.btn_r_down = True
                     self.btn_r_pressed = True
                 elif event.button == 4:
                     self.wheel_up = True
@@ -280,10 +293,13 @@ class PyGame(GameBackend):
                     self.wheel_down = True
             elif event_type == MOUSEBUTTONUP:
                 if event.button == 1:
+                    self.btn_l_up = True
                     self.btn_l_pressed = False
                 elif event.button == 2:
+                    self.btn_m_up = True
                     self.btn_m_pressed = False
                 elif event.button == 3:
+                    self.btn_r_up = True
                     self.btn_r_pressed = False
                 elif event.button == 4:
                     self.wheel_up = False

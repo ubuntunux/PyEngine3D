@@ -45,6 +45,7 @@ class PyGlet(GameBackend):
         self.window.push_handlers(
             on_draw=self.on_draw,
             on_resize=self.on_resize,
+            on_text=self.on_text,
             on_key_press=self.on_key_press,
             on_key_release=self.on_key_release,
             on_mouse_press=self.on_mouse_press,
@@ -270,9 +271,14 @@ class PyGlet(GameBackend):
 
     def update_event(self):
         self.mouse_pos_old[...] = self.mouse_pos
-        self.btn_l_clicked = False
-        self.btn_m_clicked = False
-        self.btn_r_clicked = False
+        self.btn_l_down = False
+        self.btn_m_down = False
+        self.btn_r_down = False
+        self.btn_l_up = False
+        self.btn_m_up = False
+        self.btn_r_up = False
+        self.keyboard_down = False
+        self.keyboard_up = False
 
         self.window.switch_to()
 
@@ -299,23 +305,26 @@ class PyGlet(GameBackend):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
         if button == window.mouse.LEFT:
-            self.btn_l_clicked = True
+            self.btn_l_down = True
             self.btn_l_pressed = True
         elif button == window.mouse.MIDDLE:
-            self.btn_m_clicked = True
+            self.btn_m_down = True
             self.btn_m_pressed = True
         elif button == window.mouse.RIGHT:
-            self.btn_r_clicked = True
+            self.btn_r_down = True
             self.btn_r_pressed = True
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
         if button == window.mouse.LEFT:
+            self.btn_l_up = True
             self.btn_l_pressed = False
         elif button == window.mouse.MIDDLE:
+            self.btn_m_up = True
             self.btn_m_pressed = False
         elif button == window.mouse.RIGHT:
+            self.btn_r_up = True
             self.btn_r_pressed = False
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -328,12 +337,22 @@ class PyGlet(GameBackend):
     def on_mouse_leave(self, x, y):
         pass
 
+    def on_text(self, text):
+        self.text = text
+        self.core_manager.update_event(Event.TEXT, text)
+
     def on_key_press(self, symbol, modifiers):
+        self.keyboard_down = True
+        self.keyboard_pressed = True
         self.key_pressed[symbol] = True
         self.core_manager.update_event(Event.KEYDOWN, symbol)
 
     def on_key_release(self, symbol, modifiers):
+        self.text = ''
+        self.keyboard_up = True
+        self.keyboard_pressed = False
         self.key_pressed[symbol] = False
+        self.core_manager.update_event(Event.KEYUP, symbol)
 
     def get_keyboard_pressed(self):
         return self.key_pressed

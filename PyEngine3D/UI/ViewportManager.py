@@ -1,11 +1,13 @@
 from OpenGL.GL import *
 
 from PyEngine3D.Common import *
+from PyEngine3D.App.GameBackend import Keyboard
 from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import FrameBufferManager
 from PyEngine3D.Render import ScreenQuad, RenderTargets
 from .Widget import Align, Orientation
-from .Widget import Widget, Button, ToggleButton, Label, BoxLayout
+from .Widget import Widget, Button, ToggleButton, Label, TextEdit
+from .Widget import BoxLayout
 
 
 class ViewportManager(Singleton):
@@ -17,6 +19,7 @@ class ViewportManager(Singleton):
         self.root = None
         self.main_viewport = None
         self.touch_event = False
+        self.focused_widget = None
 
         self.quad = None
         self.render_widget = None
@@ -54,7 +57,7 @@ class ViewportManager(Singleton):
 
         layout = BoxLayout(name="BoxLayout", dragable=True, padding_x=80.0, padding_y=40.0, spacing=10, x=0, size_hint_x=1.0, size_hint_y=0.3, color=[1.0, 1.0, 1.0, 0.2], orientation=Orientation.HORIZONTAL)
         btn1 = Button(name="btn1", text="btn1", font_size=16, dragable=True, x=100, width=150, size_hint_y=1.0, color=[1.0, 1.0, 0.0, 0.1])
-        btn2 = Button(name="btn2", text="btn2", x=200, width=50, size_hint_y=1.0, color=[0.0, 0.0, 1.0, 0.1])
+        btn2 = TextEdit(name="btn2", text="TextEdit", touchable=True, font_size=20, x=200, width=50, size_hint_y=1.0, color=[0.0, 0.0, 1.0, 0.1])
         layout.add_widget(btn1)
         layout.add_widget(btn2)
         self.main_viewport.add_widget(layout)
@@ -83,6 +86,16 @@ class ViewportManager(Singleton):
     def update(self, dt):
         self.touch_event = self.root.update(dt, touch_event=False)
         self.root.update_layout()
+
+        if self.focused_widget is not None and isinstance(self.focused_widget, TextEdit):
+            if self.core_manager.is_keyboard_pressed():
+                if self.core_manager.is_key_pressed(Keyboard.BACKSPACE):
+                    if 0 < len(self.focused_widget.text):
+                        self.focused_widget.text = self.focused_widget.text[:-1]
+                else:
+                    text = self.focused_widget.text + self.core_manager.get_text()
+                    self.focused_widget.text = text
+
         return self.touch_event
 
     def render(self):

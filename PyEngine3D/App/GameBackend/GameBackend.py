@@ -15,6 +15,8 @@ class Event(AutoEnum):
     QUIT = ()
     VIDEORESIZE = ()
     KEYDOWN = ()
+    KEYUP = ()
+    TEXT = ()
 
 
 class Keyboard:
@@ -233,18 +235,29 @@ class GameBackend:
         self.mouse_delta = np.zeros(2)
         self.wheel_up = False
         self.wheel_down = False
-        self.btn_l_clicked = False
-        self.btn_m_clicked = False
-        self.btn_r_clicked = False
+        self.btn_l_down = False
+        self.btn_m_down = False
+        self.btn_r_down = False
         self.btn_l_pressed = False
         self.btn_m_pressed = False
         self.btn_r_pressed = False
+        self.btn_l_up = False
+        self.btn_m_up = False
+        self.btn_r_up = False
 
-    def get_mouse_clicked(self):
-        return self.btn_l_clicked, self.btn_m_clicked, self.btn_r_clicked
+        self.text = ''
+        self.keyboard_down = False
+        self.keyboard_pressed = False
+        self.keyboard_up = False
+
+    def get_mouse_down(self):
+        return self.btn_l_down, self.btn_m_down, self.btn_r_down
 
     def get_mouse_pressed(self):
         return self.btn_l_pressed, self.btn_m_pressed, self.btn_r_pressed
+
+    def get_mouse_up(self):
+        return self.btn_l_up, self.btn_m_up, self.btn_r_up
 
     def set_window_info(self, width, height, full_screen):
         changed = False

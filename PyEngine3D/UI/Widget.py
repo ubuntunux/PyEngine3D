@@ -27,6 +27,7 @@ class Widget:
     haligns = (Align.LEFT, Align.CENTER, Align.RIGHT)
     valigns = (Align.TOP, Align.CENTER, Align.BOTTOM)
     orientations = (Orientation.HORIZONTAL, Orientation.VERTICAL)
+    has_cursor = False
 
     def __init__(self, **kwargs):
         self.changed_layout = True
@@ -86,19 +87,29 @@ class Widget:
         self.callback_touch_move = None
         self.callback_touch_up = None
 
-        self.text_widget = None
+        self.label = None
         text = kwargs.get('text', '')
         font_size = kwargs.get('font_size', 10)
 
         if text:
             self.set_text(text, font_size)
 
-    def set_text(self, text, font_size=10):
-        # create text widget
-        if self.text_widget is None:
-            self.text_widget = Label(halign=Align.CENTER, valign=Align.CENTER)
-            self.add_widget(self.text_widget)
-        self.text_widget.set_text(text, font_size)
+    @property
+    def text(self):
+        return self.label.text if self.label is not None else ''
+
+    @text.setter
+    def text(self, text):
+        if self.label is not None:
+            self.label.text = text
+        else:
+            self.set_text(text)
+
+    def set_text(self, text, font_size=10, halign=Align.LEFT, valign=Align.BOTTOM):
+        if self.label is None:
+            self.label = Label(halign=halign, valign=valign)
+            self.add_widget(self.label)
+        self.label.set_text(text, font_size, halign=halign, valign=valign)
 
     def collide(self, x, y):
         return self.world_x <= x < (self.world_x + self.width) and self.world_y <= y < (self.world_y + self.height)
@@ -114,6 +125,7 @@ class Widget:
 
     def on_touch_down(self, x, y):
         self.touched = True
+
         if self.dragable:
             self.touch_offset_x = self.x - x
             self.touch_offset_y = self.y - y
@@ -308,6 +320,36 @@ class Widget:
             self.pos_hint_y = None
             self._valign = valign
 
+    def bind_texture(self, texture):
+        self.texture = texture
+
+    def clear_widgets(self):
+        for widget in self.widgets:
+            widget.clear_widgets()
+
+            if self.viewport_manager.focused_widget is widget:
+                self.viewport_manager.focused_widget = None
+
+        self.widgets = []
+
+    def add_widget(self, widget):
+        if widget.parent is not None:
+            raise AttributeError("Widget already has parent.")
+
+        if widget not in self.widgets:
+            self.widgets.append(widget)
+            widget.parent = self
+            self.update_layout(changed_layout=True)
+
+    def remove_widget(self, widget):
+        if widget in self.widgets:
+            if self.viewport_manager.focused_widget is widget:
+                self.viewport_manager.focused_widget = None
+
+            self.widgets.remove(widget)
+            widget.parent = None
+            self.update_layout(changed_layout=True)
+
     def update_layout(self, changed_layout=False, recursive=True):
         changed_layout = self.changed_layout or changed_layout
 
@@ -357,36 +399,12 @@ class Widget:
             for widget in self.widgets:
                 widget.update_layout(changed_layout=changed_layout)
 
-    def bind_texture(self, texture):
-        self.texture = texture
-
-    def clear_widgets(self):
-        for widget in self.widgets:
-            widget.clear_widgets()
-
-        self.widgets = []
-
-    def add_widget(self, widget):
-        if widget.parent is not None:
-            raise AttributeError("Widget already has parent.")
-
-        if widget not in self.widgets:
-            self.widgets.append(widget)
-            widget.parent = self
-            self.update_layout(changed_layout=True)
-
-    def remove_widget(self, widget):
-        if widget in self.widgets:
-            self.widgets.remove(widget)
-            widget.parent = None
-            self.update_layout(changed_layout=True)
-
     def update(self, dt, touch_event=False):
         for widget in self.widgets:
             touch_event = widget.update(dt, touch_event)
 
         if not touch_event and self.touchable:
-            click_left, click_middle, click_right = self.core_manager.get_mouse_clicked()
+            down_left, down_middle, down_right = self.core_manager.get_mouse_down()
             pressed_left, pressed_middle, pressed_right = self.core_manager.get_mouse_pressed()
             mouse_x, mouse_y = self.core_manager.get_mouse_pos()
 
@@ -395,8 +413,15 @@ class Widget:
                     self.on_touch_move(mouse_x, mouse_y)
                 else:
                     self.on_touch_up(mouse_x, mouse_y)
-            elif click_left and self.collide(mouse_x, mouse_y):
-                self.on_touch_down(mouse_x, mouse_y)
+                    if not self.has_cursor:
+                        self.viewport_manager.focused_widget = None
+
+            elif down_left:
+                if self.collide(mouse_x, mouse_y):
+                    self.viewport_manager.focused_widget = self
+                    self.on_touch_down(mouse_x, mouse_y)
+                elif self.has_cursor:
+                    self.viewport_manager.focused_widget = None
 
         return self.touched or touch_event
 
@@ -440,6 +465,9 @@ class Button(Widget):
         self.color = kwargs.get('color', [0.25, 0.25, 0.25, 1.0])
         self.pressed_color = np.array(kwargs.get('pressed_color', [0.5, 0.5, 1.0, 1.0]), np.float32)
 
+    def set_text(self, text, font_size=10, halign=Align.CENTER, valign=Align.CENTER):
+        super(Button, self).set_text(text, font_size, halign, valign)
+
     def on_touch_down(self, x, y):
         super(Button, self).on_touch_down(x, y)
         self.pressed = True
@@ -454,7 +482,7 @@ class Button(Widget):
 
 class ToggleButton(Widget):
     def __init__(self, **kwargs):
-        super(Button, self).__init__(touchable=True, **kwargs)
+        super(ToggleButton, self).__init__(touchable=True, **kwargs)
 
         self.pressed = False
         self.color = kwargs.get('color', [0.25, 0.25, 0.25, 1.0])
@@ -467,22 +495,25 @@ class ToggleButton(Widget):
 
 class Label(Widget):
     def __init__(self, **kwargs):
-        if 'halign' not in kwargs:
-            kwargs['halign'] = 'left'
-
-        if 'valign' not in kwargs:
-            kwargs['valign'] = 'bottom'
+        text = kwargs.get('text', '')
+        self.text_render_data = TextRenderData()
 
         super(Label, self).__init__(**kwargs)
 
-        self.text = kwargs.get('text', '')
-        self.text_render_data = TextRenderData()
+        if text != self.text_render_data.text:
+            self.set_text(text)
 
-        if self.text:
-            self.set_text(self.text)
+    @property
+    def text(self):
+        return self.text_render_data.text
 
-    def set_text(self, text, font_size=10):
-        self.text = text
+    @text.setter
+    def text(self, text):
+        self.text_render_data.text = text
+
+    def set_text(self, text, font_size=10, halign=Align.LEFT, valign=Align.BOTTOM):
+        self.halign = halign
+        self.valign = valign
         font_data = self.core_manager.resource_manager.get_default_font_data()
         changed_layout = self.text_render_data.set_text(text, font_data, font_size=font_size)
         self.update_layout(changed_layout=changed_layout)
@@ -513,6 +544,13 @@ class Label(Widget):
         pass
 
 
+class TextEdit(Widget):
+    has_cursor = True
+
+    def __init__(self, **kwargs):
+        super(TextEdit, self).__init__(**kwargs)
+
+
 class BoxLayout(Widget):
     def __init__(self, **kwargs):
         super(BoxLayout, self).__init__(**kwargs)
@@ -536,13 +574,17 @@ class BoxLayout(Widget):
 
                 # We have to use size_hint.
                 if Orientation.HORIZONTAL == self.orientation:
-                    if widget.size_hint_x is None:
-                        widget.size_hint_x = widget.width / self._width
-                    total_size_hint_x += widget.size_hint_x
+                    size_hint_x = widget.size_hint_x
+                    if size_hint_x is None:
+                        size_hint_x = abs(widget.width / self._width)
+                        widget.size_hint_x = size_hint_x
+                    total_size_hint_x += size_hint_x
                 elif Orientation.VERTICAL == self.orientation:
-                    if widget.size_hint_y is None:
-                        widget.size_hint_y = widget.height / self._height
-                    total_size_hint_y += widget.size_hint_y
+                    size_hint_y = widget.size_hint_y
+                    if size_hint_y is None:
+                        size_hint_y = abs(widget.height / self._height)
+                        widget.size_hint_y = size_hint_y
+                    total_size_hint_y += size_hint_y
 
             if 0.0 == total_size_hint_x:
                 total_size_hint_x = 1.0

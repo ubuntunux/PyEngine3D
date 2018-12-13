@@ -483,11 +483,32 @@ class CoreManager(Singleton):
     def get_mouse_pos(self):
         return self.game_backend.mouse_pos
 
-    def get_mouse_clicked(self):
-        return self.game_backend.get_mouse_clicked()
+    def get_mouse_down(self):
+        return self.game_backend.get_mouse_down()
 
     def get_mouse_pressed(self):
         return self.game_backend.get_mouse_pressed()
+
+    def get_mouse_up(self):
+        return self.game_backend.get_mouse_up()
+
+    def get_keyboard_pressed(self):
+        return self.game_backend.get_keyboard_pressed()
+
+    def is_keyboard_down(self):
+        return self.game_backend.keyboard_down
+
+    def is_keyboard_pressed(self):
+        return self.game_backend.keyboard_pressed
+
+    def is_keyboard_up(self):
+        return self.game_backend.keyboard_up
+
+    def is_key_pressed(self, key_code):
+        return self.game_backend.get_keyboard_pressed()[key_code]
+
+    def get_text(self):
+        return self.game_backend.text
 
     def update_event(self, event_type, event_value=None):
         if Event.QUIT == event_type:
@@ -529,6 +550,10 @@ class CoreManager(Singleton):
                 current_obj_names = set(self.scene_manager.get_object_names())
                 for obj_name in (obj_names - current_obj_names):
                     self.notify_delete_object(obj_name)
+        elif Event.KEYUP == event_type:
+            pass
+        elif Event.TEXT == event_type:
+            pass
 
     def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
