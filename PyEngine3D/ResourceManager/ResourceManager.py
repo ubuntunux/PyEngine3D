@@ -32,7 +32,7 @@ from OpenGL.GL import *
 from PyEngine3D.Common import *
 from PyEngine3D.Render import MaterialInstance, Triangle, Quad, Cube, Plane, Mesh, Model, Font
 from PyEngine3D.Render import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
-from PyEngine3D.Render import EffectInfo
+from PyEngine3D.Render import EffectInfo, ParticleInfo
 from PyEngine3D.Render import FontData
 from PyEngine3D.Render.Ocean.Constants import GRID_VERTEX_COUNT
 from PyEngine3D.OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
@@ -1087,8 +1087,7 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Quad", Quad("Quad"))
         self.create_resource("Cube", Cube("Cube"))
         self.create_resource("Plane", Plane("Plane", width=4, height=4, xz_plane=True))
-        self.create_resource("FFT_Grid",
-                             Plane("FFT_Grid", width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
+        self.create_resource("FFT_Grid", Plane("FFT_Grid", width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
@@ -1303,9 +1302,13 @@ class EffectLoader(ResourceLoader):
     fileExt = '.effect'
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def create_effect(self):
+    def create_effect(self, particle_info=None):
         resource = self.create_resource('effect')
-        effect = EffectInfo(resource.name)
+        if particle_info is not None:
+            particle_infos = [particle_info, ]
+        else:
+            particle_infos = []
+        effect = EffectInfo(resource.name, particle_infos=particle_infos)
         resource.set_data(effect)
         self.save_resource(resource.name)
 
@@ -1314,12 +1317,11 @@ class EffectLoader(ResourceLoader):
         if resource:
             effect_info = self.load_resource_data(resource)
             if effect_info is not None:
-                for particle_info in effect_info.get('particle_infos', []):
-                    particle_info['mesh'] = self.resource_manager.get_mesh(particle_info.get('mesh'))
-                    particle_info['material_instance'] = self.resource_manager.get_material_instance(
-                        particle_info.get('material_instance'))
-                    particle_info['texture_diffuse'] = self.resource_manager.get_texture(
-                        particle_info.get('texture_diffuse'))
+                particle_infos = []
+                for particle_name in effect_info.get('particle_infos', []):
+                    particle_info = self.resource_manager.get_particle(particle_name)
+                    particle_infos.append(particle_info)
+                effect_info['particle_infos'] = particle_infos
                 effect_info = EffectInfo(resource_name, **effect_info)
                 resource.set_data(effect_info)
                 return True
@@ -1328,6 +1330,42 @@ class EffectLoader(ResourceLoader):
 
     def action_resource(self, resource_name):
         self.scene_manager.add_effect(name=resource_name, effect_info=resource_name)
+
+
+# -----------------------#
+# CLASS : ParticleLoader
+# -----------------------#
+class ParticleLoader(ResourceLoader):
+    name = "ParticleLoader"
+    resource_dir_name = 'Particles'
+    resource_type_name = 'Particle'
+    fileExt = '.particle'
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def create_particle(self):
+        resource = self.create_resource('particle')
+        effect = ParticleInfo(resource.name)
+        resource.set_data(effect)
+        self.save_resource(resource.name)
+
+    def load_resource(self, resource_name):
+        resource = self.get_resource(resource_name)
+        if resource:
+            particle_info = self.load_resource_data(resource)
+            particle_info['mesh'] = self.resource_manager.get_mesh(particle_info.get('mesh'))
+            particle_info['material_instance'] = self.resource_manager.get_material_instance(particle_info.get('material_instance'))
+            particle_info['texture_diffuse'] = self.resource_manager.get_texture(particle_info.get('texture_diffuse'))
+            particle_info = ParticleInfo(resource_name, **particle_info)
+            resource.set_data(particle_info)
+            return True
+
+        logger.error('%s failed to load %s' % (self.name, resource_name))
+        return False
+
+    def action_resource(self, resource_name):
+        particle_info = self.get_resource_data(resource_name)
+        if particle_info:
+            self.resource_manager.effect_loader.create_effect(particle_info)
 
 
 # -----------------------#
@@ -1394,6 +1432,7 @@ class ResourceManager(Singleton):
         self.mesh_loader = None
         self.scene_loader = None
         self.effect_loader = None
+        self.particle_loader = None
         self.sound_loader = None
         self.script_loader = None
         self.model_loader = None
@@ -1423,6 +1462,7 @@ class ResourceManager(Singleton):
         self.mesh_loader = self.regist_loader(MeshLoader)
         self.scene_loader = self.regist_loader(SceneLoader)
         self.effect_loader = self.regist_loader(EffectLoader)
+        self.particle_loader = self.regist_loader(ParticleLoader)
         self.sound_loader = self.regist_loader(SoundLoader)
         self.script_loader = self.regist_loader(ScriptLoader)
         self.model_loader = self.regist_loader(ModelLoader)
@@ -1601,6 +1641,12 @@ class ResourceManager(Singleton):
 
     def get_effect(self, effect_name):
         return self.effect_loader.get_resource_data(effect_name) or self.get_default_effect()
+
+    def get_default_particle(self):
+        return self.particle_loader.get_resource_data('default_particle')
+
+    def get_particle(self, particle_name):
+        return self.particle_loader.get_resource_data(particle_name) or self.get_default_particle()
 
     def get_script(self, script_name):
         return self.script_loader.get_resource_data(script_name)

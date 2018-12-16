@@ -398,8 +398,7 @@ class CoreManager(Singleton):
         self.commands[COMMAND.ADD_LIGHT.value] = lambda value: self.scene_manager.add_light()
 
         # create resource
-        self.commands[COMMAND.CREATE_EFFECT.value] = \
-            lambda value: self.resource_manager.effect_loader.create_effect()
+        self.commands[COMMAND.CREATE_PARTICLE.value] = lambda value: self.resource_manager.particle_loader.create_particle()
 
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()
         self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.action_object(value)

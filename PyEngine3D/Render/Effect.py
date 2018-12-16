@@ -460,13 +460,11 @@ class Emitter:
         self.alive_particle_count = 0
         self.gpu_particle_spawn_count = 0
 
-        particle_info = self.particle_info
-
         # pre-allocate particles and spawn at first time.
-        if particle_info.enable_gpu_particle:
+        if self.particle_info.enable_gpu_particle:
             # GPU Particle - create only one particle
-            self.create_gpu_buffer(particle_info.max_particle_count)
-            particle = Particle(self.parent_effect, self, particle_info)
+            self.create_gpu_buffer(self.particle_info.max_particle_count)
+            particle = Particle(self.parent_effect, self, self.particle_info)
             self.particles = [particle, ]
             # spawn only one particle for gpu particle
             self.spawn_particle(1)
@@ -714,31 +712,14 @@ class EffectInfo:
     def __init__(self, name, **effect_info):
         self.name = name
         self.radius = effect_info.get('radius', 1.0)
-
-        self.particle_infos = []
-
-        for particle_info in effect_info.get('particle_infos', []):
-            self.add_particle_info(**particle_info)
-
+        self.particle_infos = effect_info.get('particle_infos', [])
         self.attributes = Attributes()
 
-    def add_particle_info(self, **particle_info):
-        self.particle_infos.append(ParticleInfo(**particle_info))
-        # refresh
-        EffectManager.instance().notify_effect_info_changed(self)
-
-    def delete_particle_info(self, index):
-        if index < len(self.particle_infos):
-            self.particle_infos.pop(index)
-        # refresh
-        EffectManager.instance().notify_effect_info_changed(self)
-
     def get_save_data(self):
-        save_data = dict(radius=self.radius,
-                         particle_infos=[])
+        save_data = dict(radius=self.radius, particle_infos=[])
 
         for particle_info in self.particle_infos:
-            save_data['particle_infos'].append(particle_info.get_save_data())
+            save_data['particle_infos'].append(particle_info.name)
         return save_data
 
     def get_attribute(self):
@@ -746,40 +727,29 @@ class EffectInfo:
         self.attributes.set_attribute('radius', self.radius)
         attributes = []
         for particle_info in self.particle_infos:
-            attributes.append(particle_info.get_attribute())
+            attributes.append(particle_info.name)
         self.attributes.set_attribute('particle_infos', attributes)
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        item_info_history = []
-        while parent_info is not None:
-            item_info_history.insert(0, parent_info)
-            parent_info = parent_info.parent_info
-
-        if 1 < len(item_info_history) and 'particle_infos' == item_info_history[0].attribute_name:
-            particle_index = item_info_history[1].index
-            particle_info = self.particle_infos[particle_index]
-            count = len(item_info_history)
-            if 2 == count:
-                particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
-            else:
-                particle_attribute_name = item_info_history[2].attribute_name
-                if hasattr(particle_info, particle_attribute_name):
-                    particle_attribute = getattr(particle_info, particle_attribute_name)
-                    if type(particle_attribute) in (tuple, list, np.ndarray):
-                        particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
-                    elif isinstance(particle_attribute, RangeVariable):
-                        if 'min_value' == attribute_name:
-                            particle_attribute.set_range(attribute_value, particle_attribute.value[1])
-                        elif 'max_value' == attribute_name:
-                            particle_attribute.set_range(particle_attribute.value[0], attribute_value)
-                    # notify
-                    particle_info.notify_attribute_changed(particle_attribute_name)
-                else:
-                    particle_info.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+        if 'particle_infos' == attribute_name:
+            resource_manager = CoreManager.instance().resource_manager
+            particle_info = resource_manager.get_particle(attribute_value[attribute_index])
+            if particle_info is not None:
+                self.particle_infos[attribute_index] = particle_info
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
-        # refresh
+        EffectManager.instance().notify_effect_info_changed(self)
+
+    def add_particle_info(self):
+        resource_manager = CoreManager.instance().resource_manager
+        particle = resource_manager.get_default_particle()
+        self.particle_infos.append(particle)
+        EffectManager.instance().notify_effect_info_changed(self)
+
+    def delete_particle_info(self, index):
+        if index < len(self.particle_infos):
+            self.particle_infos.pop(index)
         EffectManager.instance().notify_effect_info_changed(self)
 
     def refresh_attribute_info(self):
@@ -797,9 +767,8 @@ class EffectInfo:
 
 
 class ParticleInfo:
-    def __init__(self, **particle_info):
-        self.particle_info = particle_info
-        self.name = particle_info.get('name', 'Particle')
+    def __init__(self, name, **particle_info):
+        self.name = name
         self.blend_mode = BlendMode(particle_info.get('blend_mode', BlendMode.ADDITIVE.value))
         self.enable = particle_info.get('enable', True)
         self.enable_gpu_particle = particle_info.get('enable_gpu_particle', True)
@@ -831,8 +800,7 @@ class ParticleInfo:
         self.life_time = RangeVariable(**particle_info.get('life_time', dict(min_value=1.0)))
         self.transform_position = RangeVariable(**particle_info.get('transform_position', dict(min_value=FLOAT3_ZERO)))
         self.transform_rotation = RangeVariable(**particle_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
-        self.transform_scale = RangeVariable(
-            **particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+        self.transform_scale = RangeVariable(**particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
         self.velocity_rotation = RangeVariable(**particle_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
         self.velocity_scale = RangeVariable(**particle_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
@@ -934,6 +902,11 @@ class ParticleInfo:
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        item_info_history = []
+        while parent_info is not None:
+            item_info_history.insert(0, parent_info)
+            parent_info = parent_info.parent_info
+
         if hasattr(self, attribute_name):
             resource_manager = CoreManager.instance().resource_manager
             if 'mesh' == attribute_name:
@@ -965,6 +938,16 @@ class ParticleInfo:
                 self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:
                 setattr(self, attribute_name, attribute_value)
+        else:
+            if 0 < len(item_info_history):
+                particle_attribute_name = item_info_history[0].attribute_name
+                if hasattr(self, particle_attribute_name):
+                    particle_attribute = getattr(self, particle_attribute_name)
+                    if isinstance(particle_attribute, RangeVariable):
+                        if 'min_value' == attribute_name:
+                            particle_attribute.set_range(attribute_value, particle_attribute.value[1])
+                        elif 'max_value' == attribute_name:
+                            particle_attribute.set_range(particle_attribute.value[0], attribute_value)
 
             self.notify_attribute_changed(attribute_name)
 

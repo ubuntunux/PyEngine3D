@@ -80,7 +80,7 @@ class COMMAND(AutoEnum):
     ADD_LIGHT = ()
 
     # create
-    CREATE_EFFECT = ()
+    CREATE_PARTICLE = ()
 
     # object
     CLEAR_OBJECT_LIST = ()
