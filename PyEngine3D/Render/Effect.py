@@ -103,6 +103,12 @@ class EffectManager(Singleton):
             if effect_info == effect.effect_info:
                 self.play_effect(effect)
 
+    def notify_particle_info_changed(self, particle_info_name):
+        for effect in self.effects:
+            for emitter in effect.emitters:
+                if particle_info_name == emitter.particle_info.name:
+                    self.play_effect(effect)
+
     def render(self):
         prev_blend_mode = None
 
@@ -470,7 +476,7 @@ class Emitter:
             self.spawn_particle(1)
         else:
             # CPU Particle
-            self.particles = [Particle(self.parent_effect, self, particle_info) for i in range(particle_info.max_particle_count)]
+            self.particles = [Particle(self.parent_effect, self, self.particle_info) for i in range(self.particle_info.max_particle_count)]
             # spawn at first time
             self.spawn_particle(self.particle_info.spawn_count)
 
@@ -948,8 +954,8 @@ class ParticleInfo:
                             particle_attribute.set_range(attribute_value, particle_attribute.value[1])
                         elif 'max_value' == attribute_name:
                             particle_attribute.set_range(particle_attribute.value[0], attribute_value)
-
-            self.notify_attribute_changed(attribute_name)
+        self.notify_attribute_changed(attribute_name)
+        EffectManager.instance().notify_particle_info_changed(self.name)
 
     def notify_attribute_changed(self, attribute_name):
         if attribute_name in ('delay', 'life_time', 'spawn_count', 'spawn_term', 'spawn_time'):
