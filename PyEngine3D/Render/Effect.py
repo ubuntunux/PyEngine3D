@@ -145,7 +145,6 @@ class EffectManager(Singleton):
                 self.renderer.uniform_particle_common_buffer.bind_uniform_block(data=uniform_data)
 
                 if particle_info.enable_gpu_particle:
-                    # GPU Particle
                     uniform_data = self.renderer.uniform_particle_infos_data
                     uniform_data['PARTICLE_PARENT_MATRIX'] = effect.transform.matrix
                     uniform_data['PARTICLE_PARENT_SCALE'][...] = effect.transform.scale
@@ -195,7 +194,6 @@ class EffectManager(Singleton):
                     material_instance.use_program()
                     emitter.index_range_buffer.bind_buffer_base(0)
                     emitter.dispatch_indirect_buffer.bind_buffer_base(1)
-
                     glDispatchCompute(1, 1, 1)
                     glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
@@ -545,10 +543,11 @@ class Emitter:
                         self.last_spawned_time = int(self.elapsed_time / self.particle_info.spawn_term) * self.particle_info.spawn_term
                         spawn_count = self.particle_info.spawn_count * spawn_number_of_times
 
-            if self.particle_info.enable_gpu_particle:
-                self.gpu_particle_spawn_count += spawn_count
-            else:
-                self.spawn_particle(spawn_count)
+            if 0 < spawn_count:
+                if self.particle_info.enable_gpu_particle:
+                    self.gpu_particle_spawn_count += spawn_count
+                else:
+                    self.spawn_particle(spawn_count)
 
         if 0 == self.alive_particle_count and not self.is_infinite_emitter() and self.particle_info.spawn_end_time < self.elapsed_time:
             self.destroy()
@@ -595,6 +594,8 @@ class Particle:
             # GPU Particle
             self.delay = self.particle_info.delay.get_max()
             self.life_time = self.particle_info.life_time.get_max()
+            if not self.parent_emitter.is_infinite_emitter():
+                self.life_time += self.particle_info.spawn_end_time
         else:
             # CPU Particle
             self.delay = self.particle_info.delay.get_uniform()
@@ -615,8 +616,7 @@ class Particle:
             self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0, 1.0],
                                      self.parent_effect.transform.inverse_matrix)[:3]
 
-            self.has_velocity_position = \
-                any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
+            self.has_velocity_position = any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
             self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
             self.has_velocity_scale = any([v != 0.0 for v in self.velocity_scale])
 
@@ -841,7 +841,7 @@ class ParticleInfo:
             self.max_particle_count = self.spawn_count
         else:
             total_time = self.delay.get_max() + self.life_time.get_max()
-            self.max_particle_count = self.spawn_count * math.ceil(total_time / self.spawn_term)
+            self.max_particle_count = self.spawn_count * math.ceil(float(total_time) / float(self.spawn_term)) + self.spawn_count
 
         self.parent_matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
         self.matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
