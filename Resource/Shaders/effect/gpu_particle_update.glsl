@@ -194,7 +194,7 @@ void update(inout ParticleData particle_data, uint id)
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
             particle_data.transform_rotation += particle_data.velocity_rotation * DELTA_TIME;
             particle_data.transform_scale += particle_data.velocity_scale * DELTA_TIME;
-            particle_data.relative_position = (vec4(particle_data.transform_position, 1.0) * particle_datas[id].parent_matrix).xyz - CAMERA_POSITION.xyz;
+            particle_data.relative_position = (particle_datas[id].parent_matrix * vec4(particle_data.transform_position, 1.0)).xyz - CAMERA_POSITION.xyz;
 
             // update matrix
             update_local_matrix(particle_data);

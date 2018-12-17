@@ -189,6 +189,9 @@ class EffectManager(Singleton):
                         glDispatchCompute(dispatch_count, 1, 1)
                         glMemoryBarrier(GL_ALL_BARRIER_BITS)
 
+                        # reset spawn count
+                        emitter.gpu_particle_spawn_count = 0
+
                     # set dispatch indirect
                     material_instance = self.material_gpu_particle_dispatch_indircet
                     material_instance.use_program()
@@ -472,6 +475,7 @@ class Emitter:
             self.particles = [particle, ]
             # spawn only one particle for gpu particle
             self.spawn_particle(1)
+            self.gpu_particle_spawn_count = self.particle_info.spawn_count
         else:
             # CPU Particle
             self.particles = [Particle(self.parent_effect, self, self.particle_info) for i in range(self.particle_info.max_particle_count)]
@@ -519,8 +523,6 @@ class Emitter:
             index += 1
 
         # spawn particles
-        self.gpu_particle_spawn_count = 0
-
         if self.is_infinite_emitter() or self.elapsed_time < self.particle_info.spawn_end_time:
             spawn_count = 0
 
