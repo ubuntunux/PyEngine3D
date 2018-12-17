@@ -3,13 +3,6 @@
 
 uniform sampler2D texture_diffuse;
 
-uniform bool billboard;
-uniform vec3 color;
-uniform int blend_mode;
-uniform mat4 particle_matrix;
-uniform float sequence_width;
-uniform float sequence_height;
-
 
 struct VERTEX_OUTPUT
 {

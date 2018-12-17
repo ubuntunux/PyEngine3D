@@ -459,6 +459,9 @@ class Emitter:
         return self.particle_info.spawn_end_time < 0.0
 
     def play(self):
+        if not self.particle_info.enable:
+            return
+
         self.destroy()
 
         self.alive = True
@@ -499,7 +502,7 @@ class Emitter:
         self.particles = []
 
     def update(self, dt):
-        if not self.alive:
+        if not self.alive or not self.particle_info.enable:
             return 0
 
         self.elapsed_time += dt
