@@ -272,11 +272,15 @@ class SceneManager(Singleton):
         self.regist_object(light_probe)
         return light_probe
 
+    def add_effect_here(self, **effect_data):
+        effect_data['pos'] = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
+        self.add_effect(**effect_data)
+
     def add_effect(self, **effect_data):
         name = self.generate_object_name(effect_data.get('name', 'effect'))
+        logger.info("add Particle : %s" % name)
         effect_data['name'] = name
         effect_data['effect_info'] = self.resource_manager.get_effect(effect_data.get('effect_info', ''))
-        logger.info("add Particle : %s" % name)
         effect = Effect(**effect_data)
         self.regist_object(effect)
         return effect

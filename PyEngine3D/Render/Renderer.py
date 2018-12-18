@@ -214,8 +214,6 @@ class Renderer(Singleton):
             ('dummy_0', np.float32),
             ('PARTICLE_VECTOR_FIELD_MATRIX', np.float32, (4, 4)),
             ('PARTICLE_VECTOR_FIELD_INV_MATRIX', np.float32, (4, 4)),
-            ('PARTICLE_PARENT_SCALE', np.float32, 3),
-            ('dummy_1', np.float32),
         ])
         self.uniform_particle_infos_buffer = UniformBlock("particle_infos", program, 6, self.uniform_particle_infos_data)
 
@@ -332,7 +330,7 @@ class Renderer(Singleton):
         uniform_data['VIEW'][...] = camera.view
         uniform_data['INV_VIEW'][...] = camera.inv_view
         uniform_data['VIEW_ORIGIN'][...] = camera.view_origin
-        uniform_data['INV_VIEW_ORIGIN'][...] = np.transpose(camera.view_origin)
+        uniform_data['INV_VIEW_ORIGIN'][...] = camera.inv_view_origin
         uniform_data['PROJECTION'][...] = camera.projection_jitter
         uniform_data['INV_PROJECTION'][...] = camera.inv_projection_jitter
         uniform_data['CAMERA_POSITION'][...] = camera.transform.get_pos()

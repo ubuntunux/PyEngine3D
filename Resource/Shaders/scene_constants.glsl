@@ -99,8 +99,6 @@ layout(std140, binding=6) uniform particle_infos
     float PARTICLE_DUMMY_0;
     mat4 PARTICLE_VECTOR_FIELD_MATRIX;
     mat4 PARTICLE_VECTOR_FIELD_INV_MATRIX;
-    vec3 PARTICLE_PARENT_SCALE;
-    float PARTICLE_DUMMY_1;
 };
 
 

@@ -40,6 +40,7 @@ class Camera(StaticActor):
         self.view = Matrix4()
         self.inv_view = Matrix4()
         self.view_origin = Matrix4()
+        self.inv_view_origin = Matrix4()
         self.view_projection = Matrix4()
         self.view_projection_jitter = Matrix4()
         self.view_origin_projection = Matrix4()
@@ -48,6 +49,7 @@ class Camera(StaticActor):
         self.prev_view = Matrix4()
         self.inv_prev_view = Matrix4()
         self.prev_view_origin = Matrix4()
+        self.inv_prev_view_origin = Matrix4()
         self.prev_view_projection = Matrix4()
         self.prev_view_projection_jitter = Matrix4()
         self.prev_view_origin_projection = Matrix4()
@@ -130,11 +132,13 @@ class Camera(StaticActor):
             self.prev_view = self.transform.prev_inverse_matrix
             self.inv_prev_view = self.transform.prev_matrix
             self.prev_view_origin[...] = self.view_origin
+            self.inv_prev_view_origin[...] = self.inv_view_origin
 
             self.view = self.transform.inverse_matrix
             self.inv_view = self.transform.matrix
             self.view_origin[...] = self.view
             self.view_origin[3, 0:3] = [0.0, 0.0, 0.0]
+            self.inv_view_origin[...] = np.transpose(self.view_origin)
 
         self.prev_view_projection[...] = self.view_projection
         self.prev_view_projection_jitter[...] = self.view_projection_jitter

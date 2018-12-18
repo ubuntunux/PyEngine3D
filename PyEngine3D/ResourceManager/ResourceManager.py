@@ -1329,7 +1329,7 @@ class EffectLoader(ResourceLoader):
         return False
 
     def action_resource(self, resource_name):
-        self.scene_manager.add_effect(name=resource_name, effect_info=resource_name)
+        self.scene_manager.add_effect_here(name=resource_name, effect_info=resource_name)
 
 
 # -----------------------#

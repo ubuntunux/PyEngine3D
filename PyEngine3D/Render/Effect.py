@@ -58,7 +58,6 @@ class EffectManager(Singleton):
         self.particle_instance_buffer = InstanceBuffer(name="instance_buffer",
                                                        location_offset=5,
                                                        element_datas=[MATRIX4_IDENTITY,
-                                                                      MATRIX4_IDENTITY,
                                                                       FLOAT4_ZERO,
                                                                       FLOAT4_ZERO])
 
@@ -111,6 +110,8 @@ class EffectManager(Singleton):
 
     def render(self):
         prev_blend_mode = None
+        main_camera = CoreManager.instance().scene_manager.main_camera
+        cameara_position = main_camera.transform.get_pos()
 
         for effect in self.render_effects:
             for emitter in effect.emitters:
@@ -147,7 +148,6 @@ class EffectManager(Singleton):
                 if particle_info.enable_gpu_particle:
                     uniform_data = self.renderer.uniform_particle_infos_data
                     uniform_data['PARTICLE_PARENT_MATRIX'] = effect.transform.matrix
-                    uniform_data['PARTICLE_PARENT_SCALE'][...] = effect.transform.scale
                     uniform_data['PARTICLE_DELAY'] = particle_info.delay.value
                     uniform_data['PARTICLE_LIFE_TIME'] = particle_info.life_time.value
                     uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
@@ -242,8 +242,22 @@ class EffectManager(Singleton):
                     draw_count = 0
                     for particle in emitter.particles:
                         if particle.is_renderable():
-                            particle_info.parent_matrix_data[draw_count][...] = particle.parent_matrix
-                            particle_info.matrix_data[draw_count][...] = particle.transform.matrix
+                            if AlignMode.BILLBOARD == particle_info.align_mode:
+                                particle_info.world_matrix_data[draw_count][...] = np.dot(particle.transform.matrix, main_camera.inv_view_origin)
+                                particle_info.world_matrix_data[draw_count][3][...] = np.dot(particle.transform.matrix, particle.parent_matrix)[3]
+                            elif AlignMode.VELOCITY_ALIGN == particle_info.align_mode:
+                                world_velocity = np.dot(particle.velocity_position, particle.parent_matrix[0:3, 0:3])
+                                velocity_length = magnitude(world_velocity)
+                                if 0.0 < velocity_length:
+                                    direction = normalize(particle.parent_matrix[3][0:3] - cameara_position)
+                                    world_velocity /= velocity_length
+                                    world_matrix = particle_info.world_matrix_data[draw_count]
+                                    world_matrix[0][0:3] = np.cross(world_velocity, direction)
+                                    world_matrix[1][0:3] = world_velocity * (1.0 + velocity_length * particle_info.velocity_stretch * 0.1)
+                                    world_matrix[2][0:3] = np.cross(world_matrix[0][0:3], world_velocity)
+                                    world_matrix[3][...] = np.dot(particle.transform.matrix, particle.parent_matrix)[3]
+                            else:
+                                particle_info.world_matrix_data[draw_count][...] = np.dot(particle.transform.matrix, particle.parent_matrix)
                             particle_info.uvs_data[draw_count][0:2] = particle.sequence_uv
                             particle_info.uvs_data[draw_count][2:4] = particle.next_sequence_uv
                             particle_info.sequence_opacity_data[draw_count][0] = particle.sequence_ratio
@@ -253,8 +267,7 @@ class EffectManager(Singleton):
                     if 0 < draw_count:
                         geometry.draw_elements_instanced(draw_count,
                                                          self.particle_instance_buffer,
-                                                         [particle_info.parent_matrix_data,
-                                                          particle_info.matrix_data,
+                                                         [particle_info.world_matrix_data,
                                                           particle_info.uvs_data,
                                                           particle_info.sequence_opacity_data])
 
@@ -831,12 +844,12 @@ class ParticleInfo:
         self.vector_field_transform = TransformObject()
         self.update_vector_field_matrix()
 
-        self.parent_matrix_data = None
-        self.matrix_data = None
+        self.attributes = Attributes()
+
+        # instance buffer data
+        self.world_matrix_data = None
         self.uvs_data = None
         self.sequence_opacity_data = None
-
-        self.attributes = Attributes()
 
         self.refresh_spawn_count()
 
@@ -848,8 +861,8 @@ class ParticleInfo:
             total_time = self.delay.get_max() + self.life_time.get_max()
             self.max_particle_count = self.spawn_count * math.ceil(float(total_time) / float(self.spawn_term)) + self.spawn_count
 
-        self.parent_matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
-        self.matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
+        # instance buffer data
+        self.world_matrix_data = np.zeros(self.max_particle_count, dtype=(np.float32, (4, 4)))
         self.uvs_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
         self.sequence_opacity_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
 
