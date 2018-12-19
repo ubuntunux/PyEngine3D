@@ -10,7 +10,7 @@ def always_pass(*args):
 def cone_sphere_culling_actor(camera, actor):
     to_actor = actor.transform.pos - camera.transform.pos
 
-    dist = magnitude(to_actor)
+    dist = length(to_actor)
     if 0.0 < dist:
         to_actor /= dist
 

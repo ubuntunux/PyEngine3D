@@ -1337,7 +1337,7 @@ class EffectLoader(ResourceLoader):
 # -----------------------#
 class ParticleLoader(ResourceLoader):
     name = "ParticleLoader"
-    resource_dir_name = 'Particles'
+    resource_dir_name = 'Effects'
     resource_type_name = 'Particle'
     fileExt = '.particle'
     USE_FILE_COMPRESS_TO_SAVE = False

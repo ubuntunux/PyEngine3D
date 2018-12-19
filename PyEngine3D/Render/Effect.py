@@ -150,16 +150,18 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_PARENT_MATRIX'] = effect.transform.matrix
                     uniform_data['PARTICLE_DELAY'] = particle_info.delay.value
                     uniform_data['PARTICLE_LIFE_TIME'] = particle_info.life_time.value
-                    uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
-                    uniform_data['PARTICLE_FORCE_GRAVITY'] = particle_info.force_gravity
-                    uniform_data['PARTICLE_TRANSFORM_POSITION_MAX'] = particle_info.transform_position.value[1]
+                    uniform_data['PARTICLE_MAX_COUNT'] = emitter.gpu_particle_max_count
+                    uniform_data['PARTICLE_SPAWN_COUNT'] = emitter.gpu_particle_spawn_count
                     uniform_data['PARTICLE_FADE_IN'] = particle_info.fade_in
-                    uniform_data['PARTICLE_TRANSFORM_ROTATION_MIN'] = particle_info.transform_rotation.value[0]
                     uniform_data['PARTICLE_FADE_OUT'] = particle_info.fade_out
-                    uniform_data['PARTICLE_TRANSFORM_ROTATION_MAX'] = particle_info.transform_rotation.value[1]
                     uniform_data['PARTICLE_OPACITY'] = particle_info.opacity
-                    uniform_data['PARTICLE_TRANSFORM_SCALE_MIN'] = particle_info.transform_scale.value[0]
                     uniform_data['PARTICLE_PLAY_SPEED'] = particle_info.play_speed
+                    uniform_data['PARTICLE_FORCE_GRAVITY'] = particle_info.force_gravity
+                    uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
+                    uniform_data['PARTICLE_TRANSFORM_POSITION_MAX'] = particle_info.transform_position.value[1]
+                    uniform_data['PARTICLE_TRANSFORM_ROTATION_MIN'] = particle_info.transform_rotation.value[0]
+                    uniform_data['PARTICLE_TRANSFORM_ROTATION_MAX'] = particle_info.transform_rotation.value[1]
+                    uniform_data['PARTICLE_TRANSFORM_SCALE_MIN'] = particle_info.transform_scale.value[0]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MAX'] = particle_info.transform_scale.value[1]
                     uniform_data['PARTICLE_VELOCITY_POSITION_MIN'] = particle_info.velocity_position.value[0]
                     uniform_data['PARTICLE_VELOCITY_POSITION_MAX'] = particle_info.velocity_position.value[1]
@@ -173,8 +175,6 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_VECTOR_FIELD_TIGHTNESS'] = particle_info.vector_field_tightness
                     uniform_data['PARTICLE_VECTOR_FIELD_MATRIX'] = particle_info.vector_field_transform.matrix
                     uniform_data['PARTICLE_VECTOR_FIELD_INV_MATRIX'] = particle_info.vector_field_transform.inverse_matrix
-                    uniform_data['PARTICLE_MAX_COUNT'] = emitter.gpu_particle_max_count
-                    uniform_data['PARTICLE_SPAWN_COUNT'] = emitter.gpu_particle_spawn_count
 
                     self.renderer.uniform_particle_infos_buffer.bind_uniform_block(data=uniform_data)
 
@@ -247,7 +247,7 @@ class EffectManager(Singleton):
                                 particle_info.world_matrix_data[draw_count][3][...] = np.dot(particle.transform.matrix, particle.parent_matrix)[3]
                             elif AlignMode.VELOCITY_ALIGN == particle_info.align_mode:
                                 world_velocity = np.dot(particle.velocity_position, particle.parent_matrix[0:3, 0:3])
-                                velocity_length = magnitude(world_velocity)
+                                velocity_length = length(world_velocity)
                                 if 0.0 < velocity_length:
                                     direction = normalize(particle.parent_matrix[3][0:3] - cameara_position)
                                     world_velocity /= velocity_length
@@ -271,7 +271,8 @@ class EffectManager(Singleton):
                                                           particle_info.uvs_data,
                                                           particle_info.sequence_opacity_data])
 
-    def view_frustum_culling_effect(self, camera, effect):
+    @staticmethod
+    def view_frustum_culling_effect(camera, effect):
         to_effect = effect.transform.pos - camera.transform.pos
         radius = effect.effect_info.radius * max(effect.transform.scale)
         for i in range(4):
@@ -491,12 +492,12 @@ class Emitter:
             self.particles = [particle, ]
             # spawn only one particle for gpu particle
             self.spawn_particle(1)
-            self.gpu_particle_spawn_count = self.particle_info.spawn_count
+            # self.gpu_particle_spawn_count = self.particle_info.spawn_count
         else:
             # CPU Particle
             self.particles = [Particle(self.parent_effect, self, self.particle_info) for i in range(self.particle_info.max_particle_count)]
             # spawn at first time
-            self.spawn_particle(self.particle_info.spawn_count)
+            # self.spawn_particle(self.particle_info.spawn_count)
 
     def spawn_particle(self, spawn_count):
         spawn_count = min(spawn_count, self.particle_info.max_particle_count - self.alive_particle_count)
@@ -631,8 +632,7 @@ class Particle:
             self.parent_matrix[...] = self.parent_effect.transform.matrix
 
             # We will apply inverse_matrix here because we will apply parent_matrix later.
-            self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0, 1.0],
-                                     self.parent_effect.transform.inverse_matrix)[:3]
+            self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0], self.parent_effect.transform.inverse_matrix[0:3, 0:3])
 
             self.has_velocity_position = any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
             self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
@@ -710,6 +710,15 @@ class Particle:
             self.velocity_position += self.force * dt
 
         if self.has_velocity_position:
+            if any(self.velocity_position != 0.0) and 0.0 != self.particle_info.velocity_acceleration:
+                velocity_length = length(self.velocity_position)
+                self.velocity_position /= velocity_length
+                velocity_length += self.particle_info.velocity_acceleration * dt
+                if 0.0 < self.particle_info.velocity_limit_max:
+                    velocity_length = min(velocity_length, self.particle_info.velocity_limit_max)
+                velocity_length = max(velocity_length, self.particle_info.velocity_limit_min)
+                self.velocity_position *= velocity_length
+
             self.transform.move(self.velocity_position * dt)
 
         if self.has_velocity_rotation:
@@ -825,6 +834,9 @@ class ParticleInfo:
         self.transform_position = RangeVariable(**particle_info.get('transform_position', dict(min_value=FLOAT3_ZERO)))
         self.transform_rotation = RangeVariable(**particle_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
         self.transform_scale = RangeVariable(**particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+        self.velocity_acceleration = particle_info.get('velocity_acceleration', 0.0)
+        self.velocity_limit_min = particle_info.get('velocity_limit_min', 0.0)
+        self.velocity_limit_max = particle_info.get('velocity_limit_max', 0.0)
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
         self.velocity_rotation = RangeVariable(**particle_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
         self.velocity_scale = RangeVariable(**particle_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
@@ -849,6 +861,7 @@ class ParticleInfo:
         # instance buffer data
         self.world_matrix_data = None
         self.uvs_data = None
+        self.sequence_opacity_data = None
         self.sequence_opacity_data = None
 
         self.refresh_spawn_count()
@@ -896,6 +909,9 @@ class ParticleInfo:
             transform_position=self.transform_position.get_save_data(),
             transform_rotation=self.transform_rotation.get_save_data(),
             transform_scale=self.transform_scale.get_save_data(),
+            velocity_acceleration=self.velocity_acceleration,
+            velocity_limit_min=self.velocity_limit_min,
+            velocity_limit_max=self.velocity_limit_max,
             velocity_position=self.velocity_position.get_save_data(),
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),

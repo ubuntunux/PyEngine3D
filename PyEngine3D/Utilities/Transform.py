@@ -65,12 +65,12 @@ def transform(m, v):
     return np.asarray(m * np.asmatrix(v).T)[:, 0]
 
 
-def magnitude(v):
+def length(v):
     return math.sqrt(np.sum(v * v))
 
 
 def normalize(v):
-    m = magnitude(v)
+    m = length(v)
     if m == 0:
         return v
     return v / m

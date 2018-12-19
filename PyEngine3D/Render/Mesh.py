@@ -18,7 +18,7 @@ def calc_bounding(positions):
     for position in positions:
         boundMin = np.minimum(boundMin, position)
         boundMax = np.maximum(boundMax, position)
-    radius = magnitude(np.maximum(abs(boundMax), abs(boundMin)))
+    radius = length(np.maximum(abs(boundMax), abs(boundMin)))
     return boundMin, boundMax, radius
 
 
