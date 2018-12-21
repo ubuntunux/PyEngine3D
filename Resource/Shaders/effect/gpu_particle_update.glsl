@@ -167,6 +167,20 @@ void update(inout ParticleData particle_data, uint id)
             // update sequence
             update_sequence(particle_data, life_ratio);
 
+            // velocity acceleration
+            if(0.0 != PARTICLE_VELOCITY_ACCELERATION && any(particle_data.velocity_position != 0.0))
+            {
+                float velocity_length = length(particle_data.velocity_position);
+                particle_data.velocity_position /= velocity_length;
+                velocity_length += PARTICLE_VELOCITY_ACCELERATION * DELTA_TIME;
+                if(0.0 < PARTICLE_VELOCITY_LIMIT.y)
+                {
+                    velocity_length = min(velocity_length, PARTICLE_VELOCITY_LIMIT.y);
+                }
+                velocity_length = max(velocity_length, PARTICLE_VELOCITY_LIMIT.x);
+                particle_data.velocity_position *= velocity_length;
+            }
+
             vec3 force = particle_data.force;
 
             if(PARTICLE_ENABLE_VECTOR_FIELD)

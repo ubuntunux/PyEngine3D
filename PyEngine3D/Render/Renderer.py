@@ -211,9 +211,11 @@ class Renderer(Singleton):
             ('PARTICLE_VELOCITY_SCALE_MIN', np.float32, 3),
             ('PARTICLE_VELOCITY_STRETCH', np.float32),
             ('PARTICLE_VELOCITY_SCALE_MAX', np.float32, 3),
-            ('dummy_0', np.float32),
+            ('PARTICLE_VELOCITY_ACCELERATION', np.float32),
             ('PARTICLE_VECTOR_FIELD_MATRIX', np.float32, (4, 4)),
             ('PARTICLE_VECTOR_FIELD_INV_MATRIX', np.float32, (4, 4)),
+            ('PARTICLE_VELOCITY_LIMIT', np.float32, 2),
+            ('PARTICLE_DUMMY0', np.float32, 2),
         ])
         self.uniform_particle_infos_buffer = UniformBlock("particle_infos", program, 6, self.uniform_particle_infos_data)
 

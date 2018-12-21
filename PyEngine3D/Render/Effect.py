@@ -163,6 +163,8 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_TRANSFORM_ROTATION_MAX'] = particle_info.transform_rotation.value[1]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MIN'] = particle_info.transform_scale.value[0]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MAX'] = particle_info.transform_scale.value[1]
+                    uniform_data['PARTICLE_VELOCITY_ACCELERATION'] = particle_info.velocity_acceleration
+                    uniform_data['PARTICLE_VELOCITY_LIMIT'] = particle_info.velocity_limit.value
                     uniform_data['PARTICLE_VELOCITY_POSITION_MIN'] = particle_info.velocity_position.value[0]
                     uniform_data['PARTICLE_VELOCITY_POSITION_MAX'] = particle_info.velocity_position.value[1]
                     uniform_data['PARTICLE_VELOCITY_ROTATION_MIN'] = particle_info.velocity_rotation.value[0]
@@ -714,9 +716,9 @@ class Particle:
                 velocity_length = length(self.velocity_position)
                 self.velocity_position /= velocity_length
                 velocity_length += self.particle_info.velocity_acceleration * dt
-                if 0.0 < self.particle_info.velocity_limit_max:
-                    velocity_length = min(velocity_length, self.particle_info.velocity_limit_max)
-                velocity_length = max(velocity_length, self.particle_info.velocity_limit_min)
+                if 0.0 < self.particle_info.velocity_limit.value[1]:
+                    velocity_length = min(velocity_length, self.particle_info.velocity_limit.value[1])
+                velocity_length = max(velocity_length, self.particle_info.velocity_limit.value[0])
                 self.velocity_position *= velocity_length
 
             self.transform.move(self.velocity_position * dt)
@@ -835,8 +837,7 @@ class ParticleInfo:
         self.transform_rotation = RangeVariable(**particle_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
         self.transform_scale = RangeVariable(**particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
         self.velocity_acceleration = particle_info.get('velocity_acceleration', 0.0)
-        self.velocity_limit_min = particle_info.get('velocity_limit_min', 0.0)
-        self.velocity_limit_max = particle_info.get('velocity_limit_max', 0.0)
+        self.velocity_limit = RangeVariable(**particle_info.get('velocity_limit', dict(min_value=0.0)))
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
         self.velocity_rotation = RangeVariable(**particle_info.get('velocity_rotation', dict(min_value=FLOAT3_ZERO)))
         self.velocity_scale = RangeVariable(**particle_info.get('velocity_scale', dict(min_value=FLOAT3_ZERO)))
@@ -910,8 +911,7 @@ class ParticleInfo:
             transform_rotation=self.transform_rotation.get_save_data(),
             transform_scale=self.transform_scale.get_save_data(),
             velocity_acceleration=self.velocity_acceleration,
-            velocity_limit_min=self.velocity_limit_min,
-            velocity_limit_max=self.velocity_limit_max,
+            velocity_limit=self.velocity_limit.get_save_data(),
             velocity_position=self.velocity_position.get_save_data(),
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),
