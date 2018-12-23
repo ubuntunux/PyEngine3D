@@ -494,12 +494,13 @@ class Emitter:
             self.particles = [particle, ]
             # spawn only one particle for gpu particle
             self.spawn_particle(1)
-            self.gpu_particle_spawn_count = self.particle_info.spawn_count
+            # spawn at first time
+            # self.gpu_particle_spawn_count = self.particle_info.spawn_count
         else:
             # CPU Particle
             self.particles = [Particle(self.parent_effect, self, self.particle_info) for i in range(self.particle_info.max_particle_count)]
             # spawn at first time
-            self.spawn_particle(self.particle_info.spawn_count)
+            # self.spawn_particle(self.particle_info.spawn_count)
 
     def spawn_particle(self, spawn_count):
         spawn_count = min(spawn_count, self.particle_info.max_particle_count - self.alive_particle_count)
