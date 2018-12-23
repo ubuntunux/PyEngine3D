@@ -64,10 +64,6 @@ void main()
     vec2 uv_dir_delta = uv_dir * delta_uv_length;
     vec2 sample_uv = uv;
 
-    if(light_shaft_length < uv_dist)
-    {
-        sample_uv += uv_dir * (uv_dist - light_shaft_length);
-    }
 
     float ratio = 0.0;
 
