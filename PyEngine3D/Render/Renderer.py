@@ -652,14 +652,13 @@ class Renderer(Singleton):
             last_actor_material_instance = actor_material_instance
 
     def render_selected_object(self):
-        self.set_blend_state(False)
-        self.framebuffer_manager.bind_framebuffer(RenderTargets.TEMP_RGBA8)
-        glClearColor(0.0, 0.0, 0.0, 0.0)
-        glClear(GL_COLOR_BUFFER_BIT)
-
-        # render mask
         selected_object = self.scene_manager.get_selected_object()
         if selected_object is not None:
+            self.set_blend_state(False)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.TEMP_RGBA8)
+            glClearColor(0.0, 0.0, 0.0, 0.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+
             object_type = type(selected_object)
             if SkeletonActor == object_type:
                 self.render_actors(RenderGroup.SKELETON_ACTOR,

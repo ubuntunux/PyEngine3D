@@ -138,7 +138,7 @@ class StaticActor:
     def get_material_instance(self, index):
         return self.model.material_instances[index] if self.model else None
 
-    def setSelected(self, selected):
+    def set_selected(self, selected):
         self.selected = selected
 
     def update(self, dt):

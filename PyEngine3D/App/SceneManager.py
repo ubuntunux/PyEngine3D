@@ -230,6 +230,10 @@ class SceneManager(Singleton):
             self.objectMap.pop(obj.name)
             self.core_manager.notify_delete_object(obj.name)
 
+            if self.selected_object is obj:
+                obj.set_selected(False)
+                self.selected_object = None
+
             if hasattr(obj, 'delete'):
                 obj.delete()
         else:
@@ -381,7 +385,7 @@ class SceneManager(Singleton):
                 self.selected_object.setSelected(False)
             self.selected_object = selected_object
             if selected_object and hasattr(selected_object, "setSelected"):
-                selected_object.setSelected(True)
+                selected_object.set_selected(True)
 
     def set_object_focus(self, object_name):
         obj = self.get_object(object_name)
