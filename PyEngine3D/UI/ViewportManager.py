@@ -37,7 +37,7 @@ class ViewportManager(Singleton):
         width, height = self.core_manager.get_window_size()
 
         self.root = Widget(name="root", width=width, height=height)
-        self.main_viewport = Widget(name="Main viewport", dragable=True, size_hint_x=1.0,  size_hint_y=1.0)
+        self.main_viewport = Widget(name="Main viewport", dragable=False, size_hint_x=1.0,  size_hint_y=1.0)
         self.root.add_widget(self.main_viewport)
 
         # Set static members
@@ -46,25 +46,26 @@ class ViewportManager(Singleton):
         Widget.root = self.root
 
     def build_ui(self):
-        side_viewport = Button(name="Side viewport", dragable=True, padding_x=10, padding_y=20, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1])
-        btn = Button(name="Side viewport", text="side_viewport", size_hint_x=1.0, size_hint_y=1.0, color=[1.0, 1.0, 0.0, 0.1])
-        btn.set_text("Count", font_size=16)
-
-        text = Label(name="Text", pos_hint_x=1.0, x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
-        text.set_text("Count dwqdwqd", font_size=16)
-        side_viewport.add_widget(text)
-        side_viewport.add_widget(btn)
-
-        layout = BoxLayout(name="BoxLayout", dragable=True, padding_x=80.0, padding_y=40.0, spacing=10, x=0, size_hint_x=1.0, size_hint_y=0.3, color=[1.0, 1.0, 1.0, 0.2], orientation=Orientation.HORIZONTAL)
-        btn1 = Button(name="btn1", text="btn1", font_size=16, dragable=True, x=100, width=150, size_hint_y=1.0, color=[1.0, 1.0, 0.0, 0.1])
-        btn2 = TextEdit(name="btn2", text="TextEdit", touchable=True, font_size=20, x=200, width=50, size_hint_y=1.0, color=[0.0, 0.0, 1.0, 0.1])
-        layout.add_widget(btn1)
-        layout.add_widget(btn2)
-        self.main_viewport.add_widget(layout)
-        btn1.size_hint_x = 10.0
-        btn2.size_hint_x = 10.0
-
-        self.main_viewport.add_widget(side_viewport)
+        pass
+        # side_viewport = Button(name="Side viewport", dragable=True, padding_x=10, padding_y=20, size_hint_x=0.5, size_hint_y=0.5, color=[1.0, 1.0, 1.0, 0.1])
+        # btn = Button(name="Side viewport", text="side_viewport", size_hint_x=1.0, size_hint_y=1.0, color=[1.0, 1.0, 0.0, 0.1])
+        # btn.set_text("Count", font_size=16)
+        #
+        # text = Label(name="Text", pos_hint_x=1.0, x=100, y=100, width=200, height=200, color=[1.0, 1.0, 1.0, 0.1])
+        # text.set_text("Count dwqdwqd", font_size=16)
+        # side_viewport.add_widget(text)
+        # side_viewport.add_widget(btn)
+        #
+        # layout = BoxLayout(name="BoxLayout", dragable=True, padding_x=80.0, padding_y=40.0, spacing=10, x=0, size_hint_x=1.0, size_hint_y=0.3, color=[1.0, 1.0, 1.0, 0.2], orientation=Orientation.HORIZONTAL)
+        # btn1 = Button(name="btn1", text="btn1", font_size=16, dragable=True, x=100, width=150, size_hint_y=1.0, color=[1.0, 1.0, 0.0, 0.1])
+        # btn2 = TextEdit(name="btn2", text="TextEdit", touchable=True, font_size=20, x=200, width=50, size_hint_y=1.0, color=[0.0, 0.0, 1.0, 0.1])
+        # layout.add_widget(btn1)
+        # layout.add_widget(btn2)
+        # self.main_viewport.add_widget(layout)
+        # btn1.size_hint_x = 10.0
+        # btn2.size_hint_x = 10.0
+        #
+        # self.main_viewport.add_widget(side_viewport)
 
     def resize_viewport(self, width, height):
         self.root.width = width
