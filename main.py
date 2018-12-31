@@ -35,8 +35,11 @@ import os
 import time
 from multiprocessing import Process
 
-# import OpenGL
-# OpenGL.FULL_LOGGING = True
+import OpenGL
+OpenGL.ERROR_CHECKING = True
+OpenGL.ERROR_LOGGING = True
+OpenGL.FULL_LOGGING = False
+OpenGL.ALLOW_NUMPY_SCALARS = True
 
 from PyEngine3D.Common import CustomQueue, CustomPipe
 from PyEngine3D.App import CoreManager
