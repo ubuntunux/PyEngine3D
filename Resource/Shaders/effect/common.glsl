@@ -7,6 +7,11 @@ const int ALIGN_MODE_NONE = 0;
 const int ALIGN_MODE_BILLBOARD = 1;
 const int ALIGN_MODE_VELOCITY_ALIGN = 2;
 
+const uint SPAWN_VOLUME_BOX = 0;
+const uint SPAWN_VOLUME_SPHERE = 1;
+const uint SPAWN_VOLUME_CONE = 2;
+const uint SPAWN_VOLUME_CYLINDER = 3;
+
 
 struct ParticleData
 {

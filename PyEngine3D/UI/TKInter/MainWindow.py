@@ -590,7 +590,14 @@ class MainWindow:
                         child = self.attribute_treeview.item(child_id)
                         child_info = self.attribute_treeview.item_infos.get(child_id)
                         # evaluate value
-                        values.append(child_info.dataType(get_value(child)))
+                        value = get_value(child)
+                        if 'True' == value:
+                            value = True
+                        elif 'False' == value:
+                            value = False
+                        else:
+                            value = child_info.dataType(value)
+                        values.append(value)
                     if parent_info.dataType == numpy.ndarray:
                         # numpy array
                         value = numpy.array(values)
@@ -600,7 +607,7 @@ class MainWindow:
                 else:
                     attribute_name = get_name(item)
                     dataType = item_info.dataType
-                    if bool == dataType:
+                    if bool == dataType or numpy.bool == dataType:
                         # evaluate boolean
                         value = dataType(get_value(item) == "True")
                     elif type(dataType) == type(Enum):
@@ -643,7 +650,7 @@ class MainWindow:
     def select_attribute(self, event):
         for item_id in self.attribute_treeview.selection():
             item_info = self.attribute_treeview.item_infos[item_id]
-            if bool == item_info.dataType:
+            if bool == item_info.dataType or numpy.bool == item_info.dataType:
                 self.attribute_treeview.inplace_checkbutton('#1', item_id)
             elif type(item_info.dataType) == type(Enum):
                 dataType = item_info.dataType

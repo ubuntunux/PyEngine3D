@@ -20,11 +20,10 @@ from . import Model, BlendMode
 
 
 class SpawnVolume(Enum):
-    POINT = 0
-    BOX = 1
-    SPHERE = 2
-    CONE = 3
-    CYLINDER = 4
+    BOX = 0
+    SPHERE = 1
+    CONE = 2
+    CYLINDER = 3
 
 
 class AlignMode(Enum):
@@ -157,8 +156,6 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_OPACITY'] = particle_info.opacity
                     uniform_data['PARTICLE_PLAY_SPEED'] = particle_info.play_speed
                     uniform_data['PARTICLE_FORCE_GRAVITY'] = particle_info.force_gravity
-                    uniform_data['PARTICLE_TRANSFORM_POSITION_MIN'] = particle_info.transform_position.value[0]
-                    uniform_data['PARTICLE_TRANSFORM_POSITION_MAX'] = particle_info.transform_position.value[1]
                     uniform_data['PARTICLE_TRANSFORM_ROTATION_MIN'] = particle_info.transform_rotation.value[0]
                     uniform_data['PARTICLE_TRANSFORM_ROTATION_MAX'] = particle_info.transform_rotation.value[1]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MIN'] = particle_info.transform_scale.value[0]
@@ -177,6 +174,14 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_VECTOR_FIELD_TIGHTNESS'] = particle_info.vector_field_tightness
                     uniform_data['PARTICLE_VECTOR_FIELD_MATRIX'] = particle_info.vector_field_transform.matrix
                     uniform_data['PARTICLE_VECTOR_FIELD_INV_MATRIX'] = particle_info.vector_field_transform.inverse_matrix
+                    uniform_data['PARTICLE_SPAWN_VOLUME_INFO'] = particle_info.spawn_volume_info
+
+                    spawn_volume_abs_axis_flag = (1 << 8) if particle_info.spawn_volume_abs_axis[0] else 0
+                    spawn_volume_abs_axis_flag |= (1 << 9) if particle_info.spawn_volume_abs_axis[1] else 0
+                    spawn_volume_abs_axis_flag |= (1 << 10) if particle_info.spawn_volume_abs_axis[2] else 0
+                    uniform_data['PARTICLE_SPAWN_VOLUME_TYPE'] = particle_info.spawn_volume_type.value | spawn_volume_abs_axis_flag
+
+                    uniform_data['PARTICLE_SPAWN_VOLUME_MATRIX'] = particle_info.spawn_volume_transform.matrix
 
                     self.renderer.uniform_particle_infos_buffer.bind_uniform_block(data=uniform_data)
 
@@ -627,7 +632,8 @@ class Particle:
             self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
             self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
 
-            self.transform.set_pos(self.particle_info.transform_position.get_uniform())
+            # TODO
+            # self.transform.set_pos(self.particle_info.transform_position.get_uniform())
             self.transform.set_rotation(self.particle_info.transform_rotation.get_uniform())
             self.transform.set_scale(self.particle_info.transform_scale.get_uniform())
 
@@ -834,9 +840,18 @@ class ParticleInfo:
 
         self.delay = RangeVariable(**particle_info.get('delay', dict(min_value=0.0)))
         self.life_time = RangeVariable(**particle_info.get('life_time', dict(min_value=1.0)))
-        self.transform_position = RangeVariable(**particle_info.get('transform_position', dict(min_value=FLOAT3_ZERO)))
+
+        self.spawn_volume_type = SpawnVolume(particle_info.get('spawn_volume_type', SpawnVolume.BOX.value))
+        self.spawn_volume_info = particle_info.get('spawn_volume_info', Float3(1.0, 1.0, 1.0))
+        self.spawn_volume_position = particle_info.get('spawn_volume_position', Float3())
+        self.spawn_volume_rotation = particle_info.get('spawn_volume_rotation', Float3())
+        self.spawn_volume_scale = particle_info.get('spawn_volume_scale', Float3(1.0, 1.0, 1.0))
+        self.spawn_volume_abs_axis = particle_info.get('spawn_volume_abs_axis', [False, False, False])
+        self.spawn_volume_transform = TransformObject()
+
         self.transform_rotation = RangeVariable(**particle_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
         self.transform_scale = RangeVariable(**particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
+
         self.velocity_acceleration = particle_info.get('velocity_acceleration', 0.0)
         self.velocity_limit = RangeVariable(**particle_info.get('velocity_limit', dict(min_value=0.0)))
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
@@ -881,6 +896,12 @@ class ParticleInfo:
         self.uvs_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
         self.sequence_opacity_data = np.zeros(self.max_particle_count, dtype=(np.float32, 4))
 
+    def update_spawn_volume_matrix(self):
+        self.spawn_volume_transform.set_pos(self.spawn_volume_position)
+        self.spawn_volume_transform.set_rotation(self.spawn_volume_rotation)
+        self.spawn_volume_transform.set_scale(self.spawn_volume_scale)
+        self.spawn_volume_transform.update_transform()
+
     def update_vector_field_matrix(self):
         self.vector_field_transform.set_pos(self.vector_field_position)
         self.vector_field_transform.set_rotation(self.vector_field_rotation)
@@ -908,7 +929,12 @@ class ParticleInfo:
             cell_count=self.cell_count.tolist(),
             delay=self.delay.get_save_data(),
             life_time=self.life_time.get_save_data(),
-            transform_position=self.transform_position.get_save_data(),
+            spawn_volume_type=self.spawn_volume_type.value,
+            spawn_volume_info=self.spawn_volume_info,
+            spawn_volume_position=self.spawn_volume_position,
+            spawn_volume_rotation=self.spawn_volume_rotation,
+            spawn_volume_scale=self.spawn_volume_scale,
+            spawn_volume_abs_axis=self.spawn_volume_abs_axis,
             transform_rotation=self.transform_rotation.get_save_data(),
             transform_scale=self.transform_scale.get_save_data(),
             velocity_acceleration=self.velocity_acceleration,
@@ -938,6 +964,8 @@ class ParticleInfo:
                 self.attributes.set_attribute(key, AlignMode(self.align_mode.value))
             elif 'blend_mode' == key:
                 self.attributes.set_attribute(key, BlendMode(self.blend_mode.value))
+            elif 'spawn_volume_type' == key:
+                self.attributes.set_attribute(key, SpawnVolume(self.spawn_volume_type.value))
             else:
                 self.attributes.set_attribute(key, attributes[key])
         return self.attributes
@@ -975,6 +1003,15 @@ class ParticleInfo:
             elif 'vector_field_scale' == attribute_name:
                 self.vector_field_scale[...] = attribute_value
                 self.update_vector_field_matrix()
+            elif 'spawn_volume_position' == attribute_name:
+                self.spawn_volume_position[...] = attribute_value
+                self.update_spawn_volume_matrix()
+            elif 'spawn_volume_rotation' == attribute_name:
+                self.spawn_volume_rotation[...] = attribute_value
+                self.update_spawn_volume_matrix()
+            elif 'spawn_volume_scale' == attribute_name:
+                self.spawn_volume_scale[...] = attribute_value
+                self.update_spawn_volume_matrix()
             elif 'cell_count' == attribute_name:
                 self.cell_count[...] = [max(1, x) for x in attribute_value]
             else:

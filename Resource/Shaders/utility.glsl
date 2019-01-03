@@ -187,6 +187,48 @@ float rand4(vec4 seed4){
     return fract(sin(dot(seed4, vec4(12.9898, 78.233, 45.164, 94.673))) * 43758.5453123);
 }
 
+
+// Random Generate Interface
+vec4 generate_random(float random_seed)
+{
+    vec4 random_factor;
+    random_factor.x = PseudoRandom(vec2(TIME, random_seed));
+    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
+    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
+    random_factor.w = PseudoRandom(vec2(random_factor.z, TIME));
+    return random_factor;
+}
+
+void generate_random1(inout vec4 random_factor)
+{
+    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
+    random_factor.w = random_factor.x;
+}
+
+void generate_random2(inout vec4 random_factor)
+{
+    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
+    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
+    random_factor.w = random_factor.y;
+}
+
+void generate_random3(inout vec4 random_factor)
+{
+    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
+    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
+    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
+    random_factor.w = random_factor.z;
+}
+
+void generate_random4(inout vec4 random_factor)
+{
+    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
+    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
+    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
+    random_factor.w = PseudoRandom(vec2(random_factor.z, TIME));
+}
+
+
 vec3 invert_y(vec3 vector)
 {
     return vec3(vector.x, -vector.y, vector.z);
@@ -197,7 +239,19 @@ float safe_atan(float y, float x)
     return mod(atan(y, x), TWO_PI);
 }
 
+vec2 safe_normalize(vec2 vector)
+{
+    float dist = length(vector);
+    return vector / (dist == 0.0 ? 1.0 : dist);
+}
+
 vec3 safe_normalize(vec3 vector)
+{
+    float dist = length(vector);
+    return vector / (dist == 0.0 ? 1.0 : dist);
+}
+
+vec4 safe_normalize(vec4 vector)
 {
     float dist = length(vector);
     return vector / (dist == 0.0 ? 1.0 : dist);
