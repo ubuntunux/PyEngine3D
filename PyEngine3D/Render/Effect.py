@@ -172,8 +172,8 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_ENABLE_VECTOR_FIELD'] = particle_info.enable_vector_field
                     uniform_data['PARTICLE_VECTOR_FIELD_STRENGTH'] = particle_info.vector_field_strength
                     uniform_data['PARTICLE_VECTOR_FIELD_TIGHTNESS'] = particle_info.vector_field_tightness
-                    uniform_data['PARTICLE_VECTOR_FIELD_MATRIX'] = particle_info.vector_field_transform.matrix
-                    uniform_data['PARTICLE_VECTOR_FIELD_INV_MATRIX'] = particle_info.vector_field_transform.inverse_matrix
+                    uniform_data['PARTICLE_VECTOR_FIELD_MATRIX'] = emitter.vector_field_transform.matrix
+                    uniform_data['PARTICLE_VECTOR_FIELD_INV_MATRIX'] = emitter.vector_field_transform.inverse_matrix
                     uniform_data['PARTICLE_SPAWN_VOLUME_INFO'] = particle_info.spawn_volume_info
 
                     spawn_volume_abs_axis_flag = (1 << 8) if particle_info.spawn_volume_abs_axis[0] else 0
@@ -402,6 +402,16 @@ class Emitter:
         self.gpu_particle_max_count = 0
         self.gpu_particle_spawn_count = 0
 
+        self.has_vector_field_rotation = any([0.0 != x for x in particle_info.vector_field_rotation])
+        self.vector_field_transform = TransformObject()
+        self.reset_vector_field_transform()
+
+    def reset_vector_field_transform(self):
+        self.vector_field_transform.set_pos(self.particle_info.vector_field_position)
+        self.vector_field_transform.set_rotation(self.particle_info.vector_field_rotation)
+        self.vector_field_transform.set_scale(self.particle_info.vector_field_scale)
+        self.vector_field_transform.update_transform(update_inverse_matrix=True)
+
     def create_gpu_buffer(self, count):
         self.delete_gpu_buffer()
 
@@ -491,6 +501,9 @@ class Emitter:
         self.alive_particle_count = 0
         self.gpu_particle_spawn_count = 0
 
+        if self.has_vector_field_rotation:
+            self.reset_vector_field_transform()
+
         # pre-allocate particles and spawn at first time.
         if self.particle_info.enable_gpu_particle:
             # GPU Particle - create only one particle
@@ -546,6 +559,10 @@ class Emitter:
                         self.particles[last_particle_index] = particle
                         continue
             index += 1
+
+        if self.has_vector_field_rotation:
+            self.vector_field_transform.rotation(self.particle_info.vector_field_rotation * dt)
+            self.vector_field_transform.update_transform(update_inverse_matrix=True)
 
         # spawn particles
         if self.is_infinite_emitter() or self.elapsed_time < self.particle_info.spawn_end_time:
@@ -870,8 +887,6 @@ class ParticleInfo:
         self.vector_field_position = particle_info.get('vector_field_position', Float3(0.0, 0.0, 0.0))
         self.vector_field_rotation = particle_info.get('vector_field_rotation', Float3(0.0, 0.0, 0.0))
         self.vector_field_scale = particle_info.get('vector_field_scale', Float3(1.0, 1.0, 1.0))
-        self.vector_field_transform = TransformObject()
-        self.update_vector_field_matrix()
 
         self.attributes = Attributes()
 
@@ -901,12 +916,6 @@ class ParticleInfo:
         self.spawn_volume_transform.set_rotation(self.spawn_volume_rotation)
         self.spawn_volume_transform.set_scale(self.spawn_volume_scale)
         self.spawn_volume_transform.update_transform()
-
-    def update_vector_field_matrix(self):
-        self.vector_field_transform.set_pos(self.vector_field_position)
-        self.vector_field_transform.set_rotation(self.vector_field_rotation)
-        self.vector_field_transform.set_scale(self.vector_field_scale)
-        self.vector_field_transform.update_transform(update_inverse_matrix=True)
 
     def get_save_data(self):
         save_data = dict(
@@ -996,13 +1005,10 @@ class ParticleInfo:
                     self.texture_vector_field = texture_vector_field
             elif 'vector_field_position' == attribute_name:
                 self.vector_field_position[...] = attribute_value
-                self.update_vector_field_matrix()
             elif 'vector_field_rotation' == attribute_name:
                 self.vector_field_rotation[...] = attribute_value
-                self.update_vector_field_matrix()
             elif 'vector_field_scale' == attribute_name:
                 self.vector_field_scale[...] = attribute_value
-                self.update_vector_field_matrix()
             elif 'spawn_volume_position' == attribute_name:
                 self.spawn_volume_position[...] = attribute_value
                 self.update_spawn_volume_matrix()
