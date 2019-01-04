@@ -649,8 +649,36 @@ class Particle:
             self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
             self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
 
-            # TODO
-            # self.transform.set_pos(self.particle_info.transform_position.get_uniform())
+            random_factor = np.array([np.random.uniform() for i in range(4)], dtype=np.float32)
+            spawn_volume_info = self.particle_info.spawn_volume_info
+            if SpawnVolume.BOX == self.particle_info.spawn_volume_type:
+                spawn_position = spawn_volume_info * (random_factor[0:3] - 0.5)
+            elif SpawnVolume.SPHERE == self.particle_info.spawn_volume_type:
+                vector = normalize(random_factor[0:3] - 0.5)
+                spawn_position = vector * lerp(spawn_volume_info[1], spawn_volume_info[0], random_factor[3] * random_factor[3]) * 0.5
+            elif SpawnVolume.CONE == self.particle_info.spawn_volume_type:
+                vector = normalize(random_factor[0:2] - 0.5)
+                ratio = random_factor[2] * random_factor[2]
+                y = spawn_volume_info[2] * (ratio - 0.5)
+                l = lerp(spawn_volume_info[1], spawn_volume_info[0], ratio) * sqrt(random_factor[3]) * 0.5
+                x = l * vector[0]
+                z = l * vector[1]
+                spawn_position = Float3(x, y, z)
+            elif SpawnVolume.CYLINDER == self.particle_info.spawn_volume_type:
+                vector = normalize(random_factor[0:2] - 0.5)
+                y = spawn_volume_info[2] * (random_factor[2] - 0.5)
+                l = lerp(spawn_volume_info[1], spawn_volume_info[0], random_factor[2] * random_factor[2]) * 0.5
+                x = l * vector[0]
+                z = l * vector[1]
+                spawn_position = Float3(x, y, z)
+
+            for i, is_abs_axis in enumerate(self.particle_info.spawn_volume_abs_axis):
+                if is_abs_axis:
+                    spawn_position[i] = abs(spawn_position[i])
+
+            spawn_position[...] = np.dot([spawn_position[0], spawn_position[1], spawn_position[2], 1.0], self.particle_info.spawn_volume_transform.matrix)[:3]
+
+            self.transform.set_pos(spawn_position)
             self.transform.set_rotation(self.particle_info.transform_rotation.get_uniform())
             self.transform.set_scale(self.particle_info.transform_scale.get_uniform())
 
