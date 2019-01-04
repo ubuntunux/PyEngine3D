@@ -66,8 +66,7 @@
     - Emitter Script
     - Particle spawn on polygon surface
     - Bitonic Sorting
-    - Memory Pool
-    - Spawn Volume
+    - Memory Pool    
     - Attractor
     - Projector
     - Velocity Type
@@ -75,7 +74,6 @@
         - Spawn Direction
         - Tornado
         - Hurricane
-    - Acceleration / Damping
     - Vector Field Tiling
     - Screen Space Collide
     - Noise
