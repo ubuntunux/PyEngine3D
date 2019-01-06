@@ -12,12 +12,13 @@ from . import StaticActor
 # ------------------------------ #
 class Camera(StaticActor):
     def __init__(self, name, scene_manager, **object_data):
+        if 'pos' not in object_data:
+            object_data['pos'] = [0, 1.0, 0]
+
         StaticActor.__init__(self, name, **object_data)
 
         self.scene_manager = scene_manager
         self.postprocess = self.scene_manager.renderer.postprocess
-
-        self.transform.set_pos([0.0, 1.0, 0.0])
 
         self.meter_per_unit = object_data.get('meter_per_unit', 1.0)
         self.aspect = object_data.get('aspect', 0.0)
