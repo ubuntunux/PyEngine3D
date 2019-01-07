@@ -153,6 +153,8 @@ void update(inout ParticleData particle_data, uint id)
     {
         particle_data.elapsed_time += DELTA_TIME;
 
+        const float max_life_time = PARTICLE_DELAY.y + PARTICLE_LIFE_TIME.y;
+
         if(particle_data.elapsed_time <= particle_data.life_time)
         {
             float life_ratio = 0.0;
@@ -218,7 +220,7 @@ void update(inout ParticleData particle_data, uint id)
                 particle_data.opacity *= left_elapsed_time / PARTICLE_FADE_OUT;
             }
         }
-        else
+        else if(max_life_time <= particle_data.elapsed_time)
         {
             particle_data.state = PARTICLE_STATE_DEAD;
         }
