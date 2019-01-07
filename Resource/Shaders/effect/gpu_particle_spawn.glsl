@@ -92,7 +92,7 @@ void main()
     if(gl_GlobalInvocationID.x < available_spawn_count)
     {
         uint id = (particle_index_range.begin_index + particle_index_range.instance_count + gl_GlobalInvocationID.x) % PARTICLE_MAX_COUNT;
-        spawn_particle(particle_datas[id], float(id) * 0.003141592 + PI);
+        spawn_particle(particle_datas[id], float(id) / float(PARTICLE_MAX_COUNT) + PI);
     }
 }
 #endif

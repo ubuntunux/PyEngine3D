@@ -192,40 +192,45 @@ float rand4(vec4 seed4){
 vec4 generate_random(float random_seed)
 {
     vec4 random_factor;
-    random_factor.x = PseudoRandom(vec2(TIME, random_seed));
-    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
-    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
-    random_factor.w = PseudoRandom(vec2(random_factor.z, TIME));
+    float time = fract(TIME * 0.001);
+    random_factor.x = rand(vec2(time, random_seed));
+    random_factor.y = rand(vec2(random_factor.x, time));
+    random_factor.z = rand(vec2(time, random_factor.y));
+    random_factor.w = rand(vec2(random_factor.z, time));
     return random_factor;
 }
 
 void generate_random1(inout vec4 random_factor)
 {
-    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
+    float time = fract(TIME * 0.001);
+    random_factor.x = rand(vec2(time, random_factor.w));
     random_factor.w = random_factor.x;
 }
 
 void generate_random2(inout vec4 random_factor)
 {
-    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
-    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
+    float time = fract(TIME * 0.001);
+    random_factor.x = rand(vec2(time, random_factor.w));
+    random_factor.y = rand(vec2(random_factor.x, time));
     random_factor.w = random_factor.y;
 }
 
 void generate_random3(inout vec4 random_factor)
 {
-    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
-    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
-    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
+    float time = fract(TIME * 0.001);
+    random_factor.x = rand(vec2(time, random_factor.w));
+    random_factor.y = rand(vec2(random_factor.x, time));
+    random_factor.z = rand(vec2(time, random_factor.y));
     random_factor.w = random_factor.z;
 }
 
 void generate_random4(inout vec4 random_factor)
 {
-    random_factor.x = PseudoRandom(vec2(TIME, random_factor.w));
-    random_factor.y = PseudoRandom(vec2(random_factor.x, TIME));
-    random_factor.z = PseudoRandom(vec2(TIME, random_factor.y));
-    random_factor.w = PseudoRandom(vec2(random_factor.z, TIME));
+    float time = fract(TIME * 0.001);
+    random_factor.x = rand(vec2(time, random_factor.w));
+    random_factor.y = rand(vec2(random_factor.x, time));
+    random_factor.z = rand(vec2(time, random_factor.y));
+    random_factor.w = rand(vec2(random_factor.z, time));
 }
 
 
