@@ -64,6 +64,15 @@ void spawn_particle(inout ParticleData particle_data, float random_seed)
     generate_random3(random_factor);
     particle_data.velocity_position = mix(PARTICLE_VELOCITY_POSITION_MIN, PARTICLE_VELOCITY_POSITION_MAX, random_factor.xyz);
 
+    if(VELOCITY_TYPE_SPAWN_DIRECTION == PARTICLE_VELOCITY_TYPE)
+    {
+        particle_data.velocity_position = abs(particle_data.velocity_position) * safe_normalize(particle_data.transform_position);
+    }
+    else if(VELOCITY_TYPE_HURRICANE == PARTICLE_VELOCITY_TYPE)
+    {
+        particle_data.velocity_position = abs(particle_data.velocity_position) * cross(vec3(0.0, 1.0, 0.0), safe_normalize(particle_data.transform_position));
+    }
+
     generate_random3(random_factor);
     particle_data.velocity_rotation = mix(PARTICLE_VELOCITY_ROTATION_MIN, PARTICLE_VELOCITY_ROTATION_MAX, random_factor.xyz);
 

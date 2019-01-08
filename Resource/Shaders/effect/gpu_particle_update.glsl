@@ -4,10 +4,11 @@
 
 
 uniform bool enable_vector_field;
-uniform sampler3D texture_vector_field;
 uniform float vector_field_strength;
 uniform vec3 vector_field_offset;
 uniform vec3 vector_field_radius;
+uniform sampler3D texture_vector_field;
+uniform sampler2D texture_linear_depth;
 
 
 #ifdef COMPUTE_SHADER
@@ -45,7 +46,7 @@ void update_sequence(inout ParticleData particle_data, float life_ratio)
 }
 
 
-void update_local_matrix(inout ParticleData particle_data)
+void update_local_matrix(inout ParticleData particle_data, vec3 normalized_world_velocity, float world_velocity_length)
 {
     mat4 rotation_matrix = mat4(
         1.0, 0.0, 0.0, 0.0,
@@ -110,17 +111,12 @@ void update_local_matrix(inout ParticleData particle_data)
     }
     else if(ALIGN_MODE_VELOCITY_ALIGN == PARTICLE_ALIGN_MODE)
     {
-        vec3 world_velocity = mat3(particle_data.parent_matrix) * particle_data.velocity_position.xyz;
-        float velocity_length = length(world_velocity);
-
-        if(0.0 < velocity_length)
+        if(0.0 < world_velocity_length)
         {
-            world_velocity /= velocity_length;
-
             mat4 world_matrix;
-            world_matrix[0].xyz = cross(world_velocity, normalize(particle_data.relative_position));
-            world_matrix[1].xyz = world_velocity * (1.0 + velocity_length * PARTICLE_VELOCITY_STRETCH * 0.1);
-            world_matrix[2].xyz = cross(world_matrix[0].xyz, world_velocity);
+            world_matrix[0].xyz = cross(normalized_world_velocity.xyz, normalize(particle_data.relative_position));
+            world_matrix[1].xyz = normalized_world_velocity.xyz * (1.0 + world_velocity_length * PARTICLE_VELOCITY_STRETCH * 0.1);
+            world_matrix[2].xyz = cross(world_matrix[0].xyz, normalized_world_velocity.xyz);
             world_matrix[3] = vec4(0.0, 0.0, 0.0, 1.0);
 
             particle_data.local_matrix = world_matrix * particle_data.local_matrix;
@@ -139,27 +135,29 @@ void update(inout ParticleData particle_data, uint id)
 {
     if(PARTICLE_STATE_DELAY == particle_data.state)
     {
-        particle_data.delay -= DELTA_TIME;
         if(particle_data.delay <= 0.0)
         {
             particle_data.elapsed_time = abs(particle_data.delay);
             particle_data.delay = 0.0;
             particle_data.state = PARTICLE_STATE_ALIVE;
         }
+        else
+        {
+            particle_data.delay -= DELTA_TIME;
+        }
     }
 
     // Update
     if(PARTICLE_STATE_ALIVE == particle_data.state)
     {
+        const float max_life_time = PARTICLE_DELAY.y + PARTICLE_LIFE_TIME.y;
+        float elapsed_time = particle_data.elapsed_time;
+        float left_elapsed_time = particle_data.life_time - elapsed_time;
         particle_data.elapsed_time += DELTA_TIME;
 
-        const float max_life_time = PARTICLE_DELAY.y + PARTICLE_LIFE_TIME.y;
-
-        if(particle_data.elapsed_time <= particle_data.life_time)
+        if(elapsed_time <= particle_data.life_time)
         {
             float life_ratio = 0.0;
-            float elapsed_time = particle_data.elapsed_time;
-            float life_time = particle_data.life_time;
 
             if(0.0 < particle_data.life_time)
             {
@@ -197,18 +195,34 @@ void update(inout ParticleData particle_data, uint id)
             }
             particle_data.velocity_position += force * DELTA_TIME;
 
+            // end of transform
             particle_data.transform_position += particle_data.velocity_position * DELTA_TIME;
             particle_data.transform_rotation += particle_data.velocity_rotation * DELTA_TIME;
             particle_data.transform_scale += particle_data.velocity_scale * DELTA_TIME;
+
+            // relative world position
             particle_data.relative_position = (particle_datas[id].parent_matrix * vec4(particle_data.transform_position, 1.0)).xyz - CAMERA_POSITION.xyz;
 
+            // world velocity
+            vec3 world_velocity = mat3(particle_data.parent_matrix) * particle_data.velocity_position.xyz;
+            float world_velocity_length = length(world_velocity);
+            vec3 normalized_world_velocity = (world_velocity_length != 0.0) ? (world_velocity / world_velocity_length) : world_velocity;
+
+            /*vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(particle_data.relative_position, 1.0);
+            vec2 scene_uv = (proj_pos.xy / proj_pos.w) * 0.5 + 0.5;
+            float scene_linear_depth = texture2DLod(texture_linear_depth, scene_uv, 0.0).x;
+            float linear_depth = depth_to_linear_depth(proj_pos.z / proj_pos.w);
+
+            if(scene_linear_depth <= linear_depth)
+            {
+                particle_data.velocity_position.y = 0.0;
+            }*/
+
             // update matrix
-            update_local_matrix(particle_data);
+            update_local_matrix(particle_data, normalized_world_velocity, world_velocity_length);
 
             // update opacity
             particle_data.opacity = PARTICLE_OPACITY;
-
-            float left_elapsed_time = life_time - elapsed_time;
 
             if(0.0 < PARTICLE_FADE_IN && elapsed_time < PARTICLE_FADE_IN)
             {

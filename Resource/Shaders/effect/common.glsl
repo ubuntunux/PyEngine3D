@@ -12,6 +12,10 @@ const uint SPAWN_VOLUME_SPHERE = 1;
 const uint SPAWN_VOLUME_CONE = 2;
 const uint SPAWN_VOLUME_CYLINDER = 3;
 
+const uint VELOCITY_TYPE_RANDOM = 0;
+const uint VELOCITY_TYPE_SPAWN_DIRECTION = 1;
+const uint VELOCITY_TYPE_HURRICANE = 2;
+
 
 struct ParticleData
 {

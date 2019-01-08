@@ -17,6 +17,7 @@ from PyEngine3D.Common.Constants import *
 from PyEngine3D.Common import logger, log_level, COMMAND
 from PyEngine3D.App import CoreManager
 from . import Model, BlendMode
+from .RenderTarget import RenderTargets
 
 
 class SpawnVolume(Enum):
@@ -24,6 +25,12 @@ class SpawnVolume(Enum):
     SPHERE = 1
     CONE = 2
     CYLINDER = 3
+
+
+class VelocityType(Enum):
+    RANDOM = 0
+    SPAWN_DIRECTION = 1
+    HURRICANE = 2
 
 
 class AlignMode(Enum):
@@ -156,10 +163,13 @@ class EffectManager(Singleton):
                     uniform_data['PARTICLE_OPACITY'] = particle_info.opacity
                     uniform_data['PARTICLE_PLAY_SPEED'] = particle_info.play_speed
                     uniform_data['PARTICLE_FORCE_GRAVITY'] = particle_info.force_gravity
+                    uniform_data['PARTICLE_FORCE_ELASTICITY'] = particle_info.force_elasticity
+                    uniform_data['PARTICLE_FORCE_FRICTION'] = particle_info.force_friction
                     uniform_data['PARTICLE_TRANSFORM_ROTATION_MIN'] = particle_info.transform_rotation.value[0]
                     uniform_data['PARTICLE_TRANSFORM_ROTATION_MAX'] = particle_info.transform_rotation.value[1]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MIN'] = particle_info.transform_scale.value[0]
                     uniform_data['PARTICLE_TRANSFORM_SCALE_MAX'] = particle_info.transform_scale.value[1]
+                    uniform_data['PARTICLE_VELOCITY_TYPE'] = particle_info.velocity_type.value
                     uniform_data['PARTICLE_VELOCITY_ACCELERATION'] = particle_info.velocity_acceleration
                     uniform_data['PARTICLE_VELOCITY_LIMIT'] = particle_info.velocity_limit.value
                     uniform_data['PARTICLE_VELOCITY_POSITION_MIN'] = particle_info.velocity_position.value[0]
@@ -213,6 +223,8 @@ class EffectManager(Singleton):
 
                     if particle_info.enable_vector_field:
                         material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
+
+                    material_instance.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
 
                     emitter.particle_buffer.bind_buffer_base(0)
                     emitter.index_range_buffer.bind_buffer_base(1)
@@ -645,10 +657,6 @@ class Particle:
             self.delay = self.particle_info.delay.get_uniform()
             self.life_time = self.particle_info.life_time.get_uniform()
 
-            self.velocity_position[...] = self.particle_info.velocity_position.get_uniform()
-            self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
-            self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
-
             random_factor = np.array([np.random.uniform() for i in range(4)], dtype=np.float32)
             spawn_volume_info = self.particle_info.spawn_volume_info
             if SpawnVolume.BOX == self.particle_info.spawn_volume_type:
@@ -687,6 +695,15 @@ class Particle:
 
             # We will apply inverse_matrix here because we will apply parent_matrix later.
             self.force[...] = np.dot([0.0, -self.particle_info.force_gravity, 0.0], self.parent_effect.transform.inverse_matrix[0:3, 0:3])
+
+            self.velocity_position[...] = self.particle_info.velocity_position.get_uniform()
+            if VelocityType.SPAWN_DIRECTION == self.particle_info.velocity_type:
+                self.velocity_position[...] = abs(self.velocity_position) * normalize(spawn_position)
+            elif VelocityType.HURRICANE == self.particle_info.velocity_type:
+                self.velocity_position[...] = abs(self.velocity_position) * np.cross(WORLD_UP, normalize(spawn_position))
+
+            self.velocity_rotation[...] = self.particle_info.velocity_rotation.get_uniform()
+            self.velocity_scale[...] = self.particle_info.velocity_scale.get_uniform()
 
             self.has_velocity_position = any([v != 0.0 for v in self.velocity_position]) or self.particle_info.force_gravity != 0.0
             self.has_velocity_rotation = any([v != 0.0 for v in self.velocity_rotation])
@@ -743,19 +760,21 @@ class Particle:
             else:
                 return
 
-        self.elapsed_time += dt
-
         if self.life_time < self.elapsed_time:
             self.destroy()
-            return
-
-        if self.particle_info.enable_gpu_particle:
-            # gpu particle, just return.
             return
 
         life_ratio = 0.0
         if 0.0 < self.life_time:
             life_ratio = min(1.0, self.elapsed_time / self.life_time)
+
+        left_life_time = self.life_time - self.elapsed_time
+
+        self.elapsed_time += dt
+
+        if self.particle_info.enable_gpu_particle:
+            # gpu particle, just return.
+            return
 
         self.update_sequence(life_ratio)
 
@@ -785,8 +804,6 @@ class Particle:
 
         if 0.0 != self.particle_info.fade_in or 0.0 != self.particle_info.fade_out:
             self.final_opacity = self.particle_info.opacity
-
-            left_life_time = self.life_time - self.elapsed_time
 
             if 0.0 < self.particle_info.fade_in and self.life_time < self.particle_info.fade_in:
                 self.final_opacity *= self.life_time / self.particle_info.fade_in
@@ -897,6 +914,7 @@ class ParticleInfo:
         self.transform_rotation = RangeVariable(**particle_info.get('transform_rotation', dict(min_value=FLOAT3_ZERO)))
         self.transform_scale = RangeVariable(**particle_info.get('transform_scale', dict(min_value=Float3(1.0, 1.0, 1.0))))
 
+        self.velocity_type = VelocityType(particle_info.get('velocity_type', VelocityType.SPAWN_DIRECTION.value))
         self.velocity_acceleration = particle_info.get('velocity_acceleration', 0.0)
         self.velocity_limit = RangeVariable(**particle_info.get('velocity_limit', dict(min_value=0.0)))
         self.velocity_position = RangeVariable(**particle_info.get('velocity_position', dict(min_value=FLOAT3_ZERO)))
@@ -905,6 +923,8 @@ class ParticleInfo:
         self.velocity_stretch = particle_info.get('velocity_stretch', 1.0)
 
         self.force_gravity = particle_info.get('force_gravity', 0.0)
+        self.force_elasticity = particle_info.get('force_elasticity', 0.0)
+        self.force_friction = particle_info.get('force_friction', 0.0)
 
         self.enable_vector_field = particle_info.get('enable_vector_field', False)
         texture_vector_field_name = particle_info.get('texture_vector_field', 'common.default_3d')
@@ -974,12 +994,15 @@ class ParticleInfo:
             spawn_volume_abs_axis=self.spawn_volume_abs_axis,
             transform_rotation=self.transform_rotation.get_save_data(),
             transform_scale=self.transform_scale.get_save_data(),
+            velocity_type=self.velocity_type.value,
             velocity_acceleration=self.velocity_acceleration,
             velocity_limit=self.velocity_limit.get_save_data(),
             velocity_position=self.velocity_position.get_save_data(),
             velocity_rotation=self.velocity_rotation.get_save_data(),
             velocity_scale=self.velocity_scale.get_save_data(),
             force_gravity=self.force_gravity,
+            force_elasticity=self.force_elasticity,
+            force_friction=self.force_friction,
             enable_vector_field=self.enable_vector_field,
             vector_field_position=self.vector_field_position,
             vector_field_rotation=self.vector_field_rotation,
@@ -1003,6 +1026,8 @@ class ParticleInfo:
                 self.attributes.set_attribute(key, BlendMode(self.blend_mode.value))
             elif 'spawn_volume_type' == key:
                 self.attributes.set_attribute(key, SpawnVolume(self.spawn_volume_type.value))
+            elif 'velocity_type' == key:
+                self.attributes.set_attribute(key, VelocityType(self.velocity_type.value))
             else:
                 self.attributes.set_attribute(key, attributes[key])
         return self.attributes

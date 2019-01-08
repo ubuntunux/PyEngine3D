@@ -101,6 +101,10 @@ layout(std140, binding=6) uniform particle_infos
     vec2 PARTICLE_VELOCITY_LIMIT;
     float PARTICLE_FORCE_GRAVITY;
     float PARTICLE_PLAY_SPEED;
+    uint PARTICLE_VELOCITY_TYPE;
+    float PARTICLE_FORCE_ELASTICITY;
+    float PARTICLE_FORCE_FRICTION;
+    uint PARTICLE_DUMMY_0;
 };
 
 
