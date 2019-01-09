@@ -113,7 +113,7 @@ float get_luminance(vec3 color)
     return dot(vec3(0.2126, 0.7152, 0.0722), color);
 }
 
-// non-linear depth to linear depth
+// depth(0.0 ~ 1.0) to linear depth(near ~ far)
 float depth_to_linear_depth(float depth)
 {
     const float zNear = NEAR_FAR.x;
@@ -124,7 +124,7 @@ float depth_to_linear_depth(float depth)
     return 2.0 * zNear * zFar / (zFar + zNear - depth * (zFar - zNear));
 }
 
-// linear depth to non-linear depth
+// linear depth(near ~ far) to non-linear depth(0.0 ~ 1.0)
 float linear_depth_to_depth(float linear_depth)
 {
     const float zNear = NEAR_FAR.x;

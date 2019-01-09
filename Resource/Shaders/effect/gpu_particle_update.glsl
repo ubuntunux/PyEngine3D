@@ -9,6 +9,7 @@ uniform vec3 vector_field_offset;
 uniform vec3 vector_field_radius;
 uniform sampler3D texture_vector_field;
 uniform sampler2D texture_linear_depth;
+uniform sampler2D texture_normal;
 
 
 #ifdef COMPUTE_SHADER
@@ -208,15 +209,20 @@ void update(inout ParticleData particle_data, uint id)
             float world_velocity_length = length(world_velocity);
             vec3 normalized_world_velocity = (world_velocity_length != 0.0) ? (world_velocity / world_velocity_length) : world_velocity;
 
-            /*vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(particle_data.relative_position, 1.0);
-            vec2 scene_uv = (proj_pos.xy / proj_pos.w) * 0.5 + 0.5;
-            float scene_linear_depth = texture2DLod(texture_linear_depth, scene_uv, 0.0).x;
-            float linear_depth = depth_to_linear_depth(proj_pos.z / proj_pos.w);
-
-            if(scene_linear_depth <= linear_depth)
+            // Collide
+            if(0.0 != PARTICLE_FORCE_ELASTICITY || 0.0 != PARTICLE_FORCE_FRICTION)
             {
-                particle_data.velocity_position.y = 0.0;
-            }*/
+                vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(particle_data.relative_position, 1.0);
+                vec3 scene_uvw = (proj_pos.xyz / proj_pos.w) * 0.5 + 0.5;
+                float scene_linear_depth = texture2DLod(texture_linear_depth, scene_uvw.xy, 0.0).x;
+                vec3 scene_normal = normalize(texture2DLod(texture_normal, scene_uvw.xy, 0.0).xyz * 2.0 - 1.0);
+                float depth_diff = depth_to_linear_depth(scene_uvw.z) - scene_linear_depth;
+
+                if(0.0 <= depth_diff && depth_diff < 1.0)
+                {
+                    particle_data.velocity_position = reflect(particle_data.velocity_position, scene_normal) * PARTICLE_FORCE_ELASTICITY;
+                }
+            }
 
             // update matrix
             update_local_matrix(particle_data, normalized_world_velocity, world_velocity_length);

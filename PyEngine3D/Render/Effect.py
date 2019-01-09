@@ -224,7 +224,9 @@ class EffectManager(Singleton):
                     if particle_info.enable_vector_field:
                         material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
 
-                    material_instance.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
+                    if 0.0 != particle_info.force_elasticity or 0.0 != particle_info.force_friction:
+                        material_instance.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
+                        material_instance.bind_uniform_data('texture_normal', RenderTargets.WORLD_NORMAL)
 
                     emitter.particle_buffer.bind_buffer_base(0)
                     emitter.index_range_buffer.bind_buffer_base(1)
