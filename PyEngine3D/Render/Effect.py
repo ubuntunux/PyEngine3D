@@ -222,7 +222,7 @@ class EffectManager(Singleton):
                     material_instance.use_program()
 
                     if particle_info.enable_vector_field:
-                        material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field)
+                        material_instance.bind_uniform_data('texture_vector_field', particle_info.texture_vector_field, wrap=GL_REPEAT)
 
                     if 0.0 != particle_info.force_elasticity or 0.0 != particle_info.force_friction:
                         material_instance.bind_uniform_data('texture_linear_depth', RenderTargets.LINEAR_DEPTH)
