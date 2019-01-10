@@ -35,7 +35,7 @@
               'name': 'default_effect',
               'pos': [-1.0, 1.0, 0.0],
               'rot': [0.0, 0.0, 0.0],
-              'scale': [0.10000000149011612, 0.10000000149011612, 0.10000000149011612]}],
+              'scale': [1.0, 1.0, 1.0]}],
  'light_probes': [{'instance_count': 1,
                    'instance_pos': {'max_value': [10.0, 0.0, 10.0], 'min_value': [-10.0, 0.0, -10.0]},
                    'instance_pos_list': [],

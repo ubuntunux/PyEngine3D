@@ -568,14 +568,11 @@ class PostProcess:
         self.render_texture_mi.bind_uniform_data("debug_intensity_min", self.debug_intensity_min)
         self.render_texture_mi.bind_uniform_data("debug_intensity_max", self.debug_intensity_max)
         self.render_texture_mi.bind_uniform_data("debug_target", target)
-        self.render_texture_mi.bind_uniform_data("texture_source_2d",
-                                                 source_texture if GL_TEXTURE_2D == target else None)
-        self.render_texture_mi.bind_uniform_data("texture_source_2d_array",
-                                                 source_texture if GL_TEXTURE_2D_ARRAY == target else None)
-        self.render_texture_mi.bind_uniform_data("texture_source_3d",
-                                                 source_texture if GL_TEXTURE_3D == target else None)
-        self.render_texture_mi.bind_uniform_data("texture_source_cube",
-                                                 source_texture if GL_TEXTURE_CUBE_MAP == target else None)
+
+        self.render_texture_mi.bind_uniform_data("texture_source_2d", source_texture if GL_TEXTURE_2D == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_2d_array", source_texture if GL_TEXTURE_2D_ARRAY == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_3d", source_texture if GL_TEXTURE_3D == target else None)
+        self.render_texture_mi.bind_uniform_data("texture_source_cube", source_texture if GL_TEXTURE_CUBE_MAP == target else None)
         self.quad.draw_elements()
 
     def is_render_shader(self):

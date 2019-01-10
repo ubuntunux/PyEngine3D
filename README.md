@@ -63,21 +63,12 @@
     - Animation calculation in gpu
 * Particle System
     - Emitter Rotation
-    - Emitter Script
     - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool    
-    - Attractor
-    - Projector
-    - Velocity Type
-        - Random
-        - Spawn Direction
-        - Tornado
-        - Hurricane
+    - Attractor    
     - Vector Field Tiling
-    - Screen Space Collide
     - Noise
-    - Path Tracking
     - Depth Biased Alpha
 * Rendering
     - View Mode

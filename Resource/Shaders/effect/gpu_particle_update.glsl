@@ -159,6 +159,7 @@ void update(inout ParticleData particle_data, uint id)
         if(elapsed_time <= particle_data.life_time)
         {
             float life_ratio = 0.0;
+            vec3 old_position = particle_data.transform_position;
 
             if(0.0 < particle_data.life_time)
             {
@@ -210,7 +211,7 @@ void update(inout ParticleData particle_data, uint id)
             vec3 normalized_world_velocity = (world_velocity_length != 0.0) ? (world_velocity / world_velocity_length) : world_velocity;
 
             // Collide
-            if(0.0 != PARTICLE_FORCE_ELASTICITY || 0.0 != PARTICLE_FORCE_FRICTION)
+            if(0.0 < world_velocity_length && (0.0 != PARTICLE_FORCE_ELASTICITY || 0.0 != PARTICLE_FORCE_FRICTION))
             {
                 vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(particle_data.relative_position, 1.0);
                 vec3 scene_uvw = (proj_pos.xyz / proj_pos.w) * 0.5 + 0.5;
@@ -220,7 +221,18 @@ void update(inout ParticleData particle_data, uint id)
 
                 if(0.0 <= depth_diff && depth_diff < 1.0)
                 {
-                    particle_data.velocity_position = reflect(particle_data.velocity_position, scene_normal) * PARTICLE_FORCE_ELASTICITY;
+                    vec3 up_vector = scene_normal * dot(scene_normal, -world_velocity);
+
+                    vec3 front_vector = world_velocity + up_vector;
+                    float front_vector_length = length(front_vector);
+                    if(0.0 < front_vector_length)
+                    {
+                        front_vector /= front_vector_length;
+                        front_vector_length = max(0.0f, front_vector_length - PARTICLE_FORCE_FRICTION * DELTA_TIME);
+                        front_vector *= front_vector_length;
+                    }
+                    particle_data.velocity_position = transpose(mat3(particle_data.parent_matrix)) * (front_vector + up_vector * PARTICLE_FORCE_ELASTICITY);
+                    particle_data.transform_position = old_position + particle_data.velocity_position * DELTA_TIME;
                 }
             }
 

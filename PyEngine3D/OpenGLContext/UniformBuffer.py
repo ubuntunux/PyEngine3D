@@ -288,10 +288,10 @@ class UniformTextureBase(UniformVariable):
     def set_texture_index(self, textureIndex):
         self.textureIndex = textureIndex + self.texture_offset
 
-    def bind_uniform(self, texture):
+    def bind_uniform(self, texture, wrap=None):
         if texture is not None:
             glActiveTexture(GL_TEXTURE0 + self.textureIndex)
-            texture.bind_texture()
+            texture.bind_texture(wrap)
             glUniform1i(self.location, self.textureIndex)
         elif self.show_message:
             self.show_message = False

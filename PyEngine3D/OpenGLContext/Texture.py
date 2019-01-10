@@ -275,11 +275,20 @@ class Texture:
         else:
             logger.warn('%s disable to generate mipmap.' % self.name)
 
-    def bind_texture(self):
+    def texure_wrap(self, wrap):
+        glTexParameteri(self.target, GL_TEXTURE_WRAP_S, wrap)
+        glTexParameteri(self.target, GL_TEXTURE_WRAP_T, wrap)
+        glTexParameteri(self.target, GL_TEXTURE_WRAP_R, wrap)
+
+    def bind_texture(self, wrap=None):
         if self.buffer == -1:
             logger.warn("%s texture is invalid." % self.name)
             return
+
         glBindTexture(self.target, self.buffer)
+
+        if wrap is not None:
+            self.texure_wrap(wrap)
 
     def bind_image(self, image_unit, level=0, access=GL_READ_WRITE):
         if self.buffer == -1:

@@ -35,5 +35,5 @@ class RenderBuffer(Texture):
     def bind_render_buffer(self):
         glBindRenderbuffer(GL_RENDERBUFFER, self.buffer)
 
-    def bind_texture(self):
+    def bind_texture(self, wrap=None):
         logger.error('%s RenderBuffer cannot use bind_texture method.' % self.name)
