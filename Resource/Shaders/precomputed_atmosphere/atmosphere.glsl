@@ -54,6 +54,7 @@ void main()
     vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 eye_direction = normalize(eye_ray);
+    vec3 to_earth_center = earth_center - camera;
     vec3 screen_center_ray = -vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
     float VdotL = dot(eye_direction, sun_direction);
 
@@ -139,7 +140,7 @@ void main()
     float atmosphere_lighting = max(0.2, pow(saturate(dot(N, sun_direction) * 0.5 + 0.5), 1.0));
 
     // Cloud
-    if(render_cloud && NEAR_FAR.y <= scene_linear_depth)
+    if(render_cloud)
     {
         vec3 cloud_inscatter = vec3(0.0);
         vec3 cloud_sun_irradiance = vec3(0.0);
