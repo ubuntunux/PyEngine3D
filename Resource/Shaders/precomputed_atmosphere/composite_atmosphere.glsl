@@ -17,8 +17,20 @@ void main()
     float linear_depth = texture2D(texture_linear_depth, texcoord).x;
     vec4 color = texture2DLod(texture_atmosphere, texcoord, 0.0);
 
+    color.w = max(color.w, 0.0);
+
+    if(above_the_cloud)
+    {
+        //color.w = (NEAR_FAR.y <= linear_depth) ? 1.0 : color.w;
+        color.w = saturate(max(pow(linear_depth / NEAR_FAR.y, 2.0), color.w));
+    }
+    else
+    {
+        color.w = saturate(pow(linear_depth / NEAR_FAR.y, 2.0));
+    }
+
     // for blending : src_color * one + dst_color * (1.0 - src_alpha)
-    color.w = saturate(max(pow(linear_depth / NEAR_FAR.y, 2.0), color.w));
+    //color.w = saturate(max(pow(linear_depth / NEAR_FAR.y, 2.0), color.w));
     color.xyz *= color.w;
 
     // Upscaling Inscatter
