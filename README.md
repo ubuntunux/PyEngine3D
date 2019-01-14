@@ -66,8 +66,7 @@
     - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool    
-    - Attractor    
-    - Vector Field Tiling
+    - Attractor
     - Noise
     - Depth Biased Alpha
 * Rendering
