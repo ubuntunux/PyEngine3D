@@ -1006,7 +1006,7 @@ float GetSkyVisibility(vec3 point)
 
 void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction, out float d_in, out float d_out)
 {
-    vec3 pos = CAMERA_POSITION.xyz - kSphereCenter;
+    vec3 pos = CAMERA_POSITION.xyz * atmosphere_ratio - kSphereCenter;
     float pos_dot_sun = dot(pos, sun_direction);
     float view_dot_sun = dot(view_direction, sun_direction);
     float k = sun_size.x;
@@ -1179,7 +1179,7 @@ void GetSceneRadianceWithShadow(
 
 void GetCloudRadiance(
     const in AtmosphereParameters atmosphere,
-    float dist, vec3 eye_direction, vec3 N, float scene_shadow_length,
+    float dist, vec3 eye_direction, float scene_shadow_length,
     out vec3 sun_irradiance, out vec3 sky_irradiance, out vec3 inscatter)
 {
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
