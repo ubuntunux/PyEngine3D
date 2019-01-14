@@ -259,7 +259,7 @@ void main()
     }
 
     // White cap
-    float wave_peak = pow(saturate((vs_output.wave_offset.y * 0.5 + 0.5) * 1.5 + saturate(1.0f - N.y) * 2.0), 15.0f);
+    float wave_peak = pow(saturate((vs_output.wave_offset.y * 0.5 + 0.5) * 1.7 + saturate(1.0f - N.y) * 2.0), 12.0f);
     float white_cap = saturate(wave_peak * simulation_wind);
 
     // Transmission
