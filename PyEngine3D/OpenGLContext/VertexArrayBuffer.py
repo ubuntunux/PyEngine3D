@@ -15,46 +15,62 @@ def CreateVertexArrayBuffer(geometry_data):
     geometry_name = geometry_data.get('name', 'VertexArrayBuffer')
     logger.info("Load %s geometry." % geometry_name)
 
-    vertex_count = len(geometry_data.get('positions', []))
-    if vertex_count == 0:
+    mode = geometry_data.get('mode', GL_TRIANGLES)
+    positions = geometry_data.get('positions', [])
+    indices = geometry_data.get('indices', [])
+    bone_indicies = geometry_data.get('bone_indicies', [])
+    bone_weights = geometry_data.get('bone_weights', [])
+
+    vertex_count = len(positions)
+    if 0 == vertex_count:
         logger.error("%s geometry has no position data." % geometry_name)
         return None
 
-    positions = np.array(geometry_data['positions'], dtype=np.float32)
-
-    if 'indices' not in geometry_data:
+    if 0 == len(indices):
         logger.error("%s geometry has no index data." % geometry_name)
         return None
 
-    indices = np.array(geometry_data['indices'], dtype=np.uint32)
+    if not isinstance(positions, np.ndarray):
+        positions = np.array(positions, dtype=np.float32)
 
-    bone_indicies = np.array(geometry_data.get('bone_indicies', []), dtype=np.float32)
+    if not isinstance(indices, np.ndarray):
+        indices = np.array(indices, dtype=np.uint32)
 
-    bone_weights = np.array(geometry_data.get('bone_weights', []), dtype=np.float32)
+    if not isinstance(bone_indicies, np.ndarray):
+        bone_indicies = np.array(bone_indicies, dtype=np.float32)
 
-    colors = np.array(geometry_data.get('colors', []), dtype=np.float32)
-    if len(colors) == 0:
-        colors = np.array([[1.0, 1.0, 1.0, 1.0]] * vertex_count, dtype=np.float32)
+    if not isinstance(bone_weights, np.ndarray):
+        bone_weights = np.array(bone_weights, dtype=np.float32)
 
-    texcoords = np.array(geometry_data.get('texcoords', []), dtype=np.float32)
-    if len(texcoords) == 0:
-        texcoords = np.array([[0.0, 0.0]] * vertex_count, dtype=np.float32)
+    colors = geometry_data.get('colors', [[1.0, 1.0, 1.0, 1.0], ] * vertex_count)
+    texcoords = geometry_data.get('texcoords', [[0.0, 0.0], ] * vertex_count)
+    normals = geometry_data.get('normals', [[1.0, 1.0, 1.0], ] * vertex_count)
+    tangents = geometry_data.get('tangents', [])
 
-    normals = np.array(geometry_data.get('normals', []), dtype=np.float32)
-    if len(normals) == 0:
-        normals = np.array([[0.0, 0.0, 1.0], ] * vertex_count, dtype=np.float32)
+    if not isinstance(colors, np.ndarray):
+        colors = np.array(colors, dtype=np.float32)
 
-    tangents = np.array(geometry_data.get('tangents', []), dtype=np.float32)
+    if not isinstance(texcoords, np.ndarray):
+        texcoords = np.array(texcoords, dtype=np.float32)
+
+    if not isinstance(normals, np.ndarray):
+        normals = np.array(normals, dtype=np.float32)
+
+    if not isinstance(tangents, np.ndarray):
+        tangents = np.array(tangents, dtype=np.float32)
+
     if len(tangents) == 0:
-        tangents = compute_tangent(positions, texcoords, normals, indices)
-        geometry_data['tangents'] = tangents.tolist()
+        is_triangle_mode = (GL_TRIANGLES == mode)
+        tangents = compute_tangent(is_triangle_mode, positions, texcoords, normals, indices)
 
     if 0 < len(bone_indicies) and 0 < len(bone_weights):
         vertex_array_buffer = VertexArrayBuffer(geometry_name,
+                                                mode,
                                                 [positions, colors, normals, tangents, texcoords, bone_indicies, bone_weights],
                                                 indices)
     else:
         vertex_array_buffer = VertexArrayBuffer(geometry_name,
+                                                mode,
                                                 [positions, colors, normals, tangents, texcoords],
                                                 indices)
     return vertex_array_buffer
@@ -127,8 +143,9 @@ class InstanceBuffer:
 
 
 class VertexArrayBuffer:
-    def __init__(self, name, datas, index_data):
+    def __init__(self, name, mode, datas, index_data):
         self.name = name
+        self.mode = mode
         self.vertex_buffer_offset = []
         self.data_element_count = []
         self.data_element_size = []
@@ -174,13 +191,13 @@ class VertexArrayBuffer:
 
     def draw_elements(self):
         OpenGLContext.bind_vertex_array(self.vertex_array)
-        glDrawElements(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
+        glDrawElements(self.mode, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
     def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
         OpenGLContext.bind_vertex_array(self.vertex_array)
         instance_buffer.bind_instance_buffer(datas=instance_datas)
-        glDrawElementsInstanced(GL_TRIANGLES, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
+        glDrawElementsInstanced(self.mode, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
 
     def draw_elements_indirect(self, offset=0):
         OpenGLContext.bind_vertex_array(self.vertex_array)
-        glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, c_void_p(offset))
+        glDrawElementsIndirect(self.mode, GL_UNSIGNED_INT, c_void_p(offset))

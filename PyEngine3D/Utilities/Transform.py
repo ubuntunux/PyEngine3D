@@ -507,7 +507,7 @@ def convert_triangulate(polygon, vcount, stride=1):
 
 
 # http://jerome.jouvie.free.fr/opengl-tutorials/Lesson8.php
-def compute_tangent(positions, texcoords, normals, indices):
+def compute_tangent(is_triangle_mode, positions, texcoords, normals, indices):
     """
     Note: This point can also be considered as the vector starting from the origin to pi.
     Writting this equation for the points p1, p2 and p3 give :
@@ -538,34 +538,57 @@ def compute_tangent(positions, texcoords, normals, indices):
         N = cross(T, B)
     """
 
-    tangents = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
-    # binormals = np.array([0.0, 0.0, 0.0] * len(normals), dtype=np.float32).reshape(len(normals), 3)
+    tangents = np.array([[1.0, 0.0, 0.0], ] * len(normals), dtype=np.float32)
+    # binormals = np.array([[0.0, 0.0, 1.0], ] * len(normals), dtype=np.float32)
 
-    for i in range(0, len(indices), 3):
-        i0, i1, i2 = indices[i:i + 3]
-        deltaPos_0_1 = positions[i1] - positions[i0]
-        deltaPos_0_2 = positions[i2] - positions[i0]
-        deltaUV_0_1 = texcoords[i1] - texcoords[i0]
-        deltaUV_0_2 = texcoords[i2] - texcoords[i0]
-        r = deltaUV_0_1[0] * deltaUV_0_2[1] - deltaUV_0_1[1] * deltaUV_0_2[0]
-        r = (1.0 / r) if r != 0.0 else 0.0
+    if is_triangle_mode:
+        for i in range(0, len(indices), 3):
+            i0, i1, i2 = indices[i:i + 3]
+            deltaPos_0_1 = positions[i1] - positions[i0]
+            deltaPos_0_2 = positions[i2] - positions[i0]
+            deltaUV_0_1 = texcoords[i1] - texcoords[i0]
+            deltaUV_0_2 = texcoords[i2] - texcoords[i0]
+            r = deltaUV_0_1[0] * deltaUV_0_2[1] - deltaUV_0_1[1] * deltaUV_0_2[0]
+            r = (1.0 / r) if r != 0.0 else 0.0
 
-        tangent = (deltaPos_0_1 * deltaUV_0_2[1] - deltaPos_0_2 * deltaUV_0_1[1]) * r
-        tangent = normalize(tangent)
-        # binormal = (deltaPos_0_2 * deltaUV_0_1[0]   - deltaPos_0_1 * deltaUV_0_2[0]) * r
-        # binormal = normalize(binormal)
+            tangent = (deltaPos_0_1 * deltaUV_0_2[1] - deltaPos_0_2 * deltaUV_0_1[1]) * r
+            tangent = normalize(tangent)
+            # binormal = (deltaPos_0_2 * deltaUV_0_1[0]   - deltaPos_0_1 * deltaUV_0_2[0]) * r
+            # binormal = normalize(binormal)
 
-        # invalid tangent
-        if 0.0 == np.dot(tangent, tangent):
-            avg_normal = normalize(normals[i0] + normals[i1] + normals[i2])
-            tangent = np.cross(avg_normal, WORLD_UP)
+            # invalid tangent
+            if 0.0 == np.dot(tangent, tangent):
+                avg_normal = normalize(normals[i0] + normals[i1] + normals[i2])
+                tangent = np.cross(avg_normal, WORLD_UP)
 
-        tangents[indices[i]] = tangent
-        tangents[indices[i + 1]] = tangent
-        tangents[indices[i + 2]] = tangent
+            tangents[indices[i]] = tangent
+            tangents[indices[i + 1]] = tangent
+            tangents[indices[i + 2]] = tangent
 
-        # binormals[indices[i]] = binormal
-        # binormals[indices[i+1]] = binormal
-        # binormals[indices[i+2]] = binormal
+            # binormals[indices[i]] = binormal
+            # binormals[indices[i+1]] = binormal
+            # binormals[indices[i+2]] = binormal
+    else:
+        for i in range(0, len(indices), 4):
+            i0, i1, i2, i3 = indices[i:i + 4]
+            deltaPos_0_1 = positions[i1] - positions[i0]
+            deltaPos_0_2 = positions[i2] - positions[i0]
+            deltaUV_0_1 = texcoords[i1] - texcoords[i0]
+            deltaUV_0_2 = texcoords[i2] - texcoords[i0]
+            r = deltaUV_0_1[0] * deltaUV_0_2[1] - deltaUV_0_1[1] * deltaUV_0_2[0]
+            r = (1.0 / r) if r != 0.0 else 0.0
+
+            tangent = (deltaPos_0_1 * deltaUV_0_2[1] - deltaPos_0_2 * deltaUV_0_1[1]) * r
+            tangent = normalize(tangent)
+
+            # invalid tangent
+            if 0.0 == np.dot(tangent, tangent):
+                avg_normal = normalize(normals[i0] + normals[i1] + normals[i2])
+                tangent = np.cross(avg_normal, WORLD_UP)
+
+            tangents[indices[i]] = tangent
+            tangents[indices[i + 1]] = tangent
+            tangents[indices[i + 2]] = tangent
+            tangents[indices[i + 3]] = tangent
     # return tangents, binormals
     return tangents

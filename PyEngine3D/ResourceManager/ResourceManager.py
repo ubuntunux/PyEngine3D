@@ -1087,7 +1087,7 @@ class MeshLoader(ResourceLoader):
         self.create_resource("Quad", Quad("Quad"))
         self.create_resource("Cube", Cube("Cube"))
         self.create_resource("Plane", Plane("Plane", width=4, height=4, xz_plane=True))
-        self.create_resource("FFT_Grid", Plane("FFT_Grid", width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
+        self.create_resource("FFT_Grid", Plane("FFT_Grid", mode=GL_QUADS, width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False))
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)

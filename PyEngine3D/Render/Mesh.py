@@ -2,6 +2,7 @@ import os
 import traceback
 
 import numpy as np
+from OpenGL.GL import *
 
 from PyEngine3D.Common import logger
 from PyEngine3D.App import CoreManager
@@ -240,10 +241,11 @@ class Cube(Mesh):
 # CLASS : Plane
 # ------------------------------#
 class Plane(Mesh):
-    def __init__(self, mesh_name, width=4, height=4, xz_plane=True):
+    def __init__(self, mesh_name, width=4, height=4, xz_plane=True, mode=GL_TRIANGLES):
         self.width = width
         self.height = height
         self.xz_plane = xz_plane
+        self.mode = mode
         geometry_datas = self.get_geometry_datas()
         Mesh.__init__(self, mesh_name, geometry_datas=geometry_datas)
 
@@ -253,35 +255,38 @@ class Plane(Mesh):
         width_step = 1.0 / self.width
         height_step = 1.0 / self.height
         array_count = width_points * height_points
-        positions = np.zeros(array_count * 3).reshape(array_count, 3)
-        colors = np.zeros(array_count * 4).reshape(array_count, 4)
-        normals = np.zeros(array_count * 3).reshape(array_count, 3)
-        texcoords = np.zeros(array_count * 2).reshape(array_count, 2)
+        positions = np.array([[0, 0, 0], ] * array_count, dtype=np.float32)
+        colors = np.array([[1, 1, 1, 1], ] * array_count, dtype=np.float32)
+        normals = np.array([[0, 1, 0], ] * array_count, dtype=np.float32)
+        tangents = np.array([[1, 0, 0], ] * array_count, dtype=np.float32)
+        texcoords = np.array([[0, 0], ] * array_count, dtype=np.float32)
         array_index = 0
         for y in range(height_points):
-            y = y * height_step
+            y *= height_step
             for x in range(width_points):
-                x = x * width_step
-                positions[array_index][:] = \
-                    [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0] if self.xz_plane else [x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0]
-                colors[array_index][:] = [1, 1, 1, 1]
-                normals[array_index][:] = [0, 1, 0]
+                x *= width_step
+                positions[array_index][:] = [x * 2.0 - 1.0, 0.0, 1.0 - y * 2.0] if self.xz_plane else [x * 2.0 - 1.0, 1.0 - y * 2.0, 0.0]
                 texcoords[array_index][:] = [x, 1.0 - y]
                 array_index += 1
 
         array_index = 0
-        indices = np.zeros(self.width * self.height * 6)
+        vertex_count = 4 if self.mode == GL_QUADS else 6
+        indices = np.zeros(self.width * self.height * vertex_count, dtype=np.uint32)
         for y in range(self.height):
             for x in range(self.width):
                 i = y * width_points + x
-                indices[array_index: array_index + 6] = [i, i + width_points, i + width_points + 1, i,
-                                                         i + width_points + 1, i + 1]
-                array_index += 6
+                if GL_QUADS == self.mode:
+                    indices[array_index: array_index + vertex_count] = [i, i + width_points, i + width_points + 1, i + 1]
+                else:
+                    indices[array_index: array_index + vertex_count] = [i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1]
+                array_index += vertex_count
 
         geometry_data = dict(
+            mode=self.mode,
             positions=positions,
             colors=colors,
             normals=normals,
+            tangents=tangents,
             texcoords=texcoords,
             indices=indices)
 
@@ -318,8 +323,9 @@ class ScreenQuad:
     def get_vertex_array_buffer():
         if ScreenQuad.vertex_array_buffer is None:
             positions = np.array([(-1, 1, 0, 1), (-1, -1, 0, 1), (1, -1, 0, 1), (1, 1, 0, 1)], dtype=np.float32)
-            indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+            indices = np.array([0, 1, 2, 3], dtype=np.uint32)
             ScreenQuad.vertex_array_buffer = VertexArrayBuffer(name='screen quad',
+                                                               mode=GL_QUADS,
                                                                datas=[positions, ],
                                                                index_data=indices)
         return ScreenQuad.vertex_array_buffer
