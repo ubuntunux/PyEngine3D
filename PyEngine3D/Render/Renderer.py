@@ -494,6 +494,9 @@ class Renderer(Singleton):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        # render terrain
+        self.scene_manager.terrain.render_terrain()
+
         # render static actor
         self.render_actors(RenderGroup.STATIC_ACTOR,
                            RenderMode.GBUFFER,

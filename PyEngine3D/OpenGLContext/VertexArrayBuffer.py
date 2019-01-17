@@ -185,9 +185,10 @@ class VertexArrayBuffer:
         glBindVertexArray(0)
 
     def delete(self):
-        glDeleteVertexArrays(1, self.vertex_array)
-        glDeleteBuffers(1, self.vertex_buffer)
-        glDeleteBuffers(1, self.index_buffer)
+        logger.info("Delete %s geometry." % self.name)
+        glDeleteVertexArrays(1, GLuint(self.vertex_array))
+        glDeleteBuffers(1, GLuint(self.vertex_buffer))
+        glDeleteBuffers(1, GLuint(self.index_buffer))
 
     def draw_elements(self):
         OpenGLContext.bind_vertex_array(self.vertex_array)

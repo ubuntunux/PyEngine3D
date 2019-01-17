@@ -6,7 +6,7 @@ from OpenGL.GL import *
 from PyEngine3D.Common import logger
 from PyEngine3D.App import CoreManager
 from PyEngine3D.OpenGLContext import CreateTexture, Texture2D, Texture2DArray, Texture3D, FrameBuffer
-from PyEngine3D.Render import RenderTarget, ScreenQuad
+from PyEngine3D.Render import RenderTarget, ScreenQuad, Plane
 from PyEngine3D.Utilities import *
 from .Constants import *
 
@@ -77,7 +77,7 @@ class Ocean:
         self.texture_butterfly = self.resource_manager.get_texture("fft_ocean.butterfly", default_texture=False)
 
         self.quad = ScreenQuad.get_vertex_array_buffer()
-        self.fft_grid = self.resource_manager.get_mesh("FFT_Grid").get_geometry()
+        self.fft_grid = Plane("FFT_Grid", mode=GL_QUADS, width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False)
 
         self.simulation_size = GRID_SIZES * self.simulation_scale
 
@@ -462,4 +462,4 @@ class Ocean:
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.fft_render)
 
-        self.fft_grid.draw_elements()
+        self.fft_grid.get_geometry().draw_elements()

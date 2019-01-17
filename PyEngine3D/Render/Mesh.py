@@ -276,9 +276,9 @@ class Plane(Mesh):
             for x in range(self.width):
                 i = y * width_points + x
                 if GL_QUADS == self.mode:
-                    indices[array_index: array_index + vertex_count] = [i, i + width_points, i + width_points + 1, i + 1]
+                    indices[array_index: array_index + vertex_count] = [i, i + 1, i + 1 + width_points, i + width_points]
                 else:
-                    indices[array_index: array_index + vertex_count] = [i, i + width_points, i + width_points + 1, i, i + width_points + 1, i + 1]
+                    indices[array_index: array_index + vertex_count] = [i, i + 1, i + 1 + width_points, i, i + 1 + width_points, i + width_points]
                 array_index += vertex_count
 
         geometry_data = dict(

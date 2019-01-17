@@ -17,6 +17,7 @@ from .Light import MainLight, PointLight
 from .LightProbe import LightProbe
 from .Atmosphere import Atmosphere
 from .Ocean import Ocean
+from .Terrain import Terrain
 
 from .Font import TextRenderData, FontData, FontManager
 from .RenderTarget import RenderTargets, RenderTargetManager

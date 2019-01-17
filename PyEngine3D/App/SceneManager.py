@@ -11,7 +11,7 @@ from PyEngine3D.Common.Constants import *
 from PyEngine3D.Render import StaticActor, SkeletonActor
 from PyEngine3D.Render import Camera, MainLight, PointLight, LightProbe
 from PyEngine3D.Render import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
-from PyEngine3D.Render import Atmosphere, Ocean
+from PyEngine3D.Render import Atmosphere, Ocean, Terrain
 from PyEngine3D.Render import Effect
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
@@ -36,6 +36,7 @@ class SceneManager(Singleton):
         # envirment object
         self.atmosphere = None
         self.ocean = None
+        self.terrain = None
 
         self.cameras = []
         self.point_lights = []
@@ -107,6 +108,7 @@ class SceneManager(Singleton):
         self.main_light_probe = self.add_light_probe()
         self.atmosphere = self.add_atmosphere()
         self.ocean = self.add_ocean()
+        self.terrain = self.add_terrain()
 
         self.set_current_scene_name(self.resource_manager.scene_loader.get_new_resource_name("new_scene"))
 
@@ -153,6 +155,9 @@ class SceneManager(Singleton):
         ocean_data = scene_data.get('ocean', {})
         self.ocean = self.add_ocean(**ocean_data)
 
+        terrain_data = scene_data.get('terrain', {})
+        self.terrain = self.add_terrain(**terrain_data)
+
         for object_data in scene_data.get('static_actors', []):
             self.add_object(**object_data)
 
@@ -177,6 +182,7 @@ class SceneManager(Singleton):
             light_probes=[light_probe.get_save_data() for light_probe in self.light_probes],
             atmosphere=self.atmosphere.get_save_data(),
             ocean=self.ocean.get_save_data(),
+            terrain=self.terrain.get_save_data(),
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
             effects=self.effect_manager.get_save_data()
@@ -303,6 +309,13 @@ class SceneManager(Singleton):
         ocean = Ocean(**object_data)
         self.regist_object(ocean)
         return ocean
+
+    def add_terrain(self, **object_data):
+        object_data['name'] = self.generate_object_name(object_data.get('name', 'terrain'))
+        logger.info("add Terrain : %s" % object_data['name'])
+        terrain = Terrain(**object_data)
+        self.regist_object(terrain)
+        return terrain
 
     def add_object(self, **object_data):
         model = object_data.get('model')
@@ -495,7 +508,7 @@ class SceneManager(Singleton):
             skeleton_actor.update(dt)
 
         self.atmosphere.update(self.main_light)
-
         self.ocean.update(dt)
+        self.terrain.update(dt)
 
         self.effect_manager.update(dt)

@@ -149,9 +149,9 @@ class TransformObject:
     def get_scale(self):
         return self.scale
 
-    def set_scale(self, vScale):
+    def set_scale(self, scale):
         self.scaled = True
-        self.scale[...] = vScale
+        self.scale[...] = scale
 
     def set_scale_x(self, x):
         self.scaled = True
@@ -165,9 +165,9 @@ class TransformObject:
         self.scaled = True
         self.scale[2] = z
 
-    def scaling(self, vScale):
+    def scaling(self, scale):
         self.scaled = True
-        self.scale[...] = self.scale + vScale
+        self.scale[...] = self.scale + scale
 
     # update Transform
     def update_transform(self, update_inverse_matrix=False, force_update=False):
