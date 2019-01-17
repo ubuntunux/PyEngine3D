@@ -6,19 +6,6 @@ uniform float tessellation_level;
 uniform mat4 model;
 uniform sampler2D texture_height_map;
 
-struct VERTEX_OUTPUT
-{
-    vec3 world_position;
-    vec3 vertex_normal;
-    vec2 tex_coord;
-};
-
-struct PATCH_OUTPUT
-{
-    vec3 world_position[4];
-    vec3 vertex_normal[4];
-    vec2 tex_coord[4];
-};
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec3 vs_in_position;
@@ -27,7 +14,12 @@ layout (location = 2) in vec3 vs_in_normal;
 layout (location = 3) in vec3 vs_in_tangent;
 layout (location = 4) in vec2 vs_in_tex_coord;
 
-layout (location = 0) out VERTEX_OUTPUT vs_output;
+out block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} vs_output;
 
 void main()
 {
@@ -50,8 +42,20 @@ void main()
 #ifdef TESS_CONTROL_SHADER
 layout (vertices = 4) out;
 
-layout (location = 0) in PATCH_OUTPUT vs_output;
-layout (location = 0) out PATCH_OUTPUT ts_output;
+in block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} vs_output[];
+
+out block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} ts_output[];
+
 
 void main()
 {
@@ -65,38 +69,55 @@ void main()
         gl_TessLevelOuter[3] = tessellation_level;
     }
 
-    ts_output.world_position[gl_InvocationID] = vs_output.world_position[gl_InvocationID];
-    ts_output.vertex_normal[gl_InvocationID] = vs_output.vertex_normal[gl_InvocationID];
-    ts_output.tex_coord[gl_InvocationID] = vs_output.tex_coord[gl_InvocationID];
+    ts_output[gl_InvocationID].world_position = vs_output[gl_InvocationID].world_position;
+    ts_output[gl_InvocationID].vertex_normal = vs_output[gl_InvocationID].vertex_normal;
+    ts_output[gl_InvocationID].tex_coord = vs_output[gl_InvocationID].tex_coord;
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }
 #endif
 
 
 #ifdef TESS_EVALUATION_SHADER
-layout (quads) in;
+layout(quads, equal_spacing, ccw) in;
 
-layout (location = 0) in PATCH_OUTPUT ts_output;
-layout (location = 0) out VERTEX_OUTPUT te_output;
+in block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} ts_output[];
+
+out block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} te_output;
 
 void main()
 {
-    te_output.world_position = mix(mix(ts_output.world_position[0], ts_output.world_position[3], gl_TessCoord.x),
-                                   mix(ts_output.world_position[1], ts_output.world_position[2], gl_TessCoord.x),
+    te_output.world_position = mix(mix(ts_output[0].world_position, ts_output[3].world_position, gl_TessCoord.x),
+                                   mix(ts_output[1].world_position, ts_output[2].world_position, gl_TessCoord.x),
                                    gl_TessCoord.y);
-    te_output.vertex_normal = mix(mix(ts_output.vertex_normal[0], ts_output.vertex_normal[3], gl_TessCoord.x),
-                                  mix(ts_output.vertex_normal[1], ts_output.vertex_normal[2], gl_TessCoord.x),
-                                  gl_TessCoord.y);
-    te_output.tex_coord = mix(mix(ts_output.tex_coord[0], ts_output.tex_coord[3], gl_TessCoord.x),
-                                  mix(ts_output.tex_coord[1], ts_output.tex_coord[2], gl_TessCoord.x),
-                                  gl_TessCoord.y);
+    te_output.vertex_normal = mix(mix(ts_output[0].vertex_normal, ts_output[3].vertex_normal, gl_TessCoord.x),
+                                   mix(ts_output[1].vertex_normal, ts_output[2].vertex_normal, gl_TessCoord.x),
+                                   gl_TessCoord.y);
+    te_output.tex_coord = mix(mix(ts_output[0].tex_coord, ts_output[3].tex_coord, gl_TessCoord.x),
+                                   mix(ts_output[1].tex_coord, ts_output[2].tex_coord, gl_TessCoord.x),
+                                   gl_TessCoord.y);
     gl_Position = VIEW_PROJECTION * vec4(te_output.world_position, 1.0);
 }
 #endif
 */
 
 #ifdef FRAGMENT_SHADER
-layout (location = 0) in VERTEX_OUTPUT te_output;
+in block
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+} te_output;
+
 layout (location = 0) out vec4 fs_diffuse;
 layout (location = 1) out vec4 fs_material;
 layout (location = 2) out vec4 fs_normal;
