@@ -287,16 +287,15 @@ class PostProcess:
     def draw_elements(self):
         self.quad.draw_elements()
 
-    def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
+    def draw_elements_instanced(self, instance_count, instance_buffer=None, instance_datas=[]):
         self.quad.draw_elements_instanced(instance_count, instance_buffer, instance_datas)
 
-    def render_temporal_antialiasing(self, texture_input, texture_prev, texture_velocity, texture_linear_depth):
+    def render_temporal_antialiasing(self, texture_input, texture_prev, texture_velocity):
         self.temporal_antialiasing.use_program()
         self.temporal_antialiasing.bind_material_instance()
         self.temporal_antialiasing.bind_uniform_data('texture_input', texture_input)
         self.temporal_antialiasing.bind_uniform_data('texture_prev', texture_prev)
         self.temporal_antialiasing.bind_uniform_data('texture_velocity', texture_velocity)
-        # self.temporal_antialiasing.bind_uniform_data('texture_linear_depth', texture_linear_depth)
         self.quad.draw_elements()
 
     def render_blur(self, texture_diffuse, blur_kernel_radius=1.0):

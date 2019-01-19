@@ -38,7 +38,7 @@ class Geometry:
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
 
-    def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
+    def draw_elements_instanced(self, instance_count, instance_buffer=None, instance_datas=[]):
         self.vertex_buffer.draw_elements_instanced(instance_count, instance_buffer, instance_datas)
 
     def draw_elements_indirect(self, offset=0):

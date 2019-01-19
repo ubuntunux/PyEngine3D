@@ -495,7 +495,8 @@ class Renderer(Singleton):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # render terrain
-        self.scene_manager.terrain.render_terrain()
+        if self.scene_manager.terrain.is_render_terrain:
+            self.scene_manager.terrain.render_terrain()
 
         # render static actor
         self.render_actors(RenderGroup.STATIC_ACTOR,
@@ -751,8 +752,7 @@ class Renderer(Singleton):
             glClear(GL_COLOR_BUFFER_BIT)
             self.postprocess.render_temporal_antialiasing(RenderTargets.HDR_TEMP,
                                                           RenderTargets.TAA_RESOLVE,
-                                                          RenderTargets.VELOCITY,
-                                                          RenderTargets.LINEAR_DEPTH)
+                                                          RenderTargets.VELOCITY)
 
             src_framebuffer = self.framebuffer_manager.get_framebuffer(RenderTargets.HDR)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.TAA_RESOLVE)
@@ -932,6 +932,7 @@ class Renderer(Singleton):
             self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
 
             self.render_gbuffer()
+
             self.render_preprocess()
 
             # render shadow

@@ -114,9 +114,7 @@ class InstanceBuffer:
         self.instance_buffer = glGenBuffers(1)
 
     def bind_instance_buffer(self, datas, divisor=1):
-        instance_buffer_size = 0
-        for data in datas:
-            instance_buffer_size += data.nbytes
+        instance_buffer_size = sum(data.nbytes for data in datas)
         glBindBuffer(GL_ARRAY_BUFFER, self.instance_buffer)
         glBufferData(GL_ARRAY_BUFFER, instance_buffer_size, None, GL_STATIC_DRAW)
 
@@ -194,9 +192,10 @@ class VertexArrayBuffer:
         OpenGLContext.bind_vertex_array(self.vertex_array)
         glDrawElements(self.mode, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER)
 
-    def draw_elements_instanced(self, instance_count, instance_buffer, instance_datas):
+    def draw_elements_instanced(self, instance_count, instance_buffer=None, instance_datas=[]):
         OpenGLContext.bind_vertex_array(self.vertex_array)
-        instance_buffer.bind_instance_buffer(datas=instance_datas)
+        if instance_buffer is not None:
+            instance_buffer.bind_instance_buffer(datas=instance_datas)
         glDrawElementsInstanced(self.mode, self.index_buffer_size, GL_UNSIGNED_INT, NULL_POINTER, instance_count)
 
     def draw_elements_indirect(self, offset=0):

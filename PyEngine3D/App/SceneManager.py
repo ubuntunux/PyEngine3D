@@ -509,6 +509,8 @@ class SceneManager(Singleton):
 
         self.atmosphere.update(self.main_light)
         self.ocean.update(dt)
-        self.terrain.update(dt)
+
+        if self.terrain.is_render_terrain:
+            self.terrain.update(dt)
 
         self.effect_manager.update(dt)
