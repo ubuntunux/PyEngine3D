@@ -292,9 +292,9 @@ def set_scale_matrix(M, x, y, z):
 
 
 def matrix_scale(M, x, y, z):
-    M[0][0] *= x
-    M[1][1] *= y
-    M[2][2] *= z
+    M[0] *= x
+    M[1] *= y
+    M[2] *= z
 
 
 def get_rotation_matrix_x(radian):
@@ -405,6 +405,19 @@ def swap_matrix(matrix, transpose, up_axis):
              matrix[3, :].copy()]
         )
     return matrix
+
+
+def transform_matrix(M, translation, rotation_matrix, scale):
+    matrix_scale(M, *scale)
+    M[...] = np.dot(M, rotation_matrix)
+    matrix_translate(M, *translation)
+
+
+def inverse_transform_matrix(M, translation, rotation_matrix, scale):
+    matrix_translate(M, *(-translation))
+    M[...] = np.dot(M, rotation_matrix.T)
+    if all(0.0 != scale):
+        matrix_scale(M, *(1.0 / scale))
 
 
 def extract_location(matrix):
