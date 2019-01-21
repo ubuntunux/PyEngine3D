@@ -6,6 +6,8 @@ from PyEngine3D.Render import Plane
 from PyEngine3D.OpenGLContext import InstanceBuffer
 from PyEngine3D.Utilities import *
 
+import time
+
 
 class Terrain:
     def __init__(self, **object_data):
@@ -21,16 +23,15 @@ class Terrain:
         self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
         self.transform.set_scale(object_data.get('scale', [1, 1, 1]))
 
-        self.height_map_size = np.array(object_data.get('height_map_size', [10.0, 10.0]), dtype=np.float32)
-
         self.width = object_data.get('width', 10)
         self.height = object_data.get('height', 10)
+        self.subdivide_level = object_data.get('subdivide_level', 100)
+        self.height_map_size = np.array(object_data.get('height_map_size', [10.0, 10.0]), dtype=np.float32)
 
         self.instance_offset = None
         self.set_instance_offset(self.width, self.height)
         self.instance_buffer = InstanceBuffer(name="terrain_instance_buffer", location_offset=5, element_datas=[FLOAT4_ZERO, ])
 
-        self.subdivide_level = object_data.get('subdivide_level', 100)
         self.terrain_grid = None
         self.generate_terrain(self.subdivide_level)
 
@@ -102,5 +103,7 @@ class Terrain:
         material_instance.bind_uniform_data('height_map_size', self.height_map_size)
         material_instance.bind_uniform_data('model', self.transform.matrix)
         material_instance.bind_uniform_data('texture_height_map', self.texture_height_map)
+        material_instance.bind_uniform_data('scale', self.transform.scale)
+        material_instance.bind_uniform_data('subdivide_level', self.subdivide_level)
         self.terrain_grid.get_geometry().draw_elements_instanced(len(self.instance_offset), self.instance_buffer, [self.instance_offset, ])
 

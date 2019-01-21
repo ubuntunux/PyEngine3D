@@ -12,6 +12,8 @@ class MainLight(StaticActor):
         StaticActor.__init__(self, name, **object_data)
         self.light_color = Float4(*object_data.get('light_color', (1.0, 1.0, 1.0, 1.0)))
 
+        self.transform.set_rotation(object_data.get('rot', [-1.0, 0, 0]))
+
         self.last_shadow_camera = None
         self.last_shadow_position = FLOAT3_ZERO.copy()
 
@@ -43,7 +45,6 @@ class MainLight(StaticActor):
 
         if current_camera is not None:
             camera_pos = current_camera.transform.get_pos()
-            dist = np.linalg.norm(self.last_shadow_position - camera_pos)
 
             self.last_shadow_camera = current_camera
             self.last_shadow_position[...] = camera_pos

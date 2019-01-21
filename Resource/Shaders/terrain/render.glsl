@@ -3,9 +3,17 @@
 #include "shading.glsl"
 
 uniform vec2 height_map_size;
-uniform float tessellation_level;
+uniform vec3 scale;
+uniform float subdivide_level;
 uniform mat4 model;
 uniform sampler2D texture_height_map;
+
+struct VERTEX_OUTPUT
+{
+    vec3 world_position;
+    vec3 vertex_normal;
+    vec2 tex_coord;
+};
 
 
 #ifdef VERTEX_SHADER
@@ -17,22 +25,28 @@ layout (location = 4) in vec2 vs_in_tex_coord;
 // instance data
 layout (location = 5) in vec4 vs_in_isntance_offset;
 
-out block
-{
-    vec3 world_position;
-    vec3 vertex_normal;
-    vec2 tex_coord;
-} vs_output;
+layout (location = 0) out VERTEX_OUTPUT vs_output;
 
 void main()
 {
     vec4 position = vec4(vs_in_position, 1.0);
-    position.xz += vs_in_isntance_offset.xy * 2.0;
+    position.xz = position.xz * 0.5 + 0.5;
+    position.xz += vs_in_isntance_offset.xy;
 
     vec2 tex_coord = position.xz / height_map_size;
-    position.y += texture2DLod(texture_height_map, tex_coord, 0.0).x;
+    float height = texture2DLod(texture_height_map, tex_coord, 0.0).x;
+    position.y += height;
 
-    vec3 vertex_normal = normalize(vs_in_normal);
+    vec2 tex_coord_delta = 1.0 / (height_map_size * subdivide_level);
+    vec3 size_of_grid = vec3(scale.x / subdivide_level, scale.y, scale.z / subdivide_level);
+
+    float height_w = texture2DLod(texture_height_map, tex_coord + vec2(tex_coord_delta.x, 0.0), 0.0).x;
+    float height_h = texture2DLod(texture_height_map, tex_coord + vec2(0.0, tex_coord_delta.y), 0.0).x;
+
+    vec3 vector_w = normalize(vec3(size_of_grid.x, size_of_grid.y * (height_w - height), 0.0));
+    vec3 vector_h = normalize(vec3(0.0, size_of_grid.y * (height_h - height), size_of_grid.z));
+
+    vec3 vertex_normal = cross(vector_h, vector_w);
     vec3 world_position = (model * position).xyz;
 
     vs_output.world_position = world_position;
@@ -45,12 +59,7 @@ void main()
 
 
 #ifdef FRAGMENT_SHADER
-in block
-{
-    vec3 world_position;
-    vec3 vertex_normal;
-    vec2 tex_coord;
-} te_output;
+layout (location = 0) in VERTEX_OUTPUT vs_output;
 
 layout (location = 0) out vec4 fs_diffuse;
 layout (location = 1) out vec4 fs_material;
@@ -62,11 +71,12 @@ void main()
     float roughness = 1.0;
     float metalicness = 0.0;
     float reflectance = 0.0;
+    vec3 normal = normalize(vs_output.vertex_normal.xyz);
 
-    fs_diffuse.xyz = pow(texture2D(texture_height_map, te_output.tex_coord).xyz, vec3(2.2));
+    fs_diffuse.xyz = pow(texture2D(texture_height_map, vs_output.tex_coord).xyz, vec3(2.2));
     fs_diffuse.w = emissive;
 
     fs_material = vec4(roughness, metalicness, reflectance, 0.0);
-    fs_normal = vec4(0.0, 1.0, 0.0, 0.0);
+    fs_normal = vec4(normal * 0.5 + 0.5, 0.0);
 }
 #endif
