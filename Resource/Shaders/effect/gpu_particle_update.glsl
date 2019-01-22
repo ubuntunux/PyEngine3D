@@ -8,7 +8,7 @@ uniform float vector_field_strength;
 uniform vec3 vector_field_offset;
 uniform vec3 vector_field_radius;
 uniform sampler3D texture_vector_field;
-uniform sampler2D texture_linear_depth;
+uniform sampler2D texture_depth;
 uniform sampler2D texture_normal;
 
 
@@ -215,9 +215,11 @@ void update(inout ParticleData particle_data, uint id)
             {
                 vec4 proj_pos = PROJECTION * VIEW_ORIGIN * vec4(particle_data.relative_position, 1.0);
                 vec3 scene_uvw = (proj_pos.xyz / proj_pos.w) * 0.5 + 0.5;
-                float scene_linear_depth = texture2DLod(texture_linear_depth, scene_uvw.xy, 0.0).x;
+                float scene_depth = texture2DLod(texture_depth, scene_uvw.xy, 0.0).x;
+                float scene_linear_depth = depth_to_linear_depth(scene_depth);
                 vec3 scene_normal = normalize(texture2DLod(texture_normal, scene_uvw.xy, 0.0).xyz * 2.0 - 1.0);
-                float depth_diff = depth_to_linear_depth(scene_uvw.z) - scene_linear_depth;
+                float depth_diff = proj_pos.w - scene_linear_depth;
+                //float depth_diff = depth_to_linear_depth(scene_uvw.z) - scene_linear_depth;
 
                 if(0.0 <= depth_diff && depth_diff < 1.0)
                 {

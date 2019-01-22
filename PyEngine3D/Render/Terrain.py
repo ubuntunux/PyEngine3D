@@ -63,13 +63,10 @@ class Terrain:
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
         if attribute_name == 'pos':
             self.transform.set_pos(attribute_value)
-            self.transform.update_transform()
         elif attribute_name == 'rot':
             self.transform.set_rotation(attribute_value)
-            self.transform.update_transform()
         elif attribute_name == 'scale':
             self.transform.set_scale(attribute_value)
-            self.transform.update_transform()
         elif attribute_name == 'texture_height_map':
             self.texture_height_map = self.resource_manager.get_texture(attribute_value)
         elif hasattr(self, attribute_name):
@@ -94,7 +91,7 @@ class Terrain:
                 i += 1
 
     def update(self, delta):
-        pass
+        self.transform.update_transform()
 
     def render_terrain(self):
         material_instance = self.terrain_render
