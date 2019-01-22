@@ -113,13 +113,11 @@ class Renderer(Singleton):
                                                                                        macros={"SKELETAL": 1})
 
         self.selcted_static_object_material = self.resource_manager.get_material_instance("selected_object")
-        self.selcted_skeletal_object_material = self.resource_manager.get_material_instance(
-            name="selected_object_skeletal",
-            shader_name="selected_object",
-            macros={"SKELETAL": 1}
-        )
-        self.selcted_object_composite_material = self.resource_manager.get_material_instance(
-            "selected_object_composite")
+        self.selcted_skeletal_object_material = self.resource_manager.get_material_instance(name="selected_object_skeletal",
+                                                                                            shader_name="selected_object",
+                                                                                            macros={"SKELETAL": 1})
+
+        self.selcted_object_composite_material = self.resource_manager.get_material_instance("selected_object_composite")
 
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
