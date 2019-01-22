@@ -19,10 +19,12 @@ void main()
     if(ADDITIVE == PARTICLE_BLEND_MODE || SUBTRACT == PARTICLE_BLEND_MODE)
     {
         ps_output.xyz *= ps_output.w;
+        ps_output.w = 0.0;
     }
     else if(MULTIPLY == PARTICLE_BLEND_MODE)
     {
         ps_output.xyz = mix(vec3(1.0), ps_output.xyz, vec3(ps_output.w));
+        ps_output.w = 1.0;
     }
 }
 #endif
