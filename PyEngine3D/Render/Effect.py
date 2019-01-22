@@ -135,7 +135,7 @@ class EffectManager(Singleton):
                         glBlendFunc(GL_ONE, GL_ONE)
                     elif particle_info.blend_mode is BlendMode.MULTIPLY:
                         glBlendEquation(GL_FUNC_ADD)
-                        glBlendFunc(GL_DST_COLOR, GL_ZERO)
+                        glBlendFunc(GL_ZERO, GL_SRC_COLOR)
                     elif particle_info.blend_mode is BlendMode.SUBTRACT:
                         glBlendEquation(GL_FUNC_SUBTRACT)
                         glBlendFunc(GL_ONE, GL_ONE)
