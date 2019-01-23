@@ -1,3 +1,4 @@
+#include "scene_constants.glsl"
 #include "PCFKernels.glsl"
 #include "utility.glsl"
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
@@ -19,7 +20,6 @@ float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampl
     };
 
     float shadow_factor = 0.0;
-    int loop_count = 4;
     const float c = 1000.0;
     float depth_bias = 0.002;
 
@@ -69,11 +69,10 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     };
 
     float shadow_factor = 0.0;
-    int loop_count = 4;
     const float c = 1000.0;
     float depth_bias = 0.002;
 
-    for(int n=0; n<loop_count; ++n)
+    for(int n=0; n<SHADOWMAP_LOOP_COUNT; ++n)
     {
         vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 4.0;
 
@@ -102,7 +101,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
             mix(shadow_factors.z, shadow_factors.w, pixel_ratio.x), pixel_ratio.y);
     }
 
-    return clamp(shadow_factor / float(loop_count), 0.0, 1.0);
+    return clamp(shadow_factor / float(SHADOWMAP_LOOP_COUNT), 0.0, 1.0);
 }
 
 

@@ -137,7 +137,7 @@ class Renderer(Singleton):
                                                      ('BACKBUFFER_SIZE', np.float32, 2),
                                                      ('MOUSE_POS', np.float32, 2),
                                                      ('DELTA_TIME', np.float32),
-                                                     ('SCENECONSTANTS_DUMMY_0', np.float32)])
+                                                     ('SHADOWMAP_LOOP_COUNT', np.int32)])
         self.uniform_scene_buffer = UniformBlock("scene_constants", program, 0, self.uniform_scene_data)
 
         self.uniform_view_data = np.zeros(1, dtype=[('VIEW', np.float32, (4, 4)),
@@ -328,6 +328,7 @@ class Renderer(Singleton):
         uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
         uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
         uniform_data['DELTA_TIME'] = self.core_manager.delta
+        uniform_data['SHADOWMAP_LOOP_COUNT'] = self.postprocess.shadowmap_loop_count
         self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_view_data
@@ -494,7 +495,7 @@ class Renderer(Singleton):
 
         # render terrain
         if self.scene_manager.terrain.is_render_terrain:
-            self.scene_manager.terrain.render_terrain()
+            self.scene_manager.terrain.render_terrain(RenderMode.GBUFFER)
 
         # render static actor
         self.render_actors(RenderGroup.STATIC_ACTOR,
@@ -519,16 +520,36 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_solid_render_infos)
 
     def render_shadow(self):
-        self.render_actors(RenderGroup.STATIC_ACTOR,
-                           RenderMode.SHADOW,
-                           self.scene_manager.static_shadow_render_infos,
-                           self.shadowmap_material)
+        light = self.scene_manager.main_light
+        self.uniform_view_projection_data['VIEW_PROJECTION'][...] = light.shadow_view_projection
+        self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = light.shadow_view_projection
+        self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
+
+        # static shadow
+        self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.STATIC_SHADOWMAP)
+        glClear(GL_DEPTH_BUFFER_BIT)
+        glFrontFace(GL_CW)
+
+        if self.scene_manager.terrain.is_render_terrain:
+            self.scene_manager.terrain.render_terrain(RenderMode.SHADOW)
+
+        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW, self.scene_manager.static_shadow_render_infos, self.shadowmap_material)
+
+        # dyanmic shadow
+        self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.DYNAMIC_SHADOWMAP)
+        glClear(GL_DEPTH_BUFFER_BIT)
+        glFrontFace(GL_CW)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
-            self.render_actors(RenderGroup.SKELETON_ACTOR,
-                               RenderMode.SHADOW,
-                               self.scene_manager.skeleton_shadow_render_infos,
-                               self.shadowmap_skeletal_material)
+            self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW, self.scene_manager.skeleton_shadow_render_infos, self.shadowmap_skeletal_material)
+
+        # composite shadow maps
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.COMPOSITE_SHADOWMAP)
+        glClearColor(1.0, 1.0, 1.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glDisable(GL_CULL_FACE)
+
+        self.postprocess.render_composite_shadowmap(RenderTargets.STATIC_SHADOWMAP, RenderTargets.DYNAMIC_SHADOWMAP)
 
     def render_preprocess(self):
         # Linear depth
@@ -627,7 +648,7 @@ class Renderer(Singleton):
 
                     if RenderMode.FORWARD_SHADING == render_mode:
                         actor_material_instance.bind_uniform_data('texture_probe', self.scene_manager.get_light_probe_texture())
-                        actor_material_instance.bind_uniform_data('texture_shadow', RenderTargets.SHADOWMAP)
+                        actor_material_instance.bind_uniform_data('texture_shadow', RenderTargets.COMPOSITE_SHADOWMAP)
                         actor_material_instance.bind_uniform_data('texture_ssao', RenderTargets.SSAO)
                         actor_material_instance.bind_uniform_data('texture_scene_reflect', RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED)
                         # Bind Atmosphere
@@ -766,7 +787,7 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
             self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE,
                                                 RenderTargets.LINEAR_DEPTH,
-                                                RenderTargets.SHADOWMAP)
+                                                RenderTargets.COMPOSITE_SHADOWMAP)
 
         # Depth Of Field
         if self.postprocess.is_render_depth_of_field:
@@ -894,12 +915,11 @@ class Renderer(Singleton):
 
         elif RenderOption.RENDER_ONLY_ATMOSPHERE and RenderOption.RENDER_LIGHT_PROBE:
             """ render light probe preprocess """
-            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.COMPOSITE_SHADOWMAP)
             glClearColor(1.0, 1.0, 1.0, 1.0)
-            glClear(GL_DEPTH_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT)
 
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL,
-                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL, depth_texture=RenderTargets.DEPTHSTENCIL)
             glClearColor(0.0, 1.0, 0.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -915,7 +935,7 @@ class Renderer(Singleton):
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.SHADOWMAP,
+                                                                            RenderTargets.COMPOSITE_SHADOWMAP,
                                                                             RenderOption.RENDER_LIGHT_PROBE)
             # done render light probe preprocess
             return
@@ -932,16 +952,6 @@ class Renderer(Singleton):
             self.render_gbuffer()
 
             self.render_preprocess()
-
-            # render shadow
-            light = self.scene_manager.main_light
-            self.uniform_view_projection_data['VIEW_PROJECTION'][...] = light.shadow_view_projection
-            self.uniform_view_projection_data['PREV_VIEW_PROJECTION'][...] = light.shadow_view_projection
-            self.uniform_view_projection_buffer.bind_uniform_block(data=self.uniform_view_projection_data)
-
-            self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.SHADOWMAP)
-            glClear(GL_DEPTH_BUFFER_BIT)
-            glFrontFace(GL_CW)
 
             self.render_shadow()
 
@@ -984,7 +994,7 @@ class Renderer(Singleton):
                                                       texture_scene=RenderTargets.HDR_TEMP,
                                                       texture_linear_depth=RenderTargets.LINEAR_DEPTH,
                                                       texture_probe=RenderTargets.LIGHT_PROBE_ATMOSPHERE,
-                                                      texture_shadow=RenderTargets.SHADOWMAP)
+                                                      texture_shadow=RenderTargets.COMPOSITE_SHADOWMAP)
 
                 # re copy Linear depth
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
@@ -995,7 +1005,7 @@ class Renderer(Singleton):
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.ATMOSPHERE,
                                                           RenderTargets.ATMOSPHERE_INSCATTER)
                 self.scene_manager.atmosphere.render_precomputed_atmosphere(RenderTargets.LINEAR_DEPTH,
-                                                                            RenderTargets.SHADOWMAP,
+                                                                            RenderTargets.COMPOSITE_SHADOWMAP,
                                                                             RenderOption.RENDER_LIGHT_PROBE)
 
             glEnable(GL_CULL_FACE)

@@ -5,8 +5,7 @@ from PyEngine3D.App import CoreManager
 from PyEngine3D.Render import Plane
 from PyEngine3D.OpenGLContext import InstanceBuffer
 from PyEngine3D.Utilities import *
-
-import time
+from . import RenderMode
 
 
 class Terrain:
@@ -36,7 +35,8 @@ class Terrain:
         self.generate_terrain(self.subdivide_level)
 
         self.texture_height_map = self.resource_manager.get_texture(object_data.get('texture_height_map', "common.noise"))
-        self.terrain_render = self.resource_manager.get_material_instance('terrain.render')
+        self.terrain_render = self.resource_manager.get_material_instance('terrain.terrain_render_ps')
+        self.terrain_shadow = self.resource_manager.get_material_instance('terrain.terrain_shadow')
 
         self.attributes = Attributes()
 
@@ -93,8 +93,13 @@ class Terrain:
     def update(self, delta):
         self.transform.update_transform()
 
-    def render_terrain(self):
-        material_instance = self.terrain_render
+    def render_terrain(self, render_mode):
+        if RenderMode.GBUFFER == render_mode:
+            material_instance = self.terrain_render
+        elif RenderMode.SHADOW == render_mode:
+            material_instance = self.terrain_shadow
+        else:
+            raise BaseException("Unkown terrain render mode %s" % render_mode)
         material_instance.use_program()
         material_instance.bind_material_instance()
         material_instance.bind_uniform_data('height_map_size', self.height_map_size)

@@ -39,7 +39,9 @@ class RenderTargets:
     DIFFUSE = None
     MATERIAL = None
     WORLD_NORMAL = None
-    SHADOWMAP = None
+    STATIC_SHADOWMAP = None
+    DYNAMIC_SHADOWMAP = None
+    COMPOSITE_SHADOWMAP = None
     LINEAR_DEPTH = None
     FOCUS_DISTANCE = None
     SCREEN_SPACE_REFLECTION = None
@@ -413,13 +415,39 @@ class RenderTargetManager(Singleton):
         )
 
         # It must attach to depth render target
-        RenderTargets.SHADOWMAP = self.create_rendertarget(
-            "SHADOWMAP",
+        RenderTargets.STATIC_SHADOWMAP = self.create_rendertarget(
+            "STATIC_SHADOWMAP",
             texture_type=Texture2D,
             width=1024,
             height=1024,
             internal_format=GL_DEPTH_COMPONENT32,
             texture_format=GL_DEPTH_COMPONENT,
+            data_type=GL_FLOAT,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.DYNAMIC_SHADOWMAP = self.create_rendertarget(
+            "DYNAMIC_SHADOWMAP",
+            texture_type=Texture2D,
+            width=1024,
+            height=1024,
+            internal_format=GL_DEPTH_COMPONENT32,
+            texture_format=GL_DEPTH_COMPONENT,
+            data_type=GL_FLOAT,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.COMPOSITE_SHADOWMAP = self.create_rendertarget(
+            "COMPOSITE_SHADOWMAP",
+            texture_type=Texture2D,
+            width=1024,
+            height=1024,
+            internal_format=GL_R32F,
+            texture_format=GL_RED,
             data_type=GL_FLOAT,
             min_filter=GL_NEAREST,
             mag_filter=GL_NEAREST,

@@ -116,6 +116,9 @@ class PostProcess:
         self.copy_texture_mi = None
         self.render_texture_mi = None
 
+        self.composite_shadowmap = None
+        self.shadowmap_loop_count = 16
+
         self.temporal_antialiasing = None
         self.jitter_mode = JitterMode.Hammersley16x
         self.jitter = Float2()
@@ -176,6 +179,7 @@ class PostProcess:
         self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
         self.copy_texture_mi = self.resource_manager.get_material_instance("copy_texture")
         self.render_texture_mi = self.resource_manager.get_material_instance("render_texture")
+        self.composite_shadowmap = self.resource_manager.get_material_instance("composite_shadowmap")
 
         # TAA
         self.temporal_antialiasing = self.resource_manager.get_material_instance("temporal_antialiasing")
@@ -214,6 +218,8 @@ class PostProcess:
         self.Attributes.set_attribute('light_shaft_intensity', self.light_shaft_intensity)
         self.Attributes.set_attribute('light_shaft_threshold', self.light_shaft_threshold)
         self.Attributes.set_attribute('light_shaft_length', self.light_shaft_length)
+
+        self.Attributes.set_attribute('shadowmap_loop_count', self.shadowmap_loop_count)
 
         self.Attributes.set_attribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.set_attribute('exposure', self.exposure)
@@ -544,13 +550,20 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
 
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
-        self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.SHADOWMAP)
+        self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.COMPOSITE_SHADOWMAP)
         self.deferred_shading.bind_uniform_data("texture_ssao", RenderTargets.SSAO)
         self.deferred_shading.bind_uniform_data("texture_scene_reflect", RenderTargets.SCREEN_SPACE_REFLECTION_RESOLVED)
 
         # Bind Atmosphere
         atmosphere.bind_precomputed_atmosphere(self.deferred_shading)
 
+        self.quad.draw_elements()
+
+    def render_composite_shadowmap(self, texture_static_shadowmap, texture_dynamic_shadowmap):
+        self.composite_shadowmap.use_program()
+        self.composite_shadowmap.bind_material_instance()
+        self.composite_shadowmap.bind_uniform_data("texture_static_shadowmap", texture_static_shadowmap)
+        self.composite_shadowmap.bind_uniform_data("texture_dynamic_shadowmap", texture_dynamic_shadowmap)
         self.quad.draw_elements()
 
     def copy_texture(self, source_texture, target_level=0.0):

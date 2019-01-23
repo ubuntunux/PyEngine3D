@@ -8,7 +8,7 @@ layout(std140, binding=0) uniform scene_constants
     vec2 BACKBUFFER_SIZE;
     vec2 MOUSE_POS;
     float DELTA_TIME;
-    float SCENECONSTANTS_DUMMY_0;
+    int SHADOWMAP_LOOP_COUNT;
 };
 
 layout(std140, binding=1) uniform view_constants
