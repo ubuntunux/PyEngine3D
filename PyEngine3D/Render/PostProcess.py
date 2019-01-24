@@ -71,9 +71,11 @@ class PostProcess:
         self.bloom_scale = 1.0
 
         self.is_render_light_shaft = True
-        self.light_shaft_intensity = 2.0
-        self.light_shaft_threshold = 0.0
-        self.light_shaft_length = 1.0
+        self.light_shaft_intensity = 5.0
+        self.light_shaft_threshold = 0.5
+        self.light_shaft_radius = 0.1
+        self.light_shaft_decay = 0.98
+        self.light_shaft_samples = 128
         self.light_shaft = None
 
         self.is_render_motion_blur = True
@@ -217,7 +219,9 @@ class PostProcess:
         self.Attributes.set_attribute('is_render_light_shaft', self.is_render_light_shaft)
         self.Attributes.set_attribute('light_shaft_intensity', self.light_shaft_intensity)
         self.Attributes.set_attribute('light_shaft_threshold', self.light_shaft_threshold)
-        self.Attributes.set_attribute('light_shaft_length', self.light_shaft_length)
+        self.Attributes.set_attribute('light_shaft_radius', self.light_shaft_radius)
+        self.Attributes.set_attribute('light_shaft_decay', self.light_shaft_decay)
+        self.Attributes.set_attribute('light_shaft_samples', self.light_shaft_samples)
 
         self.Attributes.set_attribute('shadowmap_loop_count', self.shadowmap_loop_count)
 
@@ -385,17 +389,19 @@ class PostProcess:
         self.motion_blur.bind_uniform_data("texture_velocity", texture_velocity)
         self.quad.draw_elements()
 
-    def render_light_shaft(self, texture_diffuse, texture_linear_depth, texture_shadow):
+    def render_light_shaft(self, texture_diffuse, texture_depth):
         self.light_shaft.use_program()
         self.light_shaft.bind_material_instance()
         self.light_shaft.bind_uniform_data("light_shaft_intensity", self.light_shaft_intensity)
         self.light_shaft.bind_uniform_data("light_shaft_threshold", self.light_shaft_threshold)
-        self.light_shaft.bind_uniform_data("light_shaft_length", self.light_shaft_length)
+        self.light_shaft.bind_uniform_data("light_shaft_radius", self.light_shaft_radius)
+        self.light_shaft.bind_uniform_data("light_shaft_decay", self.light_shaft_decay)
+        self.light_shaft.bind_uniform_data("light_shaft_samples", self.light_shaft_samples)
+
         self.light_shaft.bind_uniform_data("texture_diffuse", texture_diffuse)
         texture_random = self.resource_manager.get_texture('common.random')
         self.light_shaft.bind_uniform_data("texture_random", texture_random)
-        self.light_shaft.bind_uniform_data("texture_linear_depth", texture_linear_depth)
-        self.light_shaft.bind_uniform_data("texture_shadow", texture_shadow)
+        self.light_shaft.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
     def render_bloom(self, texture_target):

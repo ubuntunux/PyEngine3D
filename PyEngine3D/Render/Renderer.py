@@ -785,9 +785,7 @@ class Renderer(Singleton):
         # Light Shaft
         if self.postprocess.is_render_light_shaft:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
-            self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE,
-                                                RenderTargets.LINEAR_DEPTH,
-                                                RenderTargets.COMPOSITE_SHADOWMAP)
+            self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE, RenderTargets.DEPTHSTENCIL)
 
         # Depth Of Field
         if self.postprocess.is_render_depth_of_field:
