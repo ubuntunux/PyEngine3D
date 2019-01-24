@@ -468,6 +468,9 @@ class ResourceLoader(object):
     def load_resource(self, resource_name):
         logger.warn("load_resource is not implemented in %s." % self.name)
 
+    def unload_resource(self, resource_name):
+        logger.warn("unload_resource is not implemented in %s." % self.name)
+
     def action_resource(self, resource_name):
         logger.warn("action_resource is not implemented in %s." % self.name)
 
@@ -1390,21 +1393,44 @@ class ScriptLoader(ResourceLoader):
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
         if resource:
-            module = SourceFileLoader("module.name", resource.meta_data.resource_filepath).load_module()
-            resource.set_data(module)
+            try:
+                module = SourceFileLoader("module.name", resource.meta_data.resource_filepath).load_module()
+                resource.set_data(module)
+                return True
+            except:
+                logger.error(traceback.format_exc())
+                pass
+        return False
+
+    def unload_resource(self, resource_name):
+        resource = self.get_resource(resource_name)
+        if resource:
+            resource.clear_data()
             return True
         return False
 
     def reload(self):
+        for resource_name in self.resources:
+            self.unload_resource(resource_name)
+
         for resource in self.resources.values():
             module = SourceFileLoader("module.name", resource.meta_data.resource_filepath).load_module()
             resource.set_data(module)
+
+            loaded_modules = {}
+            script_path = os.path.join(self.resource_manager.PathResources, self.resource_dir_name)
 
             # recursive reload sub modules
             def reload_module(module):
                 for attribute_name in dir(module):
                     sub_module = getattr(module, attribute_name)
-                    if types.ModuleType is type(sub_module):
+
+                    if types.ModuleType is type(sub_module) and hasattr(sub_module, "__file__") and sub_module.__file__.startswith(script_path):
+                        if sub_module.__file__ in loaded_modules:
+                            continue
+                        else:
+                            loaded_modules[sub_module.__file__] = ()
+                        logger.info("load : %s" % sub_module.__file__)
                         importlib.reload(sub_module)
                         reload_module(sub_module)
             reload_module(module)

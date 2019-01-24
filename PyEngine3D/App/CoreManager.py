@@ -172,9 +172,8 @@ class CoreManager(Singleton):
 
         self.viewport_manager.build_ui()
 
-        main_script = self.script_manager = self.resource_manager.get_script('main')
-        self.script_manager = main_script.ScriptManager.instance()
-        self.script_manager.initialize(self)
+        self.script_manager = None
+        self.load_script_manager(reload=False)
 
         # new scene
         self.game_backend.reset_screen()
@@ -188,6 +187,19 @@ class CoreManager(Singleton):
 
     def get_next_open_project_filename(self):
         return self.project_manager.next_open_project_filename
+
+    def load_script_manager(self, reload=True):
+        main_script = self.resource_manager.get_script('main')
+        if main_script is not None:
+            try:
+                if reload:
+                    self.resource_manager.script_loader.reload()
+                self.script_manager = main_script.ScriptManager.instance()
+                self.script_manager.initialize(self)
+            except:
+                logger.error(traceback.format_exc())
+        else:
+            logger.error("Not found Resource/Scripts/main.py")
 
     def run(self):
         self.game_backend.run()
@@ -299,15 +311,16 @@ class CoreManager(Singleton):
         # play mode
         def cmd_play(value):
             self.is_play_mode = True
-            self.resource_manager.script_loader.reload()
-            main_script = self.resource_manager.get_script('main')
-            self.script_manager = main_script.ScriptManager.instance()
-            self.script_manager.initialize(self)
+            self.load_script_manager()
         self.commands[COMMAND.PLAY.value] = cmd_play
 
         def cmd_stop(value):
             self.is_play_mode = False
-            self.script_manager.exit()
+            if self.script_manager is not None:
+                try:
+                    self.script_manager.exit()
+                except:
+                    logger.error(traceback.format_exc())
         self.commands[COMMAND.STOP.value] = cmd_stop
 
         # project
@@ -640,7 +653,11 @@ class CoreManager(Singleton):
 
         if not touch_event and self.viewport_manager.main_viewport.collide(*self.get_mouse_pos()):
             if self.is_play_mode:
-                self.script_manager.update(delta)
+                if self.script_manager is not None:
+                    try:
+                        self.script_manager.update(delta)
+                    except:
+                        logger.error(traceback.format_exc())
             else:
                 self.update_camera()
 
