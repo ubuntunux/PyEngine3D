@@ -60,7 +60,6 @@ class AnimationNode:
         self.bone = bone
         self.target = animation_node_data.get('target', '')  # bone name
         self.frame_times = animation_node_data.get('times', [])
-        # self.transforms = animation_node_data.get('transforms', [])
         self.locations = animation_node_data.get('locations', [])
         self.rotations = animation_node_data.get('rotations', [])
         self.scales = animation_node_data.get('scales', [])

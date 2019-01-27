@@ -173,7 +173,7 @@ class CoreManager(Singleton):
         self.viewport_manager.build_ui()
 
         self.script_manager = None
-        self.load_script_manager(reload=False)
+        # self.load_script_manager(reload=False)
 
         # new scene
         self.game_backend.reset_screen()
@@ -585,8 +585,8 @@ class CoreManager(Singleton):
 
         # camera move pan
         if btn_left and btn_right or btn_middle:
-            camera_transform.move_to_left(-mouse_delta[0] * pan_speed)
-            camera_transform.move_to_up(-mouse_delta[1] * pan_speed)
+            camera_transform.move_left(-mouse_delta[0] * pan_speed)
+            camera_transform.move_up(-mouse_delta[1] * pan_speed)
 
         # camera rotation
         elif btn_left or btn_right:
@@ -600,21 +600,21 @@ class CoreManager(Singleton):
 
         # move to view direction ( inverse front of camera matrix )
         if keydown[Keyboard.W] or self.game_backend.wheel_up:
-            camera_transform.move_to_front(-move_speed)
+            camera_transform.move_front(-move_speed)
         elif keydown[Keyboard.S] or self.game_backend.wheel_down:
-            camera_transform.move_to_front(move_speed)
+            camera_transform.move_front(move_speed)
 
         # move to side
         if keydown[Keyboard.A]:
-            camera_transform.move_to_left(-move_speed)
+            camera_transform.move_left(-move_speed)
         elif keydown[Keyboard.D]:
-            camera_transform.move_to_left(move_speed)
+            camera_transform.move_left(move_speed)
 
         # move to up
         if keydown[Keyboard.Q]:
-            camera_transform.move_to_up(move_speed)
+            camera_transform.move_up(move_speed)
         elif keydown[Keyboard.E]:
-            camera_transform.move_to_up(-move_speed)
+            camera_transform.move_up(-move_speed)
 
         if keydown[Keyboard.SPACE]:
             camera_transform.reset_transform()

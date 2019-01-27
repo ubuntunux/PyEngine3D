@@ -80,7 +80,7 @@ def dot_arrays(*array_list):
     return reduce(np.dot, array_list)
 
 
-def euler_to_matrix(rotationMatrix, pitch, yaw, roll):
+def euler_to_matrix(rotation_matrix, pitch, yaw, roll):
     '''
     create front vector
     right = cross(world_up, front)
@@ -90,7 +90,7 @@ def euler_to_matrix(rotationMatrix, pitch, yaw, roll):
     pass
 
 
-def matrix_rotation(rotationMatrix, rx, ry, rz):
+def matrix_rotation(rotation_matrix, rx, ry, rz):
     ch = math.cos(ry)
     sh = math.sin(ry)
     ca = math.cos(rz)
@@ -98,15 +98,15 @@ def matrix_rotation(rotationMatrix, rx, ry, rz):
     cb = math.cos(rx)
     sb = math.sin(rx)
 
-    rotationMatrix[:, 0] = [ch*ca, sh*sb - ch*sa*cb, ch*sa*sb + sh*cb, 0.0]
-    rotationMatrix[:, 1] = [sa, ca*cb, -ca*sb, 0.0]
-    rotationMatrix[:, 2] = [-sh*ca, sh*sa*cb + ch*sb, -sh*sa*sb + ch*cb, 0.0]
+    rotation_matrix[:, 0] = [ch*ca, sh*sb - ch*sa*cb, ch*sa*sb + sh*cb, 0.0]
+    rotation_matrix[:, 1] = [sa, ca*cb, -ca*sb, 0.0]
+    rotation_matrix[:, 2] = [-sh*ca, sh*sa*cb + ch*sb, -sh*sa*sb + ch*cb, 0.0]
 
 
-def matrix_to_vectors(rotationMatrix, axis_x, axis_y, axis_z):
-    axis_x[:] = rotationMatrix[0, 0:3]
-    axis_y[:] = rotationMatrix[1, 0:3]
-    axis_z[:] = rotationMatrix[2, 0:3]
+def matrix_to_vectors(rotation_matrix, axis_x, axis_y, axis_z):
+    axis_x[:] = rotation_matrix[0, 0:3]
+    axis_y[:] = rotation_matrix[1, 0:3]
+    axis_z[:] = rotation_matrix[2, 0:3]
 
 
 def get_quaternion(axis, radian):
@@ -189,7 +189,7 @@ def matrix_to_quaternion(matrix):
     return normalize(Float4(qw, qx, qy, qz))
 
 
-def quaternion_to_matrix(quat, rotationMatrix):
+def quaternion_to_matrix(quat, rotation_matrix):
     qw, qx, qy, qz = quat[:]
     # inhomogeneous expression
     qxqx = qx * qx * 2.0
@@ -201,10 +201,10 @@ def quaternion_to_matrix(quat, rotationMatrix):
     qyqw = qy * qw * 2.0
     qzqw = qz * qw * 2.0
     qzqz = qz * qz * 2.0
-    rotationMatrix[0, :] = [1.0 - qyqy - qzqz, qxqy + qzqw, qxqz - qyqw, 0.0]
-    rotationMatrix[1, :] = [qxqy - qzqw, 1.0 - qxqx - qzqz, qyqz + qxqw, 0.0]
-    rotationMatrix[2, :] = [qxqz + qyqw, qyqz - qxqw, 1.0 - qxqx - qyqy, 0.0]
-    rotationMatrix[3, :] = [0.0, 0.0, 0.0, 1.0]
+    rotation_matrix[0, :] = [1.0 - qyqy - qzqz, qxqy + qzqw, qxqz - qyqw, 0.0]
+    rotation_matrix[1, :] = [qxqy - qzqw, 1.0 - qxqx - qzqz, qyqz + qxqw, 0.0]
+    rotation_matrix[2, :] = [qxqz + qyqw, qyqz - qxqw, 1.0 - qxqx - qyqy, 0.0]
+    rotation_matrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
     # homogeneous expression
     qxqx = qx * qx
@@ -217,10 +217,10 @@ def quaternion_to_matrix(quat, rotationMatrix):
     qzqw = qz * qw * 2.0
     qzqz = qz * qz
     qwqw = qw * qw
-    rotationMatrix[0, :] = [qwqw + qxqx - qyqy - qzqz, qxqy + qzqw, qxqz - qyqw, 0.0]
-    rotationMatrix[1, :] = [qxqy - qzqw, qwqw - qxqx + qyqy - qzqz, qyqz + qxqw, 0.0]
-    rotationMatrix[2, :] = [qxqz + qyqw, qyqz - qxqw, qwqw - qxqx - qyqy + qzqz, 0.0]
-    rotationMatrix[3, :] = [0.0, 0.0, 0.0, 1.0]
+    rotation_matrix[0, :] = [qwqw + qxqx - qyqy - qzqz, qxqy + qzqw, qxqz - qyqw, 0.0]
+    rotation_matrix[1, :] = [qxqy - qzqw, qwqw - qxqx + qyqy - qzqz, qyqz + qxqw, 0.0]
+    rotation_matrix[2, :] = [qxqz + qyqw, qyqz - qxqw, qwqw - qxqx - qyqy + qzqz, 0.0]
+    rotation_matrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
 
 

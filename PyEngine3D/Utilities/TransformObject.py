@@ -43,6 +43,15 @@ class TransformObject:
     def get_pos(self):
         return self.pos
 
+    def get_pos_x(self):
+        return self.pos[0]
+
+    def get_pos_y(self):
+        return self.pos[1]
+
+    def get_pos_z(self):
+        return self.pos[2]
+
     def set_pos(self, pos):
         self.pos[...] = pos
 
@@ -55,30 +64,39 @@ class TransformObject:
     def set_pos_z(self, z):
         self.pos[2] = z
 
-    def move(self, delta):
-        self.pos[...] = self.pos + delta
+    def move(self, pos):
+        self.pos[...] = self.pos + pos
 
-    def move_to_front(self, delta):
-        self.pos[...] = self.pos + self.front * delta
+    def move_front(self, pos):
+        self.pos[...] = self.pos + self.front * pos
 
-    def move_to_left(self, delta):
-        self.pos[...] = self.pos + self.left * delta
+    def move_left(self, pos):
+        self.pos[...] = self.pos + self.left * pos
 
-    def move_to_up(self, delta):
-        self.pos[...] = self.pos + self.up * delta
+    def move_up(self, pos):
+        self.pos[...] = self.pos + self.up * pos
 
-    def move_x(self, delta):
-        self.pos[0] += delta
+    def move_x(self, pos_x):
+        self.pos[0] += pos_x
 
-    def move_y(self, delta):
-        self.pos[1] += delta
+    def move_y(self, pos_y):
+        self.pos[1] += pos_y
 
-    def move_z(self, delta):
-        self.pos[2] += delta
+    def move_z(self, pos_z):
+        self.pos[2] += pos_z
 
     # Rotation
     def get_rotation(self):
         return self.rot
+
+    def get_pitch(self):
+        return self.rot[0]
+
+    def get_yaw(self):
+        return self.rot[1]
+
+    def get_roll(self):
+        return self.rot[2]
 
     def set_rotation(self, rot):
         self.rot[...] = rot
@@ -121,6 +139,15 @@ class TransformObject:
     # Scale
     def get_scale(self):
         return self.scale
+
+    def get_scale_x(self):
+        return self.scale[0]
+
+    def get_scale_Y(self):
+        return self.scale[1]
+
+    def get_scale_z(self):
+        return self.scale[2]
 
     def set_scale(self, scale):
         self.scale[...] = scale

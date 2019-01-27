@@ -38,6 +38,9 @@ class StaticActor:
 
         self.attributes = Attributes()
 
+    def delete(self):
+        pass
+
     def set_model(self, model):
         if model:
             self.model = model
