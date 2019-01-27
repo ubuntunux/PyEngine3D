@@ -12,6 +12,8 @@ class GameClient(Singleton):
         self.resource_manager = None
         self.scene_manager = None
         self.player = None
+        self.jump = False
+        self.vel = 0.0
 
     def initialize(self, core_manager):
         logger.info("GameClient::initialize")
@@ -58,6 +60,20 @@ class GameClient(Singleton):
             self.player.transform.move_left(move_speed)
         elif keydown[Keyboard.D]:
             self.player.transform.move_left(-move_speed)
+
+        # Jump
+        if not self.jump and keydown[Keyboard.SPACE]:
+            self.jump = True
+            self.vel = 0.5
+
+        if self.jump:
+            self.vel -= 1.0 * delta
+            self.player.transform.move_y(self.vel)
+
+        pos = self.player.transform.get_pos()
+        if pos[1] < 0.0:
+            pos[1] = 0.0
+            self.jump = False
 
     def update(self, delta):
         self.update_player(delta)
