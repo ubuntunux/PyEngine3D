@@ -487,20 +487,6 @@ class SceneManager(Singleton):
         for light in self.point_lights:
             light.update()
 
-        # culling
-        self.update_static_render_info()
-        self.update_skeleton_render_info()
-        self.update_light_render_infos()
-
-        self.selected_object_render_info = []
-        if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):
-            gather_render_infos(culling_func=always_pass,
-                                camera=self.main_camera,
-                                light=self.main_light,
-                                actor_list=[self.selected_object, ],
-                                solid_render_infos=self.selected_object_render_info,
-                                translucent_render_infos=self.selected_object_render_info)
-
         for static_actor in self.static_actors:
             static_actor.update(dt)
 
@@ -514,3 +500,17 @@ class SceneManager(Singleton):
             self.terrain.update(dt)
 
         self.effect_manager.update(dt)
+
+        # culling
+        self.update_static_render_info()
+        self.update_skeleton_render_info()
+        self.update_light_render_infos()
+
+        self.selected_object_render_info = []
+        if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):
+            gather_render_infos(culling_func=always_pass,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=[self.selected_object, ],
+                                solid_render_infos=self.selected_object_render_info,
+                                translucent_render_infos=self.selected_object_render_info)

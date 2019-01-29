@@ -46,10 +46,9 @@ class GameClient(Singleton):
         if keydown[Keyboard.LSHIFT]:
             move_speed *= 4.0
 
-        elif btn_left or btn_right:
+        if btn_left or btn_right:
+            self.player.transform.rotation_yaw(-mouse_delta[0] * rotation_speed)
             camera.transform.rotation_pitch(mouse_delta[1] * rotation_speed)
-            camera.transform.rotation_yaw(-mouse_delta[0] * rotation_speed)
-            self.player.transform.set_yaw(camera.transform.get_yaw() + 3.141592)
 
         if keydown[Keyboard.W] or self.game_backend.wheel_up:
             self.player.transform.move_front(move_speed)
@@ -78,8 +77,10 @@ class GameClient(Singleton):
     def update(self, delta):
         self.update_player(delta)
 
-        camera = self.scene_manager.main_camera
         pos = self.player.transform.get_pos()
+        camera = self.scene_manager.main_camera
+        camera.transform.set_yaw(self.player.transform.get_yaw() + 3.141592)
+        camera.transform.update_transform(update_inverse_matrix=True)
         camera.transform.set_pos(pos)
         camera.transform.move_up(1.0)
         camera.transform.move_front(2.0)
