@@ -24,12 +24,12 @@
 
 ## Features
 * Import
-    - [x] .fbx
-    - [x] .obj
-    - [x] .dae ( colada )
-    - [ ] gltf
-    - [ ] Blender
-    - [ ] Compressed Texture (ETC, DDS)
+    - Mesh 
+        - [x] .fbx, .obj, .dae ( colada ) 
+        - [ ] gltf, blender
+    - Texture
+        - [x] .png, .tga, .bmp etc 
+        - [ ] Compressed Texture (ETC, DDS)
 * Light
     - [x] Directional light & Shadow mapping    
     - [ ] Spot light
