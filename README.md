@@ -18,75 +18,60 @@
 ## Requirements
  - numpy
  - Pillow
- - pygame
- - pyglet
+ - pyglet or pygame
  - PyOpenGL
  - PyOpenGL-accelerate ( optional )
  - Windows, Linux, Mac(not tested)
 
 ## Features
-* Optimize
-    - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
-    - SSR ray reuse in compute shader
-    - Postprocessing in compute shader
-    - FFT in compute shader
-    - Precomputed atmosphere in compute shader 
-* Blender3D plugin
-    - transfer geometry, animation, scene datas
-    - edit animation, scene, sequence, particles in blender
-* Debug
-    - 3D position font
-    - performance profiler
 * Import
-    - FBX
+    - [x] .fbx
+    - [x] .obj
+    - [x] .dae ( colada )
+    - gltf
     - Blender
     - Compressed Texture (ETC, DDS)
-* InGame GUI
-    - input / output
-    - progress bar
-    - button
 * Light
-    [o] Directional light & Shadow mapping    
+    - [x] Directional light & Shadow mapping    
     - Spot light
     - Area light
-    - Point light
+    - [x] Point light
         - shadow map using dual paraboloid mapping
 * Particle System
+    - [x] CPU Based Particle
+    - [x] GPU Based Particle
+    - [x] Vector Field
     - Particle spawn on polygon surface
     - Bitonic Sorting
     - Memory Pool
     - Attractor
     - Noise
     - Curl Noise
-    - Depth Biased Alpha   
 * Object
     - Select, Move, Modify
     - Gizmo
-    - Skeleton Mesh
-    - Static Mesh        
+    - [x] Skeleton Mesh
+    - [x] Static Mesh        
     - Tree, Foliage, Grass
-    - Terrain
-    - Atmoshpere & Sky
+    - [x] Terrain
+    - [x] Atmoshpere & Sky
     - Road
     - Wind
-    - Ocean
+    - [x] Ocean
     - River 
 * Rendering
-    - View Mode
-        - Wire, Solid, Lighting, Color
     - Culling
         - occlusion culling
         - distance culling
-        - view frustum culling
+        - [x] view frustum culling
     - VTF Skinning
-    - Animation calculation in gpu
-    - Font Distance Field
-        - FontLoader.DistanceField
-    - PBR
-    - Screen Space Relfection
-    - Temporal AA
-    - SSAA
-    - MSAA
+    - Calculate the animation in gpu
+    - Distance Field Font 
+    - [x] PBR
+    - [x] Screen Space Relfection
+    - [x] Temporal AA
+    - [x] SSAA
+    - [x] MSAA
     - Voxel Based GI
     - Screen Space Bevel
     - Screen Space SSS
@@ -98,14 +83,28 @@
     - Color Grading
     - Coarse Shading, Checkboard rendering
     - Paraboloid environment map
-    - Light Shaft
+    - [x] Light Shaft
     - Volumtric Scattering
     - Fur Rendering    
-    - Motion Blur
+    - [x] Motion Blur
         - Recursive Velocity
 * Resource Manager
-    - Load / Unload / Reload system
+    - [x] Load / Save / Import / Export
+    - Unload / Reload system
     - Duplicate resource
-* Sound
-    - Loader
-    - Player
+    - Sound Manager
+    - [x] Script Manager
+* Blender3D plugin
+    - transfer geometry, animation, scene datas
+    - edit animation, scene, sequence, particles in blender
+* InGame GUI
+    - input / output
+    - progress bar
+    - button
+* Optimize
+    - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
+    - SSR ray reuse in compute shader
+    - Postprocessing in compute shader
+    - FFT in compute shader
+    - Precomputed atmosphere in compute shader 
+
