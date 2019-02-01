@@ -68,12 +68,13 @@
     - [ ] Distance Field Font 
     - [x] Real time light probe 
     - [x] PBR
+    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_pbr.png)
     - [x] Temporal AA
     - [x] SSAA
     - [x] MSAA
     - [ ] Temporal Upsacle
     - [x] Screen Space Relfection
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png)
+    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_ssr.png)
     - [x] Screen Space Ambient Occlusion
     - [ ] Screen Space Bevel
     - [ ] Screen Space SSS    
