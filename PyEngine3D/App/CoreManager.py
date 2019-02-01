@@ -139,22 +139,43 @@ class CoreManager(Singleton):
 
         self.last_game_backend = self.last_game_backend.lower()
 
-        if self.last_game_backend == GameBackNames.PYGAME:
+        def run_pygame():
             from .GameBackend import GameBackend_pygame
             self.game_backend = GameBackend_pygame.PyGame(self)
-        else:
+            self.last_game_backend = GameBackNames.PYGAME
+
+        def run_pyglet():
             from .GameBackend import GameBackend_pyglet
             self.game_backend = GameBackend_pyglet.PyGlet(self)
             self.last_game_backend = GameBackNames.PYGLET
 
+        # try 2 times.
+        for i in range(2):
+            if self.last_game_backend == GameBackNames.PYGAME:
+                try:
+                    run_pygame()
+                    break
+                except:
+                    logger.error("The pygame library does not exist and execution failed. Run again with the pyglet.")
+                    self.last_game_backend = GameBackNames.PYGLET
+            else:
+                try:
+                    run_pyglet()
+                    break
+                except:
+                    logger.error("The pyglet library does not exist and execution failed. Run again with the pygame.")
+                    self.last_game_backend = GameBackNames.PYGAME
+        else:
+            logger.error('PyGame or PyGlet is required. Please run "pip install -r requirements.txt" and try again.')
+            # send a message to close ui
+            if self.uiCmdQueue:
+                self.uiCmdQueue.put(COMMAND.CLOSE_UI)
+            return False
+
         self.game_backend.create_window(width, height, full_screen)
-
         self.opengl_context.initialize()
-
         self.send_game_backend_list(self.game_backend_list)
-
         index = self.game_backend_list.index(self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
-
         self.send_current_game_backend_index(index)
 
         if not self.game_backend.valid:
