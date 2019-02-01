@@ -24,19 +24,13 @@
  - PyOpenGL-accelerate ( optional )
  - Windows, Linux, Mac(not tested)
 
-## TODO
+## Features
 * Optimize
     - Only dynamic shadows are updated on every frame, and static shadows are not updated every time.
     - SSR ray reuse in compute shader
     - Postprocessing in compute shader
     - FFT in compute shader
-    - Precomputed atmosphere in compute shader
-* Actors
-    - Tree, Foliage actor
-    - Landscape
-    - Road
-    - Wind
-    - River    
+    - Precomputed atmosphere in compute shader 
 * Blender3D plugin
     - transfer geometry, animation, scene datas
     - edit animation, scene, sequence, particles in blender
@@ -52,32 +46,47 @@
     - progress bar
     - button
 * Light
-    - Spot
+    [o] Directional light & Shadow mapping    
+    - Spot light
     - Area light
-    - Point light shadow using dual paraboloid mapping
-        - Use TextureArray2D for resource managemnet
+    - Point light
+        - shadow map using dual paraboloid mapping
+* Particle System
+    - Particle spawn on polygon surface
+    - Bitonic Sorting
+    - Memory Pool
+    - Attractor
+    - Noise
+    - Curl Noise
+    - Depth Biased Alpha   
 * Object
     - Select, Move, Modify
     - Gizmo
-    - VTF Skinning
-    - Animation calculation in gpu
-* Particle System
-    - Emitter Rotation
-    - Particle spawn on polygon surface
-    - Bitonic Sorting
-    - Memory Pool    
-    - Attractor
-    - Noise
-    - Depth Biased Alpha
+    - Skeleton Mesh
+    - Static Mesh        
+    - Tree, Foliage, Grass
+    - Terrain
+    - Atmoshpere & Sky
+    - Road
+    - Wind
+    - Ocean
+    - River 
 * Rendering
     - View Mode
         - Wire, Solid, Lighting, Color
     - Culling
         - occlusion culling
         - distance culling
-* Technique
+        - view frustum culling
+    - VTF Skinning
+    - Animation calculation in gpu
     - Font Distance Field
         - FontLoader.DistanceField
+    - PBR
+    - Screen Space Relfection
+    - Temporal AA
+    - SSAA
+    - MSAA
     - Voxel Based GI
     - Screen Space Bevel
     - Screen Space SSS
@@ -89,11 +98,9 @@
     - Color Grading
     - Coarse Shading, Checkboard rendering
     - Paraboloid environment map
-    - Volumtric Fog
-    - Fur Rendering
-    - TAA
-        - Effect Masking
-        - Seperate Translucent, Ocedan, Atmosphere
+    - Light Shaft
+    - Volumtric Scattering
+    - Fur Rendering    
     - Motion Blur
         - Recursive Velocity
 * Resource Manager
