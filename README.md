@@ -1,7 +1,7 @@
 ![PyEngine3D](https://github.com/ubuntunux/PyEngine3D/blob/master/PyEngine3D.png)
 
 ## Welcome to PyEngine3D
-* Open source Python 3D engine using pyopengl API.
+* An open source Python 3D engine using the pyopengl API that uses pygame and pyglet as the game backend.
 * Used pygame and pyglet as game backends.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
