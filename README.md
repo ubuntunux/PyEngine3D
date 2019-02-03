@@ -4,8 +4,6 @@
 * An open source Python 3D engine using the pyopengl API that uses pygame and pyglet as the game backend.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
-* Installation : https://www.youtube.com/watch?v=bVwdV695_zo
-* Features : https://www.youtube.com/watch?v=x9GVA7tCAdw
 
 ### Requirements
  - numpy
