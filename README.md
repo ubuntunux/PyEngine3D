@@ -6,6 +6,7 @@
 * Documents : https://pyengine3d.readthedocs.io
 
 ### Requirements
+ - python 3.6 ( python 3.7 has a pyopengl bug )
  - numpy
  - pillow
  - pyglet or pygame
