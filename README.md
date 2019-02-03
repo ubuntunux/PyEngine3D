@@ -28,7 +28,8 @@
 
 * Import
     - Mesh 
-        - [x] .fbx, .obj, .dae ( colada ) 
+        - [x] .obj, .dae ( colada )
+        - [ ] .fbx 
         - [ ] gltf, blender
     - Texture
         - [x] .png, .tga, .bmp etc 
@@ -128,13 +129,12 @@
     - [ ] FFT in compute shader
     - [ ] Precomputed atmosphere in compute shader 
 
-
 ## References
-    - https://wickedengine.net/2017/11/07/gpu-based-particle-simulation/
-    - http://kode80.com/blog/2015/03/11/screen-space-reflections-in-unity-5/index.html
-    - http://proland.inrialpes.fr/publications.html
-    - http://casual-effects.com/data/index.html
-    - https://github.com/TheRealMJP/MSAAFilter
-    - http://pyopengl.sourceforge.net/
-    - https://learnopengl.com/
-    - http://www.songho.ca/index.html
+- https://wickedengine.net/2017/11/07/gpu-based-particle-simulation
+- http://kode80.com/blog/2015/03/11/screen-space-reflections-in-unity-5/index.html
+- http://proland.inrialpes.fr/publications.html
+- http://casual-effects.com/data/index.html
+- https://github.com/TheRealMJP/MSAAFilter
+- http://pyopengl.sourceforge.net/
+- https://learnopengl.com/
+- http://www.songho.ca/index.html
