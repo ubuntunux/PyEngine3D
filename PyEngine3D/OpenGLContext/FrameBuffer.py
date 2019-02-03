@@ -18,8 +18,9 @@ class FrameBuffer:
         GL_FRAMEBUFFER_UNSUPPORTED
     )
 
-    def __init__(self):
-        logger.info("Create " + GetClassName(self))
+    def __init__(self, name=''):
+        logger.info("Create %s framebuffer" % name)
+        self.name = name
         self.buffer = glGenFramebuffers(1)
         self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
         self.color_textures = [None, ] * self.max_draw_buffers
@@ -46,7 +47,7 @@ class FrameBuffer:
                 return str(error)
 
     def delete(self):
-        logger.info("Delete %s" % GetClassName(self))
+        logger.info("Delete %s framebuffer" % self.name)
         self.set_color_textures()
         self.set_depth_texture(None)
         glDeleteFramebuffers(1, [self.buffer, ])
@@ -225,7 +226,9 @@ class FrameBufferManager(Singleton):
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
         else:
+            name = ''
             if 0 < len(textures):
+                name = textures[0].name
                 error = False
                 width = textures[0].width
                 height = textures[0].height
@@ -243,7 +246,7 @@ class FrameBufferManager(Singleton):
                     logger.error(error_message)
                     raise BaseException(error_message)
 
-            framebuffer = FrameBuffer()
+            framebuffer = FrameBuffer(name)
             self.framebuffers[key] = framebuffer
             framebuffer.set_color_textures(*textures)
             framebuffer.set_depth_texture(depth_texture)
