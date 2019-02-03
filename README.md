@@ -2,7 +2,6 @@
 
 ## Welcome to PyEngine3D
 * An open source Python 3D engine using the pyopengl API that uses pygame and pyglet as the game backend.
-* Used pygame and pyglet as game backends.
 * Homepage : https://pyengine3d.blogspot.com
 * Documents : https://pyengine3d.readthedocs.io
 
