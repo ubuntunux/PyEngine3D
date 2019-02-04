@@ -82,11 +82,11 @@ def CreateUniformDataFromString(data_type, strValue=None):
         else:
             return np.eye(componentCount, dtype=dtype)
     elif data_type in ('sampler2D', 'image2D'):
-        texture = CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_gray')
+        texture = CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_white')
         return texture
     elif data_type == 'sampler2DMS':
         logger.warn('sampler2DMS need multisample texture.')
-        return CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_gray')
+        return CoreManager.instance().resource_manager.get_texture(strValue or 'common.flat_white')
     elif data_type == 'sampler2DArray':
         return CoreManager.instance().resource_manager.get_texture(strValue or 'common.default_2d_array')
     elif data_type in ('sampler3D', 'image3D'):

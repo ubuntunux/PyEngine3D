@@ -7,10 +7,12 @@
     uniform float reflectance;
     uniform float roughness;
     uniform float metalicness;
+    uniform float normal_intensity;
+    uniform vec2 uv_tiling;
     uniform vec4 emissive_color;
     uniform vec4 diffuse_color;
     uniform sampler2D texture_diffuse;
-    uniform sampler2D texture_surface;
+    uniform sampler2D texture_material;
     uniform sampler2D texture_normal;
 #if TRANSPARENT_MATERIAL == 1
     uniform float opacity;
@@ -55,6 +57,7 @@ vec3 get_normal(vec2 tex_coord)
 {
     // Y-Up
     vec3 normal = texture2D(texture_normal, tex_coord).xzy * 2.0 - 1.0;
+    normal.xz *= normal_intensity;
     return normalize(normal);
 }
 

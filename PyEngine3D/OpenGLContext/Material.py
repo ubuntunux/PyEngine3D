@@ -26,6 +26,7 @@ class Material:
         binary_format = material_datas.get('binary_format')
         binary_data = material_datas.get('binary_data')
         uniforms = material_datas.get('uniforms', [])
+
         self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
         self.macros = material_datas.get('macros', OrderedDict())
 
@@ -127,8 +128,7 @@ class Material:
                     active_texture_index += 1
                 self.uniform_buffers[uniform_name] = uniform_buffer
             else:
-                logger.warn("%s material has no %s uniform variable. It may have been optimized by the compiler..)" %
-                            (self.name, uniform_name))
+                logger.warn("%s material has no %s uniform variable. It may have been optimized by the compiler..)" % (self.name, uniform_name))
         return True
 
     def compile(self, shaderType, shader_code):

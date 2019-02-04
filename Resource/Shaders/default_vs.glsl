@@ -69,7 +69,7 @@ void main() {
     vs_output.world_position = (local_matrix * position).xyz;
     vs_output.vertex_normal = vertex_normal;
     vs_output.vertex_color = vs_in_color;
-    vs_output.tex_coord = vs_in_tex_coord;
+    vs_output.tex_coord = vs_in_tex_coord * uv_tiling;
 
     vec3 bitangent = cross(vertex_tangent, vertex_normal);
 

@@ -134,8 +134,7 @@ class MaterialInstance:
                 if uniform_data is not None:
                     uniform[1] = uniform_data
                     return True
-        logger.warn("%s material instance has no %s uniform variable. It may have been optimized by the compiler..)" %
-                    (self.name, uniform_name))
+        logger.warn("%s material instance has no %s uniform variable. It may have been optimized by the compiler..)" % (self.name, uniform_name))
 
     def get_program(self):
         return self.material.program

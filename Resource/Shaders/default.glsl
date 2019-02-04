@@ -38,8 +38,15 @@ void main()
 #endif
 
     vec4 emissive_color = get_emissive_color();
+    vec4 material_factors = texture2D(texture_material, vs_output.tex_coord.xy);
+    float ao_factor = material_factors.x;
+    float roughness_factor = material_factors.y * get_roughness();
+    float metallic_factor = material_factors.z * get_metalicness();
+
+    base_color.xyz *= ao_factor;
 
     vec3 N = get_normal(vs_output.tex_coord.xy);
+
     // Note : Normalization is very important because tangent_to_world may have been scaled..
     N = normalize((vs_output.tangent_to_world * vec4(N, 0.0)).xyz);
     vec3 V = normalize(CAMERA_POSITION.xyz - vs_output.world_position);
@@ -51,7 +58,7 @@ void main()
         fs_diffuse.xyz = base_color.xyz + emissive_color.xyz * clamp(emissive_color.w, 0.0, 1.0);
         // emissive
         fs_diffuse.w = (get_luminance(emissive_color.xyz) * emissive_color.w) * 0.1;
-        fs_material = vec4(get_roughness(), metalicness, reflectance, 0.0);
+        fs_material = vec4(roughness_factor, metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);
 #if 1 == SKELETAL
         fs_velocity = (vs_output.projection_pos.xy / vs_output.projection_pos.w) - (vs_output.prev_projection_pos.xy / vs_output.prev_projection_pos.w);
@@ -67,7 +74,7 @@ void main()
                         base_color,
                         emissive_color.xyz * emissive_color.w,
                         metalicness,
-                        get_roughness(),
+                        metallic_factor,
                         reflectance,
                         texture2D(texture_ssao, screen_tex_coord).x,
                         texture2D(texture_scene_reflect, screen_tex_coord),
