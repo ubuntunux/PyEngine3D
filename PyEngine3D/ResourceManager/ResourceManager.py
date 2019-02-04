@@ -736,6 +736,12 @@ class MaterialLoader(ResourceLoader):
                     binary_format=None,
                     macros=final_macros
                 )
+
+                # set default uniform datas
+                root_material = self.get_resource_data(shader_name)
+                if root_material is not None:
+                    material_datas['uniform_datas'] = copy.deepcopy(root_material.get_save_data()['uniform_datas'])
+
                 # create material
                 material = Material(final_material_name, material_datas)
 

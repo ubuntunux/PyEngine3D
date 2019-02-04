@@ -10,31 +10,6 @@ from PyEngine3D.App import CoreManager
 ignore_uniform_types = ["atomic_bool", "atomic_uint", "atomic_int", "atomic_float"]
 
 
-def CreateUniformBuffer(program, uniform_type, uniform_name):
-    """ create uniform buffer from .mat(shader) file """
-    uniform_classes = [
-        UniformBool, UniformInt, UniformUint, UniformFloat,
-        UniformVector2, UniformVector3, UniformVector4,
-        UniformBoolVector2, UniformBoolVector3, UniformBoolVector4,
-        UniformIntVector2, UniformIntVector3, UniformIntVector4,
-        UniformUintVector2, UniformUintVector3, UniformUintVector4,
-        UniformMatrix2, UniformMatrix3, UniformMatrix4,
-        UniformDoubleMatrix2, UniformDoubleMatrix3, UniformDoubleMatrix4,
-        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube,
-        UniformImage2D, UniformImage3D
-    ]
-    for uniform_class in uniform_classes:
-        if uniform_type == uniform_class.uniform_type:
-            uniform_buffer = uniform_class(program, uniform_name)
-            return uniform_buffer if uniform_buffer.valid else None
-    else:
-        if uniform_type not in ignore_uniform_types:
-            error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
-            logger.error(error_message)
-            raise BaseException(error_message)
-    return None
-
-
 def CreateUniformDataFromString(data_type, strValue=None):
     """ return converted data from string or default data """
     if data_type == 'bool':
@@ -101,6 +76,37 @@ def CreateUniformDataFromString(data_type, strValue=None):
     return None
 
 
+def CreateUniformBuffer(program, uniform_type, uniform_name, default_data=None):
+    """ create uniform buffer from .mat(shader) file """
+    uniform_classes = [
+        UniformBool, UniformInt, UniformUint, UniformFloat,
+        UniformVector2, UniformVector3, UniformVector4,
+        UniformBoolVector2, UniformBoolVector3, UniformBoolVector4,
+        UniformIntVector2, UniformIntVector3, UniformIntVector4,
+        UniformUintVector2, UniformUintVector3, UniformUintVector4,
+        UniformMatrix2, UniformMatrix3, UniformMatrix4,
+        UniformDoubleMatrix2, UniformDoubleMatrix3, UniformDoubleMatrix4,
+        UniformTexture2D, UniformTexture2DMultiSample, UniformTexture2DArray, UniformTexture3D, UniformTextureCube,
+        UniformImage2D, UniformImage3D
+    ]
+
+    for uniform_class in uniform_classes:
+        if uniform_type == uniform_class.uniform_type:
+            if default_data is not None:
+                uniform_data = default_data
+            else:
+                uniform_data = CreateUniformDataFromString(uniform_type)
+            uniform_buffer = uniform_class(program, uniform_name)
+            uniform_buffer.set_default_value(uniform_data)
+            return uniform_buffer if uniform_buffer.valid else None
+    else:
+        if uniform_type not in ignore_uniform_types:
+            error_message = 'Cannot matched to %s type of %s.' % (uniform_type, uniform_name)
+            logger.error(error_message)
+            raise BaseException(error_message)
+    return None
+
+
 class UniformVariable:
     data_type = ""
     uniform_type = ""
@@ -109,10 +115,17 @@ class UniformVariable:
         self.name = variable_name
         self.location = glGetUniformLocation(program, variable_name)
         self.show_message = True
+        self.default_value = None
         self.valid = True
         if self.location == -1:
             self.valid = False
             # logger.warn("%s location is -1" % variable_name)
+
+    def set_default_value(self, value):
+        self.default_value = value
+
+    def get_default_value(self):
+        return self.default_value
 
     def bind_uniform(self, value):
         raise BaseException("You must implement bind function.")

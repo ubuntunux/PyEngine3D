@@ -13,7 +13,7 @@ import numpy as np
 from PyEngine3D.Common import logger
 from PyEngine3D.Utilities import Attributes, Logger
 from PyEngine3D.App import CoreManager
-from PyEngine3D.OpenGLContext import OpenGLContext
+from PyEngine3D.OpenGLContext import OpenGLContext, CreateUniformDataFromString
 from .UniformBuffer import CreateUniformBuffer, UniformTextureBase
 
 
@@ -22,10 +22,14 @@ class Material:
         self.valid = False
         logger.info("Load %s material." % material_name)
 
+        # for save
+        self.material_datas = material_datas
+
         shader_codes = material_datas.get('shader_codes')
         binary_format = material_datas.get('binary_format')
         binary_data = material_datas.get('binary_data')
         uniforms = material_datas.get('uniforms', [])
+        uniform_datas = material_datas.get('uniform_datas', {})
 
         self.material_component_names = [x[1] for x in material_datas.get('material_components', [])]
         self.macros = material_datas.get('macros', OrderedDict())
@@ -53,13 +57,28 @@ class Material:
                 logger.error("%s material has been failed to compile from source" % self.name)
 
         if self.valid:
-            self.create_uniform_buffers(uniforms)
+            self.create_uniform_buffers(uniforms, uniform_datas)
+
+    def get_save_data(self):
+        uniform_datas = {}
+        for uniform_name in self.uniform_buffers:
+            default_value = self.uniform_buffers[uniform_name].get_default_value()
+            if default_value is not None:
+                if hasattr(default_value, 'name'):
+                    uniform_datas[uniform_name] = default_value.name
+                else:
+                    uniform_datas[uniform_name] = default_value
+
+        self.material_datas['uniform_datas'] = uniform_datas
+        return self.material_datas
 
     def get_attribute(self):
         self.Attributes.set_attribute('name', self.name)
         self.Attributes.set_attribute('shader_name', self.shader_name)
         for key in self.macros:
             self.Attributes.set_attribute(key, self.macros[key])
+        for uniform_buffer in self.uniform_buffers.values():
+            self.Attributes.set_attribute(uniform_buffer.name, uniform_buffer.get_default_value())
         return self.Attributes
 
     def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
@@ -68,6 +87,10 @@ class Material:
             new_macros[attribute_name] = attribute_value
             # if macro was changed then create a new material.
             CoreManager.instance().resource_manager.get_material(self.shader_name, new_macros)
+        elif attribute_name in self.uniform_buffers:
+            uniform_buffer = self.uniform_buffers[attribute_name]
+            default_value = CreateUniformDataFromString(uniform_buffer.uniform_type, attribute_value)
+            uniform_buffer.set_default_value(default_value)
 
     def delete(self):
         OpenGLContext.use_program(0)
@@ -116,11 +139,12 @@ class Material:
             glDetachShader(self.program, shader)
             glDeleteShader(shader)
 
-    def create_uniform_buffers(self, uniforms):
+    def create_uniform_buffers(self, uniforms, default_uniform_datas={}):
         # create uniform buffers from source code
         active_texture_index = 0
         for uniform_type, uniform_name in uniforms:
-            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name)
+            # self.uniform_datas
+            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name, default_data=default_uniform_datas.get(uniform_name))
             if uniform_buffer is not None:
                 # Important : set texture binding index
                 if issubclass(uniform_buffer.__class__, UniformTextureBase):

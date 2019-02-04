@@ -89,13 +89,16 @@ class MaterialInstance:
                 uniform_buffer = material.uniform_buffers[uniform_name]
                 if uniform_name not in self.linked_uniform_map:
                     # cannot found uniform data. just set default uniform data.
-                    uniform_data = CreateUniformDataFromString(uniform_buffer.uniform_type)
+                    if uniform_buffer.default_value is not None:
+                        uniform_data = uniform_buffer.default_value
+                    else:
+                        uniform_data = CreateUniformDataFromString(uniform_buffer.uniform_type)
+
                     if uniform_data is not None:
                         # link between uniform buffer and data.
                         self.linked_uniform_map[uniform_name] = [uniform_buffer, uniform_data]
                     else:
-                        logger.error("%s material instance failed to create %s uniform data %s." % (
-                            self.name, uniform_name, uniform_data))
+                        logger.error("%s material instance failed to create %s uniform data %s." % (self.name, uniform_name, uniform_data))
                         continue
 
                 if uniform_name in material_component_names:
