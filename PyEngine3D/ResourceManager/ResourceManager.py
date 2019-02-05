@@ -77,9 +77,6 @@ class LoadingThread(Thread):
 # -----------------------#
 class MetaData:
     def __init__(self, resource_version, resource_filepath):
-        filepath, ext = os.path.splitext(resource_filepath)
-        resource_filepath = filepath.replace(".", os.sep) + ext
-
         self.filepath = os.path.splitext(resource_filepath)[0] + ".meta"
         self.resource_version = resource_version
         self.old_resource_version = -1
@@ -215,8 +212,8 @@ class Resource:
     def clear_data(self):
         self.data = None
 
-    def get_data(self):
-        if self.is_need_to_load():
+    def get_data(self, checkLoading=True):
+        if checkLoading and self.is_need_to_load():
             ResourceManager.instance().load_resource(self.name, self.type_name)
         return self.data
 
@@ -379,9 +376,9 @@ class ResourceLoader(object):
             logger.error("%s cannot found %s resource." % (self.name, resource_name))
         return None
 
-    def get_resource_data(self, resource_name, noWarn=False):
+    def get_resource_data(self, resource_name, noWarn=False, checkLoading=True):
         resource = self.get_resource(resource_name, noWarn)
-        return resource.get_data() if resource else None
+        return resource.get_data(checkLoading) if resource else None
 
     def get_resource_list(self):
         return list(self.resources.values())
@@ -430,7 +427,7 @@ class ResourceLoader(object):
         if resource_data:
             resource.set_data(resource_data)
         if resource_filepath is None:
-            resource_filepath = os.path.join(self.resource_path, resource_name) + self.fileExt
+            resource_filepath = os.path.join(self.resource_path, resource_name.replace(".", os.sep)) + self.fileExt
         meta_data = MetaData(self.resource_version, resource_filepath)
         self.regist_resource(resource, meta_data)
         return resource
@@ -738,7 +735,7 @@ class MaterialLoader(ResourceLoader):
                 )
 
                 # set default uniform datas
-                root_material = self.get_resource_data(shader_name)
+                root_material = self.get_resource_data(shader_name, checkLoading=False)
                 if root_material is not None:
                     material_datas['uniform_datas'] = copy.deepcopy(root_material.get_save_data()['uniform_datas'])
 
