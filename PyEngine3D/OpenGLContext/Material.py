@@ -144,7 +144,8 @@ class Material:
         active_texture_index = 0
         for uniform_type, uniform_name in uniforms:
             # self.uniform_datas
-            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name, default_data=default_uniform_datas.get(uniform_name))
+            default_data = CreateUniformDataFromString(uniform_type, default_uniform_datas.get(uniform_name))
+            uniform_buffer = CreateUniformBuffer(self.program, uniform_type, uniform_name, default_data=default_data)
             if uniform_buffer is not None:
                 # Important : set texture binding index
                 if issubclass(uniform_buffer.__class__, UniformTextureBase):
