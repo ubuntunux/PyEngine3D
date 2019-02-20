@@ -243,7 +243,7 @@ class ColladaContoller:
 
 
 class ColladaAnimation:
-    def __init__(self, xml_animation):
+    def __init__(self, xml_animation, node_name_map):
         self.valid = False
         self.id = get_xml_attrib(xml_animation, 'id').replace('.', '_')
 
@@ -255,9 +255,9 @@ class ColladaAnimation:
         self.in_tangents = []
         self.out_tangents = []
 
-        self.parsing(xml_animation)
+        self.parsing(xml_animation, node_name_map)
 
-    def parsing(self, xml_animation):
+    def parsing(self, xml_animation, node_name_map):
         sources = parsing_source_data(xml_animation)
 
         joins_semantics = {}
@@ -269,6 +269,7 @@ class ColladaAnimation:
         target = get_xml_attrib(xml_channel, 'target')
         if '/' in target:
             self.target, self.type = target.split('/', 1)
+            self.target = node_name_map.get(self.target, self.target)
 
         if 'INPUT' in joins_semantics:
             source_name = joins_semantics['INPUT'].get('source', '')
@@ -451,6 +452,7 @@ class Collada:
         self.up_axis = get_xml_text(xml_root.find("asset/up_axis"))
 
         self.nodes = []
+        self.node_name_map = {}  # { target: name }
         self.geometries = []
         self.controllers = []
         self.animations = []
@@ -460,12 +462,24 @@ class Collada:
             node = ColladaNode(xml_node)
             self.nodes.append(node)
 
+        def gather_node_name_map(nodes, node_name_map):
+            for node in nodes:
+                node_name_map[node.id] = node.name
+                gather_node_name_map(node.children, node_name_map)
+        gather_node_name_map(self.nodes, self.node_name_map)
+
         for xml_controller in xml_root.findall('library_controllers/controller'):
             controller = ColladaContoller(xml_controller)
             self.controllers.append(controller)
 
-        for xml_animation in xml_root.findall('library_animations/animation'):
-            animation = ColladaAnimation(xml_animation)
+        xml_animations = xml_root.findall('library_animations/animation')
+        if 0 < len(xml_animations):
+            temp = xml_animations[0].findall('animation')
+            if 0 < len(temp):
+                xml_animations = temp
+
+        for xml_animation in xml_animations:
+            animation = ColladaAnimation(xml_animation, self.node_name_map)
             self.animations.append(animation)
 
         for xml_geometry in xml_root.findall('library_geometries/geometry'):
@@ -536,8 +550,8 @@ class Collada:
                 target=animation_node.target,
                 times=animation_node.inputs,
                 # transforms=[matrix for matrix in transforms],
-                locations=[extract_location(matrix) for matrix in animation_node.outputs],
-                rotations=[extract_rotation(matrix) for matrix in animation_node.outputs],
+                locations=[extract_location(np.array(matrix, dtype=np.float32).reshape(4, 4)) for matrix in animation_node.outputs],
+                rotations=[extract_rotation(np.array(matrix, dtype=np.float32).reshape(4, 4)) for matrix in animation_node.outputs],
                 scales=[np.array([1.0, 1.0, 1.0], dtype=np.float32) for matrix in animation_node.outputs],
                 interpoations=animation_node.interpolations,
                 in_tangents=animation_node.in_tangents,
@@ -581,8 +595,7 @@ class Collada:
                     # precompute all animation frames
                     for frame, transform in enumerate(animation.outputs):
                         # only root bone adjust convert_matrix for swap Y-Z Axis
-                        transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True,
-                                                        False, self.up_axis)
+                        transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, False, self.up_axis)
                         if use_relative_matrix:
                             bone_index = bone_names.index(animation.target)
                             inv_bind_matrix = inv_bind_matrices[bone_index]
@@ -590,8 +603,7 @@ class Collada:
                         else:
                             animation.outputs[frame] = transform
                         # recursive precompute animation
-                        precompute_animation(hierachy[animation.target], bone_names, inv_bind_matrices, transform,
-                                             frame)
+                        precompute_animation(hierachy[animation.target], bone_names, inv_bind_matrices, transform, frame)
             # generate animation data
             animation_data = []  # bone animation data list order by bone index
             animation_datas.append(animation_data)

@@ -35,7 +35,8 @@ class Animation:
             current_time = self.animation_time + deltaTime
 
             while True:
-                if self.frame_times[self.current_frame] <= current_time <= self.frame_times[self.current_frame + 1]:
+                if (0 == self.current_frame and current_time <= self.frame_times[self.current_frame]) or \
+                        (self.frame_times[self.current_frame] <= current_time <= self.frame_times[self.current_frame + 1]):
                     break
                 self.current_frame = (self.current_frame + 1) % (self.frame_count - 1)
 
