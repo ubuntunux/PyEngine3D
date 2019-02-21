@@ -31,7 +31,7 @@ void main()
 #if TRANSPARENT_MATERIAL == 1
     base_color.a *= opacity;
 #else
-    if(base_color.a < 0.333f)
+    if(base_color.a < 0.333)
     {
         discard;
     }
