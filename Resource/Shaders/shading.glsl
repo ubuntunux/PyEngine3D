@@ -348,6 +348,26 @@ vec4 surface_shading(vec4 base_color,
         specular_light += ibl_specular_light * shValue * shadow_factor;
     }
 
+/*
+#ifdef FRAGMENT_SHADER
+    // Compute curvature
+    vec3 ddx = dFdx(N);
+    vec3 ddy = dFdy(N);
+    vec3 xneg = N - ddx;
+    vec3 xpos = N + ddx;
+    vec3 yneg = N - ddy;
+    vec3 ypos = N + ddy;
+    float curvature = (cross(xneg, xpos).y - cross(yneg, ypos).x) / scene_linear_depth;
+
+    float corrosion = clamp(-curvature * 3.0, 0.0, 1.0);
+    float shine = clamp(curvature * 5.0, 0.0, 1.0);
+
+    curvature = pow(saturate((curvature * 0.5 + 0.5) * 1.0), 4.0);
+
+    return vec4(curvature, curvature, curvature, 1.0);
+#endif
+*/
+
     // final result
     diffuse_light *= base_color.xyz * clamp((vec3(1.0) - fresnel) * (1.0 - metallic), 0.0, 1.0);
     specular_light = mix(specular_light, specular_light * base_color.xyz, vec3(metallic));
