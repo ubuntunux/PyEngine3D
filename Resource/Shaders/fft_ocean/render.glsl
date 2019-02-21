@@ -122,7 +122,7 @@ void main()
     vec3 in_scatter;
     vec3 sun_irradiance;
     vec3 sky_irradiance;
-    GetSceneRadiance(ATMOSPHERE, dist, eye_direction, vertex_normal, sun_irradiance, sky_irradiance, in_scatter);
+    GetSceneRadiance(ATMOSPHERE, dist * 0.1, eye_direction, vertex_normal, sun_irradiance, sky_irradiance, in_scatter);
 
     vs_output.sun_irradiance = sun_irradiance;
     vs_output.sky_irradiance = sky_irradiance;

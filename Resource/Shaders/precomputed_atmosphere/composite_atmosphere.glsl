@@ -19,18 +19,20 @@ void main()
 
     color.w = max(color.w, 0.0);
 
+    float depth_ratio = clamp(linear_depth / NEAR_FAR.y, 0.0, 1.0);
+
     if(above_the_cloud)
     {
         //color.w = (NEAR_FAR.y <= linear_depth) ? 1.0 : color.w;
-        color.w = saturate(max(pow(linear_depth / NEAR_FAR.y, 2.0), color.w));
+        color.w = saturate(max(pow(depth_ratio, 2.0), color.w));
     }
     else
     {
-        color.w = saturate(pow(linear_depth / NEAR_FAR.y, 2.0));
+        color.w = saturate(pow(depth_ratio, 2.0));
     }
 
     // for blending : src_color * one + dst_color * (1.0 - src_alpha)
-    //color.w = saturate(max(pow(linear_depth / NEAR_FAR.y, 2.0), color.w));
+    //color.w = saturate(max(pow(depth_ratio, 2.0), color.w));
     color.xyz *= color.w;
 
     // Upscaling Inscatter
@@ -64,7 +66,7 @@ void main()
     }
 
     // add inscatter
-    color.xyz += texture2D(texture_inscatter, fixed_uv).xyz;
+    color.xyz += texture2D(texture_inscatter, fixed_uv).xyz * pow(depth_ratio, 0.25);
 
     fs_output = color;
 }
