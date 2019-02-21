@@ -347,7 +347,7 @@ class ResourceLoader(object):
                             os.remove(filepath)
 
     def add_convert_source_file(self, source_filepath):
-        file_ext = os.path.splitext(source_filepath)[1]
+        file_ext = os.path.splitext(source_filepath)[1].lower()
         if file_ext in self.externalFileExt.values() and source_filepath not in self.externalFileList:
             self.externalFileList.append(source_filepath)
 
@@ -1107,7 +1107,7 @@ class MeshLoader(ResourceLoader):
 
     def convert_resource(self, resoure, source_filepath):
         logger.info("Convert Resource : %s" % source_filepath)
-        file_ext = os.path.splitext(source_filepath)[1]
+        file_ext = os.path.splitext(source_filepath)[1].lower()
         if file_ext == self.externalFileExt.get('WaveFront'):
             mesh = OBJ(source_filepath, 1, True)
             mesh_data = mesh.get_mesh_data()
