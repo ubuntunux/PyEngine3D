@@ -123,8 +123,8 @@ void main() {
     }
 
     float fresnel = pow(1.0 - clamp(NdotV, 0.0, 1.0), 4.0);
-
-    float Roughness = clamp(texture2D(texture_material, vs_output.tex_coord.xy).x - fresnel, 0.0, 1.0);
+    float Roughness = texture2D(texture_material, vs_output.tex_coord.xy).x;
+    Roughness = mix(Roughness, Roughness * Roughness, fresnel);
     float sqrtRoughness = sqrt(Roughness);
 
     const int NumSteps = 16;

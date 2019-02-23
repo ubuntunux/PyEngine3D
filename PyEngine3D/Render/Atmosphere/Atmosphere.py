@@ -59,6 +59,8 @@ class Atmosphere:
         self.cloud_coverage = 0.8
         self.cloud_tiling = 0.0004
 
+        self.inscatter_power = 0.25
+
         self.noise_contrast = 1.0
         self.noise_coverage = 1.0
         self.noise_tiling = 0.0003
@@ -110,6 +112,7 @@ class Atmosphere:
             cloud_contrast=self.cloud_contrast,
             cloud_coverage=self.cloud_coverage,
             cloud_absorption=self.cloud_absorption,
+            inscatter_power=self.inscatter_power,
             noise_tiling=self.noise_tiling,
             noise_contrast=self.noise_contrast,
             noise_coverage=self.noise_coverage,

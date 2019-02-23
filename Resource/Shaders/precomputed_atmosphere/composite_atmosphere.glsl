@@ -3,6 +3,7 @@
 #include "quad.glsl"
 
 uniform bool above_the_cloud;
+uniform float inscatter_power;
 uniform sampler2D texture_atmosphere;
 uniform sampler2D texture_inscatter;
 uniform sampler2D texture_linear_depth;
@@ -66,7 +67,7 @@ void main()
     }
 
     // add inscatter
-    color.xyz += texture2D(texture_inscatter, fixed_uv).xyz * pow(depth_ratio, 0.25);
+    color.xyz += texture2D(texture_inscatter, fixed_uv).xyz * pow(depth_ratio, inscatter_power);
 
     fs_output = color;
 }

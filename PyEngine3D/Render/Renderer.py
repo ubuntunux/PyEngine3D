@@ -1020,6 +1020,7 @@ class Renderer(Singleton):
                 composite_atmosphere.use_program()
                 above_the_cloud = self.scene_manager.atmosphere.cloud_altitude < main_camera.transform.get_pos()[1]
                 composite_atmosphere.bind_uniform_data("above_the_cloud", above_the_cloud)
+                composite_atmosphere.bind_uniform_data("inscatter_power", self.scene_manager.atmosphere.inscatter_power)
                 composite_atmosphere.bind_uniform_data("texture_atmosphere", RenderTargets.ATMOSPHERE)
                 composite_atmosphere.bind_uniform_data("texture_inscatter", RenderTargets.ATMOSPHERE_INSCATTER)
                 composite_atmosphere.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
