@@ -55,9 +55,9 @@ void main()
     // Render GBuffer
     if(is_render_gbuffer)
     {
-        fs_diffuse.xyz = base_color.xyz * emissive_color.xyz * emissive_color.w;
+        fs_diffuse.xyz = base_color.xyz + base_color.xyz * emissive_color.xyz * emissive_color.w * 0.5;
         // emissive
-        fs_diffuse.w = saturate((get_luminance(emissive_color.xyz) * emissive_color.w) * 0.1);
+        fs_diffuse.w = saturate(get_luminance(emissive_color.xyz * 0.5) * emissive_color.w * 0.1);
         fs_material = vec4(roughness_factor, metalicness, reflectance, 0.0);
         fs_normal = vec4(N * 0.5 + 0.5, 0.0);
 #if 1 == SKELETAL
