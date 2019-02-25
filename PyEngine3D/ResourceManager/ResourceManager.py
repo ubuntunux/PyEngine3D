@@ -1445,7 +1445,7 @@ class ScriptLoader(ResourceLoader):
             resource.set_data(module)
 
             loaded_modules = {}
-            script_path = os.path.join(self.resource_manager.engine_path, self.resource_dir_name)
+            script_path = self.project_resource_path
 
             # recursive reload sub modules
             def reload_module(module):
@@ -1491,8 +1491,6 @@ class ResourceManager(Singleton):
         self.procedural_texture_loader = None
         # self.loading_thread = LoadingThread(self)
 
-        sys.path.append(os.path.join(self.engine_path, ScriptLoader.resource_dir_name))
-
     def regist_loader(self, resource_loader_class):
         resource_loader = resource_loader_class(self)
         self.resource_loaders.append(resource_loader)
@@ -1506,6 +1504,9 @@ class ResourceManager(Singleton):
 
         self.project_path = project_path or self.engine_path
         check_directory_and_mkdir(self.project_path)
+
+        # NOTE : Script only load from project path.
+        sys.path.append(os.path.join(self.project_path, ScriptLoader.resource_dir_name))
 
         # Be careful with the initialization order.
         self.font_loader = self.regist_loader(FontLoader)
