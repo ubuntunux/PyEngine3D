@@ -160,7 +160,6 @@ class MetaData:
         if (self.changed or not os.path.exists(self.filepath)) and os.path.exists(self.resource_filepath):
             with open(self.filepath, 'w') as f:
                 save_data = dict(
-                    is_engine_resource=self.is_engine_resource,
                     resource_version=self.resource_version,
                     resource_filepath=self.resource_filepath,
                     resource_modify_time=self.resource_modify_time,
@@ -433,7 +432,9 @@ class ResourceLoader(object):
         resource = Resource(resource_name, self.resource_type_name)
         if resource_data is not None:
             resource.set_data(resource_data)
-        if resource_filepath is None:
+        if resource_filepath is not None:
+            is_engine_resource = self.is_engine_resource(resource_filepath)
+        else:
             resource_filepath = self.engine_resource_path if is_engine_resource else self.project_resource_path
             resource_filepath = os.path.join(resource_filepath, resource_name.replace(".", os.sep)) + self.fileExt
         meta_data = MetaData(self.resource_version, resource_filepath, is_engine_resource)
