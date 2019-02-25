@@ -50,6 +50,7 @@ class Atmosphere:
         self.atmosphere_exposure = 0.0001
 
         # cloud constants
+        self.cloud_exposure = 0.1
         self.cloud_altitude = 100.0
         self.cloud_height = 500.0
         self.cloud_speed = 0.01
@@ -105,6 +106,7 @@ class Atmosphere:
         save_data = dict(
             is_render_atmosphere=self.is_render_atmosphere,
             atmosphere_exposure=self.atmosphere_exposure,
+            cloud_exposure=self.cloud_exposure,
             cloud_altitude=self.cloud_altitude,
             cloud_height=self.cloud_height,
             cloud_tiling=self.cloud_tiling,
@@ -237,6 +239,7 @@ class Atmosphere:
         material_instance.bind_uniform_data("texture_cloud", self.cloud_texture)
         material_instance.bind_uniform_data("texture_noise", self.noise_texture)
 
+        material_instance.bind_uniform_data('cloud_exposure', self.cloud_exposure)
         material_instance.bind_uniform_data('cloud_altitude', self.cloud_altitude)
         material_instance.bind_uniform_data('cloud_height', self.cloud_height)
         material_instance.bind_uniform_data('cloud_speed', self.cloud_speed)

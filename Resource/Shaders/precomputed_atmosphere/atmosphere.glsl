@@ -10,6 +10,7 @@ uniform sampler2D texture_normal;
 uniform sampler3D texture_cloud;
 uniform sampler3D texture_noise;
 
+uniform float cloud_exposure;
 uniform float cloud_altitude;
 uniform float cloud_height;
 uniform float cloud_speed;
@@ -157,7 +158,6 @@ void main()
             cloud_inscatter = vec3(0.0);
         }
 
-        const float cloud_exposure = 0.1;
         vec3 light_color = LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance) * atmosphere_lighting;
         light_color *= cloud_exposure;
 
