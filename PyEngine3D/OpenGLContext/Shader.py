@@ -166,17 +166,17 @@ class Shader:
         self.attribute.set_attribute("name", self.name)
         return self.attribute
 
-    def generate_shader_codes(self, shader_version, compile_option, external_macros={}):
+    def generate_shader_codes(self, shader_directory, shader_version, compile_option, external_macros={}):
         shader_codes = {}
         for shader_type_name in shader_types:
             shader_type = shader_types[shader_type_name]
-            shader_code = self.__parsing_final_code__(shader_type_name, shader_version, compile_option, external_macros)
+            shader_code = self.__parsing_final_code__(shader_directory, shader_type_name, shader_version, compile_option, external_macros)
             # check void main
             if re.search(reVoidMain, shader_code) is not None:
                 shader_codes[shader_type] = shader_code
         return shader_codes
 
-    def __parsing_final_code__(self, shader_type_name, shader_version, compile_option, external_macros={}):
+    def __parsing_final_code__(self, shader_directory, shader_type_name, shader_version, compile_option, external_macros={}):
         if self.shader_code == "" or self.shader_code is None:
             return ""
 
@@ -224,8 +224,6 @@ class Shader:
 
         # insert version as comment
         include_files = dict()  # { 'filename': uuid }
-        resource_manager = CoreManager.instance().resource_manager
-        shader_file_dir = resource_manager.shader_loader.resource_path
 
         # do parsing
         line_num = 0
@@ -318,7 +316,7 @@ class Shader:
             m = re.search(reInclude, code)
             if m is not None:
                 valid = False
-                include_file = os.path.join(shader_file_dir, m.groups()[0])
+                include_file = os.path.join(shader_directory, m.groups()[0])
 
                 # insert include code
                 if os.path.exists(include_file):

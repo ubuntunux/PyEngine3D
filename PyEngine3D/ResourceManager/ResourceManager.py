@@ -76,13 +76,12 @@ class LoadingThread(Thread):
 # CLASS : MetaData
 # -----------------------#
 class MetaData:
-    def __init__(self, resource_version, resource_filepath):
+    def __init__(self, resource_version, resource_filepath, is_engine_resource):
+        self.is_engine_resource = is_engine_resource
         self.filepath = os.path.splitext(resource_filepath)[0] + ".meta"
         self.resource_version = resource_version
-        self.old_resource_version = -1
         self.resource_filepath = resource_filepath
         self.resource_modify_time = get_modify_time_of_file(resource_filepath)
-        self.source_filepath = ""
         self.source_filepath = ""
         self.source_modify_time = ""
         self.version_updated = False
@@ -161,6 +160,7 @@ class MetaData:
         if (self.changed or not os.path.exists(self.filepath)) and os.path.exists(self.resource_filepath):
             with open(self.filepath, 'w') as f:
                 save_data = dict(
+                    is_engine_resource=self.is_engine_resource,
                     resource_version=self.resource_version,
                     resource_filepath=self.resource_filepath,
                     resource_modify_time=self.resource_modify_time,
@@ -255,23 +255,24 @@ class ResourceLoader(object):
     resource_version = 0
     resource_type_name = 'None'
     fileExt = '.*'
-    external_dir_names = []  # example : Externals/Fonts, Externals/Meshes
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_FILE_COMPRESS_TO_SAVE = True
 
-    def __init__(self, core_manager, root_path):
-        self.core_manager = core_manager
-        self.resource_manager = core_manager.resource_manager
-        self.scene_manager = core_manager.scene_manager
-        self.resource_path = os.path.join(root_path, self.resource_dir_name)
-        check_directory_and_mkdir(self.resource_path)
+    def __init__(self, resource_manager):
+        self.resource_manager = resource_manager
+        self.core_manager = resource_manager.core_manager
+        self.scene_manager = resource_manager.core_manager.scene_manager
 
-        self.external_paths = [self.resource_path, ]
+        self.engine_resource_path = os.path.join(resource_manager.engine_path, self.resource_dir_name)
+        check_directory_and_mkdir(self.engine_resource_path)
 
-        for external_dir_name in self.external_dir_names:
-            external_dir_name = os.path.join(root_path, external_dir_name)
-            self.external_paths.append(external_dir_name)
-            check_directory_and_mkdir(external_dir_name)
+        self.project_resource_path = os.path.join(resource_manager.project_path, self.resource_dir_name)
+        check_directory_and_mkdir(self.project_resource_path)
+
+        self.external_paths = []
+        external_path = os.path.join(resource_manager.project_path, 'Externals', self.resource_dir_name)
+        check_directory_and_mkdir(external_path)
+        self.external_paths.append(external_path)
 
         self.externalFileList = []
         self.resources = {}
@@ -287,27 +288,33 @@ class ResourceLoader(object):
         if os.path.exists(source_filepath):
             # Refresh the resource from external file.
             source_modify_time = get_modify_time_of_file(source_filepath)
-            return meta_data.resource_version != self.resource_version or \
-                (meta_data.source_filepath == source_filepath and meta_data.source_modify_time != source_modify_time)
+            return (meta_data.resource_version != self.resource_version) or (meta_data.source_filepath == source_filepath and meta_data.source_modify_time != source_modify_time)
         else:
             return False
+
+    def is_engine_resource(self, filepath):
+        return filepath.startswith(self.engine_resource_path)
 
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
 
         # collect resource files
-        for dirname, dirnames, filenames in os.walk(self.resource_path):
-            for filename in filenames:
-                fileExt = os.path.splitext(filename)[1]
-                if ".*" == self.fileExt or fileExt == self.fileExt:
-                    filepath = os.path.join(dirname, filename)
-                    resource_name = self.get_resource_name(self.resource_path, filepath)
-                    self.create_resource(resource_name=resource_name, resource_data=None, resource_filepath=filepath)
+        resource_paths = [self.engine_resource_path, self.project_resource_path]
+        for resource_path in resource_paths:
+            is_engine_resource = resource_path is self.engine_resource_path
+            for dirname, dirnames, filenames in os.walk(resource_path):
+                for filename in filenames:
+                    fileExt = os.path.splitext(filename)[1]
+                    if ".*" == self.fileExt or fileExt == self.fileExt:
+                        filepath = os.path.join(dirname, filename)
+                        resource_name = self.get_resource_name(resource_path, filepath)
+                        self.create_resource(resource_name=resource_name, resource_data=None, resource_filepath=filepath, is_engine_resource=is_engine_resource)
 
         # If you use external files, will convert the resources.
         if self.externalFileExt:
             # gather external source files
             for external_path in self.external_paths:
+                is_engine_resource = self.is_engine_resource(external_path)
                 for dirname, dirnames, filenames in os.walk(external_path):
                     for filename in filenames:
                         source_filepath = os.path.join(dirname, filename)
@@ -321,7 +328,7 @@ class ResourceLoader(object):
                     # Create the new resource from exterial file.
                     if resource is None:
                         logger.info("Create the new resource from %s." % source_filepath)
-                        resource = self.create_resource(resource_name)
+                        resource = self.create_resource(resource_name, is_engine_resource=is_engine_resource)
                         self.convert_resource(resource, source_filepath)
                     elif meta_data and self.is_new_external_data(meta_data, source_filepath):
                         self.convert_resource(resource, source_filepath)
@@ -330,12 +337,12 @@ class ResourceLoader(object):
             self.externalFileList = []
 
         # clear gabage meta file
-        for dirname, dirnames, filenames in os.walk(self.resource_path):
+        for dirname, dirnames, filenames in os.walk(self.project_resource_path):
             for filename in filenames:
                 file_ext = os.path.splitext(filename)[1]
                 if file_ext == '.meta':
                     filepath = os.path.join(dirname, filename)
-                    resource_name = self.get_resource_name(self.resource_path, filepath)
+                    resource_name = self.get_resource_name(self.project_resource_path, filepath)
                     resource = self.get_resource(resource_name, noWarn=True)
                     meta_data = self.get_meta_data(resource_name, noWarn=True)
                     if resource is None:
@@ -419,16 +426,17 @@ class ResourceLoader(object):
             logger.error("Not found meta data of %s." % resource_name)
         return None
 
-    def create_resource(self, resource_name, resource_data=None, resource_filepath=None):
+    def create_resource(self, resource_name, resource_data=None, resource_filepath=None, is_engine_resource=False):
         if resource_name in self.resources:
             # logger.warn('Resource name is duplicated. %s' % resource_name)
             resource_name = self.get_new_resource_name(resource_name)
         resource = Resource(resource_name, self.resource_type_name)
-        if resource_data:
+        if resource_data is not None:
             resource.set_data(resource_data)
         if resource_filepath is None:
-            resource_filepath = os.path.join(self.resource_path, resource_name.replace(".", os.sep)) + self.fileExt
-        meta_data = MetaData(self.resource_version, resource_filepath)
+            resource_filepath = self.engine_resource_path if is_engine_resource else self.project_resource_path
+            resource_filepath = os.path.join(resource_filepath, resource_name.replace(".", os.sep)) + self.fileExt
+        meta_data = MetaData(self.resource_version, resource_filepath, is_engine_resource)
         self.regist_resource(resource, meta_data)
         return resource
 
@@ -453,7 +461,8 @@ class ResourceLoader(object):
     def rename_resource(self, resource_name, new_name):
         if new_name and resource_name != new_name:
             resource_data = self.get_resource_data(resource_name)
-            resource = self.create_resource(new_name, resource_data)
+            meta_data = self.get_meta_data(resource_name)
+            resource = self.create_resource(new_name, resource_data, is_engine_resource=meta_data.is_engine_resource)
             if resource:
                 if resource_data and hasattr(resource_data, 'name'):
                     resource_data.name = resource.name
@@ -514,10 +523,14 @@ class ResourceLoader(object):
         logger.error("file open error : %s" % filePath)
         return None
 
-    def save_resource_data(self, resource, save_data, source_filepath=""):
-        # save_filepath = os.path.join(self.resource_path, resource.name) + self.fileExt
+    def save_resource_data(self, resource, save_data, source_filepath="", is_engine_resource=False):
         save_filepath = resource.name.replace('.', os.sep)
-        save_filepath = os.path.join(self.resource_path, save_filepath) + self.fileExt
+
+        if is_engine_resource:
+            save_filepath = os.path.join(self.engine_resource_path, save_filepath) + self.fileExt
+        else:
+            save_filepath = os.path.join(self.project_resource_path, save_filepath) + self.fileExt
+
         save_dir = os.path.dirname(save_filepath)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -627,8 +640,8 @@ class MaterialLoader(ResourceLoader):
     resource_version = 0.6
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def __init__(self, core_manager, root_path):
-        ResourceLoader.__init__(self, core_manager, root_path)
+    def __init__(self, resource_manager):
+        ResourceLoader.__init__(self, resource_manager)
         # self.linked_material_map = {}
 
     def action_resource(self, resource_name):
@@ -701,9 +714,16 @@ class MaterialLoader(ResourceLoader):
         logger.info("Generate new material : %s" % material_name)
         shader = self.resource_manager.get_shader(shader_name)
         shader_version = self.resource_manager.get_shader_version()
+        shader_meta_data = self.resource_manager.shader_loader.get_meta_data(shader_name)
 
-        if shader:
-            shader_codes = shader.generate_shader_codes(shader_version, compile_option, macros)
+        if shader is not None and shader_meta_data is not None:
+            is_engine_resource = self.resource_manager.shader_loader.is_engine_resource(shader_meta_data.resource_filepath)
+            if is_engine_resource:
+                shader_directory = self.resource_manager.shader_loader.engine_resource_path
+            else:
+                shader_directory = self.resource_manager.shader_loader.project_resource_path
+
+            shader_codes = shader.generate_shader_codes(shader_directory, shader_version, compile_option, macros)
             if shader_codes is not None:
                 shader_code_list = shader_codes.values()
                 final_macros = parsing_macros(shader_code_list)
@@ -746,7 +766,7 @@ class MaterialLoader(ResourceLoader):
                     if material.valid:
                         resource = self.get_resource(final_material_name, noWarn=True)
                         if resource is None:
-                            resource = self.create_resource(final_material_name)
+                            resource = self.create_resource(final_material_name, is_engine_resource=is_engine_resource)
 
                         # set include files meta datas
                         resource.meta_data.include_files = material_datas.get('include_files', {})
@@ -765,7 +785,7 @@ class MaterialLoader(ResourceLoader):
                             material_datas['binary_data'] = binary_data
 
                         # Done : save material data
-                        self.save_resource_data(resource, material_datas, source_filepath)
+                        self.save_resource_data(resource, material_datas, source_filepath, is_engine_resource)
                         resource.set_data(material)
                         return material
                     else:
@@ -881,13 +901,12 @@ class TextureLoader(ResourceLoader):
     resource_type_name = 'Texture'
     resource_version = 2
     USE_FILE_COMPRESS_TO_SAVE = True
-    external_dir_names = [os.path.join('Externals', 'Textures'), ]
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx", PGM=".pgm")
 
-    def __init__(self, core_manager, root_path):
-        ResourceLoader.__init__(self, core_manager, root_path)
+    def __init__(self, resource_manager):
+        ResourceLoader.__init__(self, resource_manager)
         self.new_texture_list = []
 
     def initialize(self):
@@ -1081,7 +1100,6 @@ class MeshLoader(ResourceLoader):
     resource_type_name = 'Mesh'
     fileExt = '.mesh'
     externalFileExt = dict(WaveFront='.obj', Collada='.dae')
-    external_dir_names = [os.path.join('Externals', 'Meshes'), ]
     USE_FILE_COMPRESS_TO_SAVE = True
 
     def initialize(self):
@@ -1229,7 +1247,6 @@ class FontLoader(ResourceLoader):
     resource_type_name = 'Font'
     resource_version = 2
     fileExt = '.font'
-    external_dir_names = [os.path.join('Externals', 'Fonts'), ]
     externalFileExt = dict(TTF='.ttf', OTF='.otf')
 
     unicode_blocks = dict(
@@ -1239,6 +1256,12 @@ class FontLoader(ResourceLoader):
 
     def check_font_data(self, font_datas, resoure, source_filepath):
         chaneged = False
+
+        if self.is_engine_resource(source_filepath):
+            preview_path = self.engine_resource_path
+        else:
+            preview_path = self.project_resource_path
+
         for unicode_block_name in self.unicode_blocks:
             if unicode_block_name not in font_datas:
                 range_min, range_max = self.unicode_blocks[unicode_block_name]
@@ -1252,7 +1275,7 @@ class FontLoader(ResourceLoader):
                     range_min=range_min,
                     range_max=range_max,
                     source_filepath=source_filepath,
-                    preview_path=self.resource_path
+                    preview_path=preview_path
                 )
                 font_datas[unicode_block_name] = font_data
                 chaneged = True
@@ -1421,7 +1444,7 @@ class ScriptLoader(ResourceLoader):
             resource.set_data(module)
 
             loaded_modules = {}
-            script_path = os.path.join(self.resource_manager.PathResources, self.resource_dir_name)
+            script_path = os.path.join(self.resource_manager.engine_path, self.resource_dir_name)
 
             # recursive reload sub modules
             def reload_module(module):
@@ -1444,11 +1467,11 @@ class ScriptLoader(ResourceLoader):
 # -----------------------#
 class ResourceManager(Singleton):
     name = "ResourceManager"
-    PathResources = "Resource"
-    DefaultProjectFile = os.path.join(PathResources, "default.project")
+    engine_path = "Resource"
+    DefaultProjectFile = os.path.join(engine_path, "default.project")
 
     def __init__(self):
-        self.root_path = ""
+        self.project_path = ""
         self.resource_loaders = []
         self.core_manager = None
         self.scene_manager = None
@@ -1467,19 +1490,21 @@ class ResourceManager(Singleton):
         self.procedural_texture_loader = None
         # self.loading_thread = LoadingThread(self)
 
-        sys.path.append(os.path.join(self.PathResources, ScriptLoader.resource_dir_name))
+        sys.path.append(os.path.join(self.engine_path, ScriptLoader.resource_dir_name))
 
     def regist_loader(self, resource_loader_class):
-        resource_loader = resource_loader_class(self.core_manager, self.root_path)
+        resource_loader = resource_loader_class(self)
         self.resource_loaders.append(resource_loader)
         return resource_loader
 
-    def initialize(self, core_manager, root_path=""):
+    def initialize(self, core_manager, project_path=""):
         self.core_manager = core_manager
         self.scene_manager = core_manager.scene_manager
 
-        self.root_path = root_path or self.PathResources
-        check_directory_and_mkdir(self.root_path)
+        check_directory_and_mkdir(self.engine_path)
+
+        self.project_path = project_path or self.engine_path
+        check_directory_and_mkdir(self.project_path)
 
         # Be careful with the initialization order.
         self.font_loader = self.regist_loader(FontLoader)
@@ -1514,10 +1539,10 @@ class ResourceManager(Singleton):
 
     def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)
-        copy_tree(self.PathResources, new_project_dir)
-        default_project_file = os.path.join(new_project_dir, 'defualt.project')
-        if os.path.exists(default_project_file):
-            os.remove(default_project_file)
+        # copy_tree(self.engine_path, new_project_dir)
+        # default_project_file = os.path.join(new_project_dir, 'defualt.project')
+        # if os.path.exists(default_project_file):
+        #     os.remove(default_project_file)
 
     def get_resource_name_and_type_list(self):
         """
