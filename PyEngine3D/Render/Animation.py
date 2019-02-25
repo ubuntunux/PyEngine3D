@@ -50,6 +50,17 @@ class Animation:
         if self.last_frame == frame:
             return self.animation_transforms
         else:
+            # def animation(bone, parent_matrix):
+            #     for child_bone in bone.children:
+            #         child_node = self.nodes[child_bone.index]
+            #         child_node.transform[...] = np.dot(child_node.transform, parent_matrix)
+            #         self.animation_transforms[child_bone.index][...] = child_node.transform
+            #         animation(child_bone, child_node.transform)
+            # for bone in self.skeleton.hierachy:
+            #     node = self.nodes[bone.index]
+            #     self.animation_transforms[bone.index][...] = node.get_transform(frame)
+            #     animation(bone, self.animation_transforms[bone.index])
+
             for i, node in enumerate(self.nodes):
                 self.animation_transforms[i][...] = node.get_transform(frame)
             return self.animation_transforms

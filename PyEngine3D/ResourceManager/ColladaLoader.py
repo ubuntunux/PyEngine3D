@@ -534,7 +534,7 @@ class Collada:
 
     def get_animation_data(self, skeleton_datas):
         precompute_parent_matrix = True
-        precompute_inv_bind_matrix = False
+        precompute_inv_bind_matrix = True
 
         def get_empty_animation_node_data(animation_node_name, bone_name):
             return dict(
