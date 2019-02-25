@@ -84,7 +84,8 @@ class AnimationNode:
             frame = int(frame) % self.frame_count
             next_frame = (frame + 1) % self.frame_count
             
-            set_identity_matrix(self.transform)
+            # set_identity_matrix(self.transform)
+
             if frame < self.frame_count:
                 rotation = slerp(self.rotations[frame], self.rotations[next_frame], rate)
                 # rotation = normalize(lerp(self.rotations[frame], self.rotations[next_frame], rate))
@@ -93,6 +94,8 @@ class AnimationNode:
                 quaternion_to_matrix(rotation, self.transform)
                 matrix_scale(self.transform, *scale)
                 self.transform[3, 0:3] = location
+            # Why multipication inv_bind_matrix? let's suppose to the bone is T pose. Since the vertices do not move,
+            # the result must be an identity. Therefore, inv_bind_matrix is ​​the inverse of T pose transform.
             self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
             return self.transform
 
