@@ -237,8 +237,7 @@ class ColladaContoller:
         if 'INV_BIND_MATRIX' in joins_semantics:
             inv_bind_matrix_source = joins_semantics['INV_BIND_MATRIX'].get('source', '')
             self.inv_bind_matrices = sources.get(inv_bind_matrix_source, [])
-            self.inv_bind_matrices = [np.array(inv_bind_matrix, dtype=np.float32).reshape(4, 4) for inv_bind_matrix in
-                                      self.inv_bind_matrices]
+            self.inv_bind_matrices = [np.array(inv_bind_matrix, dtype=np.float32).reshape(4, 4) for inv_bind_matrix in self.inv_bind_matrices]
         self.valid = True
 
 
@@ -522,8 +521,7 @@ class Collada:
                     # recursive build hierachy of bones
                     build_hierachy(root_node, hierachy)
 
-                inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in
-                                     controller.inv_bind_matrices]
+                inv_bind_matrices = [swap_up_axis_matrix(matrix, True, True, self.up_axis) for matrix in controller.inv_bind_matrices]
 
                 skeleton_data = dict(
                     name=controller.name,
@@ -535,8 +533,8 @@ class Collada:
         return skeleton_datas
 
     def get_animation_data(self, skeleton_datas):
-        use_accumulated_transform = True
-        use_relative_matrix = False
+        precompute_parent_matrix = True
+        precompute_inv_bind_matrix = False
 
         def get_empty_animation_node_data(animation_node_name, bone_name):
             return dict(
@@ -547,6 +545,8 @@ class Collada:
         def get_animation_node_data(animation_node_name, animation_node):
             return dict(
                 name=animation_node_name,
+                precompute_parent_matrix=precompute_parent_matrix,
+                precompute_inv_bind_matrix=precompute_inv_bind_matrix,
                 target=animation_node.target,
                 times=animation_node.inputs,
                 # transforms=[matrix for matrix in transforms],
@@ -564,18 +564,17 @@ class Collada:
                     if child_anim.target == child:
                         # just Transpose child bones, no swap y-z.
                         child_transform = np.array(child_anim.outputs[frame], dtype=np.float32).reshape(4, 4).T
-                        if use_accumulated_transform:
+                        if precompute_parent_matrix:
                             child_transform = np.dot(child_transform, parent_matrix)
 
-                        if use_relative_matrix:
+                        if precompute_inv_bind_matrix:
                             child_bone_index = bone_names.index(child_anim.target)
                             child_inv_bind_matrix = inv_bind_matrices[child_bone_index]
                             child_anim.outputs[frame] = np.dot(child_inv_bind_matrix, child_transform)
                         else:
                             child_anim.outputs[frame] = child_transform
                         # recursive precompute animation
-                        precompute_animation(children_hierachy[child_anim.target], bone_names, inv_bind_matrices,
-                                             child_transform, frame)
+                        precompute_animation(children_hierachy[child_anim.target], bone_names, inv_bind_matrices, child_transform, frame)
                         break
 
         # precompute_animation
@@ -596,7 +595,7 @@ class Collada:
                     for frame, transform in enumerate(animation.outputs):
                         # only root bone adjust convert_matrix for swap Y-Z Axis
                         transform = swap_up_axis_matrix(np.array(transform, dtype=np.float32).reshape(4, 4), True, False, self.up_axis)
-                        if use_relative_matrix:
+                        if precompute_inv_bind_matrix:
                             bone_index = bone_names.index(animation.target)
                             inv_bind_matrix = inv_bind_matrices[bone_index]
                             animation.outputs[frame] = np.dot(inv_bind_matrix, transform)

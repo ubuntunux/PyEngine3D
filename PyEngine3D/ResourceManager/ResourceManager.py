@@ -269,11 +269,11 @@ class ResourceLoader(object):
         check_directory_and_mkdir(self.project_resource_path)
 
         self.external_paths = []
-        external_path = os.path.join(resource_manager.project_path, 'Externals', self.resource_dir_name)
-        check_directory_and_mkdir(external_path)
-        self.external_paths.append(external_path)
+        self.external_paths.append(os.path.join(resource_manager.engine_path, 'Externals', self.resource_dir_name))
+        self.external_paths.append(os.path.join(resource_manager.project_path, 'Externals', self.resource_dir_name))
+        for external_path in self.external_paths:
+            check_directory_and_mkdir(external_path)
 
-        self.externalFileList = []
         self.resources = {}
         self.metaDatas = {}
 
@@ -294,6 +294,9 @@ class ResourceLoader(object):
     def is_engine_resource(self, filepath):
         return filepath.startswith(self.engine_resource_path) or self.engine_resource_path == self.project_resource_path
 
+    def is_engine_external(self, filepath):
+        return filepath.startswith(self.resource_manager.engine_path) or self.resource_manager.engine_path == self.resource_manager.project_path
+
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
 
@@ -309,31 +312,34 @@ class ResourceLoader(object):
                         resource_name = self.get_resource_name(resource_path, filepath)
                         self.create_resource(resource_name=resource_name, resource_data=None, resource_filepath=filepath, is_engine_resource=is_engine_resource)
 
-        # If you use external files, will convert the resources.
+        # Convert external files to resources.
         if self.externalFileExt:
             # gather external source files
             for external_path in self.external_paths:
-                is_engine_resource = self.is_engine_resource(external_path)
+                is_engine_external = self.is_engine_external(external_path)
+                externalFileList = []
+
                 for dirname, dirnames, filenames in os.walk(external_path):
                     for filename in filenames:
                         source_filepath = os.path.join(dirname, filename)
-                        self.add_convert_source_file(source_filepath)
+
+                        file_ext = os.path.splitext(source_filepath)[1].lower()
+                        if file_ext in self.externalFileExt.values() and source_filepath not in externalFileList:
+                            externalFileList.append(source_filepath)
 
                 # convert external file to rsource file.
-                for source_filepath in self.externalFileList:
+                for source_filepath in externalFileList:
                     resource_name = self.get_resource_name(external_path, source_filepath)
                     resource = self.get_resource(resource_name, noWarn=True)
                     meta_data = self.get_meta_data(resource_name, noWarn=True)
                     # Create the new resource from exterial file.
                     if resource is None:
                         logger.info("Create the new resource from %s." % source_filepath)
-                        resource = self.create_resource(resource_name, is_engine_resource=is_engine_resource)
+                        resource = self.create_resource(resource_name, is_engine_resource=is_engine_external)
                         self.convert_resource(resource, source_filepath)
                     elif meta_data and self.is_new_external_data(meta_data, source_filepath):
                         self.convert_resource(resource, source_filepath)
                         logger.info("Refresh the new resource from %s." % source_filepath)
-            # clear list
-            self.externalFileList = []
 
         # clear gabage meta file
         for dirname, dirnames, filenames in os.walk(self.project_resource_path):
@@ -351,11 +357,6 @@ class ResourceLoader(object):
                         else:
                             logger.info("Delete the %s." % filepath)
                             os.remove(filepath)
-
-    def add_convert_source_file(self, source_filepath):
-        file_ext = os.path.splitext(source_filepath)[1].lower()
-        if file_ext in self.externalFileExt.values() and source_filepath not in self.externalFileList:
-            self.externalFileList.append(source_filepath)
 
     def get_new_resource_name(self, prefix=""):
         if prefix not in self.resources:
@@ -524,10 +525,10 @@ class ResourceLoader(object):
         logger.error("file open error : %s" % filePath)
         return None
 
-    def save_resource_data(self, resource, save_data, source_filepath="", is_engine_resource=False):
+    def save_resource_data(self, resource, save_data, source_filepath=""):
         save_filepath = resource.name.replace('.', os.sep)
 
-        if is_engine_resource:
+        if resource.meta_data.is_engine_resource:
             save_filepath = os.path.join(self.engine_resource_path, save_filepath) + self.fileExt
         else:
             save_filepath = os.path.join(self.project_resource_path, save_filepath) + self.fileExt
@@ -562,13 +563,13 @@ class ResourceLoader(object):
     def delete_resource(self, resource_name):
         resource = self.get_resource(resource_name)
         if resource is not None:
-            logger.info("Deleted the %s." % resource.name)
             if resource.name in self.metaDatas:
                 resource_filepath = self.metaDatas[resource.name].resource_filepath
             else:
                 resource_filepath = ""
             if os.path.exists(resource_filepath):
                 os.remove(resource_filepath)
+                logger.info("Deleted the %s." % resource_filepath)
             self.unregist_resource(resource)
 
 
@@ -786,7 +787,7 @@ class MaterialLoader(ResourceLoader):
                             material_datas['binary_data'] = binary_data
 
                         # Done : save material data
-                        self.save_resource_data(resource, material_datas, source_filepath, is_engine_resource)
+                        self.save_resource_data(resource, material_datas, source_filepath)
                         resource.set_data(material)
                         return material
                     else:

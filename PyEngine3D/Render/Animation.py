@@ -59,6 +59,8 @@ class AnimationNode:
     def __init__(self, bone, animation_node_data):
         self.name = animation_node_data.get('name', '')
         self.bone = bone
+        self.precompute_parent_matrix = animation_node_data.get('precompute_parent_matrix', False)
+        self.precompute_inv_bind_matrix = animation_node_data.get('precompute_inv_bind_matrix', False)
         self.target = animation_node_data.get('target', '')  # bone name
         self.frame_times = animation_node_data.get('times', [])
         self.locations = animation_node_data.get('locations', [])
@@ -83,8 +85,6 @@ class AnimationNode:
             rate = frame - int(frame)
             frame = int(frame) % self.frame_count
             next_frame = (frame + 1) % self.frame_count
-            
-            # set_identity_matrix(self.transform)
 
             if frame < self.frame_count:
                 rotation = slerp(self.rotations[frame], self.rotations[next_frame], rate)
@@ -94,8 +94,10 @@ class AnimationNode:
                 quaternion_to_matrix(rotation, self.transform)
                 matrix_scale(self.transform, *scale)
                 self.transform[3, 0:3] = location
-            # Why multipication inv_bind_matrix? let's suppose to the bone is T pose. Since the vertices do not move,
-            # the result must be an identity. Therefore, inv_bind_matrix is ​​the inverse of T pose transform.
-            self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
+
+                # Why multipication inv_bind_matrix? let's suppose to the bone is T pose. Since the vertices do not move,
+                # the result must be an identity. Therefore, inv_bind_matrix is ​​the inverse of T pose transform.
+                if not self.precompute_inv_bind_matrix:
+                    self.transform[...] = np.dot(self.bone.inv_bind_matrix, self.transform)
             return self.transform
 
