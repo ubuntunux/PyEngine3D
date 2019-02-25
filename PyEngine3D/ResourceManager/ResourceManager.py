@@ -292,7 +292,7 @@ class ResourceLoader(object):
             return False
 
     def is_engine_resource(self, filepath):
-        return filepath.startswith(self.engine_resource_path)
+        return filepath.startswith(self.engine_resource_path) or self.engine_resource_path == self.project_resource_path
 
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
