@@ -102,8 +102,9 @@ class MetaData:
             self.save_meta_file()
 
     def set_resource_meta_data(self, resource_filepath, save=True):
-        filepath, ext = os.path.splitext(resource_filepath)
-        resource_filepath = filepath.replace(".", os.sep) + ext
+        # filepath, ext = os.path.splitext(resource_filepath)
+        # dirpath, filename = os.path.split(filepath)
+        # resource_filepath = os.path.join(dirpath, filename.replace(".", os.sep) + ext)
 
         resource_modify_time = get_modify_time_of_file(resource_filepath)
         self.changed |= self.resource_filepath != resource_filepath
@@ -115,8 +116,9 @@ class MetaData:
             self.save_meta_file()
 
     def set_source_meta_data(self, source_filepath, save=True):
-        filepath, ext = os.path.splitext(source_filepath)
-        source_filepath = filepath.replace(".", os.sep) + ext
+        # filepath, ext = os.path.splitext(source_filepath)
+        # dirpath, filename = os.path.split(filepath)
+        # source_filepath = os.path.join(dirpath, filename.replace(".", os.sep) + ext)
 
         source_modify_time = get_modify_time_of_file(source_filepath)
         self.changed |= self.source_filepath != source_filepath
