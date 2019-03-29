@@ -302,8 +302,11 @@ class ResourceLoader(object):
     def initialize(self):
         logger.info("initialize " + GetClassName(self))
 
+        resource_paths = [self.engine_resource_path, ]
+        if self.project_resource_path not in resource_paths:
+            resource_paths.append(self.project_resource_path)
+
         # collect resource files
-        resource_paths = [self.engine_resource_path, self.project_resource_path]
         for resource_path in resource_paths:
             is_engine_resource = resource_path is self.engine_resource_path
             for dirname, dirnames, filenames in os.walk(resource_path):
