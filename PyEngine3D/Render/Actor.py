@@ -157,8 +157,8 @@ class SkeletonActor(StaticActor):
         self.animation_time = 0.0
         self.animation_buffers = []
         self.prev_animation_buffers = []
-        self.animation_index = 0
         self.animation_count = 0
+        self.animation_model = None
 
         if self.has_mesh:
             for animation in self.model.mesh.animations:
@@ -170,7 +170,7 @@ class SkeletonActor(StaticActor):
                 else:
                     self.prev_animation_buffers.append([])
                     self.animation_buffers.append([])
-            self.animation_count = len(self.model.mesh.animations)
+            self.animation_model = self.model
 
     def get_prev_animation_buffer(self, index):
         return self.prev_animation_buffers[index]
@@ -182,17 +182,17 @@ class SkeletonActor(StaticActor):
         self.transform.update_transform()
 
         # update animation
-        if self.animation_index < self.animation_count:
-            animation = self.model.mesh.animations[self.animation_index]
-            frame_count = animation.frame_count
-            if frame_count > 1:
-                self.animation_time = math.fmod(self.animation_time + dt, animation.animation_length)
-                self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_time)
-            else:
-                self.animation_frame = 0.0
+        for i, animation in enumerate(self.animation_model.mesh.animations):
+            if animation:
+                frame_count = animation.frame_count
+                if frame_count > 1:
+                    self.animation_time = math.fmod(self.animation_time + dt, animation.animation_length)
+                    self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_time)
+                else:
+                    self.animation_frame = 0.0
 
-            self.prev_animation_buffers[self.animation_index][...] = self.animation_buffers[self.animation_index]
+                self.prev_animation_buffers[i][...] = self.animation_buffers[i]
 
-            if self.last_animation_frame != self.animation_frame:
-                self.last_animation_frame = self.animation_frame
-                self.animation_buffers[self.animation_index][...] = animation.get_animation_transforms(self.animation_frame)
+                if self.last_animation_frame != self.animation_frame:
+                    self.last_animation_frame = self.animation_frame
+                    self.animation_buffers[i][...] = animation.get_animation_transforms(self.animation_frame)

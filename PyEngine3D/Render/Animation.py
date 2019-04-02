@@ -36,6 +36,9 @@ class Animation:
         if 1 < self.frame_count:
             frame = int(current_frame)
 
+            if self.frame_count <= frame:
+                frame %= (self.frame_count - 1)
+
             while True:
                 if (0 == frame and current_time <= self.frame_times[frame]) or (self.frame_times[frame] <= current_time <= self.frame_times[frame + 1]):
                     break
