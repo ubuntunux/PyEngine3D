@@ -27,33 +27,32 @@ class Animation:
             self.animation_length = max(self.frame_times)
 
         self.last_frame = 0.0
-        self.current_frame = 0
-        self.animation_time = 0.0
 
         # just update animation transforms
         self.animation_transforms = np.array([Matrix4() for i in range(len(self.nodes))], dtype=np.float32)
         self.get_animation_transforms(0.0)
 
-    def get_time_to_frame(self, deltaTime):
+    def get_time_to_frame(self, current_frame, current_time):
         if 1 < self.frame_count:
-            current_time = self.animation_time + deltaTime
+            frame = int(current_frame)
 
             while True:
-                if (0 == self.current_frame and current_time <= self.frame_times[self.current_frame]) or \
-                        (self.frame_times[self.current_frame] <= current_time <= self.frame_times[self.current_frame + 1]):
+                if (0 == frame and current_time <= self.frame_times[frame]) or (self.frame_times[frame] <= current_time <= self.frame_times[frame + 1]):
                     break
-                self.current_frame = (self.current_frame + 1) % (self.frame_count - 1)
+                frame = (frame + 1) % (self.frame_count - 1)
 
-            frame_time = self.frame_times[self.current_frame]
-            next_frame_time = self.frame_times[self.current_frame + 1]
+            frame_time = self.frame_times[frame]
+            next_frame_time = self.frame_times[frame + 1]
             ratio = (current_time - frame_time) / (next_frame_time - frame_time)
-            return float(self.current_frame) + ratio
+            return float(frame) + ratio
         return 0.0
 
     def get_animation_transforms(self, frame=0.0):
         if self.last_frame == frame:
             return self.animation_transforms
         else:
+            self.last_frame = frame
+
             if self.root_node.precompute_parent_matrix:
                 for i, node in enumerate(self.nodes):
                     self.animation_transforms[i][...] = node.get_transform(frame)
