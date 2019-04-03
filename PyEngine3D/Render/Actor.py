@@ -202,7 +202,7 @@ class SkeletonActor(StaticActor):
 
         # update animation
         update_animation_frame = True
-        for i, animation in enumerate(self.animation_mesh.mesh.animations):
+        for i, animation in enumerate(self.animation_mesh.animations):
             if animation is not None:
                 blend_ratio = 1.0
 
