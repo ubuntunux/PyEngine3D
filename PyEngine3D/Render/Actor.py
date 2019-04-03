@@ -163,7 +163,7 @@ class SkeletonActor(StaticActor):
         self.prev_animation_buffers = []
         self.blend_animation_buffers = []
         self.animation_count = 0
-        self.animation_model = None
+        self.animation_mesh = None
 
         if self.has_mesh:
             for animation in self.model.mesh.animations:
@@ -177,11 +177,11 @@ class SkeletonActor(StaticActor):
                     self.prev_animation_buffers.append(None)
                     self.animation_buffers.append(None)
                     self.blend_animation_buffers.append(None)
-            self.animation_model = self.model
+            self.animation_mesh = self.model.mesh
 
-    def set_animation(self, model, speed=1.0, loop=False, blend_time=0.5, force=False):
-        if model != self.animation_model or force:
-            self.animation_model = model
+    def set_animation(self, mesh, speed=1.0, loop=False, blend_time=0.5, force=False):
+        if mesh != self.animation_mesh or force:
+            self.animation_mesh = mesh
             self.animation_speed = speed
             self.animation_loop = loop
             self.animation_blend_time = blend_time
@@ -202,7 +202,7 @@ class SkeletonActor(StaticActor):
 
         # update animation
         update_animation_frame = True
-        for i, animation in enumerate(self.animation_model.mesh.animations):
+        for i, animation in enumerate(self.animation_mesh.mesh.animations):
             if animation is not None:
                 blend_ratio = 1.0
 
