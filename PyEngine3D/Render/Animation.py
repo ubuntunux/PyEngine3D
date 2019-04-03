@@ -35,14 +35,15 @@ class Animation:
     def get_time_to_frame(self, current_frame, current_time):
         if 1 < self.frame_count:
             frame = int(current_frame)
+            last_index = self.frame_count - 1
 
-            if self.frame_count <= frame:
-                frame %= (self.frame_count - 1)
+            if last_index <= frame:
+                frame %= last_index
 
             while True:
                 if (0 == frame and current_time <= self.frame_times[frame]) or (self.frame_times[frame] <= current_time <= self.frame_times[frame + 1]):
                     break
-                frame = (frame + 1) % (self.frame_count - 1)
+                frame = (frame + 1) % last_index
 
             frame_time = self.frame_times[frame]
             next_frame_time = self.frame_times[frame + 1]

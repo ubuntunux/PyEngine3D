@@ -153,10 +153,15 @@ class SkeletonActor(StaticActor):
         StaticActor.__init__(self, name, **object_data)
 
         self.last_animation_frame = 0.0
+        self.animation_loop = False
+        self.animation_blend_time = 0.5
+        self.animation_elapsed_time = 0.0
+        self.animation_speed = 1.0
         self.animation_frame = 0.0
-        self.animation_time = 0.0
+        self.animation_play_time = 0.0
         self.animation_buffers = []
         self.prev_animation_buffers = []
+        self.blend_animation_buffers = []
         self.animation_count = 0
         self.animation_model = None
 
@@ -167,10 +172,24 @@ class SkeletonActor(StaticActor):
                     # just initialize
                     self.prev_animation_buffers.append(animation_buffer.copy())
                     self.animation_buffers.append(animation_buffer.copy())
+                    self.blend_animation_buffers.append(animation_buffer.copy())
                 else:
-                    self.prev_animation_buffers.append([])
-                    self.animation_buffers.append([])
+                    self.prev_animation_buffers.append(None)
+                    self.animation_buffers.append(None)
+                    self.blend_animation_buffers.append(None)
             self.animation_model = self.model
+
+    def set_animation(self, model, speed=1.0, loop=False, blend_time=0.5, force=False):
+        if model != self.animation_model or force:
+            self.animation_model = model
+            self.animation_speed = speed
+            self.animation_loop = loop
+            self.animation_blend_time = blend_time
+            self.animation_elapsed_time = 0.0
+            self.animation_play_time = 0.0
+            self.animation_frame = 0.0
+            # swap
+            self.animation_buffers, self.blend_animation_buffers = self.blend_animation_buffers, self.animation_buffers
 
     def get_prev_animation_buffer(self, index):
         return self.prev_animation_buffers[index]
@@ -182,17 +201,37 @@ class SkeletonActor(StaticActor):
         self.transform.update_transform()
 
         # update animation
+        update_animation_frame = True
         for i, animation in enumerate(self.animation_model.mesh.animations):
-            if animation:
-                frame_count = animation.frame_count
-                if frame_count > 1:
-                    self.animation_time = math.fmod(self.animation_time + dt, animation.animation_length)
-                    self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_time)
-                else:
-                    self.animation_frame = 0.0
+            if animation is not None:
+                blend_ratio = 1.0
 
+                # update animation frame only first animation
+                if update_animation_frame:
+                    update_animation_frame = False
+                    frame_count = animation.frame_count
+                    if frame_count > 1:
+                        self.animation_play_time += dt * self.animation_speed
+                        if self.animation_loop:
+                            self.animation_play_time = math.fmod(self.animation_play_time + dt * self.animation_speed, animation.animation_length)
+                        else:
+                            self.animation_play_time = min(animation.animation_length, self.animation_play_time)
+
+                        self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_play_time)
+                    else:
+                        self.animation_frame = 0.0
+                    if self.animation_elapsed_time < self.animation_blend_time:
+                        blend_ratio = self.animation_elapsed_time / self.animation_blend_time
+                    self.animation_elapsed_time += dt
+
+                # update animation buffers
                 self.prev_animation_buffers[i][...] = self.animation_buffers[i]
 
                 if self.last_animation_frame != self.animation_frame:
                     self.last_animation_frame = self.animation_frame
-                    self.animation_buffers[i][...] = animation.get_animation_transforms(self.animation_frame)
+                    animation_buffer = animation.get_animation_transforms(self.animation_frame)
+
+                    if blend_ratio < 1.0:
+                        self.animation_buffers[i][...] = self.blend_animation_buffers[i] * (1.0 - blend_ratio) + animation_buffer * blend_ratio
+                    else:
+                        self.animation_buffers[i][...] = animation_buffer
