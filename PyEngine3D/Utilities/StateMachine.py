@@ -1,97 +1,107 @@
-#---------------------#
-# CLASS : StateItem
-#---------------------#
 class StateItem:
-  def __init__(self, stateMgr, name):
-    self.stateMgr = stateMgr
-    self.name = name
+    def __init__(self):
+        self.key = None
 
-  def onEnter(self):
-    """
-    override method
-    """
-    pass
+    def on_enter(self, *args, **kargs):
+        raise Exception("You have to override on_enter function")
 
-  def onUpdate(self):
-    """
-    override method
-    """
-    pass
+    def on_update(self, *args, **kargs):
+        raise Exception("You have to override on_update function")
 
-  def onExit(self):
-    """
-    override method
-    """
-    pass
+    def on_exit(self, *args, **kargs):
+        raise Exception("You have to override on_exit function")
 
-  def getName(self):
-      return self.name
-
-  def setState(self, state):
-    self.stateMgr.setState(state)
+    def get_key(self):
+        return self.key
 
 
-#---------------------#
-# CLASS : StateMachine
-#---------------------#
-class StateMachine(object):
-  def __init__(self):
-    self.stateCount = 0
-    self.stateList = {}
-    self.curState = None
-    self.oldState = None
+class StateMachine:
+    def __init__(self):
+        self.state_map = {}
+        self.current_state = None
+        self.previous_state = None
 
-  def createState(self, stateName):
-    stateItem = StateItem(self, stateName)
-    # stateItem is selfKey and value
-    self.stateList[stateItem] = stateItem
-    self.stateCount = len(self.stateList)
-    return stateItem
+    def add_state(self, state_item_class, state_item_key, *args, **kargs):
+        """
+        :param state_item_class: a Overrided Class of the StateItem.
+        :param state_item_key: key
+        """
+        state_item = state_item_class(*args, **kargs)
+        state_item.key = state_item_key
+        self.state_map[state_item_key] = state_item
+        return state_item
 
-  def getCount(self):
-    return self.stateCount
+    def get_state_keys(self):
+        return self.state_map.keys()
 
-  def isState(self, state):
-    return state == self.curState
+    def get_state_count(self):
+        return len(self.state_map)
 
-  def isStateName(self, stateName):
-    return stateName == self.curState.name
+    def is_state(self, state):
+        return state == self.current_state
 
-  def getState(self):
-    return self.curState
+    def is_state_key(self, state_key):
+        return state_key == self.current_state.key
 
-  def getStateName(self):
-    return self.curState.name
+    def get_state(self):
+        return self.current_state
 
-  def setState(self, state, reset=False):
-      if state != self.curState:
-        self.oldState = self.curState
-        self.curState = state
-        if self.oldState:
-          self.stateList[self.oldState].onExit()
-        self.stateList[state].onEnter()
-      elif reset:
-        self.stateList[state].onEnter()
+    def get_state_key(self):
+        return self.current_state.key
 
-  def updateState(self, *args):
-    if self.curState:
-      self.stateList[self.curState].onUpdate()
+    def set_state(self, state_key, *args, force=False, **kargs):
+        if self.current_state is None or state_key != self.current_state.key:
+            if state_key in self.state_map:
+                self.previous_state = self.current_state
+                self.current_state = self.state_map[state_key]
+                if self.previous_state is not None:
+                    self.previous_state.on_exit(*args, **kargs)
+                self.current_state.on_enter(*args, **kargs)
+        elif force and self.current_state is not None:
+            self.current_state.on_enter(*args, **kargs)
+
+    def update_state(self, *args, **kargs):
+        if self.current_state:
+            self.current_state.on_update(*args, **kargs)
+
 
 if __name__ == '__main__':
     import unittest
+    from enum import Enum
+
+
+    class STATES(Enum):
+        A = 0
+        B = 1
+
+    class StateItemCustom(StateItem):
+        def on_enter(self):
+            print(str(self.key) + "::on_enter")
+
+        def on_update(self):
+            print(str(self.key) + "::on_update")
+
+        def on_exit(self):
+            print(str(self.key) + "::on_exit")
+
     class testStateMachine(unittest.TestCase):
         def test(self):
             s = StateMachine()
-            state_A = s.createState(stateName="state_A")
-            state_B = s.createState(stateName="state_B")
+            state_A = s.add_state(StateItemCustom, STATES.A)
+            state_B = s.add_state(StateItemCustom, STATES.B)
 
-            s.setState(state_A)
-            self.assertEqual(state_A, s.getState())
-            self.assertEqual("state_A", s.getStateName())
+            s.set_state(STATES.A)
+            self.assertEqual(state_A, s.get_state())
+            self.assertEqual(STATES.A, s.get_state_key())
 
-            s.setState(state_B)
-            self.assertTrue(s.isState(state_B))
-            self.assertTrue(s.isStateName("state_B"))
+            s.update_state()
 
-            self.assertEqual(s.getCount(), 2)
+            s.set_state(STATES.B)
+            self.assertTrue(s.is_state(state_B))
+            self.assertTrue(s.is_state_key(STATES.B))
+
+            s.update_state()
+
+            self.assertEqual(s.get_state_count(), 2)
+
     unittest.main()
