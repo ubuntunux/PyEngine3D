@@ -289,7 +289,12 @@ class ColladaAnimation:
         if 'OUT_TANGENT' in joins_semantics:
             source_name = joins_semantics['OUT_TANGENT'].get('source', '')
             self.out_tangents = sources.get(source_name, [])
-        self.valid = True
+
+        if self.type == "" or self.target == "" or self.target is None or 0 == len(self.inputs):
+            self.valid = False
+            logger.error('%s has a invalid animation.\n%s' % (self.target, sources))
+        else:
+            self.valid = True
 
         # print()
         # for key in self.__dict__:
@@ -479,7 +484,8 @@ class Collada:
 
         for xml_animation in xml_animations:
             animation = ColladaAnimation(xml_animation, self.node_name_map)
-            self.animations.append(animation)
+            if animation.valid:
+                self.animations.append(animation)
 
         for xml_geometry in xml_root.findall('library_geometries/geometry'):
             geometry = ColladaGeometry(xml_geometry, self.controllers, self.nodes)
