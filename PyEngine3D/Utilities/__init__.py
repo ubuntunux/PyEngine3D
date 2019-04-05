@@ -5,6 +5,7 @@ from .ImageProcessing import *
 from .Logger import *
 from .RangeVariable import RangeVariable
 from .Singleton import Singleton
+from .StateMachine import StateMachine, StateItem
 from .Transform import *
 from .TransformObject import TransformObject
 from .Utility import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
