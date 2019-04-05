@@ -13,7 +13,7 @@ from .OpenGLContext import OpenGLContext
 
 def CreateVertexArrayBuffer(geometry_data):
     geometry_name = geometry_data.get('name', 'VertexArrayBuffer')
-    logger.info("Load %s geometry." % geometry_name)
+    # logger.info("Load %s geometry." % geometry_name)
 
     mode = geometry_data.get('mode', GL_TRIANGLES)
     positions = geometry_data.get('positions', [])
