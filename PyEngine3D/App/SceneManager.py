@@ -8,7 +8,7 @@ import numpy as np
 
 from PyEngine3D.Common import logger
 from PyEngine3D.Common.Constants import *
-from PyEngine3D.Render import StaticActor, SkeletonActor
+from PyEngine3D.Render import CollisionActor, StaticActor, SkeletonActor
 from PyEngine3D.Render import Camera, MainLight, PointLight, LightProbe
 from PyEngine3D.Render import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
 from PyEngine3D.Render import Atmosphere, Ocean, Terrain
@@ -41,6 +41,7 @@ class SceneManager(Singleton):
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
+        self.collision_actors = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
@@ -81,6 +82,7 @@ class SceneManager(Singleton):
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
+        self.collision_actors = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}
@@ -158,6 +160,9 @@ class SceneManager(Singleton):
         terrain_data = scene_data.get('terrain', {})
         self.terrain = self.add_terrain(**terrain_data)
 
+        for collision_data in scene_data.get('collision_actors', []):
+            self.add_collision(**collision_data)
+
         for object_data in scene_data.get('static_actors', []):
             self.add_object(**object_data)
 
@@ -183,6 +188,7 @@ class SceneManager(Singleton):
             atmosphere=self.atmosphere.get_save_data(),
             ocean=self.ocean.get_save_data(),
             terrain=self.terrain.get_save_data(),
+            collision_actors=[collision_actor.get_save_data() for collision_actor in self.collision_actors],
             static_actors=[static_actor.get_save_data() for static_actor in self.static_actors],
             skeleton_actors=[skeleton_actor.get_save_data() for skeleton_actor in self.skeleton_actors],
             effects=self.effect_manager.get_save_data()
@@ -206,6 +212,8 @@ class SceneManager(Singleton):
             return self.point_lights
         elif LightProbe == object_type:
             return self.light_probes
+        elif CollisionActor == object_type:
+            return self.collision_actors
         elif StaticActor == object_type:
             return self.static_actors
         elif SkeletonActor == object_type:
@@ -337,9 +345,22 @@ class SceneManager(Singleton):
         pos = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
         return self.add_object(model=model, pos=pos)
 
+    def add_collision(self, **collision_data):
+        name = self.generate_object_name(collision_data.get('name', 'collision'))
+        mesh = self.resource_manager.get_mesh(collision_data.get('mesh'))
+        if mesh is not None:
+            collision_data['name'] = name
+            collision_data['mesh'] = mesh
+            logger.info("add Collision : %s" % name)
+            collision = CollisionActor(**collision_data)
+            self.regist_object(collision)
+            return collision
+        return None
+
     def clear_objects(self):
         self.cameras = []
         self.point_lights = []
+        self.collision_actors = []
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}
@@ -417,6 +438,13 @@ class SceneManager(Singleton):
         gather_render_infos(culling_func=view_frustum_culling_geometry,
                             camera=self.main_camera,
                             light=self.main_light,
+                            actor_list=self.collision_actors,
+                            solid_render_infos=self.static_solid_render_infos,
+                            translucent_render_infos=None)
+
+        gather_render_infos(culling_func=view_frustum_culling_geometry,
+                            camera=self.main_camera,
+                            light=self.main_light,
                             actor_list=self.static_actors,
                             solid_render_infos=self.static_solid_render_infos,
                             translucent_render_infos=self.static_translucent_render_infos)
@@ -486,6 +514,9 @@ class SceneManager(Singleton):
 
         for light in self.point_lights:
             light.update()
+
+        for collision_actor in self.collision_actors:
+            collision_actor.update(dt)
 
         for static_actor in self.static_actors:
             static_actor.update(dt)

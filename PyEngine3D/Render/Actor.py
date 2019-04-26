@@ -3,6 +3,70 @@ import math
 import numpy as np
 
 from PyEngine3D.Utilities import *
+from PyEngine3D.App import CoreManager
+
+
+class CollisionActor:
+    def __init__(self, name, **object_data):
+        self.name = name
+        self.selected = False
+        self.mesh = False
+        self.instance_count = 1
+        self.material_instance = CoreManager.instance().resource_manager.get_default_material_instance()
+
+        # transform
+        self.transform = TransformObject()
+        self.transform.set_pos(object_data.get('pos', [0, 0, 0]))
+        self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
+        self.transform.set_scale(object_data.get('scale', [1, 1, 1]))
+        self.mesh = object_data.get('mesh')
+        self.attributes = Attributes()
+
+    def delete(self):
+        pass
+
+    def get_save_data(self):
+        save_data = dict(
+            name=self.name,
+            mesh=self.mesh.name if self.mesh else '',
+            pos=self.transform.pos.tolist(),
+            rot=self.transform.rot.tolist(),
+            scale=self.transform.scale.tolist(),
+        )
+        return save_data
+
+    def get_attribute(self):
+        self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('pos', self.transform.pos)
+        self.attributes.set_attribute('rot', self.transform.rot)
+        self.attributes.set_attribute('scale', self.transform.scale)
+        self.attributes.set_attribute('mesh', self.mesh.name if self.mesh else '')
+        return self.attributes
+
+    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+        if attribute_name == 'pos':
+            self.transform.set_pos(attribute_value)
+        elif attribute_name == 'rot':
+            self.transform.set_rotation(attribute_value)
+        elif attribute_name == 'scale':
+            self.transform.set_scale(attribute_value)
+        elif hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
+
+    def get_mesh(self):
+        return self.mesh
+
+    def get_geometries(self):
+        return self.mesh.geometries if self.mesh is not None else None
+
+    def get_material_instance(self, index):
+        return self.material_instance
+
+    def set_selected(self, selected):
+        self.selected = selected
+
+    def update(self, dt):
+        self.transform.update_transform()
 
 
 class StaticActor:

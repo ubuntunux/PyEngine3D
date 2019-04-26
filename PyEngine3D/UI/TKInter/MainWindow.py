@@ -283,6 +283,10 @@ class MainWindow:
         button.pack(fill="x", side="top")
         button.bind("<Button-1>", self.create_particle)
 
+        button_collision = tk.Button(label_frame, text="Create Collision")
+        button_collision.pack(fill="x", side="top")
+        button_collision.bind("<Button-1>", self.create_collision)
+
         self.resource_menu = tk.Menu(root, tearoff=0)
         self.resource_menu.add_command(label="Load", command=self.load_resource)
         self.resource_menu.add_command(label="Action", command=self.action_resource)
@@ -846,6 +850,12 @@ class MainWindow:
 
     def create_particle(self, event):
         self.appCmdQueue.put(COMMAND.CREATE_PARTICLE)
+
+    def create_collision(self, event):
+        selectedItems = self.get_selected_resource()
+        items = self.get_selected_resource()
+        for item in items:
+            self.appCmdQueue.put(COMMAND.CREATE_COLLISION, (get_name(item), get_value(item)))
 
     def open_object_menu(self, event):
         item_id = self.object_treeview.identify('item', event.x, event.y)

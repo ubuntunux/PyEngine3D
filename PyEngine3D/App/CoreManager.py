@@ -434,6 +434,12 @@ class CoreManager(Singleton):
         # create resource
         self.commands[COMMAND.CREATE_PARTICLE.value] = lambda value: self.resource_manager.particle_loader.create_particle()
 
+        def cmd_create_collision(value):
+            resource_name, resource_type = value
+            if 'Mesh' == resource_type:
+                self.scene_manager.add_collision(name=resource_name, mesh=resource_name)
+        self.commands[COMMAND.CREATE_COLLISION.value] = cmd_create_collision
+
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()
         self.commands[COMMAND.ACTION_OBJECT.value] = lambda value: self.scene_manager.action_object(value)
         self.commands[COMMAND.DELETE_OBJECT.value] = lambda value: self.scene_manager.delete_object(value)

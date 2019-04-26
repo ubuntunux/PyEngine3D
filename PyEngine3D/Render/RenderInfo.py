@@ -77,7 +77,7 @@ def gather_render_infos(culling_func, camera, light, actor_list, solid_render_in
             render_info.geometry = geometry
             render_info.material = material_instance.material if material_instance else None
             render_info.material_instance = material_instance
-            if render_info.material_instance.is_translucent():
+            if render_info.material_instance is not None and render_info.material_instance.is_translucent():
                 if translucent_render_infos is not None:
                     translucent_render_infos.append(render_info)
             elif solid_render_infos is not None:
