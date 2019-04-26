@@ -132,11 +132,22 @@ class FrameBuffer:
             self.add_command(self.func_bind_framebuffer, attachment, self.depth_texture.target, self.depth_texture.buffer)
         else:
             self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
+        # run command
+        for cmd in self.commands:
+            cmd()
 
     def run_bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+        reCommand = False
+        if self.target_face != target_face or self.target_layer != target_layer or self.target_level != target_level:
+            reCommand = True
+            
         self.target_face = target_face
         self.target_layer = target_layer
         self.target_level = target_level
+        
+        if reCommand:
+            for cmd in self.commands:
+                cmd()
 
         # update viewport
         viewport_scale = 1.0 / (2.0 ** target_level)
@@ -145,9 +156,8 @@ class FrameBuffer:
         elif self.depth_texture is not None:
             self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height, viewport_scale)
 
-        # run command
-        for cmd in self.commands:
-            cmd()
+        # bind
+        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
 
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
