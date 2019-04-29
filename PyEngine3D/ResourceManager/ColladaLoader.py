@@ -641,16 +641,16 @@ class Collada:
             geometry.bind_shape_matrix = swap_up_axis_matrix(geometry.bind_shape_matrix, True, False, self.up_axis)
 
             # precompute bind_shape_matrix
-            boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
-            boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+            bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+            bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
             for i, position in enumerate(geometry.positions):
                 geometry.positions[i] = np.dot([position[0], position[1], position[2], 1.0], geometry.bind_shape_matrix)[:3]
                 position = geometry.positions[i]
                 for j in range(3):
-                    if boundMin[j] > position[j]:
-                        boundMin[j] = position[j]
-                    if boundMax[j] < position[j]:
-                        boundMax[j] = position[j]
+                    if bound_min[j] > position[j]:
+                        bound_min[j] = position[j]
+                    if bound_max[j] < position[j]:
+                        bound_max[j] = position[j]
 
             for i, normal in enumerate(geometry.normals):
                 geometry.normals[i] = np.dot([normal[0], normal[1], normal[2], 0.0], geometry.bind_shape_matrix)[:3]
@@ -666,9 +666,9 @@ class Collada:
                 skeleton_name=skeleton_name,
                 bone_indicies=copy.deepcopy(bone_indicies),
                 bone_weights=copy.deepcopy(bone_weights),
-                bound_min=copy.deepcopy(boundMin),
-                bound_max=copy.deepcopy(boundMax),
-                radius=length(boundMax - boundMin)
+                bound_min=copy.deepcopy(bound_min),
+                bound_max=copy.deepcopy(bound_max),
+                radius=length(bound_max - bound_min)
             )
 
             geometry_datas.append(geometry_data)

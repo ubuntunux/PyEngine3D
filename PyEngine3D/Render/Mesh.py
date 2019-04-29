@@ -14,13 +14,33 @@ from .Animation import Animation
 
 def calc_bounding(positions):
     # precompute bind_shape_matrix
-    boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
-    boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+    bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+    bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
     for position in positions:
-        boundMin = np.minimum(boundMin, position)
-        boundMax = np.maximum(boundMax, position)
-    radius = length(boundMax - boundMin)
-    return boundMin, boundMax, radius
+        bound_min = np.minimum(bound_min, position)
+        bound_max = np.maximum(bound_max, position)
+    radius = length(bound_max - bound_min)
+    return bound_min, bound_max, radius
+
+
+class BoundBox:
+    def __init__(self, **data):
+        self.bound_min = data.get('bound_min', Float3())
+        self.bound_max = data.get('bound_max', Float3())
+        self.bound_center = (self.bound_min + self.bound_max) * 0.5
+        self.radius = data.get('radius', length(self.bound_max - self.bound_min))
+        self.update()
+
+    def update(self):
+        self.bound_center = (self.bound_min + self.bound_max) * 0.5
+        self.radius = length(self.bound_max - self.bound_min)
+
+    def update_with_matrix(self, matrix):
+        bound_min = np.dot(self.bound_min, matrix)
+        bound_max = np.dot(self.bound_max, matrix)
+        self.bound_min = np.minimum(bound_min, bound_max)
+        self.bound_max = np.maximum(bound_min, bound_max)
+        self.update()
 
 
 class Geometry:
@@ -29,11 +49,7 @@ class Geometry:
         self.index = geometry_data.get('index', 0)
         self.vertex_buffer = geometry_data.get('vertex_buffer')
         self.skeleton = geometry_data.get('skeleton')
-
-        self.boundMin = geometry_data.get('boundMin', Float3())
-        self.boundMax = geometry_data.get('boundMax', Float3())
-        self.boundCenter = (self.boundMin + self.boundMax) * 0.5
-        self.radius = geometry_data.get('radius', 0.0)
+        self.bound_box = BoundBox(**geometry_data)
 
     def draw_elements(self):
         self.vertex_buffer.draw_elements()
@@ -52,10 +68,12 @@ class Mesh:
         self.name = mesh_name
         self.instance_location_model = -1
 
-        self.boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
-        self.boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
-        self.boundCenter = Float3()
-        self.radius = 0.0
+        self.bound_box = BoundBox()
+
+        self.bound_box.bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+        self.bound_box.bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+        self.bound_box.bound_center = Float3()
+        self.bound_box.radius = 0.0
 
         self.skeletons = []
         for i, skeleton_data in enumerate(mesh_data.get('skeleton_datas', [])):
@@ -85,17 +103,17 @@ class Mesh:
                     if skeleton.name == geometry_data.get('skeleton_name', ''):
                         break
 
-                boundMin = geometry_data.get('boundMin')
-                boundMax = geometry_data.get('boundMax')
+                bound_min = geometry_data.get('bound_min')
+                bound_max = geometry_data.get('bound_max')
                 radius = geometry_data.get('radius')
 
-                if boundMin is None or boundMax is None or radius is None:
+                if bound_min is None or bound_max is None or radius is None:
                     positions = np.array(geometry_data['positions'], dtype=np.float32)
-                    boundMin, boundMax, radius = calc_bounding(positions)
+                    bound_min, bound_max, radius = calc_bounding(positions)
 
-                self.boundMin = np.minimum(self.boundMin, boundMin)
-                self.boundMax = np.maximum(self.boundMax, boundMax)
-                self.radius = max(self.radius, radius)
+                self.bound_box.bound_min = np.minimum(self.bound_box.bound_min, bound_min)
+                self.bound_box.bound_max = np.maximum(self.bound_box.bound_max, bound_max)
+                self.bound_box.radius = max(self.bound_box.radius, radius)
 
                 # create geometry
                 geometry = Geometry(
@@ -103,13 +121,13 @@ class Mesh:
                     index=i,
                     vertex_buffer=vertex_buffer,
                     skeleton=skeleton,
-                    boundMin=boundMin,
-                    boundMax=boundMax,
+                    bound_min=bound_min,
+                    bound_max=bound_max,
                     radius=radius
                 )
                 self.geometries.append(geometry)
 
-        self.boundCenter = (self.boundMin + self.boundMax) * 0.5
+        self.bound_box.bound_center = (self.bound_box.bound_min + self.bound_box.bound_max) * 0.5
 
         self.attributes = Attributes()
 

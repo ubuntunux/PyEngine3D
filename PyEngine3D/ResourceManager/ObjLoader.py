@@ -123,8 +123,8 @@ class OBJ:
 
             indexMap = {}
 
-            boundMin = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
-            boundMax = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+            bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+            bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
             for n, mesh_indices in enumerate(mesh.indices):
                 # exclude material
                 postionIndicies, normalIndicies, texcoordIndicies = mesh_indices
@@ -141,10 +141,10 @@ class OBJ:
                         # bounding box
                         position = positions[-1]
                         for j in range(3):
-                            if boundMin[j] > position[j]:
-                                boundMin[j] = position[j]
-                            if boundMax[j] < position[j]:
-                                boundMax[j] = position[j]
+                            if bound_min[j] > position[j]:
+                                bound_min[j] = position[j]
+                            if bound_max[j] < position[j]:
+                                bound_max[j] = position[j]
 
             if len(positions) == 0:
                 logger.info('%s has a empty mesh. %s' % (self.filename, mesh.name))
@@ -155,9 +155,9 @@ class OBJ:
                                  normals=copy.deepcopy(normals),
                                  texcoords=copy.deepcopy(texcoords),
                                  indices=copy.deepcopy(indices),
-                                 bound_min=copy.deepcopy(boundMin),
-                                 bound_max=copy.deepcopy(boundMax),
-                                 radius=length(boundMax - boundMin))
+                                 bound_min=copy.deepcopy(bound_min),
+                                 bound_max=copy.deepcopy(bound_max),
+                                 radius=length(bound_max - bound_min))
             geometry_datas.append(geometry_data)
         return geometry_datas
 
