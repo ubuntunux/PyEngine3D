@@ -15,16 +15,13 @@ class StaticActor:
         self.has_mesh = False
 
         # transform
+        self.bound_box = BoundBox()
         self.transform = TransformObject()
         self.transform.set_pos(object_data.get('pos', [0, 0, 0]))
         self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
         self.transform.set_scale(object_data.get('scale', [1, 1, 1]))
 
         self.set_model(object_data.get('model'))
-
-        self.bound_boxes = []
-        for i in range(len(self.get_geometries())):
-            self.bound_boxes.append(BoundBox())
 
         self.instance_pos = RangeVariable(**object_data.get('instance_pos',
                                                             dict(min_value=Float3(-10.0, 0.0, -10.0),
@@ -152,8 +149,8 @@ class StaticActor:
 
     def update(self, dt):
         if self.transform.update_transform():
-            for i, geometry in enumerate(self.get_geometries()):
-                self.bound_boxes[i].update_with_matrix(geometry.bound_box, self.transform.matrix)
+            if self.has_mesh:
+                self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
 
 
 class CollisionActor(StaticActor):
