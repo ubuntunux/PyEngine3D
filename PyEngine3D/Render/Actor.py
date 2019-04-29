@@ -208,7 +208,7 @@ class SkeletonActor(StaticActor):
         return self.animation_buffers[index]
 
     def update(self, dt):
-        StaticActor.update(dt)
+        StaticActor.update(self, dt)
 
         # update animation
         update_animation_frame = True
