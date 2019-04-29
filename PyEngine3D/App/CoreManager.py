@@ -436,8 +436,8 @@ class CoreManager(Singleton):
 
         def cmd_create_collision(value):
             resource_name, resource_type = value
-            if 'Mesh' == resource_type:
-                self.scene_manager.add_collision(name=resource_name, mesh=resource_name)
+            if 'Model' == resource_type:
+                self.scene_manager.add_collision(name=resource_name, model=resource_name)
         self.commands[COMMAND.CREATE_COLLISION.value] = cmd_create_collision
 
         self.commands[COMMAND.REQUEST_OBJECT_LIST.value] = lambda value: self.send_object_list()

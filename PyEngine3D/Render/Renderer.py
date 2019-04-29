@@ -371,6 +371,7 @@ class Renderer(Singleton):
         old_render_font = RenderOption.RENDER_FONT
         old_render_skeleton = RenderOption.RENDER_SKELETON_ACTOR
         old_render_effect = RenderOption.RENDER_EFFECT
+        old_render_collision = RenderOption.RENDER_COLLISION
 
         old_render_ssr = self.postprocess.is_render_ssr
         old_render_motion_blur = self.postprocess.is_render_motion_blur
@@ -471,6 +472,8 @@ class Renderer(Singleton):
         RenderOption.RENDER_SKELETON_ACTOR = old_render_skeleton
         RenderOption.RENDER_EFFECT = old_render_effect
         RenderOption.RENDER_FONT = old_render_font
+        RenderOption.RENDER_COLLISION = old_render_collision
+
         self.postprocess.is_render_ssr = old_render_ssr
         self.postprocess.is_render_motion_blur = old_render_motion_blur
         self.postprocess.anti_aliasing = old_antialiasing

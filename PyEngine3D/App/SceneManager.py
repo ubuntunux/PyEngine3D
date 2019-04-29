@@ -347,10 +347,10 @@ class SceneManager(Singleton):
 
     def add_collision(self, **collision_data):
         name = self.generate_object_name(collision_data.get('name', 'collision'))
-        mesh = self.resource_manager.get_mesh(collision_data.get('mesh'))
+        mesh = self.resource_manager.get_model(collision_data.get('model'))
         if mesh is not None:
             collision_data['name'] = name
-            collision_data['mesh'] = mesh
+            collision_data['model'] = mesh
             logger.info("add Collision : %s" % name)
             collision = CollisionActor(**collision_data)
             self.regist_object(collision)
@@ -435,26 +435,28 @@ class SceneManager(Singleton):
         self.static_translucent_render_infos = []
         self.static_shadow_render_infos = []
 
-        gather_render_infos(culling_func=view_frustum_culling_geometry,
-                            camera=self.main_camera,
-                            light=self.main_light,
-                            actor_list=self.collision_actors,
-                            solid_render_infos=self.static_solid_render_infos,
-                            translucent_render_infos=None)
+        if RenderOption.RENDER_COLLISION:
+            gather_render_infos(culling_func=view_frustum_culling_geometry,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=self.collision_actors,
+                                solid_render_infos=self.static_solid_render_infos,
+                                translucent_render_infos=self.static_translucent_render_infos)
 
-        gather_render_infos(culling_func=view_frustum_culling_geometry,
-                            camera=self.main_camera,
-                            light=self.main_light,
-                            actor_list=self.static_actors,
-                            solid_render_infos=self.static_solid_render_infos,
-                            translucent_render_infos=self.static_translucent_render_infos)
+        if RenderOption.RENDER_STATIC_ACTOR:
+            gather_render_infos(culling_func=view_frustum_culling_geometry,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=self.static_actors,
+                                solid_render_infos=self.static_solid_render_infos,
+                                translucent_render_infos=self.static_translucent_render_infos)
 
-        gather_render_infos(culling_func=shadow_culling,
-                            camera=self.main_camera,
-                            light=self.main_light,
-                            actor_list=self.static_actors,
-                            solid_render_infos=self.static_shadow_render_infos,
-                            translucent_render_infos=None)
+            gather_render_infos(culling_func=shadow_culling,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=self.static_actors,
+                                solid_render_infos=self.static_shadow_render_infos,
+                                translucent_render_infos=None)
 
         self.static_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
         self.static_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
@@ -464,22 +466,23 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
 
-        gather_render_infos(culling_func=view_frustum_culling_geometry,
-                            camera=self.main_camera,
-                            light=self.main_light,
-                            actor_list=self.skeleton_actors,
-                            solid_render_infos=self.skeleton_solid_render_infos,
-                            translucent_render_infos=self.skeleton_translucent_render_infos)
+        if RenderOption.RENDER_SKELETON_ACTOR:
+            gather_render_infos(culling_func=view_frustum_culling_geometry,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=self.skeleton_actors,
+                                solid_render_infos=self.skeleton_solid_render_infos,
+                                translucent_render_infos=self.skeleton_translucent_render_infos)
 
-        gather_render_infos(culling_func=shadow_culling,
-                            camera=self.main_camera,
-                            light=self.main_light,
-                            actor_list=self.skeleton_actors,
-                            solid_render_infos=self.skeleton_shadow_render_infos,
-                            translucent_render_infos=None)
+            gather_render_infos(culling_func=shadow_culling,
+                                camera=self.main_camera,
+                                light=self.main_light,
+                                actor_list=self.skeleton_actors,
+                                solid_render_infos=self.skeleton_shadow_render_infos,
+                                translucent_render_infos=None)
 
-        self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
-        self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
+            self.skeleton_solid_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
+            self.skeleton_translucent_render_infos.sort(key=lambda x: (id(x.geometry), id(x.material)))
 
     def update_light_render_infos(self):
         self.point_light_count = 0

@@ -6,7 +6,7 @@ from .MaterialInstance import MaterialInstance
 
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
-from .Mesh import Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad
+from .Mesh import BoundBox, Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad
 from .Model import Model
 
 from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D

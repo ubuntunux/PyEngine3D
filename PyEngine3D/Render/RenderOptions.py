@@ -20,6 +20,7 @@ class RenderOption:
     RENDER_ATMOSPHERE = True
     RENDER_OCEAN = True
     RENDER_EFFECT = True
+    RENDER_COLLISION = True
 
 
 class RenderingType(AutoEnum):

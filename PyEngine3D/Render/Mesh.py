@@ -35,12 +35,13 @@ class BoundBox:
         self.bound_center = (self.bound_min + self.bound_max) * 0.5
         self.radius = length(self.bound_max - self.bound_min)
 
-    def update_with_matrix(self, matrix):
-        bound_min = np.dot(self.bound_min, matrix)
-        bound_max = np.dot(self.bound_max, matrix)
+    def update_with_matrix(self, bound_box, matrix):
+        bound_min = np.dot(np.array([bound_box.bound_min[0], bound_box.bound_min[1], bound_box.bound_min[2], 1.0], dtype=np.float32), matrix)[: 3]
+        bound_max = np.dot(np.array([bound_box.bound_max[0], bound_box.bound_max[1], bound_box.bound_max[2], 1.0], dtype=np.float32), matrix)[: 3]
         self.bound_min = np.minimum(bound_min, bound_max)
         self.bound_max = np.maximum(bound_min, bound_max)
-        self.update()
+        self.bound_center = (self.bound_min + self.bound_max) * 0.5
+        self.radius = length(self.bound_max - self.bound_min)
 
 
 class Geometry:
