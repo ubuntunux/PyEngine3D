@@ -31,6 +31,21 @@ class BoundBox:
         self.radius = data.get('radius', length(self.bound_max - self.bound_min))
         self.update()
 
+    def get_save_data(self):
+        save_data = dict(
+            bound_min=self.bound_min.copy(),
+            bound_max=self.bound_max.copy(),
+            bound_center=self.bound_center.copy(),
+            radius=self.radius,
+        )
+        return save_data
+
+    def clone(self, bound_box):
+        self.bound_min[...] = bound_box.bound_min
+        self.bound_max[...] = bound_box.bound_max
+        self.bound_center[...] = bound_box.bound_center
+        self.radius = bound_box.radius
+
     def update(self):
         self.bound_center = (self.bound_min + self.bound_max) * 0.5
         self.radius = length(self.bound_max - self.bound_min)

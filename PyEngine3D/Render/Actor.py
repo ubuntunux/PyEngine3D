@@ -16,6 +16,7 @@ class StaticActor:
 
         # transform
         self.bound_box = BoundBox()
+        # self.geometry_bound_boxes = []
         self.transform = TransformObject()
         self.transform.set_pos(object_data.get('pos', [0, 0, 0]))
         self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
@@ -39,15 +40,20 @@ class StaticActor:
         self.instance_count = object_data.get('instance_count', 1)
         self.set_instance_count(self.instance_count)
 
+        self.update_bound_box()
+
         self.attributes = Attributes()
 
     def delete(self):
         pass
 
     def set_model(self, model):
-        if model:
-            self.model = model
-            self.has_mesh = model.mesh is not None
+        self.model = model
+        self.has_mesh = model is not None and model.mesh is not None
+        # self.geometry_bound_boxes.clear()
+        # if self.has_mesh:
+        #     for geometry in self.model.mesh.geometries:
+        #         self.geometry_bound_boxes.append(BoundBox())
 
     def get_save_data(self):
         save_data = dict(
@@ -147,10 +153,18 @@ class StaticActor:
     def set_selected(self, selected):
         self.selected = selected
 
+    def update_bound_box(self):
+        if self.has_mesh:
+            self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
+            # if 1 == len(self.model.mesh.geometries):
+            #     self.geometry_bound_boxes[0].clone(self.bound_box)
+            # else:
+            #     for i, geometry in enumerate(self.model.mesh.geometries):
+            #         self.geometry_bound_boxes[i].update_with_matrix(self.bound_box, self.transform.matrix)
+
     def update(self, dt):
         if self.transform.update_transform():
-            if self.has_mesh:
-                self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
+            self.update_bound_box()
 
 
 class CollisionActor(StaticActor):
