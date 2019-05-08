@@ -976,7 +976,7 @@ class Renderer(Singleton):
             dst_framebuffer = self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR_TEMP)
             glClear(GL_COLOR_BUFFER_BIT)
             dst_framebuffer.copy_framebuffer(src_framebuffer)
-            src_framebuffer.run_bind_framebuffer()
+            src_framebuffer.bind_framebuffer()
 
             # set common projection matrix
             camera = self.scene_manager.main_camera

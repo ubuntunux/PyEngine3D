@@ -81,10 +81,7 @@ class Ocean:
 
         self.simulation_size = GRID_SIZES * self.simulation_scale
 
-        if None in (self.texture_spectrum_1_2,
-                    self.texture_spectrum_3_4,
-                    self.texture_slope_variance,
-                    self.texture_butterfly):
+        if None in (self.texture_spectrum_1_2, self.texture_spectrum_3_4, self.texture_slope_variance, self.texture_butterfly):
             self.generate_texture()
 
         self.caustic_index = 0
@@ -398,7 +395,7 @@ class Ocean:
                                                                 RenderTargets.FFT_B)
 
         # initialize
-        fft_a_framebuffer.run_bind_framebuffer()
+        fft_a_framebuffer.bind_framebuffer()
         glClear(GL_COLOR_BUFFER_BIT)
 
         self.fft_init.use_program()
@@ -417,10 +414,10 @@ class Ocean:
             self.fft_x.bind_uniform_data("pass", float(i + 0.5) / PASSES)
             if i % 2 == 0:
                 self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
-                fft_b_framebuffer.run_bind_framebuffer()
+                fft_b_framebuffer.bind_framebuffer()
             else:
                 self.fft_x.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
-                fft_a_framebuffer.run_bind_framebuffer()
+                fft_a_framebuffer.bind_framebuffer()
             self.quad.draw_elements()
 
         self.fft_y.use_program()
@@ -429,10 +426,10 @@ class Ocean:
             self.fft_y.bind_uniform_data("pass", float(i - PASSES + 0.5) / PASSES)
             if i % 2 == 0:
                 self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_A)
-                fft_b_framebuffer.run_bind_framebuffer()
+                fft_b_framebuffer.bind_framebuffer()
             else:
                 self.fft_y.bind_uniform_data("imgSampler", RenderTargets.FFT_B)
-                fft_a_framebuffer.run_bind_framebuffer()
+                fft_a_framebuffer.bind_framebuffer()
             self.quad.draw_elements()
 
         RenderTargets.FFT_A.generate_mipmap()

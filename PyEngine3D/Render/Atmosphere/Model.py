@@ -434,16 +434,6 @@ class Model:
         self.quad.draw_elements()
 
         # compute_single_scattering
-        if self.optional_single_mie_scattering_texture is None:
-            current_framebuffer = framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
-                                                                       self.delta_mie_scattering_texture,
-                                                                       self.scattering_texture)
-        else:
-            current_framebuffer = framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
-                                                                       self.delta_mie_scattering_texture,
-                                                                       self.scattering_texture,
-                                                                       self.optional_single_mie_scattering_texture)
-
         compute_single_scattering_mi = resource_manager.get_material_instance(
             'precomputed_atmosphere.compute_single_scattering',
             macros=self.material_instance_macros)
@@ -461,32 +451,38 @@ class Model:
             glDisablei(GL_BLEND, 3)
 
         for layer in range(SCATTERING_TEXTURE_DEPTH):
-            current_framebuffer.run_bind_framebuffer(target_layer=layer)
+            if self.optional_single_mie_scattering_texture is None:
+                framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                     self.delta_mie_scattering_texture,
+                                                     self.scattering_texture,
+                                                     target_layer=layer)
+            else:
+                framebuffer_manager.bind_framebuffer(self.delta_rayleigh_scattering_texture,
+                                                     self.delta_mie_scattering_texture,
+                                                     self.scattering_texture,
+                                                     self.optional_single_mie_scattering_texture,
+                                                     target_layer=layer)
             compute_single_scattering_mi.bind_uniform_data("layer", layer)
             self.quad.draw_elements()
 
         for scattering_order in range(2, num_scattering_orders + 1):
             # compute_scattering_density
-            framebuffer = framebuffer_manager.get_framebuffer(self.delta_scattering_density_texture)
             glDisablei(GL_BLEND, 0)
 
             compute_scattering_density_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_scattering_density',
-                macros=self.material_instance_macros)
+                macros=self.material_instance_macros
+            )
             compute_scattering_density_mi.use_program()
             compute_scattering_density_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
-            compute_scattering_density_mi.bind_uniform_data('single_rayleigh_scattering_texture',
-                                                            self.delta_rayleigh_scattering_texture)
-            compute_scattering_density_mi.bind_uniform_data('single_mie_scattering_texture',
-                                                            self.delta_mie_scattering_texture)
-            compute_scattering_density_mi.bind_uniform_data('multiple_scattering_texture',
-                                                            self.delta_multiple_scattering_texture)
-            compute_scattering_density_mi.bind_uniform_data('irradiance_texture',
-                                                            self.delta_irradiance_texture)
+            compute_scattering_density_mi.bind_uniform_data('single_rayleigh_scattering_texture', self.delta_rayleigh_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('single_mie_scattering_texture', self.delta_mie_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('multiple_scattering_texture', self.delta_multiple_scattering_texture)
+            compute_scattering_density_mi.bind_uniform_data('irradiance_texture', self.delta_irradiance_texture)
             compute_scattering_density_mi.bind_uniform_data('scattering_order', scattering_order)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
-                framebuffer.run_bind_framebuffer(target_layer=layer)
+                framebuffer_manager.bind_framebuffer(self.delta_scattering_density_texture, target_layer=layer)
                 compute_scattering_density_mi.bind_uniform_data('layer', layer)
                 self.quad.draw_elements()
 
@@ -497,35 +493,31 @@ class Model:
 
             compute_indirect_irradiance_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_indirect_irradiance',
-                macros=self.material_instance_macros)
+                macros=self.material_instance_macros
+            )
             compute_indirect_irradiance_mi.use_program()
             compute_indirect_irradiance_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
             compute_indirect_irradiance_mi.bind_uniform_data('scattering_order', scattering_order - 1)
-            compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture',
-                                                             self.delta_rayleigh_scattering_texture)
-            compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture',
-                                                             self.delta_mie_scattering_texture)
-            compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture',
-                                                             self.delta_multiple_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_rayleigh_scattering_texture', self.delta_rayleigh_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('single_mie_scattering_texture', self.delta_mie_scattering_texture)
+            compute_indirect_irradiance_mi.bind_uniform_data('multiple_scattering_texture', self.delta_multiple_scattering_texture)
             self.quad.draw_elements()
 
             # compute_multiple_scattering
-            framebuffer = framebuffer_manager.get_framebuffer(self.delta_multiple_scattering_texture,
-                                                              self.scattering_texture)
             glDisablei(GL_BLEND, 0)
             glEnablei(GL_BLEND, 1)
 
             compute_multiple_scattering_mi = resource_manager.get_material_instance(
                 'precomputed_atmosphere.compute_multiple_scattering',
-                macros=self.material_instance_macros)
+                macros=self.material_instance_macros
+            )
             compute_multiple_scattering_mi.use_program()
             compute_multiple_scattering_mi.bind_uniform_data('luminance_from_radiance', luminance_from_radiance)
             compute_multiple_scattering_mi.bind_uniform_data('transmittance_texture', self.transmittance_texture)
-            compute_multiple_scattering_mi.bind_uniform_data('scattering_density_texture',
-                                                             self.delta_scattering_density_texture)
+            compute_multiple_scattering_mi.bind_uniform_data('scattering_density_texture', self.delta_scattering_density_texture)
 
             for layer in range(SCATTERING_TEXTURE_DEPTH):
-                framebuffer.run_bind_framebuffer(target_layer=layer)
+                framebuffer_manager.bind_framebuffer(self.delta_multiple_scattering_texture, self.scattering_texture, target_layer=layer)
                 compute_multiple_scattering_mi.bind_uniform_data('layer', layer)
                 self.quad.draw_elements()
 

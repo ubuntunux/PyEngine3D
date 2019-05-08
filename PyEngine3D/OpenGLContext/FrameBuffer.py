@@ -21,7 +21,7 @@ class FrameBuffer:
     def __init__(self, name=''):
         logger.info("Create %s framebuffer" % name)
         self.name = name
-        self.buffer = glGenFramebuffers(1)
+        self.buffer = None
         self.max_draw_buffers = glGetInteger(GL_MAX_DRAW_BUFFERS)
         self.color_textures = [None, ] * self.max_draw_buffers
         self.attach_count = 0
@@ -32,7 +32,6 @@ class FrameBuffer:
         self.viewport_width = 0
         self.viewport_height = 0
         self.viewport_scale = 1.0
-        self.commands = []
         self.target_face = GL_TEXTURE_CUBE_MAP_POSITIVE_X  # cubemap face
         self.target_layer = 0  # 3d texture layer
         self.target_level = 0  # mipmap level
@@ -86,7 +85,7 @@ class FrameBuffer:
         self.viewport_scale = scale
         glViewport(x, y, self.viewport_width, self.viewport_height)
 
-    def func_bind_framebuffer(self, attachment, target, texture_buffer, offset=0):
+    def attachment_framebuffer(self, attachment, target, texture_buffer, offset=0):
         if GL_RENDERBUFFER == target:
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, texture_buffer)
         elif GL_TEXTURE_2D == target:
@@ -98,12 +97,15 @@ class FrameBuffer:
         elif GL_TEXTURE_CUBE_MAP == target:
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, self.target_face, texture_buffer, self.target_level)
 
-    def add_command(self, *args):
-        self.commands.append(partial(*args))
+    def generate_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+        if self.buffer is None:
+            self.buffer = glGenFramebuffers(1)
 
-    def build_command(self):
-        self.commands.clear()
-        self.add_command(glBindFramebuffer, GL_FRAMEBUFFER, self.buffer)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
+
+        self.target_face = target_face
+        self.target_layer = target_layer
+        self.target_level = target_level
 
         # bind color textures
         layer_offset = 0
@@ -115,55 +117,36 @@ class FrameBuffer:
             else:
                 layer_offset += 1
 
-            attachment = GL_COLOR_ATTACHMENT0 + i
-
             if color_texture is not None:
-                self.add_command(self.func_bind_framebuffer, attachment, color_texture.target, color_texture.buffer, layer_offset)
+                self.attachment_framebuffer(GL_COLOR_ATTACHMENT0 + i, color_texture.target, color_texture.buffer, layer_offset)
 
         if self.attach_count > 0:
-            self.add_command(glDrawBuffers, self.attach_count, self.attachments)
+            glDrawBuffers(self.attach_count, self.attachments)
         else:
-            self.add_command(glDrawBuffer, GL_NONE)
-            self.add_command(glReadBuffer, GL_NONE)
+            glDrawBuffer(GL_NONE)
+            glReadBuffer(GL_NONE)
 
         # bind depth texture
         if self.depth_texture is not None:
             attachment = OpenGLContext.get_depth_attachment(self.depth_texture.internal_format)
-            self.add_command(self.func_bind_framebuffer, attachment, self.depth_texture.target, self.depth_texture.buffer)
+            self.attachment_framebuffer(attachment, self.depth_texture.target, self.depth_texture.buffer)
         else:
-            self.add_command(glFramebufferTexture, GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
-        # run command
-        for cmd in self.commands:
-            cmd()
-
-    def run_bind_framebuffer(self, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
-        reCommand = False
-        if self.target_face != target_face or self.target_layer != target_layer or self.target_level != target_level:
-            reCommand = True
-            
-        self.target_face = target_face
-        self.target_layer = target_layer
-        self.target_level = target_level
-        
-        if reCommand:
-            for cmd in self.commands:
-                cmd()
-
-        # update viewport
-        viewport_scale = 1.0 / (2.0 ** target_level)
-        if self.attach_count > 0:
-            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height, viewport_scale)
-        elif self.depth_texture is not None:
-            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height, viewport_scale)
-
-        # bind
-        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0)
 
         gl_error = glCheckFramebufferStatus(GL_FRAMEBUFFER)
         if gl_error != GL_FRAMEBUFFER_COMPLETE:
             error_message = "glCheckFramebufferStatus error %s." % self.get_error(gl_error)
             logger.error(error_message)
             raise BaseException(error_message)
+
+    def bind_framebuffer(self):
+        viewport_scale = 1.0 / (2.0 ** self.target_level)
+        if self.attach_count > 0:
+            self.set_viewport(0, 0, self.color_textures[0].width, self.color_textures[0].height, viewport_scale)
+        elif self.depth_texture is not None:
+            self.set_viewport(0, 0, self.depth_texture.width, self.depth_texture.height, viewport_scale)
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self.buffer)
 
     def unbind_framebuffer(self):
         self.set_color_textures()
@@ -231,8 +214,8 @@ class FrameBufferManager(Singleton):
             framebuffer = self.framebuffers.pop(key)
             framebuffer.delete()
 
-    def get_framebuffer(self, *textures, depth_texture=None):
-        key = (textures, depth_texture)
+    def get_framebuffer(self, *textures, depth_texture=None, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+        key = (textures, depth_texture, target_face, target_layer, target_level)
         if key in self.framebuffers:
             framebuffer = self.framebuffers[key]
         else:
@@ -260,16 +243,13 @@ class FrameBufferManager(Singleton):
             self.framebuffers[key] = framebuffer
             framebuffer.set_color_textures(*textures)
             framebuffer.set_depth_texture(depth_texture)
-            framebuffer.build_command()
+            framebuffer.generate_framebuffer(target_face=target_face, target_layer=target_layer, target_level=target_level)
         return framebuffer
 
-    def bind_framebuffer(self, *textures, depth_texture=None,
-                         target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
+    def bind_framebuffer(self, *textures, depth_texture=None, target_face=GL_TEXTURE_CUBE_MAP_POSITIVE_X, target_layer=0, target_level=0):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        self.current_framebuffer = self.get_framebuffer(*textures, depth_texture=depth_texture)
-        self.current_framebuffer.run_bind_framebuffer(target_face=target_face,
-                                                      target_layer=target_layer,
-                                                      target_level=target_level)
+        self.current_framebuffer = self.get_framebuffer(*textures, depth_texture=depth_texture, target_face=target_face, target_layer=target_layer, target_level=target_level)
+        self.current_framebuffer.bind_framebuffer()
         return self.current_framebuffer
 
     def unbind_framebuffer(self):
