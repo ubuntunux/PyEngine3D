@@ -397,6 +397,34 @@ class Effect:
 
 
 class Emitter:
+    particle_gpu_data_type = np.dtype([
+        ('parent_matrix', np.float32, 16),
+        ('local_matrix', np.float32, 16),
+        ('force', np.float32, 3),
+        ('delay', np.float32),
+        ('transform_position', np.float32, 3),
+        ('life_time', np.float32),
+        ('transform_rotation', np.float32, 3),
+        ('opacity', np.float32),
+        ('transform_scale', np.float32, 3),
+        ('elapsed_time', np.float32),
+        ('velocity_position', np.float32, 3),
+        ('sequence_ratio', np.float32),
+        ('velocity_rotation', np.float32, 3),
+        ('sequence_index', np.int32),
+        ('velocity_scale', np.float32, 3),
+        ('next_sequence_index', np.int32),
+        ('sequence_uv', np.float32, 2),
+        ('next_sequence_uv', np.float32, 2),
+        ('relative_position', np.float32, 3),
+        ('state', np.int32),
+    ])
+
+    index_range_data_type = np.dtype([('begin_index', np.uint32),
+              ('instance_count', np.uint32),
+              ('destroy_count', np.uint32),
+              ('dummy', np.uint32)])
+
     def __init__(self, parent_effect, particle_info):
         self.parent_effect = parent_effect
         self.particle_info = particle_info
@@ -433,10 +461,7 @@ class Emitter:
 
         self.gpu_particle_max_count = count
 
-        index_range_data = np.zeros(1, np.dtype([('begin_index', np.uint32),
-                                                 ('instance_count', np.uint32),
-                                                 ('destroy_count', np.uint32),
-                                                 ('dummy', np.uint32)]))
+        index_range_data = np.zeros(1, self.index_range_data_type)
 
         self.index_range_buffer = ShaderStorageBuffer(name='index_range_buffer',
                                                       data_size=index_range_data.nbytes,
@@ -455,31 +480,9 @@ class Emitter:
                                                               dtype=draw_indirect_data.dtype,
                                                               init_data=draw_indirect_data)
 
-        particle_gpu_data_type = np.dtype([
-            ('parent_matrix', np.float32, 16),
-            ('local_matrix', np.float32, 16),
-            ('force', np.float32, 3),
-            ('delay', np.float32),
-            ('transform_position', np.float32, 3),
-            ('life_time', np.float32),
-            ('transform_rotation', np.float32, 3),
-            ('opacity', np.float32),
-            ('transform_scale', np.float32, 3),
-            ('elapsed_time', np.float32),
-            ('velocity_position', np.float32, 3),
-            ('sequence_ratio', np.float32),
-            ('velocity_rotation', np.float32, 3),
-            ('sequence_index', np.int32),
-            ('velocity_scale', np.float32, 3),
-            ('next_sequence_index', np.int32),
-            ('sequence_uv', np.float32, 2),
-            ('next_sequence_uv', np.float32, 2),
-            ('relative_position', np.float32, 3),
-            ('state', np.int32),
-        ])
         self.particle_buffer = ShaderStorageBuffer(name='particle_buffer',
-                                                   data_size=particle_gpu_data_type.itemsize * count,
-                                                   dtype=particle_gpu_data_type)
+                                                   data_size=self.particle_gpu_data_type.itemsize * count,
+                                                   dtype=self.particle_gpu_data_type)
 
         self.particle_buffer.clear_buffer()
 

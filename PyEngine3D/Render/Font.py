@@ -16,7 +16,7 @@ class TextRenderData:
         self.initial_row = 0
         self.font_data = None
         self.render_count = 0
-        self.render_queue = np.array([[0, 0, 0, 0], ], dtype=np.float32)
+        self.render_queue = np.zeros(1, (np.float32, 4))
 
     @property
     def text(self):
