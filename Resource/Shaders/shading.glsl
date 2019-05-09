@@ -269,9 +269,6 @@ vec4 surface_shading(vec4 base_color,
     float HdV = max(0.001, dot(H, V));
     float LdV = max(0.001, dot(L, V));
 
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
-    shadow_factor = max(shadow_factor, scene_sky_irradiance);
-
     vec3 result = vec3(0.0, 0.0, 0.0);
     float opacity = base_color.w;
 
@@ -279,8 +276,34 @@ vec4 surface_shading(vec4 base_color,
     F0 = mix(max(F0, reflectance), base_color.xyz, metallic);
     vec3 fresnel = fresnelSchlick(NdV, F0);
 
+    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
+
     vec3 diffuse_light = vec3(0.0, 0.0, 0.0);
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
+
+    // Image based lighting
+    {
+        const vec2 env_size = textureSize(texture_probe, 0);
+        const float max_env_mipmap = 8.0; // log2(max(env_size.x, env_size.y));
+        vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
+        vec3 shValue = fresnel * envBRDF.x + envBRDF.y;
+
+        vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
+        vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
+
+        // mix scene reflection
+        if(RENDER_SSR)
+        {
+            // NoShadow
+            ibl_specular_light.xyz = mix(ibl_specular_light.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
+        }
+
+        shadow_factor = max(shadow_factor, mix(scene_sky_irradiance, ibl_diffuse_light, vec3(0.5)));
+
+        diffuse_light += ibl_diffuse_light * shadow_factor;
+        specular_light += ibl_specular_light * shValue * shadow_factor;
+
+    }
 
 #if TRANSPARENT_MATERIAL == 1
     float reflectivity = max(max(fresnel.r, fresnel.g), fresnel.b);
@@ -325,27 +348,6 @@ vec4 surface_shading(vec4 base_color,
             diffuse_light += oren_nayar(roughness, point_light_NdL, NdV, N, V, point_light_dir) / PI * point_light_NdL * point_light_color;
             specular_light += cooktorrance_specular(light_fresnel, point_light_NdL, NdV, point_light_NdH, roughness) * point_light_NdL * point_light_color;
         }
-    }
-
-    // Image based lighting
-    {
-        const vec2 env_size = textureSize(texture_probe, 0);
-        const float max_env_mipmap = 8.0; // log2(max(env_size.x, env_size.y));
-        vec2 envBRDF = clamp(env_BRDF_pproximate(NdV, roughness), 0.0, 1.0);
-        vec3 shValue = fresnel * envBRDF.x + envBRDF.y;
-
-        vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
-        vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
-
-        // mix scene reflection
-        if(RENDER_SSR)
-        {
-            // NoShadow
-            ibl_specular_light.xyz = mix(ibl_specular_light.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
-        }
-
-        diffuse_light += ibl_diffuse_light * shValue * shadow_factor;
-        specular_light += ibl_specular_light * shValue * shadow_factor;
     }
 
 /*

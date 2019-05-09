@@ -24,6 +24,10 @@ class MainLight(StaticActor):
                                        -self.shadow_height, self.shadow_height,
                                        -self.shadow_depth, self.shadow_depth)
         self.shadow_view_projection = MATRIX4_IDENTITY.copy()
+        self.changed = False
+
+    def reset_changed(self):
+        self.changed = False
 
     def get_attribute(self):
         super().get_attribute()
@@ -34,6 +38,7 @@ class MainLight(StaticActor):
         super().set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
         if attribute_name == 'light_color':
             self.light_color[:] = attribute_value[:]
+            self.changed = True
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)
@@ -41,7 +46,8 @@ class MainLight(StaticActor):
         return save_data
 
     def update(self, current_camera):
-        self.transform.update_transform(update_inverse_matrix=True)
+        changed = self.transform.update_transform(update_inverse_matrix=True)
+        self.changed = self.changed or changed
 
         if current_camera is not None:
             camera_pos = current_camera.transform.get_pos()

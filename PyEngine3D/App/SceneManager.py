@@ -515,6 +515,10 @@ class SceneManager(Singleton):
         if self.main_light is not None:
             self.main_light.update(self.main_camera)
 
+            if self.main_light.changed:
+                self.main_light.reset_changed()
+                self.reset_light_probe()
+
         for light in self.point_lights:
             light.update()
 
