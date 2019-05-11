@@ -16,7 +16,7 @@ class StaticActor:
 
         # transform
         self.bound_box = BoundBox()
-        # self.geometry_bound_boxes = []
+        self.geometry_bound_boxes = []
         self.transform = TransformObject()
         self.transform.set_pos(object_data.get('pos', [0, 0, 0]))
         self.transform.set_rotation(object_data.get('rot', [0, 0, 0]))
@@ -32,15 +32,12 @@ class StaticActor:
         self.instance_pos_list = object_data.get('instance_pos_list', [])
         self.instance_rot_list = object_data.get('instance_rot_list', [])
         self.instance_scale_list = object_data.get('instance_scale_list', [])
-
-        self.instance_matrix = None
-        self.instance_radius_offset = object_data.get('instance_radius_offset', 0.0)
-        self.instance_radius_scale = object_data.get('instance_radius_scale', 1.0)
-
         self.instance_count = object_data.get('instance_count', 1)
-        self.set_instance_count(self.instance_count)
+        self.instance_matrix = None
+        self.bound_box_scale = Float3()
+        self.bound_box_offset = Float3()
 
-        self.update_bound_box()
+        self.set_instance_count(self.instance_count)
 
         self.attributes = Attributes()
 
@@ -50,10 +47,10 @@ class StaticActor:
     def set_model(self, model):
         self.model = model
         self.has_mesh = model is not None and model.mesh is not None
-        # self.geometry_bound_boxes.clear()
-        # if self.has_mesh:
-        #     for geometry in self.model.mesh.geometries:
-        #         self.geometry_bound_boxes.append(BoundBox())
+        self.geometry_bound_boxes.clear()
+        if self.has_mesh:
+            for geometry in self.model.mesh.geometries:
+                self.geometry_bound_boxes.append(BoundBox())
 
     def get_save_data(self):
         save_data = dict(
@@ -74,32 +71,32 @@ class StaticActor:
 
     def set_instance_count(self, count):
         self.instance_count = count
-
         if 1 < count:
             self.instance_pos_list = [self.instance_pos.get_uniform() for i in range(count)]
             self.instance_rot_list = [self.instance_rot.get_uniform() for i in range(count)]
             self.instance_scale_list = [self.instance_scale.get_uniform() for i in range(count)]
-
             self.instance_matrix = np.zeros(count, (np.float32, (4, 4)))
 
-            offset_max = FLOAT32_MIN
-            scale_max = FLOAT32_MIN
-            self.instance_radius_offset = 0.0
-            self.instance_radius_scale = 1.0
+            bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
+            bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
 
             for i in range(count):
-                uniform_scale = self.instance_scale_list[i]
-                offset_max = max(offset_max, max(np.abs(self.instance_pos_list[i])))
-                scale_max = max(scale_max, np.abs(uniform_scale))
-
                 self.instance_matrix[i][...] = MATRIX4_IDENTITY
+                uniform_scale = self.instance_scale_list[i]
                 matrix_scale(self.instance_matrix[i], uniform_scale, uniform_scale, uniform_scale)
                 matrix_rotate(self.instance_matrix[i], *self.instance_rot_list[i])
                 matrix_translate(self.instance_matrix[i], *self.instance_pos_list[i])
-            self.instance_radius_offset = offset_max
-            self.instance_radius_scale = scale_max
+
+                bound_box = BoundBox()
+                bound_box.update_with_matrix(self.bound_box, self.instance_matrix[i])
+                bound_min = np.minimum(bound_min, bound_box.bound_min)
+                bound_max = np.maximum(bound_max, bound_box.bound_max)
+            # update bound box
+            self.bound_box_scale[...] = abs((bound_max - bound_min) / (self.bound_box.bound_max - self.bound_box.bound_min))
+            self.bound_box_offset[...] = bound_min - self.bound_box.bound_min
         else:
             self.instance_matrix = None
+        self.update_bound_box()
 
     def get_attribute(self):
         self.attributes.set_attribute('name', self.name)
@@ -144,8 +141,20 @@ class StaticActor:
     def get_mesh(self):
         return self.model.mesh if self.has_mesh else None
 
+    def get_geometry_count(self):
+        return len(self.model.mesh.geometries)
+
+    def get_geometry(self, index):
+        return self.model.mesh.geometries[index] if self.model else None
+
     def get_geometries(self):
         return self.model.mesh.geometries if self.has_mesh else []
+
+    def get_geometry_bound_box(self, index):
+        return self.geometry_bound_boxes[index] if self.model else None
+
+    def get_geometry_bound_boxes(self):
+        return self.geometry_bound_boxes
 
     def get_material_instance(self, index):
         return self.model.material_instances[index] if self.model else None
@@ -155,12 +164,23 @@ class StaticActor:
 
     def update_bound_box(self):
         if self.has_mesh:
-            self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
-            # if 1 == len(self.model.mesh.geometries):
-            #     self.geometry_bound_boxes[0].clone(self.bound_box)
-            # else:
-            #     for i, geometry in enumerate(self.model.mesh.geometries):
-            #         self.geometry_bound_boxes[i].update_with_matrix(self.bound_box, self.transform.matrix)
+            if 1 < self.instance_count:
+                def apply_instance_scale_offset(bound_box):
+                    bound_box.bound_max[...] = bound_box.bound_min + (bound_box.bound_max - bound_box.bound_min) * self.bound_box_scale
+                    bound_box.bound_max[...] = bound_box.bound_max + self.bound_box_offset
+                    bound_box.bound_min[...] = bound_box.bound_min + self.bound_box_offset
+                    bound_box.update()
+                self.bound_box.clone(self.model.mesh.bound_box)
+                apply_instance_scale_offset(self.bound_box)
+                for i, geometry in enumerate(self.model.mesh.geometries):
+                    self.geometry_bound_boxes[i].clone(geometry.bound_box)
+                    apply_instance_scale_offset(self.geometry_bound_boxes[i])
+                for geometry_bound_box in self.geometry_bound_boxes:
+                    geometry_bound_box.update_with_matrix(geometry_bound_box, self.transform.matrix)
+            else:
+                self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
+                for i, geometry in enumerate(self.model.mesh.geometries):
+                    self.geometry_bound_boxes[i].update_with_matrix(geometry.bound_box, self.transform.matrix)
 
     def update(self, dt):
         if self.transform.update_transform():

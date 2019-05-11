@@ -24,42 +24,22 @@ def cone_sphere_culling_actor(camera, actor):
     return False
 
 
-def view_frustum_culling_geometry(camera, light, actor, bound_box):
-    to_geometry = np.array([bound_box.bound_center[0], bound_box.bound_center[1], bound_box.bound_center[2], 1.0])
-    to_geometry = np.dot(to_geometry, actor.transform.matrix)[0:3] - camera.transform.pos
-    max_scale = max(actor.transform.scale)
-
-    if 1 < actor.instance_count:
-        # instancing
-        radius = bound_box.radius * max_scale * actor.instance_radius_scale
-        radius += actor.instance_radius_offset * max_scale
-    else:
-        radius = bound_box.radius * max_scale
-
+def view_frustum_culling_geometry(camera, light, actor, geometry_bound_box):
+    to_geometry = geometry_bound_box.bound_center - camera.transform.pos
     for i in range(4):
         d = np.dot(camera.frustum_vectors[i], to_geometry)
-        if radius < d:
+        if geometry_bound_box.radius < d:
             return True
     return False
 
 
-def shadow_culling(camera, light, actor, bound_box):
-    if 1 < actor.instance_count:
-        # instancing
-        scale = actor.instance_radius_scale
-        offset = actor.instance_radius_offset
-        bound_min = bound_box.bound_min * scale - offset
-        bound_max = bound_box.bound_max * scale + offset
-    else:
-        bound_min = bound_box.bound_min.copy()
-        bound_max = bound_box.bound_max.copy()
-
-    shadow_matrix = np.dot(actor.transform.matrix, light.shadow_view_projection)
-    bound_min[...] = np.dot(np.array([bound_min[0], bound_min[1], bound_min[2], 1.0], dtype=np.float32), shadow_matrix)[: 3]
-    bound_max[...] = np.dot(np.array([bound_max[0], bound_max[1], bound_max[2], 1.0], dtype=np.float32), shadow_matrix)[: 3]
+def shadow_culling(camera, light, actor, geometry_bound_box):
+    geometry_bound_min = geometry_bound_box.bound_min
+    geometry_bound_max = geometry_bound_box.bound_max
+    bound_min = np.dot(np.array([geometry_bound_min[0], geometry_bound_min[1], geometry_bound_min[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
+    bound_max = np.dot(np.array([geometry_bound_max[0], geometry_bound_max[1], geometry_bound_max[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
     minimum = np.minimum(bound_min, bound_max)
     maximum = np.maximum(bound_min, bound_max)
-
     if any(x < -1.0 for x in maximum) or any(1.0 < x for x in minimum):
         return True
     return False
@@ -67,14 +47,14 @@ def shadow_culling(camera, light, actor, bound_box):
 
 def gather_render_infos(culling_func, camera, light, actor_list, solid_render_infos, translucent_render_infos):
     for actor in actor_list:
-        for geometry in actor.get_geometries():
-            if culling_func(camera, light, actor, geometry.bound_box):
+        for i in range(actor.get_geometry_count()):
+            if culling_func(camera, light, actor, actor.get_geometry_bound_box(i)):
                 continue
 
-            material_instance = actor.get_material_instance(geometry.index)
+            material_instance = actor.get_material_instance(i)
             render_info = RenderInfo()
             render_info.actor = actor
-            render_info.geometry = geometry
+            render_info.geometry = actor.get_geometry(i)
             render_info.material = material_instance.material if material_instance else None
             render_info.material_instance = material_instance
             if render_info.material_instance is not None and render_info.material_instance.is_translucent():

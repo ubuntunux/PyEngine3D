@@ -85,7 +85,6 @@ class Mesh:
         self.instance_location_model = -1
 
         self.bound_box = BoundBox()
-
         self.bound_box.bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
         self.bound_box.bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
         self.bound_box.bound_center = Float3()
@@ -100,8 +99,7 @@ class Mesh:
         for i, animation_data in enumerate(mesh_data.get('animation_datas', [])):
             if animation_data:
                 animation_name = "%s_%s" % (self.name, self.skeletons[i].name)
-                animation = Animation(name=animation_name, index=i, skeleton=self.skeletons[i],
-                                      animation_data=animation_data)
+                animation = Animation(name=animation_name, index=i, skeleton=self.skeletons[i], animation_data=animation_data)
                 self.animations.append(animation)
             else:
                 self.animations.append(None)
