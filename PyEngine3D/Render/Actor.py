@@ -47,10 +47,13 @@ class StaticActor:
     def set_model(self, model):
         self.model = model
         self.has_mesh = model is not None and model.mesh is not None
+
         self.geometry_bound_boxes.clear()
         if self.has_mesh:
-            for geometry in self.model.mesh.geometries:
+            self.bound_box.clone(self.model.mesh.bound_box)
+            for i, geometry in enumerate(self.model.mesh.geometries):
                 self.geometry_bound_boxes.append(BoundBox())
+                self.geometry_bound_boxes[i].clone(geometry.bound_box)
 
     def get_save_data(self):
         save_data = dict(
@@ -70,6 +73,11 @@ class StaticActor:
         return save_data
 
     def set_instance_count(self, count):
+        if not self.has_mesh:
+            return
+
+        mesh = self.model.mesh
+
         self.instance_count = count
         if 1 < count:
             self.instance_pos_list = [self.instance_pos.get_uniform() for i in range(count)]
@@ -79,6 +87,7 @@ class StaticActor:
 
             bound_min = Float3(FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX)
             bound_max = Float3(FLOAT32_MIN, FLOAT32_MIN, FLOAT32_MIN)
+            bound_box = BoundBox()
 
             for i in range(count):
                 self.instance_matrix[i][...] = MATRIX4_IDENTITY
@@ -87,13 +96,12 @@ class StaticActor:
                 matrix_rotate(self.instance_matrix[i], *self.instance_rot_list[i])
                 matrix_translate(self.instance_matrix[i], *self.instance_pos_list[i])
 
-                bound_box = BoundBox()
-                bound_box.update_with_matrix(self.bound_box, self.instance_matrix[i])
+                bound_box.update_with_matrix(mesh.bound_box, self.instance_matrix[i])
                 bound_min = np.minimum(bound_min, bound_box.bound_min)
                 bound_max = np.maximum(bound_max, bound_box.bound_max)
             # update bound box
-            self.bound_box_scale[...] = abs((bound_max - bound_min) / (self.bound_box.bound_max - self.bound_box.bound_min))
-            self.bound_box_offset[...] = bound_min - self.bound_box.bound_min
+            self.bound_box_scale[...] = abs((bound_max - bound_min) / (mesh.bound_box.bound_max - mesh.bound_box.bound_min))
+            self.bound_box_offset[...] = bound_min - mesh.bound_box.bound_min
         else:
             self.instance_matrix = None
         self.update_bound_box()
@@ -175,8 +183,7 @@ class StaticActor:
                 for i, geometry in enumerate(self.model.mesh.geometries):
                     self.geometry_bound_boxes[i].clone(geometry.bound_box)
                     apply_instance_scale_offset(self.geometry_bound_boxes[i])
-                for geometry_bound_box in self.geometry_bound_boxes:
-                    geometry_bound_box.update_with_matrix(geometry_bound_box, self.transform.matrix)
+                    self.geometry_bound_boxes[i].update_with_matrix(self.geometry_bound_boxes[i], self.transform.matrix)
             else:
                 self.bound_box.update_with_matrix(self.model.mesh.bound_box, self.transform.matrix)
                 for i, geometry in enumerate(self.model.mesh.geometries):
