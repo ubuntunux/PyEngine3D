@@ -34,10 +34,8 @@ def view_frustum_culling_geometry(camera, light, actor, geometry_bound_box):
 
 
 def shadow_culling(camera, light, actor, geometry_bound_box):
-    geometry_bound_min = geometry_bound_box.bound_min
-    geometry_bound_max = geometry_bound_box.bound_max
-    bound_min = np.dot(np.array([geometry_bound_min[0], geometry_bound_min[1], geometry_bound_min[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
-    bound_max = np.dot(np.array([geometry_bound_max[0], geometry_bound_max[1], geometry_bound_max[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
+    bound_min = np.dot(np.array([geometry_bound_box.bound_min[0], geometry_bound_box.bound_min[1], geometry_bound_box.bound_min[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
+    bound_max = np.dot(np.array([geometry_bound_box.bound_max[0], geometry_bound_box.bound_max[1], geometry_bound_box.bound_max[2], 1.0], dtype=np.float32), light.shadow_view_projection)[: 3]
     minimum = np.minimum(bound_min, bound_max)
     maximum = np.maximum(bound_min, bound_max)
     if any(x < -1.0 for x in maximum) or any(1.0 < x for x in minimum):
@@ -48,6 +46,9 @@ def shadow_culling(camera, light, actor, geometry_bound_box):
 def gather_render_infos(culling_func, camera, light, actor_list, solid_render_infos, translucent_render_infos):
     for actor in actor_list:
         for i in range(actor.get_geometry_count()):
+            if not actor.visible:
+                continue
+
             if culling_func(camera, light, actor, actor.get_geometry_bound_box(i)):
                 continue
 

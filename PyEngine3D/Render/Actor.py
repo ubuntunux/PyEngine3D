@@ -13,6 +13,7 @@ class StaticActor:
         self.selected = False
         self.model = None
         self.has_mesh = False
+        self.visible = object_data.get('visible', True)
 
         # transform
         self.bound_box = BoundBox()
@@ -58,6 +59,7 @@ class StaticActor:
     def get_save_data(self):
         save_data = dict(
             name=self.name,
+            visible=self.visible,
             model=self.model.name if self.model else '',
             pos=self.transform.pos.tolist(),
             rot=self.transform.rot.tolist(),
@@ -108,6 +110,7 @@ class StaticActor:
 
     def get_attribute(self):
         self.attributes.set_attribute('name', self.name)
+        self.attributes.set_attribute('visible', self.visible)
         self.attributes.set_attribute('pos', self.transform.pos)
         self.attributes.set_attribute('rot', self.transform.rot)
         self.attributes.set_attribute('scale', self.transform.scale)
@@ -195,7 +198,9 @@ class StaticActor:
 
 
 class CollisionActor(StaticActor):
-    pass
+    def __init__(self,  name, **object_data):
+        StaticActor.__init__(self,  name, **object_data)
+        self.visible = object_data.get('visible', False)
 
 
 class SkeletonActor(StaticActor):

@@ -17,9 +17,9 @@ class MainLight(StaticActor):
         self.last_shadow_camera = None
         self.last_shadow_position = FLOAT3_ZERO.copy()
 
-        self.shadow_width = SHADOW_DISTANCE * 0.5
-        self.shadow_height = SHADOW_DISTANCE * 0.5
-        self.shadow_depth = SHADOW_DISTANCE
+        self.shadow_width = SHADOW_DISTANCE * 1.0
+        self.shadow_height = SHADOW_DISTANCE * 1.0
+        self.shadow_depth = SHADOW_DISTANCE * 1.0
         self.shadow_orthogonal = ortho(-self.shadow_width, self.shadow_width,
                                        -self.shadow_height, self.shadow_height,
                                        -self.shadow_depth, self.shadow_depth)
@@ -55,9 +55,7 @@ class MainLight(StaticActor):
             self.last_shadow_camera = current_camera
             self.last_shadow_position[...] = camera_pos
             set_translate_matrix(self.shadow_view_projection, *(-camera_pos))
-            self.shadow_view_projection[...] = np.dot(np.dot(self.shadow_view_projection,
-                                                             self.transform.inverse_matrix),
-                                                      self.shadow_orthogonal)
+            self.shadow_view_projection[...] = np.dot(np.dot(self.shadow_view_projection, self.transform.inverse_matrix), self.shadow_orthogonal)
 
 
 class PointLight(StaticActor):
