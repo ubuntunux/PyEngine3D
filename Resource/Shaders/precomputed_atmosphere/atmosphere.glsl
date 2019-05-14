@@ -65,15 +65,16 @@ void main()
 
     // Sky
     vec3 transmittance;
-    vec3 radiance = GetSkyRadiance(
-        ATMOSPHERE, camera - earth_center, eye_direction, scene_shadow_length, sun_direction, transmittance);
+    vec3 radiance = GetSkyRadiance(ATMOSPHERE, camera - earth_center, eye_direction, scene_shadow_length, sun_direction, transmittance);
 
     // Sun
     vec3 sun_color = vec3(0.0);
     const float sun_absorption = 0.9;
+    const float sun_intensity = 100.0;
     if (!render_light_probe_mode && sun_size.y < VdotL)
     {
         sun_color = transmittance * GetSolarRadiance(ATMOSPHERE) * pow(clamp((VdotL - sun_size.y) / (1.0 - sun_size.y), 0.0, 1.0), 2.0);
+        sun_color *= LIGHT_COLOR.xyz * sun_intensity;
         radiance += sun_color * sun_absorption;
     }
 

@@ -20,17 +20,18 @@ void main()
     vec2 uv = vs_output.tex_coord;
     vec3 screen_center_ray = -vec3(VIEW_ORIGIN[0].z, VIEW_ORIGIN[1].z, VIEW_ORIGIN[2].z);
 
+    const float screenRatio = BACKBUFFER_SIZE.y / BACKBUFFER_SIZE.x;
+
     vec4 sun_proj = PROJECTION * VIEW_ORIGIN * vec4(LIGHT_DIRECTION.xyz * NEAR_FAR.y, 1.0);
     sun_proj.xyz /= sun_proj.w;
     vec2 sun_uv = sun_proj.xy * 0.5 + 0.5;
+
     vec2 uv_dir = sun_uv - uv;
     float radian = atan((0.0 != uv_dir.x) ? (uv_dir.y / -uv_dir.x) : uv_dir.x) * 0.05;
     float noise = textureLod(texture_random, vec2(radian, 0.0), 0.0).x * 0.2 + 0.8;
 
-
     vec2 uv_dir_delta = uv_dir / float(light_shaft_samples);
-    float uv_dist = length(uv_dir);
-    float delta_uv_length = length(uv_dir_delta);
+    float uv_dist = length(vec2(uv_dir.x, uv_dir.y * screenRatio));
     vec2 sample_uv = uv;
 
     float illuminationDecay = 1.0;
@@ -44,7 +45,10 @@ void main()
             break;
         }
 
-        if(1.0 <= textureLod(texture_depth, sample_uv, 0.0).x && length(sample_uv - sun_uv) < light_shaft_radius)
+        vec2 temp_uv_dir = sample_uv - sun_uv;
+        temp_uv_dir.y *= screenRatio;
+
+        if(1.0 <= textureLod(texture_depth, sample_uv, 0.0).x && length(temp_uv_dir) < light_shaft_radius)
         {
             vec3 diffuse = textureLod(texture_diffuse, sample_uv, 0.0).xyz;
             float luminance = get_luminance(diffuse);

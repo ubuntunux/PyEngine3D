@@ -6,7 +6,7 @@ kLambdaMin = 360
 kLambdaMax = 830
 
 kPi = 3.1415926
-kSunAngularRadius = 0.0935 / 4.0  # 0.00935 / 2.0
+kSunAngularRadius = 0.0235 / 2.0  # 0.00935 / 2.0
 kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius
 kLengthUnitInMeters = 1000.0
 
