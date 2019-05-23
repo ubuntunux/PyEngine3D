@@ -1637,10 +1637,6 @@ class ResourceManager(Singleton):
         logger.error("%s is a unknown resource type." % resource_type_name)
         return None
 
-    def open_scene(self, scene_name):
-        if scene_name != self.scene_manager.get_current_scene_name():
-            self.scene_loader.load_resource(scene_name)
-
     # FUNCTIONS : Font
     def get_font_data(self, font_name, unicode_block_name):
         font_data = self.font_loader.get_resource_data(font_name)
