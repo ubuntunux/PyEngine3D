@@ -1,0 +1,10 @@
+{'macros': OrderedDict(),
+ 'material_name': 'fft_ocean.fft_variance',
+ 'shader_name': 'fft_ocean.fft_variance',
+ 'uniform_datas': {'FFT_SIZE': 0,
+                   'GRID_SIZES': array([1., 1., 1., 1.], dtype=float32),
+                   'N_SLOPE_VARIANCE': 0.0,
+                   'c': 0.0,
+                   'slopeVarianceDelta': 0.0,
+                   'spectrum_1_2_Sampler': 'common.flat_white',
+                   'spectrum_3_4_Sampler': 'common.flat_white'}}

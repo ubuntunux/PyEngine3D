@@ -1,0 +1,4 @@
+{'macros': OrderedDict([('INSTANCE_ID_LOCATION', 5)]),
+ 'material_name': 'effect.gpu_particle_render_3bab86b9_ea7e_3d04_9630_82acda211012',
+ 'shader_name': 'effect.gpu_particle_render',
+ 'uniform_datas': {'texture_diffuse': 'common.flat_white'}}

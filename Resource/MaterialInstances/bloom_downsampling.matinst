@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'bloom_downsampling',
+ 'shader_name': 'bloom_downsampling',
+ 'uniform_datas': {'texture_source': 'common.flat_white'}}

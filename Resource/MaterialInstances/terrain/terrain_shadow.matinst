@@ -1,0 +1,11 @@
+{'macros': OrderedDict([('COMBINED_SCATTERING_TEXTURES', 0)]),
+ 'material_name': 'terrain.terrain_shadow_2317e1a2_44c3_3469_8f89_7c40408107ec',
+ 'shader_name': 'terrain.terrain_shadow',
+ 'uniform_datas': {'height_map_size': array([1., 1.], dtype=float32),
+                   'model': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]]),
+                   'scale': array([1., 1., 1.], dtype=float32),
+                   'subdivide_level': 0.0,
+                   'texture_height_map': 'common.flat_white'}}

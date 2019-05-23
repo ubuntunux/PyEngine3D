@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'circle_blur',
+ 'shader_name': 'circle_blur',
+ 'uniform_datas': {'loop_count': 0, 'radius': 0.0, 'texture_color': 'common.flat_white'}}

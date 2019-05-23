@@ -1,0 +1,10 @@
+{'macros': OrderedDict(),
+ 'material_name': 'convolve_environment',
+ 'shader_name': 'convolve_environment',
+ 'uniform_datas': {'face_matrix': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]]),
+                   'lod': 0.0,
+                   'mipmap_count': 0.0,
+                   'texture_environment': 'common.default_cube'}}

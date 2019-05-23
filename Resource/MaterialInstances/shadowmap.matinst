@@ -1,0 +1,10 @@
+{'macros': OrderedDict([('SKELETAL', 0), ('TRANSPARENT_MATERIAL', 0)]),
+ 'material_name': 'shadowmap_34fca5d9_03d7_365b_8c81_96c7243c3713',
+ 'shader_name': 'shadowmap',
+ 'uniform_datas': {'is_instancing': False,
+                   'model': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]]),
+                   'texture_diffuse': 'common.flat_white',
+                   'uv_tiling': array([1., 1.], dtype=float32)}}

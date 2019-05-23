@@ -1,0 +1,5 @@
+{'texture_depth': 256,
+ 'texture_height': 256,
+ 'texture_name': 'vector_field_3d',
+ 'texture_type': 'VectorFieldTexture3D',
+ 'texture_width': 256}

@@ -1,0 +1,12 @@
+{'macros': OrderedDict(),
+ 'material_name': 'render_texture',
+ 'shader_name': 'render_texture',
+ 'uniform_datas': {'debug_absolute': False,
+                   'debug_intensity_max': 0.0,
+                   'debug_intensity_min': 0.0,
+                   'debug_mipmap': 0.0,
+                   'debug_target': 0,
+                   'texture_source_2d': 'common.flat_white',
+                   'texture_source_2d_array': 'common.default_2d_array',
+                   'texture_source_3d': 'common.default_3d',
+                   'texture_source_cube': 'common.default_cube'}}
