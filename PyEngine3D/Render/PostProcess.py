@@ -85,7 +85,7 @@ class PostProcess:
         self.is_render_ssao = True
         self.ssao = None
         self.ssao_blur_radius = 2.0
-        self.ssao_radius_min_max = np.array([0.1, 2.0], dtype=np.float32)
+        self.ssao_radius_min_max = np.array([0.05, 1.5], dtype=np.float32)
         self.ssao_kernel_size = 32  # Note : ssao.glsl
         self.ssao_kernel = np.zeros((self.ssao_kernel_size, 3), dtype=np.float32)
         self.ssao_random_texture = None
