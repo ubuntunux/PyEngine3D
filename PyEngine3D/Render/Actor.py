@@ -234,7 +234,7 @@ class SkeletonActor(StaticActor):
                     self.blend_animation_buffers.append(None)
             self.animation_mesh = self.model.mesh
 
-    def set_animation(self, mesh, speed=1.0, loop=True, blend_time=0.5, force=False, reset=True):
+    def set_animation(self, mesh, speed=1.0, loop=True, blend_time=0.5, play_time=0.0, force=False, reset=True):
         if mesh != self.animation_mesh or force:
             self.animation_mesh = mesh
             self.animation_speed = speed
@@ -242,7 +242,7 @@ class SkeletonActor(StaticActor):
             self.animation_blend_time = blend_time
             if reset:
                 self.animation_elapsed_time = 0.0
-                self.animation_play_time = 0.0
+                self.animation_play_time = play_time
                 self.animation_frame = 0.0
             # swap
             self.animation_buffers, self.blend_animation_buffers = self.blend_animation_buffers, self.animation_buffers

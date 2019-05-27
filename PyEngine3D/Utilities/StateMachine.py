@@ -1,15 +1,16 @@
 class StateItem:
-    def __init__(self):
+    def __init__(self, state_manager):
+        self.state_manager = state_manager
         self.key = None
 
     def on_enter(self, *args, **kargs):
-        raise Exception("You have to override on_enter function")
+        pass
 
     def on_update(self, *args, **kargs):
-        raise Exception("You have to override on_update function")
+        pass
 
     def on_exit(self, *args, **kargs):
-        raise Exception("You have to override on_exit function")
+        pass
 
     def get_key(self):
         return self.key
@@ -26,7 +27,7 @@ class StateMachine:
         :param state_item_class: a Overrided Class of the StateItem.
         :param state_item_key: key
         """
-        state_item = state_item_class(*args, **kargs)
+        state_item = state_item_class(*args, state_manager=self, **kargs)
         state_item.key = state_item_key
         self.state_map[state_item_key] = state_item
         return state_item
@@ -84,7 +85,7 @@ if __name__ == '__main__':
         def on_exit(self):
             print(str(self.key) + "::on_exit")
 
-    class testStateMachine(unittest.TestCase):
+    class TestStateMachine(unittest.TestCase):
         def test(self):
             s = StateMachine()
             state_A = s.add_state(StateItemCustom, STATES.A)
