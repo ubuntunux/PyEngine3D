@@ -213,7 +213,9 @@ class SkeletonActor(StaticActor):
         self.animation_elapsed_time = 0.0
         self.animation_speed = 1.0
         self.animation_frame = 0.0
-        self.animation_play_time = 0.0
+        self.animation_start_time = 0.0
+        self.animation_end_time = None
+        self.is_animation_end = False
         self.animation_buffers = []
         self.prev_animation_buffers = []
         self.blend_animation_buffers = []
@@ -234,16 +236,18 @@ class SkeletonActor(StaticActor):
                     self.blend_animation_buffers.append(None)
             self.animation_mesh = self.model.mesh
 
-    def set_animation(self, mesh, speed=1.0, loop=True, blend_time=0.5, play_time=0.0, force=False, reset=True):
+    def set_animation(self, mesh, speed=1.0, loop=True, start_time=0.0, end_time=None, blend_time=0.5, force=False, reset=True):
         if mesh != self.animation_mesh or force:
             self.animation_mesh = mesh
             self.animation_speed = speed
             self.animation_loop = loop
             self.animation_blend_time = blend_time
+            self.animation_end_time = end_time
             if reset:
                 self.animation_elapsed_time = 0.0
-                self.animation_play_time = play_time
+                self.animation_start_time = start_time
                 self.animation_frame = 0.0
+                self.is_animation_end = False
             # swap
             self.animation_buffers, self.blend_animation_buffers = self.blend_animation_buffers, self.animation_buffers
 
@@ -257,23 +261,30 @@ class SkeletonActor(StaticActor):
         StaticActor.update(self, dt)
 
         # update animation
+        animation_end = self.is_animation_end
+        blend_ratio = 1.0
         update_animation_frame = True
         for i, animation in enumerate(self.animation_mesh.animations):
             if animation is not None:
-                blend_ratio = 1.0
-
                 # update animation frame only first animation
                 if update_animation_frame:
                     update_animation_frame = False
                     frame_count = animation.frame_count
                     if frame_count > 1:
-                        self.animation_play_time += dt * self.animation_speed
-                        if self.animation_loop:
-                            self.animation_play_time = math.fmod(self.animation_play_time + dt * self.animation_speed, animation.animation_length)
-                        else:
-                            self.animation_play_time = min(animation.animation_length, self.animation_play_time)
+                        self.animation_start_time += dt * self.animation_speed
 
-                        self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_play_time)
+                        animation_end_time = animation.animation_length
+
+                        if self.animation_end_time is not None and self.animation_end_time < animation_end_time:
+                            animation_end_time = self.animation_end_time
+
+                        if self.animation_loop:
+                            self.animation_start_time = math.fmod(self.animation_start_time + dt * self.animation_speed, animation_end_time)
+                        else:
+                            self.animation_start_time = min(animation_end_time, self.animation_start_time)
+                            if animation_end_time == self.animation_start_time:
+                                animation_end = True
+                        self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_start_time)
                     else:
                         self.animation_frame = 0.0
                     if self.animation_elapsed_time < self.animation_blend_time:
@@ -291,3 +302,4 @@ class SkeletonActor(StaticActor):
                         self.animation_buffers[i][...] = self.blend_animation_buffers[i] * (1.0 - blend_ratio) + animation_buffer * blend_ratio
                     else:
                         self.animation_buffers[i][...] = animation_buffer
+        self.is_animation_end = animation_end
