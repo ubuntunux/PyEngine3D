@@ -276,10 +276,10 @@ vec4 surface_shading(vec4 base_color,
     F0 = mix(max(F0, reflectance), base_color.xyz, metallic);
     vec3 fresnel = fresnelSchlick(NdV, F0);
 
-    vec3 shadow_factor = vec3( get_shadow_factor(screen_tex_coord, world_position, texture_shadow) );
-
+    vec3 ambient_light = vec3(0.0, 0.0, 0.0);
     vec3 diffuse_light = vec3(0.0, 0.0, 0.0);
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
+    vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, world_position, texture_shadow));
 
     // Image based lighting
     {
@@ -291,18 +291,18 @@ vec4 surface_shading(vec4 base_color,
         vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
 
-        // mix scene reflection
-        if(RENDER_SSR)
-        {
-            // NoShadow
-            ibl_specular_light.xyz = mix(ibl_specular_light.xyz, scene_reflect_color.xyz, scene_reflect_color.w);
-        }
-
-        shadow_factor = max(shadow_factor, mix(scene_sky_irradiance, ibl_diffuse_light, vec3(0.5)));
+        ambient_light = mix(ibl_diffuse_light, scene_sky_irradiance, saturate(shadow_factor * (N.y * 0.5 + 0.5)));
+        shadow_factor = max(shadow_factor, ambient_light);
 
         diffuse_light += ibl_diffuse_light * shadow_factor;
         specular_light += ibl_specular_light * shValue * shadow_factor;
 
+         // mix scene reflection
+        if(RENDER_SSR)
+        {
+            // NoShadow
+            specular_light.xyz = mix(specular_light.xyz, scene_reflect_color.xyz * shValue, scene_reflect_color.w);
+        }
     }
 
 #if TRANSPARENT_MATERIAL == 1
