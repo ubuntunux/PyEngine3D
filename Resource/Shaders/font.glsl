@@ -44,9 +44,10 @@ void main()
 layout (location = 0) in VERTEX_OUTPUT vs_output;
 layout (location = 0) out vec4 fs_output;
 
-void main() {
+void main()
+{
     fs_output.xyz = vec3(1.0);
-    fs_output.w = texture2D(texture_font, vs_output.tex_coord ).x * 2.0;
-    //fs_output = vec4(smoothstep(0.99, 1.0, fs_output.x));
+    fs_output.w = pow(texture2D(texture_font, vs_output.tex_coord).x, 0.1);
+    //fs_output.w = smoothstep(0.0, 1.0, fs_output.w);
 }
 #endif

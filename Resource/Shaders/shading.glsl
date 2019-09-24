@@ -291,7 +291,7 @@ vec4 surface_shading(vec4 base_color,
         vec3 ibl_diffuse_light = textureCubeLod(texture_probe, invert_y(N), max_env_mipmap).xyz;
         vec3 ibl_specular_light = textureCubeLod(texture_probe, invert_y(R), max_env_mipmap * roughness).xyz;
 
-        ambient_light = mix(ibl_diffuse_light, scene_sky_irradiance, saturate(shadow_factor * (N.y * 0.5 + 0.5)));
+        ambient_light = normalize(mix(ibl_diffuse_light, scene_sky_irradiance, 0.5)) * length(scene_sky_irradiance);
         shadow_factor = max(shadow_factor, ambient_light);
 
         diffuse_light += ibl_diffuse_light * shadow_factor;
