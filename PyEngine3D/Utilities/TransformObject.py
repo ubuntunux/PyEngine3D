@@ -4,11 +4,12 @@ from .Transform import *
 
 
 class TransformObject:
-    def __init__(self, local=None):
+    def __init__(self, local=None, use_quaternion=False):
         self.quat = Float4(0.0, 0.0, 0.0, 1.0)
         self.local = local if local is not None else Matrix4()
 
         self.updated = True
+        self.use_quaternion = use_quaternion
 
         self.left = WORLD_LEFT.copy()
         self.up = WORLD_UP.copy()
@@ -16,10 +17,12 @@ class TransformObject:
 
         self.pos = Float3()
         self.rot = Float3()
+        self.quat = QUATERNION_IDENTITY.copy()
         self.scale = Float3(1, 1, 1)
 
         self.prev_Pos = Float3()
         self.prev_Rot = Float3()
+        self.prev_quat = QUATERNION_IDENTITY.copy()
         self.prev_Scale = Float3(1, 1, 1)
 
         self.rotationMatrix = Matrix4()
@@ -36,6 +39,7 @@ class TransformObject:
         self.updated = True
         self.set_pos(Float3())
         self.set_rotation(Float3())
+        self.set_quaternion(QUATERNION_IDENTITY)
         self.set_scale(Float3(1, 1, 1))
         self.update_transform(True)
 
@@ -136,6 +140,22 @@ class TransformObject:
         if self.rot[2] > TWO_PI or self.rot[2] < 0.0:
             self.rot[2] %= TWO_PI
 
+    # Quaternion
+    def set_use_quaternion(self, flag):
+        self.use_quaternion = flag
+
+    def get_quaternion(self):
+        return self.quat
+
+    def set_quaternion(self, quat):
+        self.quat[...] = quat
+
+    def rotation_quaternion(self, quat):
+        self.quat[...] = muliply_quaternion(quat, self.quat)
+
+    def euler_to_quaternion(self):
+        euler_to_quaternion(*self.rot, self.quat)
+
     # Scale
     def get_scale(self):
         return self.scale
@@ -173,25 +193,28 @@ class TransformObject:
             self.prev_Pos[...] = self.pos
             self.updated = True
 
-        if any(self.prev_Rot != self.rot) or force_update:
-            self.prev_Rot[...] = self.rot
-            self.updated = True
-
-            # Matrix Rotation - faster
-            matrix_rotation(self.rotationMatrix, *self.rot)
-            matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
-
-            # Euler Rotation - slow
-            # p = get_rotation_matrix_x(self.rot[0])
-            # y = get_rotation_matrix_y(self.rot[1])
-            # r = get_rotation_matrix_z(self.rot[2])
-            # self.rotationMatrix = np.dot(p, np.dot(y, r))
-            # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
-
+        if self.use_quaternion:
             # Quaternion Rotation - slower
-            # euler_to_quaternion(*self.rot, self.quat)
-            # quaternion_to_matrix(self.quat, self.rotationMatrix)
-            # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
+            if any(self.prev_quat != self.quat) or force_update:
+                self.prev_quat[...] = self.quat
+                quaternion_to_matrix(self.quat, self.rotationMatrix)
+                matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
+        else:
+            # Euler Roation
+            if any(self.prev_Rot != self.rot) or force_update:
+                self.prev_Rot[...] = self.rot
+                self.updated = True
+
+                # Matrix Rotation - faster
+                matrix_rotation(self.rotationMatrix, *self.rot)
+                matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
+
+                # Euler Rotation - slow
+                # p = get_rotation_matrix_x(self.rot[0])
+                # y = get_rotation_matrix_y(self.rot[1])
+                # r = get_rotation_matrix_z(self.rot[2])
+                # self.rotationMatrix = np.dot(p, np.dot(y, r))
+                # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
 
         if any(self.prev_Scale != self.scale) or force_update:
             self.prev_Scale[...] = self.scale

@@ -29,6 +29,7 @@ INT_ZERO = np.int32(0)
 INT2_ZERO = np.zeros(2, dtype=np.int32)
 INT3_ZERO = np.zeros(3, dtype=np.int32)
 INT4_ZERO = np.zeros(4, dtype=np.int32)
+QUATERNION_IDENTITY = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
 MATRIX3_IDENTITY = np.eye(3, dtype=np.float32)
 MATRIX3x4_IDENTITY = np.eye(3, 4, dtype=np.float32)
 MATRIX4_IDENTITY = np.eye(4, dtype=np.float32)
@@ -129,6 +130,10 @@ def muliply_quaternion(quaternion1, quaternion2):
     return Float4(qW, qX, qY, qZ)
 
 
+def muliply_quaternions(*quaternions):
+    return reduce(muliply_quaternion, quaternions)
+
+
 def vector_multiply_quaternion(vector, quaternion):
     u = np.cross(vector, quaternion[1:])
     return vector + u * 2.0 * quaternion[0] + np.cross(quaternion[1:], u) * 2.0
@@ -222,6 +227,13 @@ def quaternion_to_matrix(quat, rotation_matrix):
     rotation_matrix[2, :] = [qxqz + qyqw, qyqz - qxqw, qwqw - qxqx - qyqy + qzqz, 0.0]
     rotation_matrix[3, :] = [0.0, 0.0, 0.0, 1.0]
     '''
+
+
+def quaternion_to_euler(q):
+    psi = math.atan2( -2.*(q[2]*q[3] - q[0]*q[1]) , q[0]*q[0] - q[1]*q[1]- q[2]*q[2] + q[3]*q[3])
+    theta = math.asin( 2.*(q[1]*q[3] + q[0]*q[2]))
+    phi = math.atan2( 2.*(-q[1]*q[2] + q[0]*q[3]) , q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])
+    return Float3(psi, theta, phi)
 
 
 def lerp(vector1, vector2, t):
