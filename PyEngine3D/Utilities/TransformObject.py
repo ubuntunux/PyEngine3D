@@ -5,7 +5,6 @@ from .Transform import *
 
 class TransformObject:
     def __init__(self, local=None, use_quaternion=False):
-        self.quat = Float4(0.0, 0.0, 0.0, 1.0)
         self.local = local if local is not None else Matrix4()
 
         self.updated = True
@@ -163,7 +162,7 @@ class TransformObject:
     def get_scale_x(self):
         return self.scale[0]
 
-    def get_scale_Y(self):
+    def get_scale_y(self):
         return self.scale[1]
 
     def get_scale_z(self):
@@ -197,6 +196,8 @@ class TransformObject:
             # Quaternion Rotation - slower
             if any(self.prev_quat != self.quat) or force_update:
                 self.prev_quat[...] = self.quat
+                self.updated = True
+
                 quaternion_to_matrix(self.quat, self.rotationMatrix)
                 matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
         else:
