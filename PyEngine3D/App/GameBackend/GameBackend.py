@@ -230,6 +230,7 @@ class GameBackend:
         self.aspect = 1.0
         self.full_screen = False
 
+        self.mouse_grab = False
         self.mouse_pos = np.zeros(2)
         self.mouse_pos_old = np.zeros(2)
         self.mouse_delta = np.zeros(2)
@@ -250,6 +251,18 @@ class GameBackend:
         self.keyboard_pressed = False
         self.keyboard_up = False
 
+        self.key_pressed = dict()
+        self.key_released = dict()
+
+    def get_mouse_grab(self):
+        return self.mouse_grab
+
+    def set_mouse_grab(self, grab):
+        self.mouse_grab = grab
+
+    def toggle_mouse_grab(self):
+        self.set_mouse_grab(not self.get_mouse_grab())
+
     def get_mouse_down(self):
         return self.btn_l_down, self.btn_m_down, self.btn_r_down
 
@@ -258,6 +271,9 @@ class GameBackend:
 
     def get_mouse_up(self):
         return self.btn_l_up, self.btn_m_up, self.btn_r_up
+
+    def get_keyboard_released(self):
+        return self.key_released
 
     def set_window_info(self, width, height, full_screen):
         changed = False

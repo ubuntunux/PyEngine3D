@@ -35,6 +35,8 @@ class PyGlet(GameBackend):
         # Ubuntu Vsync Off : NVidia X Server Setting -> OpenGL Setting -> Sync To VBlank ( Off )
         self.window = window.Window(width=INITIAL_WIDTH, height=INITIAL_HEIGHT, config=config, resizable=True, vsync=False)
 
+        self.set_mouse_grab(self.mouse_grab)
+
         # for debbug
         # self.window.push_handlers(window.event.WindowEventLogger())
 
@@ -249,12 +251,14 @@ class PyGlet(GameBackend):
         Keyboard.BAR = window.key.BAR
         Keyboard.BRACERIGHT = window.key.BRACERIGHT
 
-        self.key_pressed = dict()
-
         for symbol in Keyboard.__dict__:
             self.key_pressed[Keyboard.__dict__[symbol]] = False
 
         self.valid = True
+
+    def set_mouse_grab(self, grab):
+        GameBackend.set_mouse_grab(self, grab)
+        self.window.set_exclusive_mouse(grab)
 
     def set_window_title(self, title):
         self.window.set_caption(title)
@@ -270,7 +274,14 @@ class PyGlet(GameBackend):
             # self.window.set_size(self.width, self.height)
 
     def update_event(self):
-        self.mouse_pos_old[...] = self.mouse_pos
+        if self.get_mouse_grab():
+            self.mouse_pos_old[0] = self.width / 2
+            self.mouse_pos_old[1] = self.height / 2
+        else:
+            self.mouse_pos_old[...] = self.mouse_pos
+        self.mouse_delta[0] = 0.0
+        self.mouse_delta[1] = 0.0
+
         self.btn_l_down = False
         self.btn_m_down = False
         self.btn_r_down = False
@@ -279,14 +290,13 @@ class PyGlet(GameBackend):
         self.btn_r_up = False
         self.keyboard_down = False
         self.keyboard_up = False
+        self.key_released.clear()
 
         self.window.switch_to()
 
         # update event
         self.window.dispatch_events()
         # self.window.dispatch_event('on_draw')
-
-        self.mouse_delta[...] = self.mouse_pos - self.mouse_pos_old
 
     def on_resize(self, width, height):
         self.goal_width = width
@@ -300,6 +310,8 @@ class PyGlet(GameBackend):
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
+        self.mouse_delta[0] = dx
+        self.mouse_delta[1] = dy
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
@@ -330,6 +342,8 @@ class PyGlet(GameBackend):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
+        self.mouse_delta[0] = dx
+        self.mouse_delta[1] = dy
 
     def on_mouse_enter(self, x, y):
         pass
@@ -345,6 +359,7 @@ class PyGlet(GameBackend):
         self.keyboard_down = True
         self.keyboard_pressed = True
         self.key_pressed[symbol] = True
+        self.key_released[symbol] = False
         self.core_manager.update_event(Event.KEYDOWN, symbol)
 
     def on_key_release(self, symbol, modifiers):
@@ -352,6 +367,7 @@ class PyGlet(GameBackend):
         self.keyboard_up = True
         self.keyboard_pressed = False
         self.key_pressed[symbol] = False
+        self.key_released[symbol] = True
         self.core_manager.update_event(Event.KEYUP, symbol)
 
     def get_keyboard_pressed(self):

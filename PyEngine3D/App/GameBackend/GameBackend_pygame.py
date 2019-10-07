@@ -20,6 +20,8 @@ class PyGame(GameBackend):
         self.screen_width = pygame.display.Info().current_w
         self.screen_height = pygame.display.Info().current_h
 
+        self.set_mouse_grab(self.get_mouse_grab())
+
         pygame.font.init()
         if not pygame.font.get_init():
             logger.error('Could not render font.')
@@ -219,12 +221,15 @@ class PyGame(GameBackend):
         # Keyboard.BRACERIGHT = K_BRACERIGHT
         # Keyboard.ASCIITILDE = K_ASCIITILDEC
 
-        self.key_pressed = dict()
-
         for symbol in Keyboard.__dict__:
             self.key_pressed[Keyboard.__dict__[symbol]] = False
 
         self.valid = True
+
+    def set_mouse_grab(self, grab):
+        GameBackend.set_mouse_grab(self, grab)
+        pygame.event.set_grab(grab)
+        pygame.mouse.set_visible(not grab)
 
     def set_window_title(self, title):
         pygame.display.set_caption(title)
@@ -241,7 +246,12 @@ class PyGame(GameBackend):
         pygame.display.set_mode((self.width, self.height), option)
 
     def update_event(self):
-        self.mouse_pos_old[...] = self.mouse_pos
+        if self.get_mouse_grab():
+            self.mouse_pos_old[0] = self.width / 2
+            self.mouse_pos_old[1] = self.height / 2
+        else:
+            self.mouse_pos_old[...] = self.mouse_pos
+
         self.btn_l_down = False
         self.btn_m_down = False
         self.btn_r_down = False
@@ -252,6 +262,7 @@ class PyGame(GameBackend):
         self.wheel_down = False
         self.keyboard_up = False
         self.keyboard_down = False
+        self.key_released.clear()
 
         # Keyboard & Mouse Events
         for event in pygame.event.get():
@@ -266,12 +277,16 @@ class PyGame(GameBackend):
                 self.text = event.unicode
                 self.keyboard_down = True
                 self.keyboard_pressed = True
+                self.key_pressed[event.key] = True
+                self.key_released[event.key] = False
                 self.core_manager.update_event(Event.TEXT, event.unicode)
                 self.core_manager.update_event(Event.KEYDOWN, event.key)
             elif event_type == KEYUP:
                 self.text = ''
                 self.keyboard_up = True
                 self.keyboard_pressed = False
+                self.key_pressed[event.key] = False
+                self.key_released[event.key] = True
                 self.core_manager.update_event(Event.KEYUP, event.key)
             elif event_type == MOUSEMOTION:
                 self.mouse_pos[...] = pygame.mouse.get_pos()
@@ -306,6 +321,9 @@ class PyGame(GameBackend):
                 elif event.button == 5:
                     self.wheel_down = False
         self.mouse_delta[...] = self.mouse_pos - self.mouse_pos_old
+
+        if self.get_mouse_grab():
+            pygame.mouse.set_pos([self.width / 2, self.height / 2])
 
     def get_keyboard_pressed(self):
         return pygame.key.get_pressed()

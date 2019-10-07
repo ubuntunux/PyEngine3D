@@ -557,6 +557,8 @@ class CoreManager(Singleton):
             self.video_resize_time = self.current_time + VIDEO_RESIZE_TIME
             self.notify_change_resolution(event_value)
         elif Event.KEYDOWN == event_type:
+            pass
+        elif Event.KEYUP == event_type:
             key_pressed = self.game_backend.get_keyboard_pressed()
             subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
             if Keyboard.ESCAPE == event_value:
@@ -589,8 +591,6 @@ class CoreManager(Singleton):
                 current_obj_names = set(self.scene_manager.get_object_names())
                 for obj_name in (obj_names - current_obj_names):
                     self.notify_delete_object(obj_name)
-        elif Event.KEYUP == event_type:
-            pass
         elif Event.TEXT == event_type:
             pass
 
