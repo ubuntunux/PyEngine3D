@@ -47,7 +47,7 @@ class ProjectManager(Singleton):
             self.config.setDefaultValue("Camera", "fov", 60)
             self.config.setDefaultValue("Camera", "move_speed", meter_per_unit)
             self.config.setDefaultValue("Camera", "pan_speed", meter_per_unit)
-            self.config.setDefaultValue("Camera", "rotation_speed", 0.01)
+            self.config.setDefaultValue("Camera", "rotation_speed", 0.005)
         except BaseException:
             logger.info("Cannot open %s : %s" % (GetClassName(self), project_filename))
             return False

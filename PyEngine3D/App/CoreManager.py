@@ -556,9 +556,9 @@ class CoreManager(Singleton):
             self.video_resized = True
             self.video_resize_time = self.current_time + VIDEO_RESIZE_TIME
             self.notify_change_resolution(event_value)
-        elif Event.KEYDOWN == event_type:
+        elif Event.KEYDOWN == event_type and not self.is_play_mode:
             pass
-        elif Event.KEYUP == event_type:
+        elif Event.KEYUP == event_type and not self.is_play_mode:
             key_pressed = self.game_backend.get_keyboard_pressed()
             subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
             if Keyboard.ESCAPE == event_value:
@@ -570,6 +570,8 @@ class CoreManager(Singleton):
                     self.renderer.postprocess.is_render_material_instance = False
                 else:
                     self.close()
+            elif Keyboard.TAB == event_value:
+                self.game_backend.toggle_mouse_grab()
             elif Keyboard._1 == event_value:
                 models = self.resource_manager.model_loader.get_resource_list()
                 if models:
