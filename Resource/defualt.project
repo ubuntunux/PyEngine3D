@@ -9,6 +9,6 @@ far = 2000.0
 fov = 60
 move_speed = 10.0
 pan_speed = 1.0
-rotation_speed = 0.3
+rotation_speed = 0.01
 aspect = 1.7777777777777777
 

@@ -27,7 +27,7 @@ class Camera(StaticActor):
         self.far = object_data.get('far', 0.0)
         self.move_speed = object_data.get('move_speed', 0.0)
         self.pan_speed = object_data.get('pan_speed', 0.0)
-        self.rotation_speed = object_data.get('rotation_speed', 0.0)
+        self.rotation_speed = object_data.get('rotation_speed', 0.01)
 
         self.half_cone = 0.0  # view frustum cone half radian
         self.frustum_vectors = np.zeros(12, dtype=np.float32).reshape(4, 3)

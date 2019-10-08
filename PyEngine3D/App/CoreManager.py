@@ -604,7 +604,6 @@ class CoreManager(Singleton):
         camera_transform = camera.transform
         move_speed = camera.move_speed * self.delta
         pan_speed = camera.pan_speed * self.delta
-        rotation_speed = camera.rotation_speed * self.delta
 
         if keydown[Keyboard.LSHIFT]:
             move_speed *= 4.0
@@ -617,13 +616,13 @@ class CoreManager(Singleton):
 
         # camera rotation
         elif btn_left or btn_right:
-            camera_transform.rotation_pitch(mouse_delta[1] * rotation_speed)
-            camera_transform.rotation_yaw(-mouse_delta[0] * rotation_speed)
+            camera_transform.rotation_pitch(mouse_delta[1] * camera.rotation_speed)
+            camera_transform.rotation_yaw(-mouse_delta[0] * camera.rotation_speed)
 
         if keydown[Keyboard.Z]:
-            camera_transform.rotation_roll(-rotation_speed * 10.0)
+            camera_transform.rotation_roll(-camera.rotation_speed * self.delta)
         elif keydown[Keyboard.C]:
-            camera_transform.rotation_roll(rotation_speed * 10.0)
+            camera_transform.rotation_roll(camera.rotation_speed * self.delta)
 
         # move to view direction ( inverse front of camera matrix )
         if keydown[Keyboard.W] or self.game_backend.wheel_up:
