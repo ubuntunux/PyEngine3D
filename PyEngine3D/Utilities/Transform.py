@@ -104,7 +104,11 @@ def matrix_rotation(rotation_matrix, rx, ry, rz):
     rotation_matrix[:, 2] = [-sh*ca, sh*sa*cb + ch*sb, -sh*sa*sb + ch*cb, 0.0]
 
 
-def matrix_to_vectors(rotation_matrix, axis_x, axis_y, axis_z):
+def matrix_to_vectors(rotation_matrix, axis_x, axis_y, axis_z, do_normalize=False):
+    if do_normalize:
+        rotation_matrix[0, 0:3] = normalize(rotation_matrix[0, 0:3])
+        rotation_matrix[1, 0:3] = normalize(rotation_matrix[1, 0:3])
+        rotation_matrix[2, 0:3] = normalize(rotation_matrix[2, 0:3])
     axis_x[:] = rotation_matrix[0, 0:3]
     axis_y[:] = rotation_matrix[1, 0:3]
     axis_z[:] = rotation_matrix[2, 0:3]

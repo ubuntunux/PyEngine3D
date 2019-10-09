@@ -187,6 +187,7 @@ class TransformObject:
     def update_transform(self, update_inverse_matrix=False, force_update=False):
         prev_updated = self.updated
         self.updated = False
+        rotation_update = False
 
         if any(self.prev_Pos != self.pos) or force_update:
             self.prev_Pos[...] = self.pos
@@ -197,25 +198,28 @@ class TransformObject:
             if any(self.prev_quat != self.quat) or force_update:
                 self.prev_quat[...] = self.quat
                 self.updated = True
+                rotation_update = True
 
                 quaternion_to_matrix(self.quat, self.rotationMatrix)
-                matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
         else:
             # Euler Roation
             if any(self.prev_Rot != self.rot) or force_update:
                 self.prev_Rot[...] = self.rot
                 self.updated = True
+                rotation_update = True
 
                 # Matrix Rotation - faster
                 matrix_rotation(self.rotationMatrix, *self.rot)
-                matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front)
 
                 # Euler Rotation - slow
                 # p = get_rotation_matrix_x(self.rot[0])
                 # y = get_rotation_matrix_y(self.rot[1])
                 # r = get_rotation_matrix_z(self.rot[2])
                 # self.rotationMatrix = np.dot(p, np.dot(y, r))
-                # matrix_to_vectors(self.rotationMatrix, self.right, self.up, self.front)
+
+        if rotation_update:
+            do_normalize = True
+            matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front, do_normalize=do_normalize)
 
         if any(self.prev_Scale != self.scale) or force_update:
             self.prev_Scale[...] = self.scale
