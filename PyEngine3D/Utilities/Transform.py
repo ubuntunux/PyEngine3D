@@ -234,10 +234,10 @@ def quaternion_to_matrix(quat, rotation_matrix):
 
 
 def quaternion_to_euler(q):
-    psi = math.atan2( -2.*(q[2]*q[3] - q[0]*q[1]) , q[0]*q[0] - q[1]*q[1]- q[2]*q[2] + q[3]*q[3])
-    theta = math.asin( 2.*(q[1]*q[3] + q[0]*q[2]))
-    phi = math.atan2( 2.*(-q[1]*q[2] + q[0]*q[3]) , q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])
-    return Float3(psi, theta, phi)
+    pitch = -np.arctan(2.0 * (q[0] * q[1] + q[2] * q[3]) / (1.0 - 2.0 * (q[1] * q[1] + q[2] * q[2])))
+    yaw = np.arcsin(2.0 * (q[0] * q[2] - q[3] * q[1]))
+    roll = -np.arctan(2.0 * (q[0] * q[3] + q[1] * q[2]) / (1.0 - 2.0 * (q[2] * q[2] + q[3] * q[3])))
+    return Float3(pitch, yaw, roll)
 
 
 def lerp(vector1, vector2, t):
