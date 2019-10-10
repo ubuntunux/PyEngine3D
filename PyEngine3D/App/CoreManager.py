@@ -191,7 +191,7 @@ class CoreManager(Singleton):
         self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 
-        self.viewport_manager.build_ui()
+        # self.viewport_manager.build_ui_example()
 
         self.script_manager = None
         # self.load_script_manager(reload=False)
