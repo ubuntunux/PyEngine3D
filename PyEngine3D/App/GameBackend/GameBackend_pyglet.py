@@ -310,8 +310,8 @@ class PyGlet(GameBackend):
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        self.mouse_delta[0] = dx
-        self.mouse_delta[1] = dy
+        self.mouse_delta[0] += dx
+        self.mouse_delta[1] += dy
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
@@ -342,8 +342,8 @@ class PyGlet(GameBackend):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        self.mouse_delta[0] = dx
-        self.mouse_delta[1] = dy
+        self.mouse_delta[0] += dx
+        self.mouse_delta[1] += dy
 
     def on_mouse_enter(self, x, y):
         pass
