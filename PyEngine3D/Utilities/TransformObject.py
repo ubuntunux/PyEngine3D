@@ -90,7 +90,7 @@ class TransformObject:
 
     # Rotation
     def get_rotation(self):
-        return self.rot
+        return self.rot.copy()
 
     def get_pitch(self):
         return self.rot[0]
@@ -144,7 +144,7 @@ class TransformObject:
         self.use_quaternion = flag
 
     def get_quaternion(self):
-        return self.quat
+        return self.quat.copy()
 
     def set_quaternion(self, quat):
         self.quat[...] = quat
