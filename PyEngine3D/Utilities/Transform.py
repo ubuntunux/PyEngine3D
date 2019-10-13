@@ -81,14 +81,33 @@ def dot_arrays(*array_list):
     return reduce(np.dot, array_list)
 
 
-def euler_to_matrix(rotation_matrix, pitch, yaw, roll):
-    '''
-    create front vector
-    right = cross(world_up, front)
-    up - cross(right, front)
-    conversion vector to matrix
-    '''
-    pass
+# Checks if a matrix is a valid rotation matrix.
+def is_rotation_matrix(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype=R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+
+
+def rotation_maxtrix_to_euler_angles(R, check_valid=False):
+    if check_valid:
+        assert (is_rotation_matrix(R))
+
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[1, 2], R[2, 2])
+        y = math.atan2(-R[0, 2], sy)
+        z = math.atan2(R[0, 1], R[0, 0])
+    else:
+        x = math.atan2(-R[2, 1], R[1, 1])
+        y = math.atan2(-R[0, 2], sy)
+        z = 0
+
+    return Float3(x, y, z)
 
 
 def matrix_rotation(rotation_matrix, rx, ry, rz):
