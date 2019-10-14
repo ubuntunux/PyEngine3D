@@ -298,6 +298,10 @@ class PyGlet(GameBackend):
         self.window.dispatch_events()
         # self.window.dispatch_event('on_draw')
 
+        if not self.mouse_grab:
+            self.mouse_delta[0] = self.mouse_pos[0] - self.mouse_pos_old[0]
+            self.mouse_delta[1] = self.mouse_pos[1] - self.mouse_pos_old[1]
+
     def on_resize(self, width, height):
         self.goal_width = width
         self.goal_height = height
@@ -310,8 +314,9 @@ class PyGlet(GameBackend):
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        self.mouse_delta[0] += dx
-        self.mouse_delta[1] += dy
+        if self.mouse_grab:
+            self.mouse_delta[0] += x - self.half_width  # dx
+            self.mouse_delta[1] += y - self.half_height  # dy
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
@@ -342,8 +347,9 @@ class PyGlet(GameBackend):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.mouse_pos[0] = x
         self.mouse_pos[1] = y
-        self.mouse_delta[0] += dx
-        self.mouse_delta[1] += dy
+        if self.mouse_grab:
+            self.mouse_delta[0] += x - self.half_width  # dx
+            self.mouse_delta[1] += y - self.half_height  # dy
 
     def on_mouse_enter(self, x, y):
         pass

@@ -223,6 +223,8 @@ class GameBackend:
 
         self.width = 0
         self.height = 0
+        self.half_width = 0
+        self.half_height = 0
         self.goal_width = 0
         self.goal_height = 0
         self.screen_width = 0
@@ -284,10 +286,12 @@ class GameBackend:
 
         if 0 < width != self.width:
             self.width = width
+            self.half_width = width / 2
             changed = True
 
         if 0 < height != self.height:
             self.height = height
+            self.half_height = height / 2
             changed = True
 
         if 0 < width and 0 < height:
