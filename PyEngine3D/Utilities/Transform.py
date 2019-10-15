@@ -81,6 +81,10 @@ def dot_arrays(*array_list):
     return reduce(np.dot, array_list)
 
 
+def clamp_radian(r):
+    return (r % TWO_PI) if (TWO_PI < r < 0.0) else r
+
+
 # Checks if a matrix is a valid rotation matrix.
 def is_rotation_matrix(R):
     Rt = np.transpose(R)
