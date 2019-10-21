@@ -637,8 +637,7 @@ class Renderer(Singleton):
             actor_material = render_info.material
             actor_material_instance = render_info.material_instance
 
-            instance_count = actor.instance_count
-            is_instancing = 1 < instance_count
+            is_instancing = actor.is_instancing()
 
             if RenderMode.GBUFFER == render_mode or RenderMode.FORWARD_SHADING == render_mode:
                 if last_actor_material != actor_material and actor_material is not None:
@@ -673,7 +672,7 @@ class Renderer(Singleton):
                     material_instance.bind_uniform_data('prev_bone_matrices', prev_animation_buffer, num=len(prev_animation_buffer))
             # draw
             if is_instancing:
-                geometry.draw_elements_instanced(instance_count, self.actor_instance_buffer, [actor.instance_matrix, ])
+                geometry.draw_elements_instanced(actor.get_instance_render_count(), self.actor_instance_buffer, [actor.instance_matrix, ])
             else:
                 geometry.draw_elements()
 

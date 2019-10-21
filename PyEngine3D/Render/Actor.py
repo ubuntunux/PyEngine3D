@@ -34,6 +34,7 @@ class StaticActor:
         self.instance_rot_list = object_data.get('instance_rot_list', [])
         self.instance_scale_list = object_data.get('instance_scale_list', [])
         self.instance_count = object_data.get('instance_count', 1)
+        self.instance_render_count = object_data.get('instance_render_count', None)
         self.instance_matrix = None
         self.bound_box_scale = Float3()
         self.bound_box_offset = Float3()
@@ -74,6 +75,17 @@ class StaticActor:
         )
         return save_data
 
+    def is_instancing(self):
+        return 1 < self.instance_count
+
+    def get_instance_render_count(self):
+        if self.instance_render_count is None:
+            return self.instance_count
+        return self.instance_render_count
+
+    def set_instance_render_count(self, count):
+        self.instance_render_count = min(count, self.instance_count)
+
     def set_instance_count(self, count):
         if not self.has_mesh:
             return
@@ -81,6 +93,10 @@ class StaticActor:
         mesh = self.model.mesh
 
         self.instance_count = count
+
+        if self.instance_render_count is not None and count < self.instance_render_count:
+            self.set_instance_render_count(count)
+
         if 1 < count:
             self.instance_pos_list = [self.instance_pos.get_uniform() for i in range(count)]
             self.instance_rot_list = [self.instance_rot.get_uniform() for i in range(count)]
