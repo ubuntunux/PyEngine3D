@@ -40,8 +40,12 @@ class BoundBox:
         )
         return save_data
 
-    def check_collide(self, pos):
-        return np.all(self.bound_min <= pos) and np.all(pos <= self.bound_max)
+    # TODO
+    def check_collide_line(self, pos0, pos1, scale=1.0):
+        return False
+
+    def check_collide(self, pos, scale=1.0):
+        return np.all((self.bound_center + (self.bound_min - self.bound_center) * scale) <= pos) and np.all(pos <= (self.bound_center + (self.bound_max - self.bound_center) * scale))
 
     def clone(self, bound_box):
         self.bound_min[...] = bound_box.bound_min
