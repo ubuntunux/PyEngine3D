@@ -488,7 +488,7 @@ def lookat(matrix, eye, target, up):
     u = np.cross(s, f)
     matrix[0, 0:3] = s
     matrix[1, 0:3] = u
-    matrix[2, 0:3] = -f
+    matrix[2, 0:3] = f
     matrix[3, 0:3] = [-np.dot(s, eye), -np.dot(u, eye), -np.dot(f, eye)]
 
 

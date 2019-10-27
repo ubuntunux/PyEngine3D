@@ -183,6 +183,9 @@ class TransformObject:
     def scaling(self, scale):
         self.scale[...] = self.scale + scale
 
+    def matrix_to_vectors(self):
+        matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front, do_normalize=True)
+
     # update Transform
     def update_transform(self, update_inverse_matrix=False, force_update=False):
         prev_updated = self.updated
@@ -218,8 +221,7 @@ class TransformObject:
                 # self.rotationMatrix = np.dot(p, np.dot(y, r))
 
         if rotation_update:
-            do_normalize = True
-            matrix_to_vectors(self.rotationMatrix, self.left, self.up, self.front, do_normalize=do_normalize)
+            self.matrix_to_vectors()
 
         if any(self.prev_Scale != self.scale) or force_update:
             self.prev_Scale[...] = self.scale
