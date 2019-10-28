@@ -40,10 +40,6 @@ class BoundBox:
         )
         return save_data
 
-    # TODO
-    def check_collide_line(self, pos0, pos1, scale=1.0):
-        return False
-
     def check_collide(self, pos, scale=1.0):
         return np.all((self.bound_center + (self.bound_min - self.bound_center) * scale) <= pos) and np.all(pos <= (self.bound_center + (self.bound_max - self.bound_center) * scale))
 
