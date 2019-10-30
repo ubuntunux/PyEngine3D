@@ -26,9 +26,14 @@ class PyGlet(GameBackend):
         # os.environ['PYGLET_DEBUG_GL'] = '1'
         config = Config(double_buffer=True, )
 
-        platform = pyglet.window.get_platform()
-        display = platform.get_default_display()
-        screen = display.get_default_screen()
+        # get default screen
+        try:
+            platform = pyglet.window.get_platform()
+            display = platform.get_default_display()
+            screen = display.get_default_screen()
+        except AttributeError as e:
+            screen = pyglet.canvas.Display().get_default_screen()
+
         self.screen_width = screen.width
         self.screen_height = screen.height
 

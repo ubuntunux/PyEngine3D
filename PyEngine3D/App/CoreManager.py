@@ -156,6 +156,7 @@ class CoreManager(Singleton):
                     run_pygame()
                     break
                 except:
+                    logger.error(traceback.format_exc())
                     logger.error("The pygame library does not exist and execution failed. Run again with the pyglet.")
                     self.last_game_backend = GameBackNames.PYGLET
             else:
@@ -163,6 +164,7 @@ class CoreManager(Singleton):
                     run_pyglet()
                     break
                 except:
+                    logger.error(traceback.format_exc())
                     logger.error("The pyglet library does not exist and execution failed. Run again with the pygame.")
                     self.last_game_backend = GameBackNames.PYGAME
         else:
