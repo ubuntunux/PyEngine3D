@@ -101,6 +101,10 @@ class SceneManager(Singleton):
         self.renderer.reset_renderer()
         self.regist_object(self.renderer.postprocess)
 
+        # Important : update camera projection
+        for camera in self.cameras:
+            camera.update()
+
     def new_scene(self):
         self.begin_open_scene()
 
@@ -379,6 +383,7 @@ class SceneManager(Singleton):
 
     def delete_object(self, object_name):
         obj = self.get_object(object_name)
+        logger.info("delete %s : %s" % (type(obj), object_name))
         if obj is not None and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 

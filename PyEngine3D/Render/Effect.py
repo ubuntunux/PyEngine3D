@@ -357,8 +357,14 @@ class Effect:
         elif attribute_name == 'scale':
             self.transform.set_scale(attribute_value)
 
+    def clear_effect(self):
+        for emitter in self.emitters:
+            emitter.destroy()
+
+        self.emitters = []
+
     def play(self):
-        self.destroy()
+        self.clear_effect()
 
         self.alive = True
 
@@ -371,11 +377,7 @@ class Effect:
 
     def destroy(self):
         self.alive = False
-
-        for emitter in self.emitters:
-            emitter.destroy()
-
-        self.emitters = []
+        self.clear_effect()
 
     def update(self, dt):
         if not self.alive:
@@ -383,7 +385,7 @@ class Effect:
 
         self.transform.update_transform(update_inverse_matrix=True)
 
-        is_alive = self.alive
+        is_alive = False
         alive_particle_count = 0
 
         for emitter in self.emitters:
