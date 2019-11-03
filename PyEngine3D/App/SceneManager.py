@@ -512,7 +512,8 @@ class SceneManager(Singleton):
                 break
 
     def update_scene(self, dt):
-        self.renderer.postprocess.update()
+        if not self.core_manager.is_basic_mode:
+            self.renderer.postprocess.update()
 
         for camera in self.cameras:
             camera.update()

@@ -56,6 +56,7 @@ def gather_render_infos(culling_func, camera, light, actor_list, solid_render_in
             render_info = RenderInfo()
             render_info.actor = actor
             render_info.geometry = actor.get_geometry(i)
+            render_info.geometry_data = actor.get_geometry_data(i)
             render_info.material = material_instance.material if material_instance else None
             render_info.material_instance = material_instance
             if render_info.material_instance is not None and render_info.material_instance.is_translucent():
@@ -69,5 +70,6 @@ class RenderInfo:
     def __init__(self):
         self.actor = None
         self.geometry = None
+        self.geometry_data = None
         self.material = None
         self.material_instance = None

@@ -174,6 +174,9 @@ class StaticActor:
     def get_geometry(self, index):
         return self.model.mesh.geometries[index] if self.model else None
 
+    def get_geometry_data(self, index):
+        return self.model.mesh.get_geometry_data(index) if self.model else None
+
     def get_geometries(self):
         return self.model.mesh.geometries if self.has_mesh else []
 

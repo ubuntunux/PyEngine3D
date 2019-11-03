@@ -1,0 +1,250 @@
+from ctypes import c_void_p
+import math
+
+import numpy as np
+
+from OpenGL.GL import *
+from OpenGL.GLU import *
+
+from PyEngine3D.Common import logger, COMMAND
+from PyEngine3D.Common.Constants import *
+from PyEngine3D.Utilities import *
+from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderBuffer, UniformBlock, CreateTexture
+from .PostProcess import AntiAliasing, PostProcess
+from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
+from . import SkeletonActor, StaticActor
+
+
+class DebugLine:
+    def __init__(self, pos1, pos2, color=None, width=1.0):
+        self.pos1 = pos1.copy()
+        self.pos2 = pos2.copy()
+        self.color = color.copy() if color is not None else [1.0, 1.0, 1.0]
+        self.width = width
+
+
+class Renderer_Basic(Singleton):
+    def __init__(self):
+        self.initialized = False
+        self.view_mode = GL_FILL
+
+        # managers
+        self.core_manager = None
+        self.viewport_manager = None
+        self.resource_manager = None
+        self.font_manager = None
+        self.scene_manager = None
+        self.render_option_manager = None
+        self.rendertarget_manager = None
+        self.framebuffer_manager = None
+        self.postprocess = None
+
+        # components
+        self.viewport = None
+        self.debug_texture = None
+
+        self.blend_enable = False
+        self.blend_equation = GL_FUNC_ADD
+        self.blend_func_src = GL_SRC_ALPHA
+        self.blend_func_dst = GL_ONE_MINUS_SRC_ALPHA
+
+        self.blend_enable_prev = self.blend_enable
+        self.blend_equation_prev = self.blend_equation
+        self.blend_func_src_prev = self.blend_func_src
+        self.blend_func_dst_prev = self.blend_func_dst
+
+        self.debug_lines_2d = []
+        self.debug_lines_3d = []
+
+    def initialize(self, core_manager):
+        logger.info("Initialize Renderer")
+        self.core_manager = core_manager
+        self.viewport_manager = core_manager.viewport_manager
+        self.viewport = self.viewport_manager.main_viewport
+        self.resource_manager = core_manager.resource_manager
+        self.render_option_manager = core_manager.render_option_manager
+        self.scene_manager = core_manager.scene_manager
+        self.postprocess = PostProcess()
+        self.postprocess.initialize()
+
+        self.uniform_point_light_data = np.zeros(MAX_POINT_LIGHTS, dtype=[('color', np.float32, 3),
+                                                                          ('radius', np.float32, 1),
+                                                                          ('pos', np.float32, 3),
+                                                                          ('render', np.float32, 1)])
+
+        self.initialized = True
+
+        # Send to GUI
+        # self.core_manager.send_rendering_type_list(rendering_type_list)
+
+    def close(self):
+        pass
+
+    def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA, func_dst=GL_ONE_MINUS_SRC_ALPHA):
+        self.blend_enable_prev = self.blend_enable
+        self.blend_equation_prev = self.blend_equation
+        self.blend_func_src_prev = self.blend_func_src
+        self.blend_func_dst_prev = self.blend_func_dst
+
+        self.blend_enable = blend_enable
+        if blend_enable:
+            self.blend_equation = equation
+            self.blend_func_src = func_src
+            self.blend_func_dst = func_dst
+            glEnable(GL_BLEND)
+            glBlendEquation(equation)
+            glBlendFunc(func_src, func_dst)
+        else:
+            glDisable(GL_BLEND)
+
+    def restore_blend_state_prev(self):
+        self.set_blend_state(self.blend_enable_prev,
+                             self.blend_equation_prev,
+                             self.blend_func_src_prev,
+                             self.blend_func_dst_prev)
+
+    def set_view_mode(self, view_mode):
+        if view_mode == COMMAND.VIEWMODE_WIREFRAME:
+            self.view_mode = GL_LINE
+        elif view_mode == COMMAND.VIEWMODE_SHADING:
+            self.view_mode = GL_FILL
+
+    def reset_renderer(self):
+        self.scene_manager.update_camera_projection_matrix(aspect=self.core_manager.game_backend.aspect)
+        self.core_manager.gc_collect()
+
+    def ortho_view(self, look_at=True):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.viewport.width, 0, self.viewport.height, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        if look_at:
+            self.look_at()
+
+    def perspective_view(self, look_at=True):
+        camera = self.scene_manager.main_camera
+
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(camera.fov, camera.aspect, camera.near, camera.far)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        if look_at:
+            self.look_at()
+
+    def look_at(self):
+        camera = self.scene_manager.main_camera
+        camera_target = -camera.transform.front
+        camera_up = camera.transform.up
+
+        glScalef(*(1.0 / camera.transform.get_scale()))
+        gluLookAt(0.0, 0.0, 0.0, *camera_target, *camera_up)
+        glTranslatef(*(-camera.transform.get_pos()))
+
+    def set_debug_texture(self, texture):
+        pass
+
+    def render_light_probe(self, light_probe):
+        pass
+
+    def render_actors(self, render_group, render_infos):
+        # if len(render_infos) < 1:
+        #     return
+
+        last_actor = None
+
+        glPushMatrix()
+        glLoadIdentity()
+        self.perspective_view(look_at=True)
+
+        glColor3f(1.0, 1.0, 1.0)
+
+        for render_info in render_infos:
+            actor = render_info.actor
+            geometry_data = render_info.geometry_data
+            indices = geometry_data['indices']
+            positions = geometry_data['positions']
+
+            glBegin(GL_TRIANGLES)
+            for index in indices:
+                glVertex3f(*positions[index])
+            glEnd()
+
+        glPopMatrix()
+
+    def render_log(self):
+        pass
+
+    def render_text(self, text_render_data, offset_x, offset_y, canvas_width, canvas_height):
+        pass
+
+    def draw_debug_line_2d(self, pos1, pos2, color=None, width=1.0):
+        if color is None:
+            color = [1.0, 1.0, 1.0]
+        debug_line = DebugLine(pos1, pos2, color, width)
+        self.debug_lines_2d.append(debug_line)
+
+    def draw_debug_line_3d(self, pos1, pos2, color=None, width=1.0):
+        if color is None:
+            color = [1.0, 1.0, 1.0]
+        debug_line = DebugLine(pos1, pos2, color, width)
+        self.debug_lines_3d.append(debug_line)
+
+    def render_debug_line(self):
+        # 2D Line
+        glPushMatrix()
+        glLoadIdentity()
+        for debug_line in self.debug_lines_2d:
+            glLineWidth(debug_line.width)
+            glColor3f(*debug_line.color)
+            glBegin(GL_LINES)
+            glVertex3f(*debug_line.pos1, -1.0)
+            glVertex3f(*debug_line.pos2, -1.0)
+            glEnd()
+        self.debug_lines_2d = []
+        glPopMatrix()
+
+        # 3D Line
+        glPushMatrix()
+        glLoadIdentity()
+
+        self.perspective_view(look_at=True)
+
+        for debug_line in self.debug_lines_3d:
+            glLineWidth(debug_line.width)
+            glColor3f(*debug_line.color)
+            glBegin(GL_LINES)
+            glVertex3f(*debug_line.pos1)
+            glVertex3f(*debug_line.pos2)
+            glEnd()
+        glPopMatrix()
+        self.debug_lines_3d = []
+
+    def render_scene(self):
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+        glPolygonMode(GL_FRONT_AND_BACK, self.view_mode)
+        glShadeModel(GL_SMOOTH)
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
+        glEnable(GL_CULL_FACE)
+        glFrontFace(GL_CCW)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glDepthMask(True)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearDepth(1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        self.set_blend_state(False)
+
+        self.render_actors(RenderGroup.STATIC_ACTOR, self.scene_manager.static_solid_render_infos)
+        self.render_actors(RenderGroup.SKELETON_ACTOR, self.scene_manager.skeleton_solid_render_infos)
+
+        self.draw_debug_line_3d([0.0, 0.0, -10.0], [10.0, 0.0, -10.0], [1.0, 0.0, 0.0], 10.0)
+        self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 10.0, -10.0], [0.0, 1.0, 0.0], 10.0)
+        self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 10.0)
+
+        # draw line
+        self.render_debug_line()

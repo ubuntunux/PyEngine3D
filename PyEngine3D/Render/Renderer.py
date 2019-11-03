@@ -857,6 +857,8 @@ class Renderer(Singleton):
         self.debug_lines_3d.append(debug_line)
 
     def render_debug_line(self):
+        # TODO : Render Line Shader Version
+
         # 2D Line
         glPushMatrix()
         glLoadIdentity()
@@ -1072,5 +1074,5 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_log()
 
-        # draw line
+        # TODO : Render Line Shader Version
         self.render_debug_line()

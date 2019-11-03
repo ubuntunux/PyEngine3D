@@ -24,3 +24,4 @@ from .RenderTarget import RenderTargets, RenderTargetManager
 
 from .PostProcess import PostProcess
 from .Renderer import Renderer
+from .Renderer_Basic import Renderer_Basic

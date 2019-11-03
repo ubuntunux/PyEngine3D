@@ -108,6 +108,7 @@ class Mesh:
                 self.animations.append(None)
 
         self.geometries = []
+        self.geometry_datas = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             if 'name' not in geometry_data:
                 geometry_data['name'] = "%s_%d" % (mesh_name, i)
@@ -143,6 +144,7 @@ class Mesh:
                     radius=radius
                 )
                 self.geometries.append(geometry)
+                self.geometry_datas.append(geometry_data)
 
         self.bound_box.bound_center = (self.bound_box.bound_min + self.bound_box.bound_max) * 0.5
 
@@ -162,18 +164,20 @@ class Mesh:
         )
         return save_data
 
-    def get_geometry_datas(self):
-        """need to implement"""
-        pass
-
     def has_bone(self):
         return len(self.skeletons) > 0
+
+    def get_geometry_count(self):
+        return len(self.geometries)
 
     def get_geometry(self, index=0):
         return self.geometries[index] if index < len(self.geometries) else None
 
-    def get_geometry_count(self):
-        return len(self.geometries)
+    def get_geometry_data(self, index=0):
+        return self.geometry_datas[index] if index < len(self.geometry_datas) else None
+
+    def get_geometry_datas(self):
+        return self.geometry_datas
 
     def get_animation(self, index=0):
         return self.animations[index] if index < len(self.animations) else None

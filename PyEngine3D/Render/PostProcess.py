@@ -145,54 +145,55 @@ class PostProcess:
         self.rendertarget_manager = self.core_manager.rendertarget_manager
         self.framebuffer_manager = FrameBufferManager.instance()
 
-        self.quad = ScreenQuad.get_vertex_array_buffer()
+        if not self.core_manager.is_basic_mode:
+            self.quad = ScreenQuad.get_vertex_array_buffer()
 
-        self.bloom = self.resource_manager.get_material_instance("bloom")
-        self.bloom_highlight = self.resource_manager.get_material_instance("bloom_highlight")
-        self.bloom_downsampling = self.resource_manager.get_material_instance("bloom_downsampling")
+            self.bloom = self.resource_manager.get_material_instance("bloom")
+            self.bloom_highlight = self.resource_manager.get_material_instance("bloom_highlight")
+            self.bloom_downsampling = self.resource_manager.get_material_instance("bloom_downsampling")
 
-        # SSAO
-        self.ssao = self.resource_manager.get_material_instance("ssao")
-        for i in range(self.ssao_kernel_size):
-            scale = float(i) / float(self.ssao_kernel_size)
-            scale = min(max(0.1, scale * scale), 1.0)
-            self.ssao_kernel[i][0] = random.uniform(-1.0, 1.0)
-            self.ssao_kernel[i][1] = random.uniform(0.5, 1.0)
-            self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
-            self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
-        self.ssao_random_texture = self.resource_manager.get_texture('common.random_normal')
+            # SSAO
+            self.ssao = self.resource_manager.get_material_instance("ssao")
+            for i in range(self.ssao_kernel_size):
+                scale = float(i) / float(self.ssao_kernel_size)
+                scale = min(max(0.1, scale * scale), 1.0)
+                self.ssao_kernel[i][0] = random.uniform(-1.0, 1.0)
+                self.ssao_kernel[i][1] = random.uniform(0.5, 1.0)
+                self.ssao_kernel[i][2] = random.uniform(-1.0, 1.0)
+                self.ssao_kernel[i][:] = normalize(self.ssao_kernel[i]) * scale
+            self.ssao_random_texture = self.resource_manager.get_texture('common.random_normal')
 
-        # depth of field
-        self.compute_focus_distance = self.resource_manager.get_material_instance('compute_focus_distance')
-        self.depth_of_field = self.resource_manager.get_material_instance('depth_of_field')
+            # depth of field
+            self.compute_focus_distance = self.resource_manager.get_material_instance('compute_focus_distance')
+            self.depth_of_field = self.resource_manager.get_material_instance('depth_of_field')
 
-        self.velocity = self.resource_manager.get_material_instance("velocity")
+            self.velocity = self.resource_manager.get_material_instance("velocity")
 
-        self.light_shaft = self.resource_manager.get_material_instance("light_shaft")
-        self.tonemapping = self.resource_manager.get_material_instance("tonemapping")
-        self.blur = self.resource_manager.get_material_instance("blur")
-        self.circle_blur = self.resource_manager.get_material_instance("circle_blur")
-        self.gaussian_blur = self.resource_manager.get_material_instance("gaussian_blur")
-        self.motion_blur = self.resource_manager.get_material_instance("motion_blur")
-        self.screen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
-        self.screen_space_reflection_resolve = self.resource_manager.get_material_instance("screen_space_reflection_resolve")
-        self.linear_depth = self.resource_manager.get_material_instance("linear_depth")
-        self.generate_min_z = self.resource_manager.get_material_instance("generate_min_z")
-        self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
-        self.copy_texture_mi = self.resource_manager.get_material_instance("copy_texture")
-        self.render_texture_mi = self.resource_manager.get_material_instance("render_texture")
-        self.composite_shadowmap = self.resource_manager.get_material_instance("composite_shadowmap")
+            self.light_shaft = self.resource_manager.get_material_instance("light_shaft")
+            self.tonemapping = self.resource_manager.get_material_instance("tonemapping")
+            self.blur = self.resource_manager.get_material_instance("blur")
+            self.circle_blur = self.resource_manager.get_material_instance("circle_blur")
+            self.gaussian_blur = self.resource_manager.get_material_instance("gaussian_blur")
+            self.motion_blur = self.resource_manager.get_material_instance("motion_blur")
+            self.screen_space_reflection = self.resource_manager.get_material_instance("screen_space_reflection")
+            self.screen_space_reflection_resolve = self.resource_manager.get_material_instance("screen_space_reflection_resolve")
+            self.linear_depth = self.resource_manager.get_material_instance("linear_depth")
+            self.generate_min_z = self.resource_manager.get_material_instance("generate_min_z")
+            self.deferred_shading = self.resource_manager.get_material_instance("deferred_shading")
+            self.copy_texture_mi = self.resource_manager.get_material_instance("copy_texture")
+            self.render_texture_mi = self.resource_manager.get_material_instance("render_texture")
+            self.composite_shadowmap = self.resource_manager.get_material_instance("composite_shadowmap")
 
-        # TAA
-        self.temporal_antialiasing = self.resource_manager.get_material_instance("temporal_antialiasing")
+            # TAA
+            self.temporal_antialiasing = self.resource_manager.get_material_instance("temporal_antialiasing")
 
-        def get_anti_aliasing_name(anti_aliasing):
-            anti_aliasing = str(anti_aliasing)
-            return anti_aliasing.split('.')[-1] if '.' in anti_aliasing else anti_aliasing
+            def get_anti_aliasing_name(anti_aliasing):
+                anti_aliasing = str(anti_aliasing)
+                return anti_aliasing.split('.')[-1] if '.' in anti_aliasing else anti_aliasing
 
-        anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in range(AntiAliasing.COUNT.value)]
-        # Send to GUI
-        self.core_manager.send_anti_aliasing_list(anti_aliasing_list)
+            anti_aliasing_list = [get_anti_aliasing_name(AntiAliasing.convert_index_to_enum(x)) for x in range(AntiAliasing.COUNT.value)]
+            # Send to GUI
+            self.core_manager.send_anti_aliasing_list(anti_aliasing_list)
 
     def get_attribute(self):
         self.Attributes.set_attribute('is_render_bloom', self.is_render_bloom)

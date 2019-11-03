@@ -19,6 +19,10 @@ reCheckGLExtention = re.compile("GL_(.+?)_(.+)")
 class OpenGLContext:
     last_vertex_array = -1
     last_program = 0
+    gl_major_version = 0
+    gl_minor_version = 0
+    require_gl_major_version = 4
+    require_gl_minor_version = 3
     GL_MAX_COMPUTE_WORK_GROUP_COUNT = None
     GL_MAX_COMPUTE_WORK_GROUP_SIZE = None
     GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = None
@@ -28,7 +32,15 @@ class OpenGLContext:
         try:
             logger.info("=" * 30)
 
-            infos = [GL_VERSION, GL_RENDERER, GL_VENDOR, GL_SHADING_LANGUAGE_VERSION]
+            OpenGLContext.gl_major_version = glGetIntegerv(GL_MAJOR_VERSION, GL_VERSION).value
+            OpenGLContext.gl_minor_version = glGetIntegerv(GL_MINOR_VERSION, GL_VERSION).value
+
+            version_string = glGetString(GL_VERSION)
+            if type(version_string) == bytes:
+                version_string = version_string.decode("utf-8")
+            logger.info("%s : %s" % (GL_VERSION.name, version_string))
+
+            infos = [GL_RENDERER, GL_VENDOR, GL_SHADING_LANGUAGE_VERSION]
             for info in infos:
                 info_string = glGetString(info)
                 if type(info_string) == bytes:
@@ -65,14 +77,20 @@ class OpenGLContext:
             logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_SIZE.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE))
 
             # OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
-            # logger.info("%s : %s" % (
-            #   GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS
-            # ))
+            # logger.info("%s : %s" % ( GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS ))
 
             logger.info("=" * 30)
 
         except BaseException:
             logger.error(traceback.format_exc())
+
+    @staticmethod
+    def check_gl_version():
+        if OpenGLContext.require_gl_major_version < OpenGLContext.gl_major_version:
+            return True
+        elif OpenGLContext.require_gl_major_version == OpenGLContext.gl_major_version:
+            return OpenGLContext.require_gl_major_version <= OpenGLContext.gl_major_version
+        return False
 
     @staticmethod
     def get_gl_dtype(numpy_dtype):

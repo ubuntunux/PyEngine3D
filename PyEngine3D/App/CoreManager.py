@@ -32,6 +32,7 @@ class CoreManager(Singleton):
         self.need_to_gc_collect = False
 
         self.is_play_mode = False
+        self.is_basic_mode = False
 
         # timer
         self.fps = 0.0
@@ -109,7 +110,7 @@ class CoreManager(Singleton):
         from PyEngine3D.UI import ViewportManager
         from PyEngine3D.OpenGLContext import OpenGLContext
         from PyEngine3D.ResourceManager import ResourceManager
-        from PyEngine3D.Render import Renderer, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
+        from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
@@ -176,6 +177,11 @@ class CoreManager(Singleton):
 
         self.game_backend.create_window(width, height, full_screen)
         self.opengl_context.initialize()
+
+        if not self.opengl_context.check_gl_version():
+            self.is_basic_mode = True
+            self.renderer = Renderer_Basic.instance()
+
         self.send_game_backend_list(self.game_backend_list)
         index = self.game_backend_list.index(self.last_game_backend) if self.last_game_backend in self.game_backend_list else 0
         self.send_current_game_backend_index(index)
@@ -707,7 +713,8 @@ class CoreManager(Singleton):
             self.renderer.render_scene()
 
             # render viewport
-            self.viewport_manager.render()
+            if not self.is_basic_mode:
+                self.viewport_manager.render()
 
             end_time = time.perf_counter()
             self.render_time = (end_time - start_time) * 1000.0  # millisecond

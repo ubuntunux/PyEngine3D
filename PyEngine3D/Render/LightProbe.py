@@ -18,7 +18,11 @@ class LightProbe(StaticActor):
         StaticActor.__init__(self, name, **object_data)
 
         self.isRendered = False
-        self.texture_probe = self.generate_texture_probe(self.name)
+
+        if CoreManager.instance().is_basic_mode:
+            self.texture_probe = None
+        else:
+            self.texture_probe = self.generate_texture_probe(self.name)
 
     def get_save_data(self):
         save_data = StaticActor.get_save_data(self)
