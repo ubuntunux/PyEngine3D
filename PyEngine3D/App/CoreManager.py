@@ -178,7 +178,8 @@ class CoreManager(Singleton):
         self.game_backend.create_window(width, height, full_screen)
         self.opengl_context.initialize()
 
-        if not self.opengl_context.check_gl_version():
+        # Test Code
+        if True or not self.opengl_context.check_gl_version():
             self.is_basic_mode = True
             self.renderer = Renderer_Basic.instance()
 
@@ -207,6 +208,10 @@ class CoreManager(Singleton):
         # new scene
         self.game_backend.reset_screen()
         self.scene_manager.new_scene()
+
+        # TEST Code
+        model = self.resource_manager.get_model("sphere")
+        self.scene_manager.add_object(model=model)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True

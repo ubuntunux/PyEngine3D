@@ -108,7 +108,6 @@ class Mesh:
                 self.animations.append(None)
 
         self.geometries = []
-        self.geometry_datas = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             if 'name' not in geometry_data:
                 geometry_data['name'] = "%s_%d" % (mesh_name, i)
@@ -144,7 +143,25 @@ class Mesh:
                     radius=radius
                 )
                 self.geometries.append(geometry)
-                self.geometry_datas.append(geometry_data)
+
+        # self.gl_call_list = []
+        # for geometry_data in mesh_data.get('geometry_datas', []):
+        #     indices = geometry_data['indices']
+        #     positions = geometry_data['positions']
+        #     normals = geometry_data['normals']
+        #     texcoords = geometry_data['texcoords']
+        #
+        #     gl_call_list = glGenLists(1)
+        #     glNewList(gl_call_list, GL_COMPILE)
+        #     glBegin(GL_TRIANGLES)
+        #     for index in indices:
+        #         glTexCoord2f(*texcoords[index])
+        #         glNormal3f(*normals[index])
+        #         glVertex3f(*positions[index])
+        #     glEnd()
+        #     glEndList()
+        #
+        #     self.gl_call_list.append(gl_call_list)
 
         self.bound_box.bound_center = (self.bound_box.bound_min + self.bound_box.bound_max) * 0.5
 
@@ -175,6 +192,9 @@ class Mesh:
 
     def get_geometry_data(self, index=0):
         return self.geometry_datas[index] if index < len(self.geometry_datas) else None
+
+    def get_gl_call_list(self, index=0):
+        return self.gl_call_list[index] if index < len(self.gl_call_list) else None
 
     def get_geometry_datas(self):
         return self.geometry_datas

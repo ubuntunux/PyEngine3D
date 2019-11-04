@@ -42,22 +42,25 @@ class Material:
         self.uniform_buffers = dict()  # OrderedDict()  # Declaration order is important.
         self.Attributes = Attributes()
 
-        if binary_format is not None and binary_data is not None:
-            self.compile_from_binary(binary_format, binary_data)
-            self.valid = self.check_validate() and self.check_linked()
+        if CoreManager.instance().is_basic_mode:
+            self.valid = True
+        else:
+            if binary_format is not None and binary_data is not None:
+                self.compile_from_binary(binary_format, binary_data)
+                self.valid = self.check_validate() and self.check_linked()
+                if not self.valid:
+                    logger.error("%s material has been failed to compile from binary" % self.name)
+
+            self.compile_message = ""
+
             if not self.valid:
-                logger.error("%s material has been failed to compile from binary" % self.name)
+                self.compile_from_source(shader_codes)
+                self.valid = self.check_validate() and self.check_linked()
+                if not self.valid:
+                    logger.error("%s material has been failed to compile from source" % self.name)
 
-        self.compile_message = ""
-
-        if not self.valid:
-            self.compile_from_source(shader_codes)
-            self.valid = self.check_validate() and self.check_linked()
-            if not self.valid:
-                logger.error("%s material has been failed to compile from source" % self.name)
-
-        if self.valid:
-            self.create_uniform_buffers(uniforms, uniform_datas)
+            if self.valid:
+                self.create_uniform_buffers(uniforms, uniform_datas)
 
     def get_save_data(self):
         uniform_datas = {}

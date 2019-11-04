@@ -155,16 +155,11 @@ class Renderer_Basic(Singleton):
 
         last_actor = None
 
-        glColor3f(1.0, 1.0, 1.0)
-
         for render_info in render_infos:
             actor = render_info.actor
-            geometry_data = render_info.geometry_data
+            geometry = render_info.geometry
             material_instance = render_info.material_instance
-            indices = geometry_data['indices']
-            positions = geometry_data['positions']
-            normals = geometry_data['normals']
-            texcoords = geometry_data['texcoords']
+            # gl_call_list = render_info.gl_call_list
 
             glPushMatrix()
 
@@ -187,12 +182,7 @@ class Renderer_Basic(Singleton):
                 texture = self.resource_manager.get_texture('common.flat_white')
                 texture.bind_texture()
 
-            glBegin(GL_TRIANGLES)
-            for index in indices:
-                glTexCoord2f(*texcoords[index])
-                glNormal3f(*normals[index])
-                glVertex3f(*positions[index])
-            glEnd()
+            geometry.draw_elements()
 
             glPopMatrix()
 
