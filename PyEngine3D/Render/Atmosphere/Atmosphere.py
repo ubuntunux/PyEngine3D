@@ -77,11 +77,9 @@ class Atmosphere:
         self.cloud_texture = None
         self.noise_texture = None
 
-        self.quad = ScreenQuad.get_vertex_array_buffer()
+        self.quad = None
 
         self.load_data(object_data)
-
-        self.initialize()
 
     def get_attribute(self):
         save_data = self.get_save_data()
@@ -124,6 +122,8 @@ class Atmosphere:
 
     def initialize(self):
         resource_manager = CoreManager.instance().resource_manager
+
+        self.quad = ScreenQuad.get_vertex_array_buffer()
 
         self.atmosphere_material_instance = resource_manager.get_material_instance(
             'precomputed_atmosphere.atmosphere',

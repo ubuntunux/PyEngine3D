@@ -60,11 +60,33 @@ class Ocean:
 
         self.acc_time = 0.0
         self.fft_seed = 1234
+        self.simulation_size = GRID_SIZES * self.simulation_scale
 
         self.renderer = CoreManager.instance().renderer
         self.scene_manager = CoreManager.instance().scene_manager
         self.resource_manager = CoreManager.instance().resource_manager
 
+        self.fft_init = None
+        self.fft_x = None
+        self.fft_y = None
+        self.fft_render = None
+        self.fft_variance = None
+
+        self.texture_spectrum_1_2 = None
+        self.texture_spectrum_3_4 = None
+        self.texture_slope_variance = None
+        self.texture_butterfly = None
+
+        self.quad = None
+        self.fft_grid = None
+
+        self.caustic_index = 0
+        self.texture_caustics = []
+
+        self.texture_foam = None
+        self.texture_noise = None
+
+    def initialize(self):
         self.fft_init = self.resource_manager.get_material_instance('fft_ocean.init')
         self.fft_x = self.resource_manager.get_material_instance('fft_ocean.fft_x')
         self.fft_y = self.resource_manager.get_material_instance('fft_ocean.fft_y')
@@ -78,8 +100,6 @@ class Ocean:
 
         self.quad = ScreenQuad.get_vertex_array_buffer()
         self.fft_grid = Plane("FFT_Grid", mode=GL_QUADS, width=GRID_VERTEX_COUNT, height=GRID_VERTEX_COUNT, xz_plane=False)
-
-        self.simulation_size = GRID_SIZES * self.simulation_scale
 
         if None in (self.texture_spectrum_1_2, self.texture_spectrum_3_4, self.texture_slope_variance, self.texture_butterfly):
             self.generate_texture()

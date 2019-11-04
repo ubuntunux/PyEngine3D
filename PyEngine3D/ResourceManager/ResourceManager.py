@@ -918,10 +918,11 @@ class TextureLoader(ResourceLoader):
 
     def initialize(self):
         ResourceLoader.initialize(self)
-        self.generate_cube_textures()
+        if not self.core_manager.is_basic_mode:
+            self.generate_cube_textures()
 
-        # generate common textures
-        TextureGenerator.generate_common_textures(self)
+            # generate common textures
+            TextureGenerator.generate_common_textures(self)
 
     def action_resource(self, resource_name):
         self.core_manager.request(COMMAND.VIEW_TEXTURE, resource_name)

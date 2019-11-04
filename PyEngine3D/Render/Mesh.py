@@ -145,8 +145,8 @@ class Mesh:
             )
             self.geometries.append(geometry)
 
+        self.gl_call_list = []
         if core_manager.is_basic_mode:
-            self.gl_call_list = []
             for geometry_data in mesh_data.get('geometry_datas', []):
                 indices = geometry_data['indices']
                 positions = geometry_data['positions']

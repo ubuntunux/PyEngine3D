@@ -178,8 +178,7 @@ class CoreManager(Singleton):
         self.game_backend.create_window(width, height, full_screen)
         self.opengl_context.initialize()
 
-        # Test Code
-        if True or not self.opengl_context.check_gl_version():
+        if not self.opengl_context.check_gl_version():
             self.is_basic_mode = True
             self.renderer = Renderer_Basic.instance()
 
@@ -193,11 +192,12 @@ class CoreManager(Singleton):
         # initialize managers
         self.resource_manager.initialize(self, self.project_manager.project_dir)
         self.viewport_manager.initialize(self)
-        self.render_option_manager.initialize(self)
-        self.rendertarget_manager.initialize(self)
-        self.font_manager.initialize(self)
+        if not self.is_basic_mode:
+            self.render_option_manager.initialize(self)
+            self.rendertarget_manager.initialize(self)
+            self.font_manager.initialize(self)
+            self.effect_manager.initialize(self)
         self.renderer.initialize(self)
-        self.effect_manager.initialize(self)
         self.scene_manager.initialize(self)
 
         # self.viewport_manager.build_ui_example()
@@ -210,8 +210,8 @@ class CoreManager(Singleton):
         self.scene_manager.new_scene()
 
         # TEST Code
-        model = self.resource_manager.get_model("sphere")
-        self.scene_manager.add_object(model=model)
+        # model = self.resource_manager.get_model("sphere")
+        # self.scene_manager.add_object(model=model)
 
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
@@ -760,29 +760,29 @@ class CoreManager(Singleton):
             self.acc_time = 0.0
 
         # debug info
-        # print(self.fps, self.update_time)
-        self.font_manager.log("%.2f fps" % self.avg_fps)
-        self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (self.avg_ms, self.min_delta, self.max_delta))
-        self.font_manager.log("CPU : %.2f ms" % self.avg_logic_time)
-        self.font_manager.log("GPU : %.2f ms" % self.avg_gpu_time)
-        self.font_manager.log("Render : %.2f ms" % self.avg_render_time)
-        self.font_manager.log("Present : %.2f ms" % self.avg_present_time)
+        if not self.is_basic_mode:
+            self.font_manager.log("%.2f fps" % self.avg_fps)
+            self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (self.avg_ms, self.min_delta, self.max_delta))
+            self.font_manager.log("CPU : %.2f ms" % self.avg_logic_time)
+            self.font_manager.log("GPU : %.2f ms" % self.avg_gpu_time)
+            self.font_manager.log("Render : %.2f ms" % self.avg_render_time)
+            self.font_manager.log("Present : %.2f ms" % self.avg_present_time)
 
-        render_count = len(self.scene_manager.skeleton_solid_render_infos)
-        render_count += len(self.scene_manager.skeleton_translucent_render_infos)
-        render_count += len(self.scene_manager.static_solid_render_infos)
-        render_count += len(self.scene_manager.static_translucent_render_infos)
-        self.font_manager.log("Render Count : %d" % render_count)
-        self.font_manager.log("Point Lights : %d" % self.scene_manager.point_light_count)
-        self.font_manager.log("Effect Count : %d" % len(self.effect_manager.render_effects))
-        self.font_manager.log("Particle Count : %d" % self.effect_manager.alive_particle_count)
+            render_count = len(self.scene_manager.skeleton_solid_render_infos)
+            render_count += len(self.scene_manager.skeleton_translucent_render_infos)
+            render_count += len(self.scene_manager.static_solid_render_infos)
+            render_count += len(self.scene_manager.static_translucent_render_infos)
+            self.font_manager.log("Render Count : %d" % render_count)
+            self.font_manager.log("Point Lights : %d" % self.scene_manager.point_light_count)
+            self.font_manager.log("Effect Count : %d" % len(self.effect_manager.render_effects))
+            self.font_manager.log("Particle Count : %d" % self.effect_manager.alive_particle_count)
 
-        # selected object transform info
-        selected_object = self.scene_manager.get_selected_object()
-        if selected_object:
-            self.font_manager.log("Selected Object : %s" % selected_object.name)
-            if hasattr(selected_object, 'transform'):
-                self.font_manager.log(selected_object.transform.get_transform_infos())
+            # selected object transform info
+            selected_object = self.scene_manager.get_selected_object()
+            if selected_object:
+                self.font_manager.log("Selected Object : %s" % selected_object.name)
+                if hasattr(selected_object, 'transform'):
+                    self.font_manager.log(selected_object.transform.get_transform_infos())
         self.gpu_time = (time.perf_counter() - start_time) * 1000.0
 
         if self.need_to_gc_collect:

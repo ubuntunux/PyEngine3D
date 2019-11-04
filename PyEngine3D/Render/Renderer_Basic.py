@@ -179,9 +179,6 @@ class Renderer_Basic(Singleton):
                 glMaterialfv(GL_FRONT, GL_SPECULAR, mat_s)
                 glMaterialfv(GL_FRONT, GL_SHININESS, low_sh)
 
-                texture = self.resource_manager.get_texture('common.flat_white')
-                texture.bind_texture()
-
             glCallList(gl_call_list)
 
             glPopMatrix()
@@ -255,7 +252,6 @@ class Renderer_Basic(Singleton):
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
         glPolygonMode(GL_FRONT_AND_BACK, self.view_mode)
         glShadeModel(GL_SMOOTH)
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_CULL_FACE)
         glFrontFace(GL_CCW)

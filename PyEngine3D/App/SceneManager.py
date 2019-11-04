@@ -311,7 +311,8 @@ class SceneManager(Singleton):
         atmosphere_data['name'] = self.generate_object_name(atmosphere_data.get('name', 'atmosphere'))
         logger.info("add Atmosphere : %s" % atmosphere_data['name'])
         atmosphere = Atmosphere(**atmosphere_data)
-        atmosphere.initialize()
+        if not self.core_manager.is_basic_mode:
+            atmosphere.initialize()
         self.regist_object(atmosphere)
         return atmosphere
 
@@ -319,6 +320,8 @@ class SceneManager(Singleton):
         object_data['name'] = self.generate_object_name(object_data.get('name', 'ocean'))
         logger.info("add Ocean : %s" % object_data['name'])
         ocean = Ocean(**object_data)
+        if not self.core_manager.is_basic_mode:
+            ocean.initialize()
         self.regist_object(ocean)
         return ocean
 
@@ -326,6 +329,8 @@ class SceneManager(Singleton):
         object_data['name'] = self.generate_object_name(object_data.get('name', 'terrain'))
         logger.info("add Terrain : %s" % object_data['name'])
         terrain = Terrain(**object_data)
+        if not self.core_manager.is_basic_mode:
+            terrain.initialize()
         self.regist_object(terrain)
         return terrain
 
@@ -537,13 +542,14 @@ class SceneManager(Singleton):
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
 
-        self.atmosphere.update(self.main_light)
-        self.ocean.update(dt)
+        if not self.core_manager.is_basic_mode:
+            self.atmosphere.update(self.main_light)
+            self.ocean.update(dt)
 
-        if self.terrain.is_render_terrain:
-            self.terrain.update(dt)
+            if self.terrain.is_render_terrain:
+                self.terrain.update(dt)
 
-        self.effect_manager.update(dt)
+            self.effect_manager.update(dt)
 
         # culling
         self.update_static_render_info()

@@ -28,17 +28,26 @@ class Terrain:
         self.height_map_size = np.array(object_data.get('height_map_size', [10.0, 10.0]), dtype=np.float32)
 
         self.instance_offset = None
+        self.instance_buffer = None
+
+        self.terrain_grid = None
+
+        self.texture_height_map_name = object_data.get('texture_height_map', "common.noise")
+        self.texture_height_map = None
+        self.terrain_render = None
+        self.terrain_shadow = None
+
+        self.attributes = Attributes()
+
+    def initialize(self):
         self.set_instance_offset(self.width, self.height)
         self.instance_buffer = InstanceBuffer(name="terrain_instance_buffer", location_offset=5, element_datas=[FLOAT4_ZERO, ])
 
-        self.terrain_grid = None
         self.generate_terrain(self.subdivide_level)
 
-        self.texture_height_map = self.resource_manager.get_texture(object_data.get('texture_height_map', "common.noise"))
+        self.texture_height_map = self.resource_manager.get_texture(self.texture_height_map_name)
         self.terrain_render = self.resource_manager.get_material_instance('terrain.terrain_render_ps')
         self.terrain_shadow = self.resource_manager.get_material_instance('terrain.terrain_shadow')
-
-        self.attributes = Attributes()
 
     def get_save_data(self):
         save_data = dict(
@@ -50,7 +59,7 @@ class Terrain:
             width=self.width,
             height=self.height,
             subdivide_level=self.subdivide_level,
-            texture_height_map=self.texture_height_map.name,
+            texture_height_map=self.texture_height_map.name if self.texture_height_map is not None else self.texture_height_map_name,
         )
         return save_data
 

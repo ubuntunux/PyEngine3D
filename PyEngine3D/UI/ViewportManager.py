@@ -31,8 +31,9 @@ class ViewportManager(Singleton):
         self.renderer = core_manager.renderer
         self.framebuffer_manager = FrameBufferManager.instance()
 
-        self.quad = ScreenQuad.get_vertex_array_buffer()
-        self.render_widget = self.resource_manager.get_material_instance('ui.render_widget')
+        if not self.core_manager.is_basic_mode:
+            self.quad = ScreenQuad.get_vertex_array_buffer()
+            self.render_widget = self.resource_manager.get_material_instance('ui.render_widget')
 
         width, height = self.core_manager.get_window_size()
 
@@ -84,6 +85,9 @@ class ViewportManager(Singleton):
         self.root.remove_widget(widget)
 
     def update(self, dt):
+        if self.root is None:
+            return False
+
         self.touch_event = self.root.update(dt, touch_event=False)
         self.root.update_layout()
 
