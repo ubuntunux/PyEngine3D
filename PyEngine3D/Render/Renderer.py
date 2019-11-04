@@ -858,6 +858,7 @@ class Renderer(Singleton):
 
     def render_debug_line(self):
         # TODO : Render Line Shader Version
+        glViewport(0, 0, self.viewport.width, self.viewport.height)
 
         # 2D Line
         glPushMatrix()
@@ -874,7 +875,6 @@ class Renderer(Singleton):
 
         # 3D Line
         glPushMatrix()
-        glLoadIdentity()
         self.perspective_view(look_at=True)
         for debug_line in self.debug_lines_3d:
             glLineWidth(debug_line.width)

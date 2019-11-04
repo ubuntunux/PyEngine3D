@@ -125,7 +125,6 @@ class Renderer_Basic(Singleton):
 
     def perspective_view(self, look_at=True):
         camera = self.scene_manager.main_camera
-
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(camera.fov, camera.aspect, camera.near, camera.far)
@@ -156,24 +155,46 @@ class Renderer_Basic(Singleton):
 
         last_actor = None
 
-        glPushMatrix()
-        glLoadIdentity()
-        self.perspective_view(look_at=True)
-
         glColor3f(1.0, 1.0, 1.0)
 
         for render_info in render_infos:
             actor = render_info.actor
             geometry_data = render_info.geometry_data
+            material_instance = render_info.material_instance
             indices = geometry_data['indices']
             positions = geometry_data['positions']
+            normals = geometry_data['normals']
+            texcoords = geometry_data['texcoords']
+
+            glPushMatrix()
+
+            glTranslatef(*actor.transform.get_pos())
+            glRotatef(actor.transform.get_pitch(), 1.0, 0.0, 0.0)
+            glRotatef(actor.transform.get_yaw(), 0.0, 1.0, 0.0)
+            glRotatef(actor.transform.get_roll(), 0.0, 0.0, 1.0)
+            glScalef(*actor.transform.get_scale())
+
+            if material_instance is not None:
+                mat_a = [0.2, 0.2, 0.2, 1.0]
+                mat_d = [1.0, 1.0, 1.0, 1.0]
+                mat_s = [1.0, 1.0, 1.0, 1.0]
+                low_sh = [60.0]
+                glMaterialfv(GL_FRONT, GL_AMBIENT, mat_a)
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_d)
+                glMaterialfv(GL_FRONT, GL_SPECULAR, mat_s)
+                glMaterialfv(GL_FRONT, GL_SHININESS, low_sh)
+
+                texture = self.resource_manager.get_texture('common.flat_white')
+                texture.bind_texture()
 
             glBegin(GL_TRIANGLES)
             for index in indices:
+                glTexCoord2f(*texcoords[index])
+                glNormal3f(*normals[index])
                 glVertex3f(*positions[index])
             glEnd()
 
-        glPopMatrix()
+            glPopMatrix()
 
     def render_log(self):
         pass
@@ -209,8 +230,6 @@ class Renderer_Basic(Singleton):
 
         # 3D Line
         glPushMatrix()
-        glLoadIdentity()
-
         self.perspective_view(look_at=True)
 
         for debug_line in self.debug_lines_3d:
@@ -223,11 +242,31 @@ class Renderer_Basic(Singleton):
         glPopMatrix()
         self.debug_lines_3d = []
 
+    def light_setup(self):
+        glEnable(GL_LIGHTING)
+
+        ambient_light = [0.1, 0.1, 0.1, 1.0]
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient_light)
+
+        light_ambient = [0.1, 0.1, 0.1, 1.0]
+        light_diffuse = [1.0, 1.0, 1.0, 1.0]
+        light_specular = [1.0, 1.0, 1.0, 1.0]
+        light_direction = [2.0, 2.0, 2.0, 0.0]
+        light_position = [2.0, 2.0, 2.0, 1.0]
+
+        glEnable(GL_LIGHT0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular)
+        glLightfv(GL_LIGHT0, GL_POSITION, light_direction)  # directional light
+        # glLightfv(GL_LIGHT0, GL_POSITION, light_position)  # point light
+
     def render_scene(self):
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
         glPolygonMode(GL_FRONT_AND_BACK, self.view_mode)
         glShadeModel(GL_SMOOTH)
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)
+        glEnable(GL_TEXTURE_2D)
         glEnable(GL_CULL_FACE)
         glFrontFace(GL_CCW)
         glEnable(GL_DEPTH_TEST)
@@ -237,14 +276,25 @@ class Renderer_Basic(Singleton):
         glClearDepth(1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        glViewport(0, 0, self.viewport.width, self.viewport.height)
+
         self.set_blend_state(False)
+
+        self.light_setup()
+
+        glPushMatrix()
+        self.perspective_view(look_at=True)
 
         self.render_actors(RenderGroup.STATIC_ACTOR, self.scene_manager.static_solid_render_infos)
         self.render_actors(RenderGroup.SKELETON_ACTOR, self.scene_manager.skeleton_solid_render_infos)
+
+        glPopMatrix()
 
         self.draw_debug_line_3d([0.0, 0.0, -10.0], [10.0, 0.0, -10.0], [1.0, 0.0, 0.0], 10.0)
         self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 10.0, -10.0], [0.0, 1.0, 0.0], 10.0)
         self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 10.0)
 
         # draw line
+        glDisable(GL_LIGHTING)
+        glDisable(GL_TEXTURE_2D)
         self.render_debug_line()
