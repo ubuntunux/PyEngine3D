@@ -159,7 +159,7 @@ class Renderer_Basic(Singleton):
             actor = render_info.actor
             geometry = render_info.geometry
             material_instance = render_info.material_instance
-            # gl_call_list = render_info.gl_call_list
+            gl_call_list = render_info.gl_call_list
 
             glPushMatrix()
 
@@ -182,7 +182,7 @@ class Renderer_Basic(Singleton):
                 texture = self.resource_manager.get_texture('common.flat_white')
                 texture.bind_texture()
 
-            geometry.draw_elements()
+            glCallList(gl_call_list)
 
             glPopMatrix()
 

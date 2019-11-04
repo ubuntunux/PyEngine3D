@@ -107,61 +107,62 @@ class Mesh:
             else:
                 self.animations.append(None)
 
+        core_manager = CoreManager().instance()
+
         self.geometries = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             if 'name' not in geometry_data:
                 geometry_data['name'] = "%s_%d" % (mesh_name, i)
 
-            vertex_buffer = CreateVertexArrayBuffer(geometry_data)
-            if vertex_buffer is not None:
-                # find skeleton of geometry
-                skeleton = None
-                for skeleton in self.skeletons:
-                    if skeleton.name == geometry_data.get('skeleton_name', ''):
-                        break
+            vertex_buffer = CreateVertexArrayBuffer(geometry_data) if not core_manager.is_basic_mode else None
+            # find skeleton of geometry
+            skeleton = None
+            for skeleton in self.skeletons:
+                if skeleton.name == geometry_data.get('skeleton_name', ''):
+                    break
 
-                bound_min = geometry_data.get('bound_min')
-                bound_max = geometry_data.get('bound_max')
-                radius = geometry_data.get('radius')
+            bound_min = geometry_data.get('bound_min')
+            bound_max = geometry_data.get('bound_max')
+            radius = geometry_data.get('radius')
 
-                if bound_min is None or bound_max is None or radius is None:
-                    positions = np.array(geometry_data['positions'], dtype=np.float32)
-                    bound_min, bound_max, radius = calc_bounding(positions)
+            if bound_min is None or bound_max is None or radius is None:
+                positions = np.array(geometry_data['positions'], dtype=np.float32)
+                bound_min, bound_max, radius = calc_bounding(positions)
 
-                self.bound_box.bound_min = np.minimum(self.bound_box.bound_min, bound_min)
-                self.bound_box.bound_max = np.maximum(self.bound_box.bound_max, bound_max)
-                self.bound_box.radius = max(self.bound_box.radius, radius)
+            self.bound_box.bound_min = np.minimum(self.bound_box.bound_min, bound_min)
+            self.bound_box.bound_max = np.maximum(self.bound_box.bound_max, bound_max)
+            self.bound_box.radius = max(self.bound_box.radius, radius)
 
-                # create geometry
-                geometry = Geometry(
-                    name=vertex_buffer.name,
-                    index=i,
-                    vertex_buffer=vertex_buffer,
-                    skeleton=skeleton,
-                    bound_min=bound_min,
-                    bound_max=bound_max,
-                    radius=radius
-                )
-                self.geometries.append(geometry)
+            # create geometry
+            geometry = Geometry(
+                name=vertex_buffer.name if vertex_buffer is not None else '',
+                index=i,
+                vertex_buffer=vertex_buffer,
+                skeleton=skeleton,
+                bound_min=bound_min,
+                bound_max=bound_max,
+                radius=radius
+            )
+            self.geometries.append(geometry)
 
-        # self.gl_call_list = []
-        # for geometry_data in mesh_data.get('geometry_datas', []):
-        #     indices = geometry_data['indices']
-        #     positions = geometry_data['positions']
-        #     normals = geometry_data['normals']
-        #     texcoords = geometry_data['texcoords']
-        #
-        #     gl_call_list = glGenLists(1)
-        #     glNewList(gl_call_list, GL_COMPILE)
-        #     glBegin(GL_TRIANGLES)
-        #     for index in indices:
-        #         glTexCoord2f(*texcoords[index])
-        #         glNormal3f(*normals[index])
-        #         glVertex3f(*positions[index])
-        #     glEnd()
-        #     glEndList()
-        #
-        #     self.gl_call_list.append(gl_call_list)
+        if core_manager.is_basic_mode:
+            self.gl_call_list = []
+            for geometry_data in mesh_data.get('geometry_datas', []):
+                indices = geometry_data['indices']
+                positions = geometry_data['positions']
+                normals = geometry_data['normals']
+                texcoords = geometry_data['texcoords']
+
+                gl_call_list = glGenLists(1)
+                glNewList(gl_call_list, GL_COMPILE)
+                glBegin(GL_TRIANGLES)
+                for index in indices:
+                    glTexCoord2f(*texcoords[index])
+                    glNormal3f(*normals[index])
+                    glVertex3f(*positions[index])
+                glEnd()
+                glEndList()
+                self.gl_call_list.append(gl_call_list)
 
         self.bound_box.bound_center = (self.bound_box.bound_min + self.bound_box.bound_max) * 0.5
 
