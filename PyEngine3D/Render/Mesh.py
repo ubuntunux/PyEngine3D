@@ -110,11 +110,11 @@ class Mesh:
         core_manager = CoreManager().instance()
 
         self.geometries = []
+        self.geometry_datas = []
         for i, geometry_data in enumerate(mesh_data.get('geometry_datas', [])):
             if 'name' not in geometry_data:
                 geometry_data['name'] = "%s_%d" % (mesh_name, i)
 
-            vertex_buffer = CreateVertexArrayBuffer(geometry_data) if not core_manager.is_basic_mode else None
             # find skeleton of geometry
             skeleton = None
             for skeleton in self.skeletons:
@@ -133,6 +133,11 @@ class Mesh:
             self.bound_box.bound_max = np.maximum(self.bound_box.bound_max, bound_max)
             self.bound_box.radius = max(self.bound_box.radius, radius)
 
+            if core_manager.is_basic_mode:
+                vertex_buffer = None
+            else:
+                vertex_buffer = CreateVertexArrayBuffer(geometry_data)
+
             # create geometry
             geometry = Geometry(
                 name=vertex_buffer.name if vertex_buffer is not None else '',
@@ -145,6 +150,7 @@ class Mesh:
             )
             self.geometries.append(geometry)
 
+        self.geometry_datas = []
         self.gl_call_list = []
         if core_manager.is_basic_mode:
             for geometry_data in mesh_data.get('geometry_datas', []):
@@ -152,6 +158,8 @@ class Mesh:
                 positions = geometry_data['positions']
                 normals = geometry_data['normals']
                 texcoords = geometry_data['texcoords']
+
+                self.geometry_datas.append(geometry_data)
 
                 gl_call_list = glGenLists(1)
                 glNewList(gl_call_list, GL_COMPILE)

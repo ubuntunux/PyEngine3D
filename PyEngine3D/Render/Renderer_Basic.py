@@ -150,16 +150,29 @@ class Renderer_Basic(Singleton):
         pass
 
     def render_actors(self, render_group, render_infos):
-        # if len(render_infos) < 1:
-        #     return
+        if len(render_infos) < 1:
+            return
 
-        last_actor = None
+        vertex_normal = Float3(0.0, 0.0, 0.0)
+        position = Float4(0.0, 0.0, 0.0)
 
         for render_info in render_infos:
             actor = render_info.actor
             geometry = render_info.geometry
-            material_instance = render_info.material_instance
+            geometry_data = render_info.geometry_data
             gl_call_list = render_info.gl_call_list
+            material_instance = render_info.material_instance
+            indices = geometry_data['indices']
+            positions = geometry_data['positions']
+            normals = geometry_data['normals']
+            texcoords = geometry_data['texcoords']
+            bone_indicies = geometry_data.get('bone_indicies', [])
+            bone_weights = geometry_data.get('bone_weights', [])
+
+            if RenderGroup.SKELETON_ACTOR == render_group:
+                animation_buffer = actor.get_animation_buffer(geometry.skeleton.index)
+            else:
+                animation_buffer = None
 
             glPushMatrix()
 
@@ -179,7 +192,21 @@ class Renderer_Basic(Singleton):
                 glMaterialfv(GL_FRONT, GL_SPECULAR, mat_s)
                 glMaterialfv(GL_FRONT, GL_SHININESS, low_sh)
 
-            glCallList(gl_call_list)
+            if animation_buffer is not None:
+                glBegin(GL_TRIANGLES)
+                for index in indices:
+                    vertex_normal[:] = 0.0
+                    position[:] = 0.0
+                    for n, bone_index in enumerate(bone_indicies[index]):
+                        bone_weight = bone_weights[bone_index][n]
+                        position += np.dot([*positions[index][0:3], 1.0], animation_buffer[bone_index] * bone_weight)
+                        vertex_normal += np.dot([*normals[index][0:3], 0.0], animation_buffer[bone_index] * bone_weight)[:3]
+                    glTexCoord2f(*texcoords[index])
+                    glNormal3f(*vertex_normal)
+                    glVertex3f(*(position[0:3] / position[3]))
+                glEnd()
+            else:
+                glCallList(gl_call_list)
 
             glPopMatrix()
 
@@ -254,6 +281,7 @@ class Renderer_Basic(Singleton):
         glShadeModel(GL_SMOOTH)
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_CULL_FACE)
+        glEnable(GL_NORMALIZE)
         glFrontFace(GL_CCW)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
@@ -275,10 +303,6 @@ class Renderer_Basic(Singleton):
         self.render_actors(RenderGroup.SKELETON_ACTOR, self.scene_manager.skeleton_solid_render_infos)
 
         glPopMatrix()
-
-        self.draw_debug_line_3d([0.0, 0.0, -10.0], [10.0, 0.0, -10.0], [1.0, 0.0, 0.0], 10.0)
-        self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 10.0, -10.0], [0.0, 1.0, 0.0], 10.0)
-        self.draw_debug_line_3d([0.0, 0.0, -10.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 10.0)
 
         # draw line
         glDisable(GL_LIGHTING)

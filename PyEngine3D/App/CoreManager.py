@@ -209,10 +209,6 @@ class CoreManager(Singleton):
         self.game_backend.reset_screen()
         self.scene_manager.new_scene()
 
-        # TEST Code
-        # model = self.resource_manager.get_model("sphere")
-        # self.scene_manager.add_object(model=model)
-
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
 
