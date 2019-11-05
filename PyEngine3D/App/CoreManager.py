@@ -209,6 +209,10 @@ class CoreManager(Singleton):
         self.game_backend.reset_screen()
         self.scene_manager.new_scene()
 
+        # test object
+        suzan = self.resource_manager.get_model("suzan")
+        self.scene_manager.add_object(model=suzan, pos=[0.0, 0.0, -5.0])
+
         self.send(COMMAND.SORT_UI_ITEMS)
         return True
 

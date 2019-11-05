@@ -28,6 +28,8 @@ class ScriptManager(Singleton):
         self.viewport_manager = core_manager.viewport_manager
         self.main_viewport = core_manager.viewport_manager.main_viewport
 
+        self.scene_manager.clear_actors()
+
         camera_transform = self.scene_manager.main_camera.transform
         camera_transform.set_pos([4.5, 4.5, 6.8])
         camera_transform.set_pitch(5.92)
@@ -47,12 +49,15 @@ class ScriptManager(Singleton):
         logger.info("ScriptManager::exit")
         if self.sphere is not None:
             self.scene_manager.delete_object(self.sphere.name)
+            self.sphere = None
 
         if self.suzan is not None:
             self.scene_manager.delete_object(self.suzan.name)
+            self.suzan = None
 
         if self.skeletal is not None:
             self.scene_manager.delete_object(self.skeletal.name)
+            self.skeletal = None
 
     def update_camera(self, delta):
         keydown = self.game_backend.get_keyboard_pressed()
