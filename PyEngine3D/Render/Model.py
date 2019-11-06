@@ -34,7 +34,7 @@ class Model:
         save_data = dict(
             object_type=GetClassName(self),
             mesh=self.mesh.name if self.mesh is not None else '',
-            material_instances=[material_instance.name for material_instance in self.material_instances]
+            material_instances=[material_instance.name if material_instance is not None else '' for material_instance in self.material_instances]
         )
         return save_data
 
