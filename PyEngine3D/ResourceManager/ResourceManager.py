@@ -258,6 +258,7 @@ class ResourceLoader(object):
     fileExt = '.*'
     externalFileExt = {}  # example, { 'WaveFront': '.obj' }
     USE_FILE_COMPRESS_TO_SAVE = True
+    enable_basic_mode = True
 
     def __init__(self, resource_manager):
         self.resource_manager = resource_manager
@@ -588,6 +589,7 @@ class ShaderLoader(ResourceLoader):
     resource_version = 0.6
     fileExt = '.glsl'
     shader_version = "#version 430 core"
+    enable_basic_mode = False
 
     def get_shader_version(self):
         return self.shader_version
@@ -646,6 +648,7 @@ class MaterialLoader(ResourceLoader):
     fileExt = '.mat'
     resource_version = 0.6
     USE_FILE_COMPRESS_TO_SAVE = False
+    enable_basic_mode = False
 
     def __init__(self, resource_manager):
         ResourceLoader.__init__(self, resource_manager)
@@ -829,6 +832,7 @@ class MaterialInstanceLoader(ResourceLoader):
     resource_type_name = 'MaterialInstance'
     fileExt = '.matinst'
     USE_FILE_COMPRESS_TO_SAVE = False
+    enable_basic_mode = False
 
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
@@ -908,6 +912,7 @@ class TextureLoader(ResourceLoader):
     resource_type_name = 'Texture'
     resource_version = 2
     USE_FILE_COMPRESS_TO_SAVE = True
+    enable_basic_mode = False
     fileExt = '.texture'
     externalFileExt = dict(GIF=".gif", JPG=".jpg", JPEG=".jpeg", PNG=".png", BMP=".bmp", TGA=".tga", TIF=".tif",
                            TIFF=".tiff", DXT=".dds", KTX=".ktx", PGM=".pgm")
@@ -1066,6 +1071,7 @@ class ProceduralTextureLoader(ResourceLoader):
     resource_type_name = 'ProceduralTexture'
     resource_version = 0
     USE_FILE_COMPRESS_TO_SAVE = False
+    enable_basic_mode = False
     fileExt = '.ptexture'
 
     def initialize(self):
@@ -1256,6 +1262,7 @@ class FontLoader(ResourceLoader):
     resource_version = 2
     fileExt = '.font'
     externalFileExt = dict(TTF='.ttf', OTF='.otf')
+    enable_basic_mode = False
 
     unicode_blocks = dict(
         Basic_Latin=(0x20, 0x7F),  # 32 ~ 127
@@ -1337,6 +1344,7 @@ class EffectLoader(ResourceLoader):
     resource_type_name = 'Effect'
     fileExt = '.effect'
     USE_FILE_COMPRESS_TO_SAVE = False
+    enable_basic_mode = False
 
     def create_effect(self, particle_info=None):
         resource = self.create_resource('effect')
@@ -1377,6 +1385,7 @@ class ParticleLoader(ResourceLoader):
     resource_type_name = 'Particle'
     fileExt = '.particle'
     USE_FILE_COMPRESS_TO_SAVE = False
+    enable_basic_mode = False
 
     def create_particle(self):
         resource = self.create_resource('particle')
@@ -1500,7 +1509,8 @@ class ResourceManager(Singleton):
 
     def regist_loader(self, resource_loader_class):
         resource_loader = resource_loader_class(self)
-        self.resource_loaders.append(resource_loader)
+        if not self.core_manager.is_basic_mode or resource_loader.enable_basic_mode:
+            self.resource_loaders.append(resource_loader)
         return resource_loader
 
     def initialize(self, core_manager, project_path=""):
@@ -1535,7 +1545,8 @@ class ResourceManager(Singleton):
 
         # initialize
         for resource_loader in self.resource_loaders:
-            resource_loader.initialize()
+            if not self.core_manager.is_basic_mode or resource_loader.enable_basic_mode:
+                resource_loader.initialize()
 
         logger.info("Resource register done.")
 

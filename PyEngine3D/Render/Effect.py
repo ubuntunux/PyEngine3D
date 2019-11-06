@@ -364,6 +364,9 @@ class Effect:
         self.emitters = []
 
     def play(self):
+        if self.effect_info is None:
+            return
+
         self.clear_effect()
 
         self.alive = True
