@@ -29,61 +29,74 @@ class OpenGLContext:
 
     @staticmethod
     def initialize():
-        try:
-            logger.info("=" * 30)
+        def callglGetIntegeri_v(*args):
+            try:
+                return glGetIntegeri_v(*args)
+            except:
+                return [0, ]
+                
+        def callglGetIntegerv(*args):
+            try:
+                return glGetIntegerv(*args)
+            except:
+                return c_int(0)
+                
+        def callglGetString(*args):
+            try:
+                return glGetString(*args)
+            except:
+                return ""
+                
+        logger.info("=" * 30)
 
-            OpenGLContext.gl_major_version = glGetIntegerv(GL_MAJOR_VERSION, GL_VERSION).value
-            OpenGLContext.gl_minor_version = glGetIntegerv(GL_MINOR_VERSION, GL_VERSION).value
+        infos = [GL_RENDERER, GL_VENDOR, GL_SHADING_LANGUAGE_VERSION]
+        for info in infos:
+            info_string = callglGetString(info)
+            if type(info_string) == bytes:
+                info_string = info_string.decode("utf-8")
+            logger.info("%s : %s" % (info.name, info_string))
+            # set value
+            setattr(OpenGLContext, info.name, info_string)
+            
+        OpenGLContext.gl_major_version = callglGetIntegerv(GL_MAJOR_VERSION, GL_VERSION).value
+        OpenGLContext.gl_minor_version = callglGetIntegerv(GL_MINOR_VERSION, GL_VERSION).value
 
-            version_string = glGetString(GL_VERSION)
-            if type(version_string) == bytes:
-                version_string = version_string.decode("utf-8")
-            logger.info("%s : %s" % (GL_VERSION.name, version_string))
+        version_string = callglGetString(GL_VERSION)
+        if type(version_string) == bytes:
+            version_string = version_string.decode("utf-8")
+        logger.info("%s : %s" % (GL_VERSION.name, version_string))
 
-            infos = [GL_RENDERER, GL_VENDOR, GL_SHADING_LANGUAGE_VERSION]
-            for info in infos:
-                info_string = glGetString(info)
-                if type(info_string) == bytes:
-                    info_string = info_string.decode("utf-8")
-                logger.info("%s : %s" % (info.name, info_string))
-                # set value
-                setattr(OpenGLContext, info.name, info_string)
+        infos = [GL_MAX_VERTEX_ATTRIBS, GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_UNIFORM_COMPONENTS,
+                 GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, GL_MAX_FRAGMENT_UNIFORM_BLOCKS,
+                 GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
+                 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_COORDS,
+                 GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VARYING_FLOATS]
+        for info in infos:
+            logger.info("%s : %s" % (info.name, callglGetIntegerv(info)))
+            # set value
+            setattr(OpenGLContext, info.name, callglGetIntegerv(info))
 
-            infos = [GL_MAX_VERTEX_ATTRIBS, GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, GL_MAX_VERTEX_UNIFORM_COMPONENTS,
-                     GL_MAX_VERTEX_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS, GL_MAX_FRAGMENT_UNIFORM_BLOCKS,
-                     GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, GL_MAX_UNIFORM_BLOCK_SIZE, GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
-                     GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, GL_MAX_DRAW_BUFFERS, GL_MAX_TEXTURE_COORDS,
-                     GL_MAX_TEXTURE_IMAGE_UNITS, GL_MAX_VARYING_FLOATS]
-            for info in infos:
-                logger.info("%s : %s" % (info.name, glGetIntegerv(info)))
-                # set value
-                setattr(OpenGLContext, info.name, glGetIntegerv(info))
+        # shader storage
+        infos = [GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, GL_MAX_SHADER_STORAGE_BLOCK_SIZE,
+                 GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS,
+                 GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS, GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS,
+                 GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS, GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
+                 GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS]
+        for info in infos:
+            logger.info("%s : %s" % (info.name, callglGetIntegerv(info)))
+            # set value
+            setattr(OpenGLContext, info.name, callglGetIntegerv(info))
 
-            # shader storage
-            infos = [GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, GL_MAX_SHADER_STORAGE_BLOCK_SIZE,
-                     GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS,
-                     GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS, GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS,
-                     GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS, GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
-                     GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS]
-            for info in infos:
-                logger.info("%s : %s" % (info.name, glGetIntegerv(info)))
-                # set value
-                setattr(OpenGLContext, info.name, glGetIntegerv(info))
+        # compute shader
+        OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_COUNT = [callglGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, i)[0] for i in range(3)]
+        OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE = [callglGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, i)[0] for i in range(3)]
+        logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_COUNT.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_COUNT))
+        logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_SIZE.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE))
 
-            # compute shader
-            OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_COUNT = [glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, i)[0] for i in range(3)]
-            OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE = [glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, i)[0] for i in range(3)]
-            logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_COUNT.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_COUNT))
-            logger.info("%s : %s" % (GL_MAX_COMPUTE_WORK_GROUP_SIZE.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_SIZE))
+        # OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = callglGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
+        # logger.info("%s : %s" % ( GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS ))
 
-            # OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS = glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS)
-            # logger.info("%s : %s" % ( GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS.name, OpenGLContext.GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS ))
-
-            logger.info("=" * 30)
-
-        except BaseException:
-            logger.error(traceback.format_exc())
-
+        logger.info("=" * 30)
     @staticmethod
     def check_gl_version():
         if OpenGLContext.require_gl_major_version < OpenGLContext.gl_major_version:
