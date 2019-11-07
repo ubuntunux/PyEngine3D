@@ -362,23 +362,29 @@ class Plane(Mesh):
 
 
 # ------------------------------#
-# CLASS : DebugLine
+# CLASS : Line
 # ------------------------------#
-class DebugLine:
-    def __init__(self, pos1, pos2, width=2.5, color=(1, 1, 0)):
-        self.width = width
-        self.pos1 = pos1
-        self.pos2 = pos2
-        self.color = color
+class Line:
+    vertex_array_buffer = None
 
-    def draw(self):
-        pass
-        # glLineWidth(self.width)
-        # glColor3f(1, 1, 1)
-        # glBegin(GL_LINES)
-        # glVertex3f(*self.pos1)
-        # glVertex3f(*self.pos2)
-        # glEnd()
+    @staticmethod
+    def get_vertex_array_buffer():
+        if Line.vertex_array_buffer is None:
+            positions = np.array([(0, 0, 0, 1), (0, 1, 0, 1)], dtype=np.float32)
+            indices = np.array([0, 1], dtype=np.uint32)
+            Line.vertex_array_buffer = VertexArrayBuffer(name='line',
+                                                         mode=GL_LINES,
+                                                         datas=[positions, ],
+                                                         index_data=indices)
+        return Line.vertex_array_buffer
+
+
+class DebugLine:
+    def __init__(self, pos0, pos1, color=None, width=1.0):
+        self.pos0 = pos0
+        self.pos1 = pos1
+        self.color = color if color is not None else Float4(1.0, 1.0, 1.0, 1.0)
+        self.width = width
 
 
 # ------------------------------#

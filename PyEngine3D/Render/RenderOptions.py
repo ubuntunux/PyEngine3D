@@ -21,6 +21,7 @@ class RenderOption:
     RENDER_OCEAN = True
     RENDER_EFFECT = True
     RENDER_COLLISION = True
+    RENDER_DEBUG_LINE = True
 
 
 class RenderingType(AutoEnum):

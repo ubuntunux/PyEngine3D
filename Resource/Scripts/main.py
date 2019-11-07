@@ -1,5 +1,5 @@
 from PyEngine3D.Common import logger
-from PyEngine3D.Utilities import Singleton
+from PyEngine3D.Utilities import Singleton, Float3, Float4
 from PyEngine3D.App.GameBackend import Keyboard
 
 
@@ -113,7 +113,7 @@ class ScriptManager(Singleton):
     def update(self, delta):
         self.update_camera(delta)
 
-        self.renderer.draw_debug_line_3d([0.0, 0.0, 0.0], [3.0, 0.0, 0.0], [1.0, 0.0, 0.0], 3.0)
-        self.renderer.draw_debug_line_3d([0.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 1.0, 0.0], 3.0)
-        self.renderer.draw_debug_line_3d([0.0, 0.0, 0.0], [0.0, 0.0, 3.0], [0.0, 0.0, 1.0], 3.0)
+        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(3.0, 0.0, 0.0), Float4(1.0, 0.0, 0.0, 1.0), 3.0)
+        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 3.0, 0.0), Float4(0.0, 1.0, 0.0, 1.0), 3.0)
+        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 0.0, 3.0), Float4(0.0, 0.0, 1.0, 1.0), 3.0)
 

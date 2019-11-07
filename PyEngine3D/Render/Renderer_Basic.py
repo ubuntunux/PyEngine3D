@@ -12,15 +12,7 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderBuffer, UniformBlock, CreateTexture
 from .PostProcess import AntiAliasing, PostProcess
 from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
-from . import SkeletonActor, StaticActor
-
-
-class DebugLine:
-    def __init__(self, pos1, pos2, color=None, width=1.0):
-        self.pos1 = pos1.copy()
-        self.pos2 = pos2.copy()
-        self.color = color.copy() if color is not None else [1.0, 1.0, 1.0]
-        self.width = width
+from . import SkeletonActor, StaticActor, DebugLine
 
 
 class Renderer_Basic(Singleton):
@@ -216,16 +208,12 @@ class Renderer_Basic(Singleton):
     def render_text(self, text_render_data, offset_x, offset_y, canvas_width, canvas_height):
         pass
 
-    def draw_debug_line_2d(self, pos1, pos2, color=None, width=1.0):
-        if color is None:
-            color = [1.0, 1.0, 1.0]
-        debug_line = DebugLine(pos1, pos2, color, width)
+    def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0):
+        debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width)
         self.debug_lines_2d.append(debug_line)
 
-    def draw_debug_line_3d(self, pos1, pos2, color=None, width=1.0):
-        if color is None:
-            color = [1.0, 1.0, 1.0]
-        debug_line = DebugLine(pos1, pos2, color, width)
+    def draw_debug_line_3d(self, pos0, pos1, color=None, width=1.0):
+        debug_line = DebugLine(pos0, pos1, color, width)
         self.debug_lines_3d.append(debug_line)
 
     def render_debug_line(self):
@@ -236,8 +224,8 @@ class Renderer_Basic(Singleton):
             glLineWidth(debug_line.width)
             glColor3f(*debug_line.color)
             glBegin(GL_LINES)
-            glVertex3f(*debug_line.pos1, -1.0)
-            glVertex3f(*debug_line.pos2, -1.0)
+            glVertex3f(*debug_line.pos0)
+            glVertex3f(*debug_line.pos1)
             glEnd()
         self.debug_lines_2d = []
         glPopMatrix()
@@ -248,10 +236,10 @@ class Renderer_Basic(Singleton):
 
         for debug_line in self.debug_lines_3d:
             glLineWidth(debug_line.width)
-            glColor3f(*debug_line.color)
+            glColor4f(*debug_line.color)
             glBegin(GL_LINES)
+            glVertex3f(*debug_line.pos0)
             glVertex3f(*debug_line.pos1)
-            glVertex3f(*debug_line.pos2)
             glEnd()
         glPopMatrix()
         self.debug_lines_3d = []
