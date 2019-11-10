@@ -6,7 +6,7 @@ from .MaterialInstance import MaterialInstance
 
 from .Animation import Animation, AnimationNode
 from .Skeleton import Skeleton, Bone
-from .Mesh import BoundBox, Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad, Line, DebugLine
+from .Mesh import BoundBox, Geometry, Mesh, Triangle, Quad, Cube, Plane, ScreenQuad, Line
 from .Model import Model
 
 from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
@@ -25,3 +25,5 @@ from .RenderTarget import RenderTargets, RenderTargetManager
 from .PostProcess import PostProcess
 from .Renderer import Renderer
 from .Renderer_Basic import Renderer_Basic
+from .DebugLine import DebugLineManager, DebugLine
+

@@ -379,14 +379,6 @@ class Line:
         return Line.vertex_array_buffer
 
 
-class DebugLine:
-    def __init__(self, pos0, pos1, color=None, width=1.0):
-        self.pos0 = pos0
-        self.pos1 = pos1
-        self.color = color if color is not None else Float4(1.0, 1.0, 1.0, 1.0)
-        self.width = width
-
-
 # ------------------------------#
 # CLASS : Screen Quad
 # ------------------------------#

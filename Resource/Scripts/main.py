@@ -8,6 +8,7 @@ class ScriptManager(Singleton):
         logger.info("ScriptManager::__init__")
         self.core_manager = None
         self.renderer = None
+        self.debug_line_manager = None
         self.game_backend = None
         self.resource_manager = None
         self.scene_manager = None
@@ -22,6 +23,7 @@ class ScriptManager(Singleton):
 
         self.core_manager = core_manager
         self.renderer = core_manager.renderer
+        self.debug_line_manager = core_manager.debug_line_manager
         self.game_backend = core_manager.game_backend
         self.resource_manager = core_manager.resource_manager
         self.scene_manager = core_manager.scene_manager
@@ -113,7 +115,7 @@ class ScriptManager(Singleton):
     def update(self, delta):
         self.update_camera(delta)
 
-        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(3.0, 0.0, 0.0), Float4(1.0, 0.0, 0.0, 1.0), 3.0)
-        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 3.0, 0.0), Float4(0.0, 1.0, 0.0, 1.0), 3.0)
-        self.renderer.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 0.0, 3.0), Float4(0.0, 0.0, 1.0, 1.0), 3.0)
+        self.debug_line_manager.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(3.0, 0.0, 0.0), Float4(1.0, 0.0, 0.0, 1.0), width=3.0)
+        self.debug_line_manager.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 3.0, 0.0), Float4(0.0, 1.0, 0.0, 1.0), width=3.0)
+        self.debug_line_manager.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 0.0, 3.0), Float4(0.0, 0.0, 1.0, 1.0), width=3.0)
 

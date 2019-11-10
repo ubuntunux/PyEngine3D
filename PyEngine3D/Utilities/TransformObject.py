@@ -24,6 +24,8 @@ class TransformObject:
         self.prev_quat = QUATERNION_IDENTITY.copy()
         self.prev_Scale = Float3(1, 1, 1)
 
+        self.prev_pos_store = Float3()
+
         self.rotationMatrix = Matrix4()
 
         self.matrix = Matrix4()
@@ -47,7 +49,7 @@ class TransformObject:
         return self.pos
 
     def get_prev_pos(self):
-        return self.prev_pos
+        return self.prev_pos_store
 
     def get_pos_x(self):
         return self.pos[0]
@@ -199,6 +201,7 @@ class TransformObject:
         rotation_update = False
 
         if any(self.prev_pos != self.pos) or force_update:
+            self.prev_pos_store[...] = self.prev_pos
             self.prev_pos[...] = self.pos
             self.updated = True
 

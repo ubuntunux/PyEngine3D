@@ -26,6 +26,7 @@ class Renderer_Basic(Singleton):
         self.resource_manager = None
         self.font_manager = None
         self.scene_manager = None
+        self.debug_line_manager = None
         self.render_option_manager = None
         self.rendertarget_manager = None
         self.framebuffer_manager = None
@@ -56,6 +57,7 @@ class Renderer_Basic(Singleton):
         self.resource_manager = core_manager.resource_manager
         self.render_option_manager = core_manager.render_option_manager
         self.scene_manager = core_manager.scene_manager
+        self.debug_line_manager = core_manager.debug_line_manager
         self.postprocess = PostProcess()
         self.postprocess.initialize()
 
@@ -208,42 +210,6 @@ class Renderer_Basic(Singleton):
     def render_text(self, text_render_data, offset_x, offset_y, canvas_width, canvas_height):
         pass
 
-    def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0):
-        debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width)
-        self.debug_lines_2d.append(debug_line)
-
-    def draw_debug_line_3d(self, pos0, pos1, color=None, width=1.0):
-        debug_line = DebugLine(pos0, pos1, color, width)
-        self.debug_lines_3d.append(debug_line)
-
-    def render_debug_line(self):
-        # 2D Line
-        glPushMatrix()
-        glLoadIdentity()
-        for debug_line in self.debug_lines_2d:
-            glLineWidth(debug_line.width)
-            glColor3f(*debug_line.color)
-            glBegin(GL_LINES)
-            glVertex3f(*debug_line.pos0)
-            glVertex3f(*debug_line.pos1)
-            glEnd()
-        self.debug_lines_2d = []
-        glPopMatrix()
-
-        # 3D Line
-        glPushMatrix()
-        self.perspective_view(look_at=True)
-
-        for debug_line in self.debug_lines_3d:
-            glLineWidth(debug_line.width)
-            glColor4f(*debug_line.color)
-            glBegin(GL_LINES)
-            glVertex3f(*debug_line.pos0)
-            glVertex3f(*debug_line.pos1)
-            glEnd()
-        glPopMatrix()
-        self.debug_lines_3d = []
-
     def light_setup(self):
         glEnable(GL_LIGHTING)
 
@@ -295,4 +261,4 @@ class Renderer_Basic(Singleton):
         # draw line
         glDisable(GL_LIGHTING)
         glDisable(GL_TEXTURE_2D)
-        self.render_debug_line()
+        self.debug_line_manager.render_debug_line()

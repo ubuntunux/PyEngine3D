@@ -12,7 +12,7 @@ from PyEngine3D.Utilities import *
 from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderBuffer, UniformBlock, CreateTexture
 from .PostProcess import AntiAliasing, PostProcess
 from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
-from . import SkeletonActor, StaticActor, ScreenQuad, Line, DebugLine
+from . import SkeletonActor, StaticActor, ScreenQuad, Line
 
 
 class Renderer(Singleton):
@@ -26,6 +26,7 @@ class Renderer(Singleton):
         self.resource_manager = None
         self.font_manager = None
         self.scene_manager = None
+        self.debug_line_manager = None
         self.render_option_manager = None
         self.rendertarget_manager = None
         self.framebuffer_manager = None
@@ -76,13 +77,6 @@ class Renderer(Singleton):
 
         self.actor_instance_buffer = None
 
-        self.debug_lines_2d = {}
-        self.debug_lines_3d = {}
-
-        self.debug_line_material = None
-        self.debug_line_vertex_buffer = None
-        self.debug_line_instance_buffer = None
-
     def initialize(self, core_manager):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager
@@ -92,6 +86,7 @@ class Renderer(Singleton):
         self.render_option_manager = core_manager.render_option_manager
         self.font_manager = core_manager.font_manager
         self.scene_manager = core_manager.scene_manager
+        self.debug_line_manager = core_manager.debug_line_manager
         self.rendertarget_manager = core_manager.rendertarget_manager
         self.postprocess = PostProcess()
         self.postprocess.initialize()
@@ -118,11 +113,6 @@ class Renderer(Singleton):
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
         self.font_instance_buffer = InstanceBuffer(name="font_offset", location_offset=1, element_datas=[FLOAT4_ZERO, ])
-
-        # debug line
-        self.debug_line_material = self.resource_manager.get_material_instance("debug_line")
-        self.debug_line_vertex_buffer = Line.get_vertex_array_buffer()
-        self.debug_line_instance_buffer = InstanceBuffer(name="debug_line_instance_buffer", location_offset=1, element_datas=[FLOAT4_ZERO, FLOAT4_ZERO, FLOAT4_ZERO])
 
         # instance buffer
         self.actor_instance_buffer = InstanceBuffer(name="actor_instance_buffer", location_offset=7, element_datas=[MATRIX4_IDENTITY, ])
@@ -845,43 +835,6 @@ class Renderer(Singleton):
             self.font_shader.bind_uniform_data("count_of_side", text_render_data.font_data.count_of_side)
             self.postprocess.draw_elements_instanced(text_render_data.render_count, self.font_instance_buffer, [text_render_data.render_queue, ])
 
-    def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0):
-        debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width)
-        if width in self.debug_lines_2d:
-            self.debug_lines_2d[width].append(debug_line)
-        else:
-            self.debug_lines_2d[width] = [debug_line]
-
-    def draw_debug_line_3d(self, pos0, pos1, color=None, width=1.0):
-        debug_line = DebugLine(pos0, pos1, color, width)
-        if width in self.debug_lines_3d:
-            self.debug_lines_3d[width].append(debug_line)
-        else:
-            self.debug_lines_3d[width] = [debug_line]
-
-    def render_debug_line(self):
-        def draw_debug_line(debug_lines):
-            for line_width in debug_lines.keys():
-                for debug_line in debug_lines[line_width]:
-                    glLineWidth(line_width)
-                    self.debug_line_material.bind_uniform_data("position0", debug_line.pos0)
-                    self.debug_line_material.bind_uniform_data("position1", debug_line.pos1)
-                    self.debug_line_material.bind_uniform_data("color", debug_line.color)
-                    self.debug_line_vertex_buffer.draw_elements()
-
-        glDisable(GL_DEPTH_TEST)
-        self.debug_line_material.use_program()
-        self.debug_line_material.bind_material_instance()
-        self.debug_line_material.bind_uniform_data("is_debug_line_2d", True)
-        draw_debug_line(self.debug_lines_2d)
-
-        glEnable(GL_DEPTH_TEST)
-        self.debug_line_material.bind_uniform_data("is_debug_line_2d", False)
-        draw_debug_line(self.debug_lines_3d)
-
-        self.debug_lines_2d.clear()
-        self.debug_lines_3d.clear()
-
     def render_scene(self):
         main_camera = self.scene_manager.main_camera
 
@@ -1073,8 +1026,4 @@ class Renderer(Singleton):
         if RenderOption.RENDER_DEBUG_LINE:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTHSTENCIL)
-            self.draw_debug_line_2d(Float2(0.0, 0.0), Float2(3.0, 0.0), Float4(1.0, 1.0, 0.0, 1.0), 3.0)
-            self.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(3.0, 0.0, 0.0), Float4(1.0, 0.0, 0.0, 1.0), 3.0)
-            self.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 3.0, 0.0), Float4(0.0, 1.0, 0.0, 1.0), 3.0)
-            self.draw_debug_line_3d(Float3(0.0, 0.0, 0.0), Float3(0.0, 0.0, 3.0), Float4(0.0, 0.0, 1.0, 1.0), 3.0)
-            self.render_debug_line()
+            self.debug_line_manager.render_debug_line()

@@ -74,6 +74,7 @@ class CoreManager(Singleton):
         self.resource_manager = None
         self.render_option_manager = None
         self.renderer = None
+        self.debug_line_manager = None
         self.rendertarget_manager = None
         self.font_manager = None
         self.scene_manager = None
@@ -110,7 +111,7 @@ class CoreManager(Singleton):
         from PyEngine3D.UI import ViewportManager
         from PyEngine3D.OpenGLContext import OpenGLContext
         from PyEngine3D.ResourceManager import ResourceManager
-        from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager
+        from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager, DebugLineManager
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
@@ -121,6 +122,7 @@ class CoreManager(Singleton):
         self.resource_manager = ResourceManager.instance()
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
+        self.debug_line_manager = DebugLineManager.instance()
         self.scene_manager = SceneManager.instance()
         self.effect_manager = EffectManager.instance()
         self.project_manager = ProjectManager.instance()
@@ -178,7 +180,7 @@ class CoreManager(Singleton):
         self.game_backend.create_window(width, height, full_screen)
         self.opengl_context.initialize()
 
-        if not self.opengl_context.check_gl_version():
+        if True or not self.opengl_context.check_gl_version():
             self.is_basic_mode = True
             self.renderer = Renderer_Basic.instance()
 
@@ -198,6 +200,7 @@ class CoreManager(Singleton):
             self.font_manager.initialize(self)
             self.effect_manager.initialize(self)
         self.renderer.initialize(self)
+        self.debug_line_manager.initialize(self)
         self.scene_manager.initialize(self)
 
         # self.viewport_manager.build_ui_example()
@@ -703,6 +706,7 @@ class CoreManager(Singleton):
                 self.update_camera()
 
         self.scene_manager.update_scene(delta)
+        self.debug_line_manager.update(delta)
 
         # Start Render Scene
 
