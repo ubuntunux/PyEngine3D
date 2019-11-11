@@ -1727,3 +1727,6 @@ class ResourceManager(Singleton):
 
     def get_script(self, script_name):
         return self.script_loader.get_resource_data(script_name)
+
+    def get_file_path(self, file_path=""):
+        return os.path.join(self.project_path, file_path)
