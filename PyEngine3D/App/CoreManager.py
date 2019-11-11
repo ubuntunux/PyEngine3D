@@ -180,7 +180,7 @@ class CoreManager(Singleton):
         self.game_backend.create_window(width, height, full_screen)
         self.opengl_context.initialize()
 
-        if True or not self.opengl_context.check_gl_version():
+        if not self.opengl_context.check_gl_version():
             self.is_basic_mode = True
             self.renderer = Renderer_Basic.instance()
 
