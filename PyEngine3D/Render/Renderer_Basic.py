@@ -171,9 +171,9 @@ class Renderer_Basic(Singleton):
             glPushMatrix()
 
             glTranslatef(*actor.transform.get_pos())
-            glRotatef(radian_to_degree(actor.transform.get_pitch()), 1.0, 0.0, 0.0)
             glRotatef(radian_to_degree(actor.transform.get_yaw()), 0.0, 1.0, 0.0)
             glRotatef(radian_to_degree(actor.transform.get_roll()), 0.0, 0.0, 1.0)
+            glRotatef(radian_to_degree(actor.transform.get_pitch()), 1.0, 0.0, 0.0)
             glScalef(*actor.transform.get_scale())
 
             if material_instance is not None:
