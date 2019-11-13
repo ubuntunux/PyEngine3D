@@ -74,6 +74,7 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notify_clear_scene()
+        self.core_manager.debug_line_manager.clear_debug_lines()
         self.effect_manager.clear()
         self.main_camera = None
         self.main_light = None

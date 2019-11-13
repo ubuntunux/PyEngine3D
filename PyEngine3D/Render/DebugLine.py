@@ -81,6 +81,10 @@ class DebugLineManager(Singleton):
         update_func(self.debug_lines_2d)
         update_func(self.debug_lines_3d)
 
+    def clear_debug_lines(self):
+        self.debug_lines_2d = []
+        self.debug_lines_3d = []
+
     def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0, life_time=0.0, is_infinite=False, render_once=True):
         debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width, life_time, is_infinite, render_once)
         self.debug_lines_2d.append(debug_line)
