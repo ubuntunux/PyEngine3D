@@ -1026,4 +1026,13 @@ class Renderer(Singleton):
         if RenderOption.RENDER_DEBUG_LINE:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTHSTENCIL)
+
+            line_thickness = 2.0
+            line_length = 100.0
+            line_size = Float2(line_length / self.core_manager.game_backend.width, line_length / self.core_manager.game_backend.height)
+            line_offset = line_size - 1.0
+
+            self.debug_line_manager.draw_debug_line_2d(line_offset, line_offset + camera.view_origin[0][0:2] * line_size, color=Float4(1.0, 0.0, 0.0, 1.0), width=line_thickness)
+            self.debug_line_manager.draw_debug_line_2d(line_offset, line_offset + camera.view_origin[1][0:2] * line_size, color=Float4(0.0, 1.0, 0.0, 1.0), width=line_thickness)
+            self.debug_line_manager.draw_debug_line_2d(line_offset, line_offset + camera.view_origin[2][0:2] * line_size, color=Float4(0.0, 0.0, 1.0, 1.0), width=line_thickness)
             self.debug_line_manager.render_debug_line()

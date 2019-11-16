@@ -8,7 +8,7 @@ from PyEngine3D.Common import logger
 from PyEngine3D.App import CoreManager
 from PyEngine3D.OpenGLContext import InstanceBuffer
 from PyEngine3D.Utilities import *
-from . import Line
+from . import Line, ScreenQuad
 
 
 class DebugLine:
@@ -64,7 +64,7 @@ class DebugLineManager(Singleton):
 
         if not core_manager.is_basic_mode:
             self.debug_line_material = core_manager.resource_manager.get_material_instance("debug_line")
-            self.debug_line_vertex_buffer = Line.get_vertex_array_buffer()
+            self.debug_line_vertex_buffer = ScreenQuad.get_vertex_array_buffer()
             self.debug_line_instance_buffer = InstanceBuffer(name="debug_line_instance_buffer", location_offset=1, element_datas=[FLOAT4_ZERO, FLOAT4_ZERO, FLOAT4_ZERO])
 
     def update(self, delta):
@@ -99,7 +99,7 @@ class DebugLineManager(Singleton):
             glLoadIdentity()
             for debug_line in self.debug_lines_2d:
                 glLineWidth(debug_line.width)
-                glColor3f(*debug_line.color)
+                glColor4f(*debug_line.color)
                 glBegin(GL_LINES)
                 glVertex3f(*debug_line.pos0)
                 glVertex3f(*debug_line.pos1)
@@ -120,11 +120,16 @@ class DebugLineManager(Singleton):
         else:
             def draw_debug_line(debug_lines):
                 for debug_line in debug_lines:
-                    glLineWidth(debug_line.width)
                     self.debug_line_material.bind_uniform_data("position0", debug_line.pos0)
                     self.debug_line_material.bind_uniform_data("position1", debug_line.pos1)
                     self.debug_line_material.bind_uniform_data("color", debug_line.color)
+                    self.debug_line_material.bind_uniform_data("width", debug_line.width)
                     self.debug_line_vertex_buffer.draw_elements()
+                    # self.debug_line_vertex_buffer.draw_elements_instanced(
+                    #     1,
+                    #     instance_buffer=self.debug_line_instance_buffer,
+                    #     instance_datas=[debug_line.pos0, debug_line.pos1, debug_line.color]
+                    # )
 
             glDisable(GL_DEPTH_TEST)
             self.debug_line_material.use_program()

@@ -4,22 +4,38 @@ uniform bool is_debug_line_2d;
 uniform vec3 position0;
 uniform vec3 position1;
 uniform vec4 color;
+uniform float width;
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec4 vs_in_position;
 
 void main() {
-    vec3 vertex_position = (0 == gl_VertexID) ? position0.xyz : position1.xyz;
+    vec4 vertex_position0 = vec4(position0, 1.0);
+    vec4 vertex_position1 = vec4(position1, 1.0);
+
+    if(false == is_debug_line_2d)
+    {
+        vertex_position0 = VIEW_PROJECTION * vec4(position0.xyz, 1.0);
+        vertex_position1 = VIEW_PROJECTION * vec4(position1.xyz, 1.0);
+
+        vertex_position0.xyz /= vertex_position0.w;
+        vertex_position1.xyz /= vertex_position1.w;
+    }
+
+    vec2 lineWidth = normalize(vertex_position1.xy - vertex_position0.xy);
+    lineWidth = vec2(-lineWidth.y, lineWidth.x);
+
+    gl_Position = mix(vertex_position0, vertex_position1, clamp(vs_in_position.y * 0.5 + 0.5, 0.0, 1.0));
+    gl_Position.xy += mix(lineWidth, -lineWidth, clamp(vs_in_position.x * 0.5 + 0.5, 0.0, 1.0)) / SCREEN_SIZE.xy * width;
 
     if(is_debug_line_2d)
     {
-        gl_Position.xyz = vertex_position;
         gl_Position.z = -1.0;
         gl_Position.w = 1.0;
     }
     else
     {
-        gl_Position = VIEW_PROJECTION * vec4(vertex_position.xyz, 1.0);
+        gl_Position.xyz *= gl_Position.w;
     }
 }
 
