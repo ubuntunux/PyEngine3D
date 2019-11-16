@@ -56,6 +56,8 @@ class DebugLineManager(Singleton):
         self.debug_line_material = None
         self.debug_line_vertex_buffer = None
         self.debug_line_instance_buffer = None
+        self.debug_line_instance_data = None
+        self.debug_line_instance_element_data = [FLOAT4_ZERO, FLOAT4_ZERO, FLOAT4_ZERO, FLOAT4_ZERO]
 
     def initialize(self, core_manager):
         logger.info("Initialize DebugLineManager")
@@ -65,7 +67,13 @@ class DebugLineManager(Singleton):
         if not core_manager.is_basic_mode:
             self.debug_line_material = core_manager.resource_manager.get_material_instance("debug_line")
             self.debug_line_vertex_buffer = ScreenQuad.get_vertex_array_buffer()
-            self.debug_line_instance_buffer = InstanceBuffer(name="debug_line_instance_buffer", location_offset=1, element_datas=[FLOAT4_ZERO, FLOAT4_ZERO, FLOAT4_ZERO])
+            self.debug_line_instance_buffer = InstanceBuffer(name="debug_line_instance_buffer", location_offset=1, element_datas=self.debug_line_instance_element_data)
+            self.resize_debug_line_instance_data(10)
+
+    def resize_debug_line_instance_data(self, count):
+        if self.debug_line_instance_data is None or (len(self.debug_line_instance_data) / len(self.debug_line_instance_element_data)) < count:
+            element = [[0.0, 0.0, 0.0, 0.0]] * count
+            self.debug_line_instance_data = np.array([element, element, element, element], dtype=np.float32)
 
     def update(self, delta):
         def update_func(debug_line_array):
@@ -119,17 +127,20 @@ class DebugLineManager(Singleton):
             glPopMatrix()
         else:
             def draw_debug_line(debug_lines):
-                for debug_line in debug_lines:
-                    self.debug_line_material.bind_uniform_data("position0", debug_line.pos0)
-                    self.debug_line_material.bind_uniform_data("position1", debug_line.pos1)
-                    self.debug_line_material.bind_uniform_data("color", debug_line.color)
-                    self.debug_line_material.bind_uniform_data("width", debug_line.width)
-                    self.debug_line_vertex_buffer.draw_elements()
-                    # self.debug_line_vertex_buffer.draw_elements_instanced(
-                    #     1,
-                    #     instance_buffer=self.debug_line_instance_buffer,
-                    #     instance_datas=[debug_line.pos0, debug_line.pos1, debug_line.color]
-                    # )
+                line_count = len(debug_lines)
+                self.resize_debug_line_instance_data(line_count)
+
+                for i, debug_line in enumerate(debug_lines):
+                    self.debug_line_instance_data[0][i][0:3] = debug_line.pos0
+                    self.debug_line_instance_data[1][i][0:3] = debug_line.pos1
+                    self.debug_line_instance_data[2][i][0:4] = debug_line.color
+                    self.debug_line_instance_data[3][i][0] = debug_line.width
+
+                self.debug_line_vertex_buffer.draw_elements_instanced(
+                    line_count,
+                    instance_buffer=self.debug_line_instance_buffer,
+                    instance_datas=self.debug_line_instance_data
+                )
 
             glDisable(GL_DEPTH_TEST)
             self.debug_line_material.use_program()
