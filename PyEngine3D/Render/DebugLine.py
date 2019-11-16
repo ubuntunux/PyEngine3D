@@ -128,19 +128,20 @@ class DebugLineManager(Singleton):
         else:
             def draw_debug_line(debug_lines):
                 line_count = len(debug_lines)
-                self.resize_debug_line_instance_data(line_count)
+                if 0 < line_count:
+                    self.resize_debug_line_instance_data(line_count)
 
-                for i, debug_line in enumerate(debug_lines):
-                    self.debug_line_instance_data[0][i][0:3] = debug_line.pos0
-                    self.debug_line_instance_data[1][i][0:3] = debug_line.pos1
-                    self.debug_line_instance_data[2][i][0:4] = debug_line.color
-                    self.debug_line_instance_data[3][i][0] = debug_line.width
+                    for i, debug_line in enumerate(debug_lines):
+                        self.debug_line_instance_data[0][i][0:3] = debug_line.pos0
+                        self.debug_line_instance_data[1][i][0:3] = debug_line.pos1
+                        self.debug_line_instance_data[2][i][0:4] = debug_line.color
+                        self.debug_line_instance_data[3][i][0] = debug_line.width
 
-                self.debug_line_vertex_buffer.draw_elements_instanced(
-                    line_count,
-                    instance_buffer=self.debug_line_instance_buffer,
-                    instance_datas=self.debug_line_instance_data
-                )
+                    self.debug_line_vertex_buffer.draw_elements_instanced(
+                        line_count,
+                        instance_buffer=self.debug_line_instance_buffer,
+                        instance_datas=self.debug_line_instance_data
+                    )
 
             glDisable(GL_DEPTH_TEST)
             self.debug_line_material.use_program()
