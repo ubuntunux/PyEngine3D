@@ -112,7 +112,7 @@ class SceneManager(Singleton):
         # add scene objects
         self.main_camera = self.add_camera()
         self.main_light = self.add_main_light()
-        self.main_light_probe = self.add_light_probe()
+        self.main_light_probe = self.add_light_probe(pos=[0.0, 5.0, 0.0])
         self.atmosphere = self.add_atmosphere()
         self.ocean = self.add_ocean()
         self.terrain = self.add_terrain()

@@ -26,4 +26,4 @@ from .PostProcess import PostProcess
 from .Renderer import Renderer
 from .Renderer_Basic import Renderer_Basic
 from .DebugLine import DebugLineManager, DebugLine
-
+from .Spline import SplinePoint, Spline3D
