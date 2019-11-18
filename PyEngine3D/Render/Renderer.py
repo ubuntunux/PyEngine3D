@@ -13,6 +13,7 @@ from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderB
 from .PostProcess import AntiAliasing, PostProcess
 from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
 from . import SkeletonActor, StaticActor, ScreenQuad, Line
+from . import SplinePoint, Spline3D
 
 
 class Renderer(Singleton):
@@ -1037,4 +1038,19 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTHSTENCIL)
             self.render_axis()
+
+            # blender - spline inspector
+            # ob = bpy.context.object  # active object
+            # for p in ob.data.splines.active.bezier_points:
+            #     print(p.co, p.handle_right)
+
+            # spline_points = [
+            #     SplinePoint(Float3(-1.9986, 0.1261, 1.0605), Float3(-0.2383, -0.1441, 2.5278)),
+            #     SplinePoint(Float3(1.5969, -0.8184, 0.0853), Float3(0.9488, -2.7828, 2.0698))
+            # ]
+            #
+            # spline = Spline3D(spline_points=spline_points)
+            # spline.resampling(30)
+            # self.debug_line_manager.draw_spline_3d(spline)
+
             self.debug_line_manager.render_debug_line()
