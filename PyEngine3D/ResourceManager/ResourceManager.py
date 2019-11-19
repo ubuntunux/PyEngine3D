@@ -34,11 +34,12 @@ from PyEngine3D.Render import MaterialInstance, Triangle, Quad, Cube, Plane, Mes
 from PyEngine3D.Render import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
 from PyEngine3D.Render import EffectInfo, ParticleInfo
 from PyEngine3D.Render import FontData
+from PyEngine3D.Render import SplinePoint, SplineData
 from PyEngine3D.Render.Ocean.Constants import GRID_VERTEX_COUNT
 from PyEngine3D.OpenGLContext import CreateTexture, Material, Texture2D, Texture2DArray, Texture3D, TextureCube
 from PyEngine3D.OpenGLContext import Shader, ShaderCompileOption, ShaderCompileMessage, default_compile_option
 from PyEngine3D.OpenGLContext import parsing_macros, parsing_uniforms, parsing_material_components
-from PyEngine3D.Utilities import Attributes, Singleton, Config, Logger, Profiler
+from PyEngine3D.Utilities import Attributes, Singleton, Config, Logger, Profiler, Float3
 from PyEngine3D.Utilities import GetClassName, is_gz_compressed_file, check_directory_and_mkdir, get_modify_time_of_file
 from . import Collada, OBJ, loadDDS, generate_font_data, TextureGenerator
 
@@ -1207,6 +1208,49 @@ class ModelLoader(ResourceLoader):
 
 
 # -----------------------#
+# CLASS : SplineLoader
+# -----------------------#
+class SplineLoader(ResourceLoader):
+    name = "SplineLoader"
+    resource_dir_name = 'Splines'
+    resource_type_name = 'Spline'
+    fileExt = '.spline'
+    externalFileExt = dict(Mesh='.spline')
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def initialize(self):
+        # load and regist resource
+        super(SplineLoader, self).initialize()
+
+        self.create_resource("default_spline", SplineData("default_spline"))
+
+    def create_spline(self):
+        resource = self.create_resource('spline')
+        spline = SplineData("spline")
+        resource.set_data(spline)
+        self.save_resource(resource.name)
+
+    def load_resource(self, resource_name):
+        resource = self.get_resource(resource_name)
+        if resource:
+            spline_data = self.load_resource_data(resource)
+            if spline_data:
+                spline_points = spline_data.get('spline_points', [])
+                for i, spline_point in enumerate(spline_points):
+                    spline_points[i] = SplinePoint(Float3(*spline_point[0]), Float3(*spline_point[1]))
+                spline_data['spline_points'] = spline_points
+                spline_data['name'] = resource_name
+                spline = SplineData(**spline_data)
+                resource.set_data(spline)
+                return True
+        logger.error('%s failed to load %s' % (self.name, resource_name))
+        return False
+
+    def action_resource(self, resource_name):
+        self.scene_manager.add_spline_here(name=resource_name, spline_data=resource_name)
+
+
+# -----------------------#
 # CLASS : SceneLoader
 # -----------------------#
 class SceneLoader(ResourceLoader):
@@ -1532,6 +1576,7 @@ class ResourceManager(Singleton):
         self.material_loader = self.regist_loader(MaterialLoader)
         self.material_instance_loader = self.regist_loader(MaterialInstanceLoader)
         self.mesh_loader = self.regist_loader(MeshLoader)
+        self.spline_loader = self.regist_loader(SplineLoader)
         self.scene_loader = self.regist_loader(SceneLoader)
         self.effect_loader = self.regist_loader(EffectLoader)
         self.particle_loader = self.regist_loader(ParticleLoader)
@@ -1692,6 +1737,12 @@ class ResourceManager(Singleton):
 
     def get_mesh(self, mesh_name):
         return self.mesh_loader.get_resource_data(mesh_name) or self.get_default_mesh()
+
+    def get_default_spline(self):
+        return self.get_spline('default_spline')
+
+    def get_spline(self, spline_name):
+        return self.spline_loader.get_resource_data(spline_name) or self.get_default_spline()
 
     def get_procedural_texture(self, texture_name):
         return self.procedural_texture_loader.get_resource_data(texture_name)

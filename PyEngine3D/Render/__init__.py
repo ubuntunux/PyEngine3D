@@ -18,7 +18,7 @@ from .LightProbe import LightProbe
 from .Atmosphere import Atmosphere
 from .Ocean import Ocean
 from .Terrain import Terrain
-from .Spline import SplinePoint, Spline3D
+from .Spline import SplinePoint, SplineData, Spline3D
 
 from .Font import TextRenderData, FontData, FontManager
 from .RenderTarget import RenderTargets, RenderTargetManager

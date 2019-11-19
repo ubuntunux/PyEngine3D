@@ -82,6 +82,7 @@ class COMMAND(AutoEnum):
     # create
     CREATE_PARTICLE = ()
     CREATE_COLLISION = ()
+    CREATE_SPLINE = ()
 
     # object
     CLEAR_OBJECT_LIST = ()

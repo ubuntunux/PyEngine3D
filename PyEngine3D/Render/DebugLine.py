@@ -101,15 +101,15 @@ class DebugLineManager(Singleton):
         debug_line = DebugLine(pos0, pos1, color, width, life_time, is_infinite, render_once)
         self.debug_lines_3d.append(debug_line)
 
-    def draw_spline_3d(self, spline, color=None, width=1.0, life_time=0.0, is_infinite=False, render_once=True):
-        resampling_count = len(spline.resampling_positions)
+    def draw_spline_3d(self, spline, life_time=0.0, is_infinite=False, render_once=True):
+        resampling_count = len(spline.spline_data.resampling_positions)
         if 1 < resampling_count:
             for i in range(resampling_count - 1):
                 self.draw_debug_line_3d(
-                    spline.resampling_positions[i],
-                    spline.resampling_positions[i + 1],
-                    color=color,
-                    width=width,
+                    spline.spline_data.resampling_positions[i],
+                    spline.spline_data.resampling_positions[i + 1],
+                    color=spline.spline_data.color,
+                    width=spline.spline_data.width,
                     life_time=life_time,
                     is_infinite=is_infinite,
                     render_once=render_once

@@ -13,7 +13,7 @@ from PyEngine3D.OpenGLContext import InstanceBuffer, FrameBufferManager, RenderB
 from .PostProcess import AntiAliasing, PostProcess
 from . import RenderTargets, RenderOption, RenderingType, RenderGroup, RenderMode
 from . import SkeletonActor, StaticActor, ScreenQuad, Line
-from . import SplinePoint, Spline3D
+from . import Spline3D
 
 
 class Renderer(Singleton):
@@ -1051,6 +1051,9 @@ class Renderer(Singleton):
             #
             # spline = Spline3D(spline_points=spline_points)
             # spline.resampling(30)
-            # self.debug_line_manager.draw_spline_3d(spline)
+            #
+
+            for spline in self.scene_manager.splines:
+                self.debug_line_manager.draw_spline_3d(spline)
 
             self.debug_line_manager.render_debug_line()

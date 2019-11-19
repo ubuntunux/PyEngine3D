@@ -13,6 +13,7 @@ from PyEngine3D.Render import Camera, MainLight, PointLight, LightProbe
 from PyEngine3D.Render import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
 from PyEngine3D.Render import Atmosphere, Ocean, Terrain
 from PyEngine3D.Render import Effect
+from PyEngine3D.Render import Spline3D
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
 from PyEngine3D.Utilities import Singleton, GetClassName
@@ -86,6 +87,7 @@ class SceneManager(Singleton):
         self.collision_actors = []
         self.static_actors = []
         self.skeleton_actors = []
+        self.splines = []
         self.objectMap = {}
 
         self.static_solid_render_infos = []
@@ -156,6 +158,10 @@ class SceneManager(Singleton):
             self.add_light_probe()
         self.main_light_probe = self.light_probes[0] if 0 < len(self.light_probes) else None
 
+        spline_datas = scene_data.get('splines', [])
+        for spline_data in spline_datas:
+            self.add_spline(**spline_data)
+
         atmosphere_data = scene_data.get('atmosphere', {})
         self.atmosphere = self.add_atmosphere(**atmosphere_data)
 
@@ -190,6 +196,7 @@ class SceneManager(Singleton):
             main_light=self.main_light.get_save_data() if self.main_light is not None else dict(),
             lights=[light.get_save_data() for light in self.point_lights],
             light_probes=[light_probe.get_save_data() for light_probe in self.light_probes],
+            splines=[spline.get_save_data() for spline in self.splines],
             atmosphere=self.atmosphere.get_save_data(),
             ocean=self.ocean.get_save_data(),
             terrain=self.terrain.get_save_data(),
@@ -223,6 +230,8 @@ class SceneManager(Singleton):
             return self.static_actors
         elif SkeletonActor == object_type:
             return self.skeleton_actors
+        elif Spline3D == object_type:
+            return self.splines
         return None
 
     def regist_object(self, obj):
@@ -294,6 +303,19 @@ class SceneManager(Singleton):
         light_probe = LightProbe(**light_probe_data)
         self.regist_object(light_probe)
         return light_probe
+
+    def add_spline_here(self, **spline_data):
+        spline_data['pos'] = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
+        self.add_spline(**spline_data)
+
+    def add_spline(self, **spline_data):
+        name = self.generate_object_name(spline_data.get('name', 'spline'))
+        spline_data['name'] = name
+        spline_data['spline_data'] = self.resource_manager.get_spline(spline_data.get('spline_data', ''))
+        logger.info("add Spline : %s" % name)
+        spline = Spline3D(**spline_data)
+        self.regist_object(spline)
+        return spline
 
     def add_effect_here(self, **effect_data):
         effect_data['pos'] = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
@@ -373,6 +395,7 @@ class SceneManager(Singleton):
         self.collision_actors = []
         self.static_actors = []
         self.skeleton_actors = []
+        self.splines = []
         self.objectMap = {}
 
     def clear_actors(self):
@@ -542,6 +565,9 @@ class SceneManager(Singleton):
 
         for skeleton_actor in self.skeleton_actors:
             skeleton_actor.update(dt)
+
+        for spline in self.splines:
+            spline.update(dt)
 
         if not self.core_manager.is_basic_mode:
             self.atmosphere.update(self.main_light)

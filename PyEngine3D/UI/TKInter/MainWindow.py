@@ -283,6 +283,10 @@ class MainWindow:
         button.pack(fill="x", side="top")
         button.bind("<Button-1>", self.create_particle)
 
+        button = tk.Button(label_frame, text="Create Spline")
+        button.pack(fill="x", side="top")
+        button.bind("<Button-1>", self.create_spline)
+
         button_collision = tk.Button(label_frame, text="Create Collision")
         button_collision.pack(fill="x", side="top")
         button_collision.bind("<Button-1>", self.create_collision)
@@ -850,6 +854,9 @@ class MainWindow:
 
     def create_particle(self, event):
         self.appCmdQueue.put(COMMAND.CREATE_PARTICLE)
+
+    def create_spline(self, event):
+        self.appCmdQueue.put(COMMAND.CREATE_SPLINE)
 
     def create_collision(self, event):
         selectedItems = self.get_selected_resource()

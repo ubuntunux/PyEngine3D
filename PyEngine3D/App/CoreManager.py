@@ -449,6 +449,7 @@ class CoreManager(Singleton):
 
         # create resource
         self.commands[COMMAND.CREATE_PARTICLE.value] = lambda value: self.resource_manager.particle_loader.create_particle()
+        self.commands[COMMAND.CREATE_SPLINE.value] = lambda value: self.resource_manager.spline_loader.create_spline()
 
         def cmd_create_collision(value):
             resource_name, resource_type = value
