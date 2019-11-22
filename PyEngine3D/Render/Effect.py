@@ -349,7 +349,7 @@ class Effect:
         self.attributes.set_attribute('effect_info', self.effect_info.name if self.effect_info is not None else '')
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if attribute_name == 'pos':
             self.transform.set_pos(attribute_value)
         elif attribute_name == 'rot':
@@ -845,7 +845,7 @@ class EffectInfo:
         self.attributes.set_attribute('particle_infos', attributes)
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if 'particle_infos' == attribute_name:
             resource_manager = CoreManager.instance().resource_manager
             particle_info = resource_manager.get_particle(attribute_value[attribute_index])
@@ -1042,12 +1042,7 @@ class ParticleInfo:
                 self.attributes.set_attribute(key, attributes[key])
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        item_info_history = []
-        while parent_info is not None:
-            item_info_history.insert(0, parent_info)
-            parent_info = parent_info.parent_info
-
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if hasattr(self, attribute_name):
             resource_manager = CoreManager.instance().resource_manager
             if 'mesh' == attribute_name:

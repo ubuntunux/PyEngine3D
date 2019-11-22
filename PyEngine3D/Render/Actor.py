@@ -137,15 +137,8 @@ class StaticActor:
         self.attributes.set_attribute('instance_scale', self.instance_scale.get_save_data())
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        item_info_history = []
-        parent_attribute_name = attribute_name
-        while parent_info is not None:
-            parent_attribute_name = parent_info.attribute_name
-            item_info_history.insert(0, parent_info)
-            parent_info = parent_info.parent_info
-
-        if 1 < len(item_info_history) or 'instance_scale' == parent_attribute_name:
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
+        if 1 < len(item_info_history) or 'instance_scale' == item_info_history[0].attribute_name:
             attribute = getattr(self, item_info_history[0].attribute_name)
             if attribute is not None and isinstance(attribute, RangeVariable):
                 if 'min_value' == attribute_name:

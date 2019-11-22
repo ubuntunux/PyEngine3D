@@ -235,9 +235,9 @@ class Resource:
                 return new_attributes
         return None
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if self.data and hasattr(self.data, 'set_attribute'):
-            self.data.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+            self.data.set_attribute(attribute_name, attribute_value, item_info_history, attribute_index)
 
     def add_component(self, attribute_name, parent_info, attribute_index):
         if self.data and hasattr(self.data, 'add_component'):
@@ -406,7 +406,7 @@ class ResourceLoader(object):
             return resource.get_attribute()
         return None
 
-    def set_resource_attribute(self, resource_name, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_resource_attribute(self, resource_name, attribute_name, attribute_value, item_info_history, attribute_index):
         # rename resource
         if attribute_name == 'name' and parent_info is None:
             self.rename_resource(resource_name, attribute_value)
@@ -414,7 +414,7 @@ class ResourceLoader(object):
             # set other attributes
             resource = self.get_resource(resource_name)
             if resource:
-                resource.set_attribute(attribute_name, attribute_value, parent_info, attribute_index)
+                resource.set_attribute(attribute_name, attribute_value, item_info_history, attribute_index)
 
     def add_resource_component(self, resource_name, attribute_name, parent_info, attribute_index):
         resource = self.get_resource(resource_name)
@@ -1237,7 +1237,7 @@ class SplineLoader(ResourceLoader):
             if spline_data:
                 spline_points = spline_data.get('spline_points', [])
                 for i, spline_point in enumerate(spline_points):
-                    spline_points[i] = SplinePoint(Float3(*spline_point[0]), Float3(*spline_point[1]))
+                    spline_points[i] = SplinePoint(Float3(*spline_point['position']), Float3(*spline_point['control_point']))
                 spline_data['spline_points'] = spline_points
                 spline_data['name'] = resource_name
                 spline = SplineData(**spline_data)

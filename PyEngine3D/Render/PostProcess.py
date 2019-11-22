@@ -239,7 +239,7 @@ class PostProcess:
         self.Attributes.set_attribute('render_material_instance', self.target_material_instance)
         return self.Attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if attribute_name == 'msaa_multisample_count':
             self.msaa_multisample_count = attribute_value
             self.set_anti_aliasing(self.anti_aliasing.value, force=True)

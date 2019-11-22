@@ -75,6 +75,9 @@ class ItemInfo:
     def set_old_value(self, value):
         self.oldValue = value
 
+    def __repr__(self):
+        return "ItemInfo :" + repr(self.__dict__)
+
 
 class MessageThread(Thread):
     def __init__(self, cmdQueue):
@@ -642,13 +645,19 @@ class MainWindow:
                     selected_item_name = get_name(selected_item)
                     selected_item_type = get_value(selected_item)
 
+                    item_info_history = [item_info]
+                    parent_info = item_info.parent_info
+                    while parent_info is not None:
+                        item_info_history.insert(0, parent_info)
+                        parent_info = parent_info.parent_info
+
                     # send changed data
                     self.appCmdQueue.put(command,
                                          (selected_item_name,
                                           selected_item_type,
                                           attribute_name,
                                           value,
-                                          item_info.parent_info,
+                                          item_info_history,
                                           item_info.index))
             except BaseException:
                 logger.error(traceback.format_exc())

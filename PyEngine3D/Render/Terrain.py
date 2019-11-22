@@ -69,7 +69,7 @@ class Terrain:
             self.attributes.set_attribute(key, save_data[key])
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if attribute_name == 'pos':
             self.transform.set_pos(attribute_value)
         elif attribute_name == 'rot':

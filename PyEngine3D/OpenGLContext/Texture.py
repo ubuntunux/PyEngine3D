@@ -322,7 +322,7 @@ class Texture:
         self.attribute.set_attribute("wrap_r", self.wrap_r)
         return self.attribute
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if hasattr(self, attribute_name) and "" != attribute_value:
             setattr(self, attribute_name, eval(attribute_value))
 

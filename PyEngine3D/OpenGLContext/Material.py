@@ -84,7 +84,7 @@ class Material:
             self.Attributes.set_attribute(uniform_buffer.name, uniform_buffer.get_default_value())
         return self.Attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if attribute_name in self.macros and self.macros[attribute_name] != attribute_value:
             new_macros = copy.deepcopy(self.macros)
             new_macros[attribute_name] = attribute_value

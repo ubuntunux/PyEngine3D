@@ -5,7 +5,7 @@ import copy
 import numpy as np
 from OpenGL.GL import *
 
-from PyEngine3D.Common import logger
+from PyEngine3D.Common import logger, COMMAND
 from PyEngine3D.App import CoreManager
 from PyEngine3D.OpenGLContext import InstanceBuffer
 from PyEngine3D.Utilities import *
@@ -42,37 +42,74 @@ class SplineData:
             self.attributes.set_attribute(attribute_name, save_data[attribute_name])
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
-        # print("SplineData", attribute_name, attribute_value, parent_info, attribute_index)
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
+        item_info = item_info_history[0]
         if 'resample_count' == attribute_name:
             self.resampling(attribute_value)
         elif 'color' == attribute_name:
             self.color = Float4(*attribute_value)
+        elif 'spline_points' == item_info.attribute_name:
+            spine_point_index = item_info_history[1].index
+            spline_point_attribute_name = item_info_history[2].index
+            point = getattr(self.spline_points[spine_point_index], spline_point_attribute_name)
+            point[...] = attribute_value
+            self.resampling()
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
+
+    def add_spline_point(self):
+        point_count = len(self.spline_points)
+        if 1 == point_count:
+            self.spline_points.append(copy.deepcopy(self.default_spline_points[-1]))
+        elif 1 < point_count:
+            point = self.spline_points[-1].position * 2.0 - self.spline_points[-2].position
+            self.spline_points.append(SplinePoint(point, self.spline_points[-1].control_point.copy()))
+        else:
+            self.spline_points = copy.deepcopy(self.default_spline_points)
+        self.resampling()
+
+    def delete_spline_point(self, index):
+        if len(self.spline_points) <= 2:
+            return
+        self.spline_points.pop(index)
+        self.resampling()
+
+    def refresh_attribute_info(self):
+        CoreManager.instance().send(COMMAND.TRANS_RESOURCE_ATTRIBUTE, self.get_attribute())
+
+    def add_component(self, attribute_name, parent_info, attribute_index):
+        if 'spline_points' == attribute_name:
+            self.add_spline_point()
+            self.refresh_attribute_info()
+
+    def delete_component(self, attribute_name, parent_info, attribute_index):
+        if parent_info is not None and 'spline_points' == parent_info.attribute_name:
+            self.delete_spline_point(attribute_index)
+            self.refresh_attribute_info()
 
     def get_save_data(self):
         save_data = dict(
             name=self.name,
-            spline_points=[(spline_point.position.tolist(), spline_point.control_point.tolist()) for spline_point in self.spline_points],
+            spline_points=[{'position': spline_point.position.tolist(), 'control_point': spline_point.control_point.tolist()} for spline_point in self.spline_points],
             color=self.color.tolist(),
             width=self.width,
             resample_count=self.resample_count
         )
         return save_data
 
-    def resampling(self, resample_count=128):
-        self.resample_count = resample_count
+    def resampling(self, resample_count=None):
+        if resample_count is not None:
+            self.resample_count = max(1, resample_count)
         point_count = len(self.spline_points)
         segment_count = point_count - 1
         if segment_count < 1:
             return
-        self.resampling_positions = np.zeros(resample_count, dtype=(np.float32, 3))
+        self.resampling_positions = np.zeros(self.resample_count, dtype=(np.float32, 3))
 
         index = 0
         resample_pos = 0.0
-        resample_step = 1.0 / resample_count
-        while resample_pos <= 1.0 and index < resample_count:
+        resample_step = 1.0 / self.resample_count
+        while resample_pos <= 1.0 and index < self.resample_count:
             t = resample_pos * segment_count
             if t == 1.0:
                 point_index = min(point_count - 2, int(resample_pos * segment_count) - 1)
@@ -115,7 +152,7 @@ class Spline3D:
             self.attributes.set_attribute(attribute_name, save_data[attribute_name])
         return self.attributes
 
-    def set_attribute(self, attribute_name, attribute_value, parent_info, attribute_index):
+    def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
         if 'spline_data' == attribute_name:
             spline_data = CoreManager.instance().resource_manager.get_spline(attribute_value)
             if spline_data is not None:
