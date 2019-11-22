@@ -12,39 +12,15 @@ from . import Line, ScreenQuad
 
 
 class DebugLine:
-    def __init__(self, pos0, pos1, color=None, width=1.0, life_time=0.0, is_infinite=False, render_once=True):
+    def __init__(self, pos0, pos1, color=None, width=1.0):
         self.pos0 = pos0.copy()
         self.pos1 = pos1.copy()
         self.color = color.copy() if color is not None else Float4(1.0, 1.0, 1.0, 1.0)
         self.width = width
-        self.life_time = life_time
-        self.is_infinite = is_infinite
-        self.render_once = render_once
-        self.update_count = 0
         self.alive = True
 
-        if 0.0 < life_time:
-            self.is_infinite = False
-            self.render_once = False
-        elif self.is_infinite and self.render_once:
-            self.render_once = False
-
     def update(self, delta_time):
-        self.update_count += 1
-
-        if self.is_infinite:
-            return
-
-        if self.render_once:
-            if 1 < self.update_count:
-                self.alive = False
-            return
-
-        if self.life_time <= delta_time:
-            self.life_time = 0.0
-            self.alive = False
-        else:
-            self.life_time -= delta_time
+        pass
 
 
 class DebugLineManager(Singleton):
@@ -53,6 +29,7 @@ class DebugLineManager(Singleton):
         self.renderer = None
         self.debug_lines_2d = []
         self.debug_lines_3d = []
+        self.debug_splines_3d = []
         self.debug_line_material = None
         self.debug_line_vertex_buffer = None
         self.debug_line_instance_buffer = None
@@ -76,44 +53,31 @@ class DebugLineManager(Singleton):
             self.debug_line_instance_data = np.array([element, element, element, element], dtype=np.float32)
 
     def update(self, delta):
-        def update_func(debug_line_array):
-            debug_line_count = len(debug_line_array)
-            index = 0
-            for i in range(debug_line_count):
-                debug_line = debug_line_array[index]
-                debug_line.update(delta)
-                if not debug_line.alive:
-                    debug_line_array.pop(index)
-                else:
-                    index += 1
-        update_func(self.debug_lines_2d)
-        update_func(self.debug_lines_3d)
-
-    def clear_debug_lines(self):
         self.debug_lines_2d = []
         self.debug_lines_3d = []
+        self.debug_splines_3d = []
 
-    def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0, life_time=0.0, is_infinite=False, render_once=True):
-        debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width, life_time, is_infinite, render_once)
+    def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0):
+        debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width)
         self.debug_lines_2d.append(debug_line)
 
-    def draw_debug_line_3d(self, pos0, pos1, color=None, width=1.0, life_time=0.0, is_infinite=False, render_once=True):
-        debug_line = DebugLine(pos0, pos1, color, width, life_time, is_infinite, render_once)
+    def draw_debug_line_3d(self, pos0, pos1, color=None, width=1.0):
+        debug_line = DebugLine(pos0, pos1, color, width)
         self.debug_lines_3d.append(debug_line)
 
-    def draw_spline_3d(self, spline, life_time=0.0, is_infinite=False, render_once=True):
+    def draw_spline_3d(self, spline):
         resampling_count = len(spline.spline_data.resampling_positions)
         if 1 < resampling_count:
+            debug_lines = []
             for i in range(resampling_count - 1):
-                self.draw_debug_line_3d(
+                debug_line = DebugLine(
                     spline.spline_data.resampling_positions[i],
                     spline.spline_data.resampling_positions[i + 1],
-                    color=spline.spline_data.color,
-                    width=spline.spline_data.width,
-                    life_time=life_time,
-                    is_infinite=is_infinite,
-                    render_once=render_once
+                    color=spline.color,
+                    width=spline.width
                 )
+                debug_lines.append(debug_line)
+            self.debug_splines_3d.append((spline.depth_test, spline.transform.matrix, debug_lines))
 
     def render_debug_line(self):
         if self.core_manager.is_basic_mode:
@@ -163,7 +127,19 @@ class DebugLineManager(Singleton):
             self.debug_line_material.bind_uniform_data("is_debug_line_2d", True)
             draw_debug_line(self.debug_lines_2d)
 
-            glEnable(GL_DEPTH_TEST)
             self.debug_line_material.bind_uniform_data("is_debug_line_2d", False)
+            self.debug_line_material.bind_uniform_data("transform", MATRIX4_IDENTITY)
             draw_debug_line(self.debug_lines_3d)
+
+            prev_depth_test = False
+            for depth_test, transform, debug_lines in self.debug_splines_3d:
+                if prev_depth_test != depth_test:
+                    if depth_test:
+                        glEnable(GL_DEPTH_TEST)
+                    else:
+                        glDisable(GL_DEPTH_TEST)
+                    prev_depth_test = depth_test
+                self.debug_line_material.bind_uniform_data("transform", transform)
+                draw_debug_line(debug_lines)
+
 

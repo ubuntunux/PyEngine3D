@@ -26,8 +26,6 @@ class SplineData:
     def __init__(self, name, **data):
         self.name = name
         self.spline_points = data.get('spline_points', copy.deepcopy(self.default_spline_points))
-        self.color = Float4(*data.get('color', [1.0, 1.0, 1.0, 1.0]))
-        self.width = data.get('width', 1.0)
         self.resample_count = data.get('resampling_count', 128)
         self.resampling_positions = np.zeros(0, dtype=(np.float32, 3))
         self.resampling(self.resample_count)
@@ -46,8 +44,6 @@ class SplineData:
         item_info = item_info_history[0]
         if 'resample_count' == attribute_name:
             self.resampling(attribute_value)
-        elif 'color' == attribute_name:
-            self.color = Float4(*attribute_value)
         elif 'spline_points' == item_info.attribute_name:
             spine_point_index = item_info_history[1].index
             spline_point_attribute_name = item_info_history[2].index
@@ -91,8 +87,6 @@ class SplineData:
         save_data = dict(
             name=self.name,
             spline_points=[{'position': spline_point.position.tolist(), 'control_point': spline_point.control_point.tolist()} for spline_point in self.spline_points],
-            color=self.color.tolist(),
-            width=self.width,
             resample_count=self.resample_count
         )
         return save_data
@@ -141,6 +135,9 @@ class Spline3D:
         self.transform.set_rotation(spline_data.get('rot', [0, 0, 0]))
         self.transform.set_scale(spline_data.get('scale', [1, 1, 1]))
         self.spline_data = spline_data.get('spline_data')
+        self.depth_test = spline_data.get('depth_test', True)
+        self.color = Float4(*spline_data.get('color', [1.0, 1.0, 1.0, 1.0]))
+        self.width = spline_data.get('width', 1.0)
         self.attributes = Attributes()
 
     def get_attribute(self):
@@ -157,6 +154,14 @@ class Spline3D:
             spline_data = CoreManager.instance().resource_manager.get_spline(attribute_value)
             if spline_data is not None:
                 self.spline_data = spline_data
+        elif 'color' == attribute_name:
+            self.color = Float4(*attribute_value)
+        elif attribute_name == 'pos':
+            self.transform.set_pos(attribute_value)
+        elif attribute_name == 'rot':
+            self.transform.set_rotation(attribute_value)
+        elif attribute_name == 'scale':
+            self.transform.set_scale(attribute_value)
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
 
@@ -166,7 +171,10 @@ class Spline3D:
             spline_data=self.spline_data.name if self.spline_data is not None else '',
             pos=self.transform.pos.tolist(),
             rot=self.transform.rot.tolist(),
-            scale=self.transform.scale.tolist()
+            scale=self.transform.scale.tolist(),
+            color=self.color.tolist(),
+            width=self.width,
+            depth_test=self.depth_test
         )
         return save_data
 

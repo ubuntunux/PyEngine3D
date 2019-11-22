@@ -1,6 +1,7 @@
 #include "scene_constants.glsl"
 
 uniform bool is_debug_line_2d;
+uniform mat4 transform;
 
 #ifdef VERTEX_SHADER
 layout (location = 0) in vec4 vs_in_position;
@@ -19,8 +20,8 @@ void main() {
 
     if(false == is_debug_line_2d)
     {
-        vertex_position0 = VIEW_PROJECTION * vec4(line_position0.xyz, 1.0);
-        vertex_position1 = VIEW_PROJECTION * vec4(line_position1.xyz, 1.0);
+        vertex_position0 = VIEW_PROJECTION * transform * vertex_position0;
+        vertex_position1 = VIEW_PROJECTION * transform * vertex_position1;
 
         vertex_position0.xyz /= vertex_position0.w;
         vertex_position1.xyz /= vertex_position1.w;

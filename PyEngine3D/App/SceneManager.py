@@ -75,7 +75,6 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notify_clear_scene()
-        self.core_manager.debug_line_manager.clear_debug_lines()
         self.effect_manager.clear()
         self.main_camera = None
         self.main_light = None
@@ -438,8 +437,7 @@ class SceneManager(Singleton):
         obj = self.get_object(object_name)
         return obj.get_attribute() if obj else None
 
-    def set_object_attribute(self, object_name, objectTypeName, attribute_name, attribute_value, item_info_history,
-                             attribute_index):
+    def set_object_attribute(self, object_name, objectTypeName, attribute_name, attribute_value, item_info_history, attribute_index):
         obj = self.get_object(object_name)
         obj and obj.set_attribute(attribute_name, attribute_value, item_info_history, attribute_index)
 
