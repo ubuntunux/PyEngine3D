@@ -16,7 +16,7 @@ from PyEngine3D.Render import Effect
 from PyEngine3D.Render import Spline3D
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
-from PyEngine3D.Utilities import Singleton, GetClassName
+from PyEngine3D.Utilities import Singleton, GetClassName, length
 
 
 class SceneManager(Singleton):
@@ -46,6 +46,8 @@ class SceneManager(Singleton):
         self.static_actors = []
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
+        self.objectIDMap = {}
+        self.objectIDEntry = list(range(2 ** 16))
 
         # render group
         self.point_light_count = 0
@@ -87,7 +89,10 @@ class SceneManager(Singleton):
         self.static_actors = []
         self.skeleton_actors = []
         self.splines = []
+
         self.objectMap = {}
+        self.objectIDMap = {}
+        self.objectIDEntry = list(range(2 ** 16))
 
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
@@ -241,6 +246,10 @@ class SceneManager(Singleton):
                 object_list.append(obj)
             elif object_type is Effect:
                 self.effect_manager.add_effect(obj)
+            if hasattr(obj, 'set_object_id'):
+                object_id = self.objectIDEntry[len(self.objectMap)]
+                obj.set_object_id(object_id)
+                self.objectIDMap[object_id] = obj
             self.objectMap[obj.name] = obj
             self.core_manager.send_object_info(obj)
         else:
@@ -255,6 +264,10 @@ class SceneManager(Singleton):
             elif object_type is Effect:
                 self.effect_manager.delete_effect(obj)
             self.objectMap.pop(obj.name)
+            if hasattr(obj, 'get_object_id'):
+                object_id = obj.get_object_id()
+                self.objectIDEntry[len(self.objectMap)] = object_id
+                self.objectIDMap.pop(object_id)
             self.core_manager.notify_delete_object(obj.name)
 
             if self.selected_object is obj and hasattr(self.selected_object, "set_selected"):
@@ -453,6 +466,17 @@ class SceneManager(Singleton):
             if selected_object and hasattr(selected_object, "set_selected"):
                 selected_object.set_selected(True)
 
+    def intersect_select_object(self):
+        windows_size = self.core_manager.get_window_size()
+        mouse_pos = self.core_manager.get_mouse_pos()
+        x = math.floor(min(1.0, (mouse_pos[0] / windows_size[0])) * (RenderTargets.OBJECT_ID.width - 1))
+        y = math.floor(min(1.0, (mouse_pos[1] / windows_size[1])) * (RenderTargets.OBJECT_ID.height - 1))
+        object_ids = RenderTargets.OBJECT_ID.get_image_data()
+        object_id = math.floor(object_ids[y][x] + 0.5)
+        if object_id in self.objectIDMap:
+            obj = self.objectIDMap[object_id]
+            self.set_selected_object(obj.name)
+
     def set_object_focus(self, object_name):
         obj = self.get_object(object_name)
         if obj and obj != self.main_camera:
@@ -580,6 +604,23 @@ class SceneManager(Singleton):
         self.update_static_render_info()
         self.update_skeleton_render_info()
         self.update_light_render_infos()
+
+        def check_collide(bound_box):
+            bound_box_pos = bound_box.bound_center
+            radius = bound_box.radius * 0.5
+
+            direction = -self.main_camera.transform.front
+            camera_pos = self.main_camera.transform.get_pos()
+            target_pos = camera_pos + direction * 10000.0
+            to_actor0 = bound_box_pos - camera_pos
+            to_actor1 = bound_box_pos - target_pos
+            if length(to_actor0) <= radius or length(to_actor1) <= radius:
+                return True
+            elif np.dot(to_actor0, to_actor1) <= 0.0:
+                d = length(to_actor0 - direction * np.dot(to_actor0, direction))
+                if d <= radius:
+                    return True
+            return False
 
         self.selected_object_render_info = []
         if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):

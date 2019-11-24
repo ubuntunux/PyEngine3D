@@ -68,6 +68,8 @@ class Renderer(Singleton):
         self.debug_bone_material = None
         self.shadowmap_material = None
         self.shadowmap_skeletal_material = None
+        self.static_object_id_material = None
+        self.skeletal_object_id_material = None
         self.selcted_static_object_material = None
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
@@ -102,6 +104,12 @@ class Renderer(Singleton):
         self.shadowmap_material = self.resource_manager.get_material_instance("shadowmap")
         self.shadowmap_skeletal_material = self.resource_manager.get_material_instance(name="shadowmap_skeletal",
                                                                                        shader_name="shadowmap",
+                                                                                       macros={"SKELETAL": 1})
+
+        self.static_object_id_material = self.resource_manager.get_material_instance(name="render_static_object_id",
+                                                                                     shader_name="render_object_id")
+        self.skeletal_object_id_material = self.resource_manager.get_material_instance(name="render_skeletal_object_id",
+                                                                                       shader_name="render_object_id",
                                                                                        macros={"SKELETAL": 1})
 
         self.selcted_static_object_material = self.resource_manager.get_material_instance("selected_object")
@@ -160,9 +168,9 @@ class Renderer(Singleton):
         self.uniform_light_buffer = UniformBlock("light_constants", program, 3, self.uniform_light_data)
 
         self.uniform_point_light_data = np.zeros(MAX_POINT_LIGHTS, dtype=[('color', np.float32, 3),
-                                                                          ('radius', np.float32, 1),
+                                                                          ('radius', np.float32),
                                                                           ('pos', np.float32, 3),
-                                                                          ('render', np.float32, 1)])
+                                                                          ('render', np.float32)])
         self.uniform_point_light_buffer = UniformBlock("point_light_constants", program, 4, self.uniform_point_light_data)
 
         self.uniform_particle_common_data = np.zeros(1, dtype=[
@@ -493,15 +501,17 @@ class Renderer(Singleton):
             self.scene_manager.terrain.render_terrain(RenderMode.GBUFFER)
 
         # render static actor
-        self.render_actors(RenderGroup.STATIC_ACTOR,
-                           RenderMode.GBUFFER,
-                           self.scene_manager.static_solid_render_infos)
+        if RenderOption.RENDER_STATIC_ACTOR:
+            self.render_actors(RenderGroup.STATIC_ACTOR,
+                               RenderMode.GBUFFER,
+                               self.scene_manager.static_solid_render_infos)
 
         # render velocity
         self.framebuffer_manager.bind_framebuffer(RenderTargets.VELOCITY)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
+        if RenderOption.RENDER_STATIC_ACTOR:
+            self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
 
         # render skeletal actor gbuffer
         if RenderOption.RENDER_SKELETON_ACTOR:
@@ -528,7 +538,8 @@ class Renderer(Singleton):
         if self.scene_manager.terrain.is_render_terrain:
             self.scene_manager.terrain.render_terrain(RenderMode.SHADOW)
 
-        self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW, self.scene_manager.static_shadow_render_infos, self.shadowmap_material)
+        if RenderOption.RENDER_STATIC_ACTOR:
+            self.render_actors(RenderGroup.STATIC_ACTOR, RenderMode.SHADOW, self.scene_manager.static_shadow_render_infos, self.shadowmap_material)
 
         # dyanmic shadow
         self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.DYNAMIC_SHADOWMAP)
@@ -655,6 +666,8 @@ class Renderer(Singleton):
 
             if last_actor != actor:
                 material_instance = scene_material_instance or actor_material_instance
+                if render_mode == RenderMode.OBJECT_ID:
+                    material_instance.bind_uniform_data('object_id', actor.get_object_id())
                 material_instance.bind_uniform_data('is_instancing', is_instancing)
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 if render_group == RenderGroup.SKELETON_ACTOR:
@@ -681,12 +694,12 @@ class Renderer(Singleton):
             glClear(GL_COLOR_BUFFER_BIT)
 
             object_type = type(selected_object)
-            if SkeletonActor == object_type:
+            if SkeletonActor == object_type and RenderOption.RENDER_SKELETON_ACTOR:
                 self.render_actors(RenderGroup.SKELETON_ACTOR,
                                    RenderMode.SELECTED_OBJECT,
                                    self.scene_manager.selected_object_render_info,
                                    self.selcted_skeletal_object_material)
-            elif StaticActor == object_type:
+            elif StaticActor == object_type and RenderOption.RENDER_STATIC_ACTOR:
                 self.render_actors(RenderGroup.STATIC_ACTOR,
                                    RenderMode.SELECTED_OBJECT,
                                    self.scene_manager.selected_object_render_info,
@@ -700,6 +713,33 @@ class Renderer(Singleton):
             self.selcted_object_composite_material.use_program()
             self.selcted_object_composite_material.bind_uniform_data("texture_mask", RenderTargets.TEMP_RGBA8)
             self.postprocess.draw_elements()
+
+    def render_object_id(self):
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.OBJECT_ID, depth_texture=RenderTargets.OBJECT_ID_DEPTH)
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # render static actor
+        if RenderOption.RENDER_STATIC_ACTOR:
+            self.render_actors(RenderGroup.STATIC_ACTOR,
+                               RenderMode.OBJECT_ID,
+                               self.scene_manager.static_solid_render_infos,
+                               self.static_object_id_material)
+            self.render_actors(RenderGroup.STATIC_ACTOR,
+                               RenderMode.OBJECT_ID,
+                               self.scene_manager.static_translucent_render_infos,
+                               self.static_object_id_material)
+
+        # render skeletal actor gbuffer
+        if RenderOption.RENDER_SKELETON_ACTOR:
+            self.render_actors(RenderGroup.SKELETON_ACTOR,
+                               RenderMode.OBJECT_ID,
+                               self.scene_manager.skeleton_solid_render_infos,
+                               self.skeletal_object_id_material)
+            self.render_actors(RenderGroup.SKELETON_ACTOR,
+                               RenderMode.OBJECT_ID,
+                               self.scene_manager.skeleton_translucent_render_infos,
+                               self.skeletal_object_id_material)
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
@@ -1019,6 +1059,12 @@ class Renderer(Singleton):
 
             # PostProcess
             self.render_postprocess()
+
+        # render object id
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(True)
+        self.set_blend_state(False)
+        self.render_object_id()
 
         # selected object
         self.render_selected_object()

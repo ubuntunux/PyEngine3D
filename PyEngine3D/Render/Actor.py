@@ -14,6 +14,7 @@ class StaticActor:
         self.model = None
         self.has_mesh = False
         self.visible = object_data.get('visible', True)
+        self.object_id = object_data.get('object_id', 0)
 
         # transform
         self.bound_box = BoundBox()
@@ -45,6 +46,12 @@ class StaticActor:
 
     def delete(self):
         pass
+
+    def get_object_id(self):
+        return self.object_id
+
+    def set_object_id(self, object_id):
+        self.object_id = object_id
 
     def set_model(self, model):
         self.model = model

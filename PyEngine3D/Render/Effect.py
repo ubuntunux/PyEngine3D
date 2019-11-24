@@ -321,6 +321,7 @@ class Effect:
     def __init__(self, **effect_data):
         self.name = effect_data.get('name', 'effect')
         self.effect_info = effect_data.get('effect_info')
+        self.object_id = effect_data.get('object_id', 0)
 
         self.transform = TransformObject()
         self.transform.set_pos(effect_data.get('pos', (0.0, 0.0, 0.0)))

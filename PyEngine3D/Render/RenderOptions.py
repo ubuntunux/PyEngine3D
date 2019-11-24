@@ -41,6 +41,7 @@ class RenderMode(AutoEnum):
     GBUFFER = ()
     FORWARD_SHADING = ()
     SHADOW = ()
+    OBJECT_ID = ()
     SELECTED_OBJECT = ()
     COUNT = ()
 

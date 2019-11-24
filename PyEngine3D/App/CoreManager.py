@@ -617,6 +617,7 @@ class CoreManager(Singleton):
         keydown = self.game_backend.get_keyboard_pressed()
         mouse_delta = self.game_backend.mouse_delta
         btn_left, btn_middle, btn_right = self.game_backend.get_mouse_pressed()
+        btn_left_up, btn_middle_up, btn_right_up = self.game_backend.get_mouse_up()
 
         # get camera
         camera = self.scene_manager.main_camera
@@ -628,13 +629,16 @@ class CoreManager(Singleton):
             move_speed *= 4.0
             pan_speed *= 4.0
 
+        if btn_left_up:
+            self.scene_manager.intersect_select_object()
+
         # camera move pan
-        if btn_left and btn_right or btn_middle:
+        if btn_middle:
             camera_transform.move_left(-mouse_delta[0] * pan_speed)
             camera_transform.move_up(-mouse_delta[1] * pan_speed)
 
         # camera rotation
-        elif btn_left or btn_right:
+        elif btn_right:
             camera_transform.rotation_pitch(mouse_delta[1] * camera.rotation_speed)
             camera_transform.rotation_yaw(-mouse_delta[0] * camera.rotation_speed)
 
@@ -657,9 +661,9 @@ class CoreManager(Singleton):
 
         # move to up
         if keydown[Keyboard.Q]:
-            camera_transform.move_up(move_speed)
-        elif keydown[Keyboard.E]:
             camera_transform.move_up(-move_speed)
+        elif keydown[Keyboard.E]:
+            camera_transform.move_up(move_speed)
 
         if keydown[Keyboard.SPACE]:
             camera_transform.reset_transform()

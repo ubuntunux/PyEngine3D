@@ -130,6 +130,7 @@ class SplineData:
 class Spline3D:
     def __init__(self, **spline_data):
         self.name = spline_data.get('name', 'spline')
+        self.object_id = spline_data.get('object_id', 0)
         self.transform = TransformObject()
         self.transform.set_pos(spline_data.get('pos', [0, 0, 0]))
         self.transform.set_rotation(spline_data.get('rot', [0, 0, 0]))
@@ -139,6 +140,12 @@ class Spline3D:
         self.color = Float4(*spline_data.get('color', [1.0, 1.0, 1.0, 1.0]))
         self.width = spline_data.get('width', 1.0)
         self.attributes = Attributes()
+
+    def get_object_id(self):
+        return self.object_id
+
+    def set_object_id(self, object_id):
+        self.object_id = object_id
 
     def get_attribute(self):
         save_data = self.get_save_data()

@@ -23,6 +23,8 @@ class RenderTargets:
     SCREENBUFFER = None
     BACKBUFFER = None
     DEPTHSTENCIL = None
+    OBJECT_ID = None
+    OBJECT_ID_DEPTH = None
     HDR = None
     HDR_TEMP = None
     HDR_BACKUP = None
@@ -231,9 +233,39 @@ class RenderTargetManager(Singleton):
             option=Option.SSAA,
             width=fullsize_x,
             height=fullsize_y,
-            internal_format=GL_DEPTH24_STENCIL8,
-            texture_format=GL_DEPTH_STENCIL,
-            data_type=GL_UNSIGNED_INT_24_8,
+            internal_format=GL_DEPTH_COMPONENT32F,
+            texture_format=GL_DEPTH_COMPONENT,
+            data_type=GL_FLOAT,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            wrap=GL_CLAMP
+        )
+
+        object_id_size = 512
+
+        RenderTargets.OBJECT_ID = self.create_rendertarget(
+            "OBJECT_ID",
+            texture_type=Texture2D,
+            option=Option.NONE,
+            width=object_id_size,
+            height=object_id_size,
+            internal_format=GL_R32F,
+            texture_format=GL_RED,
+            data_type=GL_FLOAT,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.OBJECT_ID_DEPTH = self.create_rendertarget(
+            "OBJECT_ID_DEPTH",
+            texture_type=Texture2D,
+            option=Option.NONE,
+            width=object_id_size,
+            height=object_id_size,
+            internal_format=GL_DEPTH_COMPONENT32F,
+            texture_format=GL_DEPTH_COMPONENT,
+            data_type=GL_FLOAT,
             min_filter=GL_NEAREST,
             mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
