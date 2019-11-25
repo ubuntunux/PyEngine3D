@@ -73,6 +73,7 @@ class Renderer(Singleton):
         self.selcted_static_object_material = None
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
+        self.axis_gizmo_material = None
 
         # font
         self.font_instance_buffer = None
@@ -118,6 +119,9 @@ class Renderer(Singleton):
                                                                                             macros={"SKELETAL": 1})
 
         self.selcted_object_composite_material = self.resource_manager.get_material_instance("selected_object_composite")
+
+        self.axis_gizmo_material = self.resource_manager.get_material_instance(name="render_axis_gizmo",
+                                                                               shader_name="render_axis_gizmo")
 
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
@@ -492,7 +496,7 @@ class Renderer(Singleton):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.DIFFUSE,
                                                   RenderTargets.MATERIAL,
                                                   RenderTargets.WORLD_NORMAL,
-                                                  depth_texture=RenderTargets.DEPTHSTENCIL)
+                                                  depth_texture=RenderTargets.DEPTH)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -511,7 +515,7 @@ class Renderer(Singleton):
         glClear(GL_COLOR_BUFFER_BIT)
 
         if RenderOption.RENDER_STATIC_ACTOR:
-            self.postprocess.render_velocity(RenderTargets.DEPTHSTENCIL)
+            self.postprocess.render_velocity(RenderTargets.DEPTH)
 
         # render skeletal actor gbuffer
         if RenderOption.RENDER_SKELETON_ACTOR:
@@ -519,7 +523,7 @@ class Renderer(Singleton):
                                                       RenderTargets.MATERIAL,
                                                       RenderTargets.WORLD_NORMAL,
                                                       RenderTargets.VELOCITY,
-                                                      depth_texture=RenderTargets.DEPTHSTENCIL)
+                                                      depth_texture=RenderTargets.DEPTH)
             self.render_actors(RenderGroup.SKELETON_ACTOR,
                                RenderMode.GBUFFER,
                                self.scene_manager.skeleton_solid_render_infos)
@@ -562,7 +566,7 @@ class Renderer(Singleton):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
         glClearColor(1.0, 1.0, 1.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
-        self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
+        self.postprocess.render_linear_depth(RenderTargets.DEPTH, RenderTargets.LINEAR_DEPTH)
 
         # Screen Space Reflection
         if self.postprocess.is_render_ssr:
@@ -688,10 +692,12 @@ class Renderer(Singleton):
     def render_selected_object(self):
         selected_object = self.scene_manager.get_selected_object()
         if selected_object is not None:
-            self.set_blend_state(False)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.TEMP_RGBA8)
+            glDisable(GL_DEPTH_TEST)
+            glDepthMask(False)
             glClearColor(0.0, 0.0, 0.0, 0.0)
             glClear(GL_COLOR_BUFFER_BIT)
+            self.set_blend_state(False)
 
             object_type = type(selected_object)
             if SkeletonActor == object_type and RenderOption.RENDER_SKELETON_ACTOR:
@@ -714,12 +720,37 @@ class Renderer(Singleton):
             self.selcted_object_composite_material.bind_uniform_data("texture_mask", RenderTargets.TEMP_RGBA8)
             self.postprocess.draw_elements()
 
+    def render_axis_gizmo(self, render_mode):
+        if self.scene_manager.get_selected_object() is not None:
+            axis_gizmo_actor = self.scene_manager.axis_gizmo
+            material_instance = None
+            if RenderMode.GIZMO == render_mode:
+                material_instance = self.axis_gizmo_material
+            elif RenderMode.OBJECT_ID == render_mode:
+                material_instance = self.static_object_id_material
+            material_instance.use_program()
+            material_instance.bind_uniform_data('is_instancing', False)
+            material_instance.bind_uniform_data('model', axis_gizmo_actor.transform.matrix)
+            geometries = axis_gizmo_actor.get_geometries()
+            axis_gizmo_names = self.scene_manager.axis_gizmo_id_maps.keys()
+            for geometry in geometries:
+                axis_gizmo_name = geometry.name
+                if RenderMode.GIZMO == render_mode:
+                    material_instance.bind_uniform_data('color', self.scene_manager.axis_gizmo_colors[axis_gizmo_name])
+                elif RenderMode.OBJECT_ID == render_mode:
+                    material_instance.bind_uniform_data('object_id', self.scene_manager.axis_gizmo_id_maps[axis_gizmo_name])
+                geometry.draw_elements()
+
     def render_object_id(self):
         self.framebuffer_manager.bind_framebuffer(RenderTargets.OBJECT_ID, depth_texture=RenderTargets.OBJECT_ID_DEPTH)
+        glDisable(GL_CULL_FACE)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(True)
         glClearColor(0.0, 0.0, 0.0, 0.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.set_blend_state(False)
 
-        # render static actor
+        # render static actor object id
         if RenderOption.RENDER_STATIC_ACTOR:
             self.render_actors(RenderGroup.STATIC_ACTOR,
                                RenderMode.OBJECT_ID,
@@ -730,7 +761,7 @@ class Renderer(Singleton):
                                self.scene_manager.static_translucent_render_infos,
                                self.static_object_id_material)
 
-        # render skeletal actor gbuffer
+        # render skeletal actor object id
         if RenderOption.RENDER_SKELETON_ACTOR:
             self.render_actors(RenderGroup.SKELETON_ACTOR,
                                RenderMode.OBJECT_ID,
@@ -740,6 +771,9 @@ class Renderer(Singleton):
                                RenderMode.OBJECT_ID,
                                self.scene_manager.skeleton_translucent_render_infos,
                                self.skeletal_object_id_material)
+
+        glClear(GL_DEPTH_BUFFER_BIT)
+        self.render_axis_gizmo(RenderMode.OBJECT_ID)
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
@@ -819,7 +853,7 @@ class Renderer(Singleton):
         # Light Shaft
         if self.postprocess.is_render_light_shaft:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LIGHT_SHAFT)
-            self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE, RenderTargets.DEPTHSTENCIL)
+            self.postprocess.render_light_shaft(RenderTargets.ATMOSPHERE, RenderTargets.DEPTH)
 
         # Depth Of Field
         if self.postprocess.is_render_depth_of_field:
@@ -921,14 +955,14 @@ class Renderer(Singleton):
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
 
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL, depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.WORLD_NORMAL, depth_texture=RenderTargets.DEPTH)
             glClearColor(0.0, 1.0, 0.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
             glClearColor(1.0, 1.0, 1.0, 1.0)
             glClear(GL_COLOR_BUFFER_BIT)
-            self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
+            self.postprocess.render_linear_depth(RenderTargets.DEPTH, RenderTargets.LINEAR_DEPTH)
 
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR)
             glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -967,7 +1001,7 @@ class Renderer(Singleton):
 
             glDepthMask(False)  # cause depth prepass and gbuffer
 
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTH)
             glClear(GL_COLOR_BUFFER_BIT)
 
             self.render_solid()
@@ -987,7 +1021,7 @@ class Renderer(Singleton):
 
             # render ocean
             if self.scene_manager.ocean.is_render_ocean:
-                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+                self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTH)
                 glDisable(GL_CULL_FACE)
                 glEnable(GL_DEPTH_TEST)
                 glDepthMask(True)
@@ -1000,7 +1034,7 @@ class Renderer(Singleton):
 
                 # re copy Linear depth
                 self.framebuffer_manager.bind_framebuffer(RenderTargets.LINEAR_DEPTH)
-                self.postprocess.render_linear_depth(RenderTargets.DEPTHSTENCIL, RenderTargets.LINEAR_DEPTH)
+                self.postprocess.render_linear_depth(RenderTargets.DEPTH, RenderTargets.LINEAR_DEPTH)
 
             # render atmosphere
             if self.scene_manager.atmosphere.is_render_atmosphere:
@@ -1033,7 +1067,7 @@ class Renderer(Singleton):
             # set blend state
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTH)
             glEnable(GL_DEPTH_TEST)
 
             # Translucent
@@ -1061,9 +1095,6 @@ class Renderer(Singleton):
             self.render_postprocess()
 
         # render object id
-        glEnable(GL_DEPTH_TEST)
-        glDepthMask(True)
-        self.set_blend_state(False)
         self.render_object_id()
 
         # selected object
@@ -1082,10 +1113,18 @@ class Renderer(Singleton):
 
         if RenderOption.RENDER_DEBUG_LINE:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTHSTENCIL)
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
             self.render_axis()
 
             for spline in self.scene_manager.splines:
                 self.debug_line_manager.draw_spline_3d(spline)
 
             self.debug_line_manager.render_debug_line()
+
+        if RenderOption.RENDER_GIZMO:
+            self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
+            glEnable(GL_DEPTH_TEST)
+            glDepthMask(True)
+            glClear(GL_DEPTH_BUFFER_BIT)
+            self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            self.render_axis_gizmo(RenderMode.GIZMO)

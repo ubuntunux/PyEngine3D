@@ -22,7 +22,8 @@ class Option:
 class RenderTargets:
     SCREENBUFFER = None
     BACKBUFFER = None
-    DEPTHSTENCIL = None
+    DEPTH = None
+    DEPTH_STENCIL = None
     OBJECT_ID = None
     OBJECT_ID_DEPTH = None
     HDR = None
@@ -227,8 +228,8 @@ class RenderTargetManager(Singleton):
         # NOTE : bind render target
         self.viewport_manager.main_viewport.bind_texture(RenderTargets.BACKBUFFER)
 
-        RenderTargets.DEPTHSTENCIL = self.create_rendertarget(
-            "DEPTHSTENCIL",
+        RenderTargets.DEPTH = self.create_rendertarget(
+            "DEPTH",
             texture_type=Texture2D,
             option=Option.SSAA,
             width=fullsize_x,
@@ -240,6 +241,20 @@ class RenderTargetManager(Singleton):
             mag_filter=GL_NEAREST,
             wrap=GL_CLAMP
         )
+
+        # RenderTargets.DEPTH_STENCIL = self.create_rendertarget(
+        #     "DEPTH_STENCIL",
+        #     texture_type=Texture2D,
+        #     option=Option.SSAA,
+        #     width=fullsize_x,
+        #     height=fullsize_y,
+        #     internal_format=GL_DEPTH24_STENCIL8,
+        #     texture_format=GL_DEPTH_STENCIL,
+        #     data_type=GL_UNSIGNED_INT_24_8,
+        #     min_filter=GL_NEAREST,
+        #     mag_filter=GL_NEAREST,
+        #     wrap=GL_CLAMP
+        # )
 
         object_id_size = 512
 

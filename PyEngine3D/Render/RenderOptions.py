@@ -22,6 +22,7 @@ class RenderOption:
     RENDER_EFFECT = True
     RENDER_COLLISION = True
     RENDER_DEBUG_LINE = True
+    RENDER_GIZMO = True
 
 
 class RenderingType(AutoEnum):
@@ -43,6 +44,7 @@ class RenderMode(AutoEnum):
     SHADOW = ()
     OBJECT_ID = ()
     SELECTED_OBJECT = ()
+    GIZMO = ()
     COUNT = ()
 
 

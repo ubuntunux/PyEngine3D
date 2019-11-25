@@ -16,7 +16,7 @@ from PyEngine3D.Render import Effect
 from PyEngine3D.Render import Spline3D
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
-from PyEngine3D.Utilities import Singleton, GetClassName, length
+from PyEngine3D.Utilities import Singleton, GetClassName, Float3, length
 
 
 class SceneManager(Singleton):
@@ -33,6 +33,8 @@ class SceneManager(Singleton):
         self.main_light = None
         self.main_light_probe = None
         self.selected_object = None
+        self.selected_axis_gizmo = ""
+        self.axis_gizmo = None
 
         # envirment object
         self.atmosphere = None
@@ -47,7 +49,12 @@ class SceneManager(Singleton):
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
         self.objectIDMap = {}
-        self.objectIDEntry = list(range(2 ** 16))
+        self.objectIDEntry = []
+        self.object_id_start = 0
+        self.axis_gizmo_id_start = 1
+        self.axis_gizmo_names = {}
+        self.axis_gizmo_id_maps = {}
+        self.axis_gizmo_colors = {}
 
         # render group
         self.point_light_count = 0
@@ -68,6 +75,50 @@ class SceneManager(Singleton):
         self.renderer = core_manager.renderer
         self.effect_manager = core_manager.effect_manager
 
+        # 1 ~ geometry_count : axis gizmo id
+        self.AXIS_GIZMO_POSITION_Z_ID = self.axis_gizmo_id_start
+        self.AXIS_GIZMO_ROTATION_YAW_ID = self.axis_gizmo_id_start + 1
+        self.AXIS_GIZMO_POSITION_XZ_ID = self.axis_gizmo_id_start + 2
+
+        self.axis_gizmo_names[self.axis_gizmo_id_start] = "position_z"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 1] = "rotation_yaw"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 2] = "position_xz"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 3] = "rotation_pitch"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 4] = "position_yz"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 5] = "rotation_roll"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 6] = "position_xy"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 7] = "position_y"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 8] = "position_x"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 9] = "scale_z"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 10] = "scale_x"
+        self.axis_gizmo_names[self.axis_gizmo_id_start + 11] = "scale_y"
+
+        self.axis_gizmo_id_maps = {}
+        for axis_gizmo_id, axis_gizmo_name in self.axis_gizmo_names.items():
+            self.axis_gizmo_id_maps[axis_gizmo_name] = axis_gizmo_id
+
+        self.axis_gizmo_colors = dict(
+            position_x=Float3(1.0, 0.0, 0.0),
+            position_y=Float3(0.0, 1.0, 0.0),
+            position_z=Float3(0.0, 0.0, 1.0),
+            position_xy=Float3(1.0, 1.0, 0.0),
+            position_xz=Float3(1.0, 0.0, 1.0),
+            position_yz=Float3(0.0, 1.0, 1.0),
+            rotation_pitch=Float3(1.0, 0.0, 0.0),
+            rotation_yaw=Float3(0.0, 1.0, 0.0),
+            rotation_roll=Float3(0.0, 0.0, 1.0),
+            scale_x=Float3(1.0, 0.0, 0.0),
+            scale_z=Float3(0.0, 0.0, 1.0),
+            scale_y=Float3(0.0, 1.0, 0.0)
+        )
+
+        self.axis_gizmo = StaticActor(name='axis_gizmo', model=self.resource_manager.get_model('axis_gizmo'))
+        axis_gizmo_geometry_count = self.axis_gizmo.get_geometry_count()
+        for i, geometry in enumerate(self.axis_gizmo.get_geometries()):
+            geometry.name = self.axis_gizmo_names[self.axis_gizmo_id_start + i]
+        self.object_id_start = self.axis_gizmo_id_start + axis_gizmo_geometry_count
+        assert(axis_gizmo_geometry_count == len(self.axis_gizmo_names))
+
     def get_current_scene_name(self):
         return self.__current_scene_name
 
@@ -82,6 +133,7 @@ class SceneManager(Singleton):
         self.main_light = None
         self.main_light_probe = None
         self.selected_object = None
+        self.selected_axis_gizmo = ""
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
@@ -92,7 +144,7 @@ class SceneManager(Singleton):
 
         self.objectMap = {}
         self.objectIDMap = {}
-        self.objectIDEntry = list(range(2 ** 16))
+        self.objectIDEntry = list(range(self.object_id_start, 2 ** 16, 1))
 
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
@@ -473,9 +525,13 @@ class SceneManager(Singleton):
         y = math.floor(min(1.0, (mouse_pos[1] / windows_size[1])) * (RenderTargets.OBJECT_ID.height - 1))
         object_ids = RenderTargets.OBJECT_ID.get_image_data()
         object_id = math.floor(object_ids[y][x] + 0.5)
-        if object_id in self.objectIDMap:
+        if 0 < object_id < self.object_id_start:
+            self.selected_axis_gizmo = self.axis_gizmo_names[object_id]
+        elif object_id in self.objectIDMap:
             obj = self.objectIDMap[object_id]
             self.set_selected_object(obj.name)
+        else:
+            self.set_selected_object("")
 
     def set_object_focus(self, object_name):
         obj = self.get_object(object_name)
@@ -605,23 +661,6 @@ class SceneManager(Singleton):
         self.update_skeleton_render_info()
         self.update_light_render_infos()
 
-        def check_collide(bound_box):
-            bound_box_pos = bound_box.bound_center
-            radius = bound_box.radius * 0.5
-
-            direction = -self.main_camera.transform.front
-            camera_pos = self.main_camera.transform.get_pos()
-            target_pos = camera_pos + direction * 10000.0
-            to_actor0 = bound_box_pos - camera_pos
-            to_actor1 = bound_box_pos - target_pos
-            if length(to_actor0) <= radius or length(to_actor1) <= radius:
-                return True
-            elif np.dot(to_actor0, to_actor1) <= 0.0:
-                d = length(to_actor0 - direction * np.dot(to_actor0, direction))
-                if d <= radius:
-                    return True
-            return False
-
         self.selected_object_render_info = []
         if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):
             gather_render_infos(culling_func=always_pass,
@@ -630,3 +669,8 @@ class SceneManager(Singleton):
                                 actor_list=[self.selected_object, ],
                                 solid_render_infos=self.selected_object_render_info,
                                 translucent_render_infos=self.selected_object_render_info)
+            # update axis gizmo
+            axis_gizmo_pos = self.selected_object.transform.get_pos()
+            self.axis_gizmo.transform.set_pos(axis_gizmo_pos)
+            self.axis_gizmo.transform.set_scale(length(axis_gizmo_pos - self.main_camera.transform.get_pos()) * 0.15)
+            self.axis_gizmo.update(dt)

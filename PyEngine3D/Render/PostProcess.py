@@ -554,7 +554,7 @@ class PostProcess:
         self.deferred_shading.bind_uniform_data("texture_diffuse", RenderTargets.DIFFUSE)
         self.deferred_shading.bind_uniform_data("texture_material", RenderTargets.MATERIAL)
         self.deferred_shading.bind_uniform_data("texture_normal", RenderTargets.WORLD_NORMAL)
-        self.deferred_shading.bind_uniform_data("texture_depth", RenderTargets.DEPTHSTENCIL)
+        self.deferred_shading.bind_uniform_data("texture_depth", RenderTargets.DEPTH)
 
         self.deferred_shading.bind_uniform_data("texture_probe", texture_probe)
         self.deferred_shading.bind_uniform_data("texture_shadow", RenderTargets.COMPOSITE_SHADOWMAP)

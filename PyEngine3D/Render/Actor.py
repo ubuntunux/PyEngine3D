@@ -145,25 +145,25 @@ class StaticActor:
         return self.attributes
 
     def set_attribute(self, attribute_name, attribute_value, item_info_history, attribute_index):
-        if 1 < len(item_info_history) or 'instance_scale' == item_info_history[0].attribute_name:
-            attribute = getattr(self, item_info_history[0].attribute_name)
-            if attribute is not None and isinstance(attribute, RangeVariable):
-                if 'min_value' == attribute_name:
-                    attribute.set_range(attribute_value, attribute.value[1])
-                elif 'max_value' == attribute_name:
-                    attribute.set_range(attribute.value[0], attribute_value)
-                self.set_instance_count(self.instance_count)
-        else:
-            if attribute_name == 'pos':
-                self.transform.set_pos(attribute_value)
-            elif attribute_name == 'rot':
-                self.transform.set_rotation(attribute_value)
-            elif attribute_name == 'scale':
-                self.transform.set_scale(attribute_value)
-            elif attribute_name == 'instance_count':
-                self.set_instance_count(attribute_value)
-            elif hasattr(self, attribute_name):
-                setattr(self, attribute_name, attribute_value)
+        if attribute_name == 'pos':
+            self.transform.set_pos(attribute_value)
+        elif attribute_name == 'rot':
+            self.transform.set_rotation(attribute_value)
+        elif attribute_name == 'scale':
+            self.transform.set_scale(attribute_value)
+        elif attribute_name == 'instance_count':
+            self.set_instance_count(attribute_value)
+        elif hasattr(self, attribute_name):
+            setattr(self, attribute_name, attribute_value)
+        elif 1 < len(item_info_history) or 'instance_scale' == item_info_history[0].attribute_name:
+            if hasattr(self, item_info_history[0].attribute_name):
+                attribute = getattr(self, item_info_history[0].attribute_name)
+                if isinstance(attribute, RangeVariable):
+                    if 'min_value' == attribute_name:
+                        attribute.set_range(attribute_value, attribute.value[1])
+                    elif 'max_value' == attribute_name:
+                        attribute.set_range(attribute.value[0], attribute_value)
+                    self.set_instance_count(self.instance_count)
 
     def get_mesh(self):
         return self.model.mesh if self.has_mesh else None
