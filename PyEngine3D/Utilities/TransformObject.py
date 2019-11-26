@@ -44,6 +44,13 @@ class TransformObject:
         self.set_scale(Float3(1, 1, 1))
         self.update_transform(True)
 
+    def clone(self, other_transform):
+        self.set_pos(other_transform.get_pos())
+        self.set_rotation(other_transform.get_rotation())
+        self.set_quaternion(other_transform.get_quaternion())
+        self.set_scale(other_transform.get_scale())
+        self.update_transform(True)
+
     # Translate
     def get_pos(self):
         return self.pos

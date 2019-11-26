@@ -322,6 +322,7 @@ class PyGlet(GameBackend):
         if self.mouse_grab:
             self.mouse_delta[0] += x - self.half_width  # dx
             self.mouse_delta[1] += y - self.half_height  # dy
+        self.core_manager.update_event(Event.MOUSE_MOVE)
 
     def on_mouse_press(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
@@ -335,6 +336,7 @@ class PyGlet(GameBackend):
         elif button == window.mouse.RIGHT:
             self.btn_r_down = True
             self.btn_r_pressed = True
+        self.core_manager.update_event(Event.MOUSE_BUTTON_DOWN)
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.mouse_pos[0] = x
@@ -348,6 +350,7 @@ class PyGlet(GameBackend):
         elif button == window.mouse.RIGHT:
             self.btn_r_up = True
             self.btn_r_pressed = False
+        self.core_manager.update_event(Event.MOUSE_BUTTON_UP)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.mouse_pos[0] = x
@@ -355,6 +358,7 @@ class PyGlet(GameBackend):
         if self.mouse_grab:
             self.mouse_delta[0] += x - self.half_width  # dx
             self.mouse_delta[1] += y - self.half_height  # dy
+        self.core_manager.update_event(Event.MOUSE_MOVE)
 
     def on_mouse_enter(self, x, y):
         pass

@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-from .GameBackend import GameBackNames, Keyboard, Event
+from .GameBackend import GameBackNames, Keyboard, Event, InputMode
 from PyEngine3D.Common import logger, log_level, COMMAND, VIDEO_RESIZE_TIME
 from PyEngine3D.Utilities import Singleton, GetClassName, Config, Profiler
 
@@ -31,7 +31,6 @@ class CoreManager(Singleton):
 
         self.need_to_gc_collect = False
 
-        self.is_play_mode = False
         self.is_basic_mode = False
 
         # timer
@@ -152,8 +151,7 @@ class CoreManager(Singleton):
             self.game_backend = GameBackend_pyglet.PyGlet(self)
             self.last_game_backend = GameBackNames.PYGLET
 
-        # try 2 times.
-        for i in range(2):
+        for i in range(GameBackNames.COUNT):
             if self.last_game_backend == GameBackNames.PYGAME:
                 try:
                     run_pygame()
@@ -347,12 +345,12 @@ class CoreManager(Singleton):
 
         # play mode
         def cmd_play(value):
-            self.is_play_mode = True
+            self.game_backend.set_input_mode(InputMode.GAME_PLAY)
             self.load_script_manager()
         self.commands[COMMAND.PLAY.value] = cmd_play
 
         def cmd_stop(value):
-            self.is_play_mode = False
+            self.game_backend.set_input_mode(InputMode.NONE)
             if self.script_manager is not None:
                 try:
                     self.script_manager.exit()
@@ -567,51 +565,70 @@ class CoreManager(Singleton):
         return self.game_backend.text
 
     def update_event(self, event_type, event_value=None):
+        mouse_delta = self.game_backend.mouse_delta
+        key_pressed = self.game_backend.get_keyboard_pressed()
+        subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
+        btn_left, btn_middle, btn_right = self.game_backend.get_mouse_pressed()
+        btn_left_up, btn_middle_up, btn_right_up = self.game_backend.get_mouse_up()
+
         if Event.QUIT == event_type:
             self.close()
         elif Event.VIDEORESIZE == event_type:
             self.video_resized = True
             self.video_resize_time = self.current_time + VIDEO_RESIZE_TIME
             self.notify_change_resolution(event_value)
-        elif Event.KEYDOWN == event_type and not self.is_play_mode:
-            pass
-        elif Event.KEYUP == event_type and not self.is_play_mode:
-            key_pressed = self.game_backend.get_keyboard_pressed()
-            subkey_down = key_pressed[Keyboard.LCTRL] or key_pressed[Keyboard.LSHIFT] or key_pressed[Keyboard.LALT]
-            if Keyboard.ESCAPE == event_value:
-                if self.game_backend.full_screen:
-                    self.game_backend.change_resolution(0, 0, False)
-                elif self.renderer.debug_texture is not None:
-                    self.renderer.set_debug_texture(None)
-                elif self.renderer.postprocess.is_render_shader():
-                    self.renderer.postprocess.is_render_material_instance = False
-                else:
-                    self.close()
-            elif Keyboard.TAB == event_value:
-                self.game_backend.toggle_mouse_grab()
-            elif Keyboard._1 == event_value:
-                models = self.resource_manager.model_loader.get_resource_list()
-                if models:
-                    for i in range(20):
-                        pos = [np.random.uniform(-10, 10) for x in range(3)]
-                        model = np.random.choice(models)
-                        obj_instance = self.scene_manager.add_object(model=model.get_data(), pos=pos)
-                        if obj_instance:
-                            self.send_object_info(obj_instance)
-            elif Keyboard._2 == event_value:
-                self.scene_manager.reset_light_probe()
-            elif Keyboard._3 == event_value:
-                self.gc_collect()
-            elif Keyboard.DELETE == event_value:
-                # Test Code
-                obj_names = set(self.scene_manager.get_object_names())
-                # clear static mesh
-                self.scene_manager.clear_actors()
-                current_obj_names = set(self.scene_manager.get_object_names())
-                for obj_name in (obj_names - current_obj_names):
-                    self.notify_delete_object(obj_name)
         elif Event.TEXT == event_type:
             pass
+
+        if InputMode.NONE == self.game_backend.get_input_mode():
+            if Event.KEYUP == event_type:
+                if Keyboard.ESCAPE == event_value:
+                    if self.game_backend.full_screen:
+                        self.game_backend.change_resolution(0, 0, False)
+                    elif self.renderer.debug_texture is not None:
+                        self.renderer.set_debug_texture(None)
+                    elif self.renderer.postprocess.is_render_shader():
+                        self.renderer.postprocess.is_render_material_instance = False
+                    elif self.scene_manager.get_selected_object() is not None:
+                        self.scene_manager.set_selected_object("")
+                    else:
+                        self.close()
+                elif Keyboard.TAB == event_value:
+                    self.game_backend.toggle_mouse_grab()
+                elif Keyboard.G == event_value:
+                    if self.scene_manager.get_selected_object() is not None:
+                        self.game_backend.set_input_mode(InputMode.EDIT_OBJECT_TRANSFORM)
+                        self.scene_manager.backup_selected_object_transform()
+                elif Keyboard._1 == event_value:
+                    models = self.resource_manager.model_loader.get_resource_list()
+                    if models:
+                        for i in range(20):
+                            pos = [np.random.uniform(-10, 10) for x in range(3)]
+                            model = np.random.choice(models)
+                            obj_instance = self.scene_manager.add_object(model=model.get_data(), pos=pos)
+                            if obj_instance:
+                                self.send_object_info(obj_instance)
+                elif Keyboard._2 == event_value:
+                    self.scene_manager.reset_light_probe()
+                elif Keyboard._3 == event_value:
+                    self.gc_collect()
+                elif Keyboard.DELETE == event_value:
+                    # Test Code
+                    obj_names = set(self.scene_manager.get_object_names())
+                    # clear static mesh
+                    self.scene_manager.clear_actors()
+                    current_obj_names = set(self.scene_manager.get_object_names())
+                    for obj_name in (obj_names - current_obj_names):
+                        self.notify_delete_object(obj_name)
+            if btn_left_up:
+                self.scene_manager.intersect_select_object()
+        elif InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
+            if Event.KEYUP == event_type or Event.MOUSE_BUTTON_UP == event_type:
+                if Keyboard.ESCAPE == event_value or btn_right_up:
+                    self.game_backend.set_input_mode(InputMode.NONE)
+                    self.scene_manager.restore_selected_object_transform()
+                if Keyboard.ENTER == event_value or btn_left_up:
+                    self.game_backend.set_input_mode(InputMode.NONE)
 
     def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
@@ -628,9 +645,6 @@ class CoreManager(Singleton):
         if keydown[Keyboard.LSHIFT]:
             move_speed *= 4.0
             pan_speed *= 4.0
-
-        if btn_left_up:
-            self.scene_manager.intersect_select_object()
 
         # camera move pan
         if btn_middle:
@@ -701,7 +715,7 @@ class CoreManager(Singleton):
         self.resource_manager.update()
 
         if not touch_event and self.viewport_manager.main_viewport.collide(*self.get_mouse_pos()):
-            if self.is_play_mode:
+            if InputMode.GAME_PLAY == self.game_backend.get_input_mode():
                 if self.script_manager is not None:
                     try:
                         self.script_manager.update(delta)
@@ -789,6 +803,8 @@ class CoreManager(Singleton):
             # selected object transform info
             selected_object = self.scene_manager.get_selected_object()
             if selected_object:
+                if InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
+                    self.scene_manager.edit_selected_object_transform()
                 self.font_manager.log("Selected Object : %s" % selected_object.name)
                 if hasattr(selected_object, 'transform'):
                     self.font_manager.log(selected_object.transform.get_transform_infos())

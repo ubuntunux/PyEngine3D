@@ -722,7 +722,7 @@ class Renderer(Singleton):
 
     def render_axis_gizmo(self, render_mode):
         if self.scene_manager.get_selected_object() is not None:
-            axis_gizmo_actor = self.scene_manager.axis_gizmo
+            axis_gizmo_actor = self.scene_manager.get_axis_gizmo()
             material_instance = None
             if RenderMode.GIZMO == render_mode:
                 material_instance = self.axis_gizmo_material
@@ -732,13 +732,11 @@ class Renderer(Singleton):
             material_instance.bind_uniform_data('is_instancing', False)
             material_instance.bind_uniform_data('model', axis_gizmo_actor.transform.matrix)
             geometries = axis_gizmo_actor.get_geometries()
-            axis_gizmo_names = self.scene_manager.axis_gizmo_id_maps.keys()
-            for geometry in geometries:
-                axis_gizmo_name = geometry.name
+            for i, geometry in enumerate(geometries):
                 if RenderMode.GIZMO == render_mode:
-                    material_instance.bind_uniform_data('color', self.scene_manager.axis_gizmo_colors[axis_gizmo_name])
+                    material_instance.bind_uniform_data('color', axis_gizmo_actor.get_object_color(i))
                 elif RenderMode.OBJECT_ID == render_mode:
-                    material_instance.bind_uniform_data('object_id', self.scene_manager.axis_gizmo_id_maps[axis_gizmo_name])
+                    material_instance.bind_uniform_data('object_id', axis_gizmo_actor.get_object_id(i))
                 geometry.draw_elements()
 
     def render_object_id(self):

@@ -8,7 +8,7 @@ import numpy as np
 
 from PyEngine3D.Common import logger
 from PyEngine3D.Common.Constants import *
-from PyEngine3D.Render import CollisionActor, StaticActor, SkeletonActor
+from PyEngine3D.Render import CollisionActor, StaticActor, SkeletonActor, AxisGizmo
 from PyEngine3D.Render import Camera, MainLight, PointLight, LightProbe
 from PyEngine3D.Render import gather_render_infos, always_pass, view_frustum_culling_geometry, shadow_culling
 from PyEngine3D.Render import Atmosphere, Ocean, Terrain
@@ -16,7 +16,7 @@ from PyEngine3D.Render import Effect
 from PyEngine3D.Render import Spline3D
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
-from PyEngine3D.Utilities import Singleton, GetClassName, Float3, length
+from PyEngine3D.Utilities import Singleton, GetClassName, TransformObject, Float3, length
 
 
 class SceneManager(Singleton):
@@ -33,7 +33,8 @@ class SceneManager(Singleton):
         self.main_light = None
         self.main_light_probe = None
         self.selected_object = None
-        self.selected_axis_gizmo = ""
+        self.selected_object_transform = TransformObject()
+        self.selected_object_id = 0
         self.axis_gizmo = None
 
         # envirment object
@@ -50,11 +51,7 @@ class SceneManager(Singleton):
         self.objectMap = {}  # All of objects
         self.objectIDMap = {}
         self.objectIDEntry = []
-        self.object_id_start = 0
-        self.axis_gizmo_id_start = 1
-        self.axis_gizmo_names = {}
-        self.axis_gizmo_id_maps = {}
-        self.axis_gizmo_colors = {}
+        self.object_id_start = AxisGizmo.ID_COUNT
 
         # render group
         self.point_light_count = 0
@@ -74,50 +71,7 @@ class SceneManager(Singleton):
         self.scene_loader = self.resource_manager.scene_loader
         self.renderer = core_manager.renderer
         self.effect_manager = core_manager.effect_manager
-
-        # 1 ~ geometry_count : axis gizmo id
-        self.AXIS_GIZMO_POSITION_Z_ID = self.axis_gizmo_id_start
-        self.AXIS_GIZMO_ROTATION_YAW_ID = self.axis_gizmo_id_start + 1
-        self.AXIS_GIZMO_POSITION_XZ_ID = self.axis_gizmo_id_start + 2
-
-        self.axis_gizmo_names[self.axis_gizmo_id_start] = "position_z"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 1] = "rotation_yaw"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 2] = "position_xz"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 3] = "rotation_pitch"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 4] = "position_yz"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 5] = "rotation_roll"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 6] = "position_xy"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 7] = "position_y"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 8] = "position_x"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 9] = "scale_z"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 10] = "scale_x"
-        self.axis_gizmo_names[self.axis_gizmo_id_start + 11] = "scale_y"
-
-        self.axis_gizmo_id_maps = {}
-        for axis_gizmo_id, axis_gizmo_name in self.axis_gizmo_names.items():
-            self.axis_gizmo_id_maps[axis_gizmo_name] = axis_gizmo_id
-
-        self.axis_gizmo_colors = dict(
-            position_x=Float3(1.0, 0.0, 0.0),
-            position_y=Float3(0.0, 1.0, 0.0),
-            position_z=Float3(0.0, 0.0, 1.0),
-            position_xy=Float3(1.0, 1.0, 0.0),
-            position_xz=Float3(1.0, 0.0, 1.0),
-            position_yz=Float3(0.0, 1.0, 1.0),
-            rotation_pitch=Float3(1.0, 0.0, 0.0),
-            rotation_yaw=Float3(0.0, 1.0, 0.0),
-            rotation_roll=Float3(0.0, 0.0, 1.0),
-            scale_x=Float3(1.0, 0.0, 0.0),
-            scale_z=Float3(0.0, 0.0, 1.0),
-            scale_y=Float3(0.0, 1.0, 0.0)
-        )
-
-        self.axis_gizmo = StaticActor(name='axis_gizmo', model=self.resource_manager.get_model('axis_gizmo'))
-        axis_gizmo_geometry_count = self.axis_gizmo.get_geometry_count()
-        for i, geometry in enumerate(self.axis_gizmo.get_geometries()):
-            geometry.name = self.axis_gizmo_names[self.axis_gizmo_id_start + i]
-        self.object_id_start = self.axis_gizmo_id_start + axis_gizmo_geometry_count
-        assert(axis_gizmo_geometry_count == len(self.axis_gizmo_names))
+        self.axis_gizmo = AxisGizmo(name='axis_gizmo', model=self.resource_manager.get_model('axis_gizmo'))
 
     def get_current_scene_name(self):
         return self.__current_scene_name
@@ -133,7 +87,7 @@ class SceneManager(Singleton):
         self.main_light = None
         self.main_light_probe = None
         self.selected_object = None
-        self.selected_axis_gizmo = ""
+        self.selected_object_id = 0
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
@@ -480,6 +434,9 @@ class SceneManager(Singleton):
         if obj is not None and obj not in (self.main_camera, self.main_light, self.main_light_probe):
             self.unregist_resource(obj)
 
+    def get_axis_gizmo(self):
+        return self.axis_gizmo
+
     def get_object(self, object_name):
         return self.objectMap[object_name] if object_name in self.objectMap else None
 
@@ -518,6 +475,20 @@ class SceneManager(Singleton):
             if selected_object and hasattr(selected_object, "set_selected"):
                 selected_object.set_selected(True)
 
+    def backup_selected_object_transform(self):
+        if self.selected_object and hasattr(self.selected_object, "transform"):
+            self.selected_object_transform.clone(self.selected_object.transform)
+
+    def restore_selected_object_transform(self):
+        if self.selected_object and hasattr(self.selected_object, "transform"):
+            self.selected_object.transform.clone(self.selected_object_transform)
+
+    def edit_selected_object_transform(self):
+        camera_transform = self.main_camera.transform
+        mouse_delta = self.core_manager.game_backend.mouse_delta
+        self.selected_object.transform.move(camera_transform.left * mouse_delta[0] * 0.01)
+        self.selected_object.transform.move(camera_transform.up * mouse_delta[1] * 0.01)
+
     def intersect_select_object(self):
         windows_size = self.core_manager.get_window_size()
         mouse_pos = self.core_manager.get_mouse_pos()
@@ -525,11 +496,11 @@ class SceneManager(Singleton):
         y = math.floor(min(1.0, (mouse_pos[1] / windows_size[1])) * (RenderTargets.OBJECT_ID.height - 1))
         object_ids = RenderTargets.OBJECT_ID.get_image_data()
         object_id = math.floor(object_ids[y][x] + 0.5)
-        if 0 < object_id < self.object_id_start:
-            self.selected_axis_gizmo = self.axis_gizmo_names[object_id]
-        elif object_id in self.objectIDMap:
-            obj = self.objectIDMap[object_id]
-            self.set_selected_object(obj.name)
+        self.selected_object_id = object_id
+        if 0 < object_id:
+            if AxisGizmo.ID_COUNT <= object_id and (object_id in self.objectIDMap):
+                obj = self.objectIDMap[object_id]
+                self.set_selected_object(obj.name)
         else:
             self.set_selected_object("")
 

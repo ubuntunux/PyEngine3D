@@ -292,6 +292,7 @@ class PyGame(GameBackend):
                 self.mouse_pos[...] = pygame.mouse.get_pos()
                 # invert - Y
                 self.mouse_pos[1] = self.height - self.mouse_pos[1]
+                self.core_manager.update_event(Event.MOUSE_MOTION)
             elif event_type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.btn_l_down = True
@@ -306,6 +307,7 @@ class PyGame(GameBackend):
                     self.wheel_up = True
                 elif event.button == 5:
                     self.wheel_down = True
+                self.core_manager.update_event(Event.MOUSE_BUTTON_DOWN)
             elif event_type == MOUSEBUTTONUP:
                 if event.button == 1:
                     self.btn_l_up = True
@@ -320,6 +322,7 @@ class PyGame(GameBackend):
                     self.wheel_up = False
                 elif event.button == 5:
                     self.wheel_down = False
+                self.core_manager.update_event(Event.MOUSE_BUTTON_UP)
         self.mouse_delta[...] = self.mouse_pos - self.mouse_pos_old
 
         if self.get_mouse_grab():

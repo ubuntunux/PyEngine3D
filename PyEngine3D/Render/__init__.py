@@ -11,6 +11,7 @@ from .Model import Model
 
 from .ProceduralTexture import CreateProceduralTexture, NoiseTexture3D, CloudTexture3D, VectorFieldTexture3D
 from .Actor import CollisionActor, StaticActor, SkeletonActor
+from .Gizmo import AxisGizmo
 from .Effect import EffectManager, Effect, Particle, EffectInfo, ParticleInfo
 from .Camera import Camera
 from .Light import MainLight, PointLight

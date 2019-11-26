@@ -9,6 +9,7 @@ from PyEngine3D.Common import logger, log_level, COMMAND
 class GameBackNames:
     PYGLET = "pyglet"
     PYGAME = "pygame"
+    COUNT = 2
 
 
 class Event(AutoEnum):
@@ -17,6 +18,15 @@ class Event(AutoEnum):
     KEYDOWN = ()
     KEYUP = ()
     TEXT = ()
+    MOUSE_BUTTON_DOWN = ()
+    MOUSE_BUTTON_UP = ()
+    MOUSE_MOVE = ()
+
+
+class InputMode(AutoEnum):
+    NONE = ()
+    GAME_PLAY = ()
+    EDIT_OBJECT_TRANSFORM = ()
 
 
 class Keyboard:
@@ -231,6 +241,8 @@ class GameBackend:
         self.screen_height = 0
         self.aspect = 1.0
         self.full_screen = False
+        self.is_play_mode = False
+        self.input_mode = InputMode.NONE
 
         self.mouse_grab = False
         self.mouse_pos = np.zeros(2)
@@ -255,6 +267,12 @@ class GameBackend:
 
         self.key_pressed = dict()
         self.key_released = dict()
+
+    def get_input_mode(self):
+        return self.input_mode
+
+    def set_input_mode(self, input_mode):
+        self.input_mode = input_mode
 
     def get_mouse_grab(self):
         return self.mouse_grab
