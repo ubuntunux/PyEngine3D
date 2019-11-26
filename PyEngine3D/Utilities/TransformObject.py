@@ -195,6 +195,20 @@ class TransformObject:
     def set_scale_z(self, z):
         self.scale[2] = z
 
+    def scale_xyz(self, scale):
+        self.scale_x(scale[0])
+        self.scale_y(scale[1])
+        self.scale_z(scale[2])
+
+    def scale_x(self, x):
+        self.scale[0] += x
+
+    def scale_y(self, y):
+        self.scale[1] += y
+
+    def scale_z(self, z):
+        self.scale[2] += z
+
     def scaling(self, scale):
         self.scale[...] = self.scale + scale
 

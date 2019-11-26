@@ -463,6 +463,18 @@ class SceneManager(Singleton):
         obj = self.get_object(object_name)
         obj and obj.set_attribute(attribute_name, attribute_value, item_info_history, attribute_index)
 
+    def is_axis_gizmo_drag(self):
+        return self.selected_object is not None and (AxisGizmo.ID_NONE < self.selected_object_id < AxisGizmo.ID_COUNT)
+
+    def get_selected_object_id(self):
+        return self.selected_object_id
+
+    def set_selected_object_id(self, object_id):
+        self.selected_object_id = object_id
+
+    def clear_selected_object_id(self):
+        self.selected_object_id = 0
+
     def get_selected_object(self):
         return self.selected_object
 
@@ -484,12 +496,43 @@ class SceneManager(Singleton):
             self.selected_object.transform.clone(self.selected_object_transform)
 
     def edit_selected_object_transform(self):
-        camera_transform = self.main_camera.transform
         mouse_delta = self.core_manager.game_backend.mouse_delta
-        self.selected_object.transform.move(camera_transform.left * mouse_delta[0] * 0.01)
-        self.selected_object.transform.move(camera_transform.up * mouse_delta[1] * 0.01)
+        if any(0.0 != mouse_delta):
+            camera_transform = self.main_camera.transform
+            mouse_move = length(mouse_delta) * 0.01
 
-    def intersect_select_object(self):
+            if AxisGizmo.ID_POSITION_X == self.selected_object_id:
+                self.selected_object.transform.move_x(mouse_move)
+            elif AxisGizmo.ID_POSITION_Y == self.selected_object_id:
+                self.selected_object.transform.move_y(mouse_move)
+            elif AxisGizmo.ID_POSITION_Z == self.selected_object_id:
+                self.selected_object.transform.move_z(mouse_move)
+            elif AxisGizmo.ID_POSITION_XY == self.selected_object_id:
+                self.selected_object.transform.move_x(mouse_move)
+                self.selected_object.transform.move_y(mouse_move)
+            elif AxisGizmo.ID_POSITION_XZ == self.selected_object_id:
+                self.selected_object.transform.move_x(mouse_move)
+                self.selected_object.transform.move_z(mouse_move)
+            elif AxisGizmo.ID_POSITION_YZ == self.selected_object_id:
+                self.selected_object.transform.move_y(mouse_move)
+                self.selected_object.transform.move_z(mouse_move)
+            elif AxisGizmo.ID_ROTATION_PITCH == self.selected_object_id:
+                self.selected_object.transform.rotation_pitch(mouse_move)
+            elif AxisGizmo.ID_ROTATION_YAW == self.selected_object_id:
+                self.selected_object.transform.rotation_yaw(mouse_move)
+            elif AxisGizmo.ID_ROTATION_ROLL == self.selected_object_id:
+                self.selected_object.transform.rotation_roll(mouse_move)
+            elif AxisGizmo.ID_SCALE_X == self.selected_object_id:
+                self.selected_object.transform.scale_x(mouse_move)
+            elif AxisGizmo.ID_SCALE_Y == self.selected_object_id:
+                self.selected_object.transform.scale_y(mouse_move)
+            elif AxisGizmo.ID_SCALE_Z == self.selected_object_id:
+                self.selected_object.transform.scale_z(mouse_move)
+            else:
+                self.selected_object.transform.move(camera_transform.left * mouse_delta[0] * 0.01)
+                self.selected_object.transform.move(camera_transform.up * mouse_delta[1] * 0.01)
+
+    def update_select_object_id(self):
         windows_size = self.core_manager.get_window_size()
         mouse_pos = self.core_manager.get_mouse_pos()
         x = math.floor(min(1.0, (mouse_pos[0] / windows_size[0])) * (RenderTargets.OBJECT_ID.width - 1))
@@ -497,6 +540,10 @@ class SceneManager(Singleton):
         object_ids = RenderTargets.OBJECT_ID.get_image_data()
         object_id = math.floor(object_ids[y][x] + 0.5)
         self.selected_object_id = object_id
+        return object_id
+
+    def intersect_select_object(self):
+        object_id = self.update_select_object_id()
         if 0 < object_id:
             if AxisGizmo.ID_COUNT <= object_id and (object_id in self.objectIDMap):
                 obj = self.objectIDMap[object_id]

@@ -620,15 +620,20 @@ class CoreManager(Singleton):
                     current_obj_names = set(self.scene_manager.get_object_names())
                     for obj_name in (obj_names - current_obj_names):
                         self.notify_delete_object(obj_name)
-            if btn_left_up:
+            if Event.MOUSE_MOVE == event_type:
+                if self.scene_manager.is_axis_gizmo_drag():
+                    self.game_backend.set_input_mode(InputMode.EDIT_OBJECT_TRANSFORM)
+            elif btn_left_up:
                 self.scene_manager.intersect_select_object()
         elif InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
             if Event.KEYUP == event_type or Event.MOUSE_BUTTON_UP == event_type:
                 if Keyboard.ESCAPE == event_value or btn_right_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
                     self.scene_manager.restore_selected_object_transform()
+                    self.scene_manager.clear_selected_object_id()
                 if Keyboard.ENTER == event_value or btn_left_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
+                    self.scene_manager.clear_selected_object_id()
 
     def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
@@ -803,7 +808,11 @@ class CoreManager(Singleton):
             # selected object transform info
             selected_object = self.scene_manager.get_selected_object()
             if selected_object:
-                if InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
+                btn_left, btn_middle, btn_right = self.game_backend.get_mouse_pressed()
+                if InputMode.NONE == self.game_backend.get_input_mode():
+                    if btn_left:
+                        self.scene_manager.update_select_object_id()
+                elif InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
                     self.scene_manager.edit_selected_object_transform()
                 self.font_manager.log("Selected Object : %s" % selected_object.name)
                 if hasattr(selected_object, 'transform'):
