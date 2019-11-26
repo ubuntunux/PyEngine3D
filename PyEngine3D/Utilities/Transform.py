@@ -468,15 +468,16 @@ def extract_location(matrix):
 
 
 def extract_rotation(matrix):
-    """
-     extract quaternion from matrix
-    """
     scale = extract_scale(matrix)
     rotation = Matrix4()
     rotation[0, :] = matrix[0, :] / scale[0]
     rotation[1, :] = matrix[1, :] / scale[1]
     rotation[2, :] = matrix[2, :] / scale[2]
-    return matrix_to_quaternion(rotation)
+    return rotation
+
+
+def extract_quaternion(matrix):
+    return matrix_to_quaternion(extract_rotation(matrix))
 
 
 def extract_scale(matrix):

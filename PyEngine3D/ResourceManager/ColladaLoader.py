@@ -557,7 +557,7 @@ class Collada:
                 times=animation_node.inputs,
                 # transforms=[matrix for matrix in transforms],
                 locations=[extract_location(np.array(matrix, dtype=np.float32).reshape(4, 4)) for matrix in animation_node.outputs],
-                rotations=[extract_rotation(np.array(matrix, dtype=np.float32).reshape(4, 4)) for matrix in animation_node.outputs],
+                rotations=[extract_quaternion(np.array(matrix, dtype=np.float32).reshape(4, 4)) for matrix in animation_node.outputs],
                 scales=[np.array([1.0, 1.0, 1.0], dtype=np.float32) for matrix in animation_node.outputs],
                 interpoations=animation_node.interpolations,
                 in_tangents=animation_node.in_tangents,
