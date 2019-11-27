@@ -506,7 +506,7 @@ class SceneManager(Singleton):
             screen_width = self.core_manager.viewport_manager.main_viewport.width
             screen_height = self.core_manager.viewport_manager.main_viewport.height
             selected_object_transform = self.selected_object.transform
-            use_quaternion = True
+            use_quaternion = False
             selected_object_transform.set_use_quaternion(use_quaternion)
 
             mouse_x_ratio = mouse_pos[0] / screen_width
