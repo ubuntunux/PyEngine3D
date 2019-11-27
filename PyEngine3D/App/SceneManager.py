@@ -16,7 +16,7 @@ from PyEngine3D.Render import Effect
 from PyEngine3D.Render import Spline3D
 from PyEngine3D.Render.RenderOptions import RenderOption
 from PyEngine3D.Render.RenderTarget import RenderTargets
-from PyEngine3D.Utilities import Singleton, GetClassName, TransformObject, Float3, length
+from PyEngine3D.Utilities import *
 
 
 class SceneManager(Singleton):
@@ -498,43 +498,74 @@ class SceneManager(Singleton):
 
     def edit_selected_object_transform(self):
         mouse_delta = self.core_manager.game_backend.mouse_delta
-        mouse_pos = self.core_manager.mouse_pos
-        mouse_pos_old = self.core_manager.mouse_pos_old
-
         if any(0.0 != mouse_delta):
-            camera_transform = self.main_camera.transform
-            mouse_move = length(mouse_delta) * 0.01
+            mouse_pos = self.core_manager.game_backend.mouse_pos
+            mouse_pos_old = self.core_manager.game_backend.mouse_pos_old
+            camera = self.main_camera
+            camera_transform = camera.transform
+            screen_width = self.core_manager.viewport_manager.main_viewport.width
+            screen_height = self.core_manager.viewport_manager.main_viewport.height
+            selected_object_transform = self.selected_object.transform
+            use_quaternion = True
+            selected_object_transform.set_use_quaternion(use_quaternion)
+
+            mouse_x_ratio = mouse_pos[0] / screen_width
+            mouse_y_ratio = mouse_pos[1] / screen_height
+            mouse_x_ratio_old = mouse_pos_old[0] / screen_width
+            mouse_y_ratio_old = mouse_pos_old[1] / screen_height
+            mouse_world_pos = np.dot(Float4(mouse_x_ratio * 2.0 - 1.0, mouse_y_ratio * 2.0 - 1.0, 0.0, 1.0), camera.inv_view_origin_projection)
+            mouse_world_pos_old = np.dot(Float4(mouse_x_ratio_old * 2.0 - 1.0, mouse_y_ratio_old * 2.0 - 1.0, 0.0, 1.0), camera.inv_view_origin_projection)
+
+            to_object = selected_object_transform.get_pos() - camera_transform.get_pos()
+            to_object_xz_dist = length(Float2(to_object[0], to_object[2]))
+            mouse_xz_dist = length(Float2(mouse_world_pos[0], mouse_world_pos[2]))
+            mouse_xz_dist_old = length(Float2(mouse_world_pos_old[0], mouse_world_pos_old[2]))
 
             if AxisGizmo.ID_POSITION_X == self.selected_object_id:
-                self.selected_object.transform.move_x(mouse_move)
+                selected_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
             elif AxisGizmo.ID_POSITION_Y == self.selected_object_id:
-                self.selected_object.transform.move_y(mouse_move)
+                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
             elif AxisGizmo.ID_POSITION_Z == self.selected_object_id:
-                self.selected_object.transform.move_z(mouse_move)
+                selected_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
             elif AxisGizmo.ID_POSITION_XY == self.selected_object_id:
-                self.selected_object.transform.move_x(mouse_move)
-                self.selected_object.transform.move_y(mouse_move)
+                selected_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
+                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
             elif AxisGizmo.ID_POSITION_XZ == self.selected_object_id:
-                self.selected_object.transform.move_x(mouse_move)
-                self.selected_object.transform.move_z(mouse_move)
+                selected_object_transform.move_x((mouse_world_pos[0] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1]))
+                selected_object_transform.move_z((mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]))
             elif AxisGizmo.ID_POSITION_YZ == self.selected_object_id:
-                self.selected_object.transform.move_y(mouse_move)
-                self.selected_object.transform.move_z(mouse_move)
+                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
+                selected_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
             elif AxisGizmo.ID_ROTATION_PITCH == self.selected_object_id:
-                self.selected_object.transform.rotation_pitch(mouse_move)
+                yz = Float2(mouse_world_pos[1] * to_object[0] / mouse_world_pos[0], mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - Float2(to_object[1], to_object[2])
+                yz_old = Float2(mouse_world_pos_old[1] * to_object[0] / mouse_world_pos_old[0], mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]) - Float2(to_object[1], to_object[2])
+                if use_quaternion:
+                    quat = get_quaternion(selected_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
+                    selected_object_transform.rotation_quaternion(quat)
+                else:
+                    selected_object_transform.rotation_pitch(math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
             elif AxisGizmo.ID_ROTATION_YAW == self.selected_object_id:
-                self.selected_object.transform.rotation_yaw(mouse_move)
+                xz = Float2(mouse_world_pos[0] * to_object[1] / mouse_world_pos[1], mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - Float2(to_object[0], to_object[2])
+                xz_old = Float2(mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1], mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]) - Float2(to_object[0], to_object[2])
+                if use_quaternion:
+                    quat = get_quaternion(selected_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
+                    selected_object_transform.rotation_quaternion(quat)
+                else:
+                    selected_object_transform.rotation_yaw(math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
             elif AxisGizmo.ID_ROTATION_ROLL == self.selected_object_id:
-                self.selected_object.transform.rotation_roll(mouse_move)
+                xy = Float2(mouse_world_pos[0] * to_object[2] / mouse_world_pos[2], mouse_world_pos[1] * to_object[2] / mouse_world_pos[2]) - Float2(to_object[0], to_object[1])
+                xy_old = Float2(mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2], mouse_world_pos_old[1] * to_object[2] / mouse_world_pos_old[2]) - Float2(to_object[0], to_object[1])
+                if use_quaternion:
+                    quat = get_quaternion(selected_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
+                    selected_object_transform.rotation_quaternion(quat)
+                else:
+                    selected_object_transform.rotation_roll(math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
             elif AxisGizmo.ID_SCALE_X == self.selected_object_id:
-                self.selected_object.transform.scale_x(mouse_move)
+                selected_object_transform.scale_x(((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2])))
             elif AxisGizmo.ID_SCALE_Y == self.selected_object_id:
-                self.selected_object.transform.scale_y(mouse_move)
+                selected_object_transform.scale_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
             elif AxisGizmo.ID_SCALE_Z == self.selected_object_id:
-                self.selected_object.transform.scale_z(mouse_move)
-            else:
-                self.selected_object.transform.move(camera_transform.left * mouse_delta[0] * 0.01)
-                self.selected_object.transform.move(camera_transform.up * mouse_delta[1] * 0.01)
+                selected_object_transform.scale_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
 
     def update_select_object_id(self):
         windows_size = self.core_manager.get_window_size()
