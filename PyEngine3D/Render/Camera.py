@@ -46,6 +46,7 @@ class Camera(StaticActor):
         self.view_projection_jitter = Matrix4()
         self.view_origin_projection = Matrix4()
         self.view_origin_projection_jitter = Matrix4()
+        self.inv_view_origin_projection = Matrix4()
 
         self.prev_view = Matrix4()
         self.inv_prev_view = Matrix4()
@@ -156,6 +157,8 @@ class Camera(StaticActor):
         self.view_projection_jitter[...] = np.dot(self.view, self.projection_jitter)
         self.view_origin_projection[...] = np.dot(self.view_origin, self.projection)
         self.view_origin_projection_jitter[...] = np.dot(self.view_origin, self.projection_jitter)
+
+        self.inv_view_origin_projection[...] = np.dot(self.inv_projection, self.inv_view_origin)
 
         # update frustum planes
         if updated or force_update:

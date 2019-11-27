@@ -273,7 +273,8 @@ class SceneManager(Singleton):
             if hasattr(obj, 'get_object_id'):
                 object_id = obj.get_object_id()
                 self.objectIDEntry[len(self.objectMap)] = object_id
-                self.objectIDMap.pop(object_id)
+                if self.object_id_start <= object_id:
+                    self.objectIDMap.pop(object_id)
             self.core_manager.notify_delete_object(obj.name)
 
             if self.selected_object is obj and hasattr(self.selected_object, "set_selected"):
@@ -497,6 +498,9 @@ class SceneManager(Singleton):
 
     def edit_selected_object_transform(self):
         mouse_delta = self.core_manager.game_backend.mouse_delta
+        mouse_pos = self.core_manager.mouse_pos
+        mouse_pos_old = self.core_manager.mouse_pos_old
+
         if any(0.0 != mouse_delta):
             camera_transform = self.main_camera.transform
             mouse_move = length(mouse_delta) * 0.01
