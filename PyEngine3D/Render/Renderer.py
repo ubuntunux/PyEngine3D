@@ -770,6 +770,9 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_translucent_render_infos,
                                self.skeletal_object_id_material)
 
+        self.render_axis_gizmo(RenderMode.GIZMO)
+
+        # gizmo object id
         glClear(GL_DEPTH_BUFFER_BIT)
         self.render_axis_gizmo(RenderMode.OBJECT_ID)
 
@@ -1106,17 +1109,18 @@ class Renderer(Singleton):
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.render_log()
 
-        if RenderOption.RENDER_DEBUG_LINE:
+        if RenderOption.RENDER_DEBUG_LINE and self.debug_texture is None:
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
             self.render_axis()
 
+            self.debug_line_manager.bind_render_spline_program()
             for spline in self.scene_manager.splines:
-                self.debug_line_manager.draw_spline_3d(spline)
+                self.debug_line_manager.render_spline(spline)
 
-            self.debug_line_manager.render_debug_line()
+            self.debug_line_manager.render_debug_lines()
 
-        if RenderOption.RENDER_GIZMO:
+        if RenderOption.RENDER_GIZMO and self.debug_texture is None:
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
             glEnable(GL_DEPTH_TEST)
             glDepthMask(True)

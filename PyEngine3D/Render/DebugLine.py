@@ -29,7 +29,6 @@ class DebugLineManager(Singleton):
         self.renderer = None
         self.debug_lines_2d = []
         self.debug_lines_3d = []
-        self.debug_splines_3d = []
         self.debug_line_material = None
         self.debug_line_vertex_buffer = None
         self.debug_line_instance_buffer = None
@@ -55,7 +54,6 @@ class DebugLineManager(Singleton):
     def update(self, delta):
         self.debug_lines_2d = []
         self.debug_lines_3d = []
-        self.debug_splines_3d = []
 
     def draw_debug_line_2d(self, pos0, pos1, color=None, width=1.0):
         debug_line = DebugLine(Float3(*pos0, -1.0), Float3(*pos1, -1.0), color, width)
@@ -65,7 +63,12 @@ class DebugLineManager(Singleton):
         debug_line = DebugLine(pos0, pos1, color, width)
         self.debug_lines_3d.append(debug_line)
 
-    def draw_spline_3d(self, spline):
+    def bind_render_spline_program(self):
+        self.debug_line_material.use_program()
+        self.debug_line_material.bind_material_instance()
+        self.debug_line_material.bind_uniform_data("is_debug_line_2d", False)
+
+    def render_spline(self, spline):
         resampling_count = len(spline.spline_data.resampling_positions)
         if 1 < resampling_count:
             debug_lines = []
@@ -77,9 +80,32 @@ class DebugLineManager(Singleton):
                     width=spline.width
                 )
                 debug_lines.append(debug_line)
-            self.debug_splines_3d.append((spline.depth_test, spline.transform.matrix, debug_lines))
 
-    def render_debug_line(self):
+            if spline.depth_test:
+                glEnable(GL_DEPTH_TEST)
+            else:
+                glDisable(GL_DEPTH_TEST)
+            self.debug_line_material.bind_uniform_data("transform", spline.transform.matrix)
+            self.render_lines(debug_lines)
+
+    def render_lines(self, debug_lines):
+        line_count = len(debug_lines)
+        if 0 < line_count:
+            self.resize_debug_line_instance_data(line_count)
+
+            for i, debug_line in enumerate(debug_lines):
+                self.debug_line_instance_data[0][i][0:3] = debug_line.pos0
+                self.debug_line_instance_data[1][i][0:3] = debug_line.pos1
+                self.debug_line_instance_data[2][i][0:4] = debug_line.color
+                self.debug_line_instance_data[3][i][0] = debug_line.width
+
+            self.debug_line_vertex_buffer.draw_elements_instanced(
+                line_count,
+                instance_buffer=self.debug_line_instance_buffer,
+                instance_datas=self.debug_line_instance_data
+            )
+
+    def render_debug_lines(self):
         if self.core_manager.is_basic_mode:
             glPushMatrix()
             glLoadIdentity()
@@ -104,42 +130,12 @@ class DebugLineManager(Singleton):
                 glEnd()
             glPopMatrix()
         else:
-            def draw_debug_line(debug_lines):
-                line_count = len(debug_lines)
-                if 0 < line_count:
-                    self.resize_debug_line_instance_data(line_count)
-
-                    for i, debug_line in enumerate(debug_lines):
-                        self.debug_line_instance_data[0][i][0:3] = debug_line.pos0
-                        self.debug_line_instance_data[1][i][0:3] = debug_line.pos1
-                        self.debug_line_instance_data[2][i][0:4] = debug_line.color
-                        self.debug_line_instance_data[3][i][0] = debug_line.width
-
-                    self.debug_line_vertex_buffer.draw_elements_instanced(
-                        line_count,
-                        instance_buffer=self.debug_line_instance_buffer,
-                        instance_datas=self.debug_line_instance_data
-                    )
-
             glDisable(GL_DEPTH_TEST)
             self.debug_line_material.use_program()
             self.debug_line_material.bind_material_instance()
             self.debug_line_material.bind_uniform_data("is_debug_line_2d", True)
-            draw_debug_line(self.debug_lines_2d)
+            self.render_lines(self.debug_lines_2d)
 
             self.debug_line_material.bind_uniform_data("is_debug_line_2d", False)
             self.debug_line_material.bind_uniform_data("transform", MATRIX4_IDENTITY)
-            draw_debug_line(self.debug_lines_3d)
-
-            prev_depth_test = False
-            for depth_test, transform, debug_lines in self.debug_splines_3d:
-                if prev_depth_test != depth_test:
-                    if depth_test:
-                        glEnable(GL_DEPTH_TEST)
-                    else:
-                        glDisable(GL_DEPTH_TEST)
-                    prev_depth_test = depth_test
-                self.debug_line_material.bind_uniform_data("transform", transform)
-                draw_debug_line(debug_lines)
-
-
+            self.render_lines(self.debug_lines_3d)

@@ -135,6 +135,10 @@ class OpenGLContext:
         return GL_DEPTH_ATTACHMENT
 
     @staticmethod
+    def get_last_program():
+        return OpenGLContext.last_program
+
+    @staticmethod
     def use_program(program):
         if program != OpenGLContext.last_program:
             OpenGLContext.last_program = program

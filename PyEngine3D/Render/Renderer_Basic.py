@@ -261,4 +261,4 @@ class Renderer_Basic(Singleton):
         # draw line
         glDisable(GL_LIGHTING)
         glDisable(GL_TEXTURE_2D)
-        self.debug_line_manager.render_debug_line()
+        self.debug_line_manager.render_debug_lines()
