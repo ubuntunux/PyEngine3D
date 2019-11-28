@@ -23,6 +23,7 @@ class RenderOption:
     RENDER_COLLISION = True
     RENDER_DEBUG_LINE = True
     RENDER_GIZMO = True
+    RENDER_OBJECT_ID = True
 
 
 class RenderingType(AutoEnum):

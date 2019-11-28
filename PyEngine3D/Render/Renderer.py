@@ -1062,9 +1062,8 @@ class Renderer(Singleton):
                 composite_atmosphere.bind_uniform_data("texture_linear_depth", RenderTargets.LINEAR_DEPTH)
                 self.postprocess.draw_elements()
 
-            # set blend state
+            # prepare translucent
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
             self.framebuffer_manager.bind_framebuffer(RenderTargets.HDR, depth_texture=RenderTargets.DEPTH)
             glEnable(GL_DEPTH_TEST)
 
@@ -1089,13 +1088,11 @@ class Renderer(Singleton):
 
             self.set_blend_state(False)
 
-            # PostProcess
             self.render_postprocess()
 
-        # render object id
-        self.render_object_id()
+        if RenderOption.RENDER_OBJECT_ID:
+            self.render_object_id()
 
-        # selected object
         self.render_selected_object()
 
         # debug render target
