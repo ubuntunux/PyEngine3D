@@ -37,7 +37,7 @@ class AxisGizmo(StaticActor):
         axis_gizmo_geometry_count = self.get_geometry_count()
         assert (axis_gizmo_geometry_count == (AxisGizmo.ID_COUNT - AxisGizmo.ID_START))
 
-        self.axis_gizmo_colors = [Float3(0.0) for i in range(AxisGizmo.ID_COUNT)]
+        self.axis_gizmo_colors = [Float3() for i in range(AxisGizmo.ID_COUNT)]
         self.axis_gizmo_colors[AxisGizmo.ID_POSITION_X][...] = Float3(1.0, 0.0, 0.0)
         self.axis_gizmo_colors[AxisGizmo.ID_POSITION_Y][...] = Float3(0.0, 1.0, 0.0)
         self.axis_gizmo_colors[AxisGizmo.ID_POSITION_Z][...] = Float3(0.0, 0.0, 1.0)

@@ -623,17 +623,18 @@ class CoreManager(Singleton):
             if Event.MOUSE_MOVE == event_type:
                 if self.scene_manager.is_axis_gizmo_drag():
                     self.game_backend.set_input_mode(InputMode.EDIT_OBJECT_TRANSFORM)
-            elif btn_left_up:
+            elif btn_left:
                 self.scene_manager.intersect_select_object()
         elif InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
             if Event.KEYUP == event_type or Event.MOUSE_BUTTON_UP == event_type:
                 if Keyboard.ESCAPE == event_value or btn_right_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
                     self.scene_manager.restore_selected_object_transform()
-                    self.scene_manager.clear_selected_object_id()
+                    self.scene_manager.clear_selected_object()
+                    self.scene_manager.clear_selected_axis_gizmo_id()
                 if Keyboard.ENTER == event_value or btn_left_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
-                    self.scene_manager.clear_selected_object_id()
+                    self.scene_manager.clear_selected_axis_gizmo_id()
 
     def update_camera(self):
         keydown = self.game_backend.get_keyboard_pressed()
@@ -814,6 +815,7 @@ class CoreManager(Singleton):
                         self.scene_manager.update_select_object_id()
                 elif InputMode.EDIT_OBJECT_TRANSFORM == self.game_backend.get_input_mode():
                     self.scene_manager.edit_selected_object_transform()
+
                 self.font_manager.log("Selected Object : %s" % selected_object.name)
                 if hasattr(selected_object, 'transform'):
                     self.font_manager.log(selected_object.transform.get_transform_infos())

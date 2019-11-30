@@ -712,7 +712,7 @@ class Renderer(Singleton):
                                    self.selcted_static_object_material)
             elif Spline3D == object_type:
                 self.debug_line_manager.bind_render_spline_program()
-                self.debug_line_manager.render_spline(selected_object, Float4(1.0), add_width=0.0)
+                self.debug_line_manager.render_spline(selected_object, Float4(1.0, 1.0, 1.0, 1.0))
             else:
                 return
 

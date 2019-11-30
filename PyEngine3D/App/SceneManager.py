@@ -35,6 +35,9 @@ class SceneManager(Singleton):
         self.selected_object = None
         self.selected_object_transform = TransformObject()
         self.selected_object_id = 0
+        self.selected_spline_gizmo_id = None
+        self.selected_spline_gizmo_ids = []
+        self.selected_axis_gizmo_id = None
         self.axis_gizmo = None
 
         # envirment object
@@ -52,7 +55,6 @@ class SceneManager(Singleton):
         self.objectIDMap = {}
         self.objectIDEntry = list(range(2 ** 16))
         self.objectIDCounter = AxisGizmo.ID_COUNT
-        self.selected_spline_gizmo_ids = []
 
         # render group
         self.point_light_count = 0
@@ -83,12 +85,16 @@ class SceneManager(Singleton):
 
     def clear_scene(self):
         self.core_manager.notify_clear_scene()
+        self.clear_selected_object()
+        self.clear_spline_gizmo()
+        self.clear_selected_axis_gizmo_id()
         self.effect_manager.clear()
         self.main_camera = None
         self.main_light = None
         self.main_light_probe = None
         self.selected_object = None
         self.selected_object_id = 0
+        self.selected_axis_gizmo_id = None
         self.cameras = []
         self.point_lights = []
         self.light_probes = []
@@ -280,12 +286,15 @@ class SceneManager(Singleton):
                 object_list.remove(obj)
             elif object_type is Effect:
                 self.effect_manager.delete_effect(obj)
+
             self.objectMap.pop(obj.name)
+
             if hasattr(obj, 'get_object_id'):
                 object_id = obj.get_object_id()
                 self.restore_object_id(object_id)
                 if AxisGizmo.ID_COUNT <= object_id:
                     self.objectIDMap.pop(object_id)
+
             self.core_manager.notify_delete_object(obj.name)
 
             if self.selected_object is obj and hasattr(self.selected_object, "set_selected"):
@@ -347,14 +356,28 @@ class SceneManager(Singleton):
         self.regist_object(spline)
         return spline
 
-    def add_spline_gizmo(self, spline):
+    def create_spline_gizmo(self, spline):
         spline_gizmo_name = spline.name + '_gizmo'
         gizmo_model = self.resource_manager.get_model('Cube')
         for spline_point in spline.spline_data.spline_points:
             for position in (spline_point.position, spline_point.position + spline_point.control_point, spline_point.position - spline_point.control_point):
-                pos = np.dot(spline.transform.matrix, Float4(*position, 1.0))[:3] + spline.transform.get_pos()
+                pos = np.dot(Float4(*position, 1.0), spline.transform.matrix)[:3]
                 gizmo = self.add_object(name=spline_gizmo_name, model=gizmo_model, pos=Float3(*pos), scale=Float3(0.1, 0.1, 0.1))
                 self.selected_spline_gizmo_ids.append(gizmo.get_object_id())
+
+    def clear_spline_gizmo(self):
+        self.selected_spline_gizmo_id = None
+        for selected_spline_gizmo_id in self.selected_spline_gizmo_ids:
+            if selected_spline_gizmo_id in self.objectIDMap:
+                gizmo_object = self.objectIDMap[selected_spline_gizmo_id]
+                self.unregist_resource(gizmo_object)
+        self.selected_spline_gizmo_ids = []
+
+    def clear_selected_axis_gizmo_id(self):
+        self.selected_axis_gizmo_id = None
+
+    def is_axis_gizmo_drag(self):
+        return self.selected_axis_gizmo_id is not None
 
     def add_effect_here(self, **effect_data):
         effect_data['pos'] = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
@@ -459,7 +482,7 @@ class SceneManager(Singleton):
         return self.axis_gizmo
 
     def get_object(self, object_name):
-        return self.objectMap[object_name] if object_name in self.objectMap else None
+        return self.objectMap.get(object_name)
 
     def get_object_names(self):
         return self.objectMap.keys()
@@ -484,16 +507,14 @@ class SceneManager(Singleton):
         obj = self.get_object(object_name)
         obj and obj.set_attribute(attribute_name, attribute_value, item_info_history, attribute_index)
 
-    def is_axis_gizmo_drag(self):
-        return self.selected_object is not None and (AxisGizmo.ID_NONE < self.selected_object_id < AxisGizmo.ID_COUNT)
-
     def get_selected_object_id(self):
         return self.selected_object_id
 
     def set_selected_object_id(self, object_id):
         self.selected_object_id = object_id
 
-    def clear_selected_object_id(self):
+    def clear_selected_object(self):
+        self.selected_object = None
         self.selected_object_id = 0
 
     def get_selected_object(self):
@@ -502,13 +523,18 @@ class SceneManager(Singleton):
     def set_selected_object(self, object_name):
         selected_object = self.get_object(object_name)
         if self.selected_object is not selected_object:
+            self.clear_selected_axis_gizmo_id()
+            self.clear_spline_gizmo()
+
             if self.selected_object and hasattr(self.selected_object, "set_selected"):
                 self.selected_object.set_selected(False)
             self.selected_object = selected_object
+
             if selected_object and hasattr(selected_object, "set_selected"):
+                self.set_selected_object_id(selected_object.get_object_id())
                 selected_object.set_selected(True)
                 if Spline3D == type(selected_object):
-                    self.add_spline_gizmo(selected_object)
+                    self.create_spline_gizmo(selected_object)
 
     def backup_selected_object_transform(self):
         if self.selected_object and hasattr(self.selected_object, "transform"):
@@ -519,6 +545,11 @@ class SceneManager(Singleton):
             self.selected_object.transform.clone(self.selected_object_transform)
 
     def edit_selected_object_transform(self):
+        selected_spline_gizmo_object = self.objectIDMap.get(self.selected_spline_gizmo_id)
+        edit_object = selected_spline_gizmo_object or self.selected_object
+        if edit_object is None:
+            return
+
         mouse_delta = self.core_manager.game_backend.mouse_delta
         if any(0.0 != mouse_delta):
             mouse_pos = self.core_manager.game_backend.mouse_pos
@@ -527,9 +558,8 @@ class SceneManager(Singleton):
             camera_transform = camera.transform
             screen_width = self.core_manager.viewport_manager.main_viewport.width
             screen_height = self.core_manager.viewport_manager.main_viewport.height
-            selected_object_transform = self.selected_object.transform
-            use_quaternion = False
-            selected_object_transform.set_use_quaternion(use_quaternion)
+            edit_object_transform = edit_object.transform
+            use_quaternion = edit_object_transform.get_use_quaternion()
 
             mouse_x_ratio = mouse_pos[0] / screen_width
             mouse_y_ratio = mouse_pos[1] / screen_height
@@ -538,56 +568,72 @@ class SceneManager(Singleton):
             mouse_world_pos = np.dot(Float4(mouse_x_ratio * 2.0 - 1.0, mouse_y_ratio * 2.0 - 1.0, 0.0, 1.0), camera.inv_view_origin_projection)
             mouse_world_pos_old = np.dot(Float4(mouse_x_ratio_old * 2.0 - 1.0, mouse_y_ratio_old * 2.0 - 1.0, 0.0, 1.0), camera.inv_view_origin_projection)
 
-            to_object = selected_object_transform.get_pos() - camera_transform.get_pos()
+            to_object = edit_object_transform.get_pos() - camera_transform.get_pos()
             to_object_xz_dist = length(Float2(to_object[0], to_object[2]))
             mouse_xz_dist = length(Float2(mouse_world_pos[0], mouse_world_pos[2]))
             mouse_xz_dist_old = length(Float2(mouse_world_pos_old[0], mouse_world_pos_old[2]))
 
-            if AxisGizmo.ID_POSITION_X == self.selected_object_id:
-                selected_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
-            elif AxisGizmo.ID_POSITION_Y == self.selected_object_id:
-                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
-            elif AxisGizmo.ID_POSITION_Z == self.selected_object_id:
-                selected_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
-            elif AxisGizmo.ID_POSITION_XY == self.selected_object_id:
-                selected_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
-                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
-            elif AxisGizmo.ID_POSITION_XZ == self.selected_object_id:
-                selected_object_transform.move_x((mouse_world_pos[0] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1]))
-                selected_object_transform.move_z((mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]))
-            elif AxisGizmo.ID_POSITION_YZ == self.selected_object_id:
-                selected_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
-                selected_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
-            elif AxisGizmo.ID_ROTATION_PITCH == self.selected_object_id:
+            if AxisGizmo.ID_POSITION_X == self.selected_axis_gizmo_id:
+                edit_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
+            elif AxisGizmo.ID_POSITION_Y == self.selected_axis_gizmo_id:
+                edit_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
+            elif AxisGizmo.ID_POSITION_Z == self.selected_axis_gizmo_id:
+                edit_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
+            elif AxisGizmo.ID_POSITION_XY == self.selected_axis_gizmo_id:
+                edit_object_transform.move_x((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2]))
+                edit_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
+            elif AxisGizmo.ID_POSITION_XZ == self.selected_axis_gizmo_id:
+                edit_object_transform.move_x((mouse_world_pos[0] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1]))
+                edit_object_transform.move_z((mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - (mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]))
+            elif AxisGizmo.ID_POSITION_YZ == self.selected_axis_gizmo_id:
+                edit_object_transform.move_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
+                edit_object_transform.move_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
+            elif AxisGizmo.ID_ROTATION_PITCH == self.selected_axis_gizmo_id:
                 yz = Float2(mouse_world_pos[1] * to_object[0] / mouse_world_pos[0], mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - Float2(to_object[1], to_object[2])
                 yz_old = Float2(mouse_world_pos_old[1] * to_object[0] / mouse_world_pos_old[0], mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]) - Float2(to_object[1], to_object[2])
                 if use_quaternion:
-                    quat = get_quaternion(selected_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
-                    selected_object_transform.rotation_quaternion(quat)
+                    quat = get_quaternion(edit_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
+                    edit_object_transform.rotation_quaternion(quat)
                 else:
-                    selected_object_transform.rotation_pitch(math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
-            elif AxisGizmo.ID_ROTATION_YAW == self.selected_object_id:
+                    edit_object_transform.rotation_pitch(math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
+            elif AxisGizmo.ID_ROTATION_YAW == self.selected_axis_gizmo_id:
                 xz = Float2(mouse_world_pos[0] * to_object[1] / mouse_world_pos[1], mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - Float2(to_object[0], to_object[2])
                 xz_old = Float2(mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1], mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]) - Float2(to_object[0], to_object[2])
                 if use_quaternion:
-                    quat = get_quaternion(selected_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
-                    selected_object_transform.rotation_quaternion(quat)
+                    quat = get_quaternion(edit_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
+                    edit_object_transform.rotation_quaternion(quat)
                 else:
-                    selected_object_transform.rotation_yaw(math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
-            elif AxisGizmo.ID_ROTATION_ROLL == self.selected_object_id:
+                    edit_object_transform.rotation_yaw(math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
+            elif AxisGizmo.ID_ROTATION_ROLL == self.selected_axis_gizmo_id:
                 xy = Float2(mouse_world_pos[0] * to_object[2] / mouse_world_pos[2], mouse_world_pos[1] * to_object[2] / mouse_world_pos[2]) - Float2(to_object[0], to_object[1])
                 xy_old = Float2(mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2], mouse_world_pos_old[1] * to_object[2] / mouse_world_pos_old[2]) - Float2(to_object[0], to_object[1])
                 if use_quaternion:
-                    quat = get_quaternion(selected_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
-                    selected_object_transform.rotation_quaternion(quat)
+                    quat = get_quaternion(edit_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
+                    edit_object_transform.rotation_quaternion(quat)
                 else:
-                    selected_object_transform.rotation_roll(math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
-            elif AxisGizmo.ID_SCALE_X == self.selected_object_id:
-                selected_object_transform.scale_x(((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2])))
-            elif AxisGizmo.ID_SCALE_Y == self.selected_object_id:
-                selected_object_transform.scale_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
-            elif AxisGizmo.ID_SCALE_Z == self.selected_object_id:
-                selected_object_transform.scale_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
+                    edit_object_transform.rotation_roll(math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
+            elif AxisGizmo.ID_SCALE_X == self.selected_axis_gizmo_id:
+                edit_object_transform.scale_x(((mouse_world_pos[0] * to_object[2] / mouse_world_pos[2]) - (mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2])))
+            elif AxisGizmo.ID_SCALE_Y == self.selected_axis_gizmo_id:
+                edit_object_transform.scale_y((mouse_world_pos[1] * to_object_xz_dist / mouse_xz_dist) - (mouse_world_pos_old[1] * to_object_xz_dist / mouse_xz_dist_old))
+            elif AxisGizmo.ID_SCALE_Z == self.selected_axis_gizmo_id:
+                edit_object_transform.scale_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
+
+            # update_spline_gizmo_object
+            if selected_spline_gizmo_object is edit_object and self.selected_object is not None:
+                index = self.selected_spline_gizmo_ids.index(self.selected_spline_gizmo_id)
+                spline_index = math.floor(index / 3)
+                spline_component_index = index % 3
+                spline_point = self.selected_object.spline_data.spline_points[spline_index]
+                pos = edit_object_transform.get_pos()
+                pos = np.dot(Float4(*pos, 1.0), self.selected_object.transform.inverse_matrix)[:3]
+                if 0 == spline_component_index:
+                    spline_point.position[...] = pos
+                elif 1 == spline_component_index:
+                    spline_point.control_point[...] = pos - spline_point.position
+                elif 2 == spline_component_index:
+                    spline_point.control_point[...] = spline_point.position - pos
+                self.selected_object.spline_data.resampling()
 
     def update_select_object_id(self):
         windows_size = self.core_manager.get_window_size()
@@ -596,15 +642,19 @@ class SceneManager(Singleton):
         y = math.floor(min(1.0, (mouse_pos[1] / windows_size[1])) * (RenderTargets.OBJECT_ID.height - 1))
         object_ids = RenderTargets.OBJECT_ID.get_image_data()
         object_id = math.floor(object_ids[y][x] + 0.5)
-        self.selected_object_id = object_id
         return object_id
 
     def intersect_select_object(self):
         object_id = self.update_select_object_id()
         if 0 < object_id:
-            if AxisGizmo.ID_COUNT <= object_id and (object_id in self.objectIDMap):
-                obj = self.objectIDMap[object_id]
-                self.set_selected_object(obj.name)
+            if object_id < AxisGizmo.ID_COUNT:
+                self.selected_axis_gizmo_id = object_id
+            elif object_id in self.selected_spline_gizmo_ids:
+                self.selected_spline_gizmo_id = object_id
+            else:
+                obj = self.objectIDMap.get(object_id)
+                if obj is not None:
+                    self.set_selected_object(obj.name)
         else:
             self.set_selected_object("")
 
@@ -745,7 +795,8 @@ class SceneManager(Singleton):
                                     actor_list=[self.selected_object, ],
                                     solid_render_infos=self.selected_object_render_info,
                                     translucent_render_infos=self.selected_object_render_info)
-            axis_gizmo_pos = self.selected_object.transform.get_pos()
+            spline_gizmo_object = self.objectIDMap.get(self.selected_spline_gizmo_id)
+            axis_gizmo_pos = spline_gizmo_object.transform.get_pos() if spline_gizmo_object is not None else self.selected_object.transform.get_pos()
             self.axis_gizmo.transform.set_pos(axis_gizmo_pos)
             self.axis_gizmo.transform.set_scale(length(axis_gizmo_pos - self.main_camera.transform.get_pos()) * 0.15)
             self.axis_gizmo.update(dt)

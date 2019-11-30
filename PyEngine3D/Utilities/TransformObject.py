@@ -157,6 +157,9 @@ class TransformObject:
             self.rot[2] %= TWO_PI
 
     # Quaternion
+    def get_use_quaternion(self):
+        return self.use_quaternion
+
     def set_use_quaternion(self, flag):
         self.use_quaternion = flag
 

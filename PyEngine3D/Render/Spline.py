@@ -13,8 +13,8 @@ from PyEngine3D.Utilities import *
 
 class SplinePoint:
     def __init__(self, position=None, control_point=None):
-        self.position = position if position is not None else Float3(0.0)
-        self.control_point = control_point if control_point is not None else Float3(0.0)
+        self.position = position if position is not None else Float3()
+        self.control_point = control_point if control_point is not None else Float3()
 
 
 class SplineData:
@@ -193,6 +193,6 @@ class Spline3D:
         return save_data
 
     def update(self, dt):
-        self.transform.update_transform()
+        self.transform.update_transform(update_inverse_matrix=True)
 
 
