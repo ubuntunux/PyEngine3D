@@ -4,6 +4,8 @@ from .Transform import *
 
 
 class TransformObject:
+    euler_to_quaternion = True
+
     def __init__(self, local=None, use_quaternion=False):
         self.local = local if local is not None else Matrix4()
 
@@ -241,14 +243,15 @@ class TransformObject:
                 self.updated = True
                 rotation_update = True
 
-                # Matrix Rotation - faster
-                matrix_rotation(self.rotationMatrix, *self.rot)
-
-                # Euler Rotation - slow
-                # p = get_rotation_matrix_x(self.rot[0])
-                # y = get_rotation_matrix_y(self.rot[1])
-                # r = get_rotation_matrix_z(self.rot[2])
-                # self.rotationMatrix = np.dot(p, np.dot(y, r))
+                if self.euler_to_quaternion:
+                    qx = get_quaternion(Float3(1.0, 0.0, 0.0), self.rot[0])
+                    qy = get_quaternion(Float3(0.0, 1.0, 0.0), self.rot[1])
+                    qz = get_quaternion(Float3(0.0, 0.0, 1.0), self.rot[2])
+                    self.prev_quat[...] = self.quat
+                    self.quat[...] = muliply_quaternions(qy, qx, qz)
+                    quaternion_to_matrix(self.quat, self.rotationMatrix)
+                else:
+                    matrix_rotation(self.rotationMatrix, *self.rot)
 
         if rotation_update:
             self.matrix_to_vectors()
