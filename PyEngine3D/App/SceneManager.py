@@ -50,8 +50,9 @@ class SceneManager(Singleton):
         self.skeleton_actors = []
         self.objectMap = {}  # All of objects
         self.objectIDMap = {}
-        self.objectIDEntry = []
-        self.object_id_start = AxisGizmo.ID_COUNT
+        self.objectIDEntry = list(range(2 ** 16))
+        self.objectIDCounter = AxisGizmo.ID_COUNT
+        self.selected_spline_gizmo_ids = []
 
         # render group
         self.point_light_count = 0
@@ -98,7 +99,7 @@ class SceneManager(Singleton):
 
         self.objectMap = {}
         self.objectIDMap = {}
-        self.objectIDEntry = list(range(self.object_id_start, 2 ** 16, 1))
+        self.objectIDEntry = list(range(2 ** 16))
 
         self.static_solid_render_infos = []
         self.static_translucent_render_infos = []
@@ -244,6 +245,16 @@ class SceneManager(Singleton):
             return self.splines
         return None
 
+    def generate_object_id(self):
+        object_id = self.objectIDEntry[self.objectIDCounter]
+        self.objectIDCounter += 1
+        return object_id
+
+    def restore_object_id(self, object_id):
+        if 0 < self.objectIDCounter:
+            self.objectIDCounter -= 1
+            self.objectIDEntry[self.objectIDCounter] = object_id
+
     def regist_object(self, obj):
         if obj is not None and obj.name not in self.objectMap:
             object_type = type(obj)
@@ -253,7 +264,7 @@ class SceneManager(Singleton):
             elif object_type is Effect:
                 self.effect_manager.add_effect(obj)
             if hasattr(obj, 'set_object_id'):
-                object_id = self.objectIDEntry[len(self.objectMap)]
+                object_id = self.generate_object_id()
                 obj.set_object_id(object_id)
                 self.objectIDMap[object_id] = obj
             self.objectMap[obj.name] = obj
@@ -272,8 +283,8 @@ class SceneManager(Singleton):
             self.objectMap.pop(obj.name)
             if hasattr(obj, 'get_object_id'):
                 object_id = obj.get_object_id()
-                self.objectIDEntry[len(self.objectMap)] = object_id
-                if self.object_id_start <= object_id:
+                self.restore_object_id(object_id)
+                if AxisGizmo.ID_COUNT <= object_id:
                     self.objectIDMap.pop(object_id)
             self.core_manager.notify_delete_object(obj.name)
 
@@ -335,6 +346,15 @@ class SceneManager(Singleton):
         spline = Spline3D(**spline_data)
         self.regist_object(spline)
         return spline
+
+    def add_spline_gizmo(self, spline):
+        spline_gizmo_name = spline.name + '_gizmo'
+        gizmo_model = self.resource_manager.get_model('Cube')
+        for spline_point in spline.spline_data.spline_points:
+            for position in (spline_point.position, spline_point.position + spline_point.control_point, spline_point.position - spline_point.control_point):
+                pos = np.dot(spline.transform.matrix, Float4(*position, 1.0))[:3] + spline.transform.get_pos()
+                gizmo = self.add_object(name=spline_gizmo_name, model=gizmo_model, pos=Float3(*pos), scale=Float3(0.1, 0.1, 0.1))
+                self.selected_spline_gizmo_ids.append(gizmo.get_object_id())
 
     def add_effect_here(self, **effect_data):
         effect_data['pos'] = self.main_camera.transform.pos - self.main_camera.transform.front * 10.0
@@ -487,6 +507,8 @@ class SceneManager(Singleton):
             self.selected_object = selected_object
             if selected_object and hasattr(selected_object, "set_selected"):
                 selected_object.set_selected(True)
+                if Spline3D == type(selected_object):
+                    self.add_spline_gizmo(selected_object)
 
     def backup_selected_object_transform(self):
         if self.selected_object and hasattr(self.selected_object, "transform"):
