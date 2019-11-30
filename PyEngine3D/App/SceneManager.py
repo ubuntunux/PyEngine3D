@@ -715,14 +715,14 @@ class SceneManager(Singleton):
         self.update_light_render_infos()
 
         self.selected_object_render_info = []
-        if self.selected_object is not None and type(self.selected_object) in (SkeletonActor, StaticActor):
-            gather_render_infos(culling_func=always_pass,
-                                camera=self.main_camera,
-                                light=self.main_light,
-                                actor_list=[self.selected_object, ],
-                                solid_render_infos=self.selected_object_render_info,
-                                translucent_render_infos=self.selected_object_render_info)
-            # update axis gizmo
+        if self.selected_object is not None:
+            if type(self.selected_object) in (SkeletonActor, StaticActor):
+                gather_render_infos(culling_func=always_pass,
+                                    camera=self.main_camera,
+                                    light=self.main_light,
+                                    actor_list=[self.selected_object, ],
+                                    solid_render_infos=self.selected_object_render_info,
+                                    translucent_render_infos=self.selected_object_render_info)
             axis_gizmo_pos = self.selected_object.transform.get_pos()
             self.axis_gizmo.transform.set_pos(axis_gizmo_pos)
             self.axis_gizmo.transform.set_scale(length(axis_gizmo_pos - self.main_camera.transform.get_pos()) * 0.15)

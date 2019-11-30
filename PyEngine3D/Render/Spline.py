@@ -139,6 +139,7 @@ class Spline3D:
         self.depth_test = spline_data.get('depth_test', True)
         self.color = Float4(*spline_data.get('color', [1.0, 1.0, 1.0, 1.0]))
         self.width = spline_data.get('width', 1.0)
+        self.selected = False
         self.attributes = Attributes()
 
     def get_object_id(self):
@@ -146,6 +147,12 @@ class Spline3D:
 
     def set_object_id(self, object_id):
         self.object_id = object_id
+
+    def is_selected(self):
+        return self.selected
+
+    def set_selected(self, selected):
+        self.selected = selected
 
     def get_attribute(self):
         save_data = self.get_save_data()

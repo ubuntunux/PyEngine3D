@@ -68,7 +68,9 @@ class DebugLineManager(Singleton):
         self.debug_line_material.bind_material_instance()
         self.debug_line_material.bind_uniform_data("is_debug_line_2d", False)
 
-    def render_spline(self, spline):
+    def render_spline(self, spline, custom_color=None, add_width=0.0):
+        spline_color = custom_color if custom_color is not None else spline.color
+        spline_width = spline.width + add_width
         resampling_count = len(spline.spline_data.resampling_positions)
         if 1 < resampling_count:
             debug_lines = []
@@ -76,8 +78,8 @@ class DebugLineManager(Singleton):
                 debug_line = DebugLine(
                     spline.spline_data.resampling_positions[i],
                     spline.spline_data.resampling_positions[i + 1],
-                    color=spline.color,
-                    width=spline.width
+                    color=spline_color,
+                    width=spline_width
                 )
                 debug_lines.append(debug_line)
 

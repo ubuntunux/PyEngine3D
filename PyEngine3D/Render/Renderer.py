@@ -710,6 +710,9 @@ class Renderer(Singleton):
                                    RenderMode.SELECTED_OBJECT,
                                    self.scene_manager.selected_object_render_info,
                                    self.selcted_static_object_material)
+            elif Spline3D == object_type:
+                self.debug_line_manager.bind_render_spline_program()
+                self.debug_line_manager.render_spline(selected_object, Float4(1.0), add_width=0.0)
             else:
                 return
 
@@ -770,7 +773,10 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_translucent_render_infos,
                                self.skeletal_object_id_material)
 
-        self.render_axis_gizmo(RenderMode.GIZMO)
+        self.debug_line_manager.bind_render_spline_program()
+        for spline in self.scene_manager.splines:
+            object_id = spline.get_object_id()
+            self.debug_line_manager.render_spline(spline, Float4(object_id, object_id, object_id, 1.0), add_width=10.0)
 
         # gizmo object id
         glClear(GL_DEPTH_BUFFER_BIT)
