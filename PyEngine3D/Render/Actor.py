@@ -48,6 +48,12 @@ class StaticActor:
     def delete(self):
         pass
 
+    def get_pos(self):
+        return self.transform.get_pos()
+
+    def set_pos(self, pos):
+        self.transform.set_pos(pos)
+
     def get_object_id(self):
         return self.object_id
 

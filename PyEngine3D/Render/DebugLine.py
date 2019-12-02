@@ -51,7 +51,7 @@ class DebugLineManager(Singleton):
             element = [[0.0, 0.0, 0.0, 0.0]] * count
             self.debug_line_instance_data = np.array([element, element, element, element], dtype=np.float32)
 
-    def update(self, delta):
+    def clear_debug_lines(self):
         self.debug_lines_2d = []
         self.debug_lines_3d = []
 

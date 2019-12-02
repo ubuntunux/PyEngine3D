@@ -37,7 +37,10 @@ class SceneManager(Singleton):
         self.selected_object_transform = TransformObject()
         self.selected_object_id = 0
 
-        self.selected_spline_gizmo_id = None
+        self.selected_spline_point_gizmo_id = None
+        self.selected_spline_control_point_gizmo_id = None
+        self.spline_control_point_gizmo_id0 = None
+        self.spline_control_point_gizmo_id1 = None
         self.spline_gizmo_object_map = {}
 
         self.selected_axis_gizmo_id = None
@@ -370,19 +373,33 @@ class SceneManager(Singleton):
         return spline
 
     def create_spline_gizmo(self, spline):
-        spline_gizmo_name = spline.name + '_gizmo'
+        spline_point_name = spline.name + '_point'
+        control_point_name = spline.name + '_control_point'
         gizmo_model = self.resource_manager.get_model('Cube')
+        if len(spline.spline_data.spline_points) < 1:
+            return
+
         for spline_point in spline.spline_data.spline_points:
             pos = np.dot(Float4(*spline_point.position, 1.0), spline.transform.matrix)[:3]
-            gizmo_object = StaticActor(
-                name=spline_gizmo_name,
-                model=gizmo_model,
-                pos=Float3(*pos),
-                scale=Float3(0.1, 0.1, 0.1),
-                object_id=self.generate_object_id(),
-                object_color=Float3(0.5, 0.5, 1.0)
-            )
+            gizmo_object = StaticActor(name=spline_point_name, model=gizmo_model, pos=Float3(*pos), scale=Float3(0.1, 0.1, 0.1), object_id=self.generate_object_id(), object_color=Float3(0.5, 0.5, 1.0))
             self.spline_gizmo_object_map[gizmo_object.get_object_id()] = gizmo_object
+
+        spline_point = spline.spline_data.spline_points[0]
+
+        def create_spline_control_point_gizmo(spline_gizmo_object_map, object_id, inverse):
+            if inverse:
+                pos = np.dot(Float4(*(spline_point.position + spline_point.control_point), 1.0), spline.transform.matrix)[:3]
+            else:
+                pos = np.dot(Float4(*(spline_point.position - spline_point.control_point), 1.0), spline.transform.matrix)[:3]
+            gizmo_object = StaticActor(name=control_point_name, model=gizmo_model, pos=Float3(*pos), scale=Float3(0.075, 0.075, 0.075), object_id=object_id, object_color=Float3(0.0, 1.0, 0.0))
+            spline_gizmo_object_map[gizmo_object.get_object_id()] = gizmo_object
+            return gizmo_object.get_object_id()
+        self.spline_control_point_gizmo_id0 = create_spline_control_point_gizmo(self.spline_gizmo_object_map, self.generate_object_id(), inverse=False)
+        self.spline_control_point_gizmo_id1 = create_spline_control_point_gizmo(self.spline_gizmo_object_map, self.generate_object_id(), inverse=True)
+
+        # select first spline gizmo object
+        self.set_selected_spline_gizmo_id(list(self.spline_gizmo_object_map.keys())[0])
+
         gather_render_infos(culling_func=always_pass,
                             camera=self.main_camera,
                             light=self.main_light,
@@ -390,8 +407,18 @@ class SceneManager(Singleton):
                             solid_render_infos=self.spline_gizmo_render_infos,
                             translucent_render_infos=None)
 
+    def set_selected_spline_gizmo_id(self, spline_gizmo_id):
+        if spline_gizmo_id == self.spline_control_point_gizmo_id0 or spline_gizmo_id == self.spline_control_point_gizmo_id1:
+            self.selected_spline_control_point_gizmo_id = spline_gizmo_id
+        else:
+            self.selected_spline_control_point_gizmo_id = None
+            self.selected_spline_point_gizmo_id = spline_gizmo_id
+
     def clear_spline_gizmo(self):
-        self.selected_spline_gizmo_id = None
+        self.selected_spline_point_gizmo_id = None
+        self.selected_spline_control_point_gizmo_id = None
+        self.spline_control_point_gizmo_id0 = None
+        self.spline_control_point_gizmo_id1 = None
         for spline_gizmo_object_id in self.spline_gizmo_object_map:
             self.restore_object_id(self.spline_gizmo_object_map[spline_gizmo_object_id].get_object_id())
         self.spline_gizmo_object_map.clear()
@@ -582,8 +609,9 @@ class SceneManager(Singleton):
             self.selected_object.transform.clone(self.selected_object_transform)
 
     def edit_selected_object_transform(self):
-        selected_spline_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_gizmo_id)
-        edit_object = selected_spline_gizmo_object or self.selected_object
+        selected_spline_control_point_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_control_point_gizmo_id)
+        selected_spline_point_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_point_gizmo_id)
+        edit_object = selected_spline_control_point_gizmo_object or selected_spline_point_gizmo_object or self.selected_object
         if edit_object is None:
             return
 
@@ -657,16 +685,17 @@ class SceneManager(Singleton):
                 edit_object_transform.scale_z((mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - (mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]))
 
             # update_spline_gizmo_object
-            if selected_spline_gizmo_object is edit_object and self.selected_object is not None:
-                spline_index = list(self.spline_gizmo_object_map).index(self.selected_spline_gizmo_id)
+            if selected_spline_point_gizmo_object is not None and self.selected_object is not None:
+                spline_index = list(self.spline_gizmo_object_map).index(self.selected_spline_point_gizmo_id)
                 spline_point = self.selected_object.spline_data.spline_points[spline_index]
-                pos = edit_object_transform.get_pos()
-                pos = np.dot(Float4(*pos, 1.0), self.selected_object.transform.inverse_matrix)[:3]
-                spline_point.position[...] = pos
-                # elif 1 == spline_component_index:
-                #     spline_point.control_point[...] = pos - spline_point.position
-                # elif 2 == spline_component_index:
-                #     spline_point.control_point[...] = spline_point.position - pos
+                spline_point_gizmo_pos = np.dot(Float4(*selected_spline_point_gizmo_object.transform.get_pos(), 1.0), self.selected_object.transform.inverse_matrix)[:3]
+                spline_point.position[...] = spline_point_gizmo_pos
+                if selected_spline_control_point_gizmo_object is not None:
+                    spline_control_point_gizmo_pos = np.dot(Float4(*selected_spline_control_point_gizmo_object.transform.get_pos(), 1.0), self.selected_object.transform.inverse_matrix)[:3]
+                    if self.spline_control_point_gizmo_id0 == self.selected_spline_control_point_gizmo_id:
+                        spline_point.control_point[...] = spline_point_gizmo_pos - spline_control_point_gizmo_pos
+                    elif self.spline_control_point_gizmo_id1 == self.selected_spline_control_point_gizmo_id:
+                        spline_point.control_point[...] = spline_control_point_gizmo_pos - spline_point_gizmo_pos
                 self.selected_object.spline_data.resampling()
 
     def update_select_object_id(self):
@@ -684,7 +713,7 @@ class SceneManager(Singleton):
             if object_id < AxisGizmo.ID_COUNT:
                 self.selected_axis_gizmo_id = object_id
             elif object_id in self.spline_gizmo_object_map:
-                self.selected_spline_gizmo_id = object_id
+                self.set_selected_spline_gizmo_id(object_id)
             else:
                 obj = self.objectIDMap.get(object_id)
                 if obj is not None:
@@ -822,15 +851,34 @@ class SceneManager(Singleton):
 
         if self.selected_object is not None and hasattr(self.selected_object, 'transform'):
             # update spline gizmo objects
-            for spline_index, spline_gizmo_object_id in enumerate(self.spline_gizmo_object_map):
-                spline_gizmo_object = self.spline_gizmo_object_map[spline_gizmo_object_id]
-                spline_point = self.selected_object.spline_data.spline_points[spline_index]
-                spline_gizmo_object.transform.set_pos(np.dot(Float4(*spline_point.position, 1.0), self.selected_object.transform.matrix)[:3])
-                spline_gizmo_object.update(dt)
+            spline_point_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_point_gizmo_id)
+            if 0 < len(self.spline_gizmo_object_map):
+                spline_gizmo_position = Float3(0.0, 0.0, 0.0)
+                for spline_gizmo_object_id in self.spline_gizmo_object_map:
+                    spline_gizmo_object = self.spline_gizmo_object_map[spline_gizmo_object_id]
+                    if spline_gizmo_object_id == self.spline_control_point_gizmo_id0 or spline_gizmo_object_id == self.spline_control_point_gizmo_id1:
+                        spline_index = list(self.spline_gizmo_object_map).index(self.selected_spline_point_gizmo_id)
+                        spline_point = self.selected_object.spline_data.spline_points[spline_index]
+                        if spline_gizmo_object_id == self.spline_control_point_gizmo_id0:
+                            spline_gizmo_position[...] = spline_point.position - spline_point.control_point
+                        elif spline_gizmo_object_id == self.spline_control_point_gizmo_id1:
+                            spline_gizmo_position[...] = spline_point.position + spline_point.control_point
+                    else:
+                        spline_index = list(self.spline_gizmo_object_map).index(spline_gizmo_object_id)
+                        spline_point = self.selected_object.spline_data.spline_points[spline_index]
+                        spline_gizmo_position[...] = spline_point.position
+                    spline_gizmo_object.transform.set_pos(np.dot(Float4(*spline_gizmo_position, 1.0), self.selected_object.transform.matrix)[:3])
+                    spline_gizmo_object.update(dt)
+                spline_control_point_gizmo_object0 = self.spline_gizmo_object_map.get(self.spline_control_point_gizmo_id0)
+                spline_control_point_gizmo_object1 = self.spline_gizmo_object_map.get(self.spline_control_point_gizmo_id1)
+                if spline_point_gizmo_object is not None and spline_control_point_gizmo_object0 is not None and spline_control_point_gizmo_object1 is not None:
+                    self.renderer.debug_line_manager.draw_debug_line_3d(spline_point_gizmo_object.get_pos(), spline_control_point_gizmo_object0.get_pos(), Float4(0.0, 1.0, 0.0, 1.0), width=3.0)
+                    self.renderer.debug_line_manager.draw_debug_line_3d(spline_point_gizmo_object.get_pos(), spline_control_point_gizmo_object1.get_pos(), Float4(0.0, 1.0, 0.0, 1.0), width=3.0)
 
             # update axis gizmo transform
-            spline_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_gizmo_id)
-            axis_gizmo_pos = spline_gizmo_object.transform.get_pos() if spline_gizmo_object is not None else self.selected_object.transform.get_pos()
+            spline_control_point_gizmo_object = self.spline_gizmo_object_map.get(self.selected_spline_control_point_gizmo_id)
+            axis_gizmo_object = spline_control_point_gizmo_object or spline_point_gizmo_object or self.selected_object
+            axis_gizmo_pos = axis_gizmo_object.transform.get_pos()
             self.axis_gizmo.transform.set_pos(axis_gizmo_pos)
             self.axis_gizmo.transform.set_scale(length(axis_gizmo_pos - self.main_camera.transform.get_pos()) * 0.15)
             self.axis_gizmo.update(dt)

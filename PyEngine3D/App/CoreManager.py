@@ -730,11 +730,11 @@ class CoreManager(Singleton):
             else:
                 self.update_camera()
 
+        self.debug_line_manager.clear_debug_lines()
+
         self.scene_manager.update_scene(delta)
-        self.debug_line_manager.update(delta)
 
         # Start Render Scene
-
         end_time = time.perf_counter()
         self.logic_time = (end_time - start_time) * 1000.0  # millisecond
         start_time = end_time
