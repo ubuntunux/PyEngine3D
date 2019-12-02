@@ -73,7 +73,7 @@ class Renderer(Singleton):
         self.selcted_static_object_material = None
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
-        self.axis_gizmo_material = None
+        self.render_color_material = None
 
         # font
         self.font_instance_buffer = None
@@ -120,8 +120,8 @@ class Renderer(Singleton):
 
         self.selcted_object_composite_material = self.resource_manager.get_material_instance("selected_object_composite")
 
-        self.axis_gizmo_material = self.resource_manager.get_material_instance(name="render_axis_gizmo",
-                                                                               shader_name="render_axis_gizmo")
+        self.render_color_material = self.resource_manager.get_material_instance(name="render_object_color",
+                                                                                 shader_name="render_object_color")
 
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
@@ -670,8 +670,10 @@ class Renderer(Singleton):
 
             if last_actor != actor:
                 material_instance = scene_material_instance or actor_material_instance
-                if render_mode == RenderMode.OBJECT_ID:
+                if RenderMode.OBJECT_ID == render_mode:
                     material_instance.bind_uniform_data('object_id', actor.get_object_id())
+                elif RenderMode.GIZMO == render_mode:
+                    material_instance.bind_uniform_data('color', actor.get_object_color())
                 material_instance.bind_uniform_data('is_instancing', is_instancing)
                 material_instance.bind_uniform_data('model', actor.transform.matrix)
                 if render_group == RenderGroup.SKELETON_ACTOR:
@@ -728,7 +730,7 @@ class Renderer(Singleton):
             axis_gizmo_actor = self.scene_manager.get_axis_gizmo()
             material_instance = None
             if RenderMode.GIZMO == render_mode:
-                material_instance = self.axis_gizmo_material
+                material_instance = self.render_color_material
             elif RenderMode.OBJECT_ID == render_mode:
                 material_instance = self.static_object_id_material
             material_instance.use_program()
@@ -773,10 +775,17 @@ class Renderer(Singleton):
                                self.scene_manager.skeleton_translucent_render_infos,
                                self.skeletal_object_id_material)
 
+        # spline object id
         self.debug_line_manager.bind_render_spline_program()
         for spline in self.scene_manager.splines:
             object_id = spline.get_object_id()
             self.debug_line_manager.render_spline(spline, Float4(object_id, object_id, object_id, 1.0), add_width=10.0)
+
+        # spline gizmo object id
+        self.render_actors(RenderGroup.STATIC_ACTOR,
+                           RenderMode.OBJECT_ID,
+                           self.scene_manager.spline_gizmo_render_infos,
+                           self.static_object_id_material)
 
         # gizmo object id
         glClear(GL_DEPTH_BUFFER_BIT)
@@ -1130,6 +1139,12 @@ class Renderer(Singleton):
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
             glEnable(GL_DEPTH_TEST)
             glDepthMask(True)
-            glClear(GL_DEPTH_BUFFER_BIT)
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            self.render_actors(RenderGroup.STATIC_ACTOR,
+                               RenderMode.GIZMO,
+                               self.scene_manager.spline_gizmo_render_infos,
+                               self.render_color_material)
+
+            glClear(GL_DEPTH_BUFFER_BIT)
             self.render_axis_gizmo(RenderMode.GIZMO)

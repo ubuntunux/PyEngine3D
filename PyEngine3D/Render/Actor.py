@@ -15,6 +15,7 @@ class StaticActor:
         self.has_mesh = False
         self.visible = object_data.get('visible', True)
         self.object_id = object_data.get('object_id', 0)
+        self.object_color = object_data.get('object_color', Float3(1.0, 1.0, 1.0))
 
         # transform
         self.bound_box = BoundBox()
@@ -52,6 +53,12 @@ class StaticActor:
 
     def set_object_id(self, object_id):
         self.object_id = object_id
+
+    def get_object_color(self):
+        return self.object_color
+
+    def set_object_color(self, object_color):
+        self.object_color[...] = object_color
 
     def set_model(self, model):
         self.model = model
