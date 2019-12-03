@@ -630,8 +630,6 @@ class CoreManager(Singleton):
                 if Keyboard.ESCAPE == event_value or btn_right_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
                     self.scene_manager.restore_selected_object_transform()
-                    self.scene_manager.clear_selected_object()
-                    self.scene_manager.clear_selected_axis_gizmo_id()
                 if Keyboard.ENTER == event_value or btn_left_up:
                     self.game_backend.set_input_mode(InputMode.NONE)
                     self.scene_manager.clear_selected_axis_gizmo_id()
