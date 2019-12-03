@@ -72,7 +72,6 @@ class SceneManager(Singleton):
         self.skeleton_translucent_render_infos = []
         self.skeleton_shadow_render_infos = []
 
-
         self.axis_gizmo_render_infos = []
         self.spline_gizmo_render_infos = []
 
@@ -148,9 +147,6 @@ class SceneManager(Singleton):
         self.atmosphere = self.add_atmosphere()
         self.ocean = self.add_ocean()
         self.terrain = self.add_terrain()
-
-        # TEST CODE
-        self.add_spline(name='default_spline', spline_data='default_spline', pos=Float3(2.0, 2.0, -8.0))
 
         self.set_current_scene_name(self.resource_manager.scene_loader.get_new_resource_name("new_scene"))
 

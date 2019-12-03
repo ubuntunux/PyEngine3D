@@ -34,7 +34,7 @@ class SplineData:
     def __init__(self, name, **data):
         self.name = name
         self.spline_points = data.get('spline_points', copy.deepcopy(self.default_spline_points))
-        self.resample_count = data.get('resampling_count', 128)
+        self.resample_count = data.get('resample_count', 128)
         self.resampling_positions = np.zeros(0, dtype=(np.float32, 3))
         self.resampling(self.resample_count)
         self.attributes = Attributes()
@@ -104,40 +104,57 @@ class SplineData:
         )
         return save_data
 
+    def get_resampling_position(self, ratio):
+        resample_index = float(self.resample_count - 1) * min(1.0, max(0.0, ratio))
+        index_min = floor(resample_index)
+        index_max = ceil(resample_index)
+        factor = resample_index - index_min
+        return lerp(self.resampling_positions[index_min], self.resampling_positions[index_max], factor)
+
     def resampling(self, resample_count=None):
         if resample_count is not None:
             self.resample_count = max(1, resample_count)
-        point_count = len(self.spline_points)
-        segment_count = point_count - 1
-        if segment_count < 1:
-            return
+
         self.resampling_positions = np.zeros(self.resample_count, dtype=(np.float32, 3))
 
-        index = 0
+        point_count = len(self.spline_points)
+        if point_count == 0:
+            return
+        elif point_count == 1:
+            spline_point = self.spline_points[0]
+            for i in range(self.resample_count):
+                self.resampling_positions[i][...] = spline_point.position
+        # 가장 첫번째 point의 시간은 제외
+        total_time = sum([self.spline_points[i].point_time for i in range(1, len(self.spline_points), 1)])
+        key_frames = [spline_point.point_time for spline_point in self.spline_points]
+        key_frames[0] = 0.0
+        key_frames = [sum(key_frames[:i+1]) for i in range(len(key_frames))]
+
+        point_index = 0
         resample_pos = 0.0
-        resample_step = 1.0 / self.resample_count
-        while resample_pos <= 1.0 and index < self.resample_count:
-            t = resample_pos * segment_count
-            if t == 1.0:
-                point_index = min(point_count - 2, int(resample_pos * segment_count) - 1)
-            else:
-                t %= 1.0
-                point_index = min(point_count - 2, int(resample_pos * segment_count))
+        resample_step = total_time / (self.resample_count - 1)
+        for i in range(self.resample_count):
+            while True:
+                if key_frames[point_index] <= resample_pos <= key_frames[point_index + 1]:
+                    break
+                if (point_count - 2) <= point_index:
+                    break
+                point_index += 1
 
-            next_point_index = point_index + 1
-            point = self.spline_points[point_index]
-            next_point = self.spline_points[next_point_index]
+            spline_point = self.spline_points[point_index]
+            next_spline_point = self.spline_points[point_index + 1]
+            time_range = key_frames[point_index + 1] - key_frames[point_index]
+            t = min(1.0, max(0.0, (resample_pos - key_frames[point_index]) / time_range))
 
-            self.resampling_positions[index][...] = getCubicBezierCurvePoint(
-                point.position,
-                point.position + point.control_point,
-                next_point.position - next_point.control_point,
-                next_point.position,
+            self.resampling_positions[i][...] = getCubicBezierCurvePoint(
+                spline_point.position,
+                spline_point.position + spline_point.control_point,
+                next_spline_point.position - next_spline_point.control_point,
+                next_spline_point.position,
                 t
             )
 
-            resample_pos += resample_step
-            index += 1
+            resample_pos = min(total_time, resample_pos + resample_step)
 
 
 class Spline3D:
