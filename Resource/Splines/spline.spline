@@ -1,0 +1,4 @@
+{'name': 'spline',
+ 'resample_count': 128,
+ 'spline_points': [{'control_point': [1.0, 0.0, 0.0], 'point_time': 1.0, 'position': [0.0, 0.0, 0.0]},
+                   {'control_point': [1.0, 0.0, 0.0], 'point_time': 1.0, 'position': [4.0, 2.0, 0.0]}]}

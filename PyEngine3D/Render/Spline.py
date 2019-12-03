@@ -12,15 +12,23 @@ from PyEngine3D.Utilities import *
 
 
 class SplinePoint:
-    def __init__(self, position=None, control_point=None):
+    def __init__(self, position=None, control_point=None, point_time=1.0):
         self.position = position if position is not None else Float3()
         self.control_point = control_point if control_point is not None else Float3()
+        self.point_time = point_time
+
+    def get_save_data(self):
+        return dict(
+            position=self.position.tolist(),
+            control_point=self.control_point.tolist(),
+            point_time=self.point_time
+        )
 
 
 class SplineData:
     default_spline_points = [
-        SplinePoint(Float3(0.0, 0.0, 0.0), Float3(1.0, 0.0, 0.0)),
-        SplinePoint(Float3(4.0, 2.0, 0.0), Float3(1.0, 0.0, 0.0))
+        SplinePoint(Float3(0.0, 0.0, 0.0), Float3(1.0, 0.0, 0.0), 0.0),
+        SplinePoint(Float3(4.0, 2.0, 0.0), Float3(1.0, 0.0, 0.0), 1.0)
     ]
 
     def __init__(self, name, **data):
@@ -47,8 +55,13 @@ class SplineData:
         elif 'spline_points' == item_info.attribute_name:
             spine_point_index = item_info_history[1].index
             spline_point_attribute_name = item_info_history[2].index
-            point = getattr(self.spline_points[spine_point_index], spline_point_attribute_name)
-            point[...] = attribute_value
+            spine_point = self.spline_points[spine_point_index]
+            if 'position' == spline_point_attribute_name:
+                spine_point.position[...] = attribute_value
+            elif 'control_point' == spline_point_attribute_name:
+                spine_point.control_point[...] = attribute_value
+            elif 'point_time' == spline_point_attribute_name:
+                spine_point.point_time = attribute_value
             self.resampling()
         elif hasattr(self, attribute_name):
             setattr(self, attribute_name, attribute_value)
@@ -86,7 +99,7 @@ class SplineData:
     def get_save_data(self):
         save_data = dict(
             name=self.name,
-            spline_points=[{'position': spline_point.position.tolist(), 'control_point': spline_point.control_point.tolist()} for spline_point in self.spline_points],
+            spline_points=[spline_point.get_save_data() for spline_point in self.spline_points],
             resample_count=self.resample_count
         )
         return save_data

@@ -1237,7 +1237,7 @@ class SplineLoader(ResourceLoader):
             if spline_data:
                 spline_points = spline_data.get('spline_points', [])
                 for i, spline_point in enumerate(spline_points):
-                    spline_points[i] = SplinePoint(Float3(*spline_point['position']), Float3(*spline_point['control_point']))
+                    spline_points[i] = SplinePoint(Float3(*spline_point['position']), Float3(*spline_point['control_point']), spline_point.get('point_time', 1.0))
                 spline_data['spline_points'] = spline_points
                 spline_data['name'] = resource_name
                 spline = SplineData(**spline_data)
