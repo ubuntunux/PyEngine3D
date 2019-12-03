@@ -1,6 +1,7 @@
 import os
 import traceback
 import copy
+import math
 
 import numpy as np
 from OpenGL.GL import *
@@ -106,8 +107,8 @@ class SplineData:
 
     def get_resampling_position(self, ratio):
         resample_index = float(self.resample_count - 1) * min(1.0, max(0.0, ratio))
-        index_min = floor(resample_index)
-        index_max = ceil(resample_index)
+        index_min = math.floor(resample_index)
+        index_max = math.ceil(resample_index)
         factor = resample_index - index_min
         return lerp(self.resampling_positions[index_min], self.resampling_positions[index_max], factor)
 
