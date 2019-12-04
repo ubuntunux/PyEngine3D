@@ -620,7 +620,7 @@ class SceneManager(Singleton):
             screen_width = self.core_manager.viewport_manager.main_viewport.width
             screen_height = self.core_manager.viewport_manager.main_viewport.height
             edit_object_transform = edit_object.transform
-            use_quaternion = edit_object_transform.get_use_quaternion()
+            use_quaternion = False
 
             mouse_x_ratio = mouse_pos[0] / screen_width
             mouse_y_ratio = mouse_pos[1] / screen_height
@@ -654,7 +654,7 @@ class SceneManager(Singleton):
                 yz_old = Float2(mouse_world_pos_old[1] * to_object[0] / mouse_world_pos_old[0], mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]) - Float2(to_object[1], to_object[2])
                 if use_quaternion:
                     quat = get_quaternion(edit_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
-                    edit_object_transform.rotation_quaternion(quat)
+                    edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_pitch(math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
             elif AxisGizmo.ID_ROTATION_YAW == self.selected_axis_gizmo_id:
@@ -662,7 +662,7 @@ class SceneManager(Singleton):
                 xz_old = Float2(mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1], mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]) - Float2(to_object[0], to_object[2])
                 if use_quaternion:
                     quat = get_quaternion(edit_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
-                    edit_object_transform.rotation_quaternion(quat)
+                    edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_yaw(math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
             elif AxisGizmo.ID_ROTATION_ROLL == self.selected_axis_gizmo_id:
@@ -670,7 +670,7 @@ class SceneManager(Singleton):
                 xy_old = Float2(mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2], mouse_world_pos_old[1] * to_object[2] / mouse_world_pos_old[2]) - Float2(to_object[0], to_object[1])
                 if use_quaternion:
                     quat = get_quaternion(edit_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
-                    edit_object_transform.rotation_quaternion(quat)
+                    edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_roll(math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
             elif AxisGizmo.ID_SCALE_X == self.selected_axis_gizmo_id:

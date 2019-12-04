@@ -4,13 +4,10 @@ from .Transform import *
 
 
 class TransformObject:
-    euler_to_quaternion = True
-
-    def __init__(self, local=None, use_quaternion=False):
+    def __init__(self, local=None):
         self.local = local if local is not None else Matrix4()
 
         self.updated = True
-        self.use_quaternion = use_quaternion
 
         self.left = WORLD_LEFT.copy()
         self.up = WORLD_UP.copy()
@@ -18,12 +15,15 @@ class TransformObject:
 
         self.pos = Float3()
         self.rot = Float3()
+        self.euler_to_quat = QUATERNION_IDENTITY.copy()
         self.quat = QUATERNION_IDENTITY.copy()
+        self.final_rotation = QUATERNION_IDENTITY.copy()
         self.scale = Float3(1, 1, 1)
 
         self.prev_pos = Float3()
         self.prev_Rot = Float3()
         self.prev_quat = QUATERNION_IDENTITY.copy()
+        self.prev_final_rotation = QUATERNION_IDENTITY.copy()
         self.prev_Scale = Float3(1, 1, 1)
 
         self.prev_pos_store = Float3()
@@ -43,6 +43,7 @@ class TransformObject:
         self.set_pos(Float3())
         self.set_rotation(Float3())
         self.set_quaternion(QUATERNION_IDENTITY)
+        self.set_final_rotation(QUATERNION_IDENTITY)
         self.set_scale(Float3(1, 1, 1))
         self.update_transform(True)
 
@@ -50,6 +51,7 @@ class TransformObject:
         self.set_pos(other_transform.get_pos())
         self.set_rotation(other_transform.get_rotation())
         self.set_quaternion(other_transform.get_quaternion())
+        self.set_final_rotation(other_transform.get_final_rotation())
         self.set_scale(other_transform.get_scale())
         self.update_transform(True)
 
@@ -107,7 +109,7 @@ class TransformObject:
 
     # Rotation
     def get_rotation(self):
-        return self.rot.copy()
+        return self.rot
 
     def get_pitch(self):
         return self.rot[0]
@@ -157,19 +159,19 @@ class TransformObject:
             self.rot[2] %= TWO_PI
 
     # Quaternion
-    def get_use_quaternion(self):
-        return self.use_quaternion
+    def get_final_rotation(self):
+        return self.final_rotation
 
-    def set_use_quaternion(self, flag):
-        self.use_quaternion = flag
+    def set_final_rotation(self, quat):
+        self.final_rotation[...] = quat
 
     def get_quaternion(self):
-        return self.quat.copy()
+        return self.quat
 
     def set_quaternion(self, quat):
         self.quat[...] = quat
 
-    def rotation_quaternion(self, quat):
+    def multiply_quaternion(self, quat):
         self.quat[...] = muliply_quaternion(quat, self.quat)
 
     def euler_to_quaternion(self):
@@ -231,32 +233,27 @@ class TransformObject:
             self.prev_pos[...] = self.pos
             self.updated = True
 
-        if self.use_quaternion:
-            # Quaternion Rotation - slower
-            if any(self.prev_quat != self.quat) or force_update:
-                self.prev_quat[...] = self.quat
-                self.updated = True
-                rotation_update = True
+        # Quaternion Rotation
+        if any(self.prev_quat != self.quat) or force_update:
+            self.prev_quat[...] = self.quat
+            self.updated = True
+            rotation_update = True
 
-                quaternion_to_matrix(self.quat, self.rotationMatrix)
-        else:
-            # Euler Roation
-            if any(self.prev_Rot != self.rot) or force_update:
-                self.prev_Rot[...] = self.rot
-                self.updated = True
-                rotation_update = True
+        # Euler Roation
+        if any(self.prev_Rot != self.rot) or force_update:
+            self.prev_Rot[...] = self.rot
+            self.updated = True
+            rotation_update = True
 
-                if self.euler_to_quaternion:
-                    qx = get_quaternion(Float3(1.0, 0.0, 0.0), self.rot[0])
-                    qy = get_quaternion(Float3(0.0, 1.0, 0.0), self.rot[1])
-                    qz = get_quaternion(Float3(0.0, 0.0, 1.0), self.rot[2])
-                    self.prev_quat[...] = self.quat
-                    self.quat[...] = muliply_quaternions(qy, qx, qz)
-                    quaternion_to_matrix(self.quat, self.rotationMatrix)
-                else:
-                    matrix_rotation(self.rotationMatrix, *self.rot)
+            qx = get_quaternion(Float3(1.0, 0.0, 0.0), self.rot[0])
+            qy = get_quaternion(Float3(0.0, 1.0, 0.0), self.rot[1])
+            qz = get_quaternion(Float3(0.0, 0.0, 1.0), self.rot[2])
+            self.euler_to_quat[...] = muliply_quaternions(qy, qx, qz)
 
         if rotation_update:
+            self.prev_final_rotation[...] = self.final_rotation
+            self.final_rotation[...] = normalize(muliply_quaternion(self.euler_to_quat, self.quat))
+            quaternion_to_matrix(self.final_rotation, self.rotationMatrix)
             self.matrix_to_vectors()
 
         if any(self.prev_Scale != self.scale) or force_update:

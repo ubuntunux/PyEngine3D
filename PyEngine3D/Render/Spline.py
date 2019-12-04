@@ -223,6 +223,10 @@ class Spline3D:
         )
         return save_data
 
+    def get_resampling_position(self, ratio):
+        pos = self.spline_data.get_resampling_position(ratio)
+        return np.dot(Float4(*pos, 1.0), self.transform.matrix)[:3]
+
     def update(self, dt):
         self.transform.update_transform(update_inverse_matrix=True)
 

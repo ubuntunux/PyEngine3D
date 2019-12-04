@@ -380,10 +380,8 @@ class MainWindow:
         self.attribute_treeview["columns"] = ("#1",)
         self.attribute_treeview.column("#0", width=property_width)
         self.attribute_treeview.column("#1", width=property_width)
-        self.attribute_treeview.heading("#0", text="Attribute",
-                                        command=lambda: self.sort_treeview(self.attribute_treeview, 0))
-        self.attribute_treeview.heading("#1", text="Value",
-                                        command=lambda: self.sort_treeview(self.attribute_treeview, 1))
+        self.attribute_treeview.heading("#0", text="Attribute", command=lambda: self.sort_treeview(self.attribute_treeview, 0))
+        self.attribute_treeview.heading("#1", text="Value", command=lambda: self.sort_treeview(self.attribute_treeview, 1))
 
         self.attribute_treeview.bind("<<TreeviewSelect>>", self.select_attribute)
         self.attribute_treeview.bind("<<TreeviewCellEdited>>", self.attribute_changed)
