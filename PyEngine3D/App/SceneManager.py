@@ -653,7 +653,7 @@ class SceneManager(Singleton):
                 yz = Float2(mouse_world_pos[1] * to_object[0] / mouse_world_pos[0], mouse_world_pos[2] * to_object[0] / mouse_world_pos[0]) - Float2(to_object[1], to_object[2])
                 yz_old = Float2(mouse_world_pos_old[1] * to_object[0] / mouse_world_pos_old[0], mouse_world_pos_old[2] * to_object[0] / mouse_world_pos_old[0]) - Float2(to_object[1], to_object[2])
                 if use_quaternion:
-                    quat = get_quaternion(edit_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
+                    quat = axis_rotation(edit_object_transform.left, math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
                     edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_pitch(math.atan2(yz[1], yz[0]) - math.atan2(yz_old[1], yz_old[0]))
@@ -661,7 +661,7 @@ class SceneManager(Singleton):
                 xz = Float2(mouse_world_pos[0] * to_object[1] / mouse_world_pos[1], mouse_world_pos[2] * to_object[1] / mouse_world_pos[1]) - Float2(to_object[0], to_object[2])
                 xz_old = Float2(mouse_world_pos_old[0] * to_object[1] / mouse_world_pos_old[1], mouse_world_pos_old[2] * to_object[1] / mouse_world_pos_old[1]) - Float2(to_object[0], to_object[2])
                 if use_quaternion:
-                    quat = get_quaternion(edit_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
+                    quat = axis_rotation(edit_object_transform.up, math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
                     edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_yaw(math.atan2(xz_old[1], xz_old[0]) - math.atan2(xz[1], xz[0]))
@@ -669,7 +669,7 @@ class SceneManager(Singleton):
                 xy = Float2(mouse_world_pos[0] * to_object[2] / mouse_world_pos[2], mouse_world_pos[1] * to_object[2] / mouse_world_pos[2]) - Float2(to_object[0], to_object[1])
                 xy_old = Float2(mouse_world_pos_old[0] * to_object[2] / mouse_world_pos_old[2], mouse_world_pos_old[1] * to_object[2] / mouse_world_pos_old[2]) - Float2(to_object[0], to_object[1])
                 if use_quaternion:
-                    quat = get_quaternion(edit_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
+                    quat = axis_rotation(edit_object_transform.front, math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))
                     edit_object_transform.multiply_quaternion(quat)
                 else:
                     edit_object_transform.rotation_roll(math.atan2(xy[1], xy[0]) - math.atan2(xy_old[1], xy_old[0]))

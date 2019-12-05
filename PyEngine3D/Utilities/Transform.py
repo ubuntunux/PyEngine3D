@@ -141,7 +141,7 @@ def matrix_to_vectors(rotation_matrix, axis_x, axis_y, axis_z, do_normalize=Fals
     axis_z[:] = rotation_matrix[2, 0:3]
 
 
-def get_quaternion(axis, radian):
+def axis_rotation(axis, radian):
     angle = radian * 0.5
     s = math.sin(angle)
     return Float4(math.cos(angle), axis[0]*s, axis[1]*s, axis[2]*s)

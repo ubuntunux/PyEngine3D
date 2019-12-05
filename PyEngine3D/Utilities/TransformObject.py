@@ -171,8 +171,14 @@ class TransformObject:
     def set_quaternion(self, quat):
         self.quat[...] = quat
 
+    def axis_rotation(self, axis, radian):
+        self.multiply_quaternion(axis_rotation(axis, radian))
+
     def multiply_quaternion(self, quat):
         self.quat[...] = muliply_quaternion(quat, self.quat)
+
+    def normalize_quaternion(self):
+        self.quat[...] = normalize(self.quat)
 
     def euler_to_quaternion(self):
         euler_to_quaternion(*self.rot, self.quat)
@@ -245,9 +251,9 @@ class TransformObject:
             self.updated = True
             rotation_update = True
 
-            qx = get_quaternion(Float3(1.0, 0.0, 0.0), self.rot[0])
-            qy = get_quaternion(Float3(0.0, 1.0, 0.0), self.rot[1])
-            qz = get_quaternion(Float3(0.0, 0.0, 1.0), self.rot[2])
+            qx = axis_rotation(Float3(1.0, 0.0, 0.0), self.rot[0])
+            qy = axis_rotation(Float3(0.0, 1.0, 0.0), self.rot[1])
+            qz = axis_rotation(Float3(0.0, 0.0, 1.0), self.rot[2])
             self.euler_to_quat[...] = muliply_quaternions(qy, qx, qz)
 
         if rotation_update:
