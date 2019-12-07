@@ -28,6 +28,8 @@ class TransformObject:
 
         self.prev_pos_store = Float3()
 
+        self.quaternionMatrix = Matrix4()
+        self.eulerMatrix = Matrix4()
         self.rotationMatrix = Matrix4()
 
         self.matrix = Matrix4()
@@ -244,22 +246,17 @@ class TransformObject:
             self.prev_quat[...] = self.quat
             self.updated = True
             rotation_update = True
+            quaternion_to_matrix(self.quat, self.quaternionMatrix)
 
         # Euler Roation
         if any(self.prev_Rot != self.rot) or force_update:
             self.prev_Rot[...] = self.rot
             self.updated = True
             rotation_update = True
-
-            qx = axis_rotation(Float3(1.0, 0.0, 0.0), self.rot[0])
-            qy = axis_rotation(Float3(0.0, 1.0, 0.0), self.rot[1])
-            qz = axis_rotation(Float3(0.0, 0.0, 1.0), self.rot[2])
-            self.euler_to_quat[...] = muliply_quaternions(qy, qx, qz)
+            matrix_rotation(self.eulerMatrix, *self.rot)
 
         if rotation_update:
-            self.prev_final_rotation[...] = self.final_rotation
-            self.final_rotation[...] = normalize(muliply_quaternion(self.euler_to_quat, self.quat))
-            quaternion_to_matrix(self.final_rotation, self.rotationMatrix)
+            self.rotationMatrix[...] = np.dot(self.eulerMatrix, self.quaternionMatrix)
             self.matrix_to_vectors()
 
         if any(self.prev_Scale != self.scale) or force_update:
