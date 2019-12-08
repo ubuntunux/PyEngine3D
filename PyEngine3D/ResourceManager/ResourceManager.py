@@ -408,7 +408,7 @@ class ResourceLoader(object):
 
     def set_resource_attribute(self, resource_name, attribute_name, attribute_value, item_info_history, attribute_index):
         # rename resource
-        if attribute_name == 'name' and parent_info is None:
+        if attribute_name == 'name':
             self.rename_resource(resource_name, attribute_value)
         else:
             # set other attributes
