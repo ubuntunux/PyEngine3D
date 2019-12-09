@@ -8,7 +8,7 @@ layout(std140, binding=0) uniform scene_constants
     vec2 BACKBUFFER_SIZE;
     vec2 MOUSE_POS;
     float DELTA_TIME;
-    int SHADOWMAP_LOOP_COUNT;
+    int SCENE_DUMMY_0;
 };
 
 layout(std140, binding=1) uniform view_constants
@@ -35,12 +35,13 @@ layout(std140, binding=2) uniform view_projection
 
 layout(std140, binding=3) uniform light_constants
 {
-    vec3 LIGHT_POSITION;
-    float LIGHT_DUMMY_0;
-    vec3 LIGHT_DIRECTION;
-    float LIGHT_DUMMY_1;
-    vec4 LIGHT_COLOR;
     mat4 SHADOW_MATRIX;
+    vec3 LIGHT_POSITION;
+    float SHADOW_EXP;
+    vec3 LIGHT_DIRECTION;
+    float SHADOW_BIAS;
+    vec3 LIGHT_COLOR;
+    float SHADOW_SAMPLES;
 };
 
 const int MAX_POINT_LIGHTS = 10;
@@ -118,7 +119,6 @@ const int SUBTRACT = 3;
 
 const int MAX_BONES_PER_VERTEX = 4;
 const int MAX_BONES = 100;
-const float SHADOW_BIAS = -0.0001;
 
 const float PI = 3.14159265358979323846;
 const float HALF_PI = PI * 0.5;

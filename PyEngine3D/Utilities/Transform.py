@@ -497,14 +497,9 @@ def lookat(matrix, eye, target, up):
     matrix[3, 0:3] = [-np.dot(s, eye), -np.dot(u, eye), -np.dot(f, eye)]
 
 
-def ortho(left, right, bottom, top, znear, zfar):
-    assert (right != left)
-    assert (bottom != top)
-    assert (znear != zfar)
-
-    M = np.zeros((4, 4), dtype=np.float32)
-    M[0, 0] = +2.0 / (right - left)
-    M[1, 1] = +2.0 / (top - bottom)
+def ortho(M, left, right, bottom, top, znear, zfar):
+    M[0, 0] = 2.0 / (right - left)
+    M[1, 1] = 2.0 / (top - bottom)
     M[2, 2] = -2.0 / (zfar - znear)
     M[3, 0] = -(right + left) / float(right - left)
     M[3, 1] = -(top + bottom) / float(top - bottom)

@@ -141,7 +141,7 @@ class Renderer(Singleton):
                                                      ('BACKBUFFER_SIZE', np.float32, 2),
                                                      ('MOUSE_POS', np.float32, 2),
                                                      ('DELTA_TIME', np.float32),
-                                                     ('SHADOWMAP_LOOP_COUNT', np.int32)])
+                                                     ('SCENE_DUMMY_0', np.int32)])
         self.uniform_scene_buffer = UniformBlock("scene_constants", program, 0, self.uniform_scene_data)
 
         self.uniform_view_data = np.zeros(1, dtype=[('VIEW', np.float32, (4, 4)),
@@ -163,12 +163,13 @@ class Renderer(Singleton):
         self.uniform_view_projection_buffer = UniformBlock("view_projection", program, 2,
                                                            self.uniform_view_projection_data)
 
-        self.uniform_light_data = np.zeros(1, dtype=[('LIGHT_POSITION', np.float32, 3),
-                                                     ('LIGHT_DUMMY_0', np.float32),
+        self.uniform_light_data = np.zeros(1, dtype=[('SHADOW_MATRIX', np.float32, (4, 4)),
+                                                     ('LIGHT_POSITION', np.float32, 3),
+                                                     ('SHADOW_EXP', np.float32),
                                                      ('LIGHT_DIRECTION', np.float32, 3),
-                                                     ('LIGHT_DUMMY_1', np.float32),
-                                                     ('LIGHT_COLOR', np.float32, 4),
-                                                     ('SHADOW_MATRIX', np.float32, (4, 4))])
+                                                     ('SHADOW_BIAS', np.float32),
+                                                     ('LIGHT_COLOR', np.float32, 3),
+                                                     ('SHADOW_SAMPLES', np.float32)])
         self.uniform_light_buffer = UniformBlock("light_constants", program, 3, self.uniform_light_data)
 
         self.uniform_point_light_data = np.zeros(MAX_POINT_LIGHTS, dtype=[('color', np.float32, 3),
@@ -332,7 +333,6 @@ class Renderer(Singleton):
         uniform_data['BACKBUFFER_SIZE'] = (RenderTargets.BACKBUFFER.width, RenderTargets.BACKBUFFER.height)
         uniform_data['MOUSE_POS'] = self.core_manager.get_mouse_pos()
         uniform_data['DELTA_TIME'] = self.core_manager.delta
-        uniform_data['SHADOWMAP_LOOP_COUNT'] = self.postprocess.shadowmap_loop_count
         self.uniform_scene_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_view_data
@@ -349,10 +349,13 @@ class Renderer(Singleton):
         self.uniform_view_buffer.bind_uniform_block(data=uniform_data)
 
         uniform_data = self.uniform_light_data
+        uniform_data['SHADOW_MATRIX'][...] = main_light.shadow_view_projection
+        uniform_data['SHADOW_EXP'] = main_light.shadow_exp
+        uniform_data['SHADOW_BIAS'] = main_light.shadow_bias
+        uniform_data['SHADOW_SAMPLES'] = main_light.shadow_samples
         uniform_data['LIGHT_POSITION'][...] = main_light.transform.get_pos()
         uniform_data['LIGHT_DIRECTION'][...] = main_light.transform.front
-        uniform_data['LIGHT_COLOR'][...] = main_light.light_color
-        uniform_data['SHADOW_MATRIX'][...] = main_light.shadow_view_projection
+        uniform_data['LIGHT_COLOR'][...] = main_light.light_color[:3]
         self.uniform_light_buffer.bind_uniform_block(data=uniform_data)
 
         self.uniform_point_light_buffer.bind_uniform_block(data=self.uniform_point_light_data)

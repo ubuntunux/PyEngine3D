@@ -4,7 +4,7 @@
 #include "precomputed_atmosphere/atmosphere_predefine.glsl"
 
 
-float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
+float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, float NdotL, sampler2D texture_shadow)
 {
     vec2 shadow_size = textureSize(texture_shadow, 0);
     vec2 shadow_texel_size = 1.0 / shadow_size;
@@ -20,9 +20,6 @@ float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampl
     };
 
     float shadow_factor = 0.0;
-    const float c = 1000.0;
-    float depth_bias = 0.002;
-
     vec2 shadow_uv = shadow_proj.xy;
 
     vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
@@ -37,7 +34,7 @@ float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampl
         shadow_factors[i] = texture2DLod(texture_shadow, shadow_uv, 0.0).x;
         if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
         {
-            shadow_factors[i] = saturate(exp( -c * (shadow_depth - shadow_factors[i] + depth_bias)));
+            shadow_factors[i] = saturate(exp(-SHADOW_EXP * (shadow_depth - shadow_factors[i] - SHADOW_BIAS * (1.0 - saturate(NdotL)))));
         }
         else
         {
@@ -53,7 +50,7 @@ float get_shadow_factor_simple(vec2 screen_tex_coord, vec3 world_position, sampl
 }
 
 
-float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D texture_shadow)
+float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float NdotL, sampler2D texture_shadow)
 {
     vec2 shadow_size = textureSize(texture_shadow, 0);
     vec2 shadow_texel_size = 1.0 / shadow_size;
@@ -69,12 +66,10 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
     };
 
     float shadow_factor = 0.0;
-    const float c = 1000.0;
-    float depth_bias = 0.002;
 
-    for(int n=0; n<SHADOWMAP_LOOP_COUNT; ++n)
+    for(int n = 0; n < SHADOW_SAMPLES; ++n)
     {
-        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[n] * shadow_texel_size * 4.0;
+        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[(n % PoissonSampleCount)] * shadow_texel_size * 4;
 
         vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
         vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
@@ -88,7 +83,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
             shadow_factors[i] = texture2DLod(texture_shadow, shadow_uv, 0.0).x;
             if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
             {
-                shadow_factors[i] = saturate(exp( -c * (shadow_depth - shadow_factors[i] + depth_bias)));
+                shadow_factors[i] = saturate(exp(-SHADOW_EXP * (shadow_depth - shadow_factors[i] - SHADOW_BIAS * (1.0 - saturate(NdotL)))));
             }
             else
             {
@@ -101,7 +96,7 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, sampler2D te
             mix(shadow_factors.z, shadow_factors.w, pixel_ratio.x), pixel_ratio.y);
     }
 
-    return clamp(shadow_factor / float(SHADOWMAP_LOOP_COUNT), 0.0, 1.0);
+    return clamp(shadow_factor / float(SHADOW_SAMPLES), 0.0, 1.0);
 }
 
 
@@ -261,9 +256,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 R = reflect(-V, N);
     vec3 H = normalize(V + L);
 
-    float NdL = dot(N, L);
-    NdL = max(0.0, NdL);
-
+    float NdL = max(0.0, dot(N, L));
     float NdV = max(0.001, dot(N, V));
     float NdH = max(0.001, dot(N, H));
     float HdV = max(0.001, dot(H, V));
@@ -279,7 +272,7 @@ vec4 surface_shading(vec4 base_color,
     vec3 ambient_light = vec3(0.0, 0.0, 0.0);
     vec3 diffuse_light = vec3(0.0, 0.0, 0.0);
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
-    vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, world_position, texture_shadow));
+    vec3 shadow_factor = vec3(get_shadow_factor(screen_tex_coord, world_position, dot(N, L), texture_shadow));
 
     // Image based lighting
     {

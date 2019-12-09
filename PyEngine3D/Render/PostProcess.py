@@ -119,7 +119,6 @@ class PostProcess:
         self.render_texture_mi = None
 
         self.composite_shadowmap = None
-        self.shadowmap_loop_count = 16
 
         self.temporal_antialiasing = None
         self.jitter_mode = JitterMode.Hammersley16x
@@ -223,8 +222,6 @@ class PostProcess:
         self.Attributes.set_attribute('light_shaft_radius', self.light_shaft_radius)
         self.Attributes.set_attribute('light_shaft_decay', self.light_shaft_decay)
         self.Attributes.set_attribute('light_shaft_samples', self.light_shaft_samples)
-
-        self.Attributes.set_attribute('shadowmap_loop_count', self.shadowmap_loop_count)
 
         self.Attributes.set_attribute('is_render_tonemapping', self.is_render_tonemapping)
         self.Attributes.set_attribute('exposure', self.exposure)
