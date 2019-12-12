@@ -462,11 +462,12 @@ class RenderTargetManager(Singleton):
         )
 
         # It must attach to depth render target
+        shadow_map_size = 2048
         RenderTargets.STATIC_SHADOWMAP = self.create_rendertarget(
             "STATIC_SHADOWMAP",
             texture_type=Texture2D,
-            width=1024,
-            height=1024,
+            width=shadow_map_size,
+            height=shadow_map_size,
             internal_format=GL_DEPTH_COMPONENT32,
             texture_format=GL_DEPTH_COMPONENT,
             data_type=GL_FLOAT,
@@ -478,8 +479,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.DYNAMIC_SHADOWMAP = self.create_rendertarget(
             "DYNAMIC_SHADOWMAP",
             texture_type=Texture2D,
-            width=1024,
-            height=1024,
+            width=shadow_map_size,
+            height=shadow_map_size,
             internal_format=GL_DEPTH_COMPONENT32,
             texture_format=GL_DEPTH_COMPONENT,
             data_type=GL_FLOAT,
@@ -491,8 +492,8 @@ class RenderTargetManager(Singleton):
         RenderTargets.COMPOSITE_SHADOWMAP = self.create_rendertarget(
             "COMPOSITE_SHADOWMAP",
             texture_type=Texture2D,
-            width=1024,
-            height=1024,
+            width=shadow_map_size,
+            height=shadow_map_size,
             internal_format=GL_R32F,
             texture_format=GL_RED,
             data_type=GL_FLOAT,

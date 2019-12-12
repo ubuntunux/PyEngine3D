@@ -67,23 +67,22 @@ float get_shadow_factor(vec2 screen_tex_coord, vec3 world_position, float NdotL,
 
     float shadow_factor = 0.0;
 
+    vec2 noise_size = (1 < SHADOW_SAMPLES) ? (shadow_texel_size * 4.0) : vec2(0.0);
+
     for(int n = 0; n < SHADOW_SAMPLES; ++n)
     {
-        vec2 shadow_uv = shadow_proj.xy + PoissonSamples[(n % PoissonSampleCount)] * shadow_texel_size * 4;
-
-        vec2 pixel_ratio = fract(shadow_uv.xy * shadow_size);
-        vec2 pixel_pos = shadow_uv.xy * shadow_size - pixel_ratio + 0.5;
-        vec2 uv = pixel_pos * shadow_texel_size;
+        vec2 uv = shadow_proj.xy + PoissonSamples[n % PoissonSampleCount] * noise_size;
+        vec2 pixel_ratio = fract(uv * shadow_size);
 
         vec4 shadow_factors;
-
         for(int i=0; i<4; ++i)
         {
             vec2 shadow_uv = uv + offsets[i];
             shadow_factors[i] = texture2DLod(texture_shadow, shadow_uv, 0.0).x;
             if(0.0 <= shadow_uv.x && shadow_uv.x <= 1.0 && 0.0 <= shadow_uv.y && shadow_uv.y <= 1.0 && shadow_factors[i] < 1.0)
             {
-                shadow_factors[i] = saturate(exp(-SHADOW_EXP * (shadow_depth - shadow_factors[i] - SHADOW_BIAS * (1.0 - saturate(NdotL)))));
+                float bias = SHADOW_BIAS * (1.0 - saturate(NdotL));
+                shadow_factors[i] = saturate(exp(-SHADOW_EXP * (shadow_depth - shadow_factors[i] - bias)));
             }
             else
             {

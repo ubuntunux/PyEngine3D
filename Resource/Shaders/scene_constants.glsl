@@ -41,7 +41,7 @@ layout(std140, binding=3) uniform light_constants
     vec3 LIGHT_DIRECTION;
     float SHADOW_BIAS;
     vec3 LIGHT_COLOR;
-    float SHADOW_SAMPLES;
+    int SHADOW_SAMPLES;
 };
 
 const int MAX_POINT_LIGHTS = 10;

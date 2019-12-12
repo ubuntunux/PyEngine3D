@@ -169,7 +169,7 @@ class Renderer(Singleton):
                                                      ('LIGHT_DIRECTION', np.float32, 3),
                                                      ('SHADOW_BIAS', np.float32),
                                                      ('LIGHT_COLOR', np.float32, 3),
-                                                     ('SHADOW_SAMPLES', np.float32)])
+                                                     ('SHADOW_SAMPLES', np.int32)])
         self.uniform_light_buffer = UniformBlock("light_constants", program, 3, self.uniform_light_data)
 
         self.uniform_point_light_data = np.zeros(MAX_POINT_LIGHTS, dtype=[('color', np.float32, 3),
@@ -540,7 +540,7 @@ class Renderer(Singleton):
         # static shadow
         self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.STATIC_SHADOWMAP)
         glClear(GL_DEPTH_BUFFER_BIT)
-        glFrontFace(GL_CW)
+        glFrontFace(GL_CCW)
 
         if self.scene_manager.terrain.is_render_terrain:
             self.scene_manager.terrain.render_terrain(RenderMode.SHADOW)
@@ -551,7 +551,7 @@ class Renderer(Singleton):
         # dyanmic shadow
         self.framebuffer_manager.bind_framebuffer(depth_texture=RenderTargets.DYNAMIC_SHADOWMAP)
         glClear(GL_DEPTH_BUFFER_BIT)
-        glFrontFace(GL_CW)
+        glFrontFace(GL_CCW)
 
         if RenderOption.RENDER_SKELETON_ACTOR:
             self.render_actors(RenderGroup.SKELETON_ACTOR, RenderMode.SHADOW, self.scene_manager.skeleton_shadow_render_infos, self.shadowmap_skeletal_material)
