@@ -293,7 +293,7 @@ vec4 surface_shading(vec4 base_color,
         if(RENDER_SSR)
         {
             // NoShadow
-            specular_light.xyz = mix(specular_light.xyz, scene_reflect_color.xyz * shValue, scene_reflect_color.w);
+            specular_light.xyz = mix(specular_light.xyz, scene_reflect_color.xyz * shValue * shadow_factor, scene_reflect_color.w);
         }
     }
 
