@@ -1,7 +1,9 @@
 class StateItem:
-    def __init__(self, state_manager):
+    def __init__(self, state_manager, *args, **kargs):
         self.state_manager = state_manager
         self.key = None
+        for key in kargs:
+            setattr(self, key, kargs[key])
 
     def on_enter(self, *args, **kargs):
         pass
