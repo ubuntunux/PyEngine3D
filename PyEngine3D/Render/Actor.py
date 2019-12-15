@@ -48,6 +48,9 @@ class StaticActor:
     def delete(self):
         pass
 
+    def get_center(self):
+        return self.bound_box.bound_center
+
     def get_pos(self):
         return self.transform.get_pos()
 
