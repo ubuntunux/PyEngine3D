@@ -52,7 +52,9 @@ void main()
     const float min_dist = 1000.0;
     const float far_dist = NEAR_FAR.y * 4.0;
 
-    vec3 camera = CAMERA_POSITION.xyz * atmosphere_ratio;
+    vec3 camera = vec3(0.0, max(10.0, CAMERA_POSITION.y), 0.0) * atmosphere_ratio;
+
+    float world_pos_y = max(0.0, CAMERA_POSITION.y);
 
     vec3 sun_direction = LIGHT_DIRECTION.xyz;
     vec3 eye_direction = normalize(eye_ray);
@@ -85,7 +87,7 @@ void main()
     // distance from earch center
     const float cloud_bottom_dist = cloud_altitude - earth_center_pos.y;
     const float cloud_top_dist = cloud_bottom_dist + cloud_height;
-    float altitude_diff = cloud_altitude - CAMERA_POSITION.y;
+    float altitude_diff = cloud_altitude - world_pos_y;
     const bool in_the_cloud = -cloud_height < altitude_diff && altitude_diff < 0.0;
     bool above_the_cloud = false;
     bool render_cloud = true;
@@ -103,10 +105,10 @@ void main()
     else
     {
         // https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-        vec3 to_origin = vec3(0.0, CAMERA_POSITION.y, 0.0) - earth_center_pos;
+        vec3 to_origin = vec3(0.0, world_pos_y, 0.0) - earth_center_pos;
         float c = pow(dot(eye_direction, to_origin), 2.0) - dot(to_origin, to_origin);
 
-        if(cloud_altitude < CAMERA_POSITION.y)
+        if(cloud_altitude < world_pos_y)
         {
             // above the sky
             if(eye_direction.y < 0.0)
@@ -133,12 +135,12 @@ void main()
     }
 
     // apply altitude of camera
-    ray_start_pos.y += CAMERA_POSITION.y;
+    ray_start_pos.y += world_pos_y;
 
     // vec3 smooth_N = normalize(ray_start_pos.xyz - earth_center);
     vec3 N = normalize(ray_start_pos.xyz);
 
-    float altitude_ratio = saturate(CAMERA_POSITION.y / (cloud_altitude + cloud_height));
+    float altitude_ratio = saturate(world_pos_y / (cloud_altitude + cloud_height));
     float atmosphere_lighting = max(0.2, pow(saturate(dot(N, sun_direction) * 0.5 + 0.5), 1.0));
 
     // Cloud
