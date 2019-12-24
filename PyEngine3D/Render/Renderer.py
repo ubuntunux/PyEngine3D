@@ -74,6 +74,7 @@ class Renderer(Singleton):
         self.selcted_skeletal_object_material = None
         self.selcted_object_composite_material = None
         self.render_color_material = None
+        self.render_heightmap_material = None
 
         # font
         self.font_instance_buffer = None
@@ -120,8 +121,10 @@ class Renderer(Singleton):
 
         self.selcted_object_composite_material = self.resource_manager.get_material_instance("selected_object_composite")
 
-        self.render_color_material = self.resource_manager.get_material_instance(name="render_object_color",
-                                                                                 shader_name="render_object_color")
+        self.render_color_material = self.resource_manager.get_material_instance(name="render_object_color", shader_name="render_object_color")
+
+        self.render_heightmap_material = self.resource_manager.get_material_instance(name="render_heightmap", shader_name="render_heightmap")
+
 
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
@@ -793,6 +796,21 @@ class Renderer(Singleton):
         # gizmo object id
         glClear(GL_DEPTH_BUFFER_BIT)
         self.render_axis_gizmo(RenderMode.OBJECT_ID)
+
+    def render_heightmap(self, actor):
+        self.framebuffer_manager.bind_framebuffer(RenderTargets.TEMP_HEIGHT_MAP)
+        self.set_blend_state(blend_enable=True, equation=GL_MAX, func_src=GL_ONE, func_dst=GL_ONE)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glDisable(GL_CULL_FACE)
+        glDisable(GL_DEPTH_TEST)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+
+        self.render_heightmap_material.use_program()
+        self.render_heightmap_material.bind_material_instance()
+        self.render_heightmap_material.bind_uniform_data('model', actor.transform.matrix)
+        self.render_heightmap_material.bind_uniform_data('bound_box_min', actor.bound_box.bound_min)
+        self.render_heightmap_material.bind_uniform_data('bound_box_max', actor.bound_box.bound_max)
+        actor.get_geometry(0).draw_elements()
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)

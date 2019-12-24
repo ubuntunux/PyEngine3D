@@ -58,6 +58,7 @@ class RenderTargets:
     TEMP_RGBA8 = None
     TEMP_2D_ARRAY = None
     TEMP_MULTISAMPLE_X4 = None
+    TEMP_HEIGHT_MAP = None
 
 
 class RenderTargetManager(Singleton):
@@ -655,6 +656,19 @@ class RenderTargetManager(Singleton):
             width=fullsize_x,
             height=fullsize_y,
             internal_format=GL_RGBA8,
+            wrap=GL_CLAMP
+        )
+
+        RenderTargets.TEMP_HEIGHT_MAP = self.create_rendertarget(
+            "TEMP_HEIGHT_MAP",
+            texture_type=Texture2D,
+            width=1024,
+            height=1024,
+            internal_format=GL_R32F,
+            texture_format=GL_RED,
+            data_type=GL_FLOAT,
+            min_filter=GL_LINEAR,
+            mag_filter=GL_LINEAR,
             wrap=GL_CLAMP
         )
 
