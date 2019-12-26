@@ -812,6 +812,9 @@ class Renderer(Singleton):
         self.render_heightmap_material.bind_uniform_data('bound_box_max', actor.bound_box.bound_max)
         actor.get_geometry(0).draw_elements()
 
+        if RenderTargets.TEMP_HEIGHT_MAP.enable_mipmap:
+            RenderTargets.TEMP_HEIGHT_MAP.generate_mipmap()
+
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_CULL_FACE)
