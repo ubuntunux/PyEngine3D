@@ -219,15 +219,24 @@ class Texture:
             save_data['data'] = data
         return save_data
 
-    def get_image_data(self):
+    def get_mipmap_size(self, level=0):
+        if 0 < level:
+            divider = 2.0 ** level
+            width = max(1, int(self.width / divider))
+            height = max(1, int(self.height / divider))
+            return width, height
+        return self.width, self.height
+
+    def get_image_data(self, level=0):
         if self.target not in (GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D):
             return None
 
+        level = min(level, self.get_mipmap_count())
         dtype = get_numpy_dtype(self.data_type)
 
         try:
             glBindTexture(self.target, self.buffer)
-            data = OpenGLContext.glGetTexImage(self.target, 0, self.texture_format, self.data_type)
+            data = OpenGLContext.glGetTexImage(self.target, level, self.texture_format, self.data_type)
             # convert to numpy array
             if type(data) is bytes:
                 data = np.fromstring(data, dtype=dtype)
@@ -247,13 +256,14 @@ class Texture:
         data = []
         for layer in range(self.depth):
             if GL_TEXTURE_2D == self.target:
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.buffer, 0)
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.buffer, level)
             elif GL_TEXTURE_3D == self.target:
-                glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, 0, layer)
+                glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, self.buffer, level, layer)
             elif GL_TEXTURE_2D_ARRAY == self.target:
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, 0, layer)
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, self.buffer, level, layer)
             glReadBuffer(GL_COLOR_ATTACHMENT0)
-            pixels = glReadPixels(0, 0, self.width, self.height, self.texture_format, self.data_type)
+            width, height = self.get_mipmap_size(level)
+            pixels = glReadPixels(0, 0, width, height, self.texture_format, self.data_type)
             # convert to numpy array
             if type(pixels) is bytes:
                 pixels = np.fromstring(pixels, dtype=dtype)
