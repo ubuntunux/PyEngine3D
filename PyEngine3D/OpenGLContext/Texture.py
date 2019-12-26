@@ -541,18 +541,12 @@ class TextureCube(Texture):
         face_texture_datas.pop('name')
         face_texture_datas['texture_type'] = Texture2D
 
-        self.texture_positive_x = texture_data.get(
-            'texture_positive_x', CreateTexture(name=self.name + "_right", **face_texture_datas))
-        self.texture_negative_x = texture_data.get(
-            'texture_negative_x', CreateTexture(name=self.name + "_left", **face_texture_datas))
-        self.texture_positive_y = texture_data.get(
-            'texture_positive_y', CreateTexture(name=self.name + "_top", **face_texture_datas))
-        self.texture_negative_y = texture_data.get(
-            'texture_negative_y', CreateTexture(name=self.name + "_bottom", **face_texture_datas))
-        self.texture_positive_z = texture_data.get(
-            'texture_positive_z', CreateTexture(name=self.name + "_front", **face_texture_datas))
-        self.texture_negative_z = texture_data.get(
-            'texture_negative_z', CreateTexture(name=self.name + "_back", **face_texture_datas))
+        self.texture_positive_x = texture_data.get('texture_positive_x', CreateTexture(name=self.name + "_right", **face_texture_datas))
+        self.texture_negative_x = texture_data.get('texture_negative_x', CreateTexture(name=self.name + "_left", **face_texture_datas))
+        self.texture_positive_y = texture_data.get('texture_positive_y', CreateTexture(name=self.name + "_top", **face_texture_datas))
+        self.texture_negative_y = texture_data.get('texture_negative_y', CreateTexture(name=self.name + "_bottom", **face_texture_datas))
+        self.texture_positive_z = texture_data.get('texture_positive_z', CreateTexture(name=self.name + "_front", **face_texture_datas))
+        self.texture_negative_z = texture_data.get('texture_negative_z', CreateTexture(name=self.name + "_back", **face_texture_datas))
 
         self.buffer = glGenTextures(1)
         glBindTexture(GL_TEXTURE_CUBE_MAP, self.buffer)
