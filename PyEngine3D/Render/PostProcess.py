@@ -465,9 +465,9 @@ class PostProcess:
         self.linear_depth.bind_uniform_data("texture_depth", texture_depth)
         self.quad.draw_elements()
 
-        self.render_generate_min_z(texture_linear_depth)
+        self.render_generate_min_z(texture_linear_depth, min_z=True)
 
-    def render_generate_min_z(self, texture_linear_depth):
+    def render_generate_min_z(self, texture_linear_depth, min_z=True):
         lod_count = texture_linear_depth.get_mipmap_count()
         width = texture_linear_depth.width
         height = texture_linear_depth.height
@@ -475,6 +475,7 @@ class PostProcess:
         self.generate_min_z.use_program()
 
         for lod in range(1, lod_count - 1):
+            self.generate_min_z.bind_uniform_data("generate_min_z", min_z)
             self.generate_min_z.bind_uniform_data("img_input", texture_linear_depth, level=lod-1, access=GL_READ_ONLY)
             self.generate_min_z.bind_uniform_data("img_output", texture_linear_depth, level=lod, access=GL_WRITE_ONLY)
 
@@ -482,6 +483,9 @@ class PostProcess:
             height = math.floor(height / 2)
             glDispatchCompute(width, height, 1)
             glMemoryBarrier(GL_ALL_BARRIER_BITS)
+
+    def render_generate_max_z(self, texture_linear_depth):
+        self.render_generate_min_z(texture_linear_depth, min_z=False)
 
     def render_tone_map(self, texture_diffuse, texture_bloom0, texture_bloom1, texture_bloom2, texture_bloom3,
                         texture_bloom4, texture_light_shaft):

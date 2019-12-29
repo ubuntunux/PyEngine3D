@@ -813,7 +813,7 @@ class Renderer(Singleton):
         actor.get_geometry(0).draw_elements()
 
         if RenderTargets.TEMP_HEIGHT_MAP.enable_mipmap:
-            RenderTargets.TEMP_HEIGHT_MAP.generate_mipmap()
+            self.postprocess.render_generate_max_z(RenderTargets.TEMP_HEIGHT_MAP)
 
     def render_bones(self):
         glDisable(GL_DEPTH_TEST)
