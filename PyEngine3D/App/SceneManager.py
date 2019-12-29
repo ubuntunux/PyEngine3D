@@ -130,6 +130,7 @@ class SceneManager(Singleton):
         self.clear_scene()
 
     def end_open_scene(self):
+        self.update_scene(0.0)
         self.renderer.reset_renderer()
         self.regist_object(self.renderer.postprocess)
 
