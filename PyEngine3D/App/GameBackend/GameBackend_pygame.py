@@ -166,6 +166,7 @@ class PyGame(GameBackend):
         Keyboard.MINUS = K_MINUS
         Keyboard.PERIOD = K_PERIOD
         Keyboard.SLASH = K_SLASH
+        Keyboard.BACKQUOTE = K_BACKQUOTE
         Keyboard._0 = K_0
         Keyboard._1 = K_1
         Keyboard._2 = K_2

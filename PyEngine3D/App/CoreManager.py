@@ -73,6 +73,7 @@ class CoreManager(Singleton):
         self.resource_manager = None
         self.render_option_manager = None
         self.renderer = None
+        self.render_option = None
         self.debug_line_manager = None
         self.rendertarget_manager = None
         self.font_manager = None
@@ -110,7 +111,7 @@ class CoreManager(Singleton):
         from PyEngine3D.UI import ViewportManager
         from PyEngine3D.OpenGLContext import OpenGLContext
         from PyEngine3D.ResourceManager import ResourceManager
-        from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager, DebugLineManager
+        from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager, DebugLineManager, RenderOption
         from .SceneManager import SceneManager
         from .ProjectManager import ProjectManager
 
@@ -121,6 +122,7 @@ class CoreManager(Singleton):
         self.resource_manager = ResourceManager.instance()
         self.font_manager = FontManager.instance()
         self.renderer = Renderer.instance()
+        self.render_option = RenderOption
         self.debug_line_manager = DebugLineManager.instance()
         self.scene_manager = SceneManager.instance()
         self.effect_manager = EffectManager.instance()
@@ -564,6 +566,12 @@ class CoreManager(Singleton):
     def get_text(self):
         return self.game_backend.text
 
+    def set_render_font(self, value):
+        self.render_option.RENDER_FONT = value
+
+    def toggle_render_font(self):
+        self.set_render_font(not self.render_option.RENDER_FONT)
+
     def update_event(self, event_type, event_value=None):
         mouse_delta = self.game_backend.mouse_delta
         key_pressed = self.game_backend.get_keyboard_pressed()
@@ -579,6 +587,10 @@ class CoreManager(Singleton):
             self.notify_change_resolution(event_value)
         elif Event.TEXT == event_type:
             pass
+
+        if Event.KEYUP == event_type:
+            if Keyboard.BACKQUOTE == event_value:
+                self.toggle_render_font()
 
         if InputMode.NONE == self.game_backend.get_input_mode():
             if Event.KEYUP == event_type:
@@ -787,7 +799,7 @@ class CoreManager(Singleton):
             self.acc_time = 0.0
 
         # debug info
-        if not self.is_basic_mode:
+        if not self.is_basic_mode and self.render_option.RENDER_FONT:
             self.font_manager.log("%.2f fps" % self.avg_fps)
             self.font_manager.log("%.2f ms (%.2f ms ~ %.2f ms)" % (self.avg_ms, self.min_delta, self.max_delta))
             self.font_manager.log("CPU : %.2f ms" % self.avg_logic_time)

@@ -169,6 +169,7 @@ class Keyboard:
     MINUS = ()
     PERIOD = ()
     SLASH = ()
+    BACKQUOTE = ()
     _0 = ()
     _1 = ()
     _2 = ()

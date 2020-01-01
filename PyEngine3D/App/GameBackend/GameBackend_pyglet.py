@@ -202,6 +202,7 @@ class PyGlet(GameBackend):
         Keyboard.MINUS = window.key.MINUS
         Keyboard.PERIOD = window.key.PERIOD
         Keyboard.SLASH = window.key.SLASH
+        Keyboard.BACKQUOTE = window.key.QUOTELEFT
         Keyboard._0 = window.key._0
         Keyboard._1 = window.key._1
         Keyboard._2 = window.key._2
