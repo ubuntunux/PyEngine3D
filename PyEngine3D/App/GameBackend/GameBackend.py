@@ -346,3 +346,9 @@ class GameBackend:
     def resize_scene_to_window(self):
         if self.set_window_info(self.goal_width, self.goal_height, self.full_screen):
             self.reset_screen()
+
+    def create_sound(self, filepath):
+        pass
+
+    def play_sound(self, sound):
+        pass

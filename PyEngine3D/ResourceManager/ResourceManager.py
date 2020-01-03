@@ -1464,7 +1464,26 @@ class SoundLoader(ResourceLoader):
     name = "SoundLoader"
     resource_dir_name = 'Sounds'
     resource_type_name = 'Sound'
-    fileExt = '.sound'
+    fileExt = '.wav'
+    externalFileExt = dict(Sound='.wav')
+    USE_FILE_COMPRESS_TO_SAVE = False
+
+    def load_resource(self, resource_name):
+        resource = self.get_resource(resource_name)
+        if resource:
+            try:
+                sound = self.core_manager.game_backend.create_sound(resource.meta_data.resource_filepath)
+                resource.set_data(sound)
+                return True
+            except:
+                logger.error(traceback.format_exc())
+                pass
+        return False
+
+    def action_resource(self, resource_name):
+        sound = self.get_resource_data(resource_name)
+        if sound:
+            self.core_manager.game_backend.play_sound(sound)
 
 
 # -----------------------#

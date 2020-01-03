@@ -16,6 +16,7 @@ class PyGame(GameBackend):
         # centered window
         os.environ['SDL_VIDEO_CENTERED'] = '1'
         pygame.init()
+        pygame.mixer.init()
 
         self.screen_width = pygame.display.Info().current_w
         self.screen_height = pygame.display.Info().current_h
@@ -293,7 +294,7 @@ class PyGame(GameBackend):
                 self.mouse_pos[...] = pygame.mouse.get_pos()
                 # invert - Y
                 self.mouse_pos[1] = self.height - self.mouse_pos[1]
-                self.core_manager.update_event(Event.MOUSE_MOTION)
+                self.core_manager.update_event(Event.MOUSE_MOVE)
             elif event_type == MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.btn_l_down = True
@@ -347,4 +348,16 @@ class PyGame(GameBackend):
     def quit(self):
         pygame.display.quit()
         pygame.quit()
+
+    def create_music(self, filepath, volume=1.0, loop=False):
+        pygame.mixer.music.load(filepath)
+        pygame.mixer.music.set_volume(volume)
+        pygame.mixer.music.play(-1 if loop else 0)
+
+    def create_sound(self, filepath):
+        sound = pygame.mixer.Sound(filepath)
+        return sound
+
+    def play_sound(self, sound):
+        sound.play()
 
