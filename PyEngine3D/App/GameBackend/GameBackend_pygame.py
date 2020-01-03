@@ -15,8 +15,9 @@ class PyGame(GameBackend):
 
         # centered window
         os.environ['SDL_VIDEO_CENTERED'] = '1'
-        pygame.init()
+        pygame.mixer.pre_init(44100, -16, 2, 4096)
         pygame.mixer.init()
+        pygame.init()
 
         self.screen_width = pygame.display.Info().current_w
         self.screen_height = pygame.display.Info().current_h
@@ -359,5 +360,5 @@ class PyGame(GameBackend):
         return sound
 
     def play_sound(self, sound):
-        sound.play()
+        pygame.mixer.Sound.play(sound)
 

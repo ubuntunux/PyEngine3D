@@ -78,6 +78,7 @@ class CoreManager(Singleton):
         self.rendertarget_manager = None
         self.font_manager = None
         self.scene_manager = None
+        self.sound_manager = None
         self.viewport_manager = None
         self.effect_manager = None
         self.project_manager = None
@@ -113,6 +114,7 @@ class CoreManager(Singleton):
         from PyEngine3D.ResourceManager import ResourceManager
         from PyEngine3D.Render import Renderer, Renderer_Basic, RenderTargetManager, FontManager, RenderOptionManager, EffectManager, DebugLineManager, RenderOption
         from .SceneManager import SceneManager
+        from .SoundManager import SoundManager
         from .ProjectManager import ProjectManager
 
         self.opengl_context = OpenGLContext
@@ -125,6 +127,7 @@ class CoreManager(Singleton):
         self.render_option = RenderOption
         self.debug_line_manager = DebugLineManager.instance()
         self.scene_manager = SceneManager.instance()
+        self.sound_manager = SoundManager.instance()
         self.effect_manager = EffectManager.instance()
         self.project_manager = ProjectManager.instance()
 
@@ -202,6 +205,7 @@ class CoreManager(Singleton):
         self.renderer.initialize(self)
         self.debug_line_manager.initialize(self)
         self.scene_manager.initialize(self)
+        self.sound_manager.initialize(self)
 
         # self.viewport_manager.build_ui_example()
 
@@ -743,6 +747,8 @@ class CoreManager(Singleton):
         self.debug_line_manager.clear_debug_lines()
 
         self.scene_manager.update_scene(delta)
+
+        self.sound_manager.update(delta)
 
         # Start Render Scene
         end_time = time.perf_counter()

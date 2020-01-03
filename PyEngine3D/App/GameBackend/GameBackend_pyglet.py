@@ -411,7 +411,7 @@ class PyGlet(GameBackend):
         self.window.close()
 
     def create_sound(self, filepath):
-        sound = pyglet.media.load(sound_filepath, streaming=False)
+        sound = pyglet.media.load(filepath, streaming=False)
         return sound
 
     def play_sound(self, sound):
