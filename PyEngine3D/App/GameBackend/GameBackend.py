@@ -347,8 +347,17 @@ class GameBackend:
         if self.set_window_info(self.goal_width, self.goal_height, self.full_screen):
             self.reset_screen()
 
+    def create_sound_listner(self):
+        pass
+
     def create_sound(self, filepath):
         pass
 
-    def play_sound(self, sound):
+    def play_sound(self, sound, loop=False, volume=1.0, position=None):
+        pass
+
+    def stop_sound(self, sound):
+        pass
+
+    def is_sound_playing(self, sound):
         pass

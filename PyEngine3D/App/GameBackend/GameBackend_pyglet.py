@@ -9,7 +9,7 @@ from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.gl import *
 
-from PyEngine3D.Common import logger, INITIAL_WIDTH, INITIAL_HEIGHT
+from PyEngine3D.Common import logger, INITIAL_WIDTH, INITIAL_HEIGHT, SOUND_DISTANCE_RATIO
 from .GameBackend import GameBackend, Keyboard, Event
 
 
@@ -410,9 +410,33 @@ class PyGlet(GameBackend):
     def quit(self):
         self.window.close()
 
+    def create_sound_listner(self):
+        return pyglet.media.get_audio_driver().get_listener()
+
     def create_sound(self, filepath):
         sound = pyglet.media.load(filepath, streaming=False)
         return sound
 
-    def play_sound(self, sound):
-        sound.play()
+    def play_sound(self, sound, loop=False, volume=1.0, position=None):
+        sound_player = sound.play()
+        sound_player.loop = loop
+        sound_player.volume = volume
+
+        if position is not None:
+            sound_player.position = tuple(position * SOUND_DISTANCE_RATIO)
+
+        if loop:
+            pyglet.clock.schedule_interval(lambda dt: sound_player.dispatch_event("on_eos"), sound_player.source.duration)
+        else:
+            pyglet.clock.schedule_once(lambda dt: sound_player.dispatch_event("on_eos"), sound_player.source.duration)
+
+        return sound_player
+
+    def pause_sound(self, sound_player):
+        sound_player.pause()
+
+    def stop_sound(self, sound_player):
+        sound_player.delete()
+
+    def is_sound_playing(self, sound_player):
+        return sound_player._playing

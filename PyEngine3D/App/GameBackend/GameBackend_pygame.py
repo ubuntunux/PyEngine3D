@@ -350,6 +350,9 @@ class PyGame(GameBackend):
         pygame.display.quit()
         pygame.quit()
 
+    def create_sound_listner(self):
+        return None
+
     def create_music(self, filepath, volume=1.0, loop=False):
         pygame.mixer.music.load(filepath)
         pygame.mixer.music.set_volume(volume)
@@ -359,6 +362,16 @@ class PyGame(GameBackend):
         sound = pygame.mixer.Sound(filepath)
         return sound
 
-    def play_sound(self, sound):
-        pygame.mixer.Sound.play(sound)
+    def play_sound(self, sound, loop=False, volume=1.0, position=None):
+        sound.play(1 if loop else 0)
+        sound.set_volume(volume)
+        return sound
 
+    def pause_sound(self, sound):
+        sound.pause()
+
+    def stop_sound(self, sound):
+        sound.stop()
+
+    def is_sound_playing(self, sound):
+        return True
