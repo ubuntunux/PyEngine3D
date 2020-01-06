@@ -265,6 +265,7 @@ class ResourceLoader(object):
         self.resource_manager = resource_manager
         self.core_manager = resource_manager.core_manager
         self.scene_manager = resource_manager.core_manager.scene_manager
+        self.sound_manager = resource_manager.core_manager.sound_manager
 
         self.engine_resource_path = os.path.join(resource_manager.engine_path, self.resource_dir_name)
         check_directory_and_mkdir(self.engine_resource_path)
@@ -280,6 +281,9 @@ class ResourceLoader(object):
 
         self.resources = {}
         self.metaDatas = {}
+
+    def close(self):
+        pass
 
     @staticmethod
     def get_resource_name(resource_path, filepath, make_lower=True):
@@ -1468,11 +1472,18 @@ class SoundLoader(ResourceLoader):
     externalFileExt = dict(Sound='.wav')
     USE_FILE_COMPRESS_TO_SAVE = False
 
+    def close(self):
+        for resource_name in self.resources:
+            resource = self.resources[resource_name]
+            if resource.data is not None:
+                resource.data.destroy()
+        self.resources.clear()
+
     def load_resource(self, resource_name):
         resource = self.get_resource(resource_name)
         if resource:
             try:
-                sound = self.core_manager.game_backend.create_sound(resource.meta_data.resource_filepath)
+                sound = self.sound_manager.create_sound(resource.meta_data.resource_filepath)
                 resource.set_data(sound)
                 return True
             except:
@@ -1481,9 +1492,7 @@ class SoundLoader(ResourceLoader):
         return False
 
     def action_resource(self, resource_name):
-        sound = self.get_resource_data(resource_name)
-        if sound:
-            self.core_manager.game_backend.play_sound(sound)
+        self.sound_manager.play_sound(resource_name)
 
 
 # -----------------------#
@@ -1555,6 +1564,7 @@ class ResourceManager(Singleton):
         self.resource_loaders = []
         self.core_manager = None
         self.scene_manager = None
+        self.sound_manager = None
         self.font_loader = None
         self.texture_loader = None
         self.shader_loader = None
@@ -1579,6 +1589,7 @@ class ResourceManager(Singleton):
     def initialize(self, core_manager, project_path=""):
         self.core_manager = core_manager
         self.scene_manager = core_manager.scene_manager
+        self.sound_manager = self.core_manager.sound_manager
 
         check_directory_and_mkdir(self.engine_path)
 
@@ -1619,7 +1630,9 @@ class ResourceManager(Singleton):
         # self.loading_thread.set_data()
 
     def close(self):
-        pass
+        for resource_loader in self.resource_loaders:
+            if not self.core_manager.is_basic_mode or resource_loader.enable_basic_mode:
+                resource_loader.close()
 
     def prepare_project_directory(self, new_project_dir):
         check_directory_and_mkdir(new_project_dir)

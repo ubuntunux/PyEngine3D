@@ -258,9 +258,11 @@ class CoreManager(Singleton):
             self.config.save()  # save config
 
         # save project
+        self.sound_manager.clear()
         self.project_manager.close_project()
         self.renderer.close()
         self.resource_manager.close()
+        self.sound_manager.close()
         self.game_backend.quit()
 
         logger.info("Process Stop : %s" % GetClassName(self))  # process stop
