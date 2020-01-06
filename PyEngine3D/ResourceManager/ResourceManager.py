@@ -1472,11 +1472,15 @@ class SoundLoader(ResourceLoader):
     externalFileExt = dict(Sound='.wav')
     USE_FILE_COMPRESS_TO_SAVE = False
 
-    def close(self):
+    def clear(self):
         for resource_name in self.resources:
             resource = self.resources[resource_name]
             if resource.data is not None:
                 resource.data.destroy()
+                resource.data = None
+
+    def close(self):
+        self.clear()
         self.resources.clear()
 
     def load_resource(self, resource_name):

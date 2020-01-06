@@ -83,9 +83,10 @@ class SoundManager(Singleton):
             sound.set_looping(loop)
             sound.set_gain(volume)
             if position is not None:
-                sound.set_position(self.sound_listner.position)
+                sound.set_position(tuple(position * SOUND_DISTANCE_RATIO))
             else:
-                sound.set_position(tuple(self.scene_manager.main_camera.transform.get_pos() * SOUND_DISTANCE_RATIO))
+                sound.set_position(self.sound_listner.position)
+
             sound.play()
             self.sound_list.append(sound)
             return sound

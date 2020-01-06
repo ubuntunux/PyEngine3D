@@ -68,6 +68,7 @@ class Widget:
         self.dragable = kwargs.get('dragable', False)
         self.touchable = kwargs.get('touchable', False) or self.dragable
         self.texture = kwargs.get('texture')
+        self.opacity = kwargs.get('opacity', 1.0)
 
         self.center_x = 0.0
         self.center_y = 0.0
@@ -159,14 +160,6 @@ class Widget:
     @color.setter
     def color(self, color):
         self._color[...] = color
-
-    @property
-    def opacity(self):
-        return self._color[3]
-
-    @opacity.setter
-    def opacity(self, opacity):
-        self._color[3] = opacity
 
     @property
     def pressed_color(self):
@@ -437,6 +430,7 @@ class Widget:
 
             render_widget_program.bind_uniform_data("pos_size", [self.world_x, self.world_y, self.width, self.height])
             render_widget_program.bind_uniform_data("texcoord", self.texcoord)
+            render_widget_program.bind_uniform_data("opacity", self.opacity)
 
             if self.texture is not None:
                 render_widget_program.bind_uniform_data("texture_diffuse", self.texture)

@@ -4,6 +4,7 @@ uniform sampler2D texture_diffuse;
 uniform bool is_render_diffuse;
 uniform vec4 color;
 uniform vec4 texcoord;
+uniform float opacity;
 
 
 #ifdef FRAGMENT_SHADER
@@ -20,10 +21,12 @@ void main()
     {
         if(0.0 < uv.x && 0.0 < uv.y && uv.x < 1.0 && uv.y < 1.0)
         {
-            result = texture2D(texture_diffuse, uv);
-            result = mix(result, result * color, color.w);
+            vec4 diffuse = texture2D(texture_diffuse, uv);
+            result = mix(diffuse, diffuse * color, color.w);
         }
     }
+
+    result.w *= opacity;
 
     fs_output = result;
 }
