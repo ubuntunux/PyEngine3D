@@ -69,6 +69,7 @@ class Widget:
         self.touchable = kwargs.get('touchable', False) or self.dragable
         self.texture = kwargs.get('texture')
         self.opacity = kwargs.get('opacity', 1.0)
+        self.visible = kwargs.get('visible', True)
 
         self.center_x = 0.0
         self.center_y = 0.0
@@ -419,7 +420,7 @@ class Widget:
         return self.touched or touch_event
 
     def render(self, last_program, render_widget_program, mesh):
-        if 0.0 <= self.opacity:
+        if 0.0 <= self.opacity and self.visible:
             render_widget_program.use_program()
             render_widget_program.bind_material_instance()
 
@@ -440,15 +441,15 @@ class Widget:
 
             mesh.draw_elements()
 
-        if isinstance(self, Label) and self.text_render_data is not None:
-            self.core_manager.renderer.render_text(self.text_render_data,
-                                                   self.world_x,
-                                                   self.world_y,
-                                                   self.root.width,
-                                                   self.root.height)
-
-        for widget in self.widgets:
-            widget.render(last_program, render_widget_program, mesh)
+        if self.visible:
+            if isinstance(self, Label) and self.text_render_data is not None:
+                self.core_manager.renderer.render_text(self.text_render_data,
+                                                       self.world_x,
+                                                       self.world_y,
+                                                       self.root.width,
+                                                       self.root.height)
+            for widget in self.widgets:
+                widget.render(last_program, render_widget_program, mesh)
 
 
 class Button(Widget):
