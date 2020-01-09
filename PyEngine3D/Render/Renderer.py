@@ -100,31 +100,23 @@ class Renderer(Singleton):
 
         # material instances
         self.scene_constants_material = self.resource_manager.get_material_instance('scene_constants_main')
-
         self.debug_bone_material = self.resource_manager.get_material_instance("debug_bone")
-
         self.shadowmap_material = self.resource_manager.get_material_instance("shadowmap")
         self.shadowmap_skeletal_material = self.resource_manager.get_material_instance(name="shadowmap_skeletal",
                                                                                        shader_name="shadowmap",
                                                                                        macros={"SKELETAL": 1})
-
         self.static_object_id_material = self.resource_manager.get_material_instance(name="render_static_object_id",
                                                                                      shader_name="render_object_id")
         self.skeletal_object_id_material = self.resource_manager.get_material_instance(name="render_skeletal_object_id",
                                                                                        shader_name="render_object_id",
                                                                                        macros={"SKELETAL": 1})
-
         self.selcted_static_object_material = self.resource_manager.get_material_instance("selected_object")
         self.selcted_skeletal_object_material = self.resource_manager.get_material_instance(name="selected_object_skeletal",
                                                                                             shader_name="selected_object",
                                                                                             macros={"SKELETAL": 1})
-
         self.selcted_object_composite_material = self.resource_manager.get_material_instance("selected_object_composite")
-
         self.render_color_material = self.resource_manager.get_material_instance(name="render_object_color", shader_name="render_object_color")
-
         self.render_heightmap_material = self.resource_manager.get_material_instance(name="render_heightmap", shader_name="render_heightmap")
-
 
         # font
         self.font_shader = self.resource_manager.get_material_instance("font")
@@ -1149,6 +1141,7 @@ class Renderer(Singleton):
             self.render_log()
 
         if RenderOption.RENDER_DEBUG_LINE and self.debug_texture is None:
+            # render world axis
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             self.framebuffer_manager.bind_framebuffer(RenderTargets.BACKBUFFER, depth_texture=RenderTargets.DEPTH)
             self.render_axis()
@@ -1165,10 +1158,12 @@ class Renderer(Singleton):
             glDepthMask(True)
             self.set_blend_state(True, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+            # render spline gizmo
             self.render_actors(RenderGroup.STATIC_ACTOR,
                                RenderMode.GIZMO,
                                self.scene_manager.spline_gizmo_render_infos,
                                self.render_color_material)
 
+            # render transform axis gizmo
             glClear(GL_DEPTH_BUFFER_BIT)
             self.render_axis_gizmo(RenderMode.GIZMO)
