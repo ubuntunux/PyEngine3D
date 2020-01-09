@@ -261,10 +261,25 @@ def quaternion_to_matrix(quat, rotation_matrix):
 
 
 def quaternion_to_euler(q):
-    pitch = -np.arctan(2.0 * (q[0] * q[1] + q[2] * q[3]) / (1.0 - 2.0 * (q[1] * q[1] + q[2] * q[2])))
-    yaw = np.arcsin(2.0 * (q[0] * q[2] - q[3] * q[1]))
-    roll = -np.arctan(2.0 * (q[0] * q[3] + q[1] * q[2]) / (1.0 - 2.0 * (q[2] * q[2] + q[3] * q[3])))
-    return Float3(pitch, yaw, roll)
+    float sqw = w * w;
+float sqx = x * x;
+float sqy = y * y;
+float sqz = z * z;
+m[0][0] = sqx - sqy - sqz + sqw;
+m[1][1] = -sqx + sqy - sqz + sqw;
+m[2][2] = -sqx - sqy + sqz + sqw;
+float tmp1 = x * y;
+float tmp2 = z * w;
+m[0][1] = 2.0f * (tmp1 + tmp2);
+m[1][0] = 2.0f * (tmp1 - tmp2);
+tmp1 = x * z;
+tmp2 = y * w;
+m[0][2] = 2.0f * (tmp1 - tmp2);
+m[2][0] = 2.0f * (tmp1 + tmp2);
+tmp1 = y * z;
+tmp2 = x * w;
+m[1][2] = 2.0f * (tmp1 + tmp2);
+m[2][1] = 2.0f * (tmp1 - tmp2);
 
 
 def lerp(vector1, vector2, t):
