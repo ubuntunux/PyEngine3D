@@ -48,6 +48,9 @@ class StaticActor:
     def delete(self):
         pass
 
+    def is_skeletal_actor(self):
+        return False
+
     def get_center(self):
         return self.bound_box.bound_center
 
@@ -276,6 +279,9 @@ class SkeletonActor(StaticActor):
                     self.animation_buffers.append(None)
                     self.blend_animation_buffers.append(None)
             self.animation_mesh = self.model.mesh
+
+    def is_skeletal_actor(self):
+        return True
 
     def set_animation(self, mesh, speed=1.0, loop=True, start_time=0.0, end_time=None, blend_time=0.5, force=False, reset=True):
         if mesh != self.animation_mesh or force:

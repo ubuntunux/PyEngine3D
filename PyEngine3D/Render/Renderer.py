@@ -82,6 +82,8 @@ class Renderer(Singleton):
 
         self.actor_instance_buffer = None
 
+        self.render_custom_translucent_callbacks = []
+
     def initialize(self, core_manager):
         logger.info("Initialize Renderer")
         self.core_manager = core_manager
@@ -234,6 +236,9 @@ class Renderer(Singleton):
 
     def close(self):
         pass
+
+    def render_custom_translucent(self, render_custom_translucent_callback):
+        self.render_custom_translucent_callbacks.append(render_custom_translucent_callback)
 
     def set_blend_state(self, blend_enable=True, equation=GL_FUNC_ADD, func_src=GL_SRC_ALPHA, func_dst=GL_ONE_MINUS_SRC_ALPHA):
         self.blend_enable_prev = self.blend_enable
@@ -619,6 +624,10 @@ class Renderer(Singleton):
         self.render_actors(RenderGroup.SKELETON_ACTOR,
                            RenderMode.FORWARD_SHADING,
                            self.scene_manager.skeleton_translucent_render_infos)
+
+        for render_custom_translucent_callback in self.render_custom_translucent_callbacks:
+            render_custom_translucent_callback()
+        self.render_custom_translucent_callbacks.clear()
 
     def render_effect(self):
         self.scene_manager.effect_manager.render()

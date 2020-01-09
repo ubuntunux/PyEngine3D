@@ -733,12 +733,10 @@ class MaterialLoader(ResourceLoader):
 
         if shader is not None and shader_meta_data is not None:
             is_engine_resource = self.resource_manager.shader_loader.is_engine_resource(shader_meta_data.resource_filepath)
-            if is_engine_resource:
-                shader_directory = self.resource_manager.shader_loader.engine_resource_path
-            else:
-                shader_directory = self.resource_manager.shader_loader.project_resource_path
+            engine_shader_directory = self.resource_manager.shader_loader.engine_resource_path
+            project_shader_directory = self.resource_manager.shader_loader.project_resource_path
 
-            shader_codes = shader.generate_shader_codes(shader_directory, shader_version, compile_option, macros)
+            shader_codes = shader.generate_shader_codes(is_engine_resource, engine_shader_directory, project_shader_directory, shader_version, compile_option, macros)
             if shader_codes is not None:
                 shader_code_list = shader_codes.values()
                 final_macros = parsing_macros(shader_code_list)

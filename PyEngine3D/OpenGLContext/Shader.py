@@ -166,17 +166,25 @@ class Shader:
         self.attribute.set_attribute("name", self.name)
         return self.attribute
 
-    def generate_shader_codes(self, shader_directory, shader_version, compile_option, external_macros={}):
+    def generate_shader_codes(self, is_engine_resource, engine_shader_directory, project_shader_directory, shader_version, compile_option, external_macros={}):
         shader_codes = {}
         for shader_type_name in shader_types:
             shader_type = shader_types[shader_type_name]
-            shader_code = self.__parsing_final_code__(shader_directory, shader_type_name, shader_version, compile_option, external_macros)
+            shader_code = self.__parsing_final_code__(
+                is_engine_resource,
+                engine_shader_directory,
+                project_shader_directory,
+                shader_type_name,
+                shader_version,
+                compile_option,
+                external_macros
+            )
             # check void main
             if re.search(reVoidMain, shader_code) is not None:
                 shader_codes[shader_type] = shader_code
         return shader_codes
 
-    def __parsing_final_code__(self, shader_directory, shader_type_name, shader_version, compile_option, external_macros={}):
+    def __parsing_final_code__(self, is_engine_resource, engine_shader_directory, project_shader_directory, shader_type_name, shader_version, compile_option, external_macros={}):
         if self.shader_code == "" or self.shader_code is None:
             return ""
 
@@ -315,11 +323,25 @@ class Shader:
             # find include block
             m = re.search(reInclude, code)
             if m is not None:
-                valid = False
-                include_file = os.path.join(shader_directory, m.groups()[0])
+                is_include_file_exists = False
+                include_file_in_engine = os.path.join(engine_shader_directory, m.groups()[0])
+                include_file_in_project = os.path.join(project_shader_directory, m.groups()[0])
+                if is_engine_resource:
+                    if os.path.exists(include_file_in_engine):
+                        include_file = include_file_in_engine
+                        is_include_file_exists = True
+                    else:
+                        include_file = include_file_in_project
+                else:
+                    if os.path.exists(include_file_in_project):
+                        include_file = include_file_in_project
+                        is_include_file_exists = True
+                    else:
+                        include_file = include_file_in_engine
 
                 # insert include code
-                if os.path.exists(include_file):
+                valid = False
+                if is_include_file_exists or os.path.exists(include_file):
                     try:
                         f = codecs.open(include_file, mode='r', encoding='utf-8')
                         include_source = f.read()
