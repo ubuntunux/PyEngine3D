@@ -1,0 +1,6 @@
+{'macros': OrderedDict(),
+ 'material_name': 'screen_space_reflection_resolve',
+ 'shader_name': 'screen_space_reflection_resolve',
+ 'uniform_datas': {'texture_input': 'common.flat_white',
+                   'texture_resolve_prev': 'common.flat_white',
+                   'texture_velocity': 'common.flat_white'}}

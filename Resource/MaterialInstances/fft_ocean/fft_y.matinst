@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'fft_ocean.fft_y',
+ 'shader_name': 'fft_ocean.fft_y',
+ 'uniform_datas': {'butterflySampler': 'common.flat_white', 'imgSampler': 'common.default_2d_array', 'pass': 0.0}}

@@ -1,0 +1,9 @@
+{'depth': 128,
+ 'height': 128,
+ 'noise_persistance': 0.7,
+ 'noise_scale': 6,
+ 'sphere_count': 4096,
+ 'sphere_scale': 0.15,
+ 'texture_name': 'cloud_3d',
+ 'texture_type': 'CloudTexture3D',
+ 'width': 128}

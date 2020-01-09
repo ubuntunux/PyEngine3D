@@ -1,0 +1,4 @@
+{'macros': OrderedDict([('COMBINED_SCATTERING_TEXTURES', 1)]),
+ 'material_name': 'precomputed_atmosphere.compute_transmittance_c1724325_d120_32c5_b165_66a50a3d6e23',
+ 'shader_name': 'precomputed_atmosphere.compute_transmittance',
+ 'uniform_datas': {}}

@@ -1,0 +1,10 @@
+{'macros': OrderedDict([('SKELETAL', 0), ('TRANSPARENT_MATERIAL', 0)]),
+ 'material_name': 'render_object_color',
+ 'shader_name': 'render_object_color',
+ 'uniform_datas': {'color': array([1., 1., 1., 1.], dtype=float32),
+                   'is_instancing': False,
+                   'model': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]]),
+                   'uv_tiling': array([1., 1.], dtype=float32)}}

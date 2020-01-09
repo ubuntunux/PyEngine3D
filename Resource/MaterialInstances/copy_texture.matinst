@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'copy_texture',
+ 'shader_name': 'copy_texture',
+ 'uniform_datas': {'target_level': 0.0, 'texture_source': 'common.flat_white'}}

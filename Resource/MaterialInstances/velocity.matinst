@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'velocity',
+ 'shader_name': 'velocity',
+ 'uniform_datas': {'texture_depth': 'common.flat_white'}}

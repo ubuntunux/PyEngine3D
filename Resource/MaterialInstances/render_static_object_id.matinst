@@ -1,0 +1,9 @@
+{'macros': OrderedDict([('COMBINED_SCATTERING_TEXTURES', 0), ('SKELETAL', 0), ('TRANSPARENT_MATERIAL', 0)]),
+ 'material_name': 'render_object_id_aec1d398_da1e_308c_9d63_56e9056db8f9',
+ 'shader_name': 'render_object_id',
+ 'uniform_datas': {'is_instancing': False,
+                   'model': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]]),
+                   'uv_tiling': array([1., 1.], dtype=float32)}}

@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'selected_object_composite',
+ 'shader_name': 'selected_object_composite',
+ 'uniform_datas': {'texture_mask': 'common.flat_white'}}

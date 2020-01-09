@@ -1,0 +1,8 @@
+{'macros': OrderedDict(),
+ 'material_name': 'ui.render_widget',
+ 'shader_name': 'ui.render_widget',
+ 'uniform_datas': {'color': array([1., 1., 1., 1.], dtype=float32),
+                   'is_render_diffuse': False,
+                   'pos_size': array([1., 1., 1., 1.], dtype=float32),
+                   'texcoord': array([1., 1., 1., 1.], dtype=float32),
+                   'texture_diffuse': 'common.flat_white'}}

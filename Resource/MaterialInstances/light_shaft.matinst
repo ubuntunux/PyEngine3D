@@ -1,0 +1,11 @@
+{'macros': OrderedDict(),
+ 'material_name': 'light_shaft',
+ 'shader_name': 'light_shaft',
+ 'uniform_datas': {'light_shaft_decay': 0.0,
+                   'light_shaft_intensity': 0.0,
+                   'light_shaft_radius': 0.0,
+                   'light_shaft_samples': 0,
+                   'light_shaft_threshold': 0.0,
+                   'texture_depth': 'common.flat_white',
+                   'texture_diffuse': 'common.flat_white',
+                   'texture_random': 'common.flat_white'}}

@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'composite_shadowmap',
+ 'shader_name': 'composite_shadowmap',
+ 'uniform_datas': {'texture_dynamic_shadowmap': 'common.flat_white', 'texture_static_shadowmap': 'common.flat_white'}}

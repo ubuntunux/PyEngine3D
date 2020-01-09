@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'generate_min_z',
+ 'shader_name': 'generate_min_z',
+ 'uniform_datas': {'img_input': 'common.flat_white', 'img_output': 'common.flat_white'}}

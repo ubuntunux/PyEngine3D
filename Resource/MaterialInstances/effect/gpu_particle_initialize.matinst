@@ -1,0 +1,4 @@
+{'macros': OrderedDict([('WORK_GROUP_SIZE', 64)]),
+ 'material_name': 'effect.gpu_particle_initialize_978e1fc7_5d02_3f61_aed6_74c69b64c645',
+ 'shader_name': 'effect.gpu_particle_initialize',
+ 'uniform_datas': {}}

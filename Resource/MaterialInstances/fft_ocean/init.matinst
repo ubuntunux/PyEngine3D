@@ -1,0 +1,8 @@
+{'macros': OrderedDict(),
+ 'material_name': 'fft_ocean.init',
+ 'shader_name': 'fft_ocean.init',
+ 'uniform_datas': {'FFT_SIZE': 0.0,
+                   'INVERSE_GRID_SIZES': array([1., 1., 1., 1.], dtype=float32),
+                   'spectrum_1_2_Sampler': 'common.flat_white',
+                   'spectrum_3_4_Sampler': 'common.flat_white',
+                   't': 0.0}}

@@ -1,0 +1,8 @@
+{'macros': OrderedDict(),
+ 'material_name': 'precomputed_atmosphere.composite_atmosphere',
+ 'shader_name': 'precomputed_atmosphere.composite_atmosphere',
+ 'uniform_datas': {'above_the_cloud': False,
+                   'inscatter_power': 0.0,
+                   'texture_atmosphere': 'common.flat_white',
+                   'texture_inscatter': 'common.flat_white',
+                   'texture_linear_depth': 'common.flat_white'}}

@@ -1,0 +1,10 @@
+{'macros': OrderedDict([('COMBINED_SCATTERING_TEXTURES', 1)]),
+ 'material_name': 'precomputed_atmosphere.compute_scattering_density_c1724325_d120_32c5_b165_66a50a3d6e23',
+ 'shader_name': 'precomputed_atmosphere.compute_scattering_density',
+ 'uniform_datas': {'irradiance_texture': 'common.flat_white',
+                   'layer': 0,
+                   'multiple_scattering_texture': 'common.default_3d',
+                   'scattering_order': 0,
+                   'single_mie_scattering_texture': 'common.default_3d',
+                   'single_rayleigh_scattering_texture': 'common.default_3d',
+                   'transmittance_texture': 'common.flat_white'}}

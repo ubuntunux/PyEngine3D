@@ -1,0 +1,9 @@
+{'macros': OrderedDict(),
+ 'material_name': 'render_heightmap',
+ 'shader_name': 'render_heightmap',
+ 'uniform_datas': {'bound_box_max': array([1., 1., 1.], dtype=float32),
+                   'bound_box_min': array([1., 1., 1.], dtype=float32),
+                   'model': array([[1., 0., 0., 0.],
+       [0., 1., 0., 0.],
+       [0., 0., 1., 0.],
+       [0., 0., 0., 1.]])}}

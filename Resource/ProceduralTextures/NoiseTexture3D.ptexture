@@ -1,0 +1,7 @@
+{'noise_depth': 32,
+ 'noise_height': 256,
+ 'noise_persistance': 0.7,
+ 'noise_scale': 6,
+ 'noise_width': 256,
+ 'texture_name': 'noise_3d',
+ 'texture_type': 'NoiseTexture3D'}

@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'effect.gpu_particle_draw_indirect',
+ 'shader_name': 'effect.gpu_particle_draw_indirect',
+ 'uniform_datas': {}}

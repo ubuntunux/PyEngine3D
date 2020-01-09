@@ -1,0 +1,9 @@
+{'macros': OrderedDict(),
+ 'material_name': 'depth_of_field',
+ 'shader_name': 'depth_of_field',
+ 'uniform_datas': {'blur_scale': array([1., 1.], dtype=float32),
+                   'focus_far': 0.0,
+                   'focus_near': 0.0,
+                   'texture_diffuse': 'common.flat_white',
+                   'texture_focus_distance': 'common.flat_white',
+                   'texture_linear_depth': 'common.flat_white'}}

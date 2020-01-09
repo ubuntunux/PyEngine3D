@@ -1,0 +1,4 @@
+{'macros': OrderedDict(),
+ 'material_name': 'debug_line',
+ 'shader_name': 'debug_line',
+ 'uniform_datas': {'pos_size': array([1., 1., 1., 1.], dtype=float32)}}
