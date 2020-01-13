@@ -22,7 +22,7 @@
   pip install -r requirements.txt
   python main.py
 ```
-* Video : https://www.youtube.com/watch?v=Lpuxi2O5fiA
+* Video : https://www.youtube.com/watch?v=bVwdV695_zo
 
 ## Trouble Shooting
 ### Crash issue using anaconda
@@ -55,7 +55,7 @@ pip install pillow
 ```
 
 ## Features
-* Features : https://www.youtube.com/watch?v=x9GVA7tCAdw
+* Features : https://www.youtube.com/watch?v=Lpuxi2O5fiA
 
 * pybullet example : https://github.com/ubuntunux/PyBullet3D
 
