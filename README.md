@@ -26,7 +26,7 @@
 
 ## Trouble Shooting
 ### Crash issue on using ananconda
-`
+```
 Traceback (most recent call last):
   File "main.py", line 44, in <module>
     from PyEngine3D.Common import CustomQueue, CustomPipe
@@ -39,10 +39,10 @@ Traceback (most recent call last):
   File "C:\Users\quint\Anaconda3\lib\site-packages\PIL\Image.py", line 90, in <module>
     from . import _imaging as core
 ImportError: DLL load failed
-`
+```
 https://python-pillow/Pillow#2945
 https://conda-forge/pillow-feedstock#45
-`
+```
 Solution1)
 conda install -c anaconda pillow
 
@@ -51,7 +51,7 @@ conda install --channel conda-forge pillow=5
 
 Solution3)
 $ conda remove pillow $ pip install pillow
-`
+```
 
 ## Features
 * Features : https://www.youtube.com/watch?v=x9GVA7tCAdw
