@@ -50,7 +50,8 @@ Solution2)
 conda install --channel conda-forge pillow=5
 
 Solution3)
-$ conda remove pillow $ pip install pillow
+conda remove pillow
+pip install pillow
 ```
 
 ## Features
