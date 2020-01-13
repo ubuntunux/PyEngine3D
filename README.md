@@ -25,7 +25,7 @@
 * Video : https://www.youtube.com/watch?v=bVwdV695_zo
 
 ## Trouble Shooting
-### Crash issue using ananconda
+### Crash issue using anaconda
 ```
 Traceback (most recent call last):
   File "main.py", line 44, in <module>
