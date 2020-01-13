@@ -22,7 +22,7 @@
   pip install -r requirements.txt
   python main.py
 ```
-* Video : https://www.youtube.com/watch?v=bVwdV695_zo
+* Video : https://www.youtube.com/watch?v=Lpuxi2O5fiA
 
 ## Trouble Shooting
 ### Crash issue using anaconda
