@@ -141,6 +141,23 @@ def matrix_to_vectors(rotation_matrix, axis_x, axis_y, axis_z, do_normalize=Fals
     axis_z[:] = rotation_matrix[2, 0:3]
 
 
+    getYawPitchRoll(float4x4& m, float& yaw, float& pitch, float& roll)
+{
+pitch = arcsin(-m[2][1])
+threshold = 1e-8f
+test = cos(pitch)
+if(test < threshold)
+{
+roll=arctan2(-m[1][0], m[0][0])
+yaw=0.0
+}
+else
+{
+roll=arctan2(m[0][1], m[1][1])
+yaw=arctan2(m[2][0], m[2][2])
+}
+}
+
 def axis_rotation(axis, radian):
     angle = radian * 0.5
     s = math.sin(angle)
