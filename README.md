@@ -26,9 +26,8 @@
 
 ## Trouble Shooting
 ### Crash issue using anaconda
-https://python-pillow/Pillow#2945
-
-https://conda-forge/pillow-feedstock#45
+* https://python-pillow/Pillow#2945
+* https://conda-forge/pillow-feedstock#45
 ```
 Traceback (most recent call last):
   File "main.py", line 44, in <module>
