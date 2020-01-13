@@ -24,6 +24,35 @@
 ```
 * Video : https://www.youtube.com/watch?v=bVwdV695_zo
 
+## Trouble Shooting
+### Crash issue on using ananconda
+`
+Traceback (most recent call last):
+  File "main.py", line 44, in <module>
+    from PyEngine3D.Common import CustomQueue, CustomPipe
+  File "C:\Users\quint\OneDrive\Documents\Git BASH FOLDER\PyEngine3D\PyEngine3D\Common\__init__.py", line 3, in <module>
+    from PyEngine3D.Utilities import Logger
+  File "C:\Users\quint\OneDrive\Documents\Git BASH FOLDER\PyEngine3D\PyEngine3D\Utilities\__init__.py", line 4, in <module>
+    from .ImageProcessing import *
+  File "C:\Users\quint\OneDrive\Documents\Git BASH FOLDER\PyEngine3D\PyEngine3D\Utilities\ImageProcessing.py", line 6, in <module>
+    from PIL import Image
+  File "C:\Users\quint\Anaconda3\lib\site-packages\PIL\Image.py", line 90, in <module>
+    from . import _imaging as core
+ImportError: DLL load failed
+`
+https://python-pillow/Pillow#2945
+https://conda-forge/pillow-feedstock#45
+`
+Solution1)
+conda install -c anaconda pillow
+
+Solution2)
+conda install --channel conda-forge pillow=5
+
+Solution3)
+$ conda remove pillow $ pip install pillow
+`
+
 ## Features
 * Features : https://www.youtube.com/watch?v=x9GVA7tCAdw
 
