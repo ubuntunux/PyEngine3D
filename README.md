@@ -41,6 +41,7 @@ Traceback (most recent call last):
 ImportError: DLL load failed
 ```
 https://python-pillow/Pillow#2945
+
 https://conda-forge/pillow-feedstock#45
 ```
 Solution1)
