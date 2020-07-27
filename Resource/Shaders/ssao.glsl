@@ -58,6 +58,9 @@ void main() {
         }
 
         float sampleDepth = texture2DLod(texture_linear_depth, offset.xy, texture_lod).x;
+
+        if(offset.w < sampleDepth) continue;
+
         sampleDepth = linear_depth - sampleDepth;
         if(radius_min_max.x <= sampleDepth && sampleDepth <= radius_min_max.y)
         {
