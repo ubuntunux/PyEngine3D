@@ -170,7 +170,7 @@ void update(inout ParticleData particle_data, uint id)
             update_sequence(particle_data, life_ratio);
 
             // velocity acceleration
-            if(0.0 != PARTICLE_VELOCITY_ACCELERATION && any(particle_data.velocity_position != 0.0))
+            if(0.0 != PARTICLE_VELOCITY_ACCELERATION && (0.0 != particle_data.velocity_position.x || 0.0 != particle_data.velocity_position.y || 0.0 != particle_data.velocity_position .z))
             {
                 float velocity_length = length(particle_data.velocity_position);
                 particle_data.velocity_position /= velocity_length;
