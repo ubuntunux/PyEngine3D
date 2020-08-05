@@ -117,7 +117,7 @@ void main()
     vec2 screen_coord = (proj_pos.xy / proj_pos.w) * 0.5 + 0.5;
 
     float vertex_noise = texture2DLod(texture_noise, world_pos.xz * 0.005, 0.0).x;
-    float shadow_factor = get_shadow_factor(screen_coord, world_pos, dot(LIGHT_DIRECTION.xyz, vertex_normal.xyz), texture_shadow);
+    float shadow_factor = get_shadow_factor(world_pos, dot(LIGHT_DIRECTION.xyz, vertex_normal.xyz), texture_shadow);
 
     vec3 in_scatter;
     vec3 sun_irradiance;
@@ -235,7 +235,8 @@ void main()
         // Under Water Caustic
         if(false == isUnderWater)
         {
-            vec3 under_water_shadow = vec3(get_shadow_factor_simple(screen_tex_coord, world_pos, dot(L, vertex_normal.xyz), texture_shadow));
+            const bool isSimpleShadow = true;
+            vec3 under_water_shadow = vec3(get_shadow_factor(world_pos, dot(L, vertex_normal.xyz), texture_shadow, isSimpleShadow));
             under_water_shadow = max(sky_irradiance, under_water_shadow);
 
             const float chromaSeperation = sin(t * 3.5f) * 0.005;
