@@ -262,7 +262,7 @@ vec4 surface_shading(vec4 base_color,
         vec3 light_fresnel = fresnelSchlick(HdV, F0);
 
         // Directional Light
-        diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * NdL * light_color * shadow_factor;
+        diffuse_light += oren_nayar(roughness, NdL, NdV, N, V, L) / PI * light_color * shadow_factor;
         specular_light += cooktorrance_specular(light_fresnel, NdL, NdV, NdH, roughness) * NdL * light_color * shadow_factor;
 
         // Point Lights
@@ -292,7 +292,7 @@ vec4 surface_shading(vec4 base_color,
             float point_light_NdL = max(0.01, dot(N, point_light_dir));
             float point_light_NdH = max(0.01, dot(N, point_light_half));
 
-            diffuse_light += oren_nayar(roughness, point_light_NdL, NdV, N, V, point_light_dir) / PI * point_light_NdL * point_light_color;
+            diffuse_light += oren_nayar(roughness, point_light_NdL, NdV, N, V, point_light_dir) / PI * point_light_color;
             specular_light += cooktorrance_specular(light_fresnel, point_light_NdL, NdV, point_light_NdH, roughness) * point_light_NdL * point_light_color;
         }
     }
