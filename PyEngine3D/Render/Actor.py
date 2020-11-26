@@ -257,7 +257,7 @@ class SkeletonActor(StaticActor):
         self.animation_elapsed_time = 0.0
         self.animation_speed = 1.0
         self.animation_frame = 0.0
-        self.animation_start_time = 0.0
+        self.animation_play_time = 0.0
         self.animation_end_time = None
         self.is_animation_end = False
         self.animation_buffers = []
@@ -292,7 +292,7 @@ class SkeletonActor(StaticActor):
             self.animation_end_time = end_time
             if reset:
                 self.animation_elapsed_time = 0.0
-                self.animation_start_time = start_time
+                self.animation_play_time = start_time
                 self.animation_frame = 0.0
                 self.is_animation_end = False
             # swap
@@ -318,7 +318,7 @@ class SkeletonActor(StaticActor):
                     update_animation_frame = False
                     frame_count = animation.frame_count
                     if frame_count > 1:
-                        self.animation_start_time += dt * self.animation_speed
+                        self.animation_play_time += dt * self.animation_speed
 
                         animation_end_time = animation.animation_length
 
@@ -326,12 +326,13 @@ class SkeletonActor(StaticActor):
                             animation_end_time = self.animation_end_time
 
                         if self.animation_loop:
-                            self.animation_start_time = math.fmod(self.animation_start_time + dt * self.animation_speed, animation_end_time)
+                            if animation_end_time < self.animation_play_time:
+                                self.animation_play_time = math.fmod(self.animation_play_time, animation_end_time)
                         else:
-                            self.animation_start_time = min(animation_end_time, self.animation_start_time)
-                            if animation_end_time == self.animation_start_time:
+                            self.animation_play_time = min(animation_end_time, self.animation_play_time)
+                            if animation_end_time == self.animation_play_time:
                                 animation_end = True
-                        self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_start_time)
+                        self.animation_frame = animation.get_time_to_frame(self.animation_frame, self.animation_play_time)
                     else:
                         self.animation_frame = 0.0
                     if self.animation_elapsed_time < self.animation_blend_time:
