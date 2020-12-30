@@ -44,6 +44,8 @@ def computeWeight(N, k):
 
 
 class Ocean:
+    DEFAULT_FFT_SEED = 1234
+
     def __init__(self, **object_data):
         self.name = object_data.get('name', 'ocean')
         self.height = object_data.get('height', 0.0)
@@ -59,7 +61,7 @@ class Ocean:
         self.attributes = Attributes()
 
         self.acc_time = 0.0
-        self.fft_seed = 1234
+        self.fft_seed = Ocean.DEFAULT_FFT_SEED
         self.simulation_size = GRID_SIZES * self.simulation_scale
 
         self.renderer = CoreManager.instance().renderer
@@ -87,6 +89,7 @@ class Ocean:
         self.texture_noise = None
 
     def initialize(self):
+        self.fft_seed = Ocean.DEFAULT_FFT_SEED
         self.fft_init = self.resource_manager.get_material_instance('fft_ocean.init')
         self.fft_x = self.resource_manager.get_material_instance('fft_ocean.fft_x')
         self.fft_y = self.resource_manager.get_material_instance('fft_ocean.fft_y')
