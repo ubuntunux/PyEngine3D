@@ -41,15 +41,16 @@ def export_texture(filepath, export_filepath):
             #     f.write(str(loaded_data))
 
             '''
-            export struct {
+            file struct {
                 texture_type: i32,
                 width: i32,
                 height: i32,
                 depth: i32,
                 format: i32,
+                enable_mipmap: i32,
                 min_filter: i32,
                 mag_filter: i32,
-                wrap: i32,
+                wrap: i32,                
                 data_bytes: i32,
                 data: byte array
             }
@@ -85,8 +86,14 @@ def export_texture(filepath, export_filepath):
                 else:
                     raise BaseException("Not implemented.")
 
-                # min_filter
+                # enable_mipmap & min_filter
+                mipmap_filters = (GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST)
                 min_filter = loaded_data['min_filter']
+
+                # enable_mipmap
+                f.write(struct.pack('i', 1 if min_filter in mipmap_filters else 0))
+
+                # min_filter
                 if GL_LINEAR == min_filter:
                     f.write(struct.pack('i', 1))  # VK_FILTER_LINEAR = 1,
                 else:
