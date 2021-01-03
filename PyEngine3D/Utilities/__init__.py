@@ -1,6 +1,7 @@
 from .AutoEnum import AutoEnum
 from .Attribute import Attribute, Attributes
 from .Config import Config
+from .ExportTexture import export_texture
 from .ImageProcessing import *
 from .Logger import *
 from .RangeVariable import RangeVariable
