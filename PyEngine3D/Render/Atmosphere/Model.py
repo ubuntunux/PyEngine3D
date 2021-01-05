@@ -373,18 +373,24 @@ class Model:
             resource = resource_manager.texture_loader.get_resource(texture.name)
             if resource is None:
                 resource = resource_manager.texture_loader.create_resource(texture.name, texture)
-                resource_manager.texture_loader.save_resource(resource.name)
             else:
                 old_texture = resource.get_data()
                 old_texture.delete()
                 resource.set_data(texture)
+            resource_manager.texture_loader.save_resource(resource.name)
 
+        # precomputed textures
         save_texture(self.transmittance_texture)
         save_texture(self.scattering_texture)
         save_texture(self.irradiance_texture)
 
-        if not self.use_combined_textures:
-            save_texture(self.optional_single_mie_scattering_texture)
+        # intermediate processing textures
+        # save_texture(self.delta_irradiance_texture)
+        # save_texture(self.delta_rayleigh_scattering_texture)
+        # save_texture(self.delta_mie_scattering_texture)
+        # save_texture(self.delta_scattering_density_texture)
+        # if not self.use_combined_textures:
+        #     save_texture(self.optional_single_mie_scattering_texture)
 
     def Precompute(self,
                    lambdas,
