@@ -162,7 +162,7 @@ void main()
             cloud_inscatter = vec3(0.0);
         }
 
-        vec3 light_color = solar_radiance + cloud_sun_irradiance + cloud_sky_irradiance;
+        vec3 light_color = cloud_sun_irradiance + cloud_sky_irradiance;
         light_color *= cloud_exposure * LIGHT_COLOR.xyz * atmosphere_lighting;
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
