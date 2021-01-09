@@ -83,7 +83,10 @@ def export_texture(filepath, export_filepath):
                 if GL_R16F == internal_format:
                     # 16f -> 32f
                     f.write(struct.pack('i', 100))  # VK_FORMAT_R32_SFLOAT = 100,
+                elif GL_RGBA32F == internal_format:
+                    f.write(struct.pack('i', 109))  # VK_FORMAT_R32G32B32A32_SFLOAT = 109,
                 else:
+                    print(internal_format)
                     raise BaseException("Not implemented.")
 
                 # enable_mipmap & min_filter
@@ -110,7 +113,10 @@ def export_texture(filepath, export_filepath):
                 wrap = loaded_data['wrap']
                 if GL_REPEAT == wrap:
                     f.write(struct.pack('i', 0))  # VK_SAMPLER_ADDRESS_MODE_REPEAT = 0,
+                elif GL_CLAMP == wrap or GL_CLAMP_TO_EDGE == wrap:
+                    f.write(struct.pack('i', 2))  # VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE = 2,
                 else:
+                    print("wrap:", wrap)
                     raise BaseException("Not implemented.")
 
                 # data
