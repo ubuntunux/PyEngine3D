@@ -70,14 +70,15 @@ void main()
     vec3 radiance = GetSkyRadiance(ATMOSPHERE, camera - earth_center, eye_direction, scene_shadow_length, sun_direction, transmittance);
 
     // Sun
-    vec3 sun_color = vec3(0.0);
+    vec3 sun_disc = vec3(0.0);
+    vec3 solar_radiance = GetSolarRadiance(ATMOSPHERE);
     const float sun_absorption = 0.9;
-    const float sun_intensity = 100.0;
+    const float sun_intensity = 1.0;
     if (!render_light_probe_mode && sun_size.y < VdotL)
     {
-        sun_color = transmittance * GetSolarRadiance(ATMOSPHERE) * pow(clamp((VdotL - sun_size.y) / (1.0 - sun_size.y), 0.0, 1.0), 2.0);
-        sun_color *= LIGHT_COLOR.xyz * sun_intensity;
-        radiance += sun_color * sun_absorption;
+        sun_disc = transmittance * solar_radiance * pow(clamp((VdotL - sun_size.y) / (1.0 - sun_size.y), 0.0, 1.0), 2.0);
+        sun_disc *= LIGHT_COLOR.xyz * sun_intensity;
+        radiance += sun_disc * sun_absorption;
     }
 
     // Cloud
@@ -161,8 +162,8 @@ void main()
             cloud_inscatter = vec3(0.0);
         }
 
-        vec3 light_color = LIGHT_COLOR.xyz * (cloud_sun_irradiance + cloud_sky_irradiance) * atmosphere_lighting;
-        light_color *= cloud_exposure;
+        vec3 light_color = solar_radiance + cloud_sun_irradiance + cloud_sky_irradiance;
+        light_color *= cloud_exposure * LIGHT_COLOR.xyz * atmosphere_lighting;
 
         if(0.0 <= hit_dist && hit_dist < far_dist)
         {
@@ -258,7 +259,7 @@ void main()
         }
 
         out_color.xyz += max(vec3(0.0), mix(radiance, cloud.xyz, cloud.w));
-        out_color.xyz += cloud.xyz * sun_color * (1.0 - sun_absorption);
+        out_color.xyz += sun_disc * saturate(1.0 - cloud.w);
         out_color.w = clamp(cloud.w, 0.0, 1.0);
     }
 

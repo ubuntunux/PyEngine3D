@@ -50,7 +50,7 @@ class Atmosphere:
         self.atmosphere_exposure = 0.0001
 
         # cloud constants
-        self.cloud_exposure = 0.175
+        self.cloud_exposure = 0.1
         self.cloud_altitude = 100.0
         self.cloud_height = 500.0
         self.cloud_speed = 0.01
