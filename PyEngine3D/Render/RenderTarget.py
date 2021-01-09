@@ -171,8 +171,8 @@ class RenderTargetManager(Singleton):
                 if immutable:
                     self.immutable_rendertarget_names.append(rendertarget_name)
 
-                # send rendertarget info to GUI
-                self.core_manager.send_render_target_info(rendertarget_name)
+        # send rendertarget info to GUI
+        self.core_manager.send_render_target_info(rendertarget_name)
 
         if rendertarget is None:
             logger.error("Failed to crate a render target. %s" % rendertarget_name)
