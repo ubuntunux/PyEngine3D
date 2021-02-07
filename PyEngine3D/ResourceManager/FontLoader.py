@@ -19,25 +19,16 @@ from PyEngine3D.Utilities import *
 SIMPLE_VERTEX_SHADER = '''
 #version 430 core
 
-struct VERTEX_INPUT
-{
-    layout(location=0) vec3 position;
-    layout(location=1) vec2 tex_coord;
-};
+layout (location = 0) in vec3 vs_in_position;
+layout (location = 1) in vec2 vs_in_texCoord;
 
-struct VERTEX_OUTPUT
-{
-    vec2 tex_coord;
-    vec3 position;
-};
-
-in VERTEX_INPUT vs_input;
-out VERTEX_OUTPUT vs_output;
+layout (location = 0) out vec3 vs_out_position;
+layout (location = 1) out vec2 vs_out_texCoord;
 
 void main() {
-    vs_output.tex_coord = vs_input.tex_coord;
-    vs_output.position = vs_input.position;
-    gl_Position = vec4(vs_input.position, 1.0);
+    vs_out_texCoord = vs_in_texCoord;
+    vs_out_position = vs_in_position;
+    gl_Position = vec4(vs_in_position, 1.0);
 }'''
 
 SIMPLE_PIXEL_SHADER = '''
@@ -46,24 +37,19 @@ SIMPLE_PIXEL_SHADER = '''
 uniform sampler2D texture_font;
 uniform float font_size;
 
-struct VERTEX_OUTPUT
-{
-    vec2 tex_coord;
-    vec3 position;
-};
-
-in VERTEX_OUTPUT vs_output;
-out vec4 fs_output;
+layout (location = 0) in vec3 vs_out_position;
+layout (location = 1) in vec2 vs_out_texCoord;
+layout (location = 0) out vec4 fs_output;
 
 void main(void)
 {
     vec2 texture_font_size = textureSize(texture_font, 0);
     float min_dist = 1.0;
     vec2 font_count = ceil(texture_font_size / font_size);
-    vec2 start_tex_coord = floor(vs_output.tex_coord.xy * font_count) / font_count;
+    vec2 start_tex_coord = floor(vs_out_texCoord.xy * font_count) / font_count;
 
     const float diff = 0.9;
-    float value = texture(texture_font, vs_output.tex_coord.xy).x;
+    float value = texture(texture_font, vs_out_texCoord.xy).x;
 
     if(value < diff)
     {
@@ -76,7 +62,7 @@ void main(void)
 
                 if((other_value - value) > (1.0 - diff))
                 {
-                    float dist = length(other_tex_coord - vs_output.tex_coord.xy);
+                    float dist = length(other_tex_coord - vs_out_texCoord.xy);
                     if(dist < min_dist)
                     {
                         min_dist = dist;
