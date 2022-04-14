@@ -1,7 +1,7 @@
-numpy==1.18.0
-Pillow==7.0.0
-pygame==1.9.6
-pyglet==1.4.9
+numpy==1.22.3
+Pillow==9.1.0
+pygame==2.1.2
+pyglet==1.5.23
 PyOpenAL==0.7.11a1
-PyOpenGL==3.1.4
-PyOpenGL-accelerate==3.1.4
+PyOpenGL==3.1.6
+PyOpenGL-accelerate==3.1.6
