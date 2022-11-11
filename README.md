@@ -76,7 +76,7 @@ pip install pillow
 * Particle System
     - [x] CPU Based Particle
     - [x] GPU Based Particle
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_gpu_particle.png)
+    ![GPU Based Particle](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_gpu_particle.png)
     - [x] Vector Field
     - [ ] Particle spawn on polygon surface
     - [ ] Bitonic Sorting
@@ -91,18 +91,18 @@ pip install pillow
     - [x] Static Mesh        
     - [ ] Tree, Foliage, Grass
     - [x] Terrain
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_terrain.png)
+    ![Terrain](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_terrain.png)
     - [x] Atmoshpere & Sky
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_01.png)
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_02.png)
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_03.png)
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_sky_01.png)
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_sky_02.png)
+    ![Atmoshpere0](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_01.png)
+    ![Atmoshpere1](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_02.png)
+    ![Atmoshpere2](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_atmosphere_03.png)
+    ![Atmoshpere3](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_sky_01.png)
+    ![Atmoshpere4](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_sky_02.png)
     - [ ] Road
     - [ ] Wind
     - [x] FFT Ocean
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_ocean_01.png)
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_ocean_02.png)
+    ![FFT Ocean0](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_ocean_01.png)
+    ![FFT Ocean1](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_ocean_02.png)
     - [ ] River 
 * Rendering
     - [ ] Culling
@@ -114,7 +114,7 @@ pip install pillow
     - [ ] Distance Field Font 
     - [x] Real time light probe 
     - [x] PBR
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_pbr.png)
+    ![PBR](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_pbr.png)
     - [x] Temporal AA
     - [x] SSAA
     - [x] MSAA
@@ -127,14 +127,14 @@ pip install pillow
     - [x] Depth Of Field
         - [ ] Bokeh
     - [x] Bloom
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_bloom.png)
+    ![Bloom](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_bloom.png)
     - [x] Tone mapping
     - [ ] Glare
     - [ ] Film Grain
     - [ ] Color Correction
     - [ ] Color Grading
     - [x] Light Shaft
-    ![Screen Space Relfection](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_lightshaft.png)
+    ![Light Shaft](https://github.com/ubuntunux/PyEngine3D/blob/master/images/pyengine3d_lightshaft.png)
     - [x] Motion Blur
         - [ ] Recursive Velocity
     - [ ] Parallax Occlusion Rendering
