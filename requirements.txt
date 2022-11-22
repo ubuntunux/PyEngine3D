@@ -1,5 +1,5 @@
 numpy==1.22.3
-Pillow==9.1.0
+Pillow==9.3.0
 pygame==2.1.2
 pyglet==1.5.23
 PyOpenAL==0.7.11a1
