@@ -13,7 +13,7 @@ ignore_uniform_types = ["atomic_bool", "atomic_uint", "atomic_int", "atomic_floa
 def CreateUniformDataFromString(data_type, strValue=None):
     """ return converted data from string or default data """
     if data_type == 'bool':
-        return np.bool(strValue) if strValue else np.bool(False)
+        return np._bool(strValue) if strValue else np.bool(False)
     elif data_type == 'float':
         # return float(strValue) if strValue else 0.0
         return np.float32(strValue) if strValue else np.float32(0)
