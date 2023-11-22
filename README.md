@@ -7,7 +7,6 @@
 
 ### Requirements
  - OpenGL 4.3 ( Shading language 430 )
- - python 3.6 ( python 3.7 has a pyopengl bug )
  - numpy
  - pillow
  - pyglet or pygame
